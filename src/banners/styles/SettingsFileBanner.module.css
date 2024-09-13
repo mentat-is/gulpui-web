@@ -1,0 +1,18 @@
+.engines > div {
+  flex-direction: row;
+  align-items: center;
+}
+.offset {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.offset input {
+  flex: 1;
+}
+.text {
+  font-size: 14px;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}

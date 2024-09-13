@@ -1,0 +1,9 @@
+.magnifier {
+  position: absolute;
+  border: var(--geist-border);
+  background: var(--geist-background);
+  border-radius: var(--border-l);
+  transform: translate(-50%, calc(-50% + 24px));
+  pointer-events: none;
+  backdrop-filter: blur(8px) brightness(0.7);
+}

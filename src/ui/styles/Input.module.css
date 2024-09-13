@@ -1,0 +1,87 @@
+.input {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  width: 100%;
+  border-radius: var(--border-s);
+  border: 1px solid var(--accent-2);
+  background-color: var(--soft-black);
+  padding: 8px 12px;
+  outline-offset: var(--white);
+}
+
+.image {
+  padding: 0;
+  gap: var(--p2);
+}
+.image img {
+  height: 20px;
+  padding-left: 8px; 
+}
+.image input {
+  padding: 8px 12px 8px 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.input::file {
+  border: 0;
+  background-color: transparent;
+  font-weight: 500;
+}
+
+.input::placeholder {
+  color: var(--text-dimmed);
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--soft-white), 0 0 0 4px hsla(0, 0%, 100%, .24);
+}
+
+.input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.input[type='color'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min-content;
+  aspect-ratio: 1 / 1;
+}
+.input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  height: 24px;
+  width: 24px;
+  margin: 0;
+}
+.input[type="color"]::-webkit-color-swatch {
+  margin: 0;
+  padding: 0;
+  transition: all .3s var(--transition);
+	border: none;
+  height: 24px;
+  width: 24px;
+  border-radius: 4px;
+}
+.revert {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+}
+.revert img {
+  height: 20px;
+  padding-right: 8px; 
+}
+.revert input {
+  padding: 8px 0 8px 12px;
+}
+.input::file-selector-button,
+.input input::file-selector-button {
+  background: transparent;
+  outline: none;
+  border: none;
+  color: var(--text-dimmed);
+  margin-right: 8px;
+  cursor: pointer;
+}

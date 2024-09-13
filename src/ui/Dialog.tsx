@@ -1,0 +1,32 @@
+import { HTMLAttributes } from 'react';
+import s from './styles/Dialog.module.css';
+import { cn } from './utils';
+import { Button } from './Button';
+import { useApplication } from '@/context/Application.context';
+
+interface DialogProps extends HTMLAttributes<HTMLDivElement> {
+  title: string;
+  description: React.ReactNode;
+  loading?: boolean;
+  icon?: string | React.ReactElement;
+}
+
+export function Dialog({ className, icon,description, title, loading, children, ...props }: DialogProps) {
+  const { destroyDialog } = useApplication();
+
+  return (
+    <div className={cn(s.dialog, className)} {...props}>
+      <div className={s.wrapper}>
+        {typeof icon === 'string' ? <img src={icon} alt='' /> : icon}
+        <div className={s.header}>
+          <h2>{title}</h2>
+          {description && <p>{description}</p>}
+          <Button variant='ghost' className={s.close} onClick={destroyDialog} img='https://cdn.impactium.fun/ui/close/md.svg' size='icon' />
+        </div>
+      </div>
+      <div className={s.content}>
+        {children}
+      </div>
+    </div>
+  )
+}

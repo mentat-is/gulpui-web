@@ -1,0 +1,37 @@
+.event {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+.event p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 48px);
+}
+.combination {
+  display: flex;
+  flex-direction: row;
+  gap: var(--card-gap);
+  width: calc(100% - 42px);
+}
+.group {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--white);
+}
+.description {
+  font-size: 14px;
+  color: var(--text-dimmed);
+}
+.icon {
+  border-radius: var(--round);
+  min-width: 36px;
+  border: var(--geist-border);
+}

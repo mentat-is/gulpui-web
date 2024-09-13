@@ -1,0 +1,120 @@
+.group {
+  display: flex;
+  flex-direction: row;
+  gap: var(--p4);
+  align-items: center;
+}
+.group a {
+  color: var(--text-dimmed);
+}
+.submit {
+  background-color: var(--soft-black);
+}
+.page {
+  gap: 32px;
+  padding: 32px;
+  flex-direction: row !important;
+  height: 100vh;
+  position: relative;  
+}
+.wrapper > div {
+  display: flex;
+  flex-direction: column;
+  max-width: 600px;
+  overflow: hidden;
+}
+.wrapper > div > img {
+  border: 1px solid var(--accent-5);
+  border-radius: var(--border-s);
+}
+.chooser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--p2);
+  padding: var(--p3);
+  background-color: var(--soft-black);
+  border-radius: var(--border-m);
+}
+.chooser p {
+  font-size: 16px;
+  margin: 4px 4px 8px;
+}
+.unit_group button:first-child {
+  width: 100%;
+  justify-content: flex-start;
+}
+.unit_group {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;  
+}
+.botton_group {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+.select_session {
+  justify-content: flex-start;
+  flex: 1;
+  padding: 8px 12px 8px 8px;
+  height: 64px;
+}
+.select_session > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.select_session p {
+  color: black;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sessions_wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+.delete {
+  height: 64px;
+  width: 64px;
+}
+.logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  font-size: 56px;
+  color: var(--white);
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+.logo img {
+  filter: var(--filter-to-white);
+  height: 64px;
+}
+.logo i {
+  color: var(--text-dimmed);
+  font-size: 32px;
+  font-family: var(--font-mono);
+  font-style: normal;
+  align-self: flex-end;
+  width: 100%;
+  text-align: center;
+  transform: translate(-12px, -12px);
+}
+.cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+}
+.cluster img {
+  height: 18px;
+}
+.index_button {
+  justify-content: flex-start;
+}

@@ -1,0 +1,74 @@
+.wrapper {
+  display: flex;
+  width: 100vw;
+  position: fixed;
+  top: 0;
+  z-index: 3;
+  left: 0;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+  background: #00000080;
+}
+.banner {
+  min-width: 600px;
+  padding: var(--p5) var(--p6);
+  border-radius: var(--border-l);
+  background: var(--soft-black);
+  position: absolute;
+  border: var(--border);
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+  flex-direction: column;
+}
+.banner > h6 {
+  font-size: var(--text-large);
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+.button_wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+}
+.close {
+  box-shadow: none !important;
+  background: none !important;
+}
+.loading::before {
+  content: '';
+  display: flex;
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  background: #00000080;
+  z-index: 2;
+  backdrop-filter: blur(3px);
+}
+.loading::after {
+  content: url('https://cdn.impactium.fun/ui/action/reload.svg');
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3; 
+  animation: Rotate 1s linear infinite;
+  height: 24px;
+  width: 24px;
+}
+
+@keyframes Rotate {
+  0% {
+    transform: rotateZ(360deg);
+  }
+  100% {
+    transform: rotateZ(0deg);
+  }
+}

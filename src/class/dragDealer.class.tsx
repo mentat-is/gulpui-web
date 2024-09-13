@@ -1,0 +1,53 @@
+import React from "react";
+import { Info } from "./Info";
+import { XY } from "@/dto/XY.dto";
+
+interface DragDealerProps {
+  info: DragDealer['info'],
+  timeline: DragDealer['timeline'],
+  deltaScrollX: DragDealer['deltaScrollX'];
+  increaseScrollY: DragDealer['increaseScrollY'];
+}
+
+export class DragDealer implements DragDealerProps {
+  clicked: boolean;
+  y: number;
+  x: number;
+  info: Info;
+  timeline: React.RefObject<HTMLDivElement>;
+  deltaScrollX: (λx: number) => void;
+  increaseScrollY: (λy: number) => void;
+
+  constructor({ info, timeline, deltaScrollX, increaseScrollY }: DragDealerProps) {
+    this.clicked = false;
+    this.x = 0;
+    this.y = 0;
+    this.info = info;
+    this.timeline = timeline;
+    this.deltaScrollX = deltaScrollX;
+    this.increaseScrollY = increaseScrollY;
+  }
+
+  dragStart = (ev: React.MouseEvent) => {
+    this.y = ev.clientY;
+    this.x = ev.clientX;
+    this.clicked = true;
+  };
+
+  dragStop = () => {
+    window.requestAnimationFrame(() => this.clicked = false);
+  };
+
+  dragMove = (ev: React.MouseEvent) => {
+    if (!this.clicked) return;
+    
+    const λy = this.y - ev.clientY;
+    const λx = this.x - ev.clientX;
+
+    this.y = ev.clientY;
+    this.x = ev.clientX;
+
+    this.deltaScrollX(λx);
+    this.increaseScrollY(λy);
+  }
+}

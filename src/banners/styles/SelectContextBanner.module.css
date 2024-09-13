@@ -1,0 +1,58 @@
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 64vh;
+  overflow-y: scroll;
+  scrollbar-width: 8px;
+}
+.context::-webkit-scrollbar {
+  width: 8px;
+  position: absolute;
+}
+
+.context::-webkit-scrollbar-track {
+  background-color: #242424;
+  border-radius: 10px;
+}
+
+.context::-webkit-scrollbar-thumb {
+  background-color: white;
+  border-radius: 10px;
+}
+.contextHeading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.contextHeading label {
+  font-size: 24px;
+}
+.plugin {
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pluginHeading {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+  align-items: center;
+}
+.pluginHeading label {
+  font-size: 18px;
+}
+.file {
+  padding-left: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+.group {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  gap: 16px;
+}

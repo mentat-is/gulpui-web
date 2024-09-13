@@ -1,0 +1,24 @@
+/* .toaster {} */
+
+.toast {
+  background: var(--meta-black);
+  color: var(--white);
+  border: 1px solid var(--geist-border);
+  box-shadow: var(--shadow-border);
+  border-radius: var(--border-s);
+  padding: 16px 24px;
+}
+
+.description {
+  color: var(--text-dimmed);
+}
+
+.actionButton {
+  background: var(--white);
+  color: var(--black);
+}
+
+.cancelButton {
+  background: var(--text-dimmed);
+  color: var(--soft-black);
+}

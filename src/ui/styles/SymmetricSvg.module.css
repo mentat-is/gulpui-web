@@ -1,0 +1,13 @@
+.svg {
+  position: relative;
+}
+.svg.loading::after {
+  content: url(https://cdn.impactium.fun/ui/action/loading.svg);
+  animation: spin 1s infinite;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotateZ(1turn);
+  }
+}

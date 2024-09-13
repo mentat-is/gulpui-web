@@ -1,0 +1,30 @@
+.selection {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+.context {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+.context p {
+  color: var(--text-dimmed);
+  transition: all 0.3s var(--transition);
+}
+.context p.available {
+  color: var(--text-white);
+  font-weight: 500;
+}
+.trigger {
+  height: 36px;
+}
+.done {
+  align-self: flex-end;
+}
+.p {
+  font-size: 12px;
+  padding: 0 12px;
+  font-family: var(--font-mono);
+}

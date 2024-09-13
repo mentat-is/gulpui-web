@@ -1,0 +1,11 @@
+.separator {
+  height: 1px;
+  width: 1px;
+  background: var(--accent-2);
+}
+.horizontal {
+  width: 100%;
+}
+.vertical {
+  height: unset;
+}

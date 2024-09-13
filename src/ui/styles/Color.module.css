@@ -1,0 +1,103 @@
+.button {
+  background-color: var(--soft-black);
+  border: 1px solid var(--accent-2);
+  width: 128px;
+  padding-left: 6px;
+  justify-content: start;
+  text-align: left;
+  font-weight: normal;
+  color: var(--white);
+}
+
+.muted {
+  color: var(--gray24);
+}
+
+.button .content {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview {
+  height: 24px;
+  width: 24px;
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  transition: all .3s var(--transition);
+}
+
+.icon {
+  height: 20px;
+  width: 20px;
+  margin-left: 6px;
+}
+
+.popover {
+  width: 256px;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--card-gap) / 2);
+}
+
+.tabs {
+  width: 100%;
+}
+
+.list {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.trigger {
+  flex: 1;
+}
+
+.tabs .content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 0;
+}
+
+.gradients,
+.images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.color {
+  border-radius: 4px;
+  height: 24px;
+  width: 24px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.color:active {
+  transform: scale(1.05);
+}
+
+.image {
+  border-radius: 4px;
+  background-size: cover;
+  background-position: center;
+  height: 48px;
+  width: 100%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.image:active {
+  transform: scale(1.05);
+}
+
+.group {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}

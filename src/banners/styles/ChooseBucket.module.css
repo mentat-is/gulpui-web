@@ -1,0 +1,22 @@
+.button_group {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  flex-direction: row;
+  gap: 8px;
+}
+.input_group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.button {
+  width: 100%;
+  justify-content: center;
+  font-weight: 400;
+}
+.banner {
+  gap: 8px;
+}
+.calendar {
+  height: 380px;
+}

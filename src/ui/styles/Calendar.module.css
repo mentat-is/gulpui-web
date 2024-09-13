@@ -1,0 +1,150 @@
+.p3 {
+  padding: 1rem;
+}
+
+.flexColSmFlexRow {
+  display: flex;
+  gap: 16px;
+  flex-direction: column;
+}
+@media (min-width: 640px) {
+  .flexColSmFlexRow {
+    flex-direction: row;
+  }
+}
+.spaceY4 {
+  margin-bottom: 1rem;
+}
+.smSpaceX4SmSpaceY0 {
+  @media (min-width: 640px) {
+    margin-right: 1rem;
+    margin-bottom: 0;
+  }
+}
+.caption {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.25rem;
+  position: relative;
+  align-items: center;
+}
+.captionLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.nav {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+.navButton {
+  height: 1.75rem;
+  width: 1.75rem;
+  background: transparent;
+  padding: 0;
+  opacity: 0.5;
+}
+.navButton:hover {
+  opacity: 1;
+}
+.navButtonPrevious {
+  position: absolute;
+  left: 0.25rem;
+}
+.navButtonNext {
+  position: absolute;
+  right: 0.25rem;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.25rem;
+}
+.headRow {
+  display: flex;
+}
+.headCell {
+  color: var(--text-dimmed);
+  border-radius: 0.25rem;
+  width: 2.25rem;
+  font-weight: normal;
+  font-size: 0.8rem;
+}
+.row {
+  display: flex;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+.cell {
+  height: 2.25rem;
+  width: 2.25rem;
+  text-align: center;
+  font-size: 0.875rem;
+  padding: 0;
+  position: relative;
+}
+.cell.hasDayRangeEnd {
+  border-radius: 0;
+}
+.cell.hasDayOutside {
+  background-color: var(--gray16);
+}
+.cell.hasSelected > button {
+  border-radius: var(--border-s);
+}
+.cell.hasSelected:hover > button {
+  color: var(--black);
+}
+.cell.hasSelected:first-child {
+  border-radius: 0.25rem 0 0 0.25rem;
+}
+.cell.hasSelected:last-child {
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+.cell:focus-within {
+  position: relative;
+  z-index: 20;
+}
+.day {
+  height: 2.25rem;
+  width: 2.25rem;
+  padding: 0;
+  font-weight: normal;
+  opacity: 1;
+}
+.dayRangeEnd {
+  opacity: 1;
+}
+.daySelected {
+  background-color: var(--white);
+  color: var(--meta-black);
+}
+.daySelected:hover,
+.daySelected:focus {
+  background-color: var(--gray48);
+  color: var(--meta-black);
+}
+.dayToday {
+  background-color: var(--gray32);
+  color: var(--white);
+}
+.dayOutside {
+  color: var(--text-dimmed);
+  opacity: 0.5;
+}
+.dayOutsideSelected {
+  background-color: var(--gray24);
+  color: var(--text-dimmed);
+  opacity: 0.3;
+}
+.dayDisabled {
+  color: var(--text-dimmed);
+  opacity: 0.5;
+}
+.dayRangeMiddle {
+  background-color: var(--gray48);
+  color: var(--white);
+}
+.dayHidden {
+  visibility: hidden;
+}

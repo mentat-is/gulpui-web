@@ -1,0 +1,11 @@
+.wrapper {
+  z-index: 1;
+}
+.resize {
+  position: absolute;
+  left: 0px;
+  pointer-events: none;
+}
+.shifted {
+  cursor: pointer;
+}

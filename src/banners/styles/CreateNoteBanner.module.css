@@ -1,0 +1,93 @@
+.color > div {
+  flex-direction: column;
+}
+.color p {
+  text-wrap: nowrap;
+}
+.save {
+  width: min-content;
+  align-self: flex-end;
+}
+.tags {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.group {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
+.tags .content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-direction: row;
+  max-width: 534px;
+}
+.trigger {
+  width: min-content;
+  height: 36px;
+}
+.trigger:hover {
+  border: 1px solid var(--white);
+}
+.level > div {
+  padding: var(--p3) var(--p4);
+  flex-direction: row;
+  align-items: center;
+}
+.focus {
+  border: 1px solid var(--accent-2);
+  background: var(--soft-black);
+  color: var(--white);
+}
+.focus img {
+  filter: var(--filter-to-white);
+}
+.unit {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  gap: 8px;
+  justify-content: space-between;
+}
+.overview p {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+.event_unit {
+  height: 36px;
+  display: flex;
+  gap: 12px;
+  cursor: pointer;
+}
+.event_unit svg {
+  min-height: 36px;
+  min-width: 36px;
+  border-radius: var(--round);
+  border: var(--geist-border);
+}
+.event_unit .text {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+.event_unit .text p {
+  max-width: calc(600px - 128px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.event_unit .text .top {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--white);
+}
+.event_unit .text .bottom {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dimmed);
+}

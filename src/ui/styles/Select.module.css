@@ -1,0 +1,215 @@
+.trigger {
+  display: flex;
+  height: 40px;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 6px;
+  border: 1px solid var(--accent-2);
+  background-color: var(--soft-black);
+  gap: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--text-dimmed);
+  outline: none;
+  transition: box-shadow 0.2s;
+  position: relative;
+}
+
+.trigger:focus {
+  outline: none;
+  box-shadow: var(--ring)
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.trigger > span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-clamp: 1;
+}
+.scroll {
+  background: var(--soft-black);
+  display: flex;
+  width: 100%;
+  z-index: 5;
+  left: 0;
+  cursor: default;
+  align-items: center;
+  justify-content: center;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  position: absolute;
+}
+.up {
+  top: 0;
+}
+.down {
+  bottom: 0;
+}
+.content {
+  position: relative;
+  z-index: 50;
+  max-height: 384px;
+  min-width: 128px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 1px solid var(--accent-2);
+  background-color: var(--soft-black);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  padding: 2px;
+  box-shadow: var(--border);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content[data-state="open"] {
+  animation: fade-in 0.2s ease-out, zoom-in 0.2s ease-out;
+}
+
+.content[data-state="closed"] {
+  animation: fade-out 0.2s ease-in, zoom-out 0.2s ease-in;
+}
+
+.content[data-side="bottom"] {
+  animation: slide-in-from-top 0.2s ease-out;
+}
+
+.content[data-side="left"] {
+  animation: slide-in-from-right 0.2s ease-out;
+}
+
+.content[data-side="right"] {
+  animation: slide-in-from-left 0.2s ease-out;
+}
+
+.content[data-side="top"] {
+  animation: slide-in-from-bottom 0.2s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes zoom-in {
+  from { transform: scale(0.95); }
+  to { transform: scale(1); }
+}
+
+@keyframes zoom-out {
+  from { transform: scale(1); }
+  to { transform: scale(0.95); }
+}
+
+@keyframes slide-in-from-top {
+  from { transform: translateY(-8px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-bottom {
+  from { transform: translateY(8px); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slide-in-from-left {
+  from { transform: translateX(-8px); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slide-in-from-right {
+  from { transform: translateX(8px); }
+  to { transform: translateX(0); }
+}
+.popper {
+  transform: translate(var(--popper-translate-x), var(--popper-translate-y));
+}
+
+.popper[data-side="bottom"] {
+  transform: translateY(4px);
+}
+
+.popper[data-side="left"] {
+  transform: translateX(-4px);
+}
+
+.popper[data-side="right"] {
+  transform: translateX(4px);
+}
+
+.popper[data-side="top"] {
+  transform: translateY(-4px);
+}
+.podder {
+  height: var(--radix-select-trigger-height);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: var(--radix-select-trigger-width);
+}
+.viewport {
+  padding: 4px;
+}
+.label {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-left: 32px;
+  padding-right: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.item {
+  position: relative;
+  display: flex;
+  width: 100%;
+  text-align: left;
+  cursor: default;
+  height: 36px;
+  user-select: none;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  padding: 8px 12px;
+  outline: none;
+  transition: background-color 0.2s, color 0.2s;
+  transition-duration: 150ms;
+  transition-timing-function: var(--transition);
+}
+
+.item:focus,
+.item:hover {
+  background-color: var(--gray16);
+  color: var(--white);
+}
+
+.item[data-disabled] {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.separator {
+  margin-left: -4px;
+  margin-right: -4px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  height: 1px;
+  background-color: var(--gray-36);
+}
+.img {
+  height: 16px;
+  width: 16px;
+}
+/* .check {
+} */

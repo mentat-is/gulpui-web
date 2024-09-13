@@ -1,0 +1,42 @@
+._ {
+  max-width: calc(100vw - 48px);
+  display: flex;
+  background: var(--meta-black);
+  border-radius: var(--border-m);
+  border: 1px solid var(--accent-3);
+  flex-direction: column;
+}
+.content {
+  gap: var(--card-gap);
+  display: flex;
+  padding: var(--card-padding);
+  flex: 1;
+  flex-direction: column;
+  position: relative;
+}
+.content h6 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.content p {
+  font-size: var(--text-medium);
+  font-weight: 400;
+}
+.description {
+  min-height: 56px;
+  border-top: 1px solid var(--accent-3);
+  padding: 0 var(--card-padding);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--card-gap);
+}
+.description p {
+  font-size: var(--text-medium);
+  line-height: 1.2;
+  color: var(--text-dimmed);
+  margin: var(--card-padding) 0px;
+}
+
+/* Для телефонов */

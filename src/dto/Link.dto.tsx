@@ -1,0 +1,34 @@
+import { UUID } from "crypto";
+import { λEvent, λRawEventMinimized } from "./ChunkEvent.dto";
+
+export type λLink = {
+  id: number;
+  events: Array<Omit<λEvent, 'event'>>;
+  context: string
+  data: {
+    src: string,
+    color: string
+  }
+  description: string
+  edits: number[]
+  file: string
+  glyph_id: null | number
+  level: number
+  name: null | string
+  operation_id: number
+  owner_user_id: number
+  private: boolean
+  src_file: string
+  tags: null | string[]
+  text: null | string
+  time_created: number
+  time_end: null | number
+  time_start: null | number
+  time_updated: number
+  type: number
+  _uuid: UUID
+}
+
+export type RawLink = Omit<λLink, 'events'> & {
+  events: λRawEventMinimized
+}

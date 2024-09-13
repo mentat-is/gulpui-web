@@ -1,0 +1,130 @@
+.layers {
+  background-color: var(--gray16);
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  border: var(--geist-border);
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+  min-height: 128px;
+}
+.layers * {
+  font-size: 12px;
+}
+.tabs {
+  display: flex;
+  flex-direction: column;
+}
+.tabs_list {
+  align-self: flex-end;
+  border: var(--geist-border);
+}
+.tabs_content * {
+  font-size: 16px;
+}
+.tabs_content::-webkit-scrollbar {
+  height: 8px;
+  position: absolute;
+}
+
+.tabs_content::-webkit-scrollbar-track {
+  background-color: #242424;
+  border-radius: 10px;
+}
+
+.tabs_content::-webkit-scrollbar-thumb {
+  background-color: white;
+  border-radius: 10px;
+}
+.xml {
+  height: max-content;
+}
+.tabs_content {
+  overflow: hidden;
+  overflow-x: auto;
+}
+.root {
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.cluster {
+  display: flex;
+  gap: 12px;
+  max-width: 100%;
+  overflow: hidden;
+  justify-items: stretch;
+  flex-wrap: wrap;
+}
+.cluster img {
+  height: 18px;
+  width: 18px;
+}
+.node {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
+  background: var(--geist-background);
+  border: var(--geist-border);
+  border-radius: var(--border-s);
+}
+.pod {
+  border-radius: var(--border-s);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 2px 2px 2px 12px;
+  width: min-content;
+  max-width: 100%;
+  overflow: hidden;
+  gap: 8px;
+  border: var(--geist-border);
+}
+.cluster > .pod {
+  font-weight: 400;
+  background: var(--gray16);
+}
+.node h6 {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.property {
+  white-space: nowrap;
+  background: var(--gray24);
+  padding: 8px 12px;
+  border-radius: var(--border-s);
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  font-weight: 200;
+  font-family: var(--font-mono);
+}
+.wrap {
+  flex-wrap: wrap;
+  padding: 12px;
+}
+.hint {
+  position: absolute;
+  text-wrap: nowrap;
+  left: -12px;
+  transform: translateX(-100%);
+  font-size: var(--text-small);
+  color: var(--text-dimmed);
+  font-family: var(--font-mono);
+}
+.createNote {
+  min-height: 36px;
+}
+.buttons_group {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  border-radius: 8px;
+  justify-content: flex-end;
+}

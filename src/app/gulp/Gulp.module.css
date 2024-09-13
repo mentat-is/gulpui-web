@@ -1,0 +1,131 @@
+.sidebar {
+  z-index: 2;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(calc(-100% - 32px));
+  margin-top: 24px;
+  transition: transform .5s var(--transition);
+}
+.sidebar.active {
+  transform: translateX(0%);
+}
+.sidebar .unit {
+  display: flex;
+  gap: 4px;
+  flex-direction: row;
+  max-height: 48px;
+  min-height: 48px;
+  position: relative;
+  width: min-content;
+  align-items: center;
+  justify-content: flex-start;
+}
+.sidebar .unit p::before,
+.sidebar .unit p::after {
+  position: absolute;
+  right: 0;
+  font-weight: 400;
+  font-family: var(--font-nunito);
+  font-size: 10px;
+}
+.sidebar .unit p::before {
+  content: attr(data-total);
+  color: var(--text-dimmed);
+  transform: translate(calc(100% + 8px), 8px);
+}
+.sidebar .unit p::after {
+  content: attr(data-render);
+  color: var(--white);
+  transform: translate(calc(100% + 8px), -8px);
+}
+.sidebar .unit p {
+  width: min-content;
+  position: relative;
+  border: 1px solid var(--accent-3);
+  border-left: none;
+  background: var(--black);
+  font-weight: 600;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 8px;
+  gap: 8px;
+  font-size: 14px;
+  display: flex;
+  justify-content: space-between;
+}
+.datelimit {
+  background: var(--gray24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--p2);
+  border-radius: var(--border-s);
+  padding: var(--p2) var(--p3);
+  width: min-content;
+  justify-self: center;
+  cursor: pointer;
+}
+
+.datelimit span {
+  padding: var(--p1);
+  background-color: var(--gray16);
+  color: var(--text-dimmed);
+  border-radius: var(--border-s);
+}
+.transfered {
+  display: flex;
+  flex-direction: row;
+  gap: var(--p4);
+}
+.logout {
+  display: flex;
+  flex-direction: row;
+  gap: var(--p4);
+  justify-content: flex-end;
+}
+.transfered .unit p {
+  font-weight: 800;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.downstream {
+  background: -webkit-linear-gradient(0deg, #04B7FE, #6EFFBF);
+}
+.upstream {
+  background: -webkit-linear-gradient(0deg, #7855D3, #FA71F3);
+}
+.timeline {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 48px);
+  overflow: hidden;
+}
+.content {
+  display: flex;
+  position: relative;
+  margin-top: 24px;
+}
+
+.controls {
+  position: fixed;
+  bottom: 16px;
+  z-index: 3;
+  padding-left: 16px;
+  display: flex;
+  gap: 8px;
+}
+.notes {
+  position: absolute;
+}
+.cm_title {
+  max-width: 256px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
