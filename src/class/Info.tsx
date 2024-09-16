@@ -281,6 +281,7 @@ export class Info implements InfoProps {
   
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
+  setTimelineTarget = (event: λEvent) => this.setInfoByKey(event, 'timeline', 'target');
   
   increaseTimelineScale = (current?: number) => {
     const _scale = current || this.app.timeline.scale;
@@ -464,7 +465,7 @@ export class File {
   // Ищем выбранные контексты где выбранная операция совпадает по имени
   public static selected = (app: Information): λFile[] => app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid));
 
-  public static find = (use: Information | λFile[], file: λFile | UUID): λFile | undefined => Parser.use(use, 'files').find(f => f._uuid === Parser.useUUID(file));
+  public static find = (use: Information | λFile[], file: λFile | UUID): λFile | undefined => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file));
   
   public static select = (use: Information | λFile[], selected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s)) ? File._select(f) : f);
  

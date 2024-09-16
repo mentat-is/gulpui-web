@@ -9,7 +9,6 @@ import { File } from "@/class/Info";
 import { StartEnd } from "@/dto/StartEnd.dto";
 import { Note } from "@/ui/Note";
 import { Note as NoteClass } from '@/class/Info';
-import { XY } from "@/dto/XY.dto";
 import { RenderEngine } from "@/class/RenderEngine";
 
 interface TimelineCanvasProps {
@@ -19,16 +18,15 @@ interface TimelineCanvasProps {
   resize: StartEnd;
 }
 
-const scale = Symbol('scale');
-
 const HEIGHT = 48;
 
 export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
-  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref);
-  const { app, spawnDialog, Info } = useApplication();
+  const { app, spawnDialog, Info, dialog } = useApplication();
+  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target];
+  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = () => {
     const canvas = canvas_ref.current
@@ -64,23 +62,35 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       
       ctx.fillStyle = '#e8e8e8';
       ctx.fillText(File.events(app, file).length.toString(), 10, y + 38);
+    });
 
-      app.target.links.forEach(l => {
-        const dots: (XY & { color: string })[] = l.events.map(e => {
-          const i = File.selected(app).findIndex(f => f.name === e.file);
+    if (app.timeline.target) {
+      const file = File.find(app, app.timeline.target._uuid);
 
-          return {
-            x: getPixelPosition(e.timestamp + file.offset),
-            y: i * 48,
-            color: stringToHexColor(File.selected(app)[i]?.name.toString() || '')
-          }
-        });
-        
-        dots.forEach(({ color, x, y }) => {
-          ctx.fillStyle = color;
-          ctx.roundRect(x, y, 10, 10);
-        })
+      if (!file || throwableByTimestamp(app.timeline.target.timestamp, limits, file.offset)) return;
+
+      ctx.fillStyle = app.timeline.target._id
+      ctx.fillRect(0, File.selected(app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - scrollY, timeline.current!.clientWidth, 1)
+      ctx.fillRect(getPixelPosition(app.timeline.target.timestamp + file.offset), 0, 1, timeline.current!.clientHeight)
+    }
+
+    app.target.links.forEach(l => {
+      const dots: ({ x: number; y: number; color: string; })[] = l.events.map(e => {
+        const i = File.selected(app).findIndex(f => f.uuid === e._uuid);
+
+        const file = File.selected(app)[i]
+
+        return {
+          x: getPixelPosition(e.timestamp + file.offset || 0),
+          y: i * 48,
+          color: stringToHexColor(file.name.toString() || '')
+        }
       });
+      
+      dots.forEach(({ color, x, y }) => {
+        ctx.fillStyle = color;
+        ctx.roundRect(x, y, 10, 10);
+      })
     });
   };
 
@@ -101,6 +111,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       const pos = getPixelPosition(event.timestamp + file.offset);      
 
       if (Math.round(clickX) === Math.round(pos)) {
+        Info.setTimelineTarget(event);
         spawnDialog(<DisplayEventDialog event={event} />);
       }
     });
@@ -118,7 +129,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       window.removeEventListener('resize', renderCanvas);
       timeline.current?.removeEventListener('resize', renderCanvas);
     };
-  }, [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links]);
+  }, dependencies);
 
   useEffect(() => {
     renderOverlay();

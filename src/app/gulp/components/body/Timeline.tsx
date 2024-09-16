@@ -13,9 +13,10 @@ import { cn, ui } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
+import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 
 export function Timeline() {
-  const { app, Info, banner, dialog, timeline, spawnBanner } = useApplication();
+  const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
   const [scrollX, _setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
@@ -113,14 +114,24 @@ export function Timeline() {
     setSelectedFileForContextMenu(file);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = e.key.toLowerCase();
+    if ((key === 'd' || key === 'a') && app.timeline.target) {
+      const newEvent = File.events(app, app.timeline.target._uuid)[File.events(app, app.timeline.target._uuid).findIndex(e => e._id === app.timeline.target!._id) + (key === 'a' ? 1 : -1)] || app.timeline.target;
+      Info.setTimelineTarget(newEvent);
+      spawnDialog(<DisplayEventDialog event={newEvent} />)
+    }
+  }
+
   return (
     <div
       id="timeline"
       className={cn(s.timeline, dialog && s.short)}
-      onMouseLeave={handleMouseUpOrLeave} // Завершаем действие при выходе мыши
-      onMouseUp={handleMouseUpOrLeave} // Завершаем действие при отпускании мыши
-      onMouseDown={handleMouseDown} // Начинаем действие при нажатии
-      onMouseMove={handleMouseMove} // Обновляем конечную позицию при движении мыши
+      onMouseLeave={handleMouseUpOrLeave}
+      onMouseUp={handleMouseUpOrLeave}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onKeyDown={handleKeyDown}
       onWheel={e => !!e}
       onContextMenu={handleContextMenu}
       ref={timeline}

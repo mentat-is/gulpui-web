@@ -45,7 +45,7 @@ export interface Info {
   },
   timeline: {
     scale: number;
-    target: TimelineTarget | null;
+    target: λEvent | null;
   }
 }
 export const BaseInfo: Info = {

@@ -1,12 +1,12 @@
 .dialog {
   position: fixed;
-  top: 0;
+  top: 64px;
   padding: var(--card-padding);
   display: flex;
   background: var(--soft-black);
   right: 0;
   width: 50vw;
-  height: 100vh;
+  height: calc(100vh - 64px);
   border-left: 1px solid var(--accent-3);
   z-index: 50;
   flex-direction: column;

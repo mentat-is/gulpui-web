@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, magnifierSize = 100, magnificationFactor = 2) => {
+export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dependencies: Array<any>, magnifierSize = 100, magnificationFactor = 2) => {
   const magnifier_ref = useRef<HTMLCanvasElement>(null);
   const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -28,7 +28,7 @@ export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, mag
 
   useEffect(() => {
     isShiftPressed && drawMagnifier();
-  }, [isShiftPressed, mousePosition]);
+  }, [isShiftPressed, mousePosition, ...dependencies]);
 
   const handleMouseMove = ({ clientX, clientY }: React.MouseEvent<HTMLDivElement>) => {
     const { left, top } = canvas_ref.current!.getBoundingClientRect();

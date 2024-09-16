@@ -16,7 +16,6 @@ import { Separator } from "@/ui/Separator";
 import { Notes } from "./components/Notes";
 import { λNote } from "@/dto/Note.dto";
 import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
-import { Card } from "@/ui/Card";
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -51,7 +50,7 @@ interface DetailedChunkEventData {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { api, app, spawnBanner, destroyDialog } = useApplication();
+  const { api, app, spawnBanner, destroyDialog, spawnDialog, Info } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent>();
   const [root, setRoot] = useState<DetailedChunkEventData[]>();
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
