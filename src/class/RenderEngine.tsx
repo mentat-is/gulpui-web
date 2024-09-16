@@ -2,9 +2,10 @@ import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { File } from "./Info";
 import { Info } from "@/dto";
-import { λEvent } from "@/dto/ChunkEvent.dto";
 import { getColorByCode, getDispersionFromColorByDelta, throwableByTimestamp } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
+
+const scale = Symbol('scale');
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
@@ -20,7 +21,7 @@ export interface Heat {
   timestamp: number
 }
 
-export type Heatmap = Map<number, Heat>;
+export type HeightMap = Map<number, Heat> & Scale;
 
 export interface Status {
   codes: number[],
@@ -29,35 +30,31 @@ export interface Status {
   heights: number[]
 }
 
-export type StatusMap = Map<number, Status>;
+export type StatusMap = Map<number, Status> & Scale;
 
 export interface Default {
   timestamp: number,
   amount: number
 }
 
-export type DefaultMap = Map<number, Default>
+export interface Scale {
+  [scale]: number
+}
+
+export type DefaultMap = Map<number, Default> & Scale;
 
 type Engines = {
   [key in Engine]: (file: λFile, y: number) => void;
 };
-
-const scale = Symbol('scale');
 
 export class RenderEngine implements RenderEngineConstructor, Engines {
   ctx!: CanvasRenderingContext2D;
   limits!: MinMax;
   app!: Info;
   getPixelPosition!: (timestamp: number) => number;
-  heatMap: Record<λFile['name'], Heatmap> & { [scale]: number } = {
-    [scale]: 1
-  };
-  statusMap: Record<λFile['name'], StatusMap> & { [scale]: number } = {
-    [scale]: 1
-  };
-  defaultMap: Record<λFile['name'], DefaultMap> & { [scale]: number } = {
-    [scale]: 1
-  };
+  heightMap: Record<λFile['name'], HeightMap> = {};
+  statusMap: Record<λFile['name'], StatusMap> = {};
+  defaultMap: Record<λFile['name'], DefaultMap> = {};
   private static instance: RenderEngine | null = null;
 
   constructor({ ctx, limits, app, getPixelPosition }: RenderEngineConstructor) {
@@ -66,8 +63,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.limits = limits;
       RenderEngine.instance.app = app;
       RenderEngine.instance.getPixelPosition = getPixelPosition;
-      RenderEngine.instance.heatMap[scale] = app.timeline.scale;
-      RenderEngine.instance.statusMap[scale] = app.timeline.scale;
+      // RenderEngine.instance.heightMap = {};
+      // RenderEngine.instance.statusMap = {};
+      // RenderEngine.instance.defaultMap = {};
       return RenderEngine.instance;
     }
 
@@ -75,35 +73,35 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.limits = limits;
     this.app = app;
     this.getPixelPosition = getPixelPosition;
-    this.heatMap[scale] = app.timeline.scale;
-    this.statusMap[scale] = app.timeline.scale;
     RenderEngine.instance = this;
   }
 
   async default(file: λFile, y: number) {
-    const heat = this.heatMap[scale] === this.app.timeline.scale && this.defaultMap[file.name] ? this.defaultMap[file.name] : await this.getDefault(file);
-
-    console.log(heat.size);
+    const heat = this.process(this.defaultMap, file)
+      ? this.defaultMap[file.name]
+      : await this.getDefault(file);
 
     const max = Math.max(...[...heat.values()].map(v => v.amount));
 
     [...heat].forEach(hit => {
       const [_, { amount, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp + file.offset, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits)) return;
 
       this.ctx.fillStyle = getDispersionFromColorByDelta(file.color, amount, max);
       this.ctx.fillRect(this.getPixelPosition(timestamp), y - 1, 1, 48);
     });
   }
   
-  async heatmap(file: λFile, y: number) {
-    const heat = this.heatMap[scale] === this.app.timeline.scale && this.heatMap[file.name] ? this.heatMap[file.name] : await this.getHeatmap(file);
+  async height(file: λFile, y: number) {
+    const heat = this.process(this.heightMap, file)
+      ? this.heightMap[file.name]
+      : await this.getHeightmap(file);
 
-    [...heat].forEach(hit => {
+    [...heat].forEach((hit) => {
       const [_, { color, height, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp + file.offset, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits)) return;
 
       this.ctx.fillStyle = color;
       this.ctx.fillRect(this.getPixelPosition(timestamp), y + 47, 1, -height);
@@ -113,12 +111,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   graph = (file: λFile, y: number) => this.default(file, y);
 
   async apache(file: λFile, y: number) {
-    const heat = this.statusMap[scale] === this.app.timeline.scale && this.statusMap[file.name] ? this.statusMap[file.name] : await this.getStatusMap(file);
+    const heat = this.process(this.statusMap, file) ? this.statusMap[file.name] : await this.getStatusMap(file);
 
     [...heat].forEach(hit => {
       const [_, { codes, colors, heights, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp + file.offset, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits)) return;
 
       codes.map((code, i) => {
         this.ctx.fillStyle = colors[i];
@@ -129,7 +127,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   private getDefault = (file: λFile): Promise<DefaultMap> => {
     return new Promise((resolve) => {
-      const heat: DefaultMap = new Map();
+      const heat: DefaultMap = new Map() as DefaultMap;
+
       File.events(this.app, file).forEach(event => {
         const timestamp = event.timestamp + file.offset;
         const λpos = this.getPixelPosition(timestamp);
@@ -139,23 +138,25 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
           timestamp
         };
   
-        const amount = obj.amount + 1;
-  
         heat.set(λpos, {
-          amount,
+          amount: obj.amount + 1,
           timestamp
         });
       });
-  
-      this.defaultMap = ({ ...this.defaultMap, [file.name]: heat, [scale]: this.app.timeline.scale });
+
+      heat[scale] = this.app.timeline.scale;
+      this.defaultMap = {
+        ...this.defaultMap,
+        [file.name]: heat
+      };
 
       resolve(heat);
     })
   }
 
-  private getHeatmap = (file: λFile): Promise<Heatmap> => {
+  private getHeightmap = (file: λFile): Promise<HeightMap> => {
     return new Promise((resolve) => {
-      const heat: Heatmap = new Map();
+      const heat: HeightMap = new Map() as HeightMap;
   
       File.events(this.app, file).forEach(event => {
         const timestamp = event.timestamp + file.offset;
@@ -180,7 +181,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         });
       });
   
-      this.heatMap = ({ ...this.heatMap, [file.name]: heat, [scale]: this.app.timeline.scale });
+      heat[scale] = this.app.timeline.scale;
+      this.heightMap = {
+        ...this.heightMap,
+        [file.name]: heat
+      };
   
       resolve(heat);
     });
@@ -188,7 +193,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   private getStatusMap = (file: λFile): Promise<StatusMap> => {
     return new Promise((resolve) => {
-      const heat: StatusMap = new Map();
+      const heat: StatusMap = new Map() as StatusMap;
   
       File.events(this.app, file).forEach(event => {
         const timestamp = event.timestamp + file.offset;
@@ -211,9 +216,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         });
       });
   
-      this.statusMap = ({ ...this.statusMap, [file.name]: heat, [scale]: this.app.timeline.scale });
+      heat[scale] = this.app.timeline.scale;
+      this.statusMap = {
+        ...this.statusMap,
+        [file.name]: heat,
+      };
   
       resolve(heat);
     });
   }
+
+  private process = (map: Record<string, StatusMap | DefaultMap | HeightMap>, file: λFile): boolean => Boolean(map[file.name]?.[scale] === this.app.timeline.scale && file.doc_count === File.events(this.app, file).length);
 }

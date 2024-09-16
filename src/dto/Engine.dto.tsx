@@ -1,4 +1,4 @@
-export type Engine = 'heatmap' | 'graph' | 'apache' | 'default';
+export type Engine = 'height' | 'graph' | 'apache' | 'default';
 
 export interface EngineMap {
   img: string;
@@ -14,8 +14,8 @@ export const enginesBase: EngineMap[] = [
   },
   {
     img: 'chart/vertical',
-    title: 'Heatmap',
-    plugin: 'heatmap'
+    title: 'HeightMap',
+    plugin: 'height'
   },
   {
     img: 'share/android',

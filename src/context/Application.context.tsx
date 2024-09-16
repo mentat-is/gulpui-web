@@ -73,7 +73,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     };
   
     const res = await fetch(app.general.server + path, requestOptions).catch(error => {
-      console.log(error);
+      console.error(error);
       return null;
     });
 

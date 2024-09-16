@@ -1,21 +1,16 @@
 import { useApplication } from "@/context/Application.context";
-import { cn, getColorByCode, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
-import { useEffect, useRef, useState } from "react";
+import { cn, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
+import { useEffect, useRef } from "react";
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from "@/dto/useMagnifier";
 import { Magnifier } from "@/ui/Magnifier";
 import { DisplayEventDialog } from "@/dialogs/DisplayEventDialog";
-import { λEvent } from "@/dto/ChunkEvent.dto";
-import { Context, File, Plugin } from "@/class/Info";
+import { File } from "@/class/Info";
 import { StartEnd } from "@/dto/StartEnd.dto";
 import { Note } from "@/ui/Note";
 import { Note as NoteClass } from '@/class/Info';
 import { XY } from "@/dto/XY.dto";
-import { λFile } from "@/dto/File.dto";
-import { SettingsFileBanner } from "@/banners/SettingsFileBanner";
-import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { RenderEngine, StatusMap } from "@/class/RenderEngine";
-import { Info } from "@/dto";
+import { RenderEngine } from "@/class/RenderEngine";
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;

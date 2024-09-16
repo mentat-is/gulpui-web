@@ -7,8 +7,7 @@ import { Badge } from "@/ui/Badge";
 import { Label } from "@/ui/Label";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { Button } from "@/ui/Button";
-import { Context, Plugin, File, Operation, Arrayed } from "@/class/Info";
-import { λContext } from "@/dto/Context.dto";
+import { Context, Plugin, Operation, Arrayed } from "@/class/Info";
 import { UUID } from "crypto";
 
 export function SelectContextBanner() {
@@ -84,6 +83,7 @@ export function SelectContextBanner() {
 
   return (
     <Banner title={lang.select_context.title} loading={app.target.contexts.length === 0}>
+    <div className={s.wrapper}>
       {Operation.contexts(app).map(context => (
         <div className={s.context} key={context.name}>
           <div className={s.contextHeading}>
@@ -101,7 +101,7 @@ export function SelectContextBanner() {
               {Plugin.files(app, plugin).map((file, fileIndex) => (
                 <div key={fileIndex} className={s.file}>
                   <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, context.uuid, plugin.uuid, file.uuid)} />
-                  <Label htmlFor={file.name}>{file.name.replace('Microsoft-Windows', 'MW').replace('%4', '__')}</Label>
+                  <Label htmlFor={file.name}>{file.name}</Label>
                   <Badge value='File' variant='outline' />
                 </div>
               ))}
@@ -109,6 +109,7 @@ export function SelectContextBanner() {
           ))}
         </div>
       ))}
+      </div>
       <div className={s.group}>
         <Button variant='secondary' onClick={selectAll}>Select all</Button>
         <Button onClick={destroyBanner}>Save</Button>
