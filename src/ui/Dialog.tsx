@@ -10,9 +10,10 @@ interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   description: React.ReactNode;
   loading?: boolean;
   icon?: string | React.ReactElement;
+  callback?: () => void;
 }
 
-export function Dialog({ className, icon,description, title, loading, children, ...props }: DialogProps) {
+export function Dialog({ className, callback, icon,description, title, loading, children, ...props }: DialogProps) {
   const { destroyDialog } = useApplication();
 
   return (
@@ -22,7 +23,7 @@ export function Dialog({ className, icon,description, title, loading, children, 
         <div className={s.header}>
           <h2>{title}</h2>
           {description && <p>{description}</p>}
-          <Button variant='ghost' className={s.close} onClick={destroyDialog} img='https://cdn.impactium.fun/ui/close/md.svg' size='icon' />
+          <Button variant='ghost' className={s.close} onClick={callback || destroyDialog} img='https://cdn.impactium.fun/ui/close/md.svg' size='icon' />
         </div>
       </div>
       <div className={cn(s.content, loading && s.loading)}>

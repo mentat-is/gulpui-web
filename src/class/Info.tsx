@@ -281,7 +281,7 @@ export class Info implements InfoProps {
   
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
-  setTimelineTarget = (event: λEvent) => this.setInfoByKey(event, 'timeline', 'target');
+  setTimelineTarget = (event?: λEvent | null) => this.setInfoByKey(event, 'timeline', 'target');
   
   increaseTimelineScale = (current?: number) => {
     const _scale = current || this.app.timeline.scale;
@@ -423,7 +423,7 @@ export class Context {
 
   public static check = (use: Information | λContext[], selected: Arrayed<λContext | UUID>, check?: boolean): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? (check ? (Context._select(Context.uuid(use, c))) : Context._unselect(Context.uuid(use, c))) : c);
   
-  public static uuid = (use: Information | λContext[], context: λContext | UUID) => Parser.use(use, 'contexts').find(c => c.uuid === Parser.useUUID(context))!;
+  public static uuid = (use: Information | λContext[], context: λContext | λContext['uuid']) => Parser.use(use, 'contexts').find(c => c.uuid === Parser.useUUID(context))!;
   
   public static plugins = (app: Information, context: λContext | string | UUID): λPlugin[] => app.target.plugins.filter(p => p._uuid === Parser.useUUID(context) || p.context === Parser.useName(context));
 
@@ -438,7 +438,7 @@ export class Plugin {
   // Ищем выбранные контексты где выбранная операция совпадает по имени
   public static selected = (use: Information | λPlugin[]): λPlugin[] => Parser.use(use, 'plugins').filter(p => p.selected && ('target' in use ? Context.selected(use).some(c => c.name === p.context) : true));
 
-  public static find = (use: Information | λPlugin[], plugin: λPlugin | λPlugin['uuid']): λPlugin | undefined => Parser.use(use, 'plugins').find(c => c.name === Parser.useUUID(plugin));
+  public static find = (use: Information | λPlugin[], plugin: λPlugin | λPlugin['uuid']): λPlugin | undefined => Parser.use(use, 'plugins').find(c => c.uuid === Parser.useUUID(plugin));
 
   public static select = (use: Information | λPlugin[], selected: Arrayed<λPlugin | λPlugin['uuid']>): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(selected).find(s => p.name === Parser.useUUID(s)) ? Plugin._select(p) : p);
 

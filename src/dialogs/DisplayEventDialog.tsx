@@ -50,7 +50,7 @@ interface DetailedChunkEventData {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { api, app, spawnBanner, destroyDialog } = useApplication();
+  const { api, Info, app, spawnBanner, destroyDialog } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
   const [root, setRoot] = useState<DetailedChunkEventData[]>();
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
@@ -179,15 +179,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   const spawnLinkBanner = () => {
+    const file = File.find(app, event._uuid);
+
+    if (!file) return;
+
     spawnBanner(<CreateLinkBanner
-      context={Plugin.find(app, File.find(app, event._uuid)!._uuid)!.context}
-      filename={event.file}
+      context={Plugin.find(app, file._uuid)!.context}
+      file={file}
       events={event} />);
     destroyDialog();
   }
 
   return (
-    <Dialog loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
+    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
       {detailedChunkEvent && (
         <>
           <Tabs defaultValue={notes.length ? 'notes' : 'layers'} className={s.tabs}>
