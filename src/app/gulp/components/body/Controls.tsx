@@ -9,6 +9,7 @@ export function Controls() {
   return (
     <div className={s.controls}>
       <Button onClick={() => Info.setTimelineScale(1)} img={ui('action/undo')} />
+      <Button onClick={Info.links_reload} img={ui('action/undo')} />
     </div>
   )
 }

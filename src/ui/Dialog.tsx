@@ -3,6 +3,7 @@ import s from './styles/Dialog.module.css';
 import { cn } from './utils';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
+import { Loading } from './Loading';
 
 interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -24,8 +25,8 @@ export function Dialog({ className, icon,description, title, loading, children, 
           <Button variant='ghost' className={s.close} onClick={destroyDialog} img='https://cdn.impactium.fun/ui/close/md.svg' size='icon' />
         </div>
       </div>
-      <div className={s.content}>
-        {children}
+      <div className={cn(s.content, loading && s.loading)}>
+        {loading ? <Button variant='disabled' loading size='icon' /> : children}
       </div>
     </div>
   )

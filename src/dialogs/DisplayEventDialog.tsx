@@ -50,21 +50,28 @@ interface DetailedChunkEventData {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { api, app, spawnBanner, destroyDialog, spawnDialog, Info } = useApplication();
-  const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent>();
+  const { api, app, spawnBanner, destroyDialog } = useApplication();
+  const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
   const [root, setRoot] = useState<DetailedChunkEventData[]>();
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
 
   useEffect(() => {
     setNotes(Note.findByEvent(app, event));
-  }, [event, app.target.notes])
+  }, [event, app.target.notes]);
 
   useEffect(() => {
     if (detailedChunkEvent) {
       setRoot(convertXML(detailedChunkEvent.event.original).Event.children)
       return;
     };
+    reloadDetailedChunkEvent();
+  }, [detailedChunkEvent]);
 
+  useEffect(() => {
+    setDetailedChunkEvent(null);
+  }, [event]);
+
+  const reloadDetailedChunkEvent = () => {
     api<ResponseBase<RawDetailedChunkEvent>>('/query_single_event', {
       data: {
         gulp_id: event._id
@@ -95,7 +102,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         })
       }
     });
-  }, [detailedChunkEvent]);
+  }
 
   const iconsMap: Record<string, string> = {
     Provider: 'specific/path.svg',
@@ -180,7 +187,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   return (
-    <Dialog icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
+    <Dialog loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
       {detailedChunkEvent && (
         <>
           <Tabs defaultValue={notes.length ? 'notes' : 'layers'} className={s.tabs}>

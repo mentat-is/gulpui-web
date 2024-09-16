@@ -18,7 +18,7 @@ interface TimelineCanvasProps {
   resize: StartEnd;
 }
 
-const HEIGHT = 48;
+export const HEIGHT = 48;
 
 export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
@@ -45,8 +45,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
       if (y + 47 < 0 || y > canvas.height + scrollY) return;
 
-      ctx.fillStyle = stringToHexColor(File.context(app, file).name) + '48';
-      ctx.fillRect(0, y + 47, window.innerWidth, 1);
+      ctx.fillStyle = stringToHexColor(File.context(app, file).name) + HEIGHT;
+      ctx.fillRect(0, y + HEIGHT - 1, window.innerWidth, 1);
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
         render[file.engine](file, y);
@@ -67,10 +67,10 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     if (app.timeline.target) {
       const file = File.find(app, app.timeline.target._uuid);
 
-      if (!file || throwableByTimestamp(app.timeline.target.timestamp, limits, file.offset)) return;
+      if (!file) return;
 
-      ctx.fillStyle = app.timeline.target._id
-      ctx.fillRect(0, File.selected(app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - scrollY, timeline.current!.clientWidth, 1)
+      ctx.fillStyle = 'white'
+      ctx.fillRect(0, File.selected(app).findIndex(f => f.uuid === file.uuid) * HEIGHT + 23 - scrollY, timeline.current!.clientWidth, 1)
       ctx.fillRect(getPixelPosition(app.timeline.target.timestamp + file.offset), 0, 1, timeline.current!.clientHeight)
     }
 

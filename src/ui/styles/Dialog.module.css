@@ -90,3 +90,8 @@
   background-color: white;
   border-radius: 10px;
 }
+.loading {
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
