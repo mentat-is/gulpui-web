@@ -1,14 +1,17 @@
 import { useApplication } from '@/context/Application.context'
 import { Button } from '@/ui/Button';
 import s from '../../Gulp.module.css';
+import { IngestBanner } from '@/banners/IngestBanner';
+import { ui } from '@/ui/utils';
 
 export function DataTransfered() {
-  const { app, Info } = useApplication();
+  const { app, spawnBanner } = useApplication();
 
   return (
     <div className={s.transfered}>
       <Unit type='downstream' num={app.transfered?.down || 0} />
       <Unit type='upstream' num={app.transfered?.up || 0} />
+      <Button variant='outline' img={ui('action/upload')} onClick={() => spawnBanner(<IngestBanner />)}>Upload</Button>
     </div>
   )
 }

@@ -1,14 +1,3 @@
-.dialog::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 100vw;
-  background: #00000096;
-  z-index: -1;
-  pointer-events: all;
-}
 .dialog {
   position: fixed;
   top: 0;

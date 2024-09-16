@@ -47,7 +47,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
       if (y + 47 < 0 || y > canvas.height + scrollY) return;
 
-      ctx.fillStyle = stringToHexColor(File.context(app, file).name);
+      ctx.fillStyle = stringToHexColor(File.context(app, file).name) + '48';
       ctx.fillRect(0, y + 47, window.innerWidth, 1);
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {

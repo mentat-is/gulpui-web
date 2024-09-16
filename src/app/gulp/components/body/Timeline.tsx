@@ -9,7 +9,7 @@ import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { ui } from '@/ui/utils';
+import { cn, ui } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
@@ -35,8 +35,13 @@ export function Timeline() {
   }
 
   const handleWheel = (event: WheelEvent) => {
-    if (!timeline.current || dialog || banner) return;
-    event.preventDefault();
+    if (!timeline.current || banner) return;
+
+    if (dialog && event.clientX > (window.innerWidth / 2)) {
+      return;
+    } else {
+      event.preventDefault();
+    }
 
     const width = Info.width;
     const newScale = event.deltaY > 0 ? Info.decreaseTimelineScale() : Info.increaseTimelineScale();
@@ -111,7 +116,7 @@ export function Timeline() {
   return (
     <div
       id="timeline"
-      className={s.timeline}
+      className={cn(s.timeline, dialog && s.short)}
       onMouseLeave={handleMouseUpOrLeave} // Завершаем действие при выходе мыши
       onMouseUp={handleMouseUpOrLeave} // Завершаем действие при отпускании мыши
       onMouseDown={handleMouseDown} // Начинаем действие при нажатии

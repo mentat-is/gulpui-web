@@ -63,9 +63,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.limits = limits;
       RenderEngine.instance.app = app;
       RenderEngine.instance.getPixelPosition = getPixelPosition;
-      // RenderEngine.instance.heightMap = {};
-      // RenderEngine.instance.statusMap = {};
-      // RenderEngine.instance.defaultMap = {};
       return RenderEngine.instance;
     }
 
@@ -89,7 +86,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
       this.ctx.fillStyle = getDispersionFromColorByDelta(file.color, amount, max);
-      this.ctx.fillRect(this.getPixelPosition(timestamp), y - 1, 1, 48);
+      this.ctx.fillRect(this.getPixelPosition(timestamp), y, 1, 47);
     });
   }
   
