@@ -1,23 +1,12 @@
-.dialog::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  height: 100vh;
-  width: 100vw;
-  background: #00000096;
-  z-index: -1;
-  pointer-events: all;
-}
 .dialog {
   position: fixed;
-  top: 0;
+  top: 64px;
   padding: var(--card-padding);
   display: flex;
   background: var(--soft-black);
   right: 0;
   width: 50vw;
-  height: 100vh;
+  height: calc(100vh - 64px);
   border-left: 1px solid var(--accent-3);
   z-index: 50;
   flex-direction: column;
@@ -100,4 +89,9 @@
 .content::-webkit-scrollbar-thumb {
   background-color: white;
   border-radius: 10px;
+}
+.loading {
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }

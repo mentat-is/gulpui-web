@@ -47,10 +47,6 @@ export function IngestBanner() {
     const chunk = file.slice(start, end);
 
     const text = await chunk.text()
-
-    console.log('Chunk', await chunk.text());
-
-    if (!text.length) console.error('ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ ХУЙНЯ');
   
     const payload = JSON.stringify({});
   
@@ -60,8 +56,6 @@ export function IngestBanner() {
   
     const chunkBuffer = await chunk.arrayBuffer();
     const chunkArray = new Uint8Array(chunkBuffer);
-
-    if (!chunkArray.length) console.error('ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ ПИЗДЕЦ');
 
     const bodyBlob = new Blob([bodyStart, chunkArray, formEnd]);
   

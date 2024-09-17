@@ -11,8 +11,6 @@ export function GulpPage() {
   const { app, spawnBanner, Info, api, setWs } = useApplication();
   const [rendered, setRendered] = useState<number>(0);
 
-  console.log(app.target)
-
   useEffect(() => {
     if (!app.target.contexts.length) {
       Info.query_operations();

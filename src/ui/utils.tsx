@@ -108,7 +108,6 @@ export const getColorByCode = (code: number, min: number, max: number): string =
   return ranges[ranges.length - 1].color;
 };
 
-// WARNING: offset should be added
 export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0): boolean => typeof timestamp === 'number' ? timestamp + offset < limits.min || timestamp + offset > limits.max : timestamp.max + offset < limits.min || timestamp.min + offset > limits.max;
 
 export function generateUUID(): UUID {
@@ -128,3 +127,64 @@ export const getLimits = (app: Information, Info: Info, timeline: RefObject<HTML
 
   return { min, max };
 };
+
+export function getDispersionFromColorByDelta(color: string, delta: number, maxDelta: number): string { 
+
+  const hsl = hexToHSL(color);
+  
+
+  const percentage = delta / maxDelta;
+
+
+  const dispersionRange = 0.80;
+
+  let targetSaturation: number;
+  let targetLightness: number;
+
+  if (percentage < 0.5) {
+      targetSaturation = hsl.saturation * (1 - dispersionRange * (0.5 - percentage));
+      targetLightness = hsl.lightness * (1 - dispersionRange * (0.5 - percentage));
+  } else {
+      targetSaturation = hsl.saturation * (1 + dispersionRange * (percentage - 0.5));
+      targetLightness = hsl.lightness * (1 + dispersionRange * (percentage - 0.5));
+  }
+
+  targetSaturation = Math.min(100, Math.max(0, targetSaturation));
+  targetLightness = Math.min(100, Math.max(0, targetLightness));
+
+
+  return `hsl(${hsl.hue}, ${targetSaturation}%, ${targetLightness}%)`;
+}
+
+export function hexToHSL(hex: string) {
+  hex = hex.replace('#', '');
+
+
+  let r = parseInt(hex.substring(0, 2), 16) / 255;
+  let g = parseInt(hex.substring(2, 4), 16) / 255;
+  let b = parseInt(hex.substring(4, 6), 16) / 255;
+
+  let max = Math.max(r, g, b);
+  let min = Math.min(r, g, b);
+  let h: number, s: number, l: number;
+  l = (max + min) / 2;
+
+  if (max === min) {
+      h = s = 0;
+  } else {
+      let d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+      switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+      }
+      h = Math.round(h! * 60);
+  }
+
+  s = Math.round(s * 100);
+  l = Math.round(l * 100);
+
+  return { hue: h, saturation: s, lightness: l };
+}

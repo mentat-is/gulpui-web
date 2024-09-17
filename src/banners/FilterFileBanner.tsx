@@ -50,7 +50,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   useEffect(() => {
     if (Object.keys(filteringOptions).length) return;
 
-    const context = Context.findByPugin(app, Plugin.find(app, file._uuid)!)!.name;
+    const context = Context.uuid(app, Plugin.find(app, file._uuid)!._uuid)!.name;
 
     api<ResponseBase<FilterOptions>>('/elastic_get_mapping_by_source', {
       data: {

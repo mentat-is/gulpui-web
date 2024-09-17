@@ -16,7 +16,6 @@ import { Separator } from "@/ui/Separator";
 import { Notes } from "./components/Notes";
 import { λNote } from "@/dto/Note.dto";
 import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
-import { Card } from "@/ui/Card";
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -51,21 +50,28 @@ interface DetailedChunkEventData {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { api, app, spawnBanner, destroyDialog } = useApplication();
-  const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent>();
+  const { api, Info, app, spawnBanner, destroyDialog } = useApplication();
+  const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
   const [root, setRoot] = useState<DetailedChunkEventData[]>();
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
 
   useEffect(() => {
     setNotes(Note.findByEvent(app, event));
-  }, [event, app.target.notes])
+  }, [event, app.target.notes]);
 
   useEffect(() => {
     if (detailedChunkEvent) {
       setRoot(convertXML(detailedChunkEvent.event.original).Event.children)
       return;
     };
+    reloadDetailedChunkEvent();
+  }, [detailedChunkEvent]);
 
+  useEffect(() => {
+    setDetailedChunkEvent(null);
+  }, [event]);
+
+  const reloadDetailedChunkEvent = () => {
     api<ResponseBase<RawDetailedChunkEvent>>('/query_single_event', {
       data: {
         gulp_id: event._id
@@ -96,7 +102,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         })
       }
     });
-  }, [detailedChunkEvent]);
+  }
 
   const iconsMap: Record<string, string> = {
     Provider: 'specific/path.svg',
@@ -173,15 +179,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   const spawnLinkBanner = () => {
+    const file = File.find(app, event._uuid);
+
+    if (!file) return;
+
     spawnBanner(<CreateLinkBanner
-      context={Plugin.find(app, File.find(app, event._uuid)!._uuid)!.context}
-      filename={event.file}
+      context={Plugin.find(app, file._uuid)!.context}
+      file={file}
       events={event} />);
     destroyDialog();
   }
 
   return (
-    <Dialog icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
+    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
       {detailedChunkEvent && (
         <>
           <Tabs defaultValue={notes.length ? 'notes' : 'layers'} className={s.tabs}>

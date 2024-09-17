@@ -20,14 +20,16 @@ import { Switch } from "@/ui/Switch";
 import { LinkCreateRequest } from "@/dto/LinkCreateRequest.dto";
 import { SymmetricSvg } from "@/ui/SymmetricSvg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
+import { λFile } from "@/dto/File.dto";
+import { λLink } from "@/dto/Link.dto";
 
 interface CreateLinkBannerProps {
   context: string,
-  filename: string,
+  file: λFile,
   events: λEvent[] | λEvent
 }
 
-export function CreateLinkBanner({ context, filename, events }: CreateLinkBannerProps) {
+export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProps) {
   const { app, api, destroyBanner, Info, spawnBanner } = useApplication();
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
@@ -45,7 +47,7 @@ export function CreateLinkBanner({ context, filename, events }: CreateLinkBanner
       data: {
         operation_id: Operation.selected(app)?.id,
         context,
-        src_file: filename,
+        src_file: file.name,
         ws_id: app.general.ws_id,
         src: Parser.array(events)[0]._id,
         color,
@@ -55,7 +57,7 @@ export function CreateLinkBanner({ context, filename, events }: CreateLinkBanner
       headers: {
         'Content-Type': 'application/json; charset=utf-8'
       },
-      body: LinkCreateRequest.body({ description, events })
+      body: LinkCreateRequest.body({ name, description, events })
     }).then(() => {
       destroyBanner();
       Info.links_reload()
@@ -85,11 +87,11 @@ export function CreateLinkBanner({ context, filename, events }: CreateLinkBanner
                 <p className={s.top}>{l.name || l.file}</p>
                 <p className={s.bottom}>{l.description || l.context}</p>
               </div>
-            ))}
-        </PopoverContent>
-      </Popover>
-    );
-  };
+            </div>
+          ))}
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).length && <Subtitle />}>
@@ -100,7 +102,7 @@ export function CreateLinkBanner({ context, filename, events }: CreateLinkBanner
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
-        <p>File: <span>{filename}</span></p>
+        <p>File: <span>{file.name}</span></p>
         <Separator />
         <p>At: <span>{format((Parser.array(events)[0]?.timestamp || 0), 'yyyy.MM.dd HH:mm:ss')}</span></p>
       </Card>

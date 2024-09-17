@@ -91,3 +91,8 @@
   font-weight: 400;
   color: var(--text-dimmed);
 }
+.popover {
+  gap: 8px;
+  display: flex;
+  flex-direction: column;
+}

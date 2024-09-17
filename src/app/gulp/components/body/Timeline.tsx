@@ -9,13 +9,14 @@ import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { ui } from '@/ui/utils';
+import { cn, ui } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
+import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 
 export function Timeline() {
-  const { app, Info, banner, dialog, timeline, spawnBanner } = useApplication();
+  const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
   const [scrollX, _setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
@@ -35,8 +36,13 @@ export function Timeline() {
   }
 
   const handleWheel = (event: WheelEvent) => {
-    if (!timeline.current || dialog || banner) return;
-    event.preventDefault();
+    if (!timeline.current || banner) return;
+
+    if (dialog && event.clientX > (window.innerWidth / 2)) {
+      return;
+    } else {
+      event.preventDefault();
+    }
 
     const width = Info.width;
     const newScale = event.deltaY > 0 ? Info.decreaseTimelineScale() : Info.increaseTimelineScale();
@@ -108,14 +114,24 @@ export function Timeline() {
     setSelectedFileForContextMenu(file);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = e.key.toLowerCase();
+    if ((key === 'd' || key === 'a') && app.timeline.target) {
+      const newEvent = File.events(app, app.timeline.target._uuid)[File.events(app, app.timeline.target._uuid).findIndex(e => e._id === app.timeline.target!._id) + (key === 'a' ? 1 : -1)] || app.timeline.target;
+      Info.setTimelineTarget(newEvent);
+      spawnDialog(<DisplayEventDialog event={newEvent} />)
+    }
+  }
+
   return (
     <div
       id="timeline"
-      className={s.timeline}
-      onMouseLeave={handleMouseUpOrLeave} // Завершаем действие при выходе мыши
-      onMouseUp={handleMouseUpOrLeave} // Завершаем действие при отпускании мыши
-      onMouseDown={handleMouseDown} // Начинаем действие при нажатии
-      onMouseMove={handleMouseMove} // Обновляем конечную позицию при движении мыши
+      className={cn(s.timeline, dialog && s.short)}
+      onMouseLeave={handleMouseUpOrLeave}
+      onMouseUp={handleMouseUpOrLeave}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onKeyDown={handleKeyDown}
       onWheel={e => !!e}
       onContextMenu={handleContextMenu}
       ref={timeline}
@@ -124,7 +140,7 @@ export function Timeline() {
       <div className={s.content} id="timeline_content">
       <ContextMenu>
           <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
+            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} dragDealer={dragState.current} />
           </ContextMenuTrigger>
           <ContextMenuContent>
             <TooltipProvider>

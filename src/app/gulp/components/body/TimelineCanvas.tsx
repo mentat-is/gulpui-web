@@ -1,39 +1,35 @@
 import { useApplication } from "@/context/Application.context";
-import { cn, getColorByCode, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
+import { cn, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
 import { useEffect, useRef, useState } from "react";
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from "@/dto/useMagnifier";
 import { Magnifier } from "@/ui/Magnifier";
 import { DisplayEventDialog } from "@/dialogs/DisplayEventDialog";
-import { λEvent } from "@/dto/ChunkEvent.dto";
-import { Context, File, Plugin } from "@/class/Info";
+import { File } from "@/class/Info";
 import { StartEnd } from "@/dto/StartEnd.dto";
 import { Note } from "@/ui/Note";
 import { Note as NoteClass } from '@/class/Info';
-import { XY } from "@/dto/XY.dto";
-import { λFile } from "@/dto/File.dto";
-import { SettingsFileBanner } from "@/banners/SettingsFileBanner";
-import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { RenderEngine, StatusMap } from "@/class/RenderEngine";
-import { Info } from "@/dto";
+import { RenderEngine } from "@/class/RenderEngine";
+import { DragDealer } from "@/class/dragDealer.class";
+import { XY, XYBase } from "@/dto/XY.dto";
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
   scrollX: number;
   scrollY: number;
   resize: StartEnd;
+  dragDealer: DragDealer;
 }
 
-const scale = Symbol('scale');
+export const HEIGHT = 48;
 
-const HEIGHT = 48;
-
-export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineCanvasProps) {
+export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
-  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref);
-  const { app, spawnDialog, Info } = useApplication();
+  const { app, spawnDialog, Info, dialog } = useApplication();
+  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target];
+  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = () => {
     const canvas = canvas_ref.current
@@ -52,8 +48,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
       if (y + 47 < 0 || y > canvas.height + scrollY) return;
 
-      ctx.fillStyle = stringToHexColor(File.context(app, file).name);
-      ctx.fillRect(0, y + 47, window.innerWidth, 1);
+      ctx.fillStyle = stringToHexColor(File.context(app, file).name) + HEIGHT;
+      ctx.fillRect(0, y + HEIGHT - 1, window.innerWidth, 1);
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
         render[file.engine](file, y);
@@ -69,27 +65,60 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       
       ctx.fillStyle = '#e8e8e8';
       ctx.fillText(File.events(app, file).length.toString(), 10, y + 38);
+    });
 
-      app.target.links.forEach(l => {
-        const dots: (XY & { color: string })[] = l.events.map(e => {
-          const i = File.selected(app).findIndex(f => f.name === e.file);
+    if (app.timeline.target) {
+      const file = File.find(app, app.timeline.target._uuid);
 
-          return {
-            x: getPixelPosition(e.timestamp + file.offset),
-            y: i * 48,
-            color: stringToHexColor(File.selected(app)[i]?.name.toString() || '')
-          }
-        });
-        
-        dots.forEach(({ color, x, y }) => {
-          ctx.fillStyle = color;
-          ctx.roundRect(x, y, 10, 10);
-        })
+      if (!file) return;
+
+      ctx.fillStyle = 'white'
+      ctx.fillRect(0, File.selected(app).findIndex(f => f.uuid === file.uuid) * HEIGHT + 23 - scrollY, timeline.current!.clientWidth, 1)
+      ctx.fillRect(getPixelPosition(app.timeline.target.timestamp + file.offset), 0, 1, timeline.current!.clientHeight)
+    }
+
+    app.target.links.forEach(l => {
+      const dots: ({ x: number; y: number; color: string; })[] = l.events.map(e => {
+        const i = File.selected(app).findIndex(f => f.uuid === e._uuid);
+
+        const file = File.selected(app)[i]
+
+        return {
+          x: getPixelPosition(e.timestamp + file.offset || 0),
+          y: i * 48 + 20 - scrollY,
+          color: l.data.color
+        }
       });
+
+      if (dots.length > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = dots[0].color; // Задаем цвет линии по цвету первой точки
+        ctx.lineWidth = 2; // Устанавливаем ширину линии
+    
+        // Начинаем линию с первой точки
+        ctx.moveTo(dots[0].x, dots[0].y);
+    
+        // Проходим по остальным точкам и соединяем их линией
+        dots.slice(1).forEach(({ x, y }) => {
+          ctx.lineTo(x, y);
+        });
+    
+        ctx.stroke(); // Рисуем линию
+      }    
+      
+      dots.forEach(({ color, x, y }) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.roundRect(x, y, 8, 8, [999]);
+        ctx.fill();
+      })
     });
   };
 
   const handleClick = ({ clientX, clientY }: MouseEvent) => {
+    // setStartPos(null);
+    // if (startPos && (Math.round(startPos.x) !== Math.round(clientX) || Math.round(startPos.y) !== Math.round(clientY))) return;
+
     const { top, left } = canvas_ref.current!.getBoundingClientRect();
     const clickX = clientX - left;
     const clickY = clientY - top + scrollY;
@@ -106,24 +135,32 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       const pos = getPixelPosition(event.timestamp + file.offset);      
 
       if (Math.round(clickX) === Math.round(pos)) {
+        Info.setTimelineTarget(event);
         spawnDialog(<DisplayEventDialog event={event} />);
       }
     });
   };
+  
+  const [startPos, setStartPos] = useState<XY | null>(XYBase(0));
 
   useEffect(() => {
     renderCanvas();
 
+    canvas_ref.current?.addEventListener("mousedown", ({ clientX: x, clientY: y }) => setStartPos({ x, y }));
+    canvas_ref.current?.addEventListener("mouseup", () => setStartPos(null));
     canvas_ref.current?.addEventListener("click", handleClick);
     window.addEventListener('resize', renderCanvas);
     timeline.current?.addEventListener('resize', renderCanvas);
 
     return () => {
-      canvas_ref.current?.removeEventListener("click", handleClick);
+      canvas_ref.current?.removeEventListener("mousedown", ({ clientX: x, clientY: y }) => setStartPos({ x, y }));
+      canvas_ref.current?.removeEventListener("mouseup", () => setStartPos(null));
+    canvas_ref.current?.removeEventListener("click", handleClick);
+
       window.removeEventListener('resize', renderCanvas);
       timeline.current?.removeEventListener('resize', renderCanvas);
     };
-  }, [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links]);
+  }, dependencies);
 
   useEffect(() => {
     renderOverlay();
@@ -147,8 +184,6 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
   }
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.target.bucket!.selected.min) / (app.target.bucket!.selected.max - app.target.bucket!.selected.min)) * Info.width) - scrollX;
-
-
 
   return (
     <>
