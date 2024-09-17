@@ -73,10 +73,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine.instance = this;
   }
 
-  async default(file: λFile, y: number) {
+  default(file: λFile, y: number) {
     const heat = this.process(this.defaultMap, file)
       ? this.defaultMap[file.name]
-      : await this.getDefault(file);
+      : this.getDefault(file);
 
     const max = Math.max(...[...heat.values()].map(v => v.amount));
 
@@ -122,105 +122,99 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
   };
 
-  private getDefault = (file: λFile): Promise<DefaultMap> => {
-    return new Promise((resolve) => {
-      const heat: DefaultMap = new Map() as DefaultMap;
+  private getDefault = (file: λFile): DefaultMap => {
+    const heat: DefaultMap = new Map() as DefaultMap;
 
-      File.events(this.app, file).forEach(event => {
-        const timestamp = event.timestamp + file.offset;
-        const λpos = this.getPixelPosition(timestamp);
-  
-        const obj: Default = heat.get(λpos) || {
-          amount: 0,
-          timestamp
-        };
-  
-        heat.set(λpos, {
-          amount: obj.amount + 1,
-          timestamp
-        });
-      });
+    File.events(this.app, file).forEach(event => {
+      const timestamp = event.timestamp + file.offset;
+      const λpos = this.getPixelPosition(timestamp);
 
-      heat[scale] = this.app.timeline.scale;
-      this.defaultMap = {
-        ...this.defaultMap,
-        [file.name]: heat
+      const obj: Default = heat.get(λpos) || {
+        amount: 0,
+        timestamp
       };
 
-      resolve(heat);
-    })
+      heat.set(λpos, {
+        amount: obj.amount + 1,
+        timestamp
+      });
+    });
+
+    heat[scale] = this.app.timeline.scale;
+    this.defaultMap = {
+      ...this.defaultMap,
+      [file.name]: heat
+    };
+
+    return heat;
   }
 
-  private getHeightmap = (file: λFile): Promise<HeightMap> => {
-    return new Promise((resolve) => {
-      const heat: HeightMap = new Map() as HeightMap;
-  
-      File.events(this.app, file).forEach(event => {
-        const timestamp = event.timestamp + file.offset;
-        const λpos = this.getPixelPosition(timestamp);
-  
-        const obj: Heat = heat.get(λpos) || {
-          amount: 0,
-          color: '#ffffff',
-          height: 1,
-          timestamp
-        };
-  
-        const amount = obj.amount + 1;
-  
-        const max = Math.max(...[...heat.values(), { ...obj, amount }].map(v => v.amount));
-  
-        heat.set(λpos, {
-          color: `rgb(${Math.min(255, Math.floor(255 * (amount / max)))}, ${Math.min(255, Math.floor(255 * (1 - amount / max)))}, 0)`,
-          amount,
-          height: 1 + (47 - 1) * (amount / max),
-          timestamp
-        });
-      });
-  
-      heat[scale] = this.app.timeline.scale;
-      this.heightMap = {
-        ...this.heightMap,
-        [file.name]: heat
+  private getHeightmap = (file: λFile): HeightMap => {
+    const heat: HeightMap = new Map() as HeightMap;
+
+    File.events(this.app, file).forEach(event => {
+      const timestamp = event.timestamp + file.offset;
+      const λpos = this.getPixelPosition(timestamp);
+
+      const obj: Heat = heat.get(λpos) || {
+        amount: 0,
+        color: '#ffffff',
+        height: 1,
+        timestamp
       };
-  
-      resolve(heat);
+
+      const amount = obj.amount + 1;
+
+      const max = Math.max(...[...heat.values(), { ...obj, amount }].map(v => v.amount));
+
+      heat.set(λpos, {
+        color: `rgb(${Math.min(255, Math.floor(255 * (amount / max)))}, ${Math.min(255, Math.floor(255 * (1 - amount / max)))}, 0)`,
+        amount,
+        height: 1 + (47 - 1) * (amount / max),
+        timestamp
+      });
     });
+
+    heat[scale] = this.app.timeline.scale;
+    this.heightMap = {
+      ...this.heightMap,
+      [file.name]: heat
+    };
+  
+    return heat;
   };
 
-  private getStatusMap = (file: λFile): Promise<StatusMap> => {
-    return new Promise((resolve) => {
-      const heat: StatusMap = new Map() as StatusMap;
-  
-      File.events(this.app, file).forEach(event => {
-        const timestamp = event.timestamp + file.offset;
-        const λpos = this.getPixelPosition(timestamp);
+  private getStatusMap = (file: λFile): StatusMap => {
+    const heat: StatusMap = new Map() as StatusMap;
 
-        const code = parseInt(event.event.code);
-  
-        const obj: Status = heat.get(λpos) || {
-          codes: [],
-          colors: [],
-          heights: [],
-          timestamp
-        };
-  
-        heat.set(λpos, {
-          colors: [...obj.colors, getColorByCode(code, file.event.min, file.event.max)],
-          codes: [...obj.codes, code],
-          heights: [...obj.heights, Math.round(((code - file.event.min) / (file.event.max - file.event.min)) * 46 + 1)],
-          timestamp
-        });
-      });
-  
-      heat[scale] = this.app.timeline.scale;
-      this.statusMap = {
-        ...this.statusMap,
-        [file.name]: heat,
+    File.events(this.app, file).forEach(event => {
+      const timestamp = event.timestamp + file.offset;
+      const λpos = this.getPixelPosition(timestamp);
+
+      const code = parseInt(event.event.code);
+
+      const obj: Status = heat.get(λpos) || {
+        codes: [],
+        colors: [],
+        heights: [],
+        timestamp
       };
-  
-      resolve(heat);
+
+      heat.set(λpos, {
+        colors: [...obj.colors, getColorByCode(code, file.event.min, file.event.max)],
+        codes: [...obj.codes, code],
+        heights: [...obj.heights, Math.round(((code - file.event.min) / (file.event.max - file.event.min)) * 46 + 1)],
+        timestamp
+      });
     });
+
+    heat[scale] = this.app.timeline.scale;
+    this.statusMap = {
+      ...this.statusMap,
+      [file.name]: heat,
+    };
+  
+    return heat;
   }
 
   private process = (map: Record<string, StatusMap | DefaultMap | HeightMap>, file: λFile): boolean => Boolean(map[file.name]?.[scale] === this.app.timeline.scale && file.doc_count === File.events(this.app, file).length);

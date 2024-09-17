@@ -140,7 +140,7 @@ export function Timeline() {
       <div className={s.content} id="timeline_content">
       <ContextMenu>
           <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
+            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} dragDealer={dragState.current} />
           </ContextMenuTrigger>
           <ContextMenuContent>
             <TooltipProvider>

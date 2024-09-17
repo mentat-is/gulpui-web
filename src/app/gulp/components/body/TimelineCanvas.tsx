@@ -1,6 +1,6 @@
 import { useApplication } from "@/context/Application.context";
 import { cn, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from "@/dto/useMagnifier";
 import { Magnifier } from "@/ui/Magnifier";
@@ -10,17 +10,20 @@ import { StartEnd } from "@/dto/StartEnd.dto";
 import { Note } from "@/ui/Note";
 import { Note as NoteClass } from '@/class/Info';
 import { RenderEngine } from "@/class/RenderEngine";
+import { DragDealer } from "@/class/dragDealer.class";
+import { XY, XYBase } from "@/dto/XY.dto";
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
   scrollX: number;
   scrollY: number;
   resize: StartEnd;
+  dragDealer: DragDealer;
 }
 
 export const HEIGHT = 48;
 
-export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineCanvasProps) {
+export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
@@ -82,19 +85,40 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
         return {
           x: getPixelPosition(e.timestamp + file.offset || 0),
-          y: i * 48,
-          color: stringToHexColor(file.name.toString() || '')
+          y: i * 48 + 20 - scrollY,
+          color: l.data.color
         }
       });
+
+      if (dots.length > 1) {
+        ctx.beginPath();
+        ctx.strokeStyle = dots[0].color; // Задаем цвет линии по цвету первой точки
+        ctx.lineWidth = 2; // Устанавливаем ширину линии
+    
+        // Начинаем линию с первой точки
+        ctx.moveTo(dots[0].x, dots[0].y);
+    
+        // Проходим по остальным точкам и соединяем их линией
+        dots.slice(1).forEach(({ x, y }) => {
+          ctx.lineTo(x, y);
+        });
+    
+        ctx.stroke(); // Рисуем линию
+      }    
       
       dots.forEach(({ color, x, y }) => {
         ctx.fillStyle = color;
-        ctx.roundRect(x, y, 10, 10);
+        ctx.beginPath();
+        ctx.roundRect(x, y, 8, 8, [999]);
+        ctx.fill();
       })
     });
   };
 
   const handleClick = ({ clientX, clientY }: MouseEvent) => {
+    // setStartPos(null);
+    // if (startPos && (Math.round(startPos.x) !== Math.round(clientX) || Math.round(startPos.y) !== Math.round(clientY))) return;
+
     const { top, left } = canvas_ref.current!.getBoundingClientRect();
     const clickX = clientX - left;
     const clickY = clientY - top + scrollY;
@@ -116,16 +140,23 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       }
     });
   };
+  
+  const [startPos, setStartPos] = useState<XY | null>(XYBase(0));
 
   useEffect(() => {
     renderCanvas();
 
+    canvas_ref.current?.addEventListener("mousedown", ({ clientX: x, clientY: y }) => setStartPos({ x, y }));
+    canvas_ref.current?.addEventListener("mouseup", () => setStartPos(null));
     canvas_ref.current?.addEventListener("click", handleClick);
     window.addEventListener('resize', renderCanvas);
     timeline.current?.addEventListener('resize', renderCanvas);
 
     return () => {
-      canvas_ref.current?.removeEventListener("click", handleClick);
+      canvas_ref.current?.removeEventListener("mousedown", ({ clientX: x, clientY: y }) => setStartPos({ x, y }));
+      canvas_ref.current?.removeEventListener("mouseup", () => setStartPos(null));
+    canvas_ref.current?.removeEventListener("click", handleClick);
+
       window.removeEventListener('resize', renderCanvas);
       timeline.current?.removeEventListener('resize', renderCanvas);
     };
@@ -153,8 +184,6 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
   }
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.target.bucket!.selected.min) / (app.target.bucket!.selected.max - app.target.bucket!.selected.min)) * Info.width) - scrollX;
-
-
 
   return (
     <>
