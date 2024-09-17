@@ -62,24 +62,28 @@ export function CreateLinkBanner({ context, filename, events }: CreateLinkBanner
     });
   }
 
-  const spawnCreateLinkBanner = (_events: λEvent[]) => {
-    spawnBanner(<CreateLinkBanner context={context} filename={filename} events={[...Parser.array(events), ..._events]} />)
+  const update = async (link: λLink) => {
+    api<any>('/link_update', {
+      data: {
+        link_id: link.id,
+        ws_id: app.general.ws_id,
+      },
+      body: LinkCreateRequest.body({ name, description, events: [...Parser.array(events), ...link.events as λEvent[]] })
+    })
   }
 
-  const Subtitle = () => {
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button variant='ghost'>Connect to existing one</Button>
-        </PopoverTrigger>
-        <PopoverContent>
-          {app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).map(l => (
-              <div className={s.event_unit} onClick={() => spawnCreateLinkBanner(Event.findByIdAndUUID(app, l.events.map(e => e._id), l._uuid))}>
-                <SymmetricSvg text={l.id.toString()} />
-                <div className={s.text}>
-                  <p className={s.top}>{l.id}</p>
-                  <p className={s.bottom}>{l.id}</p>
-                </div>
+  const Subtitle = () => (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant='ghost'>Connect to existing one</Button>
+      </PopoverTrigger>
+      <PopoverContent className={s.popover}>
+        {app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).map(l => (
+            <div className={s.event_unit} onClick={() =>update(l)}>
+              <SymmetricSvg text={l.id.toString()} />
+              <div className={s.text}>
+                <p className={s.top}>{l.name || l.file}</p>
+                <p className={s.bottom}>{l.description || l.context}</p>
               </div>
             ))}
         </PopoverContent>
