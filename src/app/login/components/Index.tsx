@@ -20,7 +20,7 @@ export function IndexesChooser() {
 
   return (
     <div className={s.chooser}>
-      <p className={s.cluster}><img src='https://cdn.impactium.fun/ui/specific/cluster.svg' />{lang.please_choose_an_indexes}</p>
+      <p className={s.cluster}><img src='https://cdn.impactium.fun/ui/specific/cluster.svg' />Choose database index</p>
       {app.target.indexes.map((index) => {
         return (
           <Button

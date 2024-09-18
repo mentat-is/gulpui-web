@@ -15,7 +15,7 @@ import { Sessions } from "@/dto/Session.dto";
 import { Index, Operation } from "@/class/Info";
 
 export function LoginPage() {
-  const { Info, app, spawnBanner } = useApplication();
+  const { Info, app } = useApplication();
   const cookie = new Cookies();
   const [sessions, setSessions] = useState<Sessions>(parseTokensFromCookies(cookie.get('sessions')));
   

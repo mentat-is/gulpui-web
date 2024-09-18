@@ -1,4 +1,4 @@
-import { Event, Operation, Parser } from "@/class/Info";
+import { Operation, Parser } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { Banner } from "@/ui/Banner";
@@ -22,6 +22,8 @@ import { SymmetricSvg } from "@/ui/SymmetricSvg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { λFile } from "@/dto/File.dto";
 import { λLink } from "@/dto/Link.dto";
+import { LinkCombination } from "@/components/LinkCombination";
+import { EventCombination } from "@/components/EventCombination";
 
 interface CreateLinkBannerProps {
   context: string,
@@ -52,7 +54,8 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
         src: Parser.array(events)[0]._id,
         color,
         level,
-        private: _private
+        private: _private,
+        name
       },
       headers: {
         'Content-Type': 'application/json; charset=utf-8'
@@ -65,17 +68,25 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   }
 
   const update = async (link: λLink) => {
+    const body = LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...link.events as λEvent[]] })
+
+    console.log(JSON.parse(body));
+
     api<any>('/link_update', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       data: {
         link_id: link.id,
         ws_id: app.general.ws_id,
       },
-      body: LinkCreateRequest.body({ name, description, events: [...Parser.array(events), ...link.events as λEvent[]] })
-    })
-  }
-
-  const spawnCreateLinkBanner = (_events: λEvent[]) => {
-    spawnBanner(<CreateLinkBanner context={context} file={file} events={[...Parser.array(events), ..._events]} />)
+      body 
+    }).then(() => {
+      Info.links_reload().then(() => {
+        destroyBanner();
+      });
+    });
   }
 
   const Subtitle = () => (
@@ -85,13 +96,9 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
       </PopoverTrigger>
       <PopoverContent className={s.popover}>
         {app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).map(l => (
-            <div className={s.event_unit} onClick={() =>update(l)}>
-              <SymmetricSvg text={l.id.toString()} />
-              <div className={s.text}>
-                <p className={s.top}>{l.name || l.file}</p>
-                <p className={s.bottom}>{l.description || l.context}</p>
-              </div>
-            </div>
+            <LinkCombination link={l}>
+              <Button onClick={() =>update(l)} variant='outline'>Connect</Button>
+            </LinkCombination>
           ))}
       </PopoverContent>
     </Popover>
@@ -100,9 +107,9 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   return (
     <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).length && <Subtitle />}>
       <Card className={s.overview}>
-        <p>Name: {<Input revert img='https://cdn.impactium.fun/ui/heading/h1.svg' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
+        <p>Name: {<Input placeholder='*Required' revert img='https://cdn.impactium.fun/ui/heading/h1.svg' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
         <Separator />
-        <p>Description: {<Input revert img='https://cdn.impactium.fun/ui/heading/h2.svg' value={description} onChange={e => setDescription(e.currentTarget.value)}/>}</p>
+        <p>Description: {<Input placeholder='*Required' revert img='https://cdn.impactium.fun/ui/heading/h2.svg' value={description} onChange={e => setDescription(e.currentTarget.value)}/>}</p>
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
@@ -113,7 +120,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
       <Card className={s.color}>
         <div className={s.unit}>
           <p>Color:</p>
-          <ColorPicker color={color} setColor={setColor}>
+          <ColorPicker color={file.color} setColor={setColor}>
             <ColorPickerTrigger />
             <ColorPickerPopover />
           </ColorPicker>
@@ -137,15 +144,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
         </div>
       </Card>
       <Card>
-        {Parser.array(events).map(e => (
-          <div className={s.event_unit}>
-            <SymmetricSvg text={e._id} />
-            <div className={s.text}>
-              <p className={s.top}>{e._id}</p>
-              <p className={s.bottom}>{e.file}</p>
-            </div>
-          </div>
-        ))}
+        {Parser.array(events).map(event => <EventCombination event={event} />)}
       </Card>
       <Button loading={loading} className={s.save} onClick={send} variant={name && description ? 'default' : 'disabled'} img='https://cdn.impactium.fun/ui/check/check.svg'>Create</Button>
     </Banner>

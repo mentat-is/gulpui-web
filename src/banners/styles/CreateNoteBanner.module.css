@@ -58,39 +58,6 @@
   gap: 8px;
   align-items: center;
 }
-.event_unit {
-  height: 36px;
-  display: flex;
-  gap: 12px;
-  cursor: pointer;
-}
-.event_unit svg {
-  min-height: 36px;
-  min-width: 36px;
-  border-radius: var(--round);
-  border: var(--geist-border);
-}
-.event_unit .text {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-evenly;
-}
-.event_unit .text p {
-  max-width: calc(600px - 128px);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.event_unit .text .top {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--white);
-}
-.event_unit .text .bottom {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--text-dimmed);
-}
 .popover {
   gap: 8px;
   display: flex;

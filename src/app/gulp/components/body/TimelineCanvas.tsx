@@ -86,25 +86,25 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
         return {
           x: getPixelPosition(e.timestamp + file.offset || 0),
           y: i * 48 + 20 - scrollY,
-          color: l.data.color
+          color: l.data.color || stringToHexColor(l.events.map(e => e._id).toString())
         }
       });
 
+      if (dots.length === 1 ) return;
+
       if (dots.length > 1) {
         ctx.beginPath();
-        ctx.strokeStyle = dots[0].color; // Задаем цвет линии по цвету первой точки
-        ctx.lineWidth = 2; // Устанавливаем ширину линии
-    
-        // Начинаем линию с первой точки
-        ctx.moveTo(dots[0].x, dots[0].y);
-    
-        // Проходим по остальным точкам и соединяем их линией
+        ctx.strokeStyle = dots[0].color;
+        ctx.lineWidth = 1;
+
+        ctx.moveTo(dots[0].x, dots[0].y + 4);
+
         dots.slice(1).forEach(({ x, y }) => {
-          ctx.lineTo(x, y);
+          ctx.lineTo(x + 4, y + 4);
         });
     
-        ctx.stroke(); // Рисуем линию
-      }    
+        ctx.stroke();
+      }
       
       dots.forEach(({ color, x, y }) => {
         ctx.fillStyle = color;
