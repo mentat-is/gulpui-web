@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format, setDate } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
 import { ResponseBase } from '@/dto/ResponseBase.dto';
-import { FilterOptions, FilterType, GulpQueryFilter, GulpQueryFilterArray, GulpQueryFilterObject } from '@/dto/GulpGueryFilter.class';
+import { FilterOptions, FilterType, GulpQueryFilterObject } from '@/dto/GulpGueryFilter.class';
 import { cn, ui } from '@/ui/utils';
 import { Context, Plugin } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';

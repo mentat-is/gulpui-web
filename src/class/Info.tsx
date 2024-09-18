@@ -283,19 +283,9 @@ export class Info implements InfoProps {
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
   setTimelineTarget = (event?: λEvent | null) => this.setInfoByKey(event, 'timeline', 'target');
   
-  increaseTimelineScale = (current?: number) => {
-    const _scale = current || this.app.timeline.scale;
-    const scale = _scale + (_scale / 10);
-    this.setTimelineScale(scale);
-    return scale;
-  };
+  increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
   
-  decreaseTimelineScale = (limit?: number) => {
-    const scale = Math.max(limit || 1, Number(this.app.timeline.scale - (this.app.timeline.scale / 10)));
-    if (scale === limit) return limit;
-    this.setTimelineScale(scale);
-    return scale;
-  };
+  decreasedTimelineScale = (limit: number = 1) => this.app.timeline.scale - this.app.timeline.scale / 16;
 
   finalizeFiltering = async (filename: string) => {
     this.events_reset_in_file(filename);

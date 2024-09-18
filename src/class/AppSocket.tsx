@@ -42,9 +42,6 @@ export class AppSocket extends WebSocket {
           _uuid: this.info.file_find_by_filename_and_context(event['gulp.source.file'], event['gulp.context'])?.uuid
         }));
 
-        const x = _chunk.events.filter(e => !e['gulp.context'] || !e['gulp.source.file']);
-        console.log(x);
-
         this.info.bucket_increase_fetched(events.length);
         this.info.events_add(events);
       } else {
