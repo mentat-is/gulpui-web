@@ -120,14 +120,14 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   }; // Function to place banner into DOM-tree
   
   const destroyBanner = () => {
-    setBanner(null); 
+    setBanner(() => null); 
     document.querySelector('body')?.classList.remove('no-scroll');
   }; // Function to unmount a banner
 
   
   const spawnDialog = (dialog: JSX.Element) => setDialog(dialog);
   
-  const destroyDialog = () => setDialog(null);
+  const destroyDialog = () => setDialog(() => null);
 
   // Application context properties
   const props: ApplicationContextProps = {

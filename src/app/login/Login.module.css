@@ -3,12 +3,7 @@
   flex-direction: row;
   gap: var(--p4);
   align-items: center;
-}
-.group a {
-  color: var(--text-dimmed);
-}
-.submit {
-  background-color: var(--soft-black);
+  justify-content: flex-end;
 }
 .page {
   gap: 32px;
@@ -103,13 +98,13 @@
   align-self: flex-end;
   width: 100%;
   text-align: center;
-  transform: translate(-12px, -12px);
+  transform: translateY(-12px);
 }
 .cluster {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   font-size: 18px !important;
 }
 .cluster img {

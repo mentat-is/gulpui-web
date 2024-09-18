@@ -5,10 +5,10 @@ import { Input } from "@/ui/Input";
 import { useApplication } from "@/context/Application.context";
 import { useLanguage } from "@/context/Language.context";
 import { Login } from "@/dto";
+import { Separator } from '@/ui/Separator';
 
 export function AuthorizationElement() {
   const { Info, app, api } = useApplication();
-  const { lang } = useLanguage();  
   const [ loading, setLoading ] = useState<boolean>(false);
 
   const send = async () => {
@@ -47,9 +47,9 @@ export function AuthorizationElement() {
       type='password'
       value={app.general.password}
       onChange={e => Info.setPassword(e.currentTarget.value)} />
+    <Separator />
     <div className={s.group}>
-      <Button loading={loading} onClick={send}>{lang.submit}</Button>
-      <a href="https://mentat.is/gulp/docs#auth">{lang.have_a_question}</a>
+      <Button loading={loading} onClick={send}>Log in</Button>
     </div>
   </React.Fragment>
   )
