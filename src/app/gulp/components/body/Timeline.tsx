@@ -9,7 +9,7 @@ import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { cn, ui } from '@/ui/utils';
+import { cn, throttle, ui } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
@@ -25,10 +25,11 @@ export function Timeline() {
   const [bounding, setBounding] = useState<DOMRect>();
   const [selectedFileForContextMenu, setSelectedFileForContextMenu] = useState<λFile>();
 
-  function deltaScrollX(λx: number) {
-    const limit = Info.width - (timeline.current?.clientWidth || 0);
-
-    _setScrollX((x) => Math.max(0, Math.min(limit, Math.round(x + λx))));
+  const deltaScrollX = (λx: number) => {
+    _setScrollX((x) => {
+      console.log({ λx, x })
+      return Math.round(x + λx);
+    });
   }
 
   function increaseScrollY(λy: number) {
@@ -46,7 +47,7 @@ export function Timeline() {
     }
 
     const width = Info.width;
-    const newScale = event.deltaY > 0 ? Info.decreaseTimelineScale() : Info.increaseTimelineScale();
+    const newScale = event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
 
     const rect = bounding || timeline.current!.getBoundingClientRect();
     if (!bounding) {
@@ -56,7 +57,8 @@ export function Timeline() {
     const diff = scrollX + event.clientX - rect.left;
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
-    deltaScrollX(left);
+    Info.setTimelineScale(newScale);
+    _setScrollX(Math.round(scrollX + left));
   };
 
   const handleMouseDown = (event: MouseEvent) => {
@@ -108,6 +110,14 @@ export function Timeline() {
       window.removeEventListener('resize', setBounding(undefined) as any);
     };
   }, [timeline, banner, dialog, app.timeline.scale, isResizing]);
+
+  useEffect(() => {
+    window.addEventListener('wheel', handleWheel as any, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', handleWheel as any);
+    };
+  }, [scrollX]);
 
   const handleContextMenu = (event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 24) / 48)
