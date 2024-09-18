@@ -552,10 +552,11 @@ export class Link {
   public static parse = (app: Information, links: RawLink[]): λLink[] => links.map(l => ({
     ...l,
     file: l.src_file,
-    events: Event.parse(app, l.events)
+    events: Event.parse(app, l.events),
+    _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
   }));
 
-  // public static findByFile = (use: Information | λLink[], file: λFile | string): λLink[] => Parser.use(use, 'links').filter(l => l. === Parser.useName(file));
+  public static findByFile = (use: Information | λLink[], file: λFile | UUID): λLink[] => Parser.use(use, 'links').filter(l => l._uuid === Parser.useUUID(file));
   
   // public static findByEvent = (use: Information | λLink[], event: λEvent | string): λLink[] => Parser.use(use, 'links').filter(l => l.events.some(e => e._id === Parser.useId(event)));
 

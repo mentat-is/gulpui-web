@@ -86,23 +86,25 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
         return {
           x: getPixelPosition(e.timestamp + file.offset || 0),
           y: i * 48 + 20 - scrollY,
-          color: l.data.color || file.color
+          color: l.data.color || stringToHexColor(l.events.map(e => e._id).toString())
         }
       });
+
+      if (dots.length === 1 ) return;
 
       if (dots.length > 1) {
         ctx.beginPath();
         ctx.strokeStyle = dots[0].color;
         ctx.lineWidth = 1;
 
-        ctx.moveTo(dots[0].x, dots[0].y);
+        ctx.moveTo(dots[0].x, dots[0].y + 4);
 
         dots.slice(1).forEach(({ x, y }) => {
-          ctx.lineTo(x, y + 4);
+          ctx.lineTo(x + 4, y + 4);
         });
     
         ctx.stroke();
-      }    
+      }
       
       dots.forEach(({ color, x, y }) => {
         ctx.fillStyle = color;
@@ -110,8 +112,6 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
         ctx.roundRect(x, y, 8, 8, [999]);
         ctx.fill();
       })
-
-      console.log(dots);
     });
   };
 

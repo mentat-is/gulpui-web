@@ -123,7 +123,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     const Node = ({ λkey, value }: NodeProps) => {
       return (
-        <div className={s.node} key={λkey}>
+        <div className={s.node} key={λkey + value}>
           <h6>
             {iconsMap[λkey] && <img src={`https://cdn.impactium.fun/ui/${iconsMap[λkey]}`} />}
             {λkey}
@@ -140,7 +140,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       const _value = _key === 'PrivilegeList' && typeof value !== 'string' ? value.content.split('\n').map(f => <Property value={f} />) : <Property value={typeof value === 'string' ? value : value.content} />;
 
       return (
-        <div className={cn(s.pod, _key === 'PrivilegeList' && s.wrap)} key={λkey}>
+        <div className={cn(s.pod, _key === 'PrivilegeList' && s.wrap)} key={λkey + value + _key + _value}>
           {iconsMap[λkey] && <img src={`https://cdn.impactium.fun/ui/${iconsMap[λkey]}`} />}
           {_key}
           {_value}
@@ -156,9 +156,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               cluster[clusterKey].children?.map(section =>
                 Object.keys(section)?.map(sectionKey => (
                   'content' in section[sectionKey]
-                    ? <Pod λkey={sectionKey} value={section[sectionKey] as UnitContent} />
+                    ? <Pod λkey={sectionKey} key={sectionKey} value={section[sectionKey] as UnitContent} />
                     : Object.keys(section[sectionKey]).length
-                      ? <Node λkey={sectionKey} value={section[sectionKey]} />
+                      ? <Node λkey={sectionKey} key={sectionKey} value={section[sectionKey]} />
                       : null
                   )
                 )
