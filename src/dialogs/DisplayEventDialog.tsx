@@ -52,7 +52,7 @@ interface DetailedChunkEventData {
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { api, Info, app, spawnBanner, destroyDialog } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
-  const [root, setRoot] = useState<DetailedChunkEventData[]>();
+  const [root, setRoot] = useState<DetailedChunkEventData[] | null>();
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
 
   useEffect(() => {
@@ -60,8 +60,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event, app.target.notes]);
 
   useEffect(() => {
-    if (detailedChunkEvent) {
-      setRoot(convertXML(detailedChunkEvent.event.original).Event.children)
+    if (detailedChunkEvent?.event?.original) {
+      try {
+        setRoot(convertXML(detailedChunkEvent.event.original)?.Event?.children);  
+      } catch (_) { }
       return;
     };
     reloadDetailedChunkEvent();
@@ -119,7 +121,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   };
 
   const SmartView = useCallback(() => {
-    if (!root) return null;
+    if (!root) return <h3>Failed to parse XML. See raw XML data</h3>;
 
     const Node = ({ λkey, value }: NodeProps) => {
       return (
@@ -216,16 +218,16 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             <Button className={s.createNote} onClick={spawnNoteBanner} img='https://cdn.impactium.fun/ui/specific/bookmark.svg'>New note</Button>
             <Button className={s.createNote} onClick={spawnLinkBanner} img='https://cdn.impactium.fun/ui/specific/path.svg'>New link / Connect link</Button>
           </div>
-          <Tabs defaultValue="smart" className={s.tabs}>
+          <Tabs defaultValue={root ? 'smart' : 'raw'} className={s.tabs}>
             <TabsList className={s.tabs_list}>
               <p className={s.hint}>Click on the block to copy the value</p>
-              <TabsTrigger value="smart">Smart View</TabsTrigger>
-              <TabsTrigger value="raw">Raw XML</TabsTrigger>
+              <TabsTrigger value='smart'>Smart View</TabsTrigger>
+              <TabsTrigger value='raw'>Raw XML</TabsTrigger>
             </TabsList>
-            <TabsContent className={s.tabs_content} value="smart">
+            <TabsContent className={s.tabs_content} value='smart'>
               <SmartView />
             </TabsContent>
-            <TabsContent className={s.tabs_content} value="raw">
+            <TabsContent className={s.tabs_content} value='raw'>
               <XMLTree className={s.xml} xml={detailedChunkEvent.event.original} />
             </TabsContent>
           </Tabs>
