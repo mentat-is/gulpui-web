@@ -6,15 +6,21 @@ import { SelectContextBanner } from '@/banners/SelectContextBanner';
 import { AppSocket } from '@/class/AppSocket';
 import { Context, Operation } from '@/class/Info';
 import { File } from '@/class/Info';
+import { toast } from 'sonner';
 
 export function GulpPage() {
   const { app, spawnBanner, Info, api, setWs } = useApplication();
   const [rendered, setRendered] = useState<number>(0);
 
   useEffect(() => {
-    if (!app.target.contexts.length) {
-      Info.query_operations();
-    }
+    (async () => {
+      if (!app.target.contexts.length) {
+        const ops = await Info.operations_request();
+        if (!ops.length) return toast('No contexts found');
+
+        await Info.operations_update(ops);
+      }
+    })();
   }, [app.target.operations]);
 
   useEffect(() => {
@@ -73,13 +79,15 @@ export function GulpPage() {
   }, [app.target.files, app.target.contexts]);
 
   useEffect(() => {
-    if (!app.target.bucket.total) {
-      Info.fetchBucket();
-    }
-
-    if (!File.selected(app).length) {
-      spawnBanner(<SelectContextBanner />);
-    }
+    (async () => {
+      if (!app.target.bucket.total) {
+        await Info.fetchBucket();
+      }
+  
+      if (!File.selected(app).length) {
+        spawnBanner(<SelectContextBanner />);
+      }
+    })();
   }, [app.target.bucket, app.target.files]);
 
   return (

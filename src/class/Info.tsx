@@ -143,12 +143,10 @@ export class Info implements InfoProps {
   });
 
   bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
-  
-  query_operations = async () => {
-    const rawOperations = await this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? res.data : []);
 
-    if (!rawOperations.length) return;
+  operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? res.data : [])
 
+  operations_update = async (rawOperations: RawOperation[]) => {
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const plugins: λPlugin[] = [];
