@@ -44,6 +44,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const api: Api = async <T extends ResponseBase>(
     path: RequestInfo | URL,
     options: RequestInit & {
+      server?: string;
       isRaw?: boolean;
       isText?: boolean;
       data?: { [key: string]: any };
@@ -72,13 +73,13 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       ...options,
     };
   
-    const res = await fetch(app.general.server + path, requestOptions).catch(error => {
+    const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
       console.error(error);
       return null;
     });
 
     if (!res) {
-      toast('Server not found');
+      toast(`Server ${(options.server || app.general.server)} not found`);
       return new λ();
     }
     
