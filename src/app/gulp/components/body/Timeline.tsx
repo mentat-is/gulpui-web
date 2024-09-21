@@ -9,7 +9,7 @@ import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { cn, throttle, ui } from '@/ui/utils';
+import { cn, ui } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
@@ -25,12 +25,7 @@ export function Timeline() {
   const [bounding, setBounding] = useState<DOMRect>();
   const [selectedFileForContextMenu, setSelectedFileForContextMenu] = useState<λFile>();
 
-  const deltaScrollX = (λx: number) => {
-    _setScrollX((x) => {
-      console.log({ λx, x })
-      return Math.round(x + λx);
-    });
-  }
+  const deltaScrollX = (λx: number) => _setScrollX((x) => Math.round(x + λx));
 
   function increaseScrollY(λy: number) {
     const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42

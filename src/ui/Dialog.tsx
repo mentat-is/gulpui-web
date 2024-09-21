@@ -23,7 +23,7 @@ export function Dialog({ className, callback, icon,description, title, loading, 
         <div className={s.header}>
           <h2>{title}</h2>
           {description && <p>{description}</p>}
-          <Button variant='ghost' className={s.close} onClick={callback || destroyDialog} img='https://cdn.impactium.fun/ui/close/md.svg' size='icon' />
+          <Button variant='ghost' className={s.close} onClick={callback || destroyDialog} img='X' size='icon' />
         </div>
       </div>
       <div className={cn(s.content, loading && s.loading)}>

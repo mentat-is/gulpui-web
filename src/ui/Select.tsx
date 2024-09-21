@@ -2,6 +2,7 @@ import * as React from "react"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { cn } from "./utils"
 import s from './styles/Select.module.css';
+import { Icon } from "./Icon";
 
 const Select = SelectPrimitive.Root
 
@@ -23,7 +24,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <img className={s.img} src='https://cdn.impactium.fun/ui/chevron/down.svg' alt='' />
+      <Icon className={s.img} name='ChevronDown' />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -42,7 +43,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <img className={s.img} src='https://cdn.impactium.fun/ui/chevron/up.svg' alt='' />
+    <Icon className={s.img} name='ChevronUp' />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -60,7 +61,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <img className={s.img} src='https://cdn.impactium.fun/ui/chevron/down.svg' alt='' />
+    <Icon className={s.img} name='ChevronDown' />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =
@@ -124,7 +125,7 @@ const SelectItem = React.forwardRef<
   >
     <span>
       <SelectPrimitive.ItemIndicator>
-        <img className={cn(s.img, s.check)} src='https://cdn.impactium.fun/ui/check/check.svg' alt='' />
+        <Icon className={cn(s.img, s.check)} name='Check' />
       </SelectPrimitive.ItemIndicator>
     </span>
 

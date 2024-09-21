@@ -1,6 +1,7 @@
 import * as ResizablePrimitive from "react-resizable-panels"
 import s from './styles/Resizable.module.css'
 import { cn } from './utils'
+import { Icon } from "./Icon"
 
 const ResizablePanelGroup = ({
   className,
@@ -30,7 +31,7 @@ const ResizableHandle = ({
   >
     {withHandle && (
       <div className={s.drag_wrapper}>
-        <img alt='' src='https://cdn.impactium.fun/ui/drag/horizontal.svg' className={s.drag} />
+        <Icon name='GripHorizontal' className={s.drag} />
       </div>
     )}
   </ResizablePrimitive.PanelResizeHandle>

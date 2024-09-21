@@ -104,7 +104,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         <Button
           onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
           variant='ghost'
-          img={ui('action/settings')}>File settings</Button>
+          img='Settings'>File settings</Button>
         }>
       <div className={s.top}>
         <Select onValueChange={setKey} value={filter?.key}>
@@ -134,7 +134,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         {acceptable === 'date' ? (
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant='outline' className={s.button} img='https://cdn.impactium.fun/ui/calendar/check.svg'>
+              <Button variant='outline' className={s.button} img='CalendarPlus2'>
                 {format(typeof filter?.value === 'number' ? filter?.value : Date.now(), "LLL dd, y")}
               </Button>
             </PopoverTrigger>
@@ -151,7 +151,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         ) : (
           <Input onChange={(event) => setValue(event.currentTarget.value)} placeholder={`Input a ${acceptable}`} value={filter?.value} />
         )}
-        <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='https://cdn.impactium.fun/ui/action/add-plus.svg' onClick={addFilter} />
+        <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
       </div>
       <div className={s.avilable_filters}>
         {filters.map(filter => (
@@ -159,11 +159,11 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
             <code>{filter.key}</code>
             <Badge value={filter.type} />
             <p>{typeof filter.value !== 'string' ? format(filter.value, "LLL dd, y") : filter.value}</p>
-            {!filter.static && <Button img='https://cdn.impactium.fun/ui/trash/full.svg' onClick={() => removeFilter(filter)} />}
+            {!filter.static && <Button img='Trash2' onClick={() => removeFilter(filter)} />}
           </div>
         ))}
       </div>
-      <Button img='https://cdn.impactium.fun/ui/check/check.svg' onClick={submit}>Submit</Button>
+      <Button img='Check' onClick={submit}>Submit</Button>
     </Banner>
   );
 }

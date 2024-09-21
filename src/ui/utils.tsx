@@ -7,6 +7,7 @@ import { UUID } from "crypto";
 import { Info as Information} from "@/dto";
 import { Info } from "@/class/Info";
 import { RefObject } from "react";
+import { icons } from "lucide-react";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -188,3 +189,6 @@ export function hexToHSL(hex: string) {
 
   return { hue: h, saturation: s, lightness: l };
 }
+
+export type Icon = keyof typeof icons;
+export const Icons = icons;

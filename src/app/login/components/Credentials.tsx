@@ -29,7 +29,7 @@ export function AuthorizationElement() {
     setLoading(true);
     await api<Login>('/login', {
       server,
-      mode: 'same-origin',
+      // mode: 'same-origin',
       method: 'PUT',
       data: {
         username: app.general.username,
@@ -40,11 +40,9 @@ export function AuthorizationElement() {
         Info.setToken(res.data.token);
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
-      } else {
-        if (res && parseInt(res.status) < 500) toast('Error during authorization', {
-          description: 'Wrong username or password'
-        })
-      }
+      } else if (parseInt(res.status) < 500) toast('Error during authorization', {
+        description: 'Wrong username or password'
+      });
     });
     setLoading(false);
   }
@@ -61,19 +59,19 @@ export function AuthorizationElement() {
     <React.Fragment>
     {errors.server && <Label htmlFor='server'>{errors.server}</Label>}
     <Input
-      img='https://cdn.impactium.fun/ui/specific/data.svg'
+      img='Database'
       placeholder="Server adress (ip:port)"
       value={serverValue}
       onChange={(e) => setServerValue(e.currentTarget.value)} />
     {errors.username && <Label htmlFor='server'>{errors.username}</Label>}
     <Input
-      img='https://cdn.impactium.fun/ui/user/user.svg'
+      img='User'
       placeholder="Username"
       value={app.general.username}
       onChange={e => Info.setUsername(e.currentTarget.value)} />
     {errors.password && <Label htmlFor='server'>{errors.password}</Label>}
     <Input
-      img='https://cdn.impactium.fun/ui/specific/key.svg'
+      img='KeyRound'
       placeholder="Password"
       type='password'
       value={app.general.password}

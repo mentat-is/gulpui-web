@@ -42,7 +42,7 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
         <h6>
           {title}
           {subtitle}
-          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={destroyBanner} img='https://cdn.impactium.fun/ui/close/md.svg' size='icon' /></div>}
+          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={destroyBanner} img='X' size='icon' /></div>}
         </h6>
         {children}
       </div>

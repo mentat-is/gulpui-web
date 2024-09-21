@@ -1,8 +1,8 @@
 import React from "react"
 import s from './styles/Input.module.css' 
-import { cn, ui } from "./utils"
+import { cn, Icon as λIcon, ui } from "./utils"
 import { cva, type VariantProps } from "class-variance-authority"; 
-import { Label } from "./Label";
+import { Icon } from "./Icon";
 
 const inputVariants = cva(s.button, {
   variants: {
@@ -22,7 +22,7 @@ const inputVariants = cva(s.button, {
 });
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
-  img?: string
+  img?: λIcon
   revert?: boolean
 }
 
@@ -35,7 +35,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         s.image,
         revert && s.revert
       )}>
-        <img src={img || ui('action/upload')} alt='' />
+        <Icon name={img || 'Upload'} alt='' />
         <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
       </div>
     ) : (

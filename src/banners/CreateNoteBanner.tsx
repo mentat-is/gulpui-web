@@ -76,9 +76,9 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
   return (
     <Banner title='Create note'>
       <Card className={s.overview}>
-        <p>Title: {<Input revert img='https://cdn.impactium.fun/ui/heading/h1.svg' value={title} onChange={e => setTitle(e.currentTarget.value)}/>}</p>
+        <p>Title: {<Input revert img='Heading1' value={title} onChange={e => setTitle(e.currentTarget.value)}/>}</p>
         <Separator />
-        <p>Text: {<Input revert img='https://cdn.impactium.fun/ui/heading/h2.svg' value={text} onChange={e => setText(e.currentTarget.value)}/>}</p>
+        <p>Text: {<Input revert img='Heading2' value={text} onChange={e => setText(e.currentTarget.value)}/>}</p>
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
@@ -118,10 +118,10 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
         </div>
         <div className={s.group}>
           <Input placeholder='Input tag name here...' ref={tag_ref} onChange={(e) => setTag(e.currentTarget.value)} value={tag}/>
-          <Button img='https://cdn.impactium.fun/ui/action/add-plus.svg' variant={tag.length > 0 ? 'outline' : 'disabled'} className={cn(tag.length > 0 && s.focus)} onClick={addTag}>Add</Button>
+          <Button img='Plus' variant={tag.length > 0 ? 'outline' : 'disabled'} className={cn(tag.length > 0 && s.focus)} onClick={addTag}>Add</Button>
         </div>
       </Card>
-      <Button loading={loading} className={s.save} onClick={send} variant={title && text ? 'default' : 'disabled'} img='https://cdn.impactium.fun/ui/check/check.svg'>Create</Button>
+      <Button loading={loading} className={s.save} onClick={send} variant={title && text ? 'default' : 'disabled'} img='Check'>Create</Button>
     </Banner>
   )
 }

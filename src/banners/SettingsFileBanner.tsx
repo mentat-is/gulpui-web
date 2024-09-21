@@ -13,7 +13,6 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Engine, enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
-import { File } from "@/class/Info";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -48,7 +47,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Button
         onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
         variant='ghost'
-        img='https://cdn.impactium.fun/ui/action/filter.svg'>{(app.target.filters[file.name] || []).length ? 'Change filters' : 'Set filters'}</Button>
+        img='Filter'>{(app.target.filters[file.name] || []).length ? 'Change filters' : 'Set filters'}</Button>
       }>
       <ColorPicker color={color} setColor={setColor}>
         <ColorPickerTrigger />
@@ -58,7 +57,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Card>
         <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
         <div className={s.offset}>
-          <Input img={ui('timer/add')} accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
+          <Input img='AlarmClockPlus' accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
           <Button variant='outline' onClick={() => setOffset(o => o + 1000)}>+1 sec</Button>
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60)}>+1 min</Button>
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60)}>+1 hour</Button>
@@ -73,11 +72,11 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
             <SelectValue placeholder="Choose render engine" />
           </SelectTrigger>
           <SelectContent>
-            {enginesBase.map(i => <SelectItem value={i.plugin}><Button variant='ghost' img={ui(i.img)}>{i.title}</Button></SelectItem>)}
+            {enginesBase.map(i => <SelectItem value={i.plugin}><Button variant='ghost' img={i.img}>{i.title}</Button></SelectItem>)}
           </SelectContent>
         </Select>
       </Card>
-      <Button img='https://cdn.impactium.fun/ui/file/document.svg' onClick={save}>Save</Button>
+      <Button img='FileBox' onClick={save}>Save</Button>
     </Banner>
   )
 }

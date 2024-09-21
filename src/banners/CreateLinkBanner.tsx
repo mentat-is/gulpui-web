@@ -107,9 +107,9 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   return (
     <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).length && <Subtitle />}>
       <Card className={s.overview}>
-        <p>Name: {<Input placeholder='*Required' revert img='https://cdn.impactium.fun/ui/heading/h1.svg' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
+        <p>Name: {<Input placeholder='*Required' revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
         <Separator />
-        <p>Description: {<Input placeholder='*Required' revert img='https://cdn.impactium.fun/ui/heading/h2.svg' value={description} onChange={e => setDescription(e.currentTarget.value)}/>}</p>
+        <p>Description: {<Input placeholder='*Required' revert img='Heading2' value={description} onChange={e => setDescription(e.currentTarget.value)}/>}</p>
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
@@ -146,7 +146,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
       <Card>
         {Parser.array(events).map(event => <EventCombination event={event} />)}
       </Card>
-      <Button loading={loading} className={s.save} onClick={send} variant={name && description ? 'default' : 'disabled'} img='https://cdn.impactium.fun/ui/check/check.svg'>Create</Button>
+      <Button loading={loading} className={s.save} onClick={send} variant={name && description ? 'default' : 'disabled'} img='Check'>Create</Button>
     </Banner>
   )
 }

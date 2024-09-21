@@ -23,7 +23,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
               <p className={s.description}>{event._id}</p>
             </div>
           </div>
-          <Button variant='outline' onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} img='https://cdn.impactium.fun/ui/drag/more-horizontal.svg' />
+          <Button variant='outline' onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} img='Ellipsis' />
         </div>
       ))}
     </Dialog>
