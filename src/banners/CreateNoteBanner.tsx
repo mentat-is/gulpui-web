@@ -76,9 +76,9 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
   return (
     <Banner title='Create note'>
       <Card className={s.overview}>
-        <p>Title: {<Input revert img='https://cdn.impactium.fun/ui/heading/h1.svg' value={title} onChange={e => setTitle(e.currentTarget.value)}/>}</p>
+        <p>Title: {<Input revert img='Heading1' value={title} onChange={e => setTitle(e.currentTarget.value)}/>}</p>
         <Separator />
-        <p>Text: {<Input revert img='https://cdn.impactium.fun/ui/heading/h2.svg' value={text} onChange={e => setText(e.currentTarget.value)}/>}</p>
+        <p>Text: {<Input revert img='Heading2' value={text} onChange={e => setText(e.currentTarget.value)}/>}</p>
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />

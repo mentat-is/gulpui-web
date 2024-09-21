@@ -9,8 +9,9 @@ import { useApplication } from '@/context/Application.context';
 import { Fragment, useState } from 'react';
 import { Event, Note as NoteClass } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { λEvent } from '@/dto/ChunkEvent.dto';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
+import { Icon } from './Icon';
+import { Icon as λIcon } from '@/ui/utils';
 
 interface NoteProps {
   note: λNote;
@@ -19,14 +20,14 @@ interface NoteProps {
 }
 
 export function Note({ note, left, top }: NoteProps) {
-  const { api, app, Info, spawnDialog } = useApplication();
+  const { Info } = useApplication();
   const [loading, setLoading] = useState<boolean>(false);
 
-  const icon = [
-    'specific/bookmark.svg',
-    'triangle/warning.svg',
-    'close/square.svg'
-  ][note.level];
+  const iconMap: Array<λIcon> = [
+    'Bookmark',
+    'TriangleAlert',
+    'SquareX'
+  ];
 
   const deleteNote = async () => {
     setLoading(true);
@@ -37,7 +38,7 @@ export function Note({ note, left, top }: NoteProps) {
   return (
     <Popover>
       <PopoverTrigger className={cn(s.note)} style={{ left, top }}>
-        <img src={`https://cdn.impactium.fun/ui/${icon}`} alt='' />
+        <Icon name={iconMap[note.level]} />
         <hr style={{ background: note.data.color }} />
       </PopoverTrigger>
       <PopoverContent className={s.content}>
@@ -69,25 +70,25 @@ export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
     <Fragment>
       <div className={s.general}>
         <p>
-          <img src='https://cdn.impactium.fun/ui/heading/h1.svg' />
+          <img src='Heading1' />
           <span>Title: </span>
           {note.name}
         </p>
         <Separator />
         <p>
-          <img src='https://cdn.impactium.fun/ui/heading/h2.svg' />
+          <img src='Heading2' />
           <span>Text: </span>
           {note.text}
         </p>
         <Separator />
         <p>
-          <img src='https://cdn.impactium.fun/ui/user/user.svg' />
+          <img src='User' />
           <span>Owner ID: </span>
           {note.owner_user_id}
         </p>
         <Separator />
         <p>
-          <img src={`https://cdn.impactium.fun/ui/lock/${note.private ? 'lock' : 'open'}.svg`} />
+          <img src={note.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
           <span>{note.private ? 'Private' : 'Not private'}</span>
         </p>
         {note.description && <Fragment>

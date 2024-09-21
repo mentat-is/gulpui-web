@@ -57,7 +57,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Card>
         <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
         <div className={s.offset}>
-          <Input img={ui('timer/add')} accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
+          <Input img='AlarmClockPlus' accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
           <Button variant='outline' onClick={() => setOffset(o => o + 1000)}>+1 sec</Button>
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60)}>+1 min</Button>
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60)}>+1 hour</Button>

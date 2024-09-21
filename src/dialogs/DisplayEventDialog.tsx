@@ -8,7 +8,7 @@ import s from './styles/DisplayEventDialog.module.css';
 import { XMLTree } from "@/ui/XMLTree";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
 import { convertXML } from 'simple-xml-to-json';
-import { cn, copy } from "@/ui/utils";
+import { cn, copy, Icon as λIcon } from "@/ui/utils";
 import { Button } from "@/ui/Button";
 import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
 import { File, Note, Plugin } from '@/class/Info';
@@ -16,6 +16,7 @@ import { Separator } from "@/ui/Separator";
 import { Notes } from "./components/Notes";
 import { λNote } from "@/dto/Note.dto";
 import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
+import { Icon } from "@/ui/Icon";
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -106,18 +107,18 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     });
   }
 
-  const iconsMap: Record<string, string> = {
-    Provider: 'specific/path.svg',
-    Level: 'specific/layer.svg',
-    Version: '',
-    EventId: 'specific/pod.svg',
-    EventID: 'specific/pod.svg',
-    Task: 'specific/code.svg',
-    Opcode: '',
-    Keywords: 'specific/key.svg',
-    Channel: '',
-    Computer: 'device/desktop-tower.svg',
-    TimeCreated: 'timer/add.svg'
+  const iconsMap: Record<string, λIcon> = {
+    Provider: 'Waypoints',
+    Level: 'Layers2',
+    Version: 'GitBranch',
+    EventId: 'Hexagon',
+    EventID: 'Hexagon',
+    Task: 'StickyNote',
+    Opcode: 'Binary',
+    Keywords: 'Key',
+    Channel: 'RailSymbol',
+    Computer: 'HardDrive',
+    TimeCreated: 'AlarmClockPlus'
   };
 
   const SmartView = useCallback(() => {
@@ -127,7 +128,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return (
         <div className={s.node} key={λkey + value}>
           <h6>
-            {iconsMap[λkey] && <img src={`https://cdn.impactium.fun/ui/${iconsMap[λkey]}`} />}
+            {iconsMap[λkey] && <Icon name={iconsMap[λkey]} />}
             {λkey}
           </h6>
           {Object.keys(value || {}).map(_key => <Pod λkey={_key} value={value[_key]} />)}
@@ -143,7 +144,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
       return (
         <div className={cn(s.pod, _key === 'PrivilegeList' && s.wrap)} key={λkey + value + _key + _value}>
-          {iconsMap[λkey] && <img src={`https://cdn.impactium.fun/ui/${iconsMap[λkey]}`} />}
+          {iconsMap[λkey] && <Icon name={iconsMap[λkey]} />}
           {_key}
           {_value}
         </div>
