@@ -4,6 +4,7 @@ import { Button } from "@/ui/Button";
 import s from '../Login.module.css';
 import {  useState } from "react";
 import { λIndex } from "@/dto/Index.dto";
+import { Icon } from "@/ui/Icon";
 
 export function IndexesChooser() {
   const { app, Info } = useApplication();
@@ -20,7 +21,7 @@ export function IndexesChooser() {
 
   return (
     <div className={s.chooser}>
-      <p className={s.cluster}><img src='https://cdn.impactium.fun/ui/specific/cluster.svg' />Choose database index</p>
+      <p className={s.cluster}><Icon name='Combine' />Choose database index</p>
       {app.target.indexes.map((index) => {
         return (
           <Button
@@ -28,7 +29,7 @@ export function IndexesChooser() {
             key={index.name}
             className={s.index_button}
             onClick={() => handle(index)}
-            img='https://cdn.impactium.fun/ui/dummy/circle-small.svg'>{index.name}</Button>
+            img='Workflow'>{index.name}</Button>
         )
       })}
     </div>

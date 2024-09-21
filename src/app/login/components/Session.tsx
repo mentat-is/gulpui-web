@@ -46,14 +46,14 @@ export function SessionsChooser({ sessions, setSessions }: SessionsChooserProps)
           <Button
             loading={loading[session.token]}
             className={s.select_session}
-            img='https://cdn.impactium.fun/ui/specific/key.svg'
+            img='KeyRound'
             onClick={() => handleSessionButtonClick(session)}>
             <div>
               <p>{session.server}</p>
               <p>{session.token}</p>
             </div>
           </Button>
-          <Button className={s.delete} onClick={() => deleteSession(session)} img='https://cdn.impactium.fun/ui/close/md.svg' />
+          <Button className={s.delete} onClick={() => deleteSession(session)} img='X' />
         </div>
       ))}
     </Card>

@@ -1,10 +1,11 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
-
 import { cn } from "./utils";
 import s from "./styles/Button.module.css";
 import { Loading } from "./Loading";
+import { Icon, IconProps } from "./Icon";
+import { Icon as λIcon } from './utils';
 
 const buttonVariants = cva(s.button, {
   variants: {
@@ -26,8 +27,8 @@ const buttonVariants = cva(s.button, {
     },
   },
   defaultVariants: {
-    variant: "default",
-    size: "default",
+    variant: 'default',
+    size: 'default',
   },
 });
 
@@ -35,13 +36,13 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  img?: string;
+  img?: λIcon;
   revert?: boolean;
   loading?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, img, revert, loading, asChild = false, ...props }, ref) => {
+  ({ className, variant, size, img, revert, disabled, loading, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
     const paddingClass = img ? (props.children ? (revert ? s.revert : s.withImage) : s.onlyImage) : null;
 
@@ -53,13 +54,13 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }), paddingClass, loading && s.loading)}
+        className={cn(buttonVariants({ variant: disabled ? 'disabled' : variant, size, className }), paddingClass, loading && s.loading)}
         ref={ref}
         {...props}>
         {asChild ? props.children : (loading
           ? <Loading size={size} />
           : <React.Fragment>
-              {img && <img src={img} />}
+              {img && <Icon name={img} variant={convertButtonVariantToImageVariant(variant)} />}
               {children}
             </React.Fragment>
         )}
@@ -68,5 +69,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   }
 );
 Button.displayName = "Button";
+
+const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): IconProps['variant'] => ({
+  default: 'black',
+  destructive: 'white',
+  outline: 'dimmed',
+  secondary: 'white',
+  ghost: 'dimmed',
+  link: 'white',
+  disabled: 'dimmed',
+  hardline: 'white',
+} as Record<NonNullable<ButtonProps['variant']>, IconProps['variant']>)[variant!] ?? 'black';
 
 export { Button, buttonVariants };

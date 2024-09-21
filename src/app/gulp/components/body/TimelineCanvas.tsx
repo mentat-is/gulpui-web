@@ -115,7 +115,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     });
 
     ctx.fillStyle = '#ff000080'
-    ctx.fillRect(getPixelPosition(app.target.bucket.selected.min) + 2, 0, 3, timeline.current?.clientHeight || 0);
+    ctx.fillRect(getPixelPosition(app.target.bucket.selected.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
     ctx.fillRect(getPixelPosition(app.target.bucket.selected.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
   };
 

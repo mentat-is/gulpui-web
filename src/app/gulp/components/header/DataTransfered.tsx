@@ -2,7 +2,6 @@ import { useApplication } from '@/context/Application.context'
 import { Button } from '@/ui/Button';
 import s from '../../Gulp.module.css';
 import { IngestBanner } from '@/banners/IngestBanner';
-import { ui } from '@/ui/utils';
 
 export function DataTransfered() {
   const { app, spawnBanner } = useApplication();
@@ -11,7 +10,7 @@ export function DataTransfered() {
     <div className={s.transfered}>
       <Unit type='downstream' num={app.transfered?.down || 0} />
       <Unit type='upstream' num={app.transfered?.up || 0} />
-      <Button variant='outline' img={ui('action/upload')} onClick={() => spawnBanner(<IngestBanner />)}>Upload</Button>
+      <Button variant='outline' img='Upload' onClick={() => spawnBanner(<IngestBanner />)}>Upload</Button>
     </div>
   )
 }
@@ -31,7 +30,7 @@ function Unit({ type, num }: UnitProps) {
   };
 
   return (
-    <Button variant='outline' img={`https://cdn.impactium.fun/mentat/${type}.svg?i=2`} className={s.unit}>
+    <Button variant='outline' img={type === 'upstream' ? 'CloudUpload' : 'CloudDownload'} className={s.unit}>
       {formatBytes(num)}
     </Button>
   )

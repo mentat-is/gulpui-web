@@ -7,6 +7,7 @@ import { useLanguage } from "@/context/Language.context";
 import { Index } from "@/class/Info";
 import { Banner } from "@/ui/Banner";
 import { λOperation } from "@/dto";
+import { Icon } from "@/ui/Icon";
 
 export function OperationsChooser() {
   const { app, Info, api, spawnBanner } = useApplication();
@@ -34,27 +35,27 @@ export function OperationsChooser() {
           loading={loading[operation.id]}
           onClick={() => deleteOperation(operation.id)}
           variant='destructive'
-          img='https://cdn.impactium.fun/ui/trash/full.svg'>Yes, delete!</Button>
+          img='Trash2'>Yes, delete!</Button>
       </Banner>
     )
   }
 
   return (
     <div className={s.chooser}>
-      <p className={s.cluster}><img src='https://cdn.impactium.fun/ui/specific/node.svg' />Choose operation node</p>
+      <p className={s.cluster}><Icon name='Hexagon' />Choose operation node</p>
       {app.target.operations.map((operation) => (
         <div className={s.unit_group} key={operation.id}>
-          <Button onClick={() => Info.operations_select(operation)} img='https://cdn.impactium.fun/ui/dummy/circle-small.svg'>{operation.name}</Button>
+          <Button onClick={() => Info.operations_select(operation)} img='Workflow'>{operation.name}</Button>
           <Button
             size='icon'
             onClick={() => spawnBannerToRequestDelete(operation)}
             variant='destructive'
-            img='https://cdn.impactium.fun/ui/trash/full.svg' />
+            img='Trash2' />
           </div>
       ))}
       <Button
         variant='outline'
-        img='https://cdn.impactium.fun/ui/action/add-plus.svg'
+        img='Plus'
         onClick={() => spawnBanner(<CreateOperationBanner />)}>{lang.operation.create}</Button>
     </div>
   );

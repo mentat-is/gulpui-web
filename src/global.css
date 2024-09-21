@@ -10,9 +10,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
 
 :root {
-  --blue-background: #202c44;
-  --blue-accent: #1E2940;
-
   --text-white: #e8e8e8;
   --font-nunito: "Nunito", sans-serif !important;
   --font-mono: "GeistMono", sans-serif !important;
@@ -30,6 +27,7 @@
   --soft-white: #e8e8e8;
   --soft-black: #0d0d0d;
   --meta-black: #0a0a0a;
+  --dimmed: #a1a1a1;
 
   --semi-hd: 1366px;
   

@@ -146,7 +146,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
       <Card>
         {Parser.array(events).map(event => <EventCombination event={event} />)}
       </Card>
-      <Button loading={loading} className={s.save} onClick={send} variant={name && description ? 'default' : 'disabled'} img='https://cdn.impactium.fun/ui/check/check.svg'>Create</Button>
+      <Button loading={loading} className={s.save} onClick={send} variant={name && description ? 'default' : 'disabled'} img='Check'>Create</Button>
     </Banner>
   )
 }

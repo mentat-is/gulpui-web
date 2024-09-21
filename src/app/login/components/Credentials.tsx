@@ -29,7 +29,7 @@ export function AuthorizationElement() {
     setLoading(true);
     await api<Login>('/login', {
       server,
-      mode: 'same-origin',
+      // mode: 'same-origin',
       method: 'PUT',
       data: {
         username: app.general.username,
@@ -40,11 +40,9 @@ export function AuthorizationElement() {
         Info.setToken(res.data.token);
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
-      } else {
-        if (res && parseInt(res.status) < 500) toast('Error during authorization', {
-          description: 'Wrong username or password'
-        })
-      }
+      } else if (parseInt(res.status) < 500) toast('Error during authorization', {
+        description: 'Wrong username or password'
+      });
     });
     setLoading(false);
   }

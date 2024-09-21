@@ -1,5 +1,6 @@
 .button {
   display: inline-flex;
+  width: min-content;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
@@ -7,32 +8,29 @@
   font-size: 0.875rem;
   cursor: pointer;
   font-weight: 500;
-  transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-  transition-duration: 150ms;
-  transition-timing-function: var(--transition);
+  transition: all 0.15s var(--transition);
   outline: none;
+  border: 1px solid transparent;
   gap: 8px
 }
 
-.button img {
+.button svg {
+  transition: all 0.15s var(--transition);
   height: 20px;
   width: 20px;
 }
 
 .default {
-  background-color: var(--white);
-  color: var(--black);
+  background-color: var(--soft-white);
+  color: var(--soft-black);
 }
 .default:hover {
-  background-color: var(--white);
-}
-.default img {
-  filter: var(--filter-to-black);
+  background-color: var(--soft-white);
 }
 
 .destructive {
   background-color: #ef4444;
-  color: #f1f5f9;
+  color: var(--soft-white);
 }
 .destructive:hover {
   background-color: rgba(239, 68, 68, 0.9);
@@ -40,53 +38,46 @@
 
 .outline {
   border: var(--geist-border);
-  background: none;
+  background-color: none;
   color: var(--text-dimmed);
 }
 .outline:hover {
-  border: 1px solid var(--white);
-  color: var(--white);
+  border: 1px solid var(--soft-white);
+  color: var(--soft-white);
 }
-.outline img {
-  filter: var(--filter-to-e8e8e8);
-}
-.outline:hover img {
-  filter: var(--filter-to-white);
+.outline:hover svg {
+  stroke: var(--soft-white);
 }
 
 .hardline {
-  border: 1px solid var(--white);
-  color: var(--white);
+  border: 1px solid var(--soft-white);
+  background-color: none;
+  color: var(--soft-white);
 }
-.hardline img {
-  filter: var(--filter-to-white);
+.hardline:hover {
+  background-color: var(--soft-black);
 }
 
 .secondary {
-  background-color: var(--gray16);
-  color: var(--white);
-}
-.secondary:hover {
-  background-color: var(--gray16);
+  background-color: var(--soft-black);
+  color: var(--soft-white);
+  border: 1px solid var(--accent-2);
 }
 
 .ghost {
   background: none;
   color: var(--text-dimmed);
 }
-.ghost img {
-  filter: var(--filter-to-e8e8e8);
-}
 .ghost:hover {
   background-color: var(--gray16);
-  color: var(--white);
+  color: var(--soft-white);
 }
-.ghost:hover img {
-  filter: var(--filter-to-white);
+.ghost:hover svg {
+  stroke: var(--soft-white);
 }
 
 .link {
-  color: var(--white);
+  color: var(--soft-white);
   text-decoration-thickness: 4px;
 }
 .link:hover {
@@ -96,16 +87,13 @@
 .disabled {
   background: none;
   cursor: default;
-  border: 1px solid transparent;
   pointer-events: none;
   color: var(--text-dimmed);
-}
-.disabled img {
-  filter: var(--filter-to-e8e8e8);
 }
 
 .defaultSize {
   height: 36px;
+  min-height: 36px;
   padding: 0 12px;
 }
 .sm {
@@ -121,6 +109,7 @@
 .icon {
   height: 36px;
   width: 36px;
+  min-height: 36px;
   min-width: 36px;
 }
 .withImage {
@@ -136,11 +125,11 @@
 .lg.revert {
   padding: 0 12px 0 16px;
 }
+
 .loading {
   pointer-events: none;
 }
-.loading > img {
-  height: 16px;
+.loading > svg {
   animation: spin 1s linear infinite;
 }
 @keyframes spin {

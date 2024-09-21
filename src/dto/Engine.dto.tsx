@@ -1,29 +1,32 @@
+import { Icon } from "@/ui/utils";
+import { icons } from "lucide-react";
+
 export type Engine = 'height' | 'graph' | 'apache' | 'default';
 
 export interface EngineMap {
-  img: string;
+  img: Icon;
   title: string;
   plugin: Engine;
 }
 
 export const enginesBase: EngineMap[] = [
   {
-    img: 'bar/left',
+    img: 'Barcode',
     title: 'Default',
     plugin: 'default'
   },
   {
-    img: 'chart/vertical',
+    img: 'AreaChart',
     title: 'HeightMap',
     plugin: 'height'
   },
   {
-    img: 'share/android',
+    img: 'Waypoints',
     title: 'Graph',
     plugin: 'graph'
   },
   {
-    img: 'specific/code',
+    img: 'CodeXml',
     title: 'Status codes',
     plugin: 'apache'
   }

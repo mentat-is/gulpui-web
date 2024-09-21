@@ -51,7 +51,7 @@ export function LoginPage() {
     <Page options={{ center: true }} className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
-          <img className={s.logo} src='https://cdn.impactium.fun/mentat/gulp-no-text.svg' alt='' />
+          <img className={s.logo} src='/gulp-no-text.svg' alt='' />
           Gulp
           <i>Web Client</i>
         </div>

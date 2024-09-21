@@ -108,10 +108,10 @@ export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
       )}
       <Separator />
       <div className={s.buttons}>
-        <Button className={s.copy} onClick={() => copy(JSON.stringify(note))} img='https://cdn.impactium.fun/ui/action/copy.svg'>Copy note as JSON</Button>
-        <Button loading={loading} img='https://cdn.impactium.fun/ui/trash/full.svg' onClick={deleteNote} variant='destructive' />
+        <Button className={s.copy} onClick={() => copy(JSON.stringify(note))} img='Copy'>Copy note as JSON</Button>
+        <Button loading={loading} img='Trash2' onClick={deleteNote} variant='destructive' />
       </div>
-      {!!note.events.length && !dialog && <Button img='https://cdn.impactium.fun/ui/file/search.svg' onClick={openEvent}>{note.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
+      {!!note.events.length && !dialog && <Button img='FileSearch' onClick={openEvent}>{note.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
     </Fragment>
-  )
+)
 }

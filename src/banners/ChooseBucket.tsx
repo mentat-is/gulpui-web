@@ -58,7 +58,7 @@ export function ChooseBucket() {
       <div className={s.input_group}>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant='hardline' img='https://cdn.impactium.fun/ui/calendar/check.svg'>
+            <Button variant='hardline' img='CalendarCheck2'>
             {date?.from ? (
               date.to ? (
                 <React.Fragment>
@@ -82,7 +82,7 @@ export function ChooseBucket() {
           </PopoverContent>
         </Popover>
       </div>
-      <Button variant={date?.from ? 'default' : 'disabled'} img={ui('action/save')} onClick={save}>Save</Button>
+      <Button variant={date?.from ? 'default' : 'disabled'} img='Save' onClick={save}>Save</Button>
     </Banner>
   ) 
 }
