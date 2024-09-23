@@ -21,16 +21,16 @@
 }
 
 .default {
-  background-color: var(--soft-white);
+  background-color: var(--white);
   color: var(--soft-black);
 }
 .default:hover {
-  background-color: var(--soft-white);
+  background-color: var(--white);
 }
 
 .destructive {
   background-color: #ef4444;
-  color: var(--soft-white);
+  color: var(--white);
 }
 .destructive:hover {
   background-color: rgba(239, 68, 68, 0.9);
@@ -42,17 +42,17 @@
   color: var(--text-dimmed);
 }
 .outline:hover {
-  border: 1px solid var(--soft-white);
-  color: var(--soft-white);
+  border: 1px solid var(--white);
+  color: var(--white);
 }
 .outline:hover svg {
-  stroke: var(--soft-white);
+  stroke: var(--white);
 }
 
 .hardline {
-  border: 1px solid var(--soft-white);
+  border: 1px solid var(--white);
   background-color: none;
-  color: var(--soft-white);
+  color: var(--white);
 }
 .hardline:hover {
   background-color: var(--soft-black);
@@ -60,7 +60,7 @@
 
 .secondary {
   background-color: var(--soft-black);
-  color: var(--soft-white);
+  color: var(--white);
   border: 1px solid var(--accent-2);
 }
 
@@ -70,14 +70,14 @@
 }
 .ghost:hover {
   background-color: var(--gray16);
-  color: var(--soft-white);
+  color: var(--white);
 }
 .ghost:hover svg {
-  stroke: var(--soft-white);
+  stroke: var(--white);
 }
 
 .link {
-  color: var(--soft-white);
+  color: var(--white);
   text-decoration-thickness: 4px;
 }
 .link:hover {

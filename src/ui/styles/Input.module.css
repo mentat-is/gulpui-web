@@ -36,7 +36,7 @@
 
 .input:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 1px var(--soft-white), 0 0 0 4px hsla(0, 0%, 100%, .24);
+  box-shadow: 0 0 0 1px var(--white), 0 0 0 4px hsla(0, 0%, 100%, .24);
 }
 
 .input:disabled {

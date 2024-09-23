@@ -1,8 +1,9 @@
-import * as React from "react"
-import * as SelectPrimitive from "@radix-ui/react-select"
-import { cn } from "./utils"
+'use client'
 import s from './styles/Select.module.css';
-import { Icon } from "./Icon";
+import React from "react"
+import * as SelectPrimitive from "@radix-ui/react-select"
+import { Icon } from './Icon';
+import { cn } from './utils';
 
 const Select = SelectPrimitive.Root
 
@@ -24,7 +25,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <Icon className={s.img} name='ChevronDown' />
+      <Icon name='ChevronDown' className={cn(s.icon, s.down)} />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -38,12 +39,11 @@ const SelectScrollUpButton = React.forwardRef<
     ref={ref}
     className={cn(
       s.scroll,
-      s.up,
       className
     )}
     {...props}
   >
-    <Icon className={s.img} name='ChevronUp' />
+    <Icon name='ChevronUp' className={s.icon} />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -55,13 +55,12 @@ const SelectScrollDownButton = React.forwardRef<
   <SelectPrimitive.ScrollDownButton
     ref={ref}
     className={cn(
-        s.scroll,
-        s.down,
+      s.scroll,
       className
     )}
     {...props}
   >
-    <Icon className={s.img} name='ChevronDown' />
+    <Icon name='ChevronDown' className={s.icon} />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =
@@ -86,7 +85,7 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          s.viewport,
+          s.primitive,
           position === "popper" &&
             s.podder
         )}
@@ -125,7 +124,7 @@ const SelectItem = React.forwardRef<
   >
     <span>
       <SelectPrimitive.ItemIndicator>
-        <Icon className={cn(s.img, s.check)} name='Check' />
+        <Icon name='Check' className={s.icon} />
       </SelectPrimitive.ItemIndicator>
     </span>
 

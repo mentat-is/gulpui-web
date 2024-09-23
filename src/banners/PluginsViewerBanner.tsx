@@ -1,17 +1,49 @@
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@/ui/Button';
+import s from './styles/PluginsViewerBanner.module.css';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/ui/Select';
+import { useState } from 'react';
+import { PluginEntity } from '@/dto/Plugin.dto';
+import { Icon } from '@/ui/Icon';
 
 export function PluginsViewerBanner() {
   const { app, Info } = useApplication();
+  const [plugin, setPlugin] = useState<PluginEntity>(app.target.plugins_map[0]);
 
-  return (
+  console.log(app.target.plugins_map);
+
+  return (  
     <Banner title='Review plugins'>
-      {app.target.plugins_map.map(p => {
-        return (
-          <Button key={p.name}>Reveal {p.name}</Button>
-        )
-      })}
+      <Select>
+        <SelectTrigger>
+          {plugin.name}
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectLabel>Ingestion</SelectLabel>
+            {app.target.plugins_map.filter(p => p.type === 'ingestion').map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+          </SelectGroup>
+          <SelectGroup>
+            <SelectLabel>Sigma</SelectLabel>
+            {app.target.plugins_map.filter(p => p.type === 'sigma').map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+          </SelectGroup>
+          <SelectGroup>
+            <SelectLabel>Extension</SelectLabel>
+            {app.target.plugins_map.filter(p => p.type === 'extension').map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+      <div className={s.content}>
+        <div className={s.param}>
+          <span><Icon name='Heading1' />Name:</span>
+          <p>{plugin.name}</p>
+        </div>
+        <div className={s.param}>
+          <span><Icon name='File' />Filename:</span>
+          <p>{plugin.filename}</p>
+        </div>
+      </div>
     </Banner>
   )
 }
