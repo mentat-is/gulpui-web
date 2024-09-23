@@ -35,11 +35,14 @@ export function Timeline() {
   const handleWheel = (event: WheelEvent) => {
     if (!timeline.current || banner) return;
 
+    
     if (dialog && event.clientX > (window.innerWidth / 2)) {
       return;
     } else {
       event.preventDefault();
     }
+
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return _setScrollX(scrollX => scrollX + event.deltaX);
 
     const width = Info.width;
     const newScale = event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();

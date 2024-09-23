@@ -83,17 +83,11 @@ export function Ruler({ scrollX }: RulerProps) {
     <div className={s.ruler} ref={ruler}>
       <div className={s.wrapper}>
         {visibleDates.map((date, index) => {
-          const isEven = !!(Math.round(date.position / 100) % 2);
+          const isEven = !!(index % 2 === 0);
           return <div key={index} className={s.date} style={{ left: `${date.position - scrollX}px` }} data-even={isEven}>
             <p>{format(date.date, timeUnit)}</p>
           </div>
         })}
-        {/* {borders.map(border => (
-          <>
-            <div className={s.border} style={{left: border.min}}/>
-            <div className={s.border} style={{left: border.max}}/>
-          </>
-        ))} */}
       </div>
     </div>
   );
