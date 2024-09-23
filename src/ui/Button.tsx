@@ -17,7 +17,8 @@ const buttonVariants = cva(s.button, {
       ghost: s.ghost,
       link: s.link,
       disabled: s.disabled,
-      hardline: s.hardline
+      hardline: s.hardline,
+      glass: s.glass
     },
     size: {
       default: s.defaultSize,
@@ -79,6 +80,7 @@ const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): Ic
   link: 'white',
   disabled: 'dimmed',
   hardline: 'white',
+  glass: 'dimmed'
 } as Record<NonNullable<ButtonProps['variant']>, IconProps['variant']>)[variant!] ?? 'black';
 
 export { Button, buttonVariants };

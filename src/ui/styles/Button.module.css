@@ -91,6 +91,18 @@
   color: var(--text-dimmed);
 }
 
+.glass {
+  background: var(--geist-background);
+  border: var(--geist-border);
+  color: var(--text-dimmed);
+}
+.glass:hover {
+  color: var(--white);
+}
+.glass:hover svg {
+  stroke: var(--white);
+}
+
 .defaultSize {
   height: 36px;
   min-height: 36px;
