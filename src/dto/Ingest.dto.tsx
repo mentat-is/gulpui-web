@@ -1,11 +1,23 @@
 export type IngestMapping = IngestCluster[]
 
 export interface IngestCluster {
-  plugin: string;
-  types: IngestNode[]
+  depends_on: unknown[];
+  desc: string;
+  event_type_field: string;
+  filename: string;
+  internal: boolean;
+  name: string;
+  options: IngestOption[];
+  tags: string[];
+  type: IngestType;
+  version: string;
 };
 
-export interface IngestNode {
-  filename: string
-  ids: string[]
-};
+export type IngestType = 'ingestion' | 'sigma' | 'extension'
+
+export interface IngestOption {
+  name: string,
+  type: string,
+  default: string,
+  desc: string
+}

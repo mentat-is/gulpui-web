@@ -74,6 +74,8 @@ export class Info implements InfoProps {
   // 🔥 PLUGINS
   plugins_set = (plugins: λPlugin[]) => this.setInfoByKey(plugins, 'target', 'plugins');
 
+  plugins_reload = () => this.api<ResponseBase<unknown[]>>('/plugin_list').then(console.log);
+
   // 🔥 PLUGINS
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
   files_unselect = (files: Arrayed<λFile>) => this.setInfoByKey(File.unselect(this.app, files), 'target', 'files');

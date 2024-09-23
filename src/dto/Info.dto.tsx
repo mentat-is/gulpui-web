@@ -32,6 +32,7 @@ export interface Info {
     filters: Record<string, GulpQueryFilterArray>;
     notes: λNote[],
     links: λLink[],
+    // custom_plugins: λCustomPlugin
   }
   general: {
     server: string;

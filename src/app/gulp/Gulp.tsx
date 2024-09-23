@@ -38,6 +38,8 @@ export function GulpPage() {
 
     (async () => {
       Info.events_reset();
+
+      await Info.plugins_reload();
   
       await Info.notes_reload();
   
