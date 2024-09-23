@@ -5,7 +5,7 @@ import { RawOperation, λOperation } from "@/dto/Operation.dto";
 import { λContext } from "@/dto/Context.dto";
 import { QueryOperations } from '@/dto/QueryOperations.dto';
 import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
-import { λPlugin } from '@/dto/Plugin.dto';
+import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { GulpQueryFilter, GulpQueryFilterArray } from '@/dto/GulpGueryFilter.class';
@@ -74,9 +74,17 @@ export class Info implements InfoProps {
   // 🔥 PLUGINS
   plugins_set = (plugins: λPlugin[]) => this.setInfoByKey(plugins, 'target', 'plugins');
 
-  plugins_reload = () => this.api<ResponseBase<unknown[]>>('/plugin_list').then(console.log);
+  plugins_reload = () => this.api<PluginEntityResponse>('/plugin_list').then(res => {
+    if (res.isSuccess()) {
+      this.setInfoByKey(Plugin.parse(res.data), 'target', 'plugins_map');
+    } else {
+      toast('Error fetching plugin_list', {
+        description: (res as unknown as ResponseError).data.exception.msg
+      })
+    }
+  });
 
-  // 🔥 PLUGINS
+  // 🔥 FILES
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
   files_unselect = (files: Arrayed<λFile>) => this.setInfoByKey(File.unselect(this.app, files), 'target', 'files');
   files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
@@ -441,6 +449,8 @@ export class Plugin {
   public static check = (use: Information | λPlugin[], selected: Arrayed<λPlugin | λPlugin['uuid']>, check: boolean): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(selected).find(s => p.uuid === Parser.useUUID(s) && check) ? Plugin._select(p) : Plugin._unselect(p));
 
   public static files = (app: Information, plugin: λPlugin): λFile[] => app.target.files.filter(f => f._uuid === plugin.uuid);
+
+  public static parse = (plugins: Arrayed<PluginEntity>) => plugins;
 
   private static _select = (p: λPlugin): λPlugin => ({ ...p, selected: true });
 
