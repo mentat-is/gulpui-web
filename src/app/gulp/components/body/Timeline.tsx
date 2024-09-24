@@ -27,6 +27,8 @@ export function Timeline() {
 
   const deltaScrollX = (λx: number) => _setScrollX((x) => Math.round(x + λx));
 
+  console.log(app.target)
+
   function increaseScrollY(λy: number) {
     const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42
     setScrollY((y) => Math.max(0, Math.min(Math.round(limit), Math.round(y + λy))));
@@ -35,7 +37,6 @@ export function Timeline() {
   const handleWheel = (event: WheelEvent) => {
     if (!timeline.current || banner) return;
 
-    
     if (dialog && event.clientX > (window.innerWidth / 2)) {
       return;
     } else {

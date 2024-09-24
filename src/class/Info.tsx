@@ -315,28 +315,9 @@ export class Info implements InfoProps {
     })
   }).then(response => {
     if (response.isSuccess()) {
-      if ('total' in response.data && response.data.total === 0) {
-        this.setBucket({
-          total: 0,
-          fetched: 0,
-          event_code: {
-            max: 0,
-            min: 0
-          },
-          timestamp: {
-            max: Date.now(),
-            min: Date.now()
-          },
-          selected: {
-            max: Date.now(),
-            min: Date.now()
-          }
-        });
+      if (response.data.total === 0 || !response.data.buckets.length) throw new Error('/query_max_min');
 
-        return;
-      }
-
-      if (!response.data.buckets?.length) return;
+      console.error(response.data);
 
       this.setBucket({
         total: response.data.buckets[0]['*'].doc_count,

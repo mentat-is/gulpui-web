@@ -85,7 +85,7 @@ export function GulpPage() {
 
   useEffect(() => {
     (async () => {
-      if (!app.target.bucket.total && !app.target.bucket.timestamp) {
+      if (!app.target.bucket.timestamp.max) {
         await Info.fetchBucket();
       }
   

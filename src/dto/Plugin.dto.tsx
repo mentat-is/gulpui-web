@@ -24,7 +24,7 @@ export interface PluginEntity {
   event_type_field: string;
   filename: string;
   internal: boolean;
-  name: string;
+  display_name: string;
   options: PluginEntityOption[];
   tags: string[];
   type: PluginEntityType;

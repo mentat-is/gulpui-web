@@ -8,40 +8,38 @@ import { PluginEntity } from '@/dto/Plugin.dto';
 import { Icon } from '@/ui/Icon';
 
 export function PluginsViewerBanner() {
-  const { app, Info } = useApplication();
-  const [plugin, setPlugin] = useState<PluginEntity>(app.target.plugins_map[0]);
-
-  console.log(app.target.plugins_map);
+  const { app } = useApplication();
+  const [plugin, setPlugin] = useState<PluginEntity | undefined>(app.target.plugins_map[0]);
 
   return (  
     <Banner title='Review plugins'>
-      <Select>
+      <Select onValueChange={name => setPlugin(app.target.plugins_map.find(p => p.display_name === name))}>
         <SelectTrigger>
-          {plugin.name}
+          {plugin?.display_name || 'There is no plugins'}
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
             <SelectLabel>Ingestion</SelectLabel>
-            {app.target.plugins_map.filter(p => p.type === 'ingestion').map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+            {app.target.plugins_map.filter(p => p.type === 'ingestion').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
           <SelectGroup>
             <SelectLabel>Sigma</SelectLabel>
-            {app.target.plugins_map.filter(p => p.type === 'sigma').map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+            {app.target.plugins_map.filter(p => p.type === 'sigma').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
           <SelectGroup>
             <SelectLabel>Extension</SelectLabel>
-            {app.target.plugins_map.filter(p => p.type === 'extension').map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+            {app.target.plugins_map.filter(p => p.type === 'extension').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
         </SelectContent>
       </Select>
       <div className={s.content}>
         <div className={s.param}>
           <span><Icon name='Heading1' />Name:</span>
-          <p>{plugin.name}</p>
+          <p>{plugin?.display_name}</p>
         </div>
         <div className={s.param}>
           <span><Icon name='File' />Filename:</span>
-          <p>{plugin.filename}</p>
+          <p>{plugin?.filename}</p>
         </div>
       </div>
     </Banner>
