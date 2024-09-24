@@ -4,7 +4,7 @@ import { λEvent, DetailedChunkEvent } from "./ChunkEvent.dto";
 import { λIndex } from "./Index.dto";
 import { GulpQueryFilterArray } from "./GulpGueryFilter.class";
 import { λContext } from "./Context.dto";
-import { λPlugin } from "./Plugin.dto";
+import { PluginEntity, λPlugin } from "./Plugin.dto";
 import { λFile } from "./File.dto";
 import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
@@ -32,6 +32,7 @@ export interface Info {
     filters: Record<string, GulpQueryFilterArray>;
     notes: λNote[],
     links: λLink[],
+    plugins_map: PluginEntity[]
   }
   general: {
     server: string;
@@ -90,6 +91,7 @@ export const BaseInfo: Info = {
       }
     },
     notes: [],
-    links: []
+    links: [],
+    plugins_map: []
   }
 }

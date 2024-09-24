@@ -9,7 +9,7 @@ import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
 import { Context, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
-import { cn, ui } from "@/ui/utils";
+import { cn } from "@/ui/utils";
 
 export function IngestBanner() {
   const { app, api } = useApplication();
@@ -45,8 +45,6 @@ export function IngestBanner() {
   const sendChunkedFiles = async (file: File, start: number = 0) => {
     const end = Math.min(file.size, start + CHUNK_SIZE);
     const chunk = file.slice(start, end);
-
-    const text = await chunk.text()
   
     const payload = JSON.stringify({});
   
@@ -152,7 +150,7 @@ export function IngestBanner() {
   }
 
   return (
-    <Banner title='Upload files'>
+    <Banner title='Upload files' fixed={!Operation.selected(app)?.contexts?.length}>
       <Input
         type='file'
         id='ingest_input'

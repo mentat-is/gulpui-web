@@ -11,7 +11,7 @@ export function Loading({ size }: LoadingProps) {
   const { lang } = useLanguage();
   return (
     <>
-      <Icon className={s.loading} name='LoaderCircle' />
+      <Icon className={s.loading} variant='black' name='LoaderCircle' />
       {size !== 'icon' && lang._please_wait}
     </>
   )
