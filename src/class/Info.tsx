@@ -154,7 +154,7 @@ export class Info implements InfoProps {
 
   bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
 
-  operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? res.data : [])
+  operations_request = (): Promise<RawOperation[] | void> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? (res.data.length ? res.data : (() => { toast('There is no operations')})()) : []);
 
   operations_update = async (rawOperations: RawOperation[]) => {
     const operations: λOperation[] = [];
@@ -315,6 +315,27 @@ export class Info implements InfoProps {
     })
   }).then(response => {
     if (response.isSuccess()) {
+      if ('total' in response.data && response.data.total === 0) {
+        this.setBucket({
+          total: 0,
+          fetched: 0,
+          event_code: {
+            max: 0,
+            min: 0
+          },
+          timestamp: {
+            max: Date.now(),
+            min: Date.now()
+          },
+          selected: {
+            max: Date.now(),
+            min: Date.now()
+          }
+        });
+
+        return;
+      }
+
       if (!response.data.buckets?.length) return;
 
       this.setBucket({

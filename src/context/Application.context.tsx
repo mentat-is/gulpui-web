@@ -68,7 +68,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     }
   
     const requestOptions: RequestInit = {
-      credentials: 'include',
       method: 'GET',
       ...options,
     };
@@ -85,7 +84,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     
     const lambda = new λ(await res.json() as T)
     if (!res.ok && lambda.isError()) {
-      if (lambda.data.exception.name === 'SessionExpired' && app.general.token) {
+      if ((lambda.data.exception.name === 'SessionExpired' || lambda.data.exception.msg.startsWith('session token')) && app.general.token) {
         removeToken();
         setInfo(BaseInfo);
         toast(lambda.data.exception.name, {

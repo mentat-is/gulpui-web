@@ -12,11 +12,14 @@ export function GulpPage() {
   const { app, spawnBanner, Info, api, setWs } = useApplication();
   const [rendered, setRendered] = useState<number>(0);
 
+
   useEffect(() => {
     (async () => {
-      if (!app.target.contexts.length) {
+      console.log(app.target.operations, app.target.contexts);
+      if (app.target.operations.some(o => !o.contexts) && !app.target.contexts.length) {
         const ops = await Info.operations_request();
-        if (!ops.length) return toast('No contexts found');
+
+        if (!ops?.length) return toast('No contexts found');
 
         await Info.operations_update(ops);
       }
@@ -82,7 +85,7 @@ export function GulpPage() {
 
   useEffect(() => {
     (async () => {
-      if (!app.target.bucket.total) {
+      if (!app.target.bucket.total && !app.target.bucket.timestamp) {
         await Info.fetchBucket();
       }
   
