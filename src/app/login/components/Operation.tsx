@@ -8,6 +8,7 @@ import { Index } from "@/class/Info";
 import { Banner } from "@/ui/Banner";
 import { λOperation } from "@/dto";
 import { Icon } from "@/ui/Icon";
+import { Separator } from "@/ui/Separator";
 
 export function OperationsChooser() {
   const { app, Info, api, spawnBanner } = useApplication();
@@ -53,9 +54,11 @@ export function OperationsChooser() {
             img='Trash2' />
           </div>
       ))}
+      <Separator />
       <Button
         variant='outline'
         img='Plus'
+        style={{ width: '100%' }}
         onClick={() => spawnBanner(<CreateOperationBanner />)}>{lang.operation.create}</Button>
     </div>
   );

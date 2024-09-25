@@ -8,7 +8,7 @@ import s from './styles/SettingsFileBanner.module.css'
 import { FilterFileBanner } from "./FilterFileBanner";
 import { Card } from "@/ui/Card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { ui } from "@/ui/utils";
+import { Gradients, GradientsMap, ui } from "@/ui/utils";
 import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Engine, enginesBase } from '@/dto/Engine.dto';
@@ -27,7 +27,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const save = () => {
     Info.files_replace({
       ...file,
-      color,
+      color: color as Gradients,
       offset,
       engine
     });
@@ -51,7 +51,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       }>
       <ColorPicker color={color} setColor={setColor}>
         <ColorPickerTrigger />
-        <ColorPickerPopover />
+        <ColorPickerPopover gradients={GradientsMap} solids={[]} />
       </ColorPicker>
       <Separator />
       <Card>

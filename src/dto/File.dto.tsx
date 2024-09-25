@@ -1,6 +1,7 @@
 import { UUID } from "crypto";
 import { Engine } from "./Engine.dto";
 import { MinMax } from "./QueryMaxMin.dto";
+import { Gradients } from "@/ui/utils";
 
 export interface λFile {
   name: string,
@@ -11,7 +12,7 @@ export interface λFile {
   plugin: string,
   events: string[],
   offset: number,
-  color: string,
+  color: Gradients,
   engine: Engine,
   uuid: UUID
   _uuid: UUID,

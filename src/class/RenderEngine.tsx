@@ -2,7 +2,7 @@ import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { File } from "./Info";
 import { Info } from "@/dto";
-import { getColorByCode, getDispersionFromColorByDelta, throwableByTimestamp } from "@/ui/utils";
+import { getColorByCode, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 
 const scale = Symbol('scale');
@@ -34,7 +34,7 @@ export type StatusMap = Map<number, Status> & Scale;
 
 export interface Default {
   timestamp: number,
-  amount: number
+  code: number
 }
 
 export interface Scale {
@@ -78,14 +78,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.defaultMap[file.name]
       : this.getDefault(file);
 
-    const max = Math.max(...[...heat.values()].map(v => v.amount));
+    const max = Math.max(...[...heat.values()].map(v => v.code));
 
     [...heat].forEach(hit => {
-      const [_, { amount, timestamp }] = hit;
+      const [_, { code, timestamp }] = hit;
       
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
-      this.ctx.fillStyle = getDispersionFromColorByDelta(file.color, amount, max);
+      this.ctx.fillStyle = useGradient(file.color, code, {
+        min: file.event.min || 0,
+        max: file.event.max || max,
+      });
       this.ctx.fillRect(this.getPixelPosition(timestamp), y, 1, 47);
     });
   }
@@ -93,7 +96,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   async height(file: λFile, y: number) {
     const heat = this.process(this.heightMap, file)
       ? this.heightMap[file.name]
-      : await this.getHeightmap(file);
+      : this.getHeightmap(file);
 
     [...heat].forEach((hit) => {
       const [_, { color, height, timestamp }] = hit;
@@ -108,7 +111,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   graph = (file: λFile, y: number) => this.default(file, y);
 
   async apache(file: λFile, y: number) {
-    const heat = this.process(this.statusMap, file) ? this.statusMap[file.name] : await this.getStatusMap(file);
+    const heat = this.process(this.statusMap, file)
+      ? this.statusMap[file.name]
+      : this.getStatusMap(file);
 
     [...heat].forEach(hit => {
       const [_, { codes, colors, heights, timestamp }] = hit;
@@ -129,13 +134,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const timestamp = event.timestamp + file.offset;
       const λpos = this.getPixelPosition(timestamp);
 
-      const obj: Default = heat.get(λpos) || {
-        amount: 0,
-        timestamp
-      };
-
       heat.set(λpos, {
-        amount: obj.amount + 1,
+        code: parseInt(event.event.code) || 0,
         timestamp
       });
     });

@@ -14,10 +14,11 @@ import { λFile } from '@/dto/File.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
-import { generateUUID, stringToHexColor } from '@/ui/utils';
+import { generateUUID, Gradients, stringToHexColor } from '@/ui/utils';
 import { MappingFileListRequest } from '@/dto/MappingFileList.dto';
 import { IngestMapping } from '@/dto/Ingest.dto';
 import { UUID } from 'crypto';
+import { HALFHEIGHT, HEIGHT } from '@/app/gulp/components/body/TimelineCanvas';
 
 interface InfoProps {
   app: Information,
@@ -88,7 +89,7 @@ export class Info implements InfoProps {
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
   files_unselect = (files: Arrayed<λFile>) => this.setInfoByKey(File.unselect(this.app, files), 'target', 'files');
   files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
-  files_set_color = (file: λFile, color: string) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
+  files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
   files_replace = (file: λFile) => this.setInfoByKey(File.replace(file, this.app), 'target', 'files');
   file_find_by_filename_and_context = (filename: λFile['name'], context: λContext['name']) => File.findByNameAndContextName(this.app, filename, context);
 
@@ -204,7 +205,7 @@ export class Info implements InfoProps {
                     plugin: rawPlugin.name,
                     _uuid: p_uuid,
                     offset: 0,
-                    color: stringToHexColor(rawFile.name),
+                    color: 'thermal',
                     engine: 'default',
                     uuid: f_uuid
                   }
@@ -486,6 +487,10 @@ export class File {
   public static events = (app: Information, file: λFile | UUID): λEvent[] => Event.get(app, Parser.useUUID(file));
   
   public static notes = (app: Information, files: Arrayed<λFile>): λNote[] => Parser.array(files).map(f => Note.findByFile(app, f)).flat();
+
+  public static index = (app: Information, file: λFile | UUID) => File.selected(app).findIndex(f => f.uuid === Parser.useUUID(file));
+
+  public static getHeight = (app: Information, file: λFile | UUID, scrollY: number) => HEIGHT * this.index(app, file) - scrollY + HALFHEIGHT;
 
   private static _select = (p: λFile): λFile => ({ ...p, selected: true });
 

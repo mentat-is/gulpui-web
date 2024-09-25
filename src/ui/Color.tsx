@@ -2,7 +2,7 @@ import { Paintbrush } from 'lucide-react';
 import { createContext, HTMLAttributes, useContext, useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Button } from './Button';
-import { cn } from './utils';
+import { arrayToLinearGradientCSS, cn, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 import { Input } from './Input';
 import s from './styles/Color.module.css';
@@ -10,7 +10,7 @@ import { Children } from '@/dto';
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[],
-  gradients?: string[],
+  gradients?: Record<string, string[]>,
   solids?: string[]
 }
 
@@ -34,7 +34,9 @@ const ColorContext = createContext<ColorPickerContext | undefined>(undefined) ||
 
 export const useColor = (): ColorPickerContext => useContext(ColorContext)!;
 
-type ColorPickerProps = Children | (Children & ColorPickerContext);
+type ColorPickerProps = Children | (Children & ColorPickerContext) & {
+  default?: string;
+};
 
 export function ColorPicker(props: ColorPickerProps) {
   const [ _color, _setColor ] = useState<string>('#ffa647');
@@ -77,27 +79,23 @@ export function ColorPickerTrigger({ className, ...props }: ColorPickerTriggerPr
   );
 }
 
-export function ColorPickerPopover({ className, gradients = [], images = [], solids = baseSolids}: ColorProps) {
-  const { color, setColor } = useColor();
+export type Tab = 'solid' | 'gradient'
 
-  const defaultTab = useMemo(() => {
-    if (color.includes('url')) return 'image';
-    if (color.includes('gradient')) return 'gradient';
-    return 'solid';
-  }, [color]);
+export function ColorPickerPopover({ className, gradients = GradientsMap, images = [], solids = baseSolids}: ColorProps) {
+  const { color, setColor } = useColor();
+  const [tab, setTab] = useState<Tab>(Object.keys(gradients).length ? 'gradient' : 'solid');
 
   return (
     <PopoverContent className={s.popover}>
-      <Tabs defaultValue={defaultTab} className={s.tabs}>
-        {!!gradients.length && !!images.length && <TabsList className={s.list}>
+      <Tabs onValueChange={v => setTab(v as Tab)} defaultValue={tab} value={tab} className={s.tabs}>
+        {!!solids.length && !!Object.keys(gradients) && <TabsList className={s.list}>
           <TabsTrigger className={s.trigger} value="solid">
             Solid
           </TabsTrigger>
-          {!!gradients.length && <TabsTrigger className={s.trigger} value="gradient">Gradient</TabsTrigger>}
-          {!!images.length && <TabsTrigger className={s.trigger} value="image">Image</TabsTrigger>}
+          <TabsTrigger className={s.trigger} value="gradient">Gradient</TabsTrigger>
         </TabsList>}
 
-        <TabsContent value="solid" className={s.content}>
+        {!!solids.length && <TabsContent value="solid" className={s.content}>
           {solids.map((solid) => (
             <div
               key={solid}
@@ -106,19 +104,17 @@ export function ColorPickerPopover({ className, gradients = [], images = [], sol
               onClick={() => setColor(solid)}
             />
           ))}
-        </TabsContent>
+        </TabsContent>}
 
-        {!!gradients.length && <TabsContent value="gradient" className={s.content}>
-          <div className={s.gradientsContainer}>
-            {gradients.map((gradient) => (
-              <div
-                key={gradient}
-                style={{ background: gradient }}
-                className={s.color}
-                onClick={() => setColor(gradient)}
-              />
-            ))}
-          </div>
+        {!!Object.keys(gradients).length && <TabsContent value="gradient" className={s.content}>
+          {Object.keys(gradients).map((key) => 
+            <div
+              key={key}
+              style={{ background: arrayToLinearGradientCSS(gradients[key]) }}
+              className={s.color}
+              onClick={() => setColor(key)}
+            />
+          )}
         </TabsContent>}
 
         {!!images.length && <TabsContent value="image" className={s.content}>

@@ -68,10 +68,6 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   }
 
   const update = async (link: λLink) => {
-    const body = LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...link.events as λEvent[]] })
-
-    console.log(JSON.parse(body));
-
     api<any>('/link_update', {
       method: 'PUT',
       headers: {
@@ -81,7 +77,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
         link_id: link.id,
         ws_id: app.general.ws_id,
       },
-      body 
+      body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...link.events as λEvent[]] })
     }).then(() => {
       Info.links_reload().then(() => {
         destroyBanner();
