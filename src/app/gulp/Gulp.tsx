@@ -15,7 +15,6 @@ export function GulpPage() {
 
   useEffect(() => {
     (async () => {
-      console.log(app.target.operations, app.target.contexts);
       if (app.target.operations.some(o => !o.contexts) && !app.target.contexts.length) {
         const ops = await Info.operations_request();
 
@@ -85,7 +84,7 @@ export function GulpPage() {
 
   useEffect(() => {
     (async () => {
-      if (!app.target.bucket.total && !app.target.bucket.timestamp) {
+      if (!app.target.bucket.timestamp.max) {
         await Info.fetchBucket();
       }
   

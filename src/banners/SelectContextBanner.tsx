@@ -119,7 +119,7 @@ export function SelectContextBanner() {
       )) : (() => spawnBanner(<IngestBanner />) as never)()}
       </div>
       <div className={s.group}>
-        <Button variant='secondary' onClick={selectAll}>Select all</Button>
+        <Button variant='glass' onClick={selectAll}>Select all</Button>
         <Button onClick={destroyBanner}>Save</Button>
       </div>
     </Banner>

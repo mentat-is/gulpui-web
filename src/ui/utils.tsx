@@ -73,17 +73,6 @@ export const colorToRgb = (color: string): [number, number, number] => {
   return match ? [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])] : [0, 0, 0];
 };
 
-export const interpolateColor = (color1: string, color2: string, factor: number): string => {
-  const [r1, g1, b1] = colorToRgb(color1);
-  const [r2, g2, b2] = colorToRgb(color2);
-
-  const r = Math.round(r1 + factor * (r2 - r1));
-  const g = Math.round(g1 + factor * (g2 - g1));
-  const b = Math.round(b1 + factor * (b2 - b1));
-
-  return `rgb(${r}, ${g}, ${b})`;
-};
-
 export const getColorByCode = (code: number, min: number, max: number): string => {
   const ranges = [
     { min: 0, max: 99, color: 'rgb(128, 0, 128)' },
@@ -129,66 +118,58 @@ export const getLimits = (app: Information, Info: Info, timeline: RefObject<HTML
   return { min, max };
 };
 
-export function getDispersionFromColorByDelta(color: string, delta: number, maxDelta: number): string { 
-
-  const hsl = hexToHSL(color);
-  
-
-  const percentage = delta / maxDelta;
-
-
-  const dispersionRange = 0.80;
-
-  let targetSaturation: number;
-  let targetLightness: number;
-
-  if (percentage < 0.5) {
-      targetSaturation = hsl.saturation * (1 - dispersionRange * (0.5 - percentage));
-      targetLightness = hsl.lightness * (1 - dispersionRange * (0.5 - percentage));
-  } else {
-      targetSaturation = hsl.saturation * (1 + dispersionRange * (percentage - 0.5));
-      targetLightness = hsl.lightness * (1 + dispersionRange * (percentage - 0.5));
-  }
-
-  targetSaturation = Math.min(100, Math.max(0, targetSaturation));
-  targetLightness = Math.min(100, Math.max(0, targetLightness));
-
-
-  return `hsl(${hsl.hue}, ${targetSaturation}%, ${targetLightness}%)`;
-}
-
-export function hexToHSL(hex: string) {
-  hex = hex.replace('#', '');
-
-
-  let r = parseInt(hex.substring(0, 2), 16) / 255;
-  let g = parseInt(hex.substring(2, 4), 16) / 255;
-  let b = parseInt(hex.substring(4, 6), 16) / 255;
-
-  let max = Math.max(r, g, b);
-  let min = Math.min(r, g, b);
-  let h: number, s: number, l: number;
-  l = (max + min) / 2;
-
-  if (max === min) {
-      h = s = 0;
-  } else {
-      let d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-
-      switch (max) {
-          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-          case g: h = (b - r) / d + 2; break;
-          case b: h = (r - g) / d + 4; break;
-      }
-      h = Math.round(h! * 60);
-  }
-
-  s = Math.round(s * 100);
-  l = Math.round(l * 100);
-
-  return { hue: h, saturation: s, lightness: l };
-}
-
 export type Icon = keyof typeof icons;
+
 export const Icons = icons;
+
+export const GradientsMap = {
+  thermal: ['01016f', '010198', '0000c1', '4f00ea', '8600d0', 'af00af', 'd00086', 'ea004f', 'ff014f', 'ff4600', 'ff7800', 'ff9f00', 'ffbe00', 'ffd800', 'ffff01', 'ffffaf'],
+  sepal: ['fe2400', 'fcfafd', '7e51fe'],
+  deep: ['54aef3', '142f48']
+}
+
+export type Gradients = keyof typeof GradientsMap;
+
+export const hexToRgb = (hex: string) => {
+  const bigint = parseInt(hex, 16);
+  return [
+    (bigint >> 16) & 255,  // Красный канал
+    (bigint >> 8) & 255,   // Зелёный канал
+    bigint & 255           // Синий канал
+  ];
+};
+
+export const rgbToHex = (rgb: number[]) => `#${rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+
+export const interpolateColor = (color1: string, color2: string, factor: number): string => {
+  const c1 = hexToRgb(color1);
+  const c2 = hexToRgb(color2);
+
+  const result = c1.map((val, i) => Math.round(val + factor * (c2[i] - val)));
+
+  return rgbToHex(result);
+};
+
+/**
+ * Функция для выбора цвета из градиента на основе delta и deltaMax
+ */
+export const useGradient = (target: Gradients, diff: number, delta: MinMax): string => {
+  const gradient = GradientsMap[target];
+  const numColors = gradient.length;
+
+  const percentage = (diff - delta.min) / (delta.max - delta.min);
+
+  if (Number.isNaN(percentage)) return gradient[0];
+  
+  // Находим индекс двух цветов в градиенте для интерполяции
+  const scaledIndex = percentage * (numColors - 1);
+  const lowerIndex = Math.floor(scaledIndex);
+  const upperIndex = Math.min(Math.ceil(scaledIndex), numColors - 1);
+  
+  // Интерполяция между двумя ближайшими цветами
+  const factor = scaledIndex - lowerIndex;
+  return interpolateColor(gradient[lowerIndex], gradient[upperIndex], factor);
+};
+
+export const arrayToLinearGradientCSS = (gradient: string[]): string => `linear-gradient(to right, ${gradient.map(g => '#' + g).join(', ')})`;
+

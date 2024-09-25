@@ -35,7 +35,6 @@ export function Timeline() {
   const handleWheel = (event: WheelEvent) => {
     if (!timeline.current || banner) return;
 
-    
     if (dialog && event.clientX > (window.innerWidth / 2)) {
       return;
     } else {

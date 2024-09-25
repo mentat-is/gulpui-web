@@ -19,7 +19,8 @@ export type QueryMaxMin = ResponseBase<{
         'min_@timestamp': number,
       }
     }
-  ]
+  ],
+  total: number;
 }>
 
 export interface MinMax {

@@ -1,6 +1,6 @@
 import { useApplication } from "@/context/Application.context";
 import { cn, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from "@/dto/useMagnifier";
 import { Magnifier } from "@/ui/Magnifier";
@@ -11,7 +11,8 @@ import { Note } from "@/ui/Note";
 import { Note as NoteClass } from '@/class/Info';
 import { RenderEngine } from "@/class/RenderEngine";
 import { DragDealer } from "@/class/dragDealer.class";
-import { XY, XYBase } from "@/dto/XY.dto";
+import { λFile } from "@/dto/File.dto";
+import { format } from "date-fns";
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -22,6 +23,7 @@ interface TimelineCanvasProps {
 }
 
 export const HEIGHT = 48;
+export const HALFHEIGHT = HEIGHT / 2;
 
 export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
@@ -30,6 +32,41 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
   const { app, spawnDialog, Info, dialog } = useApplication();
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target];
   const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
+
+  const drawFileLine = (ctx: CanvasRenderingContext2D, target: string, file: λFile) => {
+    const y = File.getHeight(app, file, scrollY) - HEIGHT / 2;
+
+    ctx.fillStyle = target + HEIGHT;
+    ctx.fillRect(0, y + HEIGHT - 1, window.innerWidth, 1);
+  }
+
+  const drawFileInfo = (ctx: CanvasRenderingContext2D, file: λFile) => {
+    const y = File.getHeight(app, file, scrollY) + 4;
+
+    ctx.font = `12px Arial`;
+    ctx.fillStyle = '#e8e8e8';
+    ctx.fillText(file.name, 10, y);
+    
+    ctx.font = `10px Arial`;
+    ctx.fillStyle = '#a1a1a1';
+    ctx.fillText(`${file.doc_count.toString()} | ${File.context(app, file).name}`, 10, y - 14);
+    
+    ctx.fillStyle = '#e8e8e8';
+    ctx.fillText(File.events(app, file).length.toString(), 10, y + 14);
+  }
+
+  const drawFileLocals = (ctx: CanvasRenderingContext2D, file: λFile) => {
+    const y = File.getHeight(app, file, scrollY);
+
+    ctx.fillStyle = file.color;
+    ctx.fillRect(getPixelPosition(file.timestamp.max + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
+    ctx.fillRect(getPixelPosition(file.timestamp.min + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
+    
+    ctx.font = `10px Arial`;
+    ctx.fillStyle = '#a1a1a1';
+    ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), getPixelPosition(file.timestamp.min) - 64, y + 4);
+    ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), getPixelPosition(file.timestamp.max) + 12, y + 4);
+  }
 
   const renderCanvas = () => {
     const canvas = canvas_ref.current
@@ -43,28 +80,18 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
 
     const render = new RenderEngine({ ctx, limits, app, getPixelPosition })
     
-    File.selected(app).forEach((file, index) => {
-      const y = index * HEIGHT - scrollY;
+    File.selected(app).forEach(async (file) => {
+      const y = File.getHeight(app, file, scrollY);
 
-      if (y + 47 < 0 || y > canvas.height + scrollY) return;
-
-      ctx.fillStyle = stringToHexColor(File.context(app, file).name) + HEIGHT;
-      ctx.fillRect(0, y + HEIGHT - 1, window.innerWidth, 1);
+      if (y + HEIGHT < 0 || y > canvas.height + scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
-        render[file.engine](file, y);
+        await render[file.engine](file, y - HALFHEIGHT);
       };
-
-      ctx.font = `12px Arial`;
-      ctx.fillStyle = '#e8e8e8';
-      ctx.fillText(file.name, 10, y + 26);
       
-      ctx.font = `10px Arial`;
-      ctx.fillStyle = '#a1a1a1';
-      ctx.fillText(`${file.doc_count.toString()} | ${File.context(app, file).name}`, 10, y + 14);
-      
-      ctx.fillStyle = '#e8e8e8';
-      ctx.fillText(File.events(app, file).length.toString(), 10, y + 38);
+      drawFileLine(ctx, stringToHexColor(File.context(app, file).name), file)
+      drawFileInfo(ctx, file);
+      drawFileLocals(ctx, file);
     });
 
     if (app.timeline.target) {
@@ -120,18 +147,14 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
   };
 
   const handleClick = ({ clientX, clientY }: MouseEvent) => {
-    // setStartPos(null);
-    // if (startPos && (Math.round(startPos.x) !== Math.round(clientX) || Math.round(startPos.y) !== Math.round(clientY))) return;
-
     const { top, left } = canvas_ref.current!.getBoundingClientRect();
     const clickX = clientX - left;
     const clickY = clientY - top + scrollY;
 
     const file = File.selected(app)[Math.floor(clickY / 48)];
-
-    if (!file) return;
-
     const limits = getLimits(app, Info, timeline, scrollX);
+
+    if (!file || throwableByTimestamp(file.timestamp, limits, file.offset)) return;
 
     File.events(app, file).forEach(event => {
       if (throwableByTimestamp(event.timestamp + file.offset, limits)) return;
@@ -144,23 +167,16 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
       }
     });
   };
-  
-  const [startPos, setStartPos] = useState<XY | null>(XYBase(0));
 
   useEffect(() => {
     renderCanvas();
 
-    canvas_ref.current?.addEventListener("mousedown", ({ clientX: x, clientY: y }) => setStartPos({ x, y }));
-    canvas_ref.current?.addEventListener("mouseup", () => setStartPos(null));
-    canvas_ref.current?.addEventListener("click", handleClick);
+    canvas_ref.current?.addEventListener("mousedown", handleClick);
     window.addEventListener('resize', renderCanvas);
     timeline.current?.addEventListener('resize', renderCanvas);
 
     return () => {
-      canvas_ref.current?.removeEventListener("mousedown", ({ clientX: x, clientY: y }) => setStartPos({ x, y }));
-      canvas_ref.current?.removeEventListener("mouseup", () => setStartPos(null));
-    canvas_ref.current?.removeEventListener("click", handleClick);
-
+      canvas_ref.current?.removeEventListener("mousedown", handleClick);
       window.removeEventListener('resize', renderCanvas);
       timeline.current?.removeEventListener('resize', renderCanvas);
     };
@@ -201,7 +217,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
         <div className={s.notes}>
           {app.target.notes.map(note => {
             const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
-            const top = File.selected(app).findIndex(f => f.name === note.file) * HEIGHT - scrollY;
+            const top = File.selected(app).findIndex(f => f.name === note.file) * HEIGHT - scrollY - 24;
 
             return <Note note={note} left={left} top={top} />
           })}

@@ -29,6 +29,7 @@
   padding: var(--p3);
   background-color: var(--soft-black);
   border-radius: var(--border-m);
+  border: 1px solid var(--accent-2);
 }
 .chooser p {
   font-size: 16px;
@@ -112,4 +113,5 @@
 }
 .index_button {
   justify-content: flex-start;
+  width: 100%;
 }
