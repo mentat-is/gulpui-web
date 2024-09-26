@@ -221,10 +221,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </div>
           <Tabs defaultValue={root ? 'smart' : 'raw'} className={s.tabs}>
             <TabsList className={s.tabs_list}>
-              <p className={s.hint}>Click on the block to copy the value</p>
               <TabsTrigger value='smart'>Smart View</TabsTrigger>
               <TabsTrigger value='raw'>Raw XML</TabsTrigger>
             </TabsList>
+            <p className={s.hint}>Click on the block to copy the value</p>
             <TabsContent className={s.tabs_content} value='smart'>
               <SmartView />
             </TabsContent>

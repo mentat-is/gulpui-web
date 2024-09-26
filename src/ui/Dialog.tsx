@@ -18,8 +18,7 @@ export function Dialog({ className, callback, icon,description, title, loading, 
 
   return (
     <ResizablePanelGroup className={s.resize} direction="horizontal">
-      <ResizablePanel defaultSize={50}>
-      </ResizablePanel>
+      <ResizablePanel className={s.not} defaultSize={50} />
       <ResizableHandle />
       <ResizablePanel maxSize={50} minSize={20} defaultSize={50}>
         <div className={cn(s.dialog, className)} {...props}>

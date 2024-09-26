@@ -35,11 +35,7 @@ export function Timeline() {
   const handleWheel = (event: WheelEvent) => {
     if (!timeline.current || banner) return;
 
-    if (dialog && event.clientX > (window.innerWidth / 2)) {
-      return;
-    } else {
-      event.preventDefault();
-    }
+    event.preventDefault();
 
     if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return _setScrollX(scrollX => scrollX + event.deltaX);
 
@@ -134,7 +130,7 @@ export function Timeline() {
   return (
     <div
       id="timeline"
-      className={cn(s.timeline, dialog && s.short)}
+      className={cn(s.timeline)}
       onMouseLeave={handleMouseUpOrLeave}
       onMouseUp={handleMouseUpOrLeave}
       onMouseDown={handleMouseDown}

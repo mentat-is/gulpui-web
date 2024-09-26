@@ -1,5 +1,6 @@
 .resize {
   position: absolute;
+  pointer-events: none;
 }
 .dialog {
   padding: var(--card-padding);
@@ -11,6 +12,7 @@
   align-items: flex-start;
   justify-content: flex-start;
   margin-top: 64px;
+  pointer-events: all;
 }
 .wrapper {
   display: flex;
@@ -92,4 +94,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
+}
+.not {
+  pointer-events: none;
 }

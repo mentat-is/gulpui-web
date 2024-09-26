@@ -41,7 +41,6 @@
   display: flex;
   gap: 8px;
   flex-direction: column;
-  min-width: 256px;
 }
 .general div {
   display: flex;

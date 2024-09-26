@@ -7,10 +7,6 @@
   margin-top: 24px;
   transition: transform .5s var(--transition);
 }
-.short {
-  width: 50vw !important;
-  overflow: hidden !important;
-}
 .sidebar.active {
   transform: translateX(0%);
 }
@@ -108,7 +104,6 @@
   position: relative;
   width: 100%;
   height: calc(100vh - 64px);
-  overflow: hidden;
 }
 .content {
   display: flex;
