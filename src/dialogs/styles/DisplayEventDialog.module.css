@@ -110,10 +110,10 @@
   padding: 12px;
 }
 .hint {
-  position: absolute;
   text-wrap: nowrap;
-  left: -12px;
-  transform: translateX(-100%);
+  padding: 8px 12px;
+  width: 100%;
+  text-align: end;
   font-size: var(--text-small);
   color: var(--text-dimmed);
   font-family: var(--font-mono);
@@ -124,6 +124,7 @@
 .buttons_group {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   gap: 12px;
   border-radius: 8px;
   justify-content: flex-end;

@@ -4,7 +4,7 @@ import { useApplication } from '@/context/Application.context';
 import { Note } from '@/class/Info';
 import { Card } from '@/ui/Card';
 import { NoteContent } from '@/ui/Note';
-import { useState } from 'react';
+import { SetStateAction, useState } from 'react';
 import { λNote } from '@/dto/Note.dto';
 
 interface NotesProps {
@@ -14,6 +14,7 @@ interface NotesProps {
 export function Notes({ notes }: NotesProps) {
   const { Info } = useApplication();
   const [loading, setLoading] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
 
   const deleteNote = async (note: λNote) => {
     setLoading(true);
@@ -25,7 +26,7 @@ export function Notes({ notes }: NotesProps) {
     <div className={s.notes}>
       {notes.map(note => (
         <Card key={note.id}>
-          <NoteContent loading={loading} deleteNote={() => deleteNote(note)} note={note} />
+          <NoteContent loading={loading} deleteNote={() => deleteNote(note)} note={note} setOpen={setOpen} />
         </Card>
       ))}
     </div>

@@ -41,28 +41,40 @@
   display: flex;
   gap: 8px;
   flex-direction: column;
-  min-width: 256px;
 }
-.general p {
+.general div {
   display: flex;
+  position: relative;
   flex-direction: row;
   gap: 12px;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   font-family: var(--font-mono);
   font-size: 14px;
   font-weight: 200;
 }
-.general img {
+.general svg {
   height: 24px;
   width: 24px;
+  min-height: 24px;
+  min-width: 24px;
   padding: 4px;
   background: var(--soft-black);
   border-radius: 4px;
   box-shadow: var(--shadow-menu);
 }
 .general span {
-  flex: 1;
+  flex: 1 1;
+  height: 24px;
+  line-height: 24px;
+}
+.general p {
+  white-space: normal;
+  word-break: break-all;
+  max-width: 80%;
+  max-height: 256px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .content {
   display: flex;
@@ -78,4 +90,12 @@
 }
 .copy {
   flex: 1;
+}
+.open_event {
+  width: 100%;
+}
+.__copy {
+  position: absolute;
+  top: 32px;
+  cursor: pointer !important;
 }

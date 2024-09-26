@@ -152,6 +152,7 @@ time, mark, audio, video {
   text-decoration: none;
 	font-size: 100%;
 	vertical-align: baseline;
+  font-style: normal;
 }
 /* HTML5 display-role reset for older browsers */
 article, aside, details, figcaption, figure, 

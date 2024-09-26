@@ -63,7 +63,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     ctx.fillRect(getPixelPosition(file.timestamp.min + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
     
     ctx.font = `10px Arial`;
-    ctx.fillStyle = '#a1a1a1';
+    ctx.fillStyle = '#a1a1a1' + HEIGHT;
     ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), getPixelPosition(file.timestamp.min) - 64, y + 4);
     ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), getPixelPosition(file.timestamp.max) + 12, y + 4);
   }

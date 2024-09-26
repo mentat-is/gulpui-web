@@ -21,7 +21,7 @@ export interface IconProps extends React.ImgHTMLAttributes<SVGSVGElement>, Varia
   size?: number;
 }
 
-export function Icon({ name = 'BoxSelect', color, variant, className, size = 20, ...props }: IconProps) {
+export function Icon({ name = 'BoxSelect', color, variant, size = 20, ...props }: IconProps) {
   const Icon = icons[name!];
 
   return <Icon {...props} size={size} stroke={color || iconVariants({ variant })} />
