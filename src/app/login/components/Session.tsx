@@ -4,9 +4,8 @@ import { Session, Sessions } from "@/dto/Session.dto";
 import { Button } from "@/ui/Button";
 import { Card } from "@/ui/Card";
 import s from '../Login.module.css'
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Cookies from "universal-cookie";
-import { toast } from "sonner";
 
 interface SessionsChooserProps {
   sessions: Sessions;

@@ -25,7 +25,6 @@ export type HeightMap = Map<number, Heat> & Scale;
 
 export interface Status {
   codes: number[],
-  colors: string[],
   timestamp: number,
   heights: number[]
 }
@@ -116,12 +115,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       : this.getStatusMap(file);
 
     [...heat].forEach(hit => {
-      const [_, { codes, colors, heights, timestamp }] = hit;
+      const [_, { codes, heights, timestamp }] = hit;
       
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
       codes.map((code, i) => {
-        this.ctx.fillStyle = colors[i];
+        this.ctx.fillStyle = useGradient(file.color, code, {
+          min: file.event.min || 0,
+          max: file.event.max || 599,
+        });
         this.ctx.fillRect(this.getPixelPosition(timestamp), y + 47 - heights[i], 1, 1);
       })
     });
@@ -195,13 +197,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const obj: Status = heat.get(λpos) || {
         codes: [],
-        colors: [],
         heights: [],
         timestamp
       };
 
       heat.set(λpos, {
-        colors: [...obj.colors, getColorByCode(code, file.event.min, file.event.max)],
         codes: [...obj.codes, code],
         heights: [...obj.heights, Math.round(((code - file.event.min) / (file.event.max - file.event.min)) * 46 + 1)],
         timestamp

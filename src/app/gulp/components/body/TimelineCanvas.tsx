@@ -108,16 +108,16 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
       const dots: ({ x: number; y: number; color: string; })[] = l.events.map(e => {
         const i = File.selected(app).findIndex(f => f.uuid === e._uuid);
 
-        const file = File.selected(app)[i]
+        const file = File.selected(app)[i];
 
         return {
-          x: getPixelPosition(e.timestamp + file.offset || 0),
+          x: getPixelPosition(e.timestamp + (file?.offset || 0)),
           y: i * 48 + 20 - scrollY,
           color: l.data.color || stringToHexColor(l.events.map(e => e._id).toString())
         }
-      });
+      }).filter(d => !!d  );
 
-      if (dots.length === 1 ) return;
+      if (dots.length === 1) return;
 
       if (dots.length > 1) {
         ctx.beginPath();
