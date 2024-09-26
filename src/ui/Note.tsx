@@ -6,7 +6,7 @@ import { Badge } from './Badge';
 import { Separator } from './Separator';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
-import { Fragment, useState } from 'react';
+import { Fragment, useRef, useState } from 'react';
 import { Event, Note as NoteClass } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
@@ -22,6 +22,7 @@ interface NoteProps {
 export function Note({ note, left, top }: NoteProps) {
   const { Info } = useApplication();
   const [loading, setLoading] = useState<boolean>(false);
+  const [open, setOpen] = useState<boolean>(false);
 
   const iconMap: Array<λIcon> = [
     'Bookmark',
@@ -36,13 +37,13 @@ export function Note({ note, left, top }: NoteProps) {
   }
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger className={cn(s.note)} style={{ left, top }}>
         <Icon name={iconMap[note.level]} />
         <hr style={{ background: note.data.color }} />
       </PopoverTrigger>
       <PopoverContent className={s.content}>
-        <NoteContent loading={loading} note={note} deleteNote={deleteNote} />
+        <NoteContent loading={loading} note={note} setOpen={setOpen} deleteNote={deleteNote} />
       </PopoverContent>
     </Popover>
   )
@@ -51,10 +52,12 @@ export function Note({ note, left, top }: NoteProps) {
 interface NoteContentProps extends Pick<NoteProps, 'note'> {
   loading: boolean;
   deleteNote: () => void;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
+export function NoteContent({ note, setOpen, loading, deleteNote }: NoteContentProps) {
   const { app, spawnDialog, dialog } = useApplication();
+  const [fulfill, setFulfill] = useState<boolean>(false);
 
   const openEvent = () => {
     const events = Event.findByIdAndUUID(app, note.events[0]._id, note._uuid);
@@ -63,40 +66,44 @@ export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
       ? <DisplayEventDialog event={events[0]} />
       : <DisplayGroupDialog events={events} />;
 
-    spawnDialog(dialog)
+    spawnDialog(dialog);
+    setOpen(false);
   };
 
   return (
     <Fragment>
       <div className={s.general}>
-        <p>
-          <img src='Heading1' />
+        <div>
+          <Icon name='Heading1' />
           <span>Title: </span>
-          {note.name}
-        </p>
+          <p>{note.name}</p>
+          {note.name?.length > 128 && <Icon onClick={() => copy(note.name!)} className={s.__copy} name='Copy' />}
+        </div>
         <Separator />
-        <p>
-          <img src='Heading2' />
+        <div>
+          <Icon name='Heading2' />
           <span>Text: </span>
-          {note.text}
-        </p>
+          <p>{note.text}</p>
+          {note.text?.length > 128 && <Icon onClick={() => copy(note.text!)} className={s.__copy} name='Copy' />}
+        </div>
         <Separator />
-        <p>
-          <img src='User' />
+        {/* <div>
+          <Icon name='User' />
           <span>Owner ID: </span>
-          {note.owner_user_id}
-        </p>
-        <Separator />
-        <p>
-          <img src={note.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
+          <p>{note.owner_user_id}</p>
+        </div>
+        <Separator /> */}
+        <div>
+          <Icon name={note.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
           <span>{note.private ? 'Private' : 'Not private'}</span>
-        </p>
+        </div>
         {note.description && <Fragment>
           <Separator />
-          <p>
+          <div>
             <span>Description: </span>
-            {note.description}
-          </p>
+            <p>{note.description}</p>
+            {note.description?.length > 128 && <Icon onClick={() => copy(note.description!)} className={s.__copy} name='Copy' />}
+          </div>
         </Fragment>}
       </div>
       {!!note.tags.filter(t => !!t).length && (
@@ -112,7 +119,7 @@ export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
         <Button className={s.copy} onClick={() => copy(JSON.stringify(note))} img='Copy'>Copy note as JSON</Button>
         <Button loading={loading} img='Trash2' onClick={deleteNote} variant='destructive' />
       </div>
-      {!!note.events.length && !dialog && <Button img='FileSearch' onClick={openEvent}>{note.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
+      {!!note.events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{note.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
     </Fragment>
-)
+  )
 }

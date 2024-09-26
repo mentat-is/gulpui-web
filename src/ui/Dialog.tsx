@@ -3,7 +3,7 @@ import s from './styles/Dialog.module.css';
 import { cn } from './utils';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
-import { Loading } from './Loading';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizable';
 
 interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -17,18 +17,25 @@ export function Dialog({ className, callback, icon,description, title, loading, 
   const { destroyDialog } = useApplication();
 
   return (
-    <div className={cn(s.dialog, className)} {...props}>
-      <div className={s.wrapper}>
-        {typeof icon === 'string' ? <img src={icon} alt='' /> : icon}
-        <div className={s.header}>
-          <h2>{title}</h2>
-          {description && <p>{description}</p>}
-          <Button variant='ghost' className={s.close} onClick={callback || destroyDialog} img='X' size='icon' />
+    <ResizablePanelGroup className={s.resize} direction="horizontal">
+      <ResizablePanel defaultSize={50}>
+      </ResizablePanel>
+      <ResizableHandle />
+      <ResizablePanel maxSize={50} minSize={20} defaultSize={50}>
+        <div className={cn(s.dialog, className)} {...props}>
+          <div className={s.wrapper}>
+            {typeof icon === 'string' ? <img src={icon} alt='' /> : icon}
+            <div className={s.header}>
+              <h2>{title}</h2>
+              {description && <p>{description}</p>}
+              <Button variant='ghost' className={s.close} onClick={callback || destroyDialog} img='X' size='icon' />
+            </div>
+          </div>
+          <div className={cn(s.content, loading && s.loading)}>
+            {loading ? <Button variant='disabled' loading size='icon' /> : children}
+          </div>
         </div>
-      </div>
-      <div className={cn(s.content, loading && s.loading)}>
-        {loading ? <Button variant='disabled' loading size='icon' /> : children}
-      </div>
-    </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   )
 }

@@ -1,18 +1,16 @@
+.resize {
+  position: absolute;
+}
 .dialog {
-  position: fixed;
-  top: 64px;
   padding: var(--card-padding);
   display: flex;
   background: var(--soft-black);
-  right: 0;
-  width: 50vw;
-  height: calc(100vh - 64px);
-  border-left: 1px solid var(--accent-3);
-  z-index: 50;
   flex-direction: column;
   gap: var(--card-gap);
+  height: calc(100% - 64px);
   align-items: flex-start;
   justify-content: flex-start;
+  margin-top: 64px;
 }
 .wrapper {
   display: flex;
