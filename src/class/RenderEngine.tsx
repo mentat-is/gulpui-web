@@ -16,7 +16,6 @@ interface RenderEngineConstructor {
 
 export interface Heat {
   amount: number,
-  color: string,
   height: number,
   timestamp: number
 }
@@ -97,12 +96,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.heightMap[file.name]
       : this.getHeightmap(file);
 
+    const max = Math.max(...[...heat.values()].map(v => v.height));
+
     [...heat].forEach((hit) => {
-      const [_, { color, height, timestamp }] = hit;
+      const [_, { height, timestamp }] = hit;
       
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
-      this.ctx.fillStyle = color;
+      this.ctx.fillStyle = useGradient(file.color, height, {
+        min: 0,
+        max,
+      });
       this.ctx.fillRect(this.getPixelPosition(timestamp), y + 47, 1, -height);
     });
   };
@@ -160,7 +164,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const obj: Heat = heat.get(λpos) || {
         amount: 0,
-        color: '#ffffff',
         height: 1,
         timestamp
       };
@@ -170,7 +173,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const max = Math.max(...[...heat.values(), { ...obj, amount }].map(v => v.amount));
 
       heat.set(λpos, {
-        color: `rgb(${Math.min(255, Math.floor(255 * (amount / max)))}, ${Math.min(255, Math.floor(255 * (1 - amount / max)))}, 0)`,
         amount,
         height: 1 + (47 - 1) * (amount / max),
         timestamp
