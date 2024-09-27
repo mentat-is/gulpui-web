@@ -33,113 +33,34 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target];
   const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
-  const drawFileLine = (ctx: CanvasRenderingContext2D, target: string, file: λFile) => {
-    const y = File.getHeight(app, file, scrollY) - HEIGHT / 2;
-
-    ctx.fillStyle = target + HEIGHT;
-    ctx.fillRect(0, y + HEIGHT - 1, window.innerWidth, 1);
-  }
-
-  const drawFileInfo = (ctx: CanvasRenderingContext2D, file: λFile) => {
-    const y = File.getHeight(app, file, scrollY) + 4;
-
-    ctx.font = `12px Arial`;
-    ctx.fillStyle = '#e8e8e8';
-    ctx.fillText(file.name, 10, y);
-    
-    ctx.font = `10px Arial`;
-    ctx.fillStyle = '#a1a1a1';
-    ctx.fillText(`${file.doc_count.toString()} | ${File.context(app, file).name}`, 10, y - 14);
-    
-    ctx.fillStyle = '#e8e8e8';
-    ctx.fillText(File.events(app, file).length.toString(), 10, y + 14);
-  }
-
-  const drawFileLocals = (ctx: CanvasRenderingContext2D, file: λFile) => {
-    const y = File.getHeight(app, file, scrollY);
-
-    ctx.fillStyle = file.color;
-    ctx.fillRect(getPixelPosition(file.timestamp.max + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
-    ctx.fillRect(getPixelPosition(file.timestamp.min + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
-    
-    ctx.font = `10px Arial`;
-    ctx.fillStyle = '#a1a1a1' + HEIGHT;
-    ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), getPixelPosition(file.timestamp.min) - 64, y + 4);
-    ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), getPixelPosition(file.timestamp.max) + 12, y + 4);
-  }
-
   const renderCanvas = () => {
-    const canvas = canvas_ref.current
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    ctx.clearRect(0, 0, window.innerWidth, canvas.height);
+    if (!canvas_ref.current) return;
+    const ctx = canvas_ref.current.getContext("2d")!;
+    ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
     
     ctx.fillStyle = '#ff0000';
 
     const limits = getLimits(app, Info, timeline, scrollX);
 
-    const render = new RenderEngine({ ctx, limits, app, getPixelPosition })
+    const render = new RenderEngine({ ctx, limits, app, getPixelPosition, scrollY })
     
-    File.selected(app).forEach(async (file) => {
+    File.selected(app).forEach(file => {
       const y = File.getHeight(app, file, scrollY);
 
-      if (y + HEIGHT < 0 || y > canvas.height + scrollY) return;
+      if (y + HEIGHT < 0 || y > canvas_ref.current!.height + scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
-        await render[file.engine](file, y - HALFHEIGHT);
+        render[file.engine](file, y - HALFHEIGHT);
       };
-      
-      drawFileLine(ctx, stringToHexColor(File.context(app, file).name), file)
-      drawFileInfo(ctx, file);
-      drawFileLocals(ctx, file);
+
+      render.lines(file);
+      render.locals(file);
+      render.info(file);
     });
 
-    if (app.timeline.target) {
-      const file = File.find(app, app.timeline.target._uuid);
+    render.target();
 
-      if (!file) return;
-
-      ctx.fillStyle = 'white'
-      ctx.fillRect(0, File.selected(app).findIndex(f => f.uuid === file.uuid) * HEIGHT + 23 - scrollY, timeline.current!.clientWidth, 1)
-      ctx.fillRect(getPixelPosition(app.timeline.target.timestamp + file.offset), 0, 1, timeline.current!.clientHeight)
-    }
-
-    app.target.links.forEach(l => {
-      const dots: ({ x: number; y: number; color: string; })[] = l.events.map(e => {
-        const i = File.selected(app).findIndex(f => f.uuid === e._uuid);
-
-        const file = File.selected(app)[i];
-
-        return {
-          x: getPixelPosition(e.timestamp + (file?.offset || 0)),
-          y: i * 48 + 20 - scrollY,
-          color: l.data.color || stringToHexColor(l.events.map(e => e._id).toString())
-        }
-      }).filter(d => !!d  );
-
-      if (dots.length === 1) return;
-
-      if (dots.length > 1) {
-        ctx.beginPath();
-        ctx.strokeStyle = dots[0].color;
-        ctx.lineWidth = 1;
-
-        ctx.moveTo(dots[0].x, dots[0].y + 4);
-
-        dots.slice(1).forEach(({ x, y }) => {
-          ctx.lineTo(x + 4, y + 4);
-        });
-    
-        ctx.stroke();
-      }
-      
-      dots.forEach(({ color, x, y }) => {
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.roundRect(x, y, 8, 8, [999]);
-        ctx.fill();
-      })
-    });
+    render.links()
 
     ctx.fillStyle = '#ff000080'
     ctx.fillRect(getPixelPosition(app.target.bucket.selected.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
