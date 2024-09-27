@@ -5,7 +5,7 @@ import { cn } from "./utils";
 import s from "./styles/Button.module.css";
 import { Loading } from "./Loading";
 import { Icon, IconProps } from "./Icon";
-import { Icon as λIcon } from './utils';
+import { λIcon } from './utils';
 
 const buttonVariants = cva(s.button, {
   variants: {

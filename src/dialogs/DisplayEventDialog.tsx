@@ -8,7 +8,7 @@ import s from './styles/DisplayEventDialog.module.css';
 import { XMLTree } from "@/ui/XMLTree";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
 import { convertXML } from 'simple-xml-to-json';
-import { cn, copy, Icon as λIcon } from "@/ui/utils";
+import { cn, copy, λIcon } from "@/ui/utils";
 import { Button } from "@/ui/Button";
 import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
 import { File, Note, Plugin } from '@/class/Info';

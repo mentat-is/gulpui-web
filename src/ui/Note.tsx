@@ -6,12 +6,12 @@ import { Badge } from './Badge';
 import { Separator } from './Separator';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
-import { Fragment, useRef, useState } from 'react';
-import { Event, Note as NoteClass } from '@/class/Info';
+import { Fragment, useState } from 'react';
+import { Event } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
-import { Icon as λIcon } from '@/ui/utils';
+import { λIcon } from '@/ui/utils';
 
 interface NoteProps {
   note: λNote;

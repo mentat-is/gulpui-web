@@ -158,10 +158,10 @@ export function Timeline() {
               </Tooltip>
             </TooltipProvider>
             <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img={ui('action/settings')}>Settings</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img={ui('action/filter')}>Filters</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img={ui('specific/path')}>Links</ContextMenuItem>
-            <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img={ui('action/hide')}>Hide</ContextMenuItem>
+            <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img='Settings'>Settings</ContextMenuItem>
+            <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img='Filter'>Filters</ContextMenuItem>
+            <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img='Waypoints'>Links</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img='EyeOff'>Hide</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       </div>

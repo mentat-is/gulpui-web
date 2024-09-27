@@ -1,10 +1,9 @@
-import { Icon } from "@/ui/utils";
-import { icons } from "lucide-react";
+import { λIcon } from "@/ui/utils";
 
 export type Engine = 'height' | 'graph' | 'apache' | 'default';
 
 export interface EngineMap {
-  img: Icon;
+  img: λIcon;
   title: string;
   plugin: Engine;
 }

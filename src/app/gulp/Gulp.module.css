@@ -1,63 +1,3 @@
-.sidebar {
-  z-index: 2;
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(calc(-100% - 32px));
-  margin-top: 24px;
-  transition: transform .5s var(--transition);
-}
-.sidebar.active {
-  transform: translateX(0%);
-}
-.sidebar .unit {
-  display: flex;
-  gap: 4px;
-  flex-direction: row;
-  max-height: 48px;
-  min-height: 48px;
-  position: relative;
-  width: min-content;
-  align-items: center;
-  justify-content: flex-start;
-}
-.sidebar .unit p::before,
-.sidebar .unit p::after {
-  position: absolute;
-  right: 0;
-  font-weight: 400;
-  font-family: var(--font-nunito);
-  font-size: 10px;
-}
-.sidebar .unit p::before {
-  content: attr(data-total);
-  color: var(--text-dimmed);
-  transform: translate(calc(100% + 8px), 8px);
-}
-.sidebar .unit p::after {
-  content: attr(data-render);
-  color: var(--white);
-  transform: translate(calc(100% + 8px), -8px);
-}
-.sidebar .unit p {
-  width: min-content;
-  position: relative;
-  border: 1px solid var(--accent-3);
-  border-left: none;
-  background: var(--black);
-  font-weight: 600;
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0 8px;
-  gap: 8px;
-  font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-}
 .datelimit {
   background: var(--gray24);
   display: flex;
@@ -104,6 +44,7 @@
   position: relative;
   width: 100%;
   height: calc(100vh - 64px);
+  cursor: crosshair;
 }
 .content {
   display: flex;
