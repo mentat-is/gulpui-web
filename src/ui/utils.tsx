@@ -98,7 +98,16 @@ export const getColorByCode = (code: number, min: number, max: number): string =
   return ranges[ranges.length - 1].color;
 };
 
-export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0): boolean => typeof timestamp === 'number' ? timestamp + offset < limits.min || timestamp + offset > limits.max : timestamp.max + offset < limits.min || timestamp.min + offset > limits.max;
+export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0, app?: Information): boolean => {
+  const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {
+    min: timestamp.min + offset,
+    max: timestamp.max + offset
+  };
+
+  return typeof time === 'number' 
+    ? time < limits.min || time > limits.max || time < (app?.target.bucket.selected.min || 0) || time > (app?.target.bucket.selected.max || Infinity)
+    : time.max < limits.min || time.min > limits.max || time.max < (app?.target.bucket.selected.min || 0) || time.min > (app?.target.bucket.selected.max || Infinity);
+}
 
 export function generateUUID(): UUID {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -162,7 +171,7 @@ export const useGradient = (target: Gradients, diff: number, delta: MinMax): str
 
   const percentage = (diff - delta.min) / (delta.max - delta.min);
 
-  if (Number.isNaN(percentage)) return gradient[0];
+  if (Number.isNaN(percentage)) return `#${gradient[0]}`;
   
   // Находим индекс двух цветов в градиенте для интерполяции
   const scaledIndex = percentage * (numColors - 1);

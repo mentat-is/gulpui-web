@@ -165,7 +165,6 @@ export function Timeline() {
           </ContextMenuContent>
         </ContextMenu>
       </div>
-      <Controls />
     </div>
   );
 }

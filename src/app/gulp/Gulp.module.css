@@ -1,21 +1,16 @@
 .datelimit {
-  background: var(--gray24);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--p2);
   border-radius: var(--border-s);
-  padding: var(--p2) var(--p3);
+  border: 1px solid var(--accent-2);
+  padding: 8px 12px;
   width: min-content;
   justify-self: center;
   cursor: pointer;
-}
-
-.datelimit span {
-  padding: var(--p1);
-  background-color: var(--gray16);
   color: var(--text-dimmed);
-  border-radius: var(--border-s);
+  height: 36px;
+  gap: 8px;
 }
 .transfered {
   display: flex;

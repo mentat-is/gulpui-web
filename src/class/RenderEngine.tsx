@@ -2,7 +2,7 @@ import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { File } from "./Info";
 import { Info } from "@/dto";
-import { getColorByCode, stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
+import { getColorByCode, GradientsMap, stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { HALFHEIGHT, HEIGHT } from "@/app/gulp/components/body/TimelineCanvas";
 import { format } from "date-fns";
@@ -86,7 +86,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     [...heat].forEach(hit => {
       const [_, { code, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits, 0, this.app)) return;
+
 
       this.ctx.fillStyle = useGradient(file.color, code, {
         min: file.event.min || 0,
@@ -187,9 +188,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public locals = (file: λFile) => {
     const y = File.getHeight(this.app, file, this.scrollY);
 
-    this.ctx.fillStyle = file.color;
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.offset), y - HALFHEIGHT, 1, HEIGHT - 1);
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.offset) + 2, y - HALFHEIGHT, 2, HEIGHT - 1);
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.offset) - 2, y - HALFHEIGHT, 2, HEIGHT - 1);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1' + HEIGHT;
@@ -219,7 +220,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     if (!file) return;
 
-    this.ctx.fillStyle = 'white'
+    this.ctx.fillStyle = '#e8e8e8'
     this.ctx.fillRect(0, File.selected(this.app).findIndex(f => f.uuid === file.uuid) * HEIGHT + 23 - this.scrollY, window.innerWidth, 1)
     this.ctx.fillRect(this.getPixelPosition(this.app.timeline.target.timestamp + file.offset), 0, 1, window.innerWidth)
   }

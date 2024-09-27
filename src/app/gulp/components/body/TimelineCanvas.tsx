@@ -67,10 +67,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     ctx.fillRect(getPixelPosition(app.target.bucket.selected.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
   };
 
-  const handleClick = ({ clientX, clientY }: MouseEvent) => {
+  const handleClick = (event: MouseEvent) => {
+    if (event.button === 2) return event.preventDefault();
+
     const { top, left } = canvas_ref.current!.getBoundingClientRect();
-    const clickX = clientX - left;
-    const clickY = clientY - top + scrollY;
+    const clickX = event.clientX - left;
+    const clickY = event.clientY - top + scrollY;
 
     const file = File.selected(app)[Math.floor(clickY / 48)];
     const limits = getLimits(app, Info, timeline, scrollX);

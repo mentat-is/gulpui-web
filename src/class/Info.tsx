@@ -271,12 +271,14 @@ export class Info implements InfoProps {
     }
   });
   // Timestamp - Full range
-  setBucketCustomRange = (min: number, max: number) => this.setBucket({
+  setBucketCustomRange = (min: number, max: number) => this.setBucket({ ...this.app.target.bucket!, selected: { max, min }});
+  setBucketSelectedStart = (min: number) => this.setBucket({
     ...this.app.target.bucket!,
-    selected: {
-      max: max,
-      min: min
-    }
+    selected: { ...this.app.target.bucket.selected, min }
+  });
+  setBucketSelectedEnd = (max: number) => this.setBucket({
+    ...this.app.target.bucket!,
+    selected: { ...this.app.target.bucket.selected, max}
   });
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
   
