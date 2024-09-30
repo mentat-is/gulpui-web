@@ -62,14 +62,13 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     ctx.fillRect(getPixelPosition(app.target.bucket.selected.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
 
     if (timeline.current) {
-      console.log({
-        x: timeline.current.clientWidth - 36,
-        y: timeline.current.clientHeight - 36
-      });
       render.debug({
-        x: timeline.current.clientWidth - 36,
+        x: timeline.current.clientWidth - 128,
         y: timeline.current.clientHeight - 36
-      });
+      }, [
+        `X: ${scrollX} Y: ${scrollY}`,
+        `Scale: ${app.timeline.scale.toPrecision(2)}`
+      ]);
     }
   };
 

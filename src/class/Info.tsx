@@ -568,11 +568,11 @@ export class Link {
   
   // public static findByEvent = (use: Information | λLink[], event: λEvent | string): λLink[] => Parser.use(use, 'links').filter(l => l.events.some(e => e._id === Parser.useId(event)));
 
-  // public static timestamp = (note: λNote): number => {
-  //   let sum = 0
-  //   note.events.forEach(e => sum += e.timestamp);
-  //   return (sum / note.events.length) || (note.time_end ? (note.time_start + note.time_end) / 2 : note.time_start);
-  // }
+  public static timestamp = (link: λLink): number => {
+    let sum = 0
+    link.events.forEach(e => sum += e.timestamp);
+    return (sum / link.events.length) || (link.time_end ? (link.time_start + link.time_end) / 2 : link.time_start);
+  }
 }
 
 export class Parser {
