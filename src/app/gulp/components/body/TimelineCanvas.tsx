@@ -1,16 +1,17 @@
-import { useApplication } from "@/context/Application.context";
-import { cn, getLimits, stringToHexColor, throwableByTimestamp } from "@/ui/utils";
-import { useEffect, useRef } from "react";
+import { useApplication } from '@/context/Application.context';
+import { cn, getLimits, stringToHexColor, throwableByTimestamp } from '@/ui/utils';
+import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
-import { useMagnifier } from "@/dto/useMagnifier";
-import { Magnifier } from "@/ui/Magnifier";
-import { DisplayEventDialog } from "@/dialogs/DisplayEventDialog";
-import { File } from "@/class/Info";
-import { StartEnd } from "@/dto/StartEnd.dto";
-import { Note } from "@/ui/Note";
-import { Note as NoteClass } from '@/class/Info';
-import { RenderEngine } from "@/class/RenderEngine";
-import { DragDealer } from "@/class/dragDealer.class";
+import { useMagnifier } from '@/dto/useMagnifier';
+import { Magnifier } from '@/ui/Magnifier';
+import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
+import { File } from '@/class/Info';
+import { StartEnd } from '@/dto/StartEnd.dto';
+import { Note } from '@/ui/Note';
+import { Link } from '@/ui/Link';
+import { Note as NoteClass, Link as LinkClass } from '@/class/Info';
+import { RenderEngine } from '@/class/RenderEngine';
+import { DragDealer } from '@/class/dragDealer.class';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -30,7 +31,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
 
   const renderCanvas = () => {
     if (!canvas_ref.current) return;
-    const ctx = canvas_ref.current.getContext("2d")!;
+    const ctx = canvas_ref.current.getContext('2d')!;
     ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
     
     ctx.fillStyle = '#ff0000';
@@ -99,12 +100,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
   useEffect(() => {
     renderCanvas();
 
-    canvas_ref.current?.addEventListener("mousedown", handleClick);
+    canvas_ref.current?.addEventListener('mousedown', handleClick);
     window.addEventListener('resize', renderCanvas);
     timeline.current?.addEventListener('resize', renderCanvas);
 
     return () => {
-      canvas_ref.current?.removeEventListener("mousedown", handleClick);
+      canvas_ref.current?.removeEventListener('mousedown', handleClick);
       window.removeEventListener('resize', renderCanvas);
       timeline.current?.removeEventListener('resize', renderCanvas);
     };
@@ -116,7 +117,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
 
   const renderOverlay = () => {
     if (!overlay_ref.current || !canvas_ref.current) return;
-    const overlayCtx = overlay_ref.current.getContext("2d");
+    const overlayCtx = overlay_ref.current.getContext('2d');
     if (!overlayCtx) return;
 
     overlay_ref.current.height = canvas_ref.current.height || 1;
@@ -148,6 +149,13 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
             const top = File.selected(app).findIndex(f => f.name === note.file) * 48 - scrollY - 24;
 
             return <Note note={note} left={left} top={top} />
+          })}
+          {app.target.links.map(link => {
+            console.log(link)
+            const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
+            const top = File.selected(app).findIndex(f => f.name === link.file) * 48 - scrollY - 24;
+
+            return <Link link={link} left={left} top={top} />
           })}
         </div>
         <canvas
