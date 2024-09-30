@@ -2,10 +2,10 @@ import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { File } from "./Info";
 import { Info } from "@/dto";
-import { getColorByCode, GradientsMap, stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
+import { stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
-import { HALFHEIGHT, HEIGHT } from "@/app/gulp/components/body/TimelineCanvas";
 import { format } from "date-fns";
+import { XY } from "@/dto/XY.dto";
 
 const scale = Symbol('scale');
 
@@ -129,7 +129,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
-      codes.map((code, i) => {
+      codes.forEach((code, i) => {
         this.ctx.fillStyle = useGradient(file.color, code, {
           min: file.event.min || 0,
           max: file.event.max || 599,
@@ -140,10 +140,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   };
 
   public lines = (file: λFile) => {
-    const y = File.getHeight(this.app, file, this.scrollY) - HEIGHT / 2;
+    const y = File.getHeight(this.app, file, this.scrollY) - 48 / 2;
 
-    this.ctx.fillStyle = stringToHexColor(File.context(this.app, file).name) + HEIGHT;
-    this.ctx.fillRect(0, y + HEIGHT - 1, window.innerWidth, 1);
+    this.ctx.fillStyle = stringToHexColor(File.context(this.app, file).name) + 48;
+    this.ctx.fillRect(0, y + 48 - 1, window.innerWidth, 1);
   }
 
   public links = () => {
@@ -189,11 +189,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const y = File.getHeight(this.app, file, this.scrollY);
 
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.offset) + 2, y - HALFHEIGHT, 2, HEIGHT - 1);
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.offset) - 2, y - HALFHEIGHT, 2, HEIGHT - 1);
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.offset) + 2, y - 24, 2, 48 - 1);
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.offset) - 2, y - 24, 2, 48 - 1);
     
     this.ctx.font = `10px Arial`;
-    this.ctx.fillStyle = '#a1a1a1' + HEIGHT;
+    this.ctx.fillStyle = '#a1a1a1' + 48;
     this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.min) - 64, y + 4);
     this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.max) + 12, y + 4);
   }
@@ -213,6 +213,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(File.events(this.app, file).length.toString(), 10, y + 14);
   }
 
+  public debug = (pos: XY) => {
+    this.ctx.font = `12px Arial`;
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.fillText((this.scrollY || 0).toString(), window.innerWidth - 36, window.innerHeight - 36);
+  }
+
   public target = () => {
     if (!this.app.timeline.target) return;
 
@@ -221,7 +227,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     if (!file) return;
 
     this.ctx.fillStyle = '#e8e8e8'
-    this.ctx.fillRect(0, File.selected(this.app).findIndex(f => f.uuid === file.uuid) * HEIGHT + 23 - this.scrollY, window.innerWidth, 1)
+    this.ctx.fillRect(0, File.selected(this.app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - this.scrollY, window.innerWidth, 1)
     this.ctx.fillRect(this.getPixelPosition(this.app.timeline.target.timestamp + file.offset), 0, 1, window.innerWidth)
   }
 

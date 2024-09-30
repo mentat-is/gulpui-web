@@ -18,7 +18,6 @@ import { generateUUID, Gradients, stringToHexColor } from '@/ui/utils';
 import { MappingFileListRequest } from '@/dto/MappingFileList.dto';
 import { IngestMapping } from '@/dto/Ingest.dto';
 import { UUID } from 'crypto';
-import { HALFHEIGHT, HEIGHT } from '@/app/gulp/components/body/TimelineCanvas';
 
 interface InfoProps {
   app: Information,
@@ -492,7 +491,7 @@ export class File {
 
   public static index = (app: Information, file: λFile | UUID) => File.selected(app).findIndex(f => f.uuid === Parser.useUUID(file));
 
-  public static getHeight = (app: Information, file: λFile | UUID, scrollY: number) => HEIGHT * this.index(app, file) - scrollY + HALFHEIGHT;
+  public static getHeight = (app: Information, file: λFile | UUID, scrollY: number) => 48 * this.index(app, file) - scrollY + 24;
 
   private static _select = (p: λFile): λFile => ({ ...p, selected: true });
 

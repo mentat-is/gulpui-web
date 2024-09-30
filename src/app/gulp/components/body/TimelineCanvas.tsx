@@ -11,8 +11,6 @@ import { Note } from "@/ui/Note";
 import { Note as NoteClass } from '@/class/Info';
 import { RenderEngine } from "@/class/RenderEngine";
 import { DragDealer } from "@/class/dragDealer.class";
-import { λFile } from "@/dto/File.dto";
-import { format } from "date-fns";
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -21,9 +19,6 @@ interface TimelineCanvasProps {
   resize: StartEnd;
   dragDealer: DragDealer;
 }
-
-export const HEIGHT = 48;
-export const HALFHEIGHT = HEIGHT / 2;
 
 export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
@@ -47,10 +42,10 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     File.selected(app).forEach(file => {
       const y = File.getHeight(app, file, scrollY);
 
-      if (y + HEIGHT < 0 || y > canvas_ref.current!.height + scrollY) return;
+      if (y + 48 < 0 || y > canvas_ref.current!.height + scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
-        render[file.engine](file, y - HALFHEIGHT);
+        render[file.engine](file, y - 24);
       };
 
       render.lines(file);
@@ -60,11 +55,22 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
 
     render.target();
 
-    render.links()
+    render.links();
 
     ctx.fillStyle = '#ff000080'
     ctx.fillRect(getPixelPosition(app.target.bucket.selected.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
     ctx.fillRect(getPixelPosition(app.target.bucket.selected.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
+
+    if (timeline.current) {
+      console.log({
+        x: timeline.current.clientWidth - 36,
+        y: timeline.current.clientHeight - 36
+      });
+      render.debug({
+        x: timeline.current.clientWidth - 36,
+        y: timeline.current.clientHeight - 36
+      });
+    }
   };
 
   const handleClick = (event: MouseEvent) => {
@@ -140,7 +146,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
         <div className={s.notes}>
           {app.target.notes.map(note => {
             const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
-            const top = File.selected(app).findIndex(f => f.name === note.file) * HEIGHT - scrollY - 24;
+            const top = File.selected(app).findIndex(f => f.name === note.file) * 48 - scrollY - 24;
 
             return <Note note={note} left={left} top={top} />
           })}
