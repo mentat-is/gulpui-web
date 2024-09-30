@@ -165,21 +165,25 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       if (dots.length > 1) {
         this.ctx.beginPath();
         this.ctx.strokeStyle = dots[0].color;
-        this.ctx.lineWidth = 1;
+        this.ctx.lineWidth = 2;
 
         this.ctx.moveTo(dots[0].x, dots[0].y + 4);
 
         dots.slice(1).forEach(({ x, y }) => {
-          this.ctx.lineTo(x + 4, y + 4);
+          this.ctx.lineTo(x, y + 4);
         });
     
         this.ctx.stroke();
       }
       
       dots.forEach(({ color, x, y }) => {
-        this.ctx.fillStyle = color;
+        this.ctx.fillStyle = '#e8e8e8';
         this.ctx.beginPath();
         this.ctx.roundRect(x, y, 8, 8, [999]);
+        this.ctx.fill();
+        this.ctx.fillStyle = color;
+        this.ctx.beginPath();
+        this.ctx.roundRect(x + 1, y + 1, 6, 6, [999]);
         this.ctx.fill();
       })
     });

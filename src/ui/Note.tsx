@@ -1,5 +1,5 @@
 import { λNote } from '@/dto/Note.dto';
-import s from './styles/Note.module.css';
+import s from './styles/Link.module.css';
 import { cn, copy } from './utils';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
@@ -38,7 +38,7 @@ export function Note({ note, left, top }: NoteProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={cn(s.note)} style={{ left, top }}>
+      <PopoverTrigger className={s.target} style={{ left, top }}>
         <Icon name={iconMap[note.level]} />
         <hr style={{ background: note.data.color }} />
       </PopoverTrigger>
@@ -57,7 +57,6 @@ interface NoteContentProps extends Pick<NoteProps, 'note'> {
 
 export function NoteContent({ note, setOpen, loading, deleteNote }: NoteContentProps) {
   const { app, spawnDialog, dialog } = useApplication();
-  const [fulfill, setFulfill] = useState<boolean>(false);
 
   const openEvent = () => {
     const events = Event.findByIdAndUUID(app, note.events[0]._id, note._uuid);

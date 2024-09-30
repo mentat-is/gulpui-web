@@ -1,4 +1,4 @@
-import s from './styles/link.module.css';
+import s from './styles/Link.module.css';
 import { cn, copy } from './utils';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
@@ -24,13 +24,7 @@ export function Link({ link, left, top }: LinkProps) {
   const [loading, setLoading] = useState<boolean>(false);
   const [open, setOpen] = useState<boolean>(false);
 
-  const iconMap: Array<λIcon> = [
-    'Bookmark',
-    'TriangleAlert',
-    'SquareX'
-  ];
-
-  const deleteNote = async () => {
+  const deleteLink = async () => {
     setLoading(true);
     await Info.links_delete(link);
     setLoading(false);
@@ -38,12 +32,12 @@ export function Link({ link, left, top }: LinkProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={s.link} style={{ left, top }}>
-        <Icon name={iconMap[link.level]} />
+      <PopoverTrigger className={s.target} style={{ left, top }}>
+        <Icon name='Waypoints' />
         <hr style={{ background: link.data.color }} />
       </PopoverTrigger>
       <PopoverContent className={s.content}>
-        <LinkContent loading={loading} link={link} setOpen={setOpen} deleteNote={deleteNote} />
+        <LinkContent loading={loading} link={link} setOpen={setOpen} deleteLink={deleteLink} />
       </PopoverContent>
     </Popover>
   )
@@ -51,11 +45,11 @@ export function Link({ link, left, top }: LinkProps) {
 
 interface LinkContentProps extends Pick<LinkProps, 'link'> {
   loading: boolean;
-  deleteNote: () => void;
+  deleteLink: () => void;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function LinkContent({ link, setOpen, loading, deleteNote }: LinkContentProps) {
+export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentProps) {
   const { app, spawnDialog, dialog } = useApplication();
   const [fulfill, setFulfill] = useState<boolean>(false);
 
@@ -117,7 +111,7 @@ export function LinkContent({ link, setOpen, loading, deleteNote }: LinkContentP
       <Separator />
       <div className={s.buttons}>
         <Button className={s.copy} onClick={() => copy(JSON.stringify(link))} img='Copy'>Copy note as JSON</Button>
-        <Button loading={loading} img='Trash2' onClick={deleteNote} variant='destructive' />
+        <Button loading={loading} img='Trash2' onClick={deleteLink} variant='destructive' />
       </div>
       {!!link.events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{link.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
     </Fragment>

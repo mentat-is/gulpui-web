@@ -138,26 +138,27 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     <>
       <div
         ref={wrapper_ref}
-        className={cn(s.wrapper, isShiftPressed && s.shifted)}
+        className={cn(s.wrapper)}
         onMouseMove={move}
         onKeyDown={down}
         tabIndex={0}
         onKeyUp={up}>
-        <div className={s.notes}>
-          {app.target.notes.map(note => {
-            const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
-            const top = File.selected(app).findIndex(f => f.name === note.file) * 48 - scrollY - 24;
+        {app.target.notes.map(note => {
+          const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
+          const top = File.getHeight(app, note._uuid, scrollY);
 
-            return <Note note={note} left={left} top={top} />
-          })}
-          {app.target.links.map(link => {
-            console.log(link)
-            const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
-            const top = File.selected(app).findIndex(f => f.name === link.file) * 48 - scrollY - 24;
+          if (top < 0) return;
 
-            return <Link link={link} left={left} top={top} />
-          })}
-        </div>
+          return <Note note={note} left={left} top={top} />
+        })}
+        {app.target.links.map(link => {
+          const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
+          const top = File.getHeight(app, link._uuid, scrollY);
+
+          if (top < 0) return;
+
+          return <Link link={link} left={left} top={top} />
+        })}
         <canvas
           ref={canvas_ref}
           width={window.innerWidth}

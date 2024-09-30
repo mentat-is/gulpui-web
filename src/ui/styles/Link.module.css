@@ -1,4 +1,4 @@
-.link {
+.target {
   position: absolute;
   height: 32px;
   width: 32px;
@@ -9,7 +9,7 @@
   background: var(--geist-background);
   backdrop-filter: brightness(0.6) blur(3px);
   border-radius: 4px;
-  transform: translate(-50%, calc(-50% + 48px));
+  transform: translate(-50%, -50%);
 }
 .link img {
   position: relative;
