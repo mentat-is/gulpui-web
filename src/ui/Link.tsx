@@ -1,5 +1,4 @@
-import { λNote } from '@/dto/Note.dto';
-import s from './styles/Note.module.css';
+import s from './styles/link.module.css';
 import { cn, copy } from './utils';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
@@ -39,7 +38,7 @@ export function Link({ link, left, top }: LinkProps) {
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={cn(s.note)} style={{ left, top }}>
+      <PopoverTrigger className={s.link} style={{ left, top }}>
         <Icon name={iconMap[link.level]} />
         <hr style={{ background: link.data.color }} />
       </PopoverTrigger>
