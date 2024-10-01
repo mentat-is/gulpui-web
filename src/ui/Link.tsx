@@ -51,10 +51,9 @@ interface LinkContentProps extends Pick<LinkProps, 'link'> {
 
 export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentProps) {
   const { app, spawnDialog, dialog } = useApplication();
-  const [fulfill, setFulfill] = useState<boolean>(false);
 
   const openEvent = () => {
-    const events = Event.findByIdAndUUID(app, link.events[0]._id, link._uuid);
+    const events = link.events.map(event => Event.findByIdAndUUID(app, event._id, event._uuid)).flat()
 
     const dialog = events.length === 1
       ? <DisplayEventDialog event={events[0]} />
@@ -81,6 +80,17 @@ export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentP
           {(link.text || '').length > 128 && <Icon onClick={() => copy(link.text!)} className={s.__copy} name='Copy' />}
         </div>
         <Separator />
+        {link.description &&
+          <Fragment>
+            <div>
+              <Icon name='CircleHelp' />
+              <span>Description: </span>
+              <p>{link.description}</p>
+              {link.description?.length > 128 && <Icon onClick={() => copy(link.description!)} className={s.__copy} name='Copy' />}
+            </div>
+            <Separator />
+          </Fragment>
+        }
         {/* <div>
           <Icon name='User' />
           <span>Owner ID: </span>
@@ -91,14 +101,6 @@ export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentP
           <Icon name={link.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
           <span>{link.private ? 'Private' : 'Not private'}</span>
         </div>
-        {link.description && <Fragment>
-          <Separator />
-          <div>
-            <span>Description: </span>
-            <p>{link.description}</p>
-            {link.description?.length > 128 && <Icon onClick={() => copy(link.description!)} className={s.__copy} name='Copy' />}
-          </div>
-        </Fragment>}
       </div>
       {!!(link.tags || []).filter(t => !!t).length && (
         <Fragment>
@@ -113,7 +115,7 @@ export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentP
         <Button className={s.copy} onClick={() => copy(JSON.stringify(link))} img='Copy'>Copy note as JSON</Button>
         <Button loading={loading} img='Trash2' onClick={deleteLink} variant='destructive' />
       </div>
-      {!!link.events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{link.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
+      {!!link.events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{link.events.length === 1 ? 'Open link`s event' : 'Open link`s events group'}</Button>}
     </Fragment>
   )
 }

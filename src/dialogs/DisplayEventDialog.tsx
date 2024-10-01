@@ -217,7 +217,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Tabs>
           <div className={s.buttons_group}>
             <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
-            <Button className={s.createNote} onClick={spawnLinkBanner} img='Spline'>New link / Connect link</Button>
+            <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
           </div>
           <Tabs defaultValue={root ? 'smart' : 'raw'} className={s.tabs}>
             <TabsList className={s.tabs_list}>

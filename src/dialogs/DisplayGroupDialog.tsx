@@ -12,6 +12,7 @@ interface DisplayGroupDialogProps {
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const { spawnDialog } = useApplication();
+  console.log(events);
   return (
     <Dialog title='Choose event' description='Choose event from list below'>
       {events.map((event: λEvent) => (
@@ -23,7 +24,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
               <p className={s.description}>{event._id}</p>
             </div>
           </div>
-          <Button variant='outline' onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} img='Ellipsis' />
+          <Button variant='outline' onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} img='ArrowRight' revert>Open</Button>
         </div>
       ))}
     </Dialog>

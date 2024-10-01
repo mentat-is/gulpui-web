@@ -5,7 +5,8 @@ import { Info } from "@/dto";
 import { stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
-import { XY } from "@/dto/XY.dto";
+import { XY, XYBase } from "@/dto/XY.dto";
+import { λLink } from "@/dto/Link.dto";
 
 const scale = Symbol('scale');
 
@@ -47,6 +48,12 @@ export type DefaultMap = Map<number, Default> & Scale;
 type Engines = {
   [key in Engine]: (file: λFile, y: number) => void;
 };
+
+export interface Dot {
+  x: number;
+  y: number;
+  color: string;
+}
 
 export class RenderEngine implements RenderEngineConstructor, Engines {
   ctx!: CanvasRenderingContext2D;
@@ -147,46 +154,61 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public links = () => {
-    this.app.target.links.forEach(l => {
-      const dots: ({ x: number; y: number; color: string; })[] = l.events.map(e => {
-        const i = File.selected(this.app).findIndex(f => f.uuid === e._uuid);
+    this.app.target.links.forEach(link => {
+      const { dots, center } = this.calcDots(link)
 
-        const file = File.selected(this.app)[i];
-
-        return {
-          x: this.getPixelPosition(e.timestamp + (file?.offset || 0)),
-          y: i * 48 + 20 - this.scrollY,
-          color: l.data.color || stringToHexColor(l.events.map(e => e._id).toString())
-        }
-      });
-
-      if (dots.length === 1) return;
-
-      if (dots.length > 1) {
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = dots[0].color;
-        this.ctx.lineWidth = 2;
-
-        this.ctx.moveTo(dots[0].x, dots[0].y + 4);
-
-        dots.slice(1).forEach(({ x, y }) => {
-          this.ctx.lineTo(x, y + 4);
-        });
-    
-        this.ctx.stroke();
-      }
-      
-      dots.forEach(({ color, x, y }) => {
-        this.ctx.fillStyle = '#e8e8e8';
-        this.ctx.beginPath();
-        this.ctx.roundRect(x, y, 8, 8, [999]);
-        this.ctx.fill();
-        this.ctx.fillStyle = color;
-        this.ctx.beginPath();
-        this.ctx.roundRect(x + 1, y + 1, 6, 6, [999]);
-        this.ctx.fill();
-      })
+      this.connection(dots);
+      this.connection(dots, center);
+      dots.forEach(dot => this.dot(dot));
     });
+  }
+
+  public connection = (dots: Dot[], center?: XY) => {
+    this.ctx.beginPath();
+    this.ctx.moveTo(dots[0].x, dots[0].y);
+    this.ctx.lineWidth = 2;
+  
+    dots.forEach(({ x, y, color }) => {
+      this.ctx.strokeStyle = color;
+      this.ctx.lineTo(x, y);
+      if (center) {
+        this.ctx.strokeStyle = color + 48;
+        this.ctx.lineTo(center.x / dots.length, center.y / dots.length);
+      }
+    });
+  
+    this.ctx.stroke();
+  };
+
+  public dot = ({ x, y, color }: Dot) => {
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.beginPath();
+    this.ctx.roundRect(x - 4, y - 4, 8, 8, [999]);
+    this.ctx.fill();
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    this.ctx.roundRect(x - 3, y - 3, 6, 6, [999]);
+    this.ctx.fill();
+  }
+
+  public calcDots = (link: λLink): {
+    dots: Dot[],
+    center: XY
+  } => {
+    const center = XYBase(0);
+    const dots: Dot[] = link.events.map(e => {
+      const index = File.selected(this.app).findIndex(f => f.uuid === e._uuid);
+
+      const x = this.getPixelPosition(e.timestamp + (File.selected(this.app)[index]?.offset || 0));
+      const y = index * 48 + 20 - this.scrollY;
+
+      center.x += x;
+      center.y += y;
+
+      return { x, y, color: link.data.color || stringToHexColor(link.events.map(e => e._id).toString()) };
+    });
+
+    return { dots, center }
   }
 
   public locals = (file: λFile) => {

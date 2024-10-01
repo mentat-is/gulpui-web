@@ -73,8 +73,11 @@
   word-break: break-all;
   max-width: 80%;
   max-height: 256px;
+  display: flex;
   overflow: hidden;
+  min-height: 24px;
   text-overflow: ellipsis;
+  align-items: center;
 }
 .content {
   display: flex;

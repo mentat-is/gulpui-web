@@ -17,9 +17,10 @@
 .wrapper {
   display: flex;
   flex-direction: row;
-  max-width: 100%;
   width: 100%;
+  min-height: 36px;
   gap: var(--card-gap);
+  overflow: hidden;
 }
 .wrapper > img,
 .wrapper > svg {
@@ -31,9 +32,10 @@
   flex-direction: column;
   gap: 8px;
   position: relative;
+  overflow: hidden;
   gap: 2px;
   text-align: center;
-  width: calc(100% - 48px);
+  width: 100%;
   min-height: 36px;
   align-items: flex-start;
   justify-content: center;

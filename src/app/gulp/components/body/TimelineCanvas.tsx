@@ -153,11 +153,14 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
         })}
         {app.target.links.map(link => {
           const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
-          const top = File.getHeight(app, link._uuid, scrollY);
+          let top = 0;
+          link.events.forEach(event => {
+            top += File.getHeight(app, event._uuid, scrollY)
+          });
 
           if (top < 0) return;
 
-          return <Link link={link} left={left} top={top} />
+          return <Link link={link} left={left} top={top / Math.max(link.events.length, 1)} />
         })}
         <canvas
           ref={canvas_ref}
