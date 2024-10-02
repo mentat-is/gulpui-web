@@ -11,11 +11,11 @@
   border-radius: 4px;
   transform: translate(-50%, -50%);
 }
-.link img {
+.target img {
   position: relative;
   top: -2px;
 }
-.link hr {
+.target hr {
   position: absolute;
   bottom: 0;
   left: 0;

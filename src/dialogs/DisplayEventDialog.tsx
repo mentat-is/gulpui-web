@@ -60,6 +60,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     setNotes(Note.findByEvent(app, event));
   }, [event, app.target.notes]);
 
+  useEffect(() => Info.setTimelineTarget(event), [event])
+
   useEffect(() => {
     if (detailedChunkEvent?.event?.original) {
       try {

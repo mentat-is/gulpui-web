@@ -19,7 +19,7 @@ export interface λNote {
   text: string,
   glyph_id: null | number,
   tags: string[],
-  events: Array<Omit<λEvent, 'event'>>,
+  events: λEvent[],
   data: {
       color: string
   },

@@ -514,12 +514,16 @@ export class Event {
     return app.target.events;
   }
 
-  public static parse = (app: Information, events: Arrayed<λRawEventMinimized>): λNote['events'] => Parser.array(events).map(e => ({
+  public static parse = (app: Information, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).map(e => ({
     _id: e.id,
     operation_id: e.operation_id,
     timestamp: e['@timestamp'],
     file: e.src_file,
     context: e.context,
+    event: {
+      duration: 1,
+      code: '0'
+    },
     _uuid: File.findByNameAndContextName(app, e.src_file, e.context).uuid,
   }));
 
