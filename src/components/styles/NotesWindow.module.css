@@ -2,18 +2,20 @@
   height: 100%;
   border-radius: 0px;
   gap: 8px;
-  background: var(--geist-background);
+  background: var(--soft-black);
   width: 100%;
   border: none;
 }
 .background {
   position: absolute;
-  height: calc(100% + 3px);
-  width: calc(100% + 3px);
-  left: -1.5px;
-  border-radius: 7px;
-  z-index: -1 !important;
-  top: -1.25px;
+  height: calc(100% - 2px);
+  width: calc(100% - 2px);
+  left: 1px;
+  border-radius: 8px;
+  top: 1px;
+  z-index: 0 !important;
+  background: var(--geist-background);
+  backdrop-filter: brightness(0.05);
 }
 .unit {
   position: relative;
@@ -22,9 +24,7 @@
   gap: 10px;
   padding: 8px 12px;
   width: 100%;
-  background: var(--soft-black);
-  border-radius: var(--border-s);
-  border: var(--geist-border);
+  border-radius: 9px;
 }
 .unit * {
   z-index: 1;
