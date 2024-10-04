@@ -14,17 +14,16 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/T
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { LinkVisualizer } from '@/banners/LinksVisualizer';
+import { toast } from 'sonner';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
-  const [scrollX, _setScrollX] = useState<number>(0);
+  const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect>();
   const [selectedFileForContextMenu, setSelectedFileForContextMenu] = useState<λFile>();
-
-  const deltaScrollX = (λx: number) => _setScrollX((x) => Math.round(x + λx));
 
   function increaseScrollY(λy: number) {
     const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42
@@ -36,7 +35,7 @@ export function Timeline() {
 
     event.preventDefault();
 
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return _setScrollX(scrollX => scrollX + event.deltaX);
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return setScrollX(scrollX => scrollX + event.deltaX);
 
     const width = Info.width;
     const newScale = event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
@@ -50,7 +49,7 @@ export function Timeline() {
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
     Info.setTimelineScale(newScale);
-    _setScrollX(Math.round(scrollX + left));
+    setScrollX(scrollX + left);
   };
 
   const handleMouseDown = (event: MouseEvent) => {
@@ -61,12 +60,10 @@ export function Timeline() {
     }
   };
 
-  const handleMouseMove = (event: MouseEvent) => {
-    isResizing ? setResize((prev) => ({ ...prev, end: event.clientX })) : dragState.current.dragMove(event);
-  };
+  const handleMouseMove = (event: MouseEvent) => isResizing ? setResize((prev) => ({ ...prev, end: event.clientX })) : dragState.current.dragMove(event);
 
-  const handleMouseUpOrLeave = (event: any) => {
-    event?.preventDefault();
+  const handleMouseUpOrLeave = (event: MouseEvent) => {
+    event.preventDefault();
     dragState.current.dragStop();
   
     if (isResizing) {
@@ -75,39 +72,37 @@ export function Timeline() {
 
       const scale = Info.width / (max - min);
       
-      if (scale === Infinity) return;
-
-      const scroll = (scrollX + min) * (scale / app.timeline.scale);
+      if (scale === Infinity) return toast('Selected frame too small');
   
       Info.setTimelineScale(scale);
-      _setScrollX(scroll);
+      setScrollX((scrollX + min) * (scale / app.timeline.scale));
     }
   
     setResize(StartEndBase);
     setIsResizing(false);
   };
 
-  const dragState = useRef(new DragDealer({ info: Info, timeline, deltaScrollX, increaseScrollY }));
+  const dragState = useRef(new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY }));
 
   useEffect(() => {
     if (isResizing) return;
 
-    dragState.current = new DragDealer({ info: Info, timeline, deltaScrollX, increaseScrollY });
+    dragState.current = new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY });
 
-    window.addEventListener('wheel', handleWheel as any, { passive: false });
-    window.addEventListener('resize', setBounding(undefined) as any, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    window.addEventListener('resize', () => setBounding(undefined), { passive: false });
 
     return () => {
-      window.removeEventListener('wheel', handleWheel as any);
-      window.removeEventListener('resize', setBounding(undefined) as any);
+      window.removeEventListener('wheel', handleWheel);
+      window.removeEventListener('resize', () => setBounding(undefined));
     };
   }, [timeline, banner, dialog, app.timeline.scale, isResizing]);
 
   useEffect(() => {
-    window.addEventListener('wheel', handleWheel as any, { passive: false });
+    window.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      window.removeEventListener('wheel', handleWheel as any);
+      window.removeEventListener('wheel', handleWheel);
     };
   }, [scrollX]);
 
@@ -117,12 +112,16 @@ export function Timeline() {
     setSelectedFileForContextMenu(file);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    const key = e.key.toLowerCase();
-    if ((key === 'd' || key === 'a') && app.timeline.target) {
-      const newEvent = File.events(app, app.timeline.target._uuid)[File.events(app, app.timeline.target._uuid).findIndex(e => e._id === app.timeline.target!._id) + (key === 'a' ? 1 : -1)] || app.timeline.target;
-      Info.setTimelineTarget(newEvent);
-      spawnDialog(<DisplayEventDialog event={newEvent} />)
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = event.key.toLowerCase();
+
+    if (app.timeline.target && (key === 'd' || key === 'a')) {
+      event.preventDefault();
+      const delta = Number(key === 'a') || -1;
+      const events = File.events(app, app.timeline.target._uuid);
+      const index = events.findIndex(evevt => evevt._id === app.timeline.target!._id) + delta
+
+      spawnDialog(<DisplayEventDialog event={events[index] ?? app.timeline.target} />)
     }
   }
 

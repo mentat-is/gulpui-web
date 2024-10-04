@@ -90,10 +90,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
 
       const pos = getPixelPosition(event.timestamp + file.offset);      
 
-      if (Math.round(clickX) === Math.round(pos)) {
-        Info.setTimelineTarget(event);
-        spawnDialog(<DisplayEventDialog event={event} />);
-      }
+      if (Math.round(clickX) === Math.round(pos)) spawnDialog(<DisplayEventDialog event={event} />);
     });
   };
 

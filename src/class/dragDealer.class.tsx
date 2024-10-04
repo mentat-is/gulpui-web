@@ -5,7 +5,7 @@ import { XY } from "@/dto/XY.dto";
 interface DragDealerProps {
   info: DragDealer['info'],
   timeline: DragDealer['timeline'],
-  deltaScrollX: DragDealer['deltaScrollX'];
+  setScrollX: DragDealer['setScrollX'];
   increaseScrollY: DragDealer['increaseScrollY'];
 }
 
@@ -15,16 +15,16 @@ export class DragDealer implements DragDealerProps {
   x: number;
   info: Info;
   timeline: React.RefObject<HTMLDivElement>;
-  deltaScrollX: (λx: number) => void;
+  setScrollX: React.Dispatch<React.SetStateAction<number>>;
   increaseScrollY: (λy: number) => void;
 
-  constructor({ info, timeline, deltaScrollX, increaseScrollY }: DragDealerProps) {
+  constructor({ info, timeline, setScrollX, increaseScrollY }: DragDealerProps) {
     this.clicked = false;
     this.x = 0;
     this.y = 0;
     this.info = info;
     this.timeline = timeline;
-    this.deltaScrollX = deltaScrollX;
+    this.setScrollX = setScrollX;
     this.increaseScrollY = increaseScrollY;
   }
 
@@ -47,7 +47,7 @@ export class DragDealer implements DragDealerProps {
     this.y = ev.clientY;
     this.x = ev.clientX;
 
-    this.deltaScrollX(λx);
+    this.setScrollX(scrollX => Math.round(scrollX + λx));
     this.increaseScrollY(λy);
   }
 }
