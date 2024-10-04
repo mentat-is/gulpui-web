@@ -73,12 +73,15 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     };
   
     const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
-      console.error(error);
+      console.error('[ API | ERROR ]: ', error);
+      toast(`Internal appliction error in ${(options.server || app.general.server)}`, {
+        description: error
+      });
       return null;
     });
 
     if (!res) {
-      toast(`Server ${(options.server || app.general.server)} not found`);
+      
       return new λ();
     }
     

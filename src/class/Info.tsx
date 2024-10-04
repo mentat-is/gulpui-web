@@ -44,14 +44,9 @@ export class Info implements InfoProps {
     this.timeline = timeline
   }
   
-  get ws_link(): string | null {
-    return this.app.general.server + '/ws';
-  }
-  
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
-
 
 
   // 🔥 INDEXES
@@ -318,8 +313,6 @@ export class Info implements InfoProps {
   }).then(response => {
     if (response.isSuccess()) {
       if (response.data.total === 0 || !response.data.buckets.length) throw new Error('/query_max_min');
-
-      console.error(response.data);
 
       this.setBucket({
         total: response.data.buckets[0]['*'].doc_count,

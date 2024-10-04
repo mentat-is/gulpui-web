@@ -1,4 +1,5 @@
 import { File, Info } from '@/class/Info';
+import { Info as Information } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
 import { Chunk, isChunkDefault, isChunkType_6 } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
@@ -6,16 +7,23 @@ import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
   info!: Info;
+  app!: Information;
 
-  constructor(info: Info) {
+  constructor(info: Info, app: Information) {
     if (AppSocket.instance) {
       AppSocket.instance.info = info;
+      AppSocket.instance.app = app;
       return AppSocket.instance;
     }
-    
-    super(`${info.ws_link}`);
+
+    if (!app.general.server)
+      console.error('Expected URL in app.general.server, instead got ', typeof app.general.server);
+
+    console.log('Initializing WebSocket connection to: ', app.general.server);
+    super(app.general.server + '/ws');
 
     this.info = info;
+    this.app = app;
     AppSocket.instance = this;
 
     this.onopen = (ev) => {
@@ -45,16 +53,17 @@ export class AppSocket extends WebSocket {
         this.info.bucket_increase_fetched(events.length);
         this.info.events_add(events);
       } else {
-        console.log(_chunk);
+        console.warn(_chunk);
       }
     }
 
     this.onerror = (error) => {
-      console.error('WebSocket error:', error);
+      console.error('[ WebSocket | ERROR ]:', error);
+      AppSocket.instance = null;
     };
 
-    this.onclose = (ev) => {
-      console.log('WebSocket connection closed:', ev);
+    this.onclose = (event) => {
+      console.log('[ WebSocket | CLOSE ]:', event);
       AppSocket.instance = null;
     };
   }

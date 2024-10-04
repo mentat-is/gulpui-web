@@ -32,11 +32,9 @@ export function GulpPage() {
 
     if (!operation || !context.length || !files.length || app.target.files.length === rendered) return;
 
-    console.error('Fetching', app.target.files);
-
     setRendered(File.selected(app).length);
 
-    setWs(new AppSocket(Info));
+    setWs(new AppSocket(Info, app));
 
     (async () => {
       Info.events_reset();
