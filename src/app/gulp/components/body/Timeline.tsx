@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, MouseEvent } from 'react';
+import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
@@ -15,6 +15,9 @@ import { FilterFileBanner } from '@/banners/FilterFileBanner';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { toast } from 'sonner';
+import debounce from 'lodash/debounce';
+
+const DEBOUNCE_DELAY = 5; // ms
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
@@ -22,25 +25,27 @@ export function Timeline() {
   const [scrollY, setScrollY] = useState<number>(0);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
-  const [bounding, setBounding] = useState<DOMRect>();
+  const [bounding, setBounding] = useState<DOMRect | null>(null);
   const [selectedFileForContextMenu, setSelectedFileForContextMenu] = useState<λFile>();
+  // const lastEventRef = useRef<{ scale: number; scroll: number } | null>(null);
 
-  function increaseScrollY(λy: number) {
+  const increaseScrollY = useCallback((λy: number) => {
     const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42
     setScrollY((y) => Math.max(0, Math.min(Math.round(limit), Math.round(y + λy))));
-  }
+  }, [app, timeline]);
 
-  const handleWheel = (event: WheelEvent) => {
+  const handleWheel = useCallback((event: WheelEvent) => {
     if (!timeline.current || banner) return;
-
-    event.preventDefault();
-
-    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return setScrollX(scrollX => scrollX + event.deltaX);
+    
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+      setScrollX(scrollX => scrollX + event.deltaX);
+      return;
+    }
 
     const width = Info.width;
     const newScale = event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
 
-    const rect = bounding || timeline.current!.getBoundingClientRect();
+    const rect = bounding || timeline.current.getBoundingClientRect();
     if (!bounding) {
       setBounding(rect);
     }
@@ -48,21 +53,37 @@ export function Timeline() {
     const diff = scrollX + event.clientX - rect.left;
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
-    Info.setTimelineScale(newScale);
-    setScrollX(scrollX + left);
-  };
+    // lastEventRef.current = { scale: newScale, scroll: left };
 
-  const handleMouseDown = (event: MouseEvent) => {
+    Info.setTimelineScale(newScale);
+    setScrollX(scrollX => scrollX + left);
+
+    // console.log({
+    //   PreviousScale: app.timeline.scale,
+    //   NewScale: newScale,
+    //   PreviousScroll: scrollX,
+    //   NewScroll: scrollX + left
+    // });
+  }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);
+
+  const debouncedHandleWheel = useMemo(
+    () => debounce(handleWheel, DEBOUNCE_DELAY),
+    [handleWheel]
+  );
+
+  const handleMouseDown = useCallback((event: MouseEvent) => {
     dragState.current.dragStart(event);
     if (event.altKey) {
       setResize({ start: event.clientX, end: event.clientX });
       setIsResizing(true);
     }
-  };
+  }, []);
 
-  const handleMouseMove = (event: MouseEvent) => isResizing ? setResize((prev) => ({ ...prev, end: event.clientX })) : dragState.current.dragMove(event);
+  const handleMouseMove = useCallback((event: MouseEvent) => 
+    isResizing ? setResize((prev) => ({ ...prev, end: event.clientX })) : dragState.current.dragMove(event),
+  [isResizing]);
 
-  const handleMouseUpOrLeave = (event: MouseEvent) => {
+  const handleMouseUpOrLeave = useCallback((event: MouseEvent) => {
     event.preventDefault();
     dragState.current.dragStop();
   
@@ -80,7 +101,7 @@ export function Timeline() {
   
     setResize(StartEndBase);
     setIsResizing(false);
-  };
+  }, [isResizing, resize, Info, scrollX, app.timeline.scale]);
 
   const dragState = useRef(new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY }));
 
@@ -89,30 +110,35 @@ export function Timeline() {
 
     dragState.current = new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY });
 
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('resize', () => setBounding(undefined), { passive: false });
+    const handleResize = () => setBounding(null);
+    window.addEventListener('resize', handleResize, { passive: true });
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('resize', () => setBounding(undefined));
+      window.removeEventListener('resize', handleResize);
     };
-  }, [timeline, banner, dialog, app.timeline.scale, isResizing]);
+  }, [timeline, banner, dialog, app.timeline.scale, isResizing, Info, increaseScrollY]);
 
   useEffect(() => {
-    window.addEventListener('wheel', handleWheel, { passive: false });
+    const currentTimeline = timeline.current;
+    if (currentTimeline) {
+      currentTimeline.addEventListener('wheel', debouncedHandleWheel as unknown as EventListener, { passive: true });
+    }
 
     return () => {
-      window.removeEventListener('wheel', handleWheel);
+      if (currentTimeline) {
+        currentTimeline.removeEventListener('wheel', debouncedHandleWheel as unknown as EventListener);
+      }
+      debouncedHandleWheel.cancel();
     };
-  }, [scrollX]);
+  }, [timeline, debouncedHandleWheel]);
 
-  const handleContextMenu = (event: MouseEvent) => {
+  const handleContextMenu = useCallback((event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 24) / 48)
     const file = File.selected(app)[index];
     setSelectedFileForContextMenu(file);
-  };
+  }, [app, scrollY, timeline]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     const key = event.key.toLowerCase();
 
     if (app.timeline.target && (key === 'd' || key === 'a')) {
@@ -123,7 +149,7 @@ export function Timeline() {
 
       spawnDialog(<DisplayEventDialog event={events[index] ?? app.timeline.target} />)
     }
-  }
+  }, [app.timeline.target, spawnDialog]);
 
   return (
     <div
@@ -140,7 +166,7 @@ export function Timeline() {
     >
       <Ruler scrollX={scrollX} />
       <div className={s.content} id="timeline_content">
-      <ContextMenu>
+        <ContextMenu>
           <ContextMenuTrigger>
             <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} dragDealer={dragState.current} />
           </ContextMenuTrigger>

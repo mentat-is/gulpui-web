@@ -33,6 +33,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
     if (!canvas_ref.current) return;
     const ctx = canvas_ref.current.getContext('2d')!;
     ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
+    canvas_ref.current.width = window.innerWidth
     
     ctx.fillStyle = '#ff0000';
 

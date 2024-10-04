@@ -15,7 +15,7 @@
   top: 1px;
   z-index: 0 !important;
   background: var(--geist-background);
-  backdrop-filter: brightness(0.05);
+  backdrop-filter: brightness(0.075);
 }
 .unit {
   position: relative;
