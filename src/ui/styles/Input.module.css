@@ -73,8 +73,8 @@
   height: 20px;
   padding-right: 8px; 
 }
-.revert input {
-  padding: 8px 0 8px 12px;
+.revert {
+  padding: 8px 12px 8px 10px;
 }
 .input::file-selector-button,
 .input input::file-selector-button {

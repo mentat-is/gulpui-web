@@ -2,11 +2,12 @@ import { Paintbrush } from 'lucide-react';
 import { createContext, HTMLAttributes, useContext, useMemo, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Button } from './Button';
-import { arrayToLinearGradientCSS, cn, GradientsMap } from './utils';
+import { arrayToLinearGradientCSS, cn, Gradients, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 import { Input } from './Input';
 import s from './styles/Color.module.css';
 import { Children } from '@/dto';
+import { capitalize } from 'lodash';
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[],
@@ -54,7 +55,7 @@ export function ColorPicker(props: ColorPickerProps) {
   );
 };
 
-interface ColorPickerTriggerProps extends HTMLAttributes<HTMLDivElement> {
+interface ColorPickerTriggerProps extends HTMLAttributes<HTMLButtonElement> {
 
 }
 
@@ -64,16 +65,17 @@ export function ColorPickerTrigger({ className, ...props }: ColorPickerTriggerPr
     <PopoverTrigger asChild>
       <Button
         variant='outline'
-        className={cn(s.button, !color && s.muted, className)}>
+        className={cn(s.button, !color && s.muted, className)}
+        {...props}>
           {color ? (
             <div
               className={s.preview}
-              style={{ background: color }}
-            ></div>
+              style={{ background: Object.keys(GradientsMap).includes(color) ? arrayToLinearGradientCSS(GradientsMap[color as Gradients]) : color}}
+            />
           ) : (
             <Paintbrush className={s.icon} />
           )}
-          {color ? color : 'Pick a color'}
+          {color ? capitalize(color) : 'Pick a color'}
       </Button>
     </PopoverTrigger>
   );
@@ -81,14 +83,14 @@ export function ColorPickerTrigger({ className, ...props }: ColorPickerTriggerPr
 
 export type Tab = 'solid' | 'gradient'
 
-export function ColorPickerPopover({ className, gradients = GradientsMap, images = [], solids = baseSolids}: ColorProps) {
+export function ColorPickerPopover({ gradients = {}, solids = baseSolids}: ColorProps) {
   const { color, setColor } = useColor();
   const [tab, setTab] = useState<Tab>(Object.keys(gradients).length ? 'gradient' : 'solid');
 
   return (
     <PopoverContent className={s.popover}>
       <Tabs onValueChange={v => setTab(v as Tab)} defaultValue={tab} value={tab} className={s.tabs}>
-        {!!solids.length && !!Object.keys(gradients) && <TabsList className={s.list}>
+        {!!solids.length && !!Object.keys(gradients).length && <TabsList className={s.list}>
           <TabsTrigger className={s.trigger} value="solid">
             Solid
           </TabsTrigger>
@@ -116,22 +118,9 @@ export function ColorPickerPopover({ className, gradients = GradientsMap, images
             />
           )}
         </TabsContent>}
-
-        {!!images.length && <TabsContent value="image" className={s.content}>
-          <div className={s.images}>
-            {images.map((image) => (
-              <div
-                key={image}
-                style={{ backgroundImage: image }}
-                className={s.image}
-                onClick={() => setColor(image)}
-              />
-            ))}
-          </div>
-        </TabsContent>}
       </Tabs>
 
-      <div className={s.group}>
+      {tab !== 'gradient' && <div className={s.group}>
         <Input
           variant='color'
           value={color}
@@ -142,8 +131,7 @@ export function ColorPickerPopover({ className, gradients = GradientsMap, images
           value={color}
           onChange={(e) => setColor(e.currentTarget.value)}
         />
-
-      </div>
+      </div>}
     </PopoverContent>
   );
 }

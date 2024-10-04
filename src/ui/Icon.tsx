@@ -1,6 +1,6 @@
 import { cva, VariantProps } from 'class-variance-authority';
 import React from 'react';
-import { Icon as λIcon } from './utils';
+import { λIcon } from './utils';
 import { icons } from 'lucide-react';
 
 export const iconVariants = cva('', {

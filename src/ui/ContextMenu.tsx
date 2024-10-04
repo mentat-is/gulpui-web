@@ -3,7 +3,8 @@ import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
 import { cn } from "./utils"
 import s from './styles/ContextMenu.module.css';
-
+import { λIcon } from './utils';
+import { Icon } from "./Icon";
 const ContextMenu = ContextMenuPrimitive.Root
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
@@ -73,7 +74,7 @@ const contextMenuItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
     inset?: boolean
-    img?: string
+    img?: λIcon
   }
 >(({ className, img, children, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Item
@@ -84,7 +85,7 @@ const contextMenuItem = React.forwardRef<
       className
     )}
     {...props}
-  >{img && <img src={img} className={s.icon} />}{children}</ContextMenuPrimitive.Item>
+  >{img && <Icon name={img} className={s.icon} />}{children}</ContextMenuPrimitive.Item>
 ))
 contextMenuItem.displayName = ContextMenuPrimitive.Item.displayName
 

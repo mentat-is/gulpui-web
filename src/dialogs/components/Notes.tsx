@@ -1,10 +1,8 @@
-import { λEvent } from '@/dto/ChunkEvent.dto';
 import s from '../styles/DisplayEventDialog.module.css';
 import { useApplication } from '@/context/Application.context';
-import { Note } from '@/class/Info';
 import { Card } from '@/ui/Card';
 import { NoteContent } from '@/ui/Note';
-import { SetStateAction, useState } from 'react';
+import { useState } from 'react';
 import { λNote } from '@/dto/Note.dto';
 
 interface NotesProps {

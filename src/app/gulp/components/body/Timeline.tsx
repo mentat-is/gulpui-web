@@ -2,14 +2,13 @@ import { useState, useEffect, useRef, MouseEvent } from 'react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
-import { Controls } from './Controls';
 import { Ruler } from './Ruler';
 import { DragDealer } from '@/class/dragDealer.class';
 import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { cn, ui } from '@/ui/utils';
+import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { FilterFileBanner } from '@/banners/FilterFileBanner';
@@ -158,14 +157,13 @@ export function Timeline() {
               </Tooltip>
             </TooltipProvider>
             <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img={ui('action/settings')}>Settings</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img={ui('action/filter')}>Filters</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img={ui('specific/path')}>Links</ContextMenuItem>
-            <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img={ui('action/hide')}>Hide</ContextMenuItem>
+            <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img='Settings'>Settings</ContextMenuItem>
+            <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img='Filter'>Filters</ContextMenuItem>
+            <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img='Waypoints'>Links</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img='EyeOff'>Hide</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       </div>
-      <Controls />
     </div>
   );
 }

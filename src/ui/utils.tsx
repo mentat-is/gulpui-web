@@ -98,7 +98,16 @@ export const getColorByCode = (code: number, min: number, max: number): string =
   return ranges[ranges.length - 1].color;
 };
 
-export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0): boolean => typeof timestamp === 'number' ? timestamp + offset < limits.min || timestamp + offset > limits.max : timestamp.max + offset < limits.min || timestamp.min + offset > limits.max;
+export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0, app?: Information): boolean => {
+  const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {
+    min: timestamp.min + offset,
+    max: timestamp.max + offset
+  };
+
+  return typeof time === 'number' 
+    ? time < limits.min || time > limits.max || time < (app?.target.bucket.selected.min || 0) || time > (app?.target.bucket.selected.max || Infinity)
+    : time.max < limits.min || time.min > limits.max || time.max < (app?.target.bucket.selected.min || 0) || time.min > (app?.target.bucket.selected.max || Infinity);
+}
 
 export function generateUUID(): UUID {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -118,14 +127,17 @@ export const getLimits = (app: Information, Info: Info, timeline: RefObject<HTML
   return { min, max };
 };
 
-export type Icon = keyof typeof icons;
+export type λIcon = keyof typeof icons;
 
 export const Icons = icons;
 
 export const GradientsMap = {
   thermal: ['01016f', '010198', '0000c1', '4f00ea', '8600d0', 'af00af', 'd00086', 'ea004f', 'ff014f', 'ff4600', 'ff7800', 'ff9f00', 'ffbe00', 'ffd800', 'ffff01', 'ffffaf'],
   sepal: ['fe2400', 'fcfafd', '7e51fe'],
-  deep: ['54aef3', '142f48']
+  deep: ['54aef3', '142f48'],
+  sunset: ['432371', 'faae7b'],
+  eclipse: ['f5c900', '183182'],
+  saga: ['9d80cb', 'f7c2e6']
 }
 
 export type Gradients = keyof typeof GradientsMap;
@@ -159,7 +171,7 @@ export const useGradient = (target: Gradients, diff: number, delta: MinMax): str
 
   const percentage = (diff - delta.min) / (delta.max - delta.min);
 
-  if (Number.isNaN(percentage)) return gradient[0];
+  if (Number.isNaN(percentage)) return `#${gradient[0]}`;
   
   // Находим индекс двух цветов в градиенте для интерполяции
   const scaledIndex = percentage * (numColors - 1);

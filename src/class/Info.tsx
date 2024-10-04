@@ -18,7 +18,6 @@ import { generateUUID, Gradients, stringToHexColor } from '@/ui/utils';
 import { MappingFileListRequest } from '@/dto/MappingFileList.dto';
 import { IngestMapping } from '@/dto/Ingest.dto';
 import { UUID } from 'crypto';
-import { HALFHEIGHT, HEIGHT } from '@/app/gulp/components/body/TimelineCanvas';
 
 interface InfoProps {
   app: Information,
@@ -271,12 +270,14 @@ export class Info implements InfoProps {
     }
   });
   // Timestamp - Full range
-  setBucketCustomRange = (min: number, max: number) => this.setBucket({
+  setBucketCustomRange = (min: number, max: number) => this.setBucket({ ...this.app.target.bucket!, selected: { max, min }});
+  setBucketSelectedStart = (min: number) => this.setBucket({
     ...this.app.target.bucket!,
-    selected: {
-      max: max,
-      min: min
-    }
+    selected: { ...this.app.target.bucket.selected, min }
+  });
+  setBucketSelectedEnd = (max: number) => this.setBucket({
+    ...this.app.target.bucket!,
+    selected: { ...this.app.target.bucket.selected, max}
   });
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
   
@@ -490,7 +491,7 @@ export class File {
 
   public static index = (app: Information, file: λFile | UUID) => File.selected(app).findIndex(f => f.uuid === Parser.useUUID(file));
 
-  public static getHeight = (app: Information, file: λFile | UUID, scrollY: number) => HEIGHT * this.index(app, file) - scrollY + HALFHEIGHT;
+  public static getHeight = (app: Information, file: λFile | UUID, scrollY: number) => 48 * this.index(app, file) - scrollY + 24;
 
   private static _select = (p: λFile): λFile => ({ ...p, selected: true });
 
@@ -513,12 +514,16 @@ export class Event {
     return app.target.events;
   }
 
-  public static parse = (app: Information, events: Arrayed<λRawEventMinimized>): λNote['events'] => Parser.array(events).map(e => ({
+  public static parse = (app: Information, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).map(e => ({
     _id: e.id,
     operation_id: e.operation_id,
     timestamp: e['@timestamp'],
     file: e.src_file,
     context: e.context,
+    event: {
+      duration: 1,
+      code: '0'
+    },
     _uuid: File.findByNameAndContextName(app, e.src_file, e.context).uuid,
   }));
 
@@ -567,11 +572,11 @@ export class Link {
   
   // public static findByEvent = (use: Information | λLink[], event: λEvent | string): λLink[] => Parser.use(use, 'links').filter(l => l.events.some(e => e._id === Parser.useId(event)));
 
-  // public static timestamp = (note: λNote): number => {
-  //   let sum = 0
-  //   note.events.forEach(e => sum += e.timestamp);
-  //   return (sum / note.events.length) || (note.time_end ? (note.time_start + note.time_end) / 2 : note.time_start);
-  // }
+  public static timestamp = (link: λLink): number => {
+    let sum = 0
+    link.events.forEach(e => sum += e.timestamp);
+    return (sum / link.events.length) || (link.time_end ? (link.time_start + link.time_end) / 2 : link.time_start);
+  }
 }
 
 export class Parser {

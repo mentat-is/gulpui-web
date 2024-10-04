@@ -1,6 +1,6 @@
 import React from "react"
 import s from './styles/Input.module.css' 
-import { cn, Icon as λIcon, ui } from "./utils"
+import { cn, λIcon, ui } from "./utils"
 import { cva, type VariantProps } from "class-variance-authority"; 
 import { Icon } from "./Icon";
 

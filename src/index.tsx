@@ -6,7 +6,6 @@ import { ApplicationProvider, useApplication } from './context/Application.conte
 import { GulpPage } from './app/gulp/Gulp';
 import { LoginPage } from './app/login/Login';
 import { Toaster } from './ui/Toaster';
-import { useEffect } from 'react';
 import { Index, Operation } from './class/Info';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(Root());

@@ -1,17 +1,18 @@
 import { useLanguage } from "../context/Language.context";
-import { Icon } from "./Icon";
+import { Icon, IconProps } from "./Icon";
 import s from './styles/Button.module.css';
 import { cn } from "./utils";
 
 interface LoadingProps {
   size: "default" | "sm" | "lg" | "icon" | undefined | null;
+  variant?: IconProps['variant']
 }
 
-export function Loading({ size }: LoadingProps) {
+export function Loading({ size, variant = 'black' }: LoadingProps) {
   const { lang } = useLanguage();
   return (
     <>
-      <Icon className={s.loading} variant='black' name='LoaderCircle' />
+      <Icon className={s.loading} variant={variant} name='LoaderCircle' />
       {size !== 'icon' && lang._please_wait}
     </>
   )

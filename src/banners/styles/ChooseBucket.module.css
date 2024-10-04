@@ -1,12 +1,36 @@
+.date_input_choose_option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.date_input_choose_option span {
+  font-size: 14px;
+  color: var(--text-dimmed);
+}
+.date_input_choose_option span.selected {
+  font-weight: 500;
+  color: var(--text-white);
+}
 .button_group {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   flex-direction: row;
   gap: 8px;
 }
+.wrapper {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  justify-content: space-between;
+}
+.wrapper span {
+  font-size: 14px;
+  color: var(--text-dimmed);
+}
 .input_group {
   display: flex;
-  flex-direction: column;
+  flex: 1;
+  flex-direction: row;
   gap: 8px;
 }
 .button {

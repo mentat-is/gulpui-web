@@ -22,8 +22,8 @@ export type λLink = {
   tags: null | string[]
   text: null | string
   time_created: number
-  time_end: null | number
-  time_start: null | number
+  time_end: number
+  time_start: number
   time_updated: number
   type: number
   _uuid: UUID

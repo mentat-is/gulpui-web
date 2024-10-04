@@ -1,4 +1,4 @@
-.note {
+.target {
   position: absolute;
   height: 32px;
   width: 32px;
@@ -9,13 +9,13 @@
   background: var(--geist-background);
   backdrop-filter: brightness(0.6) blur(3px);
   border-radius: 4px;
-  transform: translate(-50%, calc(-50% + 48px));
+  transform: translate(-50%, -50%);
 }
-.note img {
+.target img {
   position: relative;
   top: -2px;
 }
-.note hr {
+.target hr {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -73,8 +73,11 @@
   word-break: break-all;
   max-width: 80%;
   max-height: 256px;
+  display: flex;
   overflow: hidden;
+  min-height: 24px;
   text-overflow: ellipsis;
+  align-items: center;
 }
 .content {
   display: flex;

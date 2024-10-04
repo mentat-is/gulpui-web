@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+############ GULPUI-WEB ############
+  gulpui-web:
+    container_name: gulpui-web
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    restart: on-failure
+    ports:
+      - 3000:80

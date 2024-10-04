@@ -116,7 +116,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
       <Card className={s.color}>
         <div className={s.unit}>
           <p>Color:</p>
-          <ColorPicker color={file.color} setColor={setColor}>
+          <ColorPicker color={color} setColor={setColor}>
             <ColorPickerTrigger />
             <ColorPickerPopover />
           </ColorPicker>

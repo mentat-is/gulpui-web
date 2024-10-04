@@ -8,7 +8,7 @@ import s from './styles/DisplayEventDialog.module.css';
 import { XMLTree } from "@/ui/XMLTree";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
 import { convertXML } from 'simple-xml-to-json';
-import { cn, copy, Icon as λIcon } from "@/ui/utils";
+import { cn, copy, λIcon } from "@/ui/utils";
 import { Button } from "@/ui/Button";
 import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
 import { File, Note, Plugin } from '@/class/Info';
@@ -59,6 +59,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   useEffect(() => {
     setNotes(Note.findByEvent(app, event));
   }, [event, app.target.notes]);
+
+  useEffect(() => Info.setTimelineTarget(event), [event])
 
   useEffect(() => {
     if (detailedChunkEvent?.event?.original) {
@@ -217,7 +219,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Tabs>
           <div className={s.buttons_group}>
             <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
-            <Button className={s.createNote} onClick={spawnLinkBanner} img='Spline'>New link / Connect link</Button>
+            <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
           </div>
           <Tabs defaultValue={root ? 'smart' : 'raw'} className={s.tabs}>
             <TabsList className={s.tabs_list}>

@@ -2,12 +2,6 @@ import { useApplication } from "@/context/Application.context";
 import s from './styles/Ruler.module.css';
 import { format, differenceInMilliseconds, addMilliseconds } from 'date-fns';
 import { useRef, useEffect, useState, RefObject } from 'react';
-import { getLimits } from "@/ui/utils";
-
-interface DatePosition {
-  date: Date;
-  position: number;
-}
 
 interface RulerProps {
   scrollX: number;
@@ -16,7 +10,7 @@ interface RulerProps {
 export function Ruler({ scrollX }: RulerProps) {
   const { app, Info, timeline } = useApplication();
   const ruler = useRef<HTMLDivElement>(null);
-  const [visibleDates, setVisibleDates] = useState<DatePosition[]>([]);
+  const [visibleDates, setVisibleDates] = useState<Date[]>([]);
   const { min, max } = app.target.bucket?.selected || {};
 
   const getDateFormat = (diffInMilliseconds: number) => {
@@ -39,7 +33,7 @@ export function Ruler({ scrollX }: RulerProps) {
     const step = Math.max(totalMilliseconds / (Info.width / 100), 1);
     const visibleWidth = timeline.current.clientWidth || 0;
   
-    const dates: DatePosition[] = [];
+    const dates: Date[] = [];
     
     const visibleStartTime = addMilliseconds(new Date(min), (scrollX / Info.width) * totalMilliseconds);
     const visibleEndTime = addMilliseconds(new Date(min), ((scrollX + visibleWidth) / Info.width) * totalMilliseconds);
@@ -49,10 +43,7 @@ export function Ruler({ scrollX }: RulerProps) {
     while (currentTime <= visibleEndTime) {
       const position = ((differenceInMilliseconds(currentTime, new Date(min)) / totalMilliseconds) * Info.width);
       
-      dates.push({
-        date: currentTime,
-        position: Math.round(position)
-      });
+      dates.push(currentTime);
   
       currentTime = addMilliseconds(currentTime, step);
     }
@@ -77,15 +68,15 @@ export function Ruler({ scrollX }: RulerProps) {
     }
   }, [ruler]);
 
-  const timeUnit = getDateFormat(differenceInMilliseconds(visibleDates[1]?.date, visibleDates[0]?.date)) || 'MMM yyyy';
+  const timeUnit = getDateFormat(differenceInMilliseconds(visibleDates[1], visibleDates[0])) || 'MMM yyyy';
 
   return (
     <div className={s.ruler} ref={ruler}>
       <div className={s.wrapper}>
         {visibleDates.map((date, index) => {
           const isEven = !!(index % 2 === 0);
-          return <div key={index} className={s.date} style={{ left: `${date.position - scrollX}px` }} data-even={isEven}>
-            <p>{format(date.date, timeUnit)}</p>
+          return <div key={index} className={s.date} style={{ left: index * 100 }} data-even={isEven}>
+            <p>{format(date, timeUnit)}</p>
           </div>
         })}
       </div>

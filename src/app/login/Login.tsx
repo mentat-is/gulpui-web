@@ -65,7 +65,7 @@ export function LoginPage() {
               )
         )}
       </Card>
-      {!!sessions.length && (!app.general.token || !app.target.indexes.length) && <SessionsChooser sessions={sessions} setSessions={setSessions} />}
+      {!!sessions.length && (!app.general.token || !app.target.indexes.length) && <SessionsChooser sessions={sessions.slice(-5)} setSessions={setSessions} />}
     </Page>
   )
 }
