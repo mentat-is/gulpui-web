@@ -1,5 +1,5 @@
 import s from './styles/Link.module.css';
-import { cn, copy } from './utils';
+import { copy } from './utils';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
 import { Separator } from './Separator';
@@ -10,7 +10,6 @@ import { Event } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
-import { λIcon } from '@/ui/utils';
 import { λLink } from '@/dto/Link.dto';
 
 interface LinkProps {

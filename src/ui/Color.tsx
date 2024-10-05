@@ -1,5 +1,5 @@
 import { Paintbrush } from 'lucide-react';
-import { createContext, HTMLAttributes, useContext, useMemo, useState } from 'react';
+import { createContext, HTMLAttributes, useContext, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Button } from './Button';
 import { arrayToLinearGradientCSS, cn, Gradients, GradientsMap } from './utils';

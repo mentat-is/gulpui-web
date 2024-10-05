@@ -1,6 +1,5 @@
 import { HTMLAttributes } from "react";
 import { Button } from "./Button";
-import { toast } from "sonner";
 import { copy } from "./utils";
 
 type XMLTreeProps = HTMLAttributes<HTMLDivElement> & { xml: string };

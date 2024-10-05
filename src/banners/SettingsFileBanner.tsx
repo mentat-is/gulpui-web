@@ -8,7 +8,7 @@ import s from './styles/SettingsFileBanner.module.css'
 import { FilterFileBanner } from "./FilterFileBanner";
 import { Card } from "@/ui/Card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Gradients, GradientsMap, ui } from "@/ui/utils";
+import { Gradients, GradientsMap } from "@/ui/utils";
 import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Engine, enginesBase } from '@/dto/Engine.dto';
