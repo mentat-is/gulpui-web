@@ -1,7 +1,6 @@
 import { useLanguage } from "../context/Language.context";
 import { Icon, IconProps } from "./Icon";
 import s from './styles/Button.module.css';
-import { cn } from "./utils";
 
 interface LoadingProps {
   size: "default" | "sm" | "lg" | "icon" | undefined | null;
