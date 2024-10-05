@@ -11,7 +11,7 @@ on:
 
 env:
   DOCKER_REPOSITORY: mentatis
-  DOCKER_IMAGE_NAME: gulpui-web
+  DOCKER_IMAGE_NAME: gulp-web
 
 jobs:
   docker:
