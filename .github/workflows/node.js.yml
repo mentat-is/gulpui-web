@@ -8,6 +8,8 @@ on:
     branches: [ "master" ]
   pull_request:
     branches: [ "master" ]
+  # enables manual trigger
+  workflow_dispatch:
 
 jobs:
   build:
