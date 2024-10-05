@@ -312,22 +312,22 @@ export class Info implements InfoProps {
     })
   }).then(response => {
     if (response.isSuccess()) {
-      if (response.data.total === 0 || !response.data.buckets.length) throw new Error('/query_max_min');
+      const fulfilled = Boolean(response.data.buckets.length);
 
       this.setBucket({
-        total: response.data.buckets[0]['*'].doc_count,
+        total: response.data.total,
         fetched: this.app.target.bucket?.fetched || 0,
         event_code: {
-          max: response.data.buckets[0]['*']['max_event.code'],
-          min: response.data.buckets[0]['*']['min_event.code']
+          max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
+          min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
         },
         timestamp: {
-          max: response.data.buckets[0]['*']['max_@timestamp'],
-          min: response.data.buckets[0]['*']['min_@timestamp']
+          max: fulfilled ? response.data.buckets[0]['*']['max_@timestamp'] : Date.now(),
+          min: fulfilled ? response.data.buckets[0]['*']['min_@timestamp'] : Date.now(),
         },
         selected: {
-          max: response.data.buckets[0]['*']['max_@timestamp'],
-          min: response.data.buckets[0]['*']['min_@timestamp']
+          max: fulfilled ? response.data.buckets[0]['*']['max_@timestamp'] : Date.now(),
+          min: fulfilled ? response.data.buckets[0]['*']['min_@timestamp'] : Date.now()-1
         }
       });
     }
