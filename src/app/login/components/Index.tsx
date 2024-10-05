@@ -1,5 +1,4 @@
 import { useApplication } from "@/context/Application.context";
-import { useLanguage } from "@/context/Language.context";
 import { Button } from "@/ui/Button";
 import s from '../Login.module.css';
 import {  useState } from "react";
@@ -8,7 +7,6 @@ import { Icon } from "@/ui/Icon";
 
 export function IndexesChooser() {
   const { app, Info } = useApplication();
-  const { lang } = useLanguage();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   const awaitResponse = (index: λIndex) => setLoading(prevLoading => ({ ...prevLoading, [index.name]: true }));

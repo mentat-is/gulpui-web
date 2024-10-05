@@ -12,7 +12,6 @@ interface NotesProps {
 export function Notes({ notes }: NotesProps) {
   const { Info } = useApplication();
   const [loading, setLoading] = useState<boolean>(false);
-  const [open, setOpen] = useState<boolean>(false);
 
   const deleteNote = async (note: λNote) => {
     setLoading(true);
@@ -24,7 +23,7 @@ export function Notes({ notes }: NotesProps) {
     <div className={s.notes}>
       {notes.map(note => (
         <Card key={note.id}>
-          <NoteContent loading={loading} deleteNote={() => deleteNote(note)} note={note} setOpen={setOpen} />
+          <NoteContent loading={loading} deleteNote={() => deleteNote(note)} note={note} />
         </Card>
       ))}
     </div>

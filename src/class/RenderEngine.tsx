@@ -91,6 +91,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const max = Math.max(...[...heat.values()].map(v => v.code));
 
     [...heat].forEach(hit => {
+      // eslint-disable-next-line
       const [_, { code, timestamp }] = hit;
       
       if (throwableByTimestamp(timestamp, this.limits, 0, this.app)) return;
@@ -112,6 +113,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const max = Math.max(...[...heat.values()].map(v => v.height));
 
     [...heat].forEach((hit) => {
+      // eslint-disable-next-line
       const [_, { height, timestamp }] = hit;
       
       if (throwableByTimestamp(timestamp, this.limits)) return;
@@ -132,6 +134,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       : this.getStatusMap(file);
 
     [...heat].forEach(hit => {
+      // eslint-disable-next-line
       const [_, { codes, heights, timestamp }] = hit;
       
       if (throwableByTimestamp(timestamp, this.limits)) return;

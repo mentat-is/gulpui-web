@@ -3,11 +3,6 @@ export interface Translation {
   it: string;
 }
 
-const template = {
-  us: '',
-  it: ''
-}
-
 export interface Locale {
   [key: string]: {
     [key: string]: string | Translation;

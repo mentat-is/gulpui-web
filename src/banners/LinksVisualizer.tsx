@@ -1,4 +1,4 @@
-import { Link, File } from "@/class/Info";
+import { Link } from "@/class/Info";
 import { useApplication } from "@/context/Application.context"
 import { λFile } from "@/dto/File.dto"
 import { Banner } from "@/ui/Banner"

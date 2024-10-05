@@ -1,5 +1,5 @@
 import React from 'react';
-import card from './styles/Card.module.css'
+import s from './styles/Card.module.css'
 import { cn } from './utils';
 
 interface DescriptionOptions {
@@ -7,20 +7,20 @@ interface DescriptionOptions {
   button: JSX.Element
 }
 
-export interface Card {
+export interface CardProps {
   description?: string | DescriptionOptions;
   children: any;
   className?: string | string[];
 }
 
-export function Card({ description, children, className }: Card) {
+export function Card({ description, children, className }: CardProps) {
   return (
-    <div className={cn(className, card._)}>
-      <div className={card.content}>
+    <div className={cn(className, s._)}>
+      <div className={s.content}>
         {children}
       </div>
       {description && (
-        <div className={card.description}>
+        <div className={s.description}>
           {typeof description === 'string'
             ? <p>{description}</p>
             : (

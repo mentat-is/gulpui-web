@@ -1,5 +1,5 @@
 import { useApplication } from '@/context/Application.context';
-import { cn, getLimits, stringToHexColor, throwableByTimestamp } from '@/ui/utils';
+import { cn, getLimits, throwableByTimestamp } from '@/ui/utils';
 import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
@@ -145,7 +145,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
           const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
           const top = File.getHeight(app, note._uuid, scrollY);
 
-          if (top < 0) return;
+          if (top < 0) return null;
 
           return <Note note={note} left={left} top={top} />
         })}
@@ -156,7 +156,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
             top += File.getHeight(app, event._uuid, scrollY)
           });
 
-          if (top < 0) return;
+          if (top < 0) return null;
 
           return <Link link={link} left={left} top={top / Math.max(link.events.length, 1)} />
         })}

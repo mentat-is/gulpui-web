@@ -1,6 +1,6 @@
 import { λNote } from '@/dto/Note.dto';
 import s from './styles/Link.module.css';
-import { cn, copy } from './utils';
+import { copy } from './utils';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
 import { Separator } from './Separator';
@@ -43,7 +43,7 @@ export function Note({ note, left, top }: NoteProps) {
         <hr style={{ background: note.data.color }} />
       </PopoverTrigger>
       <PopoverContent className={s.content}>
-        <NoteContent loading={loading} note={note} setOpen={setOpen} deleteNote={deleteNote} />
+        <NoteContent loading={loading} note={note} deleteNote={deleteNote} />
       </PopoverContent>
     </Popover>
   )
@@ -52,10 +52,9 @@ export function Note({ note, left, top }: NoteProps) {
 interface NoteContentProps extends Pick<NoteProps, 'note'> {
   loading: boolean;
   deleteNote: () => void;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function NoteContent({ note, setOpen, loading, deleteNote }: NoteContentProps) {
+export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
   const { app, spawnDialog, dialog } = useApplication();
 
   const openEvent = () => {
@@ -66,7 +65,6 @@ export function NoteContent({ note, setOpen, loading, deleteNote }: NoteContentP
       : <DisplayGroupDialog events={events} />;
 
     spawnDialog(dialog);
-    setOpen(false);
   };
 
   return (

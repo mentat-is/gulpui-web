@@ -1,6 +1,5 @@
 import React from "react";
 import { Info } from "./Info";
-import { XY } from "@/dto/XY.dto";
 
 interface DragDealerProps {
   info: DragDealer['info'],

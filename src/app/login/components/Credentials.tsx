@@ -1,5 +1,5 @@
 import s from '../Login.module.css'
-import React, { ChangeEvent, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/ui/Button";
 import { Input } from "@/ui/Input";
 import { useApplication } from "@/context/Application.context";

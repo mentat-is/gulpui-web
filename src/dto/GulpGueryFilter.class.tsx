@@ -35,13 +35,12 @@ export class GulpQueryFilter {
 
   public static parse(array: GulpQueryFilterArray): GulpQueryFilterString {
     return array.map(filter => {
-      // Determine the operator to use in the query string
       let queryStringPart: string;
 
       const isParsable = !!parseInt(filter.value);
 
-      const value = isParsable ? filter.value : `\"${filter.value}\"`
-      
+      const value = isParsable ? filter.value : `"${filter.value}"`
+
       switch (filter.type) {
         case FilterType.EQUAL:
           queryStringPart = `${filter.key}:${value}`;

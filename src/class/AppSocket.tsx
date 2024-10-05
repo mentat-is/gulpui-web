@@ -1,7 +1,7 @@
-import { File, Info } from '@/class/Info';
+import { Info } from '@/class/Info';
 import { Info as Information } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
-import { Chunk, isChunkDefault, isChunkType_6 } from '@/dto/Chunk.dto';
+import { Chunk, isChunkDefault } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
 
 export class AppSocket extends WebSocket {

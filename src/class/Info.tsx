@@ -14,7 +14,7 @@ import { λFile } from '@/dto/File.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
-import { generateUUID, Gradients, stringToHexColor } from '@/ui/utils';
+import { generateUUID, Gradients } from '@/ui/utils';
 import { MappingFileListRequest } from '@/dto/MappingFileList.dto';
 import { IngestMapping } from '@/dto/Ingest.dto';
 import { UUID } from 'crypto';

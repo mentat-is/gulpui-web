@@ -14,7 +14,7 @@ interface SessionsChooserProps {
 
 export function SessionsChooser({ sessions, setSessions }: SessionsChooserProps) {
   const { lang } = useLanguage();
-  const { Info, app } = useApplication()
+  const { Info } = useApplication()
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   const awaitResponse = (token: string) => setLoading(prevLoading => ({ ...prevLoading, [token]: true }));

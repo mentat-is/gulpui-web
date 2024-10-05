@@ -1,7 +1,7 @@
 import { useApplication } from "@/context/Application.context";
 import s from './styles/Ruler.module.css';
 import { format, differenceInMilliseconds, addMilliseconds } from 'date-fns';
-import { useRef, useEffect, useState, RefObject } from 'react';
+import { useRef, useEffect, useState } from 'react';
 
 interface RulerProps {
   scrollX: number;
@@ -41,8 +41,6 @@ export function Ruler({ scrollX }: RulerProps) {
     let currentTime = visibleStartTime;
   
     while (currentTime <= visibleEndTime) {
-      const position = ((differenceInMilliseconds(currentTime, new Date(min)) / totalMilliseconds) * Info.width);
-      
       dates.push(currentTime);
   
       currentTime = addMilliseconds(currentTime, step);

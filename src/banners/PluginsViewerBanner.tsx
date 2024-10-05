@@ -1,6 +1,5 @@
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
-import { Button } from '@/ui/Button';
 import s from './styles/PluginsViewerBanner.module.css';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/ui/Select';
 import { useState } from 'react';

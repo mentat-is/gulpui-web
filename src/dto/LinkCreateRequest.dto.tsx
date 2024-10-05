@@ -1,6 +1,6 @@
 import { JsonString } from '@/ui/utils';
 import { λEvent, λEventFormForCreateRequest } from './ChunkEvent.dto';
-import { Arrayed, Event, Parser } from '@/class/Info';
+import { Arrayed, Event } from '@/class/Info';
 import { λLink } from './Link.dto';
 
 interface LinkCreateRequestProps {

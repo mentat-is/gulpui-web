@@ -1,5 +1,4 @@
-import React, { useState, createContext, useContext, ReactNode, useRef, useEffect } from "react";
-import { _server } from "@/decorator/api";
+import React, { useState, createContext, useContext, ReactNode, useRef } from "react";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { Info as Information, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";

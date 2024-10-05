@@ -18,7 +18,6 @@ import { Separator } from "@/ui/Separator";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { Switch } from "@/ui/Switch";
 import { LinkCreateRequest } from "@/dto/LinkCreateRequest.dto";
-import { SymmetricSvg } from "@/ui/SymmetricSvg";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { λFile } from "@/dto/File.dto";
 import { λLink } from "@/dto/Link.dto";
@@ -32,7 +31,7 @@ interface CreateLinkBannerProps {
 }
 
 export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProps) {
-  const { app, api, destroyBanner, Info, spawnBanner } = useApplication();
+  const { app, api, destroyBanner, Info } = useApplication();
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
   const [name, setName] = useState<string>('');
