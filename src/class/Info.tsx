@@ -266,6 +266,9 @@ export class Info implements InfoProps {
       };
       operations.push(operation);
     });
+
+    const min = Math.min(...files.map(file => file.timestamp.min));
+    const max = Math.max(...files.map(file => file.timestamp.max));
     
     this.setInfo(app => ({
       ...app,
@@ -275,7 +278,19 @@ export class Info implements InfoProps {
           operations,
           contexts,
           plugins,
-          files
+          files,
+          bucket: {
+            ...app.target.bucket,
+            timestamp: {
+              min,
+              max
+            },
+            selected: {
+              min,
+              max
+            },
+            total: files.map(file => file.doc_count).reduce((acc, curr) => acc + curr, 0)
+          }
         }
       }
     }));

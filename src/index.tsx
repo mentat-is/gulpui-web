@@ -6,8 +6,8 @@ import { ApplicationProvider, useApplication } from './context/Application.conte
 import { GulpPage } from './app/gulp/Gulp';
 import { LoginPage } from './app/login/Login';
 import { Toaster } from './ui/Toaster';
-import { Index, Operation } from './class/Info';
-import { useEffect } from 'react';
+import { File, Index, Operation } from './class/Info';
+import { useEffect, useState } from 'react';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(Root());
 
@@ -24,12 +24,13 @@ function Root() {
 
 function Main() {
   const { app } = useApplication();
+  const [preflighted, setPreflighted] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log(app)
-  }, [app]);
+    if (File.selected(app).length) setPreflighted(true);
+  }, [app.target.files]);
 
-  return (false
+  return (preflighted
     // if app has operation and index defined
     ? <GulpPage />
     // if not

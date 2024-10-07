@@ -11,13 +11,14 @@ import { Context, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
+import { SelectContextBanner } from "./SelectContextBanner";
 
 interface IngestBannerProps {
   onIngest?: () => void;
 }
 
 export function IngestBanner({ onIngest }: IngestBannerProps) {
-  const { Info, app, api, destroyBanner } = useApplication();
+  const { Info, app, api, destroyBanner, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
   const [filename, setFilename] = useState<string>();
@@ -101,11 +102,20 @@ export function IngestBanner({ onIngest }: IngestBannerProps) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       await sendChunkedFiles(file, 0, i);
-    }   
+    }
 
-    setLoading(() => false);
-    destroyBanner();
-    Info.refetch();
+    setTimeout(() => {
+      Info.operations_request().then(operations => {
+        setLoading(false);
+        
+        const result = Info.operations_update(operations);
+        
+        if (result.contexts.length && result.plugins.length && result.files.length) {
+          spawnBanner(<SelectContextBanner />);
+        }
+      });
+    }, 5000);
+    
   };
   
   

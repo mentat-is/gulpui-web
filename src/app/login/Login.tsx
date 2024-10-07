@@ -152,7 +152,7 @@ export function LoginPage() {
       const result = Info.operations_update(operations);
 
       spawnBanner(!result.contexts?.length || !result.plugins?.length || !result.files?.length
-        ? <IngestBanner onIngest={() => setStage(4)} />
+        ? <IngestBanner onIngest={() => setStage(stage => stage++)} />
         : <SelectContextBanner />
       );
     });
