@@ -151,9 +151,9 @@ export function LoginPage() {
     Info.operations_request().then(operations => {
       const result = Info.operations_update(operations);
 
-      spawnBanner(!result.contexts?.length || !result.plugins?.length || !result.files?.length
-        ? <IngestBanner onIngest={() => setStage(stage => stage++)} />
-        : <SelectContextBanner />
+      spawnBanner(result.contexts.length && result.plugins.length && result.files.length
+        ? <SelectContextBanner />
+        : <IngestBanner />
       );
     });
   }, [stage]);

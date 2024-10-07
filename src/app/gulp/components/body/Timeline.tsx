@@ -134,7 +134,8 @@ export function Timeline() {
 
   const handleContextMenu = useCallback((event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 24) / 48)
-    const file = File.selected(app)[index];
+    const files = File.selected(app)
+    const file = files[index] || files[files.length - 1];
     setSelectedFileForContextMenu(file);
   }, [app, scrollY, timeline]);
 

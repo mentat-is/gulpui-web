@@ -13,11 +13,7 @@ import { cn } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
 import { SelectContextBanner } from "./SelectContextBanner";
 
-interface IngestBannerProps {
-  onIngest?: () => void;
-}
-
-export function IngestBanner({ onIngest }: IngestBannerProps) {
+export function IngestBanner() {
   const { Info, app, api, destroyBanner, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
