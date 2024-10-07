@@ -31,6 +31,8 @@ export function LoginPage() {
   useEffect(() => {
     if (!app.general.token || !app.general.server || !Index.selected(app)) return;
 
+    cookie.set('last_used_server', app.general.server);
+
     !sessions.find(session => session.token === app.general.token) && sessions.push({
       token: app.general.token,
       server: app.general.server,
@@ -51,7 +53,7 @@ export function LoginPage() {
 
   // AUTH
 
-  const [serverValue, setServerValue] = useState<string>(app.general.server);
+  const [serverValue, setServerValue] = useState<string>(cookie.get('last_used_server') || app.general.server);
   
   const login = async () => {
     const removeOverload = (str: string): string => str.endsWith('/')
@@ -80,6 +82,7 @@ export function LoginPage() {
         Info.setToken(res.data.token);
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
+        cookie.set('last_used_server', app.general.server);
       } else if (parseInt(res.status) < 500) toast('Error during authorization', {
         description: 'Wrong username or password'
       });
