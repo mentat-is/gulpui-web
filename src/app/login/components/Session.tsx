@@ -24,6 +24,7 @@ export function SessionsChooser({ sessions, setSessions }: SessionsChooserProps)
     Info.setToken(session.token);
     Info.setServer(session.server);
     Info.setExpire(session.expires);
+    Info.setUserId(session.user_id);
     setTimeout(() => {
       deleteSession(session);
     }, 2000);
@@ -49,7 +50,7 @@ export function SessionsChooser({ sessions, setSessions }: SessionsChooserProps)
             onClick={() => handleSessionButtonClick(session)}>
             <div>
               <p>{session.server}</p>
-              <p>{session.token}</p>
+              <p>{session.token} {session.user_id}</p>
             </div>
           </Button>
           <Button className={s.delete} onClick={() => deleteSession(session)} img='X' />

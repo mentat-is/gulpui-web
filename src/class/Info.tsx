@@ -43,6 +43,54 @@ export class Info implements InfoProps {
     this.api = api;
     this.timeline = timeline
   }
+
+  refetch = async () => {
+    const operation = Operation.selected(this.app);
+    const contexts = Context.selected(this.app);
+
+    if (!operation || !contexts.length) return;
+
+    this.events_reset();
+    
+    await this.plugins_reload();
+  
+    await this.notes_reload();
+
+    await this.links_reload();
+
+    await this.mapping_file_list();
+
+    await this.api<any>('/query_gulp', {
+      method: 'POST',
+      data: {
+        ws_id: this.app.general.ws_id
+      },
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "flt": {
+          "context": [
+            ...contexts.map(c => c.name)
+          ],
+          "end_msec": this.app.target.bucket?.selected.max,
+          "operation_id": [
+            operation.id
+          ],
+          "start_msec": this.app.target.bucket?.selected.min
+        },
+        "options": {
+            "search_after_loop": false,
+            "sort": {
+              "@timestamp": "desc"
+            },
+            "notes_on_match": false,
+            "max_notes": 0,
+            "include_query_in_results": false
+          }
+      })
+    });
+  }
   
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
@@ -149,7 +197,7 @@ export class Info implements InfoProps {
 
   bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
 
-  operations_request = (): Promise<RawOperation[] | void> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? (res.data.length ? res.data : (() => { toast('There is no operations')})()) : []);
+  operations_request = (): Promise<RawOperation[] | void> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? res.data : (() => { toast('There is no operations')})());
 
   operations_update = async (rawOperations: RawOperation[]) => {
     const operations: λOperation[] = [];

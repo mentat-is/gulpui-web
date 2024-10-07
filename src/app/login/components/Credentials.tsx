@@ -29,7 +29,6 @@ export function AuthorizationElement() {
     setLoading(true);
     await api<Login>('/login', {
       server,
-      // mode: 'same-origin',
       method: 'PUT',
       data: {
         username: app.general.username,

@@ -11,6 +11,7 @@ import { Context, Plugin, Operation, Arrayed } from "@/class/Info";
 import { UUID } from "crypto";
 import { IngestBanner } from "./IngestBanner";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 export function SelectContextBanner() {
   const { app, spawnBanner, destroyBanner, Info } = useApplication();
@@ -89,10 +90,30 @@ export function SelectContextBanner() {
     destroyBanner();
   }
 
+  useEffect(() => {
+    if (Operation.contexts(app).length) return;
+
+    console.log(app);
+
+    const refetch = async () => {
+      const ops = await Info.operations_request();
+
+      console.log(ops);
+
+      if (!ops?.length) return toast('No contexts found');
+
+      await Info.operations_update(ops);
+
+      await Info.plugins_reload();
+    }
+    
+    refetch();
+  }, [])
+
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>
     <div className={s.wrapper}>
-      {Operation.contexts(app).length ? Operation.contexts(app).map(context => (
+      {Operation.contexts(app).map(context => (
         <div className={s.context} key={context.name}>
           <div className={s.contextHeading}>
             <Checkbox id={context.name} checked={Context.plugins(app, context).every(p => p.selected) ? true : (Context.plugins(app, context).some(p => p.selected) ? 'indeterminate' : false)} onCheckedChange={checked => handle(checked, context.uuid)} />
@@ -116,7 +137,7 @@ export function SelectContextBanner() {
             </div>
           ))}
         </div>
-      )) : (() => spawnBanner(<IngestBanner />) as never)()}
+      ))}
       </div>
       <div className={s.group}>
         <Button variant='glass' onClick={selectAll}>Select all</Button>

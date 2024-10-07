@@ -33,7 +33,8 @@ export function LoginPage() {
     !sessions.find(session => session.token === app.general.token) && sessions.push({
       token: app.general.token,
       server: app.general.server,
-      expires: app.general.expires!
+      expires: app.general.expires!,
+      user_id: app.general.user_id
     })
 
     cookie.set('sessions', sessions);

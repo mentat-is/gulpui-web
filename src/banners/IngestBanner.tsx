@@ -10,14 +10,17 @@ import { Switch } from "@/ui/Switch";
 import { Context, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn } from "@/ui/utils";
+import { Progress } from "@/ui/Progress";
 
 export function IngestBanner() {
-  const { app, api } = useApplication();
+  const { Info, app, api, destroyBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
   const [filename, setFilename] = useState<string>();
   const [method, setMethod] = useState<string>();
   const [context, setContext] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -42,7 +45,8 @@ export function IngestBanner() {
   const CHUNK_SIZE = 1024 * 2 * 1024;
   const boundary = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  const sendChunkedFiles = async (file: File, start: number = 0) => {
+  const sendChunkedFiles = async (file: File, start: number, index: number) => {
+    const req_id = file.name + file.size;
     const end = Math.min(file.size, start + CHUNK_SIZE);
     const chunk = file.slice(start, end);
   
@@ -66,6 +70,7 @@ export function IngestBanner() {
         'continue_offset': start.toString(),
       },
       data: {
+        req_id,
         plugin,
         operation_id: Operation.selected(app)!.id,
         context,
@@ -73,19 +78,28 @@ export function IngestBanner() {
         ws_id: app.general.ws_id,
       },
     });
+  
+    setProgress(Math.floor(((index + (end / file.size)) / files!.length) * 100));
 
     if (end < file.size) {
-      await sendChunkedFiles(file, end);
+      await sendChunkedFiles(file, end, index);
     }
   };
   
   const submitFiles = async () => {
     if (!files) return;
+
+    setLoading(() => true);
+    setProgress(0);
   
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      await sendChunkedFiles(file, 0);
-    }
+      await sendChunkedFiles(file, 0, i);
+    }   
+
+    setLoading(() => false);
+    destroyBanner();
+    Info.refetch();
   };
   
   
@@ -150,7 +164,7 @@ export function IngestBanner() {
   }
 
   return (
-    <Banner title='Upload files' fixed={!Operation.selected(app)?.contexts?.length}>
+    <Banner title='Upload files'>
       <Input
         type='file'
         id='ingest_input'
@@ -182,12 +196,16 @@ export function IngestBanner() {
           ? <ContextSelection />
           : <Input value={context} onChange={e => setContext(e.target.value)} placeholder='Context name' />}
       </Card>
-      <Button
-        variant={files?.length && context && plugin && filename && hasMethod() ? 'default' : 'disabled'}
-        onClick={submitFiles}
-        img='Check'
-        className={s.done}
-      >Done</Button>
+      <div className={s.bottom}>
+        {loading && <Progress value={progress} />}
+        <Button
+          variant={files?.length && context && plugin && filename && hasMethod() ? 'default' : 'disabled'}
+          onClick={submitFiles}
+          img='Check'
+          className={s.done}
+          loading={loading}
+        >Done</Button>
+      </div>
     </Banner>
   );
 }
