@@ -7,6 +7,7 @@ import { GulpPage } from './app/gulp/Gulp';
 import { LoginPage } from './app/login/Login';
 import { Toaster } from './ui/Toaster';
 import { Index, Operation } from './class/Info';
+import { useEffect } from 'react';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(Root());
 
@@ -23,6 +24,10 @@ function Root() {
 
 function Main() {
   const { app } = useApplication();
+
+  useEffect(() => {
+    console.log(app)
+  }, [app]);
 
   return (app.general.token && Operation.selected(app) && Index.selected(app)
     // if app has operation and index defined

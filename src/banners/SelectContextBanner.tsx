@@ -90,25 +90,23 @@ export function SelectContextBanner() {
     destroyBanner();
   }
 
-  useEffect(() => {
-    if (Operation.contexts(app).length) return;
+  // useEffect(() => {
+  //   if (Operation.contexts(app).length) return;
 
-    console.log(app);
+  //   const refetch = async () => {
+  //     const ops = await Info.operations_request();
 
-    const refetch = async () => {
-      const ops = await Info.operations_request();
+  //     console.log(ops);
 
-      console.log(ops);
+  //     if (!ops?.length) return toast('No contexts found');
 
-      if (!ops?.length) return toast('No contexts found');
+  //     await Info.operations_update(ops);
 
-      await Info.operations_update(ops);
-
-      await Info.plugins_reload();
-    }
+  //     await Info.plugins_reload();
+  //   }
     
-    refetch();
-  }, [])
+  //   refetch();
+  // }, [])
 
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>

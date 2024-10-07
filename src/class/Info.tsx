@@ -41,7 +41,7 @@ export class Info implements InfoProps {
     this.app = app;
     this.setInfo = setInfo;
     this.api = api;
-    this.timeline = timeline
+    this.timeline = timeline;
   }
 
   refetch = async () => {
@@ -99,6 +99,7 @@ export class Info implements InfoProps {
 
   // 🔥 INDEXES
   index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));
+
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
   // 🔥 OPERATIONS
@@ -197,7 +198,7 @@ export class Info implements InfoProps {
 
   bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
 
-  operations_request = (): Promise<RawOperation[] | void> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? res.data : (() => { toast('There is no operations')})());
+  operations_request = (): Promise<RawOperation[] | void> => this.api<QueryOperations>('/query_operations').then(res => res.data);
 
   operations_update = async (rawOperations: RawOperation[]) => {
     const operations: λOperation[] = [];
