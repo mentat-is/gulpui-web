@@ -41,7 +41,55 @@ export class Info implements InfoProps {
     this.app = app;
     this.setInfo = setInfo;
     this.api = api;
-    this.timeline = timeline
+    this.timeline = timeline;
+  }
+
+  refetch = async () => {
+    const operation = Operation.selected(this.app);
+    const contexts = Context.selected(this.app);
+
+    if (!operation || !contexts.length) return;
+
+    this.events_reset();
+    
+    await this.plugins_reload();
+  
+    await this.notes_reload();
+
+    await this.links_reload();
+
+    await this.mapping_file_list();
+
+    await this.api<any>('/query_gulp', {
+      method: 'POST',
+      data: {
+        ws_id: this.app.general.ws_id
+      },
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        "flt": {
+          "context": [
+            ...contexts.map(c => c.name)
+          ],
+          "end_msec": this.app.target.bucket?.selected.max,
+          "operation_id": [
+            operation.id
+          ],
+          "start_msec": this.app.target.bucket?.selected.min
+        },
+        "options": {
+            "search_after_loop": false,
+            "sort": {
+              "@timestamp": "desc"
+            },
+            "notes_on_match": false,
+            "max_notes": 0,
+            "include_query_in_results": false
+          }
+      })
+    });
   }
   
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
@@ -51,6 +99,7 @@ export class Info implements InfoProps {
 
   // 🔥 INDEXES
   index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));
+
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
   // 🔥 OPERATIONS
@@ -149,9 +198,9 @@ export class Info implements InfoProps {
 
   bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
 
-  operations_request = (): Promise<RawOperation[] | void> => this.api<QueryOperations>('/query_operations').then(res => res.isSuccess() ? (res.data.length ? res.data : (() => { toast('There is no operations')})()) : []);
+  operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.data || []);
 
-  operations_update = async (rawOperations: RawOperation[]) => {
+  operations_update = (rawOperations: RawOperation[]) => {
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const plugins: λPlugin[] = [];
@@ -217,6 +266,9 @@ export class Info implements InfoProps {
       };
       operations.push(operation);
     });
+
+    const min = Math.min(...files.map(file => file.timestamp.min));
+    const max = Math.max(...files.map(file => file.timestamp.max));
     
     this.setInfo(app => ({
       ...app,
@@ -226,10 +278,24 @@ export class Info implements InfoProps {
           operations,
           contexts,
           plugins,
-          files
+          files,
+          bucket: {
+            ...app.target.bucket,
+            timestamp: {
+              min,
+              max
+            },
+            selected: {
+              min,
+              max
+            },
+            total: files.map(file => file.doc_count).reduce((acc, curr) => acc + curr, 0)
+          }
         }
       }
     }));
+
+    return { operations, contexts, plugins, files };
   };
   
   // Timestamp - 24 hours

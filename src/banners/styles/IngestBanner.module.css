@@ -28,3 +28,10 @@
   padding: 0 12px;
   font-family: var(--font-mono);
 }
+.bottom {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+}

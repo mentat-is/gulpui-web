@@ -10,20 +10,26 @@ import { Switch } from "@/ui/Switch";
 import { Context, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn } from "@/ui/utils";
+import { Progress } from "@/ui/Progress";
+import { SelectContextBanner } from "./SelectContextBanner";
 
 export function IngestBanner() {
-  const { app, api } = useApplication();
+  const { Info, app, api, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
   const [filename, setFilename] = useState<string>();
   const [method, setMethod] = useState<string>();
   const [context, setContext] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [progress, setProgress] = useState<number>(0);
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
 
   useEffect(() => {
-    setFilename(undefined);
+    const filenames = app.general.ingest.find(p => p.plugin === plugin)?.types.map(t => t.filename) || [];
+    setFilename(filenames[0]);
     setMethod(undefined);
   }, [plugin]);
+  
   
   useEffect(() => {
     setMethod(undefined);
@@ -42,7 +48,8 @@ export function IngestBanner() {
   const CHUNK_SIZE = 1024 * 2 * 1024;
   const boundary = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  const sendChunkedFiles = async (file: File, start: number = 0) => {
+  const sendChunkedFiles = async (file: File, start: number, index: number) => {
+    const req_id = file.name + file.size;
     const end = Math.min(file.size, start + CHUNK_SIZE);
     const chunk = file.slice(start, end);
   
@@ -66,6 +73,7 @@ export function IngestBanner() {
         'continue_offset': start.toString(),
       },
       data: {
+        req_id,
         plugin,
         operation_id: Operation.selected(app)!.id,
         context,
@@ -73,19 +81,37 @@ export function IngestBanner() {
         ws_id: app.general.ws_id,
       },
     });
+  
+    setProgress(Math.floor(((index + (end / file.size)) / files!.length) * 100));
 
     if (end < file.size) {
-      await sendChunkedFiles(file, end);
+      await sendChunkedFiles(file, end, index);
     }
   };
   
   const submitFiles = async () => {
     if (!files) return;
+
+    setLoading(() => true);
+    setProgress(0);
   
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      await sendChunkedFiles(file, 0);
+      await sendChunkedFiles(file, 0, i);
     }
+
+    setTimeout(() => {
+      Info.operations_request().then(operations => {
+        setLoading(false);
+        
+        const result = Info.operations_update(operations);
+        
+        if (result.contexts.length && result.plugins.length && result.files.length) {
+          spawnBanner(<SelectContextBanner />);
+        }
+      });
+    }, 5000);
+    
   };
   
   
@@ -135,12 +161,12 @@ export function IngestBanner() {
   };
 
   const ContextSelection = () => {
-    setContext(Context.selected(app)[0].name);
+    setContext(Context.selected(app)[0]?.name);
 
-    return (  
-      <Select onValueChange={setContext} value={context || Context.selected(app)[0].name}>
+    return (
+      <Select disabled={!Context.selected(app).length} onValueChange={setContext} value={context}>
         <SelectTrigger className={s.trigger}>
-          <SelectValue defaultValue={Context.selected(app)[0].name} placeholder="Choose method" />
+          <SelectValue defaultValue={Context.selected(app)[0]?.name} placeholder={Context.selected(app).length ? `Choose one context from list below (exist: ${Context.selected(app).length})` : 'There is no contexts at this moment'} />
         </SelectTrigger>
         <SelectContent>
           {Operation.contexts(app).map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
@@ -150,7 +176,7 @@ export function IngestBanner() {
   }
 
   return (
-    <Banner title='Upload files' fixed={!Operation.selected(app)?.contexts?.length}>
+    <Banner title='Upload files'>
       <Input
         type='file'
         id='ingest_input'
@@ -182,12 +208,16 @@ export function IngestBanner() {
           ? <ContextSelection />
           : <Input value={context} onChange={e => setContext(e.target.value)} placeholder='Context name' />}
       </Card>
-      <Button
-        variant={files?.length && context && plugin && filename && hasMethod() ? 'default' : 'disabled'}
-        onClick={submitFiles}
-        img='Check'
-        className={s.done}
-      >Done</Button>
+      <div className={s.bottom}>
+        {loading && <Progress value={progress} />}
+        <Button
+          variant={files?.length && context && plugin && filename && hasMethod() ? 'default' : 'disabled'}
+          onClick={submitFiles}
+          img='Check'
+          className={s.done}
+          loading={loading}
+        >Done</Button>
+      </div>
     </Banner>
   );
 }
