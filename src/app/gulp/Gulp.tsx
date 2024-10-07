@@ -11,19 +11,6 @@ export function GulpPage() {
   const { app, spawnBanner, Info, api, setWs } = useApplication();
   const [rendered, setRendered] = useState<number>(0);
 
-
-  useEffect(() => {
-    (async () => {
-      if (app.target.operations.some(o => !o.contexts) && !app.target.contexts.length) {
-        const ops = await Info.operations_request();
-
-        if (!ops?.length) return toast('No contexts found');
-
-        await Info.operations_update(ops);
-      }
-    })();
-  }, [app.target.operations]);
-
   useEffect(() => {
     const files = File.selected(app);
 
@@ -35,18 +22,6 @@ export function GulpPage() {
 
     Info.refetch();
   }, [app.target.files, app.target.contexts]);
-
-  useEffect(() => {
-    (async () => {
-      if (!app.target.bucket.timestamp.max) {
-        await Info.fetchBucket();
-      }
-  
-      if (!File.selected(app).length) {
-        spawnBanner(<SelectContextBanner />);
-      }
-    })();
-  }, [app.target.bucket, app.target.files]);
 
   return (
     <React.Fragment>

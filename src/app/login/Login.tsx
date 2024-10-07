@@ -7,7 +7,7 @@ import { Page } from "@/components/Page";
 import { Card } from "@/ui/Card";
 import { SessionsChooser } from "./components/Session";
 import { Sessions } from "@/dto/Session.dto";
-import { Index } from "@/class/Info";
+import { Context, Index } from "@/class/Info";
 import { toast } from "sonner";
 import { Login, λOperation } from "@/dto";
 import React from "react";
@@ -18,6 +18,8 @@ import { λIndex } from "@/dto/Index.dto";
 import { Icon } from "@/ui/Icon";
 import { Banner } from "@/ui/Banner";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
+import { IngestBanner } from "@/banners/IngestBanner";
+import { SelectContextBanner } from "@/banners/SelectContextBanner";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -91,6 +93,7 @@ export function LoginPage() {
   */
   useEffect(() => {
     if (app.general.token) {
+      Info.mapping_file_list();
       Info.index_reload().then(() => setLoading(false));
     }
   }, [app.general.token]);
@@ -134,6 +137,26 @@ export function LoginPage() {
       });
     });
   };
+
+  const handleOperationSelect = (operation: λOperation) => {
+    setLoading(true);
+    Info.operations_select(operation)
+
+    setStage(3);
+  }
+
+  useEffect(() => {
+    if (stage < 3) return;
+
+    Info.operations_request().then(operations => {
+      const result = Info.operations_update(operations);
+
+      spawnBanner(!result.contexts?.length || !result.plugins?.length || !result.files?.length
+        ? <IngestBanner onIngest={() => setStage(4)} />
+        : <SelectContextBanner />
+      );
+    });
+  }, [stage]);
 
   const spawnBannerToRequestDelete = (operation: λOperation) => {
     spawnBanner(
@@ -194,27 +217,31 @@ export function LoginPage() {
                 )}
               </div>
               )
-            : (
-              <div className={s.chooser}>
-                <p className={s.cluster}><Icon name='Hexagon' />Choose operation node</p>
-                {app.target.operations.map((operation) => (
-                  <div className={s.unit_group} key={operation.id}>
-                    <Button onClick={() => Info.operations_select(operation)} img='Workflow'>{operation.name}</Button>
-                    <Button
-                      size='icon'
-                      onClick={() => spawnBannerToRequestDelete(operation)}
-                      variant='destructive'
-                      img='Trash2' />
-                    </div>
-                ))}
-                <Separator />
-                <Button
-                  variant='outline'
-                  img='Plus'
-                  style={{ width: '100%' }}
-                  onClick={() => spawnBanner(<CreateOperationBanner />)}>Create new operation</Button>
-              </div>
-            )
+            :  stage === 2 
+              ? (
+                <div className={s.chooser}>
+                  <p className={s.cluster}><Icon name='Hexagon' />Choose operation node</p>
+                  {app.target.operations.map((operation) => (
+                    <div className={s.unit_group} key={operation.id}>
+                      <Button onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
+                      <Button
+                        size='icon'
+                        onClick={() => spawnBannerToRequestDelete(operation)}
+                        variant='destructive'
+                        img='Trash2' />
+                      </div>
+                  ))}
+                  <Separator />
+                  <Button
+                    variant='outline'
+                    img='Plus'
+                    style={{ width: '100%' }}
+                    onClick={() => spawnBanner(<CreateOperationBanner />)}>Create new operation</Button>
+                </div>
+              )
+              : (
+                <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
+                )
         }
       </Card>
       {!!sessions.length && (!app.general.token || !app.target.indexes.length) && <SessionsChooser sessions={sessions.slice(-5)} setSessions={setSessions} />}

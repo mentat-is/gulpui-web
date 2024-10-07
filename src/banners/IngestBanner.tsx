@@ -12,7 +12,11 @@ import { Card } from "@/ui/Card";
 import { cn } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
 
-export function IngestBanner() {
+interface IngestBannerProps {
+  onIngest?: () => void;
+}
+
+export function IngestBanner({ onIngest }: IngestBannerProps) {
   const { Info, app, api, destroyBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
@@ -24,9 +28,11 @@ export function IngestBanner() {
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
 
   useEffect(() => {
-    setFilename(undefined);
+    const filenames = app.general.ingest.find(p => p.plugin === plugin)?.types.map(t => t.filename) || [];
+    setFilename(filenames[0]);
     setMethod(undefined);
   }, [plugin]);
+  
   
   useEffect(() => {
     setMethod(undefined);

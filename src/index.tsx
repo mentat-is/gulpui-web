@@ -29,7 +29,7 @@ function Main() {
     console.log(app)
   }, [app]);
 
-  return (app.general.token && Operation.selected(app) && Index.selected(app)
+  return (false
     // if app has operation and index defined
     ? <GulpPage />
     // if not
