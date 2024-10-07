@@ -14,7 +14,7 @@ import { Progress } from "@/ui/Progress";
 import { SelectContextBanner } from "./SelectContextBanner";
 
 export function IngestBanner() {
-  const { Info, app, api, destroyBanner, spawnBanner } = useApplication();
+  const { Info, app, api, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
   const [filename, setFilename] = useState<string>();

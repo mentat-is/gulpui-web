@@ -7,7 +7,7 @@ import { Page } from "@/components/Page";
 import { Card } from "@/ui/Card";
 import { SessionsChooser } from "./components/Session";
 import { Sessions } from "@/dto/Session.dto";
-import { Context, Index } from "@/class/Info";
+import { Index } from "@/class/Info";
 import { toast } from "sonner";
 import { Login, λOperation } from "@/dto";
 import React from "react";

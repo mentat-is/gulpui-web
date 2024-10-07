@@ -9,12 +9,10 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 import { Button } from "@/ui/Button";
 import { Context, Plugin, Operation, Arrayed } from "@/class/Info";
 import { UUID } from "crypto";
-import { IngestBanner } from "./IngestBanner";
 import { useEffect } from "react";
-import { toast } from "sonner";
 
 export function SelectContextBanner() {
-  const { app, spawnBanner, destroyBanner, Info } = useApplication();
+  const { app, destroyBanner, Info } = useApplication();
   const { lang } = useLanguage();
 
   useEffect(() => {
@@ -89,24 +87,6 @@ export function SelectContextBanner() {
     handle(true, app.target.contexts.map(context => context.uuid));
     destroyBanner();
   }
-
-  // useEffect(() => {
-  //   if (Operation.contexts(app).length) return;
-
-  //   const refetch = async () => {
-  //     const ops = await Info.operations_request();
-
-  //     console.log(ops);
-
-  //     if (!ops?.length) return toast('No contexts found');
-
-  //     await Info.operations_update(ops);
-
-  //     await Info.plugins_reload();
-  //   }
-    
-  //   refetch();
-  // }, [])
 
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>

@@ -2,13 +2,11 @@ import React, { useEffect, useState } from 'react'
 import { Header } from './components/header/Header'
 import { Body } from './components/body/Body'
 import { useApplication } from '@/context/Application.context'
-import { SelectContextBanner } from '@/banners/SelectContextBanner';
 import { AppSocket } from '@/class/AppSocket';
 import { File } from '@/class/Info';
-import { toast } from 'sonner';
 
 export function GulpPage() {
-  const { app, spawnBanner, Info, api, setWs } = useApplication();
+  const { app, Info, setWs } = useApplication();
   const [rendered, setRendered] = useState<number>(0);
 
   useEffect(() => {
