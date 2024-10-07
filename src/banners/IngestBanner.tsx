@@ -135,12 +135,12 @@ export function IngestBanner() {
   };
 
   const ContextSelection = () => {
-    setContext(Context.selected(app)[0].name);
+    setContext(Context.selected(app)[0]?.name);
 
-    return (  
-      <Select onValueChange={setContext} value={context || Context.selected(app)[0].name}>
+    return (
+      <Select disabled={!Context.selected(app).length} onValueChange={setContext} value={context}>
         <SelectTrigger className={s.trigger}>
-          <SelectValue defaultValue={Context.selected(app)[0].name} placeholder="Choose method" />
+          <SelectValue defaultValue={Context.selected(app)[0]?.name} placeholder={Context.selected(app).length ? `Choose one context from list below (exist: ${Context.selected(app).length})` : 'There is no contexts at this moment'} />
         </SelectTrigger>
         <SelectContent>
           {Operation.contexts(app).map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
