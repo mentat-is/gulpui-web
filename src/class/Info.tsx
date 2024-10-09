@@ -405,6 +405,34 @@ export class Info implements InfoProps {
 
   mapping_file_list = () => this.api<MappingFileListRequest>('/mapping_file_list').then(res => res.isSuccess() && this.setInfoByKey(this.mapping_file_list_parse(res.data), 'general', 'ingest'));
 
+  files_reorder_upper = (uuid: λFile['uuid']) => {
+    const files = this.app.target.files
+    const index = files.findIndex(file => file.uuid === uuid);
+
+    if (index === 0) return;
+
+    const file = files[index];
+    files[index] = files[index - 1]
+    files[index - 1] = file;
+
+    this.setInfoByKey(files, 'target', 'files');
+    this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
+
+  files_reorder_lower = (uuid: λFile['uuid']) => {
+    const files = this.app.target.files
+    const index = files.findIndex(file => file.uuid === uuid);
+
+    if (index === files.length - 1) return;
+
+    const file = files[index];
+    files[index] = files[index + 1]
+    files[index + 1] = file;
+
+    this.setInfoByKey(files, 'target', 'files');
+    this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
+
   mapping_file_list_parse = (raw: MappingFileListRequest['data']) => 
     raw.reduce((acc, { metadata: { plugin }, filename, mapping_ids }) => {
       const [pluginName] = plugin;

@@ -178,6 +178,8 @@ export function Timeline() {
             <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img='Filter'>Filters</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img='Waypoints'>Links</ContextMenuItem>
             <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img='EyeOff'>Hide</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_reorder_upper(selectedFileForContextMenu!.uuid)} img='ArrowBigUp'>Move upper</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_reorder_lower(selectedFileForContextMenu!.uuid)} img='ArrowBigDown'>Move lower</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       </div>
