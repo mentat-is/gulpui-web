@@ -3,6 +3,6 @@ export interface StartEnd {
   end: number
 }
 export const StartEndBase: StartEnd = {
-  start: 0,
-  end: 0
+  start: -100,
+  end: -100
 }

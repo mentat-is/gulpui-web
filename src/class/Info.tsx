@@ -139,7 +139,7 @@ export class Info implements InfoProps {
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (filename: string) => this.setInfoByKey(Event.delete(this.app, filename), 'target', 'events');
+  events_reset_in_file = (uuid: UUID) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
   notes_set = (notes: RawNote[]) => this.setInfoByKey(Note.parse(this.app, notes), 'target', 'notes');
@@ -358,15 +358,15 @@ export class Info implements InfoProps {
   
   increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
   
-  decreasedTimelineScale = (limit: number = 1) => this.app.timeline.scale - this.app.timeline.scale / 16;
+  decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
 
-  finalizeFiltering = async (filename: string) => {
-    this.events_reset_in_file(filename);
+  finalizeFiltering = async (uuid: UUID) => {
+    this.events_reset_in_file(uuid);
     await this.api<ResponseBase<void>>('/query_raw', {
       method: 'POST',
       data: { ws_id: this.app.general.ws_id },
       headers: { 'Content-Type': 'application/json' },
-      body: GulpQueryFilter.body(this.app.target.filters[filename])
+      body: GulpQueryFilter.body(this.app.target.filters[uuid])
     });
   };
 
@@ -401,7 +401,7 @@ export class Info implements InfoProps {
     }
   });
 
-  filters_add = (name: string, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [name]: filters}), 'target', 'filters');
+  filters_add = (uuid: UUID, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
   mapping_file_list = () => this.api<MappingFileListRequest>('/mapping_file_list').then(res => res.isSuccess() && this.setInfoByKey(this.mapping_file_list_parse(res.data), 'general', 'ingest'));
 
@@ -560,9 +560,9 @@ export class File {
 }
 
 export class Event {
-  public static delete = (app: Information, filename: string) => {
-    app.target.events.delete(filename);
-    app.target.events.set(filename, []);
+  public static delete = (app: Information, uuid: UUID) => {
+    app.target.events.delete(uuid);
+    app.target.events.set(uuid, []);
     return app.target.events;
   }
 

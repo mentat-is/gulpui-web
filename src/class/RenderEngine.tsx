@@ -1,6 +1,6 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { File } from "./Info";
+import { Event, File } from "./Info";
 import { Info } from "@/dto";
 import { stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
@@ -222,9 +222,19 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.offset) - 2, y - 24, 2, 48 - 1);
     
     this.ctx.font = `10px Arial`;
-    this.ctx.fillStyle = '#a1a1a1' + 48;
+    this.ctx.fillStyle = '#a1a1a1';
     this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.min) - 64, y + 4);
     this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.max) + 12, y + 4);
+
+    this.ctx.font = `10px Arial`;
+    this.ctx.fillStyle = '#0372ef';
+    const events = Event.get(this.app, file.uuid).length.toString()
+    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
+    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
+    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
+    
   }
 
   public info = (file: λFile) => {

@@ -110,7 +110,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
   useEffect(() => {
     renderOverlay();
-  }, [resize]);
+  }, [resize, mousePosition.x]);
 
   const renderOverlay = () => {
     if (!overlay_ref.current || !canvas_ref.current) return;
@@ -122,11 +122,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     overlayCtx.clearRect(0, 0, overlay_ref.current.width, overlay_ref.current.height);
     
     const { start, end } = resize;
-    if (start === 0 && start === end) return;
 
     overlayCtx.fillStyle = '#ffffff80';
-    overlayCtx.fillRect(start, 0, 3, overlay_ref.current.height);
-    overlayCtx.fillRect(end, 0, 3, overlay_ref.current.height);
+    overlayCtx.fillRect(start - 1, 0, 3, overlay_ref.current.height);
+
+    if (start === 0 && start === end) return;
+    overlayCtx.fillRect(end - 1, 0, 3, overlay_ref.current.height);
   }
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.target.bucket!.selected.min) / (app.target.bucket!.selected.max - app.target.bucket!.selected.min)) * Info.width) - scrollX;

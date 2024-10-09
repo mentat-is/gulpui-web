@@ -47,7 +47,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Button
         onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
         variant='ghost'
-        img='Filter'>{(app.target.filters[file.name] || []).length ? 'Change filters' : 'Set filters'}</Button>
+        img='Filter'>{(app.target.filters[file.uuid] || []).length ? 'Change filters' : 'Set filters'}</Button>
       }>
       <ColorPicker color={color} setColor={setColor}>
         <ColorPickerTrigger />

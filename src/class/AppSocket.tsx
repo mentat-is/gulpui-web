@@ -16,10 +16,6 @@ export class AppSocket extends WebSocket {
       return AppSocket.instance;
     }
 
-    if (!app.general.server)
-      console.error('Expected URL in app.general.server, instead got ', typeof app.general.server);
-
-    console.log('Initializing WebSocket connection to: ', app.general.server);
     super(app.general.server + '/ws');
 
     this.info = info;
@@ -36,6 +32,8 @@ export class AppSocket extends WebSocket {
     this.onmessage = ({ data }: AppSocketResponse) => {
       const { data: _chunk } = JSON.parse(data) as AppSocketResponseData;
       this.info.setDownstream(new Blob([data]).size)
+      if (Object.keys(app.target.filters).length) console.log(_chunk);
+
       if (isChunkDefault(_chunk)) {
         const events: Chunk['events'] = _chunk.events.map((event: RawChunkEvent): λEvent => ({
           _id: event._id,
@@ -52,8 +50,6 @@ export class AppSocket extends WebSocket {
 
         this.info.bucket_increase_fetched(events.length);
         this.info.events_add(events);
-      } else {
-        console.warn(_chunk);
       }
     }
 
