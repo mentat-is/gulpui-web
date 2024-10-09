@@ -341,6 +341,8 @@ export class Info implements InfoProps {
     selected: { ...this.app.target.bucket.selected, max}
   });
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
+
+  getBucketLocals = () => this.app.target.bucket.selected;
   
   // Methods to set general information (server, username, password, token)
   setServer = (server: string) => this.setInfoByKey(server, 'general', 'server');
@@ -412,7 +414,7 @@ export class Info implements InfoProps {
     }, [] as IngestMapping);  
   
   get width(): number {
-    return this.app.timeline.scale * (this.timeline.current?.clientWidth || 0);
+    return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
   }
   
   // Private method to update a specific key in the application state

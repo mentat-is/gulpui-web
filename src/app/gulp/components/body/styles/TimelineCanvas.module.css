@@ -9,3 +9,12 @@
 .shifted {
   cursor: pointer;
 }
+.position {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  text-shadow: 0px 0px 2px var(--meta-black);
+  transform: translate(16px, -16px);
+  left: -256px;
+  top: -256px;
+}

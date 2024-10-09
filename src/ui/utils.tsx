@@ -185,3 +185,21 @@ export const useGradient = (target: Gradients, diff: number, delta: MinMax): str
 
 export const arrayToLinearGradientCSS = (gradient: string[]): string => `linear-gradient(to right, ${gradient.map(g => '#' + g).join(', ')})`;
 
+export const getDateFormat = (diffInMilliseconds: number) => {
+  const diffInDays = diffInMilliseconds / (1000 * 60 * 60 * 24);
+  const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+  const diffInMinutes = diffInMilliseconds / (1000 * 60);
+
+  if (diffInDays >= 30) return 'dd.MM.yyyy';
+  if (diffInDays >= 1) return 'dd.MM.yyyy';
+  if (diffInHours >= 1) return 'HH:mm dd.MM';
+  if (diffInMinutes >= 1) return 'HH:mm:ss dd.MM';
+  return 'HH:mm:ss dd.MM.yyyy';
+}
+
+export const getTimestamp = (x: number, info: Info) => {
+  const { min, max } = info.getBucketLocals()
+  const width = info.width;
+
+  return min + (x / width) * (max - min);
+};

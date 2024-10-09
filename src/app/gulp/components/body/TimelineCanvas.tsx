@@ -1,5 +1,5 @@
 import { useApplication } from '@/context/Application.context';
-import { cn, getLimits, throwableByTimestamp } from '@/ui/utils';
+import { cn, getDateFormat, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
 import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
@@ -11,23 +11,22 @@ import { Note } from '@/ui/Note';
 import { Link } from '@/ui/Link';
 import { Note as NoteClass, Link as LinkClass } from '@/class/Info';
 import { RenderEngine } from '@/class/RenderEngine';
-import { DragDealer } from '@/class/dragDealer.class';
+import { format } from 'date-fns';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
   scrollX: number;
   scrollY: number;
   resize: StartEnd;
-  dragDealer: DragDealer;
 }
 
-export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer }: TimelineCanvasProps) {
+export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   const { app, spawnDialog, Info, dialog } = useApplication();
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target];
-  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
+  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(scrollX, canvas_ref, dependencies);
 
   const renderCanvas = () => {
     if (!canvas_ref.current) return;
@@ -170,7 +169,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, dragDealer 
           ref={overlay_ref} 
           width={window.innerWidth}
           height={timeline.current?.clientHeight} />
-        <Magnifier isVisible={isShiftPressed} self={magnifier_ref} mousePosition={mousePosition} />
+        <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), getDateFormat(0))}</p>
+        <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isShiftPressed} />
       </div>
     </>
   );

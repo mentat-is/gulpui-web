@@ -38,7 +38,7 @@ export function CreateOperationBanner() {
         variant={!name && !description ? 'disabled' : 'default'}
         loading={loading}
         img='Plus'
-        onClick={createOperation}>{lang.operation.create_with_name + name}</Button>,
+        onClick={createOperation}>{lang.operation.create_with_name + name}</Button>
     </Banner>
   )
 }

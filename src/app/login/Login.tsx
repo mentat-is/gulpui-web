@@ -5,8 +5,7 @@ import { useApplication } from "@/context/Application.context";
 import { parseTokensFromCookies } from '@/ui/utils'
 import { Page } from "@/components/Page";
 import { Card } from "@/ui/Card";
-import { SessionsChooser } from "./components/Session";
-import { Sessions } from "@/dto/Session.dto";
+import { Session, Sessions } from "@/dto/Session.dto";
 import { Index } from "@/class/Info";
 import { toast } from "sonner";
 import { Login, λOperation } from "@/dto";
@@ -20,6 +19,7 @@ import { Banner } from "@/ui/Banner";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
 import { IngestBanner } from "@/banners/IngestBanner";
 import { SelectContextBanner } from "@/banners/SelectContextBanner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -27,6 +27,7 @@ export function LoginPage() {
   const cookie = new Cookies();
   const [sessions, setSessions] = useState<Sessions>(parseTokensFromCookies(cookie.get('sessions')));
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingSession, setLoadingSession] = useState<string | null>(null);
 
   useEffect(() => {
     if (!app.general.token || !app.general.server || !Index.selected(app)) return;
@@ -152,6 +153,7 @@ export function LoginPage() {
     if (stage < 3) return;
 
     Info.operations_request().then(operations => {
+      setLoading(false)
       const result = Info.operations_update(operations);
 
       spawnBanner(result.contexts.length && result.plugins.length && result.files.length
@@ -172,6 +174,31 @@ export function LoginPage() {
       </Banner>
     )
   }
+
+  const handleSessionButtonClick = async ({ server, token, ...session }: Session) => {
+    setLoadingSession(token);
+    const response = await api('/version', { server, token });
+
+    if (response.isSuccess()) {
+      Info.setToken(token);
+      Info.setServer(server);
+      Info.setExpire(session.expires);
+      Info.setUserId(session.user_id);
+      setStage(1);
+    } else {
+      toast('Session expired');
+      deleteSession({...session, server, token });
+    }
+    setLoadingSession(null);
+  }
+
+  const deleteSession = (session: Session) => {
+    setSessions((sessions) => {
+      const newSessions = sessions.filter(s => s.token !== session.token);
+      new Cookies().set('sessions', newSessions);
+      return newSessions
+    });
+  }
   
   return (
     <Page options={{ center: true }} className={s.page}>
@@ -185,7 +212,7 @@ export function LoginPage() {
           ? (
             <React.Fragment>
               <Input
-                img='Database'
+                img='Server'
                 placeholder="Server adress (ip:port)"
                 value={serverValue}
                 onChange={(e) => setServerValue(e.currentTarget.value)} />
@@ -202,6 +229,23 @@ export function LoginPage() {
                 onChange={e => Info.setPassword(e.currentTarget.value)} />
             <Separator />
             <div className={s.group}>
+              {!!sessions.length && <Popover>
+                <PopoverTrigger>
+                  <Button variant='outline' img='Container'>Local sessions</Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                  {sessions.map(session => (
+                    <Button
+                      variant='ghost'
+                      img='KeyRound'
+                      loading={session.token === loadingSession}
+                      disabled={!!loadingSession}
+                      onClick={() => handleSessionButtonClick(session)}>
+                        User {session.user_id} at {session.server}
+                    </Button>
+                ))}
+                </PopoverContent>
+              </Popover>}
               <Button loading={loading} onClick={login}>Log in</Button>
             </div>
           </React.Fragment>
@@ -243,11 +287,13 @@ export function LoginPage() {
                 </div>
               )
               : (
-                <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
-                )
+                <>
+                  <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
+                  <Button onClick={() => spawnBanner(<IngestBanner />)} variant='ghost'>Upload files</Button>
+                </>
+              )
         }
       </Card>
-      {!!sessions.length && (!app.general.token || !app.target.indexes.length) && <SessionsChooser sessions={sessions.slice(-5)} setSessions={setSessions} />}
     </Page>
   )
 }
