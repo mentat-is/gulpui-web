@@ -174,6 +174,7 @@ export function Timeline() {
               </Tooltip>
             </TooltipProvider>
             <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => Info.files_repin(selectedFileForContextMenu!.uuid)} img={selectedFileForContextMenu?.pinned ? 'PinOff' : 'Pin'}>{selectedFileForContextMenu ? selectedFileForContextMenu.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img='Settings'>Settings</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img='Filter'>Filters</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img='Waypoints'>Links</ContextMenuItem>

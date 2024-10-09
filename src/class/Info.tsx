@@ -413,7 +413,7 @@ export class Info implements InfoProps {
 
     const file = files[index];
     files[index] = files[index - 1]
-    files[index - 1] = file;
+    files[index -  1] = file;
 
     this.setInfoByKey(files, 'target', 'files');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
@@ -428,6 +428,16 @@ export class Info implements InfoProps {
     const file = files[index];
     files[index] = files[index + 1]
     files[index + 1] = file;
+
+    this.setInfoByKey(files, 'target', 'files');
+    this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
+
+  files_repin = (uuid: λFile['uuid']) => {
+    const files = this.app.target.files
+    const index = files.findIndex(file => file.uuid === uuid);
+
+    files[index].pinned = !files[index].pinned;
 
     this.setInfoByKey(files, 'target', 'files');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
@@ -556,11 +566,13 @@ export class File {
   public static reload = (files: Arrayed<λFile>, app: Information): λFile[] => File.select(Parser.array(files), File.selected(app));
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: Information): λFile[] => app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid));
+  public static selected = (app: Information): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid)));
 
   public static find = (use: Information | λFile[], file: λFile | UUID): λFile | undefined => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file));
   
   public static select = (use: Information | λFile[], selected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s)) ? File._select(f) : f);
+
+  public static pins = (use: Information | λFile[]) => Parser.use(use, 'files').sort((a, b) => a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1);
  
   public static plugin = (app: Information, file: λFile) => Plugin.uuid(app, file._uuid);
 
