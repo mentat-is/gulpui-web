@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback, SetStateAction } from 'react';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
@@ -16,6 +16,7 @@ import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
+import { Controls } from './Controls';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
@@ -161,6 +162,7 @@ export function Timeline() {
         <ContextMenu>
           <ContextMenuTrigger>
             <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
+            <Controls setScrollX={setScrollX} scrollX={scrollX} />
           </ContextMenuTrigger>
           <ContextMenuContent>
             <TooltipProvider>
