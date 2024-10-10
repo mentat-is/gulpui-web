@@ -7,11 +7,10 @@ import { Badge } from "@/ui/Badge";
 import { Label } from "@/ui/Label";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { Button } from "@/ui/Button";
-import { Context, Plugin, Operation, Arrayed } from "@/class/Info";
+import { Context, Plugin, Operation } from "@/class/Info";
 import { UUID } from "crypto";
 import { useEffect, useState } from "react";
 import { Input } from "@/ui/Input";
-import { toast } from "sonner";
 
 export function SelectContextBanner() {
   const { app, destroyBanner, Info } = useApplication();
