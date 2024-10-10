@@ -59,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         {...props}>
         {asChild ? props.children : (loading
-          ? <Loading size={size} />
+          ? <Loading variant={convertButtonVariantToImageVariant(variant)} size={size} />
           : <React.Fragment>
               {img && <Icon name={img} variant={convertButtonVariantToImageVariant(variant)} />}
               {children}
