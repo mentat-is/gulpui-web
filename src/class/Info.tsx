@@ -610,8 +610,10 @@ export class Event {
 
   public static selected = (app: Information): λEvent[] => File.selected(app).map(f => Event.get(app, f.uuid)).flat();
 
-  public static add = (app: Information, events: λEvent | λEvent[]) => {
-    Parser.array(events).map(e => Event.get(app, e._uuid).push(e));
+  public static add = (app: Information, _events: λEvent | λEvent[]) => {
+    const events = Parser.array(_events);
+    events.map(e => Event.get(app, e._uuid).push(e));
+    events.sort((a, b) => a.timestamp - b.timestamp);
     return app.target.events;
   }
 

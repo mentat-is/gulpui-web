@@ -53,7 +53,11 @@ export function IngestBanner() {
     const end = Math.min(file.size, start + CHUNK_SIZE);
     const chunk = file.slice(start, end);
   
-    const payload = JSON.stringify({});
+    const payload = JSON.stringify(end >= file.size ? {
+      plugin_params: {
+        mapping_file: filename
+      }
+    }: {});
   
     const bodyStart = `--${boundary}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Disposition: form-data; name=payload\r\n\r\n${payload}\r\n--${boundary}\r\nContent-Disposition: form-data; name=file; filename=${file.name}; filename*=utf-8"${file.name}"\r\n\r\n`;
   
