@@ -9,11 +9,14 @@ import { CheckedState } from "@radix-ui/react-checkbox";
 import { Button } from "@/ui/Button";
 import { Context, Plugin, Operation, Arrayed } from "@/class/Info";
 import { UUID } from "crypto";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/ui/Input";
+import { toast } from "sonner";
 
 export function SelectContextBanner() {
   const { app, destroyBanner, Info } = useApplication();
   const { lang } = useLanguage();
+  const [filter, setFilter] = useState<string>('');
 
   useEffect(() => {
     if (!app.general.ingest.length) {
@@ -21,10 +24,10 @@ export function SelectContextBanner() {
     }
   }, [app.general.ingest])
 
-  const handle = (checked: CheckedState, cu: Arrayed<UUID>, pu?: UUID, fu?: UUID): void => {
+  const handle = (checked: CheckedState, cu: Array<UUID>, pu?: Array<UUID>, fu?: Array<UUID>): void => {
     if (fu) {
       const files = app.target.files.map(f =>
-        f.uuid === fu ? { ...f, selected: !!checked } : f
+        fu.includes(f.uuid) ? { ...f, selected: !!checked } : f
       );
   
       const plugins = app.target.plugins.map(p =>
@@ -43,7 +46,7 @@ export function SelectContextBanner() {
   
     if (pu) {
       const plugins = app.target.plugins.map(p =>
-        p.uuid === pu ? { ...p, selected: !!checked } : p
+        pu.includes(p.uuid) ? { ...p, selected: !!checked } : p
       );
   
       const files = app.target.files.map(f =>
@@ -84,30 +87,37 @@ export function SelectContextBanner() {
   };
  
   const selectAll = () => {
+    if (filter) {
+      const files = app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
+      const fu = files.map(file => file.uuid);
+      const pu = files.map(file => file._uuid);
+      const cu = pu.map(p => Context.findByPugin(app, p)!.uuid);
+      return handle(true, cu, pu, fu);
+    }
     handle(true, app.target.contexts.map(context => context.uuid));
-    destroyBanner();
   }
 
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>
     <div className={s.wrapper}>
-      {Operation.contexts(app).map(context => (
-        <div className={s.context} key={context.name}>
+      <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
+      {!filter.length ? Operation.contexts(app).map(context => (
+        <div className={s.context} key={context.uuid}>
           <div className={s.contextHeading}>
-            <Checkbox id={context.name} checked={Context.plugins(app, context).every(p => p.selected) ? true : (Context.plugins(app, context).some(p => p.selected) ? 'indeterminate' : false)} onCheckedChange={checked => handle(checked, context.uuid)} />
+            <Checkbox id={context.name} checked={Context.plugins(app, context).every(p => p.selected) ? true : (Context.plugins(app, context).some(p => p.selected) ? 'indeterminate' : false)} onCheckedChange={checked => handle(checked, [context.uuid])} />
             <Label htmlFor={context.name}>{context.name}</Label>
             <Badge value='Context' />
           </div>
-          {Context.plugins(app, context).map((plugin, pluginIndex) => (
-            <div className={s.plugin} key={pluginIndex}>
+          {Context.plugins(app, context).map(plugin => (
+            <div className={s.plugin} key={plugin.uuid}>
               <div className={s.pluginHeading}>
-                <Checkbox id={plugin.name} checked={Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length === Plugin.files(app, plugin).length ? true : Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length > 0 ? 'indeterminate' : false} onCheckedChange={checked => handle(checked, context.uuid, plugin.uuid)} />
+                <Checkbox id={plugin.name} checked={Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length === Plugin.files(app, plugin).length ? true : Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length > 0 ? 'indeterminate' : false} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid])} />
                 <Label htmlFor={plugin.name}>{plugin.name}</Label>
                 <Badge value='Plugin' variant='secondary' />
               </div>
-              {Plugin.files(app, plugin).map((file, fileIndex) => (
-                <div key={fileIndex} className={s.file}>
-                  <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, context.uuid, plugin.uuid, file.uuid)} />
+              {Plugin.files(app, plugin).map(file => (
+                <div key={file.uuid} className={s.file}>
+                  <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid], [file.uuid])} />
                   <Label htmlFor={file.name}>{file.name}</Label>
                   <Badge value='File' variant='outline' />
                 </div>
@@ -115,6 +125,12 @@ export function SelectContextBanner() {
             </div>
           ))}
         </div>
+      )) : app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).map(file => (
+        <div key={file.uuid} className={s.file}>
+          <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [Context.findByPugin(app, file._uuid)!.uuid], [file._uuid], [file.uuid])} />
+          <Label htmlFor={file.name}>{file.name}</Label>
+          <Badge value='File' variant='outline' />
+      </div>
       ))}
       </div>
       <div className={s.group}>

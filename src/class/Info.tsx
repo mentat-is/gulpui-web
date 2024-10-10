@@ -253,15 +253,15 @@ export class Info implements InfoProps {
                     uuid: f_uuid
                   }
                   files.push(file)
-                  return rawFile.name
+                  return file.uuid;
                 })
               };
               plugins.push(plugin)
-              return rawPlugin.name
+              return plugin.uuid;
             })
           };
           contexts.push(context);
-          return context.name
+          return context.uuid;
         })
       };
       operations.push(operation);
@@ -514,13 +514,13 @@ export class Context {
   // Ищем выбранные контексты где выбранная операция совпадает по имени
   public static selected = (use: Information | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.name === c.operation.name : true));
 
-  public static find = (use: Information | λContext[], context: λContext | λContext['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.name === Parser.useUUID(context));
+  public static find = (use: Information | λContext[], context: λContext | λContext['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.uuid === Parser.useUUID(context));
 
-  public static findByPugin = (use: Information | λContext[], plugin: λPlugin | λPlugin['name']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.plugins.some(p => p === Parser.useName(plugin)));
+  public static findByPugin = (use: Information | λContext[], plugin: λPlugin | λPlugin['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.plugins.some(p => p === Parser.useUUID(plugin)));
 
-  public static select = (use: Information | λContext[], selected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.name === Parser.useUUID(s)) ? Context._select(c) : c);
+  public static select = (use: Information | λContext[], selected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? Context._select(c) : c);
   
-  public static unselect = (use: Information | λContext[], unselected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(unselected).find(s => c.name === Parser.useUUID(s)) ? Context._unselect(c) : c);
+  public static unselect = (use: Information | λContext[], unselected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(unselected).find(s => c.uuid === Parser.useUUID(s)) ? Context._unselect(c) : c);
 
   public static check = (use: Information | λContext[], selected: Arrayed<λContext | UUID>, check?: boolean): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? (check ? (Context._select(Context.uuid(use, c))) : Context._unselect(Context.uuid(use, c))) : c);
   
