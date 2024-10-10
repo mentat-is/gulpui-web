@@ -16,8 +16,7 @@ import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
-
-const DEBOUNCE_DELAY = 5; // ms
+import { Controls } from './Controls';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
@@ -27,7 +26,6 @@ export function Timeline() {
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
   const [selectedFileForContextMenu, setSelectedFileForContextMenu] = useState<λFile>();
-  // const lastEventRef = useRef<{ scale: number; scroll: number } | null>(null);
 
   const increaseScrollY = useCallback((λy: number) => {
     const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42
@@ -53,21 +51,12 @@ export function Timeline() {
     const diff = scrollX + event.clientX - rect.left;
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
-    // lastEventRef.current = { scale: newScale, scroll: left };
-
     Info.setTimelineScale(newScale);
     setScrollX(scrollX => scrollX + left);
-
-    // console.log({
-    //   PreviousScale: app.timeline.scale,
-    //   NewScale: newScale,
-    //   PreviousScroll: scrollX,
-    //   NewScroll: scrollX + left
-    // });
   }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);
 
   const debouncedHandleWheel = useMemo(
-    () => debounce(handleWheel, DEBOUNCE_DELAY),
+    () => debounce(handleWheel, 5),
     [handleWheel]
   );
 
@@ -79,9 +68,12 @@ export function Timeline() {
     }
   }, []);
 
-  const handleMouseMove = useCallback((event: MouseEvent) => 
-    isResizing ? setResize((prev) => ({ ...prev, end: event.clientX })) : dragState.current.dragMove(event),
-  [isResizing]);
+  const handleMouseMove = useCallback((event: MouseEvent) => {
+    if (isResizing) return setResize((prev) => ({ ...prev, end: event.clientX }))
+      
+    dragState.current.dragMove(event);
+    setResize({ start: event.clientX, end: event.clientX });
+  }, [isResizing]);
 
   const handleMouseUpOrLeave = useCallback((event: MouseEvent) => {
     event.preventDefault();
@@ -169,7 +161,8 @@ export function Timeline() {
       <div className={s.content} id="timeline_content">
         <ContextMenu>
           <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} dragDealer={dragState.current} />
+            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
+            <Controls setScrollX={setScrollX} scrollX={scrollX} />
           </ContextMenuTrigger>
           <ContextMenuContent>
             <TooltipProvider>
@@ -183,10 +176,13 @@ export function Timeline() {
               </Tooltip>
             </TooltipProvider>
             <ContextMenuSeparator />
+            <ContextMenuItem onClick={() => Info.files_repin(selectedFileForContextMenu!.uuid)} img={selectedFileForContextMenu?.pinned ? 'PinOff' : 'Pin'}>{selectedFileForContextMenu ? selectedFileForContextMenu.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img='Settings'>Settings</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img='Filter'>Filters</ContextMenuItem>
             <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img='Waypoints'>Links</ContextMenuItem>
             <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img='EyeOff'>Hide</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_reorder_upper(selectedFileForContextMenu!.uuid)} img='ArrowBigUp'>Move upper</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_reorder_lower(selectedFileForContextMenu!.uuid)} img='ArrowBigDown'>Move lower</ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
       </div>

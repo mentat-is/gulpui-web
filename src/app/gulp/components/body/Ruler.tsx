@@ -2,6 +2,7 @@ import { useApplication } from "@/context/Application.context";
 import s from './styles/Ruler.module.css';
 import { format, differenceInMilliseconds, addMilliseconds } from 'date-fns';
 import { useRef, useEffect, useState } from 'react';
+import { getDateFormat } from "@/ui/utils";
 
 interface RulerProps {
   scrollX: number;
@@ -12,18 +13,6 @@ export function Ruler({ scrollX }: RulerProps) {
   const ruler = useRef<HTMLDivElement>(null);
   const [visibleDates, setVisibleDates] = useState<Date[]>([]);
   const { min, max } = app.target.bucket?.selected || {};
-
-  const getDateFormat = (diffInMilliseconds: number) => {
-    const diffInDays = diffInMilliseconds / (1000 * 60 * 60 * 24);
-    const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
-    const diffInMinutes = diffInMilliseconds / (1000 * 60);
-
-    if (diffInDays >= 30) return 'dd.MM.yyyy';
-    if (diffInDays >= 1) return 'dd.MM.yyyy';
-    if (diffInHours >= 1) return 'HH:mm dd.MM';
-    if (diffInMinutes >= 1) return 'HH:mm:ss dd.MM';
-    return 'HH:mm:ss dd.MM';
-  }
 
   const generateDates = () => {
     if (!timeline.current || !min || !max) return;

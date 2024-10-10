@@ -139,7 +139,7 @@ export class Info implements InfoProps {
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (filename: string) => this.setInfoByKey(Event.delete(this.app, filename), 'target', 'events');
+  events_reset_in_file = (uuid: UUID) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
   notes_set = (notes: RawNote[]) => this.setInfoByKey(Note.parse(this.app, notes), 'target', 'notes');
@@ -253,15 +253,15 @@ export class Info implements InfoProps {
                     uuid: f_uuid
                   }
                   files.push(file)
-                  return rawFile.name
+                  return file.uuid;
                 })
               };
               plugins.push(plugin)
-              return rawPlugin.name
+              return plugin.uuid;
             })
           };
           contexts.push(context);
-          return context.name
+          return context.uuid;
         })
       };
       operations.push(operation);
@@ -341,6 +341,8 @@ export class Info implements InfoProps {
     selected: { ...this.app.target.bucket.selected, max}
   });
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
+
+  getBucketLocals = () => this.app.target.bucket.selected;
   
   // Methods to set general information (server, username, password, token)
   setServer = (server: string) => this.setInfoByKey(server, 'general', 'server');
@@ -356,15 +358,15 @@ export class Info implements InfoProps {
   
   increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
   
-  decreasedTimelineScale = (limit: number = 1) => this.app.timeline.scale - this.app.timeline.scale / 16;
+  decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
 
-  finalizeFiltering = async (filename: string) => {
-    this.events_reset_in_file(filename);
+  finalizeFiltering = async (uuid: UUID) => {
+    this.events_reset_in_file(uuid);
     await this.api<ResponseBase<void>>('/query_raw', {
       method: 'POST',
       data: { ws_id: this.app.general.ws_id },
       headers: { 'Content-Type': 'application/json' },
-      body: GulpQueryFilter.body(this.app.target.filters[filename])
+      body: GulpQueryFilter.body(this.app.target.filters[uuid])
     });
   };
 
@@ -399,9 +401,47 @@ export class Info implements InfoProps {
     }
   });
 
-  filters_add = (name: string, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [name]: filters}), 'target', 'filters');
+  filters_add = (uuid: UUID, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
   mapping_file_list = () => this.api<MappingFileListRequest>('/mapping_file_list').then(res => res.isSuccess() && this.setInfoByKey(this.mapping_file_list_parse(res.data), 'general', 'ingest'));
+
+  files_reorder_upper = (uuid: λFile['uuid']) => {
+    const files = this.app.target.files
+    const index = files.findIndex(file => file.uuid === uuid);
+
+    if (index === 0) return;
+
+    const file = files[index];
+    files[index] = files[index - 1]
+    files[index -  1] = file;
+
+    this.setInfoByKey(files, 'target', 'files');
+    this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
+
+  files_reorder_lower = (uuid: λFile['uuid']) => {
+    const files = this.app.target.files
+    const index = files.findIndex(file => file.uuid === uuid);
+
+    if (index === files.length - 1) return;
+
+    const file = files[index];
+    files[index] = files[index + 1]
+    files[index + 1] = file;
+
+    this.setInfoByKey(files, 'target', 'files');
+    this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
+
+  files_repin = (uuid: λFile['uuid']) => {
+    const files = this.app.target.files
+    const index = files.findIndex(file => file.uuid === uuid);
+
+    files[index].pinned = !files[index].pinned;
+
+    this.setInfoByKey(files, 'target', 'files');
+    this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
 
   mapping_file_list_parse = (raw: MappingFileListRequest['data']) => 
     raw.reduce((acc, { metadata: { plugin }, filename, mapping_ids }) => {
@@ -412,7 +452,7 @@ export class Info implements InfoProps {
     }, [] as IngestMapping);  
   
   get width(): number {
-    return this.app.timeline.scale * (this.timeline.current?.clientWidth || 0);
+    return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
   }
   
   // Private method to update a specific key in the application state
@@ -474,13 +514,13 @@ export class Context {
   // Ищем выбранные контексты где выбранная операция совпадает по имени
   public static selected = (use: Information | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.name === c.operation.name : true));
 
-  public static find = (use: Information | λContext[], context: λContext | λContext['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.name === Parser.useUUID(context));
+  public static find = (use: Information | λContext[], context: λContext | λContext['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.uuid === Parser.useUUID(context));
 
-  public static findByPugin = (use: Information | λContext[], plugin: λPlugin | λPlugin['name']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.plugins.some(p => p === Parser.useName(plugin)));
+  public static findByPugin = (use: Information | λContext[], plugin: λPlugin | λPlugin['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.plugins.some(p => p === Parser.useUUID(plugin)));
 
-  public static select = (use: Information | λContext[], selected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.name === Parser.useUUID(s)) ? Context._select(c) : c);
+  public static select = (use: Information | λContext[], selected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? Context._select(c) : c);
   
-  public static unselect = (use: Information | λContext[], unselected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(unselected).find(s => c.name === Parser.useUUID(s)) ? Context._unselect(c) : c);
+  public static unselect = (use: Information | λContext[], unselected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(unselected).find(s => c.uuid === Parser.useUUID(s)) ? Context._unselect(c) : c);
 
   public static check = (use: Information | λContext[], selected: Arrayed<λContext | UUID>, check?: boolean): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? (check ? (Context._select(Context.uuid(use, c))) : Context._unselect(Context.uuid(use, c))) : c);
   
@@ -526,11 +566,13 @@ export class File {
   public static reload = (files: Arrayed<λFile>, app: Information): λFile[] => File.select(Parser.array(files), File.selected(app));
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: Information): λFile[] => app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid));
+  public static selected = (app: Information): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid)));
 
   public static find = (use: Information | λFile[], file: λFile | UUID): λFile | undefined => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file));
   
   public static select = (use: Information | λFile[], selected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s)) ? File._select(f) : f);
+
+  public static pins = (use: Information | λFile[]) => Parser.use(use, 'files').sort((a, b) => a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1);
  
   public static plugin = (app: Information, file: λFile) => Plugin.uuid(app, file._uuid);
 
@@ -558,9 +600,9 @@ export class File {
 }
 
 export class Event {
-  public static delete = (app: Information, filename: string) => {
-    app.target.events.delete(filename);
-    app.target.events.set(filename, []);
+  public static delete = (app: Information, uuid: UUID) => {
+    app.target.events.delete(uuid);
+    app.target.events.set(uuid, []);
     return app.target.events;
   }
 
@@ -568,8 +610,10 @@ export class Event {
 
   public static selected = (app: Information): λEvent[] => File.selected(app).map(f => Event.get(app, f.uuid)).flat();
 
-  public static add = (app: Information, events: λEvent | λEvent[]) => {
-    Parser.array(events).map(e => Event.get(app, e._uuid).push(e));
+  public static add = (app: Information, _events: λEvent | λEvent[]) => {
+    const events = Parser.array(_events);
+    events.map(e => Event.get(app, e._uuid).push(e));
+    events.sort((a, b) => a.timestamp - b.timestamp);
     return app.target.events;
   }
 

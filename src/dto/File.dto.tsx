@@ -14,6 +14,7 @@ export interface λFile {
   offset: number,
   color: Gradients,
   engine: Engine,
+  pinned?: boolean;
   uuid: UUID
   _uuid: UUID,
 }

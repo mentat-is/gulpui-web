@@ -44,6 +44,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     path: RequestInfo | URL,
     options: RequestInit & {
       server?: string;
+      token?: string;
       isRaw?: boolean;
       isText?: boolean;
       data?: { [key: string]: any };
@@ -51,9 +52,9 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   ): Promise<λ<T>> => {
     options.data = options.data || {};
     // Include token in request data if available
-    if (app.general.token) options.headers = {
+    if (options.token || app.general.token) options.headers = {
       ...options.headers,
-      token: app.general.token
+      token: options.token! || app.general.token!
     };
 
     const index = Index.selected(app);

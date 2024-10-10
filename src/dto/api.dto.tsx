@@ -5,6 +5,7 @@ export type Api = <T extends ResponseBase>(
   path: RequestInfo | URL,
   options?: RequestInit & {
     server?: string;
+    token?: string;
     isRaw?: boolean;
     isText?: boolean;
     data?: { [key: string]: any };

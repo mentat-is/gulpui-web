@@ -12,7 +12,7 @@ interface DisplayGroupDialogProps {
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const { spawnDialog } = useApplication();
-  console.log(events);
+
   return (
     <Dialog title='Choose event' description='Choose event from list below'>
       {events.map((event: λEvent) => (

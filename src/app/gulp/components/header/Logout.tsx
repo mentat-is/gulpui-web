@@ -13,9 +13,13 @@ import { DisplayEventDialog } from "@/dialogs/DisplayEventDialog";
 
 export function Logout() {
   const { lang } = useLanguage();
-  const { spawnBanner, logout, spawnDialog } = useApplication();
+  const { spawnBanner, spawnDialog } = useApplication();
   const [windowRef, setWindowRef] = useState<Window | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const logout = () => {
+    window.location.reload()
+  }
 
   const focus = (note: λNote) => {
     spawnDialog(note.events.length > 1

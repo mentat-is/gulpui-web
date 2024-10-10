@@ -3,7 +3,7 @@ import { λPlugin, RawPlugin } from './Plugin.dto';
 
 export interface λContext {
   operation: NameId;
-  plugins: string[],
+  plugins: UUID[],
   name: string,
   doc_count: number,
   selected?: boolean

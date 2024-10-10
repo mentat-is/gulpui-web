@@ -34,11 +34,11 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const [filter, setFilter] = useState<GulpQueryFilterObject>(_baseFilter);
   const [loading, setLoading] = useState<boolean>(true);
 
-  const filters = app.target.filters[file.name] || [];
+  const filters = app.target.filters[file.uuid] || [];
   
   useEffect(() => {
     if (!filters.length || !filters.find(f => f.key === 'log.file.path')) {
-      Info.filters_add(file.name, [{
+      Info.filters_add(file.uuid, [{
         key: 'log.file.path',
         type: FilterType.EQUAL,
         value: file.name,
@@ -63,20 +63,17 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     })
   }, []);
 
-  const submit = () => {
-    setLoading(true);
-    Info.finalizeFiltering(file.name).then(destroyBanner);
-  }
+  const submit = () => Info.finalizeFiltering(file.uuid).then(destroyBanner);
 
   const addFilter = () => {
     const _filters = [...filters, filter];
-    Info.filters_add(file.name, _filters);
+    Info.filters_add(file.uuid, _filters);
     resetFilter();
   }
 
   const removeFilter = (filter: GulpQueryFilterObject) => {
     const _filters = filters.filter(_filter => _filter.key !== filter.key)
-    Info.filters_add(file.name, _filters);
+    Info.filters_add(file.uuid, _filters);
   }
 
   const changeFilter = (filter: GulpQueryFilterObject) => setFilter(filter);

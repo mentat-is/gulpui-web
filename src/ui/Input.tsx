@@ -35,7 +35,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         s.image,
         revert && s.revert
       )}>
-        <Icon name={img || 'Upload'} alt='' />
+        <Icon variant='dimmed' name={img || 'Upload'} alt='' />
         <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
       </div>
     ) : (
