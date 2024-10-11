@@ -412,6 +412,8 @@ export class Info implements InfoProps {
 
   filters_add = (uuid: UUID, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
+  filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
+
   mapping_file_list = () => this.api<MappingFileListRequest>('/mapping_file_list').then(res => res.isSuccess() && this.setInfoByKey(this.mapping_file_list_parse(res.data), 'general', 'ingest'));
 
   files_reorder_upper = (uuid: λFile['uuid']) => {

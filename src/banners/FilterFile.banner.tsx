@@ -45,10 +45,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         context,
         src: file.name
       }
-    }).then(res => {
-      setLoading(false);
-      if (res.isSuccess()) setFilteringOptions(res.data);
-    })
+    }).then(res => res.isSuccess() && setFilteringOptions(res.data))
   }, []);
 
   const submit = () => Info.refetch(file.uuid).then(destroyBanner);
@@ -148,7 +145,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           </div>
         ))}
       </div>
-      <Button img='Check' onClick={submit}>Submit</Button>
+      <Button img='Check' loading={loading} onClick={submit}>Submit</Button>
     </Banner>
   );
 }
