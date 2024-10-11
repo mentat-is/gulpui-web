@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, ReactNode, useRef } from "react";
+import React, { useState, createContext, useContext, ReactNode, useRef, useEffect } from "react";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { λApp, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";
@@ -122,6 +122,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const instance = new Info({app, setInfo, api, timeline});
 
   const [ws, setWs] = useState<AppSocket>();
+
+  useEffect(() => {
+    if (app.general.token) setWs(new AppSocket(instance, app));
+
+  }, [app.general.token])
 
   const spawnBanner = (banner: ReactNode) => {
     setBanner(banner);

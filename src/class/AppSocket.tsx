@@ -25,7 +25,7 @@ export class AppSocket extends WebSocket {
     this.onopen = (ev) => {
       this.send(JSON.stringify({
         token: this.info.app.general.token,
-        ws_id: info.app.general.ws_id,
+        ws_id: this.info.app.general.ws_id,
       }));
     };
 
