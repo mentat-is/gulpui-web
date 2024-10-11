@@ -623,7 +623,6 @@ export type GulpQueryFilterObject = {
   key: string;
   type: FilterType;
   value: any;
-  static?: boolean
 }
 
 export type GulpQueryFilterArray = GulpQueryFilterObject[];

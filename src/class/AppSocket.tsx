@@ -32,7 +32,8 @@ export class AppSocket extends WebSocket {
     this.onmessage = ({ data }: AppSocketResponse) => {
       const { data: _chunk } = JSON.parse(data) as AppSocketResponseData;
       this.info.setDownstream(new Blob([data]).size)
-      if (Object.keys(app.target.filters).length) console.log(_chunk);
+
+      console.log(data);
 
       if (isChunkDefault(_chunk)) {
         const events: Chunk['events'] = _chunk.events.map((event: RawChunkEvent): λEvent => ({
