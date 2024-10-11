@@ -1,7 +1,7 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File } from "./Info";
-import { Info } from "@/dto";
+import { λApp } from "@/dto";
 import { stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
@@ -13,7 +13,7 @@ const scale = Symbol('scale');
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
   limits: MinMax,
-  app: Info,
+  app: λApp,
   scrollY: number;
   getPixelPosition: (timestamp: number) => number
 }
@@ -58,7 +58,7 @@ export interface Dot {
 export class RenderEngine implements RenderEngineConstructor, Engines {
   ctx!: CanvasRenderingContext2D;
   limits!: MinMax;
-  app!: Info;
+  app!: λApp;
   getPixelPosition!: (timestamp: number) => number;
   scrollY!: number;
   heightMap: Record<λFile['name'], HeightMap> = {};

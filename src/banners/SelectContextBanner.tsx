@@ -133,7 +133,7 @@ export function SelectContextBanner() {
       ))}
       </div>
       <div className={s.group}>
-        <Button variant='glass' onClick={selectAll}>Select all</Button>
+        <Button variant='outline' onClick={selectAll}>Select all</Button>
         <Button onClick={destroyBanner}>Save</Button>
       </div>
     </Banner>

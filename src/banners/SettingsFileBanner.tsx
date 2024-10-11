@@ -5,7 +5,7 @@ import { Button } from "@/ui/Button";
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
 import { ChangeEvent, useState } from "react";
 import s from './styles/SettingsFileBanner.module.css'
-import { FilterFileBanner } from "./FilterFileBanner";
+import { FilterFileBanner } from "./FilterFile.banner";
 import { Card } from "@/ui/Card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Gradients, GradientsMap } from "@/ui/utils";

@@ -55,6 +55,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
   const [root, setRoot] = useState<DetailedChunkEventData[] | null>();
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
+  const [rawJSON, setRawJSON] = useState<string>('');
 
   useEffect(() => {
     setNotes(Note.findByEvent(app, event));
@@ -83,6 +84,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       }
     }).then(res => {
       if (res.isSuccess()) {
+        setRawJSON(JSON.stringify(res.data, null, 4));
         setDetailedChunkEvent({
           operation: res.data.operation,
           agent: {
@@ -221,10 +223,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
             <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
           </div>
-          <Tabs defaultValue={root ? 'smart' : 'raw'} className={s.tabs}>
+          <Tabs defaultValue='smart' className={s.tabs}>
             <TabsList className={s.tabs_list}>
-              <TabsTrigger value='smart'>Smart View</TabsTrigger>
-              <TabsTrigger value='raw'>Raw XML</TabsTrigger>
+              <TabsTrigger value='smart'>Smart view</TabsTrigger>
+              <TabsTrigger value='raw'>Raw</TabsTrigger>
+              <TabsTrigger value='json'>JSON</TabsTrigger>
             </TabsList>
             <p className={s.hint}>Click on the block to copy the value</p>
             <TabsContent className={s.tabs_content} value='smart'>
@@ -232,6 +235,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             </TabsContent>
             <TabsContent className={s.tabs_content} value='raw'>
               <XMLTree className={s.xml} xml={detailedChunkEvent.event.original} />
+            </TabsContent>
+            <TabsContent className={s.tabs_content} value='json'>
+              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
+              <pre className={s.json}>{rawJSON}</pre>
             </TabsContent>
           </Tabs>
         </>

@@ -4,7 +4,7 @@ import { Sessions } from "@/dto/Session.dto";
 import { toast } from "sonner";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { UUID } from "crypto";
-import { Info as Information} from "@/dto";
+import { λApp } from "@/dto";
 import { Info } from "@/class/Info";
 import { RefObject } from "react";
 import { icons } from "lucide-react";
@@ -98,7 +98,7 @@ export const getColorByCode = (code: number, min: number, max: number): string =
   return ranges[ranges.length - 1].color;
 };
 
-export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0, app?: Information): boolean => {
+export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0, app?: λApp): boolean => {
   const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {
     min: timestamp.min + offset,
     max: timestamp.max + offset
@@ -116,7 +116,7 @@ export function generateUUID(): UUID {
     return v.toString(16) as UUID;
   }) as UUID;
 }
-export const getLimits = (app: Information, Info: Info, timeline: RefObject<HTMLDivElement>, scrollX: number): MinMax => {
+export const getLimits = (app: λApp, Info: Info, timeline: RefObject<HTMLDivElement>, scrollX: number): MinMax => {
   const min = app.target.bucket!.selected.min + 
     (scrollX / Info.width) * (app.target.bucket!.selected.max - app.target.bucket!.selected.min);
 

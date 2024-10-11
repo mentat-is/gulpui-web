@@ -12,9 +12,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
 import { ResponseBase } from '@/dto/ResponseBase.dto';
-import { FilterOptions, FilterType, GulpQueryFilterObject } from '@/dto/GulpGueryFilter.class';
 import { cn } from '@/ui/utils';
-import { Context, Plugin } from '@/class/Info';
+import { Context, FilterOptions, FilterType, GulpQueryFilterObject, Plugin } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
 
 const _baseFilter = {
@@ -35,17 +34,6 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const [loading, setLoading] = useState<boolean>(true);
 
   const filters = app.target.filters[file.uuid] || [];
-  
-  useEffect(() => {
-    if (!filters.length || !filters.find(f => f.key === 'log.file.path')) {
-      Info.filters_add(file.uuid, [{
-        key: 'log.file.path',
-        type: FilterType.EQUAL,
-        value: file.name,
-        static: true
-      }])
-    }
-  }, []);
 
   useEffect(() => {
     if (Object.keys(filteringOptions).length) return;
@@ -63,7 +51,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     })
   }, []);
 
-  const submit = () => Info.finalizeFiltering(file.uuid).then(destroyBanner);
+  const submit = () => Info.refetch(file.uuid).then(destroyBanner);
 
   const addFilter = () => {
     const _filters = [...filters, filter];

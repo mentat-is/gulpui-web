@@ -11,7 +11,7 @@ import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
-import { FilterFileBanner } from '@/banners/FilterFileBanner';
+import { FilterFileBanner } from '@/banners/FilterFile.banner';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { toast } from 'sonner';

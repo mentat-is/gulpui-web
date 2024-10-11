@@ -1,5 +1,5 @@
 import { Info } from '@/class/Info';
-import { Info as Information } from '@/dto';
+import { λApp } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
 import { Chunk, isChunkDefault } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
@@ -7,9 +7,9 @@ import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
   info!: Info;
-  app!: Information;
+  app!: λApp;
 
-  constructor(info: Info, app: Information) {
+  constructor(info: Info, app: λApp) {
     if (AppSocket.instance) {
       AppSocket.instance.info = info;
       AppSocket.instance.app = app;

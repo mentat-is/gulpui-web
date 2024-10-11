@@ -1,8 +1,7 @@
-import { λOperation } from "../dto";
+import { λOperation } from ".";
 import { Bucket } from "./QueryMaxMin.dto";
 import { λEvent, DetailedChunkEvent } from "./ChunkEvent.dto";
 import { λIndex } from "./Index.dto";
-import { GulpQueryFilterArray } from "./GulpGueryFilter.class";
 import { λContext } from "./Context.dto";
 import { PluginEntity, λPlugin } from "./Plugin.dto";
 import { λFile } from "./File.dto";
@@ -11,13 +10,14 @@ import { λLink } from "./Link.dto";
 import { IngestMapping } from "./Ingest.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
+import { GulpQueryFilterArray } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
   detailed: DetailedChunkEvent | null;
 };
 
-export interface Info {
+export interface λApp {
   transfered: {
     down: number,
     up: number
@@ -50,7 +50,7 @@ export interface Info {
     target: λEvent | null;
   }
 }
-export const BaseInfo: Info = {
+export const BaseInfo: λApp = {
   transfered: {
     down: 0,
     up: 0
