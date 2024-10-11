@@ -127,7 +127,7 @@ export function Timeline() {
   const handleContextMenu = useCallback((event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 24) / 48)
     const files = File.selected(app)
-    const file = files[index] || files[files.length - 1];
+    const file = files[index];
     setSelectedFileForContextMenu(file);
   }, [app, scrollY, timeline]);
 
@@ -164,7 +164,7 @@ export function Timeline() {
             <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
           </ContextMenuTrigger>
-          <ContextMenuContent>
+          {selectedFileForContextMenu && <ContextMenuContent>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -183,7 +183,7 @@ export function Timeline() {
             <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img='EyeOff'>Hide</ContextMenuItem>
             <ContextMenuItem onClick={() => Info.files_reorder_upper(selectedFileForContextMenu!.uuid)} img='ArrowBigUp'>Move upper</ContextMenuItem>
             <ContextMenuItem onClick={() => Info.files_reorder_lower(selectedFileForContextMenu!.uuid)} img='ArrowBigDown'>Move lower</ContextMenuItem>
-          </ContextMenuContent>
+          </ContextMenuContent>}
         </ContextMenu>
       </div>
     </div>
