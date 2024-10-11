@@ -66,10 +66,10 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       </Card>
       <Separator />
       <Card className={s.engines}>
-        <p className={s.text}>Render engine:</p>
+        <p className={s.text}>Renderer:</p>
         <Select onValueChange={(v: Engine) => setEngine(v)} value={engine}>
           <SelectTrigger className={s.trigger}>
-            <SelectValue placeholder="Choose render engine" />
+            <SelectValue placeholder="Choose renderer" />
           </SelectTrigger>
           <SelectContent>
             {enginesBase.map(i => <SelectItem value={i.plugin}><Button variant='ghost' img={i.img}>{i.title}</Button></SelectItem>)}

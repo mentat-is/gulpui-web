@@ -159,7 +159,7 @@ export function Timeline() {
             <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
           </ContextMenuTrigger>
-          <TargetMenu target={target} />
+          <TargetMenu file={target} />
         </ContextMenu>
       </div>
     </div>
