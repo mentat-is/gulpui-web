@@ -88,8 +88,6 @@ export function LoginPage() {
         description: 'Wrong username or password'
       });
     });
-    setLoading(false);
-    setStage(1);
   }
 
   /** 
@@ -99,6 +97,7 @@ export function LoginPage() {
     if (app.general.token) {
       Info.mapping_file_list();
       Info.index_reload().then(() => setLoading(false));
+      setStage(1);
     }
   }, [app.general.token]);
 
