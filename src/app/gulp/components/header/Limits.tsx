@@ -1,12 +1,12 @@
 import { useApplication } from '@/context/Application.context';
 import { getReadableDate } from '@/decorator/getReadableDate';
-import { ChooseBucket } from '@/banners/ChooseBucket';
+import { LimitsBanner } from '@/banners/Limits.banner';
 import s from '../../Gulp.module.css';
 
-export function DateLimit() {
+export function Limits() {
   const { app, spawnBanner } = useApplication();
   return (
-    <div onClick={() => spawnBanner(<ChooseBucket />)} className={s.datelimit}>
+    <div onClick={() => spawnBanner(<LimitsBanner />)} className={s.datelimit}>
       From
       <span>{getReadableDate(app.target.bucket?.selected.min as unknown as Date)}</span>
       to

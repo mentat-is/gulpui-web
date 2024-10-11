@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'react';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/ui/ContextMenu";
+import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
 import { Ruler } from './Ruler';
@@ -16,7 +16,7 @@ import { Controls } from './Controls';
 import { TargetMenu } from './Target.menu';
 
 export function Timeline() {
-  const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
+  const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);

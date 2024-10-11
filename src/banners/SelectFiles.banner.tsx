@@ -2,7 +2,7 @@ import { useApplication } from "@/context/Application.context";
 import { useLanguage } from "@/context/Language.context";
 import { Banner } from "@/ui/Banner";
 import { Checkbox } from "@/ui/Checkbox";
-import s from './styles/SelectContextBanner.module.css';
+import s from './styles/SelectFilesBanner.module.css';
 import { Badge } from "@/ui/Badge";
 import { Label } from "@/ui/Label";
 import { CheckedState } from "@radix-ui/react-checkbox";
@@ -14,7 +14,7 @@ import { Input } from "@/ui/Input";
 import React from "react";
 import { Separator } from "@/ui/Separator";
 
-export function SelectContextBanner() {
+export function SelectFilesBanner() {
   const { app, destroyBanner, Info } = useApplication();
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');

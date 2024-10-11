@@ -17,8 +17,8 @@ import { λIndex } from "@/dto/Index.dto";
 import { Icon } from "@/ui/Icon";
 import { Banner } from "@/ui/Banner";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
-import { IngestBanner } from "@/banners/IngestBanner";
-import { SelectContextBanner } from "@/banners/SelectContextBanner";
+import { UploadBanner } from "@/banners/Upload.banner";
+import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 
 export function LoginPage() {
@@ -156,8 +156,8 @@ export function LoginPage() {
       const result = Info.operations_update(operations);
 
       spawnBanner(result.contexts.length && result.plugins.length && result.files.length
-        ? <SelectContextBanner />
-        : <IngestBanner />
+        ? <SelectFilesBanner />
+        : <UploadBanner />
       );
     });
   }, [stage]);
@@ -288,7 +288,7 @@ export function LoginPage() {
               : (
                 <>
                   <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
-                  <Button onClick={() => spawnBanner(<IngestBanner />)} variant='ghost'>Upload files</Button>
+                  <Button onClick={() => spawnBanner(<UploadBanner />)} variant='ghost'>Upload files</Button>
                 </>
               )
         }

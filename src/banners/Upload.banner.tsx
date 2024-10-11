@@ -4,16 +4,16 @@ import { Input } from "@/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
 import { useEffect, useState } from "react";
-import s from './styles/IngestBanner.module.css';
+import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
 import { Context, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
-import { SelectContextBanner } from "./SelectContextBanner";
+import { SelectFilesBanner } from "./SelectFiles.banner";
 
-export function IngestBanner() {
+export function UploadBanner() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
   const [plugin, setPlugin] = useState<string>();
@@ -111,7 +111,7 @@ export function IngestBanner() {
         const result = Info.operations_update(operations);
         
         if (result.contexts.length && result.plugins.length && result.files.length) {
-          spawnBanner(<SelectContextBanner />);
+          spawnBanner(<SelectFilesBanner />);
         }
       });
     }, 5000);
