@@ -103,7 +103,7 @@ export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
           </div>
         </Fragment>}
       </div>
-      {!!note.tags.filter(t => !!t).length && (
+      {!!note.tags?.filter(t => !!t).length && (
         <Fragment>
           <Separator />
           <div className={s.tags}>

@@ -53,6 +53,9 @@ export class AppSocket extends WebSocket {
         
       } else if ((_chunk as UnknownChunk).type === λChunk.QUERY_RESULT && _chunk.matches_total > 0) {
         this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as UUID]);
+      } else if ('collabs' in _chunk) {
+        this.info.notes_reload();
+        this.info.links_reload();
       }
     }
 
