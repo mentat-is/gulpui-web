@@ -1,4 +1,4 @@
-import s from './styles/ChooseBucket.module.css'
+import s from './styles/LimitsBanner.module.css'
 import { useState } from "react";
 import { Banner } from "../ui/Banner";
 import { useLanguage } from "../context/Language.context";
@@ -9,7 +9,7 @@ import { Switch } from '@/ui/Switch';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
 import { Separator } from '@/ui/Separator';
 
-export function ChooseBucket() {
+export function LimitsBanner() {
   const { lang } = useLanguage();
   const { Info, destroyBanner, app } = useApplication();
 

@@ -1,11 +1,14 @@
 import { ResponseBase } from "./ResponseBase.dto";
 
-export interface MappingFile {
+export interface Mapping {
   filename: string;
   mapping_ids: string[];
+}
+
+export interface RawMapping extends Mapping {
   metadata: {
     plugin: [string]
   }
 }
 
-export type MappingFileListRequest = ResponseBase<MappingFile[]> 
+export type MappingFileListRequest = ResponseBase<RawMapping[]> 

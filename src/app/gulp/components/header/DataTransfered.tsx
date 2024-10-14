@@ -1,7 +1,7 @@
 import { useApplication } from '@/context/Application.context'
 import { Button } from '@/ui/Button';
 import s from '../../Gulp.module.css';
-import { IngestBanner } from '@/banners/IngestBanner';
+import { UploadBanner } from '@/banners/Upload.banner';
 
 export function DataTransfered() {
   const { app, spawnBanner } = useApplication();
@@ -10,7 +10,7 @@ export function DataTransfered() {
     <div className={s.transfered}>
       <Unit type='downstream' num={app.transfered?.down || 0} />
       <Unit type='upstream' num={app.transfered?.up || 0} />
-      <Button variant='outline' img='Upload' onClick={() => spawnBanner(<IngestBanner />)}>Upload</Button>
+      <Button variant='outline' img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload</Button>
     </div>
   )
 }

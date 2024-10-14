@@ -19,16 +19,14 @@
   display: flex;
   gap: 12px;
 }
-.top input {
-  height: 40px;
-}
 .avilable_filters {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
 }
 .filter {
-  padding: 8px 24px;
+  padding: 8px;
+  padding-left: 24px;
   background: var(--soft-black);
   border: var(--geist-border);
   display: flex;
@@ -38,17 +36,29 @@
   border-radius: 6px;
   height: 48px;
 }
-.static {
-  background-color: var(--gray24);
-  color: var(--text-dimmed);
-}
 .filter code {
   font-family: var(--font-mono);
 }
-.button {
-  height: 40px;
-  border: 1px solid var(--accent-2);
+.bottom {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: flex-end;
 }
-.submit {
-  height: 40px;
+.switch {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 8px;
+}
+.switch p {
+  font-size: 12px;
+  color: var(--text-dimmed);
+  font-weight: 400;
+}
+.switch p.active {
+  color: var(--text-white);
+  font-weight: 600;
 }

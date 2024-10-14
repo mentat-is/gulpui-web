@@ -2,26 +2,23 @@ import { useApplication } from "@/context/Application.context";
 import { useLanguage } from "@/context/Language.context";
 import { Banner } from "@/ui/Banner";
 import { Checkbox } from "@/ui/Checkbox";
-import s from './styles/SelectContextBanner.module.css';
+import s from './styles/SelectFilesBanner.module.css';
 import { Badge } from "@/ui/Badge";
 import { Label } from "@/ui/Label";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { Button } from "@/ui/Button";
-import { Context, Plugin, Operation } from "@/class/Info";
+import { Context, Plugin, Operation, File, Event } from "@/class/Info";
 import { UUID } from "crypto";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/ui/Input";
+import React from "react";
+import { Separator } from "@/ui/Separator";
 
-export function SelectContextBanner() {
+export function SelectFilesBanner() {
   const { app, destroyBanner, Info } = useApplication();
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
-
-  useEffect(() => {
-    if (!app.general.ingest.length) {
-      Info.mapping_file_list();
-    }
-  }, [app.general.ingest])
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handle = (checked: CheckedState, cu: Array<UUID>, pu?: Array<UUID>, fu?: Array<UUID>): void => {
     if (fu) {
@@ -96,6 +93,15 @@ export function SelectContextBanner() {
     handle(true, app.target.contexts.map(context => context.uuid));
   }
 
+  const save = () => {
+    setLoading(true);
+    const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid);
+
+    if (unfetched.length) return Info.refetch(unfetched).then(destroyBanner);
+
+    destroyBanner();
+  }
+
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>
     <div className={s.wrapper}>
@@ -114,12 +120,15 @@ export function SelectContextBanner() {
                 <Label htmlFor={plugin.name}>{plugin.name}</Label>
                 <Badge value='Plugin' variant='secondary' />
               </div>
-              {Plugin.files(app, plugin).map(file => (
-                <div key={file.uuid} className={s.file}>
-                  <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid], [file.uuid])} />
-                  <Label htmlFor={file.name}>{file.name}</Label>
-                  <Badge value='File' variant='outline' />
-                </div>
+              {Plugin.files(app, plugin).map((file, i) => (
+                <React.Fragment key={i}>
+                  {i !== 0 && <Separator color='var(--accent-3)' />}
+                  <div key={file.uuid} className={s.file}>
+                    <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid], [file.uuid])} />
+                    <Label htmlFor={file.name}>{file.name}</Label>
+                    <Badge value='File' variant='outline' />
+                  </div>
+                </React.Fragment>
               ))}
             </div>
           ))}
@@ -133,8 +142,8 @@ export function SelectContextBanner() {
       ))}
       </div>
       <div className={s.group}>
-        <Button variant='glass' onClick={selectAll}>Select all</Button>
-        <Button onClick={destroyBanner}>Save</Button>
+        <Button variant='outline' onClick={selectAll}>Select all</Button>
+        <Button loading={loading} onClick={save}>Save</Button>
       </div>
     </Banner>
   );

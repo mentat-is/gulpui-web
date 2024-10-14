@@ -17,8 +17,8 @@ import { λIndex } from "@/dto/Index.dto";
 import { Icon } from "@/ui/Icon";
 import { Banner } from "@/ui/Banner";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
-import { IngestBanner } from "@/banners/IngestBanner";
-import { SelectContextBanner } from "@/banners/SelectContextBanner";
+import { UploadBanner } from "@/banners/Upload.banner";
+import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 
 export function LoginPage() {
@@ -84,12 +84,13 @@ export function LoginPage() {
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
         cookie.set('last_used_server', app.general.server);
-      } else if (parseInt(res.status) < 500) toast('Error during authorization', {
-        description: 'Wrong username or password'
-      });
+      } else if (parseInt(res.status) < 500) {
+        toast('Error during authorization', {
+          description: 'Wrong username or password'
+        });
+        setLoading(false);
+      }
     });
-    setLoading(false);
-    setStage(1);
   }
 
   /** 
@@ -97,8 +98,14 @@ export function LoginPage() {
   */
   useEffect(() => {
     if (app.general.token) {
-      Info.mapping_file_list();
-      Info.index_reload().then(() => setLoading(false));
+      const processStage = async () => {
+        await Info.mapping()
+        await Info.index_reload()
+        setLoading(false);
+        setStage(1);
+      }
+
+      processStage();
     }
   }, [app.general.token]);
 
@@ -157,8 +164,8 @@ export function LoginPage() {
       const result = Info.operations_update(operations);
 
       spawnBanner(result.contexts.length && result.plugins.length && result.files.length
-        ? <SelectContextBanner />
-        : <IngestBanner />
+        ? <SelectFilesBanner />
+        : <UploadBanner />
       );
     });
   }, [stage]);
@@ -231,7 +238,7 @@ export function LoginPage() {
             <div className={s.group}>
               {!!sessions.length && <Popover>
                 <PopoverTrigger>
-                  <Button variant='outline' img='Container'>Local sessions</Button>
+                  <Button variant='outline' img='Container'>Previous instances</Button>
                 </PopoverTrigger>
                 <PopoverContent>
                   {sessions.map(session => (
@@ -289,7 +296,10 @@ export function LoginPage() {
               : (
                 <>
                   <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
-                  <Button onClick={() => spawnBanner(<IngestBanner />)} variant='ghost'>Upload files</Button>
+                  <div className={s.back}>
+                    <Button onClick={() => spawnBanner(<UploadBanner />)} variant='ghost'>Upload files</Button>
+                    <Button onClick={() => setStage(2)}>Back to operations</Button>
+                  </div>
                 </>
               )
         }

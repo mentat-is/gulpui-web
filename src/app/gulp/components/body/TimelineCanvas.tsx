@@ -25,8 +25,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   const { app, spawnDialog, Info, dialog } = useApplication();
-  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target];
-  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(scrollX, canvas_ref, dependencies);
+  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded];
+  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = () => {
     if (!canvas_ref.current) return;

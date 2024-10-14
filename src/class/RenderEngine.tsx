@@ -1,7 +1,7 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File } from "./Info";
-import { Info } from "@/dto";
+import { λApp } from "@/dto";
 import { stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
@@ -13,7 +13,7 @@ const scale = Symbol('scale');
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
   limits: MinMax,
-  app: Info,
+  app: λApp,
   scrollY: number;
   getPixelPosition: (timestamp: number) => number
 }
@@ -58,7 +58,7 @@ export interface Dot {
 export class RenderEngine implements RenderEngineConstructor, Engines {
   ctx!: CanvasRenderingContext2D;
   limits!: MinMax;
-  app!: Info;
+  app!: λApp;
   getPixelPosition!: (timestamp: number) => number;
   scrollY!: number;
   heightMap: Record<λFile['name'], HeightMap> = {};
@@ -215,6 +215,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public locals = (file: λFile) => {
+    const loading = ' Loading... ';
     const y = File.getHeight(this.app, file, this.scrollY);
 
     this.ctx.fillStyle = '#e8e8e8';
@@ -232,9 +233,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
     this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
-    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
-    
+    const isLoading = !this.app.timeline.loaded.includes(file.uuid);
+    this.ctx.fillText(file.doc_count.toString() + (isLoading ? loading : ''), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
+    this.ctx.fillText(file.doc_count.toString() + (isLoading ? loading : ''), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
   }
 
   public info = (file: λFile) => {

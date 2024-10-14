@@ -1,11 +1,7 @@
-import { useApplication } from '@/context/Application.context';
-import { getDateFormat, getTimestamp } from '@/ui/utils';
-import { format } from 'date-fns';
 import { useState, useEffect, useRef } from 'react';
 
-export const useMagnifier = (scrollX: number, canvas_ref: React.RefObject<HTMLCanvasElement>, dependencies: Array<any>, magnifierSize = 100, magnificationFactor = 2) => {
+export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dependencies: Array<any>, magnifierSize = 100, magnificationFactor = 2) => {
   const magnifier_ref = useRef<HTMLCanvasElement>(null);
-  const { Info } = useApplication()
   const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 

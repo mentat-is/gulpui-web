@@ -1,12 +1,18 @@
-import React, { useState, createContext, useContext, ReactNode, useRef } from "react";
+import React, { useState, createContext, useContext, ReactNode, useRef, useEffect } from "react";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
-import { Info as Information, BaseInfo, λ } from '@/dto';
+import { λApp, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";
 import { toast } from "sonner";
 import { AppSocket } from "@/class/AppSocket";
 import { Index, Info } from "@/class/Info";
 import Cookies from "universal-cookie";
 import { parseTokensFromCookies } from "@/ui/utils";
+
+export class ApplicationError extends Error {
+  constructor(message: string) {
+    super(`Application Error: ${message}`);
+  }
+}
 
 // Define the shape of the application context properties
 interface ApplicationContextProps {
@@ -17,10 +23,10 @@ interface ApplicationContextProps {
   destroyDialog: () => void;
   dialog: boolean;
   api: Api;
-  app: Information;
+  app: λApp;
   ws: AppSocket | undefined;
   setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
-  setInfo: (info: Information) => void;
+  setInfo: (info: λApp) => void;
   Info: Info;
   timeline: React.RefObject<HTMLDivElement>;
   logout: () => void;
@@ -35,7 +41,7 @@ export const useApplication = (): ApplicationContextProps => useContext(Applicat
 // Application provider component to wrap the application with context
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const cookie = new Cookies();
-  const [app, setInfo] = useState<Information>(BaseInfo);
+  const [app, setInfo] = useState<λApp>(BaseInfo);
   const [banner, setBanner] = useState<ReactNode>();
   const [dialog, setDialog] = useState<ReactNode>();
   const timeline = useRef<HTMLDivElement>(null);
@@ -75,7 +81,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
       console.error('[ API | ERROR ]: ', error);
       toast(`Internal appliction error in ${(options.server || app.general.server)}`, {
-        description: error
+        description: JSON.stringify(error),
       });
       return null;
     });
@@ -91,7 +97,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
         removeToken();
         setInfo(BaseInfo);
         toast(lambda.data.exception.name, {
-          description: lambda.data.exception.msg
+          description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
         })
       }
     }
@@ -116,6 +122,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const instance = new Info({app, setInfo, api, timeline});
 
   const [ws, setWs] = useState<AppSocket>();
+
+  useEffect(() => {
+    if (app.general.token) setWs(new AppSocket(instance, app));
+
+  }, [app.general.token])
 
   const spawnBanner = (banner: ReactNode) => {
     setBanner(banner);

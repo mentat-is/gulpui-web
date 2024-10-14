@@ -1,23 +1,22 @@
-import { λOperation } from "../dto";
+import { λOperation } from ".";
 import { Bucket } from "./QueryMaxMin.dto";
 import { λEvent, DetailedChunkEvent } from "./ChunkEvent.dto";
 import { λIndex } from "./Index.dto";
-import { GulpQueryFilterArray } from "./GulpGueryFilter.class";
 import { λContext } from "./Context.dto";
 import { PluginEntity, λPlugin } from "./Plugin.dto";
 import { λFile } from "./File.dto";
 import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
-import { IngestMapping } from "./Ingest.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
+import { GulpQueryFilterArray } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
   detailed: DetailedChunkEvent | null;
 };
 
-export interface Info {
+export interface λApp {
   transfered: {
     down: number,
     up: number
@@ -33,7 +32,6 @@ export interface Info {
     filters: Record<UUID, GulpQueryFilterArray>;
     notes: λNote[],
     links: λLink[],
-    plugins_map: PluginEntity[]
   }
   general: {
     server: string;
@@ -43,14 +41,15 @@ export interface Info {
     ws_id: string;
     token?: string;
     expires?: number;
-    ingest: IngestMapping;
+    ingest: PluginEntity[];
   },
   timeline: {
     scale: number;
     target: λEvent | null;
+    loaded: UUID[]
   }
 }
-export const BaseInfo: Info = {
+export const BaseInfo: λApp = {
   transfered: {
     down: 0,
     up: 0
@@ -66,6 +65,7 @@ export const BaseInfo: Info = {
   timeline: {
     scale: 1,
     target: null,
+    loaded: [],
   },
   target: {
     indexes: [],
@@ -93,6 +93,5 @@ export const BaseInfo: Info = {
     },
     notes: [],
     links: [],
-    plugins_map: []
   }
 }

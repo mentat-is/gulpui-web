@@ -10,7 +10,6 @@ export interface λFile {
   timestamp: MinMax,
   selected?: boolean,
   plugin: string,
-  events: string[],
   offset: number,
   color: Gradients,
   engine: Engine,

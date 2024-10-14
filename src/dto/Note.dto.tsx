@@ -18,7 +18,7 @@ export interface λNote {
   description: null | string,
   text: string,
   glyph_id: null | number,
-  tags: string[],
+  tags?: string[],
   events: λEvent[],
   data: {
       color: string

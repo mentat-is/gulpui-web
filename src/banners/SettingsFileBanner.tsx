@@ -5,7 +5,7 @@ import { Button } from "@/ui/Button";
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
 import { ChangeEvent, useState } from "react";
 import s from './styles/SettingsFileBanner.module.css'
-import { FilterFileBanner } from "./FilterFileBanner";
+import { FilterFileBanner } from "./FilterFile.banner";
 import { Card } from "@/ui/Card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Gradients, GradientsMap } from "@/ui/utils";
@@ -66,10 +66,10 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       </Card>
       <Separator />
       <Card className={s.engines}>
-        <p className={s.text}>Render engine:</p>
+        <p className={s.text}>Renderer:</p>
         <Select onValueChange={(v: Engine) => setEngine(v)} value={engine}>
           <SelectTrigger className={s.trigger}>
-            <SelectValue placeholder="Choose render engine" />
+            <SelectValue placeholder="Choose renderer" />
           </SelectTrigger>
           <SelectContent>
             {enginesBase.map(i => <SelectItem value={i.plugin}><Button variant='ghost' img={i.img}>{i.title}</Button></SelectItem>)}

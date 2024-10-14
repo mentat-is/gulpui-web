@@ -5,9 +5,11 @@ import s from './styles/Separator.module.css';
 import { cn } from './utils'
 
 type SeparatorPrimitiveProps = React.ElementRef<typeof SeparatorPrimitive.Root>;
-type ComponentPropsWithoutRef = React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root>
+type ComponentPropsWithoutRef = React.ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root> & {
+  color?: string;
+}
 
-const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(({ className, orientation = 'horizontal', decorative = true, ...props }, ref) => (
+const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(({ color, className, orientation = 'horizontal', decorative = true, ...props }, ref) => (
   <SeparatorPrimitive.Root
       ref={ref}
       decorative={decorative}
@@ -17,6 +19,9 @@ const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(
         s[orientation],
         className
       )}
+      style={{
+        background: color ?? 'inherit'
+      }}
       {...props}
     />
   )

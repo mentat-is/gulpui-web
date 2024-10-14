@@ -1,6 +1,7 @@
 import { UUID } from 'crypto';
 import { RawFile } from './File.dto';
 import { ResponseBase } from './ResponseBase.dto';
+import { Mapping } from './MappingFileList.dto';
 
 export interface λPlugin {
   name: string,
@@ -19,16 +20,18 @@ export interface RawPlugin {
 export type PluginEntityResponse = ResponseBase<PluginEntity[]>
 
 export interface PluginEntity {
-  depends_on: unknown[];
+  display_name: string;
+  type: PluginEntityType;
+  paid: boolean;
   desc: string;
-  event_type_field: string;
   filename: string;
   internal: boolean;
-  display_name: string;
   options: PluginEntityOption[];
+  depends_on: [];
   tags: string[];
-  type: PluginEntityType;
+  event_type_field: string;
   version: string;
+  mappings: Mapping[];
 };
 
 export type PluginEntityType = 'ingestion' | 'sigma' | 'extension'
@@ -36,6 +39,6 @@ export type PluginEntityType = 'ingestion' | 'sigma' | 'extension'
 export interface PluginEntityOption {
   name: string,
   type: string,
-  default: string,
+  default: boolean,
   desc: string
 }

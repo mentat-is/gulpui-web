@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'react';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuTrigger } from "@/ui/ContextMenu";
+import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
 import { Ruler } from './Ruler';
@@ -7,25 +7,22 @@ import { DragDealer } from '@/class/dragDealer.class';
 import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
-import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
-import { FilterFileBanner } from '@/banners/FilterFileBanner';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
+import { TargetMenu } from './Target.menu';
 
 export function Timeline() {
-  const { app, Info, banner, dialog, timeline, spawnBanner, spawnDialog } = useApplication();
+  const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(0);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
-  const [selectedFileForContextMenu, setSelectedFileForContextMenu] = useState<λFile>();
+  const [target, setTarget] = useState<λFile>();
 
   const increaseScrollY = useCallback((λy: number) => {
     const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42
@@ -126,9 +123,7 @@ export function Timeline() {
 
   const handleContextMenu = useCallback((event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 24) / 48)
-    const files = File.selected(app)
-    const file = files[index] || files[files.length - 1];
-    setSelectedFileForContextMenu(file);
+    setTarget(File.selected(app)[index]);
   }, [app, scrollY, timeline]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -164,26 +159,7 @@ export function Timeline() {
             <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
           </ContextMenuTrigger>
-          <ContextMenuContent>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <ContextMenuLabel className={s.cm_title}>{selectedFileForContextMenu?.name || '...'}</ContextMenuLabel>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {selectedFileForContextMenu?.name || '...'}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={() => Info.files_repin(selectedFileForContextMenu!.uuid)} img={selectedFileForContextMenu?.pinned ? 'PinOff' : 'Pin'}>{selectedFileForContextMenu ? selectedFileForContextMenu.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={selectedFileForContextMenu!} />)} img='Settings'>Settings</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={selectedFileForContextMenu!} />)} img='Filter'>Filters</ContextMenuItem>
-            <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={selectedFileForContextMenu!} />)} img='Waypoints'>Links</ContextMenuItem>
-            <ContextMenuItem onClick={() => Info.files_unselect(selectedFileForContextMenu!)} img='EyeOff'>Hide</ContextMenuItem>
-            <ContextMenuItem onClick={() => Info.files_reorder_upper(selectedFileForContextMenu!.uuid)} img='ArrowBigUp'>Move upper</ContextMenuItem>
-            <ContextMenuItem onClick={() => Info.files_reorder_lower(selectedFileForContextMenu!.uuid)} img='ArrowBigDown'>Move lower</ContextMenuItem>
-          </ContextMenuContent>
+          <TargetMenu file={target} />
         </ContextMenu>
       </div>
     </div>

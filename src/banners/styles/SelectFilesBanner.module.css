@@ -3,7 +3,9 @@
   flex-direction: column;
   gap: 12px;
   max-height: 64vh;
-  overflow-y: scroll;
+  padding-right: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-width: 8px;  
 }
 
@@ -11,20 +13,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-.wrapper::-webkit-scrollbar {
-  width: 8px;
-  position: absolute;
-}
-
-.wrapper::-webkit-scrollbar-track {
-  background-color: #242424;
-  border-radius: 10px;
-}
-
-.wrapper::-webkit-scrollbar-thumb {
-  background-color: white;
-  border-radius: 10px;
+  padding: 12px 16px;
+  background: var(--gray16);
+  border: 1px solid var(--accent-2);
+  border-radius: var(--border-m);
 }
 .contextHeading {
   display: flex;
@@ -35,10 +27,15 @@
   font-size: 24px;
 }
 .plugin {
-  padding-left: 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  padding: 8px 12px;
+  background: var(--gray24);
+  border: 1px solid var(--accent-3);
+  border-radius: var(--border-s);
+  max-height: 256px;
+  overflow-y: scroll;
 }
 .pluginHeading {
   display: flex;

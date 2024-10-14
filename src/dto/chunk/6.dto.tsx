@@ -1,3 +1,5 @@
+import { λChunk } from "../Chunk.dto"
+
 export interface ChunkType_6 {
   client_id: null
   context: null
@@ -20,5 +22,5 @@ export interface ChunkType_6 {
   time_end: number
   time_expire: number
   time_update: number
-  type: 6
+  type: λChunk.QUERY_RESULT
 }

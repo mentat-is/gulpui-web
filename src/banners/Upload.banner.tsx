@@ -4,19 +4,20 @@ import { Input } from "@/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
 import { useEffect, useState } from "react";
-import s from './styles/IngestBanner.module.css';
+import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
 import { Context, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
-import { SelectContextBanner } from "./SelectContextBanner";
+import { SelectFilesBanner } from "./SelectFiles.banner";
+import { PluginEntity } from "@/dto/Plugin.dto";
 
-export function IngestBanner() {
+export function UploadBanner() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList | null>(null);
-  const [plugin, setPlugin] = useState<string>();
+  const [plugin, setPlugin] = useState<PluginEntity>();
   const [filename, setFilename] = useState<string>();
   const [method, setMethod] = useState<string>();
   const [context, setContext] = useState<string>('');
@@ -25,7 +26,7 @@ export function IngestBanner() {
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
 
   useEffect(() => {
-    const filenames = app.general.ingest.find(p => p.plugin === plugin)?.types.map(t => t.filename) || [];
+    const filenames = app.general.ingest.find(p => p.filename === plugin?.filename)?.mappings.map(m => m.filename) || [];
     setFilename(filenames[0]);
     setMethod(undefined);
   }, [plugin]);
@@ -40,7 +41,7 @@ export function IngestBanner() {
   }, [isExistingContextChooserAvalable]);
 
   const hasMethod = () => {
-    const length = app.general.ingest.find(i => i.plugin === plugin)?.types.find(t => t.filename === filename)?.ids.length;
+    const length = app.general.ingest.find(i => i.filename === plugin?.filename)?.mappings.find(m => m.filename === filename)?.mapping_ids.length;
 
     return typeof length === 'undefined' || (files && Array.from(files).length)
   }
@@ -111,7 +112,7 @@ export function IngestBanner() {
         const result = Info.operations_update(operations);
         
         if (result.contexts.length && result.plugins.length && result.files.length) {
-          spawnBanner(<SelectContextBanner />);
+          spawnBanner(<SelectFilesBanner />);
         }
       });
     }, 5000);
@@ -123,7 +124,7 @@ export function IngestBanner() {
   const FilenameSelection = () => {
     if (!plugin) return null;
 
-    const filenames = app.general.ingest.find(p => p.plugin === plugin)?.types.map(t => t.filename) || [];
+    const filenames = app.general.ingest.find(p => p.filename === plugin.filename)?.mappings.map(m => m.filename) || [];
 
     if (!filename) setFilename(filenames[0]);
 
@@ -144,7 +145,7 @@ export function IngestBanner() {
   const MethodSelection = () => {
     if (!plugin || !filename) return null;
 
-    const methods = app.general.ingest.find(p => p.plugin === plugin)?.types.find(t => t.filename === filename)?.ids || [];
+    const methods = app.general.ingest.find(p => p.filename === plugin.filename)?.mappings.find(m => m.filename === filename)?.mapping_ids || [];
 
     if (!methods.length) return null;
 
@@ -189,13 +190,13 @@ export function IngestBanner() {
       />
       <Separator />
       <div className={s.selection}>
-        <Select onValueChange={setPlugin} value={plugin}>
+        <Select onValueChange={pluginname => setPlugin(app.general.ingest.find(i => i.filename === pluginname))} value={plugin?.display_name}>
           <SelectTrigger>
             <SelectValue placeholder="Choose plugin" />
           </SelectTrigger>
           <SelectContent>
-            {app.general.ingest.map(obj => (
-              <SelectItem key={obj.plugin} value={obj.plugin}>{obj.plugin}</SelectItem>
+            {app.general.ingest.map(plugin => (
+              <SelectItem key={plugin.filename} value={plugin.filename}>{plugin.display_name}</SelectItem>
             ))}
           </SelectContent>
         </Select>

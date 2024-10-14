@@ -12,10 +12,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
 import { ResponseBase } from '@/dto/ResponseBase.dto';
-import { FilterOptions, FilterType, GulpQueryFilterObject } from '@/dto/GulpGueryFilter.class';
-import { cn } from '@/ui/utils';
-import { Context, Plugin } from '@/class/Info';
+import { Context, FilterOptions, FilterType, GulpQueryFilterObject, Plugin } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
+import React from 'react';
+import { Switch } from '@/ui/Switch';
 
 const _baseFilter = {
   key: '',
@@ -32,20 +32,9 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const [acceptable, setAcceptable] = useState<Acceptable>('text');
   const [filteringOptions, setFilteringOptions] = useState<FilterOptions>({})
   const [filter, setFilter] = useState<GulpQueryFilterObject>(_baseFilter);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const filters = app.target.filters[file.uuid] || [];
-  
-  useEffect(() => {
-    if (!filters.length || !filters.find(f => f.key === 'log.file.path')) {
-      Info.filters_add(file.uuid, [{
-        key: 'log.file.path',
-        type: FilterType.EQUAL,
-        value: file.name,
-        static: true
-      }])
-    }
-  }, []);
 
   useEffect(() => {
     if (Object.keys(filteringOptions).length) return;
@@ -57,13 +46,13 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         context,
         src: file.name
       }
-    }).then(res => {
-      setLoading(false);
-      if (res.isSuccess()) setFilteringOptions(res.data);
-    })
+    }).then(res => res.isSuccess() && setFilteringOptions(res.data))
   }, []);
 
-  const submit = () => Info.finalizeFiltering(file.uuid).then(destroyBanner);
+  const submit = async () => {
+    setLoading(true);
+    Info.refetch(file.uuid).then(destroyBanner);
+  }
 
   const addFilter = () => {
     const _filters = [...filters, filter];
@@ -93,10 +82,12 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   const setDate = (date: Date | undefined) => changeFilter({...filter || {}, value: date?.valueOf() });
 
+  const undo = () => Info.filters_remove(file);
+
   return (
     <Banner
       title={'Choose filtering options'}
-      className={s.banner} loading={loading || !Object.keys(filteringOptions).length}
+      className={s.banner} loading={!Object.keys(filteringOptions).length}
       subtitle={
         <Button
           onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
@@ -151,16 +142,30 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
       </div>
       <div className={s.avilable_filters}>
-        {filters.map(filter => (
-          <div className={cn(s.filter, filter.static && s.static)}>
-            <code>{filter.key}</code>
-            <Badge value={filter.type} />
-            <p>{typeof filter.value !== 'string' ? format(filter.value, "LLL dd, y") : filter.value}</p>
-            {!filter.static && <Button img='Trash2' onClick={() => removeFilter(filter)} />}
-          </div>
-        ))}
+        {filters.map((filter, i) => {
+          return (
+            <React.Fragment key={i}>
+              {i !== 0 && (
+                <div className={s.switch}>
+                  <p>AND</p>
+                  <Switch />
+                  <p>OR</p>
+                </div>
+              )}
+              <div className={s.filter}>
+                <code>{filter.key}</code>
+                <Badge value={filter.type} />
+                <p>{typeof filter.value !== 'string' ? format(filter.value, "LLL dd, y") : filter.value}</p>
+                <Button variant='destructive' img='Trash2' onClick={() => removeFilter(filter)} />
+              </div>
+            </React.Fragment>
+          )
+        })}
       </div>
-      <Button img='Check' onClick={submit}>Submit</Button>
+      <div className={s.bottom}>
+        <Button img='Undo' variant='outline' onClick={undo}>Undo</Button>
+        <Button img='Check' loading={loading} onClick={submit}>Submit</Button>
+      </div>
     </Banner>
   );
 }
