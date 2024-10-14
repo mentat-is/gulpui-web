@@ -238,7 +238,7 @@ export function LoginPage() {
             <div className={s.group}>
               {!!sessions.length && <Popover>
                 <PopoverTrigger>
-                  <Button variant='outline' img='Container'>Local sessions</Button>
+                  <Button variant='outline' img='Container'>Previous instances</Button>
                 </PopoverTrigger>
                 <PopoverContent>
                   {sessions.map(session => (
@@ -296,7 +296,10 @@ export function LoginPage() {
               : (
                 <>
                   <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
-                  <Button onClick={() => spawnBanner(<UploadBanner />)} variant='ghost'>Upload files</Button>
+                  <div className={s.back}>
+                    <Button onClick={() => spawnBanner(<UploadBanner />)} variant='ghost'>Upload files</Button>
+                    <Button onClick={() => setStage(2)}>Back to operations</Button>
+                  </div>
                 </>
               )
         }

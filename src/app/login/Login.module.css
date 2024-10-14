@@ -115,3 +115,9 @@
   justify-content: flex-start;
   width: 100%;
 }
+.back {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 12px;
+}
