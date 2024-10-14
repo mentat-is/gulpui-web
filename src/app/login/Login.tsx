@@ -84,9 +84,12 @@ export function LoginPage() {
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
         cookie.set('last_used_server', app.general.server);
-      } else if (parseInt(res.status) < 500) toast('Error during authorization', {
-        description: 'Wrong username or password'
-      });
+      } else if (parseInt(res.status) < 500) {
+        toast('Error during authorization', {
+          description: 'Wrong username or password'
+        });
+        setLoading(false);
+      }
     });
   }
 
@@ -95,9 +98,14 @@ export function LoginPage() {
   */
   useEffect(() => {
     if (app.general.token) {
-      Info.mapping_file_list();
-      Info.index_reload().then(() => setLoading(false));
-      setStage(1);
+      const processStage = async () => {
+        await Info.mapping()
+        await Info.index_reload()
+        setLoading(false);
+        setStage(1);
+      }
+
+      processStage();
     }
   }, [app.general.token]);
 

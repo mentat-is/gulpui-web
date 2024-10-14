@@ -33,8 +33,6 @@ export class AppSocket extends WebSocket {
       const { data: _chunk } = JSON.parse(data) as AppSocketResponseData;
       this.info.setDownstream(new Blob([data]).size)
 
-      console.log(data);
-
       if (isChunkDefault(_chunk)) {
         const events: Chunk['events'] = _chunk.events.map((event: RawChunkEvent): λEvent => ({
           _id: event._id,

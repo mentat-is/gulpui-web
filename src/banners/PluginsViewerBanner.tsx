@@ -8,26 +8,26 @@ import { Icon } from '@/ui/Icon';
 
 export function PluginsViewerBanner() {
   const { app } = useApplication();
-  const [plugin, setPlugin] = useState<PluginEntity | undefined>(app.target.plugins_map[0]);
+  const [plugin, setPlugin] = useState<PluginEntity | undefined>(app.general.ingest[0]);
 
   return (  
     <Banner title='Review plugins'>
-      <Select onValueChange={name => setPlugin(app.target.plugins_map.find(p => p.display_name === name))}>
+      <Select onValueChange={name => setPlugin(app.general.ingest.find(i => i.display_name === name))}>
         <SelectTrigger>
           {plugin?.display_name || 'There is no plugins'}
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
             <SelectLabel>Ingestion</SelectLabel>
-            {app.target.plugins_map.filter(p => p.type === 'ingestion').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
+            {app.general.ingest.filter(i => i.type === 'ingestion').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
           <SelectGroup>
             <SelectLabel>Sigma</SelectLabel>
-            {app.target.plugins_map.filter(p => p.type === 'sigma').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
+            {app.general.ingest.filter(i => i.type === 'sigma').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
           <SelectGroup>
             <SelectLabel>Extension</SelectLabel>
-            {app.target.plugins_map.filter(p => p.type === 'extension').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
+            {app.general.ingest.filter(i => i.type === 'extension').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
         </SelectContent>
       </Select>

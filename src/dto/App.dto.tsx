@@ -7,7 +7,6 @@ import { PluginEntity, λPlugin } from "./Plugin.dto";
 import { λFile } from "./File.dto";
 import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
-import { IngestMapping } from "./Ingest.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
 import { GulpQueryFilterArray } from "@/class/Info";
@@ -33,7 +32,6 @@ export interface λApp {
     filters: Record<UUID, GulpQueryFilterArray>;
     notes: λNote[],
     links: λLink[],
-    plugins_map: PluginEntity[]
   }
   general: {
     server: string;
@@ -43,7 +41,7 @@ export interface λApp {
     ws_id: string;
     token?: string;
     expires?: number;
-    ingest: IngestMapping;
+    ingest: PluginEntity[];
   },
   timeline: {
     scale: number;
@@ -93,6 +91,5 @@ export const BaseInfo: λApp = {
     },
     notes: [],
     links: [],
-    plugins_map: []
   }
 }

@@ -14,8 +14,7 @@ import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
 import { generateUUID, Gradients } from '@/ui/utils';
-import { MappingFileListRequest } from '@/dto/MappingFileList.dto';
-import { IngestMapping } from '@/dto/Ingest.dto';
+import { Mapping, MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
 import { UUID } from 'crypto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
@@ -57,13 +56,11 @@ export class Info implements InfoProps {
       ? uuids.forEach(uuid => this.events_reset_in_file(uuid))
       : this.events_reset();
     
-    await this.plugins_reload();
-  
+    await this.mapping();
+    
     await this.notes_reload();
 
     await this.links_reload();
-
-    await this.mapping_file_list();
 
     const files = (uuids.length
       ? uuids.map(uuid => {
@@ -90,14 +87,6 @@ export class Info implements InfoProps {
         },
         body: JSON.stringify({
           ...Filter.body(this.app, file),
-          flt: {
-            context: contexts.map(c => c.name),
-            end_msec: this.app.target.bucket?.selected.max,
-            operation_id: [
-              Operation.selected(this.app)?.id
-            ],
-            start_msec: this.app.target.bucket?.selected.min
-          },
           options: {
             search_after_loop: false,
             sort: {
@@ -138,9 +127,9 @@ export class Info implements InfoProps {
   // 🔥 PLUGINS
   plugins_set = (plugins: λPlugin[]) => this.setInfoByKey(plugins, 'target', 'plugins');
 
-  plugins_reload = () => this.api<PluginEntityResponse>('/plugin_list').then(res => {
+  plugins_fetch = () => this.api<PluginEntityResponse>('/plugin_list').then(res => {
     if (res.isSuccess()) {
-      this.setInfoByKey(Plugin.parse(res.data), 'target', 'plugins_map');
+      return res.data;
     } else {
       toast('Error fetching plugin_list', {
         description: (res as unknown as ResponseError).data.exception.msg
@@ -414,7 +403,27 @@ export class Info implements InfoProps {
 
   filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
 
-  mapping_file_list = () => this.api<MappingFileListRequest>('/mapping_file_list').then(res => res.isSuccess() && this.setInfoByKey(this.mapping_file_list_parse(res.data), 'general', 'ingest'));
+  mapping = () => this.api<MappingFileListRequest>('/mapping_file_list').then(async (res) => {
+    const plugins = await this.plugins_fetch();
+
+    if (!plugins) return;
+
+    plugins.forEach(plugin => { plugin.mappings = [] });
+
+    if (res.isSuccess()) {
+      const mappings = res.data;
+
+      mappings.forEach(mapping => {
+        const plugin = plugins.find(p => mapping.metadata.plugin.some(_plugin => _plugin === p.filename));
+
+        delete (mapping as Partial<RawMapping>).metadata;
+
+        plugin?.mappings.push(mapping);
+      })
+
+      this.setInfoByKey(plugins, 'general', 'ingest');
+    }
+  });
 
   files_reorder_upper = (uuid: λFile['uuid']) => {
     const files = this.app.target.files
@@ -452,15 +461,7 @@ export class Info implements InfoProps {
 
     this.setInfoByKey(files, 'target', 'files');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
-  }
-
-  mapping_file_list_parse = (raw: MappingFileListRequest['data']) => 
-    raw.reduce((acc, { metadata: { plugin }, filename, mapping_ids }) => {
-      const [pluginName] = plugin;
-      const cluster = acc.find(c => c.plugin === pluginName) || acc[acc.push({ plugin: pluginName, types: [] }) - 1];
-      cluster.types.push({ filename, ids: mapping_ids });
-      return acc;
-    }, [] as IngestMapping);  
+  }   
   
   get width(): number {
     return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
@@ -562,8 +563,6 @@ export class Plugin {
 
   public static files = (app: λApp, plugin: λPlugin): λFile[] => app.target.files.filter(f => f._uuid === plugin.uuid);
 
-  public static parse = (plugins: Arrayed<PluginEntity>) => plugins;
-
   private static _select = (p: λPlugin): λPlugin => ({ ...p, selected: true });
 
   private static _unselect = (p: λPlugin): λPlugin => ({ ...p, selected: false });
@@ -638,7 +637,7 @@ export class Filter {
     }
 
     //eslint-disable-next-line
-    return `(operation_id:${context.operation.id} AND gulp.context:"${context.name}" AND gulp.source.file:"${file.name}" AND @timestamp:>=${file.timestamp.min} AND @timestamp:<=${file.timestamp.max})`
+    return `(operation_id:${context.operation.id} AND (gulp.context: \"${context.name}\") AND gulp.source.file:"${file.name}" AND @timestamp:>=${file.timestamp.min} AND @timestamp:<=${file.timestamp.max})`
   }
 
   public static parse(app: λApp, file: λFile) {
