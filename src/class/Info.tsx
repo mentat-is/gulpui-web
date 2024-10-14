@@ -638,7 +638,7 @@ export class Filter {
     }
 
     //eslint-disable-next-line
-    return `(operation_id:${context.operation.id} AND gulp.context:"\"${context.name}\"" AND gulp.source.file:\"${file.name}\" AND @timestamp:>=${file.timestamp.min} AND @timestamp:<=${file.timestamp.max})`
+    return `(operation_id:${context.operation.id} AND gulp.context:"${context.name}" AND gulp.source.file:"${file.name}" AND @timestamp:>=${file.timestamp.min} AND @timestamp:<=${file.timestamp.max})`
   }
 
   public static parse(app: λApp, file: λFile) {
