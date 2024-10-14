@@ -1,8 +1,9 @@
 import { Info } from '@/class/Info';
 import { λApp } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
-import { Chunk, isChunkDefault } from '@/dto/Chunk.dto';
+import { Chunk, isChunkDefault, UnknownChunk, λChunk } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
+import { UUID } from 'crypto';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -46,9 +47,12 @@ export class AppSocket extends WebSocket {
           context: event['gulp.context'],
           _uuid: this.info.file_find_by_filename_and_context(event['gulp.source.file'], event['gulp.context'])?.uuid
         }));
-
+  
         this.info.bucket_increase_fetched(events.length);
         this.info.events_add(events);
+        
+      } else if ((_chunk as UnknownChunk).type === λChunk.QUERY_RESULT && _chunk.matches_total > 0) {
+        this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as UUID]);
       }
     }
 

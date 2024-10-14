@@ -81,7 +81,10 @@ export class Info implements InfoProps {
 
       this.api<any>('/query_raw', {
         method: 'POST',
-        data: { ws_id: this.app.general.ws_id },
+        data: {
+          ws_id: this.app.general.ws_id,
+          req_id: file.uuid
+        },
         headers: {
           'Content-Type': 'application/json'
         },
@@ -98,13 +101,16 @@ export class Info implements InfoProps {
           }
         })
       });
-    })
+    });
+
+    this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
   }
   
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
+  setLoaded = (files: UUID[]) => this.setInfoByKey(files, 'timeline', 'loaded');
 
   // 🔥 INDEXES
   index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));

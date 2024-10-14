@@ -215,6 +215,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public locals = (file: λFile) => {
+    const loading = ' Loading... ';
     const y = File.getHeight(this.app, file, this.scrollY);
 
     this.ctx.fillStyle = '#e8e8e8';
@@ -232,9 +233,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
     this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
-    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
-    
+    const isLoading = !this.app.timeline.loaded.includes(file.uuid);
+    this.ctx.fillText(file.doc_count.toString() + (isLoading ? loading : ''), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
+    this.ctx.fillText(file.doc_count.toString() + (isLoading ? loading : ''), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
   }
 
   public info = (file: λFile) => {
