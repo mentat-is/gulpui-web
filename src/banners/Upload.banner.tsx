@@ -3,7 +3,7 @@ import { Banner } from "@/ui/Banner";
 import { Input } from "@/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
-import { useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
@@ -16,7 +16,7 @@ import { PluginEntity } from "@/dto/Plugin.dto";
 import { Mapping } from "@/dto/MappingFileList.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 
-interface λIngestFile extends File {
+interface λIngestFileSettings {
   plugin?: PluginEntity['filename'],
   mapping?: PluginEntity['mappings'][number]['filename'],
   method?: PluginEntity['mappings'][number]['mapping_ids'][number]
@@ -24,7 +24,8 @@ interface λIngestFile extends File {
 
 export function UploadBanner() {
   const { Info, app, api, spawnBanner } = useApplication();
-  const [files, setFiles] = useState<λIngestFile[]>([]);
+  const [files, setFiles] = useState<FileList>();
+  const [settings, setSettings] = useState<Record<File['name'], λIngestFileSettings>>({});
   const [context, setContext] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
@@ -48,14 +49,14 @@ export function UploadBanner() {
   const CHUNK_SIZE = 1024 * 2 * 1024;
   const boundary = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
-  const sendChunkedFiles = async (file: λIngestFile, start: number, index: number) => {
+  const sendChunkedFiles = async (file: File, start: number, index: number) => {
     const req_id = file.name + file.size;
     const end = Math.min(file.size, start + CHUNK_SIZE);
     const chunk = file.slice(start, end);
   
     const payload = JSON.stringify(end >= file.size ? {
       plugin_params: {
-        mapping_file: file.mapping
+        mapping_file: settings[file.name].mapping
       }
     }: {});
   
@@ -78,7 +79,7 @@ export function UploadBanner() {
       },
       data: {
         req_id,
-        plugin: file.plugin,
+        plugin: settings[file.name].plugin,
         operation_id: Operation.selected(app)!.id,
         context,
         client_id: app.general.user_id,
@@ -118,33 +119,36 @@ export function UploadBanner() {
     
   };
 
-  const updateFile = useCallback((file: λIngestFile) => {
-    setFiles(f => {
-      const _file = f.find(x => x.name === file.name && file.webkitRelativePath === x.webkitRelativePath)!;
+  const updateSettings = useCallback((filename: File['name'], setting: λIngestFileSettings) => {
+    setSettings(s => {
+      const _file = s[filename]
 
-      Object.assign(_file, file);
+      Object.assign(_file, setting);
 
-      return f;
+      return s;
     });
   }, [setFiles]);
   
-  const setPlugin = (plugin: λIngestFile['plugin'], file: λIngestFile) => updateFile({ ...file, plugin });
+  const setPlugin = (plugin: λIngestFileSettings['plugin'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, plugin });
 
-  const setMapping = (mapping: λIngestFile['mapping'], file: λIngestFile) => updateFile({ ...file, mapping });
+  const setMapping = (mapping: λIngestFileSettings['mapping'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, mapping });
 
-  const setMethod = (method: λIngestFile['method'], file: λIngestFile) => updateFile({ ...file, method });
+  const setMethod = (method: λIngestFileSettings['method'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, method });
 
-  const getExtensionMapping = (file: λIngestFile) => {
+  const getExtensionMapping = (file: File) => {
     return app.general.ingest[0]?.filename;
   }
 
-  const PluginSelection = ({ file }: { file: λIngestFile }) => {
+  const PluginSelection = ({ setting, file }: {
+    setting: λIngestFileSettings,
+    file: File
+  }) => {
     const placeholder = app.general.ingest[0];
 
-    if (!file.plugin && placeholder) setPlugin(placeholder.filename, file);
+    if (!setting.plugin && placeholder) setPlugin(placeholder.filename, setting, file.name);
 
     return (  
-      <Select onValueChange={plugin => setPlugin(plugin, file)} value={file.plugin}>
+      <Select onValueChange={plugin => setPlugin(plugin, setting, file.name)} value={setting.plugin}>
         <SelectTrigger>
           <SelectValue defaultValue={getExtensionMapping(file)} placeholder="Choose filename" />
         </SelectTrigger>
@@ -157,15 +161,18 @@ export function UploadBanner() {
     );
   };
 
-  const MappingSelection = ({ file }: { file: λIngestFile }) => {
-    const mappings = app.general.ingest.find(p => p.filename === file.plugin)?.mappings || [];
+  const MappingSelection = ({ setting, file }: {
+    setting: λIngestFileSettings,
+    file: File
+  }) => {
+    const mappings = app.general.ingest.find(p => p.filename === setting.plugin)?.mappings || [];
 
     if (!mappings.length) return null;
 
-    if (!file.method) setMapping(mappings[0]?.filename, file);
+    if (!setting.method) setMapping(mappings[0]?.filename, setting, file.name);
 
     return (
-      <Select disabled={!file.plugin} onValueChange={mapping => setMapping(mappings[0]?.filename, file)} value={file.mapping}>
+      <Select disabled={!setting.plugin} onValueChange={mapping => setMapping(mapping, setting, file.name)} value={setting.mapping}>
         <SelectTrigger>
           <SelectValue defaultValue={mappings[0].filename} placeholder="Choose mapping" />
         </SelectTrigger>
@@ -197,6 +204,26 @@ export function UploadBanner() {
     return Array.from(i);
   }
 
+  const filesSelectHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    const files = event.currentTarget.files;
+
+    if (!files) return;
+
+    setFiles(files);
+    
+    const settings: Record<File['name'], λIngestFileSettings> = {};
+
+    for (let index = 0; index < files.length; index++) {
+      const file = files.item(index)
+
+      if (!file) continue;
+
+      settings[file.name] = {};
+    }
+
+    setSettings(settings);
+  }
+
 
   return (
     <Banner title='Upload files'>
@@ -204,7 +231,7 @@ export function UploadBanner() {
         type='file'
         id='ingest_input'
         multiple
-        onChange={(e) => e.currentTarget.files && setFiles(ita(e.currentTarget.files))}
+        onChange={filesSelectHandler}
       />
       <div className={s.context}>
         <p className={cn(!isExistingContextChooserAvalable && s.available)}>New context</p>
@@ -224,17 +251,17 @@ export function UploadBanner() {
           </div>
           <Separator />
           <div className={s.files}>
-            {files.map(file => (
+            {Object.keys(settings).map((filename, i) => (
               <div className={s.node}>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <p>{file.name}</p>
+                    <p>{filename}</p>
                   </PopoverTrigger>
-                  <PopoverContent className={s.popover}>{file.name}</PopoverContent>
+                  <PopoverContent className={s.popover}>{filename}</PopoverContent>
                 </Popover>
-                <p>{formatBytes(file.size)}</p>
-                <PluginSelection file={file} />
-                <MappingSelection file={file} />
+                <p>{formatBytes(files.item(i)!.size)}</p>
+                <PluginSelection file={files.item(i)!} setting={settings[filename]} />
+                <MappingSelection file={files.item(i)!} setting={settings[filename]} />
               </div>
             ))}
           </div>
@@ -243,7 +270,7 @@ export function UploadBanner() {
       <div className={s.bottom}>
         {loading && <Progress value={progress} />}
         <Button
-          variant={files?.length && context && files.every(f => f.plugin) ? 'default' : 'disabled'}
+          variant={files?.length && context && Object.values(settings).every(s => s.plugin) ? 'default' : 'disabled'}
           onClick={submitFiles}
           img='Check'
           className={s.done}
