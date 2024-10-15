@@ -1,7 +1,6 @@
 .separator {
   min-height: 1px;
   min-width: 1px;
-  background: var(--accent-2);
 }
 .horizontal {
   width: 100%;
