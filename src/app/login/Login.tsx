@@ -222,17 +222,20 @@ export function LoginPage() {
                 img='Server'
                 placeholder="Server adress (ip:port)"
                 value={serverValue}
+                tabIndex={1}
                 onChange={(e) => setServerValue(e.currentTarget.value)} />
               <Input
                 img='User'
                 placeholder="Username"
                 value={app.general.username}
+                tabIndex={2}
                 onChange={e => Info.setUsername(e.currentTarget.value)} />
               <Input
                 img='KeyRound'
                 placeholder="Password"
                 type='password'
                 value={app.general.password}
+                tabIndex={3}
                 onChange={e => Info.setPassword(e.currentTarget.value)} />
             <Separator />
             <div className={s.group}>
@@ -253,7 +256,7 @@ export function LoginPage() {
                 ))}
                 </PopoverContent>
               </Popover>}
-              <Button loading={loading} onClick={login}>Log in</Button>
+              <Button loading={loading}tabIndex ={4} onClick={login}>Log in</Button>
             </div>
           </React.Fragment>
           )
