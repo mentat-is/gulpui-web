@@ -64,3 +64,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.filter {
+  will-change: width;
+  transition: width 0.3s var(--transition);
+  width: 36px !important;
+  overflow: hidden !important;
+  padding: 7px !important;
+}
+.filter:hover {
+  width: 256px !important;
+}
+.filter svg {
+  min-width: 20px;
+}
+

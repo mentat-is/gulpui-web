@@ -46,7 +46,8 @@ export interface λApp {
   timeline: {
     scale: number;
     target: λEvent | null;
-    loaded: UUID[]
+    loaded: UUID[];
+    filter: string;
   }
 }
 export const BaseInfo: λApp = {
@@ -66,6 +67,7 @@ export const BaseInfo: λApp = {
     scale: 1,
     target: null,
     loaded: [],
+    filter: ''
   },
   target: {
     indexes: [],

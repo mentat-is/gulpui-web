@@ -1,6 +1,7 @@
 import { Button } from '@/ui/Button';
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
+import { Input } from '@/ui/Input';
 
 interface ControlsProps {
   scrollX: number;
@@ -32,6 +33,7 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
       <Button onClick={() => zoom(true)} img='ZoomOut'>Zoom Out</Button>
       <Button onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween'>Zoom Fit</Button>
       <Button onClick={() => zoom(false)} img='ZoomIn'>Zoom In</Button>
+      <Input className={s.filter} value={app.timeline.filter} placeholder='Filter by filenames and context' onChange={(e) => Info.setTimelineFilter(e.target.value)} img='Filter' />
     </div>
   )
 }

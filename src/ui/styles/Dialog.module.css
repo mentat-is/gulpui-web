@@ -5,7 +5,8 @@
 .dialog {
   padding: var(--card-padding);
   display: flex;
-  background: var(--soft-black);
+  background: var(--geist-background);
+  backdrop-filter: blur(6px) brightness(0.15);
   flex-direction: column;
   gap: var(--card-gap);
   height: calc(100% - 64px);

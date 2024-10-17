@@ -369,6 +369,7 @@ export class Info implements InfoProps {
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
   setTimelineTarget = (event?: λEvent | null) => this.setInfoByKey(event, 'timeline', 'target');
+  setTimelineFilter = (filter: string) => this.setInfoByKey(filter, 'timeline', 'filter');
   
   increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
   
@@ -580,7 +581,7 @@ export class File {
   public static reload = (files: Arrayed<λFile>, app: λApp): λFile[] => File.select(Parser.array(files), File.selected(app));
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid)));
+  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid))).filter(f => f.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Plugin.find(app, f._uuid)?.context.toLowerCase().includes(app.timeline.filter.toLowerCase()));
 
   public static find = (use: λApp | λFile[], file: λFile | UUID): λFile | undefined => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file));
   
