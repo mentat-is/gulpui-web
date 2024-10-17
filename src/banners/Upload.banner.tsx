@@ -133,8 +133,6 @@ export function UploadBanner() {
 
   const setMapping = (mapping: λIngestFileSettings['mapping'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, mapping });
 
-  const setMethod = (method: λIngestFileSettings['method'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, method });
-
   const getExtensionMapping = (file: File) => {
     return app.general.ingest[0]?.filename;
   }

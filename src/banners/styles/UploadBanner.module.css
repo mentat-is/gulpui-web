@@ -56,7 +56,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  overflow: hidden;
+  padding: 3px 0;
   overflow-y: auto;
   max-height: 384px;
   padding-right: 12px;
@@ -67,7 +67,6 @@
   display: grid;
   grid-template-rows: repeat(1, 1fr);
   grid-template-columns: repeat(3, 1fr);
-  overflow: hidden;
   min-height: 36px;
 }
 .node p {
