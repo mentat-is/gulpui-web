@@ -5,7 +5,7 @@ import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
 import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
-import { PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
+import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { ResponseBase, ResponseError } from '@/dto/ResponseBase.dto';
@@ -694,6 +694,10 @@ export class Filter {
       }
     }
   });
+}
+
+export class Mapping {
+  public static find = (app: λApp, plugin: PluginEntity['filename']) => app.general.ingest.find(p => p.filename === plugin)?.mappings || [];
 }
 
 export class Event {

@@ -7,13 +7,12 @@ import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
-import { Context, Operation } from "@/class/Info";
+import { Context, Mapping, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn, formatBytes } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
 import { SelectFilesBanner } from "./SelectFiles.banner";
 import { PluginEntity } from "@/dto/Plugin.dto";
-import { Mapping } from "@/dto/MappingFileList.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 
 interface λIngestFileSettings {
@@ -47,33 +46,23 @@ export function UploadBanner() {
   }, [isExistingContextChooserAvalable]);
 
   const CHUNK_SIZE = 1024 * 2 * 1024;
-  const boundary = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   
   const sendChunkedFiles = async (file: File, start: number, index: number) => {
     const req_id = file.name + file.size;
     const end = Math.min(file.size, start + CHUNK_SIZE);
-    const chunk = file.slice(start, end);
-  
-    const payload = JSON.stringify(end >= file.size ? {
+
+    const formData = new FormData();
+    formData.append('payload', new Blob([JSON.stringify(end >= file.size ? {
       plugin_params: {
         mapping_file: settings[file.name].mapping
       }
-    }: {});
-  
-    const bodyStart = `--${boundary}\r\nContent-Type: application/json; charset=utf-8\r\nContent-Disposition: form-data; name=payload\r\n\r\n${payload}\r\n--${boundary}\r\nContent-Disposition: form-data; name=file; filename=${file.name}; filename*=utf-8"${file.name}"\r\n\r\n`;
-  
-    const formEnd = `\r\n--${boundary}--\r\n\r\n`;
-  
-    const chunkBuffer = await chunk.arrayBuffer();
-    const chunkArray = new Uint8Array(chunkBuffer);
+    } : {})], { type: 'application/json' }));
+    formData.append('file', file.slice(start, end), file.name);
 
-    const bodyBlob = new Blob([bodyStart, chunkArray, formEnd]);
-  
     await api<any>('/ingest_file', {
       method: 'PUT',
-      body: bodyBlob,
+      body: formData,
       headers: {
-        'Content-Type': `multipart/form-data; boundary=${boundary}`,
         'size': file.size.toString(),
         'continue_offset': start.toString(),
       },
@@ -105,50 +94,63 @@ export function UploadBanner() {
       await sendChunkedFiles(file, 0, i);
     }
 
-    setTimeout(() => {
-      Info.operations_request().then(operations => {
-        setLoading(false);
-        
-        const result = Info.operations_update(operations);
-        
-        if (result.contexts.length && result.plugins.length && result.files.length) {
-          spawnBanner(<SelectFilesBanner />);
-        }
-      });
-    }, 5000);
+    const operations = await Info.operations_request();
+
+    setLoading(false);
+   
+    const result = Info.operations_update(operations);
     
+    if (result.contexts.length && result.plugins.length && result.files.length) {
+      spawnBanner(<SelectFilesBanner />);
+    }
   };
-
-  const updateSettings = useCallback((filename: File['name'], setting: λIngestFileSettings) => {
-    setSettings(s => {
-      const _file = s[filename]
-
-      Object.assign(_file, setting);
-
-      return s;
-    });
-  }, [setFiles]);
   
-  const setPlugin = (plugin: λIngestFileSettings['plugin'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, plugin });
+  const setPlugin = (plugin: λIngestFileSettings['plugin'], filename: File['name']) => {
+    setSettings(s => ({
+      ...s,
+      [filename]: {
+        ...s[filename],
+        plugin
+      }
+    }));
 
-  const setMapping = (mapping: λIngestFileSettings['mapping'], file: λIngestFileSettings, filename: File['name']) => updateSettings(filename, { ...file, mapping });
+    const mappings = Mapping.find(app, settings[filename].plugin!);
 
-  const getExtensionMapping = (file: File) => {
-    return app.general.ingest[0]?.filename;
+    if (mappings.length) {
+      setMapping(mappings[0].filename, filename);
+    }
   }
 
-  const PluginSelection = ({ setting, file }: {
-    setting: λIngestFileSettings,
-    file: File
-  }) => {
+  const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => setSettings(s => ({
+    ...s,
+    [filename]: {
+      ...s[filename],
+      mapping
+    }
+  }));
+
+  const getExtensionMapping = (file: File) => {
+    const extension = file.name.split('.').pop()!;
+    const map: Record<string, PluginEntity['filename']> = {
+      'csv': 'csv.py',
+    };
+
+    const plugin = map[extension];
+
+    if (!plugin) return undefined;
+
+    return app.general.ingest.find(p => p.filename === plugin);
+  }
+
+  const PluginSelection = ({ file }: { file: File }) => {
     const placeholder = app.general.ingest[0];
 
-    if (!setting.plugin && placeholder) setPlugin(placeholder.filename, setting, file.name);
+    if (!settings[file.name].plugin && placeholder) setPlugin(placeholder.filename, file.name);
 
     return (  
-      <Select onValueChange={plugin => setPlugin(plugin, setting, file.name)} value={setting.plugin}>
+      <Select onValueChange={plugin => setPlugin(plugin, file.name)} value={settings[file.name].plugin}>
         <SelectTrigger>
-          <SelectValue defaultValue={getExtensionMapping(file)} placeholder="Choose filename" />
+          <SelectValue defaultValue={getExtensionMapping(file)?.filename} placeholder="Choose filename" />
         </SelectTrigger>
         <SelectContent>
           {app.general.ingest.map(i => (
@@ -159,18 +161,23 @@ export function UploadBanner() {
     );
   };
 
-  const MappingSelection = ({ setting, file }: {
-    setting: λIngestFileSettings,
+  const MappingSelection = useCallback(({ file }: {
     file: File
   }) => {
-    const mappings = app.general.ingest.find(p => p.filename === setting.plugin)?.mappings || [];
+    const mappings = Mapping.find(app, settings[file.name].plugin!) || [];
 
-    if (!mappings.length) return null;
+    if (!mappings.length) return (
+      <Select disabled>
+        <SelectTrigger>
+          <SelectValue defaultValue={'no_mappings'} placeholder="Choose mapping" />
+        </SelectTrigger>
+      </Select>
+    );
 
-    if (!setting.method) setMapping(mappings[0]?.filename, setting, file.name);
+    if (!settings[file.name].mapping) setMapping(mappings[0]?.filename, file.name);
 
     return (
-      <Select disabled={!setting.plugin} onValueChange={mapping => setMapping(mapping, setting, file.name)} value={setting.mapping}>
+      <Select disabled={!settings[file.name].plugin} onValueChange={mapping => setMapping(mapping, file.name)} value={settings[file.name].mapping}>
         <SelectTrigger>
           <SelectValue defaultValue={mappings[0].filename} placeholder="Choose mapping" />
         </SelectTrigger>
@@ -181,7 +188,7 @@ export function UploadBanner() {
         </SelectContent>
       </Select>
     );
-  };
+  }, [settings, files]);
 
   const ContextSelection = () => {
     setContext(Context.selected(app)[0]?.name);
@@ -196,10 +203,6 @@ export function UploadBanner() {
         </SelectContent>
       </Select>
     );
-  }
-
-  const ita = (i: FileList) => {
-    return Array.from(i);
   }
 
   const filesSelectHandler = (event: ChangeEvent<HTMLInputElement>) => {
@@ -245,7 +248,8 @@ export function UploadBanner() {
           <div className={cn(s.node, s.defines)}>
             <p>Filename</p>
             <p>Size</p>
-            <p>Plugin | Method</p>
+            <p>Plugin</p>
+            <p>Method</p>
           </div>
           <Separator />
           <div className={s.files}>
@@ -258,8 +262,8 @@ export function UploadBanner() {
                   <PopoverContent className={s.popover}>{filename}</PopoverContent>
                 </Popover>
                 <p>{formatBytes(files.item(i)!.size)}</p>
-                <PluginSelection file={files.item(i)!} setting={settings[filename]} />
-                <MappingSelection file={files.item(i)!} setting={settings[filename]} />
+                <PluginSelection file={files.item(i)!} />
+                <MappingSelection file={files.item(i)!} />
               </div>
             ))}
           </div>
