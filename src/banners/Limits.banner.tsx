@@ -45,7 +45,7 @@ export function LimitsBanner() {
       <div className={s.date_input_choose_option}>
         <p className={cn(!manual && s.selected)}>Select from limits</p>
         <Switch checked={manual} onCheckedChange={setManual} />
-        <p className={cn(manual && s.selected)}>ISOString</p>
+        <p className={cn(manual && s.selected)}>ISO String</p>
       </div>
       <Separator />
       <div className={s.wrapper}>
