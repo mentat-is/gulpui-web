@@ -19,6 +19,7 @@ export function SelectFilesBanner() {
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
+  const [reloadLoading, setReloadLoading] = useState<boolean>(false);
 
   const handle = (checked: CheckedState, cu: Array<UUID>, pu?: Array<UUID>, fu?: Array<UUID>): void => {
     if (fu) {
@@ -102,6 +103,15 @@ export function SelectFilesBanner() {
     destroyBanner();
   }
 
+  const reload = async () => {
+    setReloadLoading(true);
+    const operations = await Info.operations_request();
+   
+    Info.operations_update(operations);
+
+    setReloadLoading(false);
+  }
+
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>
     <div className={s.wrapper}>
@@ -142,6 +152,7 @@ export function SelectFilesBanner() {
       ))}
       </div>
       <div className={s.group}>
+        <Button variant='ghost' onClick={reload} loading={reloadLoading}>Reload</Button>
         <Button variant='outline' onClick={selectAll}>Select all</Button>
         <Button loading={loading} onClick={save}>Save</Button>
       </div>

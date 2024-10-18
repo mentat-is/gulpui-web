@@ -30,17 +30,6 @@ export function UploadBanner() {
   const [progress, setProgress] = useState<number>(0);
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
 
-  // useEffect(() => {
-  //   const filenames = app.general.ingest.find(p => p.filename === plugin?.filename)?.mappings.map(m => m.filename) || [];
-  //   setFilename(filenames[0]);
-  //   setMethod(undefined);
-  // }, [plugin]);
-  
-  
-  // useEffect(() => {
-  //   setMethod(undefined);
-  // }, [filename]);
-
   useEffect(() => {
     setContext('');
   }, [isExistingContextChooserAvalable]);
@@ -52,11 +41,7 @@ export function UploadBanner() {
     const end = Math.min(file.size, start + CHUNK_SIZE);
 
     const formData = new FormData();
-    formData.append('payload', new Blob([JSON.stringify(end >= file.size ? {
-      plugin_params: {
-        mapping_file: settings[file.name].mapping
-      }
-    } : {})], { type: 'application/json' }));
+    formData.append('payload', JSON.stringify(end >= file.size ? { plugin_params: { mapping_file: settings[file.name].mapping } } : {}));
     formData.append('file', file.slice(start, end), file.name);
 
     await api<any>('/ingest_file', {
@@ -191,15 +176,17 @@ export function UploadBanner() {
   }, [settings, files]);
 
   const ContextSelection = () => {
-    setContext(Context.selected(app)[0]?.name);
+    const contexts = Operation.contexts(app);
+
+    if (!context) setContext(contexts[0]?.name);
 
     return (
-      <Select disabled={!Context.selected(app).length} onValueChange={setContext} value={context}>
+      <Select disabled={!contexts.length} onValueChange={setContext} value={context}>
         <SelectTrigger className={s.trigger}>
-          <SelectValue defaultValue={Context.selected(app)[0]?.name} placeholder={Context.selected(app).length ? `Choose one context from list below (exist: ${Context.selected(app).length})` : 'There is no contexts at this moment'} />
+          <SelectValue defaultValue={contexts[0]?.name} placeholder={contexts.length ? `Choose one context from list below (exist: ${contexts.length})` : 'There is no contexts at this moment'} />
         </SelectTrigger>
         <SelectContent>
-          {Operation.contexts(app).map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+          {contexts.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
         </SelectContent>
       </Select>
     );
