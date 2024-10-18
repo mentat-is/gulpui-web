@@ -8,10 +8,14 @@ import { eachDayOfInterval, eachMonthOfInterval, eachYearOfInterval, format } fr
 import { Switch } from '@/ui/Switch';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
 import { Separator } from '@/ui/Separator';
+import { cn } from '@/ui/utils';
+import { Input } from '@/ui/Input';
+import { toast } from 'sonner';
 
 export function LimitsBanner() {
   const { lang } = useLanguage();
   const { Info, destroyBanner, app } = useApplication();
+  const [manual, setManual] = useState<boolean>(false);
 
   const map = [
     { text: lang.last.day, do: () => {
@@ -39,18 +43,18 @@ export function LimitsBanner() {
   return (
     <Banner className={s.banner} title='Timeline'>
       <div className={s.date_input_choose_option}>
-        <span>Select from limits</span>
-        <Switch />
-        <span>ISOString</span>
+        <p className={cn(!manual && s.selected)}>Select from limits</p>
+        <Switch checked={manual} onCheckedChange={setManual} />
+        <p className={cn(manual && s.selected)}>ISOString</p>
       </div>
       <Separator />
       <div className={s.wrapper}>
         <span>Start:</span>
-        <DateSelection initialDate={app.target.bucket.selected.min} onDateChange={Info.setBucketSelectedStart} />
+        <DateSelection initialDate={app.target.bucket.selected.min} onDateChange={Info.setBucketSelectedStart} manual={manual} />
       </div>
       <div className={s.wrapper}>  
         <span>End:</span>
-        <DateSelection initialDate={app.target.bucket.selected.max} onDateChange={Info.setBucketSelectedEnd} />
+        <DateSelection initialDate={app.target.bucket.selected.max} onDateChange={Info.setBucketSelectedEnd} manual={manual} />
       </div>
       <Separator />
       <div className={s.button_group}>
@@ -63,9 +67,35 @@ export function LimitsBanner() {
   ) 
 }
 
-export function DateSelection({ initialDate, onDateChange }: { initialDate: number, onDateChange: (date: number) => void }) {
+export function DateSelection({ initialDate, onDateChange, manual }: { initialDate: number, onDateChange: (date: number) => void, manual: boolean }) {
   const { app } = useApplication();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date(initialDate));
+  const [inputValue, setInputValue] = useState<string>(format(selectedDate, 'yyyy-MM-dd'));
+  if (manual) {
+    return <Input
+      type='text'
+      value={inputValue}
+      onChange={(e) => setInputValue(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          e.currentTarget.blur();
+        }
+      }}
+      placeholder='String in ISO format'
+      onBlur={() => {
+        const date = new Date(inputValue);
+        if (isNaN(date.getTime())) {
+          toast.error('Date is invalid', {
+            description: 'Please enter a valid date in ISO format',
+          });
+          setInputValue(format(selectedDate, 'yyyy-MM-dd'));
+        } else {
+          setSelectedDate(date);
+          onDateChange(date.valueOf());
+        }
+      }}
+    />
+  }
 
   const handleYearChange = (year: number) => {
     const newDate = new Date(selectedDate.setFullYear(year));
@@ -74,7 +104,7 @@ export function DateSelection({ initialDate, onDateChange }: { initialDate: numb
   };
 
   const handleMonthChange = (month: number) => {
-    const newDate = new Date(selectedDate.setMonth(month - 1));
+    const newDate = new Date(selectedDate.setMonth(month));
     setSelectedDate(newDate);
     onDateChange(newDate.valueOf());
   };
@@ -103,11 +133,11 @@ export function DateSelection({ initialDate, onDateChange }: { initialDate: numb
   return (
     <div className={s.input_group}>
       {/* Year select */}
-      <Select onValueChange={(value) => handleYearChange(parseInt(value))}>
+      <Select onValueChange={(value) => handleYearChange(parseInt(value))} defaultValue={selectedDate.getFullYear().toString()}>
         <SelectTrigger>{selectedDate.getFullYear() || 'Select year'}</SelectTrigger>
         <SelectContent>
           {years.map((year) => (
-            <SelectItem key={year.valueOf()} value={year.getFullYear().toString()}>
+            <SelectItem key={year.getFullYear()} value={year.getFullYear().toString()}>
               {year.getFullYear()}
             </SelectItem>
           ))}
@@ -115,11 +145,11 @@ export function DateSelection({ initialDate, onDateChange }: { initialDate: numb
       </Select>
 
       {/* Month select */}
-      <Select onValueChange={(value) => handleMonthChange(parseInt(value))}>
+      <Select onValueChange={(value) => handleMonthChange(parseInt(value))} defaultValue={selectedDate.getMonth().toString()}>
         <SelectTrigger>{format(selectedDate, "MMMM") || "Select Month"}</SelectTrigger>
         <SelectContent>
           {months.map((month) => (
-            <SelectItem key={month.valueOf()} value={month.getMonth().toString()}>
+            <SelectItem key={month.getMonth()} value={month.getMonth().toString()}>
               {format(month, "MMMM")}
             </SelectItem>
           ))}
@@ -127,11 +157,11 @@ export function DateSelection({ initialDate, onDateChange }: { initialDate: numb
       </Select>
 
       {/* Day select */}
-      <Select onValueChange={(value) => handleDayChange(Number(value))}>
+      <Select onValueChange={(value) => handleDayChange(parseInt(value))} defaultValue={selectedDate.getDate().toString()}>
         <SelectTrigger>{selectedDate.getDate() || "Select Day"}</SelectTrigger>
         <SelectContent>
           {days.map((day) => (
-            <SelectItem key={day.valueOf()} value={day.getDate().toString()}>
+            <SelectItem key={day.getDate()} value={day.getDate().toString()}>
               {day.getDate()}
             </SelectItem>
           ))}

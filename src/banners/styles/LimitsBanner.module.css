@@ -3,11 +3,19 @@
   align-items: center;
   gap: 8px;
 }
-.date_input_choose_option span {
+.date_input_choose_option p {
   font-size: 14px;
+  flex: 1;
   color: var(--text-dimmed);
+  transition: all 0.125s var(--transition);
 }
-.date_input_choose_option span.selected {
+.date_input_choose_option p:first-child {
+  text-align: right;
+}
+.date_input_choose_option p:last-child {
+  text-align: left;
+}
+.date_input_choose_option p.selected {
   font-weight: 500;
   color: var(--text-white);
 }
