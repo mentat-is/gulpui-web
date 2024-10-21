@@ -85,12 +85,12 @@ export const BaseInfo: λApp = {
         max: 0
       },
       timestamp: {
-        min: 0,
-        max: 0
+        min: Date.now(),
+        max: Date.now()
       },
       selected: {
-        min: 0,
-        max: 0
+        min: Date.now(),
+        max: Date.now()
       }
     },
     notes: [],

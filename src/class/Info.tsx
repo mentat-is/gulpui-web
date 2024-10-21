@@ -1,6 +1,6 @@
 import { ElasticListIndex, OperationsList, type λApp } from '@/dto';
 import { Api } from '@/dto/api.dto';
-import { Bucket, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
+import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
@@ -58,23 +58,26 @@ export class Info implements InfoProps {
     
     await this.mapping();
 
-    const files = (uuids.length
-      ? uuids.map(uuid => {
+    const files: λFile[] = (uuids.length
+      ? uuids.reduce<λFile[]>((files, uuid) => {
         const file = File.find(this.app, uuid);
 
-        if (file) return file;
-        
-        toast(`File with UUID_${uuid} not found in application data`, {
-          description: 'See console for further details'
-        });
+        if (file) files.push(file);
+        else {
+          toast('File not found in application data', {
+            description: `See console for further details. UUID: ${uuid}`
+          });
+        }
 
-        return null;
-      })
+        return files;
+      }, [])
       : File.selected(this.app))
 
-    await this.notes_reload(files.filter(f => !!f) as λFile[]);
+    await this.notes_reload(files);
 
-    await this.links_reload(files.filter(f => !!f) as λFile[]);
+    await this.links_reload(files);
+
+    this.syncBucket();
     
     files.forEach(file => {
       if (!file) return;
@@ -410,7 +413,6 @@ export class Info implements InfoProps {
     }
   });
   // Timestamp - Full range
-  setBucketCustomRange = (min: number, max: number) => this.setBucket({ ...this.app.target.bucket!, selected: { max, min }});
   setBucketSelectedStart = (min: number) => this.setBucket({
     ...this.app.target.bucket!,
     selected: { ...this.app.target.bucket.selected, min }
@@ -419,6 +421,21 @@ export class Info implements InfoProps {
     ...this.app.target.bucket!,
     selected: { ...this.app.target.bucket.selected, max}
   });
+  
+  setBucketSelected = (minMax: MinMax) => this.setBucket({
+    ...this.app.target.bucket!,
+    selected: minMax
+  });
+
+  syncBucket = () => {
+    const files = File.selected(this.app);
+
+    const min = Math.min(...files.map(file => file.timestamp.min));
+    const max = Math.min(...files.map(file => file.timestamp.max));
+
+    this.setBucketSelected({ min, max });
+  }
+
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
 
   getBucketLocals = () => this.app.target.bucket.selected;
