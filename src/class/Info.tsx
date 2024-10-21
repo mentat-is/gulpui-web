@@ -44,6 +44,8 @@ export class Info implements InfoProps {
     this.timeline = timeline;
   }
 
+  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({ ...this.app.timeline.filtering_options, [Parser.useUUID(file)]: options}, 'timeline', 'filtering_options');
+
   refetch = async (uuids: Arrayed<λFile['uuid']> = [], hidden?: boolean) => {
     uuids = Parser.array(uuids);
 

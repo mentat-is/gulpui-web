@@ -34,7 +34,6 @@ interface FilterFileBannerProps {
 export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const { app, api, Info, destroyBanner, spawnBanner } = useApplication();
   const [acceptable, setAcceptable] = useState<Acceptable>('text');
-  const [filteringOptions, setFilteringOptions] = useState<FilterOptions>({})
   const [filter, setFilter] = useState<λFilter>(_baseFilter());
   const [loading, setLoading] = useState<boolean>(false);
   const filters_length = useRef<number>((app.target.filters[file.uuid] || []).length)
@@ -42,7 +41,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const filters = app.target.filters[file.uuid] || [];
 
   useEffect(() => {
-    if (Object.keys(filteringOptions).length) return;
+    if (app.timeline.filtering_options[file.uuid]) return;
 
     const context = Context.uuid(app, Plugin.find(app, file._uuid)!._uuid)!.name;
 
@@ -51,8 +50,8 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         context,
         src: file.name
       }
-    }).then(res => res.isSuccess() && setFilteringOptions(res.data))
-  }, []);
+    }).then(res => res.isSuccess() && Info.setTimelineFilteringoptions(file, res.data));
+  }, [app.timeline.filtering_options]);
 
   const submit = async () => {
     if (app.target.filters[file.uuid] && filters_length.current === app.target.filters[file.uuid].length) {
@@ -89,7 +88,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const resetFilter = () => setFilter(_baseFilter);
 
   const setKey = (key: string) => {
-    const accept = filteringOptions[key];
+    const accept = app.timeline.filtering_options[file.uuid][key];
     if (acceptable !== accept) setValue('');
     setAcceptable(accept);
     setFilter({ ...filter || {}, key })
@@ -108,7 +107,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   return (
     <Banner
       title={'Choose filtering options'}
-      className={s.banner} loading={!Object.keys(filteringOptions).length}
+      className={s.banner} loading={!app.timeline.filtering_options[file.uuid]}
       subtitle={
         <Button
           onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
@@ -121,7 +120,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
             <SelectValue placeholder="Choose filter" />
           </SelectTrigger>
           <SelectContent>
-            {Object.keys(filteringOptions).map((key, i) => (
+            {Object.keys(app.timeline.filtering_options[file.uuid]).map((key, i) => (
               <SelectItem key={i} value={key}>
                 {key.startsWith('gulp.unmapped.') ? key.slice(14) : key}
               </SelectItem>

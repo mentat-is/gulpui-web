@@ -9,7 +9,7 @@ import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
-import { λFilter } from "@/class/Info";
+import { FilterOptions, λFilter } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -51,7 +51,8 @@ export interface λApp {
     cache: {
       data: Map<UUID, λEvent[]>;
       filters: Record<UUID, λFilter[]>;
-    }
+    },
+    filtering_options: Record<λFile['uuid'], FilterOptions>
   }
 }
 export const BaseInfo: λApp = {
@@ -75,7 +76,8 @@ export const BaseInfo: λApp = {
     cache: {
       data: new Map<λFile['uuid'], λEvent[]>(),
       filters: {}
-    }
+    },
+    filtering_options: {}
   },
   target: {
     indexes: [],
