@@ -40,14 +40,19 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     const render = new RenderEngine({ ctx, limits, app, getPixelPosition, scrollY })
     
-    File.selected(app).forEach(file => {
+    File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY);
 
-      if (y + 48 < 0 || y > canvas_ref.current!.height + scrollY) return;
+      console.log(y, canvas_ref.current!.height, scrollY);
+
+      if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
         render[file.engine](file, y - 24);
       };
+
+      if (!i)
+        render.primary(file);
 
       render.lines(file);
       render.locals(file);

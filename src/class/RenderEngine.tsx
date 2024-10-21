@@ -2,7 +2,7 @@ import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File } from "./Info";
 import { λApp } from "@/dto";
-import { stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
+import { Color, stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
@@ -149,12 +149,39 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
   };
 
+  /**
+   * Рисует линию разграничения снизу исходя из названия контекста
+   */
   public lines = (file: λFile) => {
-    const y = File.getHeight(this.app, file, this.scrollY) - 48 / 2;
+    const color = stringToHexColor(File.context(this.app, file).name);
+    const y = File.getHeight(this.app, file, this.scrollY);
 
-    this.ctx.fillStyle = stringToHexColor(File.context(this.app, file).name) + 48;
-    this.ctx.fillRect(0, y + 48 - 1, window.innerWidth, 1);
+    this.ctx.fillStyle = color;
+    this.ctx.fillRect(0, y + 23, window.innerWidth, 1);
+
+    this.fill(color, y);
   }
+
+  /**
+   * Рисует линию как из метода `this.lines` но только вверху
+   */
+  public primary = (file: λFile) => {
+    const y = File.getHeight(this.app, file, this.scrollY);
+
+    this.ctx.fillStyle = stringToHexColor(File.context(this.app, file).name);
+    this.ctx.fillRect(0, y - 25, window.innerWidth, 1);
+  }
+
+  /**
+   * 
+   * @param color `Color` - цвет заливки
+   * @param y `number` - позиция по середине `λFile`
+   */
+  public fill = (color: Color, y: number) => {
+    this.ctx.fillStyle = color + 12;
+    this.ctx.fillRect(0, y - 24, window.innerWidth, 48);
+  }
+
 
   public links = () => {
     this.app.target.links.forEach(link => {

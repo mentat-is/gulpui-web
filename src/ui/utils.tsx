@@ -15,6 +15,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export type ClassName = ClassValue | ClassValue[]
 
+export type Color = `#${string}`;
+
 export const parseTokensFromCookies = (tokens: string | Sessions): Sessions => {
   try {
     return JSON.parse(tokens as string);
@@ -23,7 +25,7 @@ export const parseTokensFromCookies = (tokens: string | Sessions): Sessions => {
   }
 };
 
-export const stringToHexColor = (str: string) => {
+export const stringToHexColor = (str: string): Color => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -33,7 +35,7 @@ export const stringToHexColor = (str: string) => {
     const value = (hash >> (i * 8)) & 0xFF;
     color += ('00' + value.toString(16)).slice(-2);
   }
-  return color;
+  return color as Color;
 };
 
 export function throttle(func: (...args: any[]) => void, limit: number) {
