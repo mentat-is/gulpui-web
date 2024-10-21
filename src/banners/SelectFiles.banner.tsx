@@ -115,7 +115,7 @@ export function SelectFilesBanner() {
   }
 
   return (
-    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>
+    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts} fixed={loading || reloadLoading}>
     <div className={s.wrapper}>
       <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       {!filter.length ? Operation.contexts(app).map(context => (
@@ -154,7 +154,6 @@ export function SelectFilesBanner() {
       ))}
       </div>
       <div className={s.group}>
-        <Button variant='ghost' onClick={reload} loading={reloadLoading}>Reload</Button>
         <Button variant='outline' onClick={selectAll}>Select all</Button>
         <Button loading={loading} onClick={save}>Save</Button>
       </div>
