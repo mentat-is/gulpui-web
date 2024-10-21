@@ -807,7 +807,11 @@ export class Event {
     return app.target.events;
   }
 
-  public static parse = (app: λApp, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).reduce<λEvent[]>((result, e) => {
+  public static parse = (app: λApp, original: RawNote | RawLink): λEvent[] => Parser.array(original.events).reduce<λEvent[]>((result, e) => {
+    e.context = e.context || original.context;
+    e.src_file = e.src_file || original.src_file;
+    e.operation_id = e.operation_id || original.operation_id;
+
     const file = File.findByNameAndContextName(app, e.src_file, e.context);
 
     if (file) {
@@ -846,7 +850,7 @@ export class Note {
     const note: λNote = {
       ...n,
       file: n.src_file,
-      events: Event.parse(app, n.events),
+      events: Event.parse(app, n),
       _uuid: File.findByNameAndContextName(app, n.src_file, n.context).uuid
     }
     return note;
@@ -891,7 +895,7 @@ export class Link {
     return {
       ...l,
       file: l.src_file,
-      events: Event.parse(app, l.events),
+      events: Event.parse(app, l),
       _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
     }
   });

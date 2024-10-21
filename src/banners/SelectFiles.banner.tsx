@@ -109,6 +109,8 @@ export function SelectFilesBanner() {
    
     Info.operations_update(operations);
 
+    Info.refetch();
+
     setReloadLoading(false);
   }
 

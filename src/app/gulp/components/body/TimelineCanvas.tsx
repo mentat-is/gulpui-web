@@ -150,7 +150,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
           if (top < 0) return null;
 
-          return <Note note={note} left={left} top={top} />
+          return <Note key={note.id} note={note} left={left} top={top} />
         })}
         {app.target.links.map(link => {
           const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
