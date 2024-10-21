@@ -115,10 +115,10 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           </SelectContent>
         </Select>
         <Select onValueChange={setType} value={filter?.type}>
-          <SelectTrigger>
+          <SelectTrigger className={s.select}>
             <SelectValue defaultValue={FilterType.GREATER_OR_EQUAL} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={s.select}>
             {Object.values(FilterType).map((filterType, index) => (
               <SelectItem key={index} value={filterType}>
                 {filterType}
@@ -171,7 +171,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       </div>
       <Card className={s.preview}>
         <h4>Preview</h4>
-        <code>{Filter.query(app, file)}</code>
+        <code><span>{Filter.base(app, file)}</span> AND {Filter.query(app, file)}</code>
       </Card>
       <div className={s.bottom}>
         <Button img='Undo' variant='outline' onClick={undo}>Undo</Button>

@@ -113,7 +113,14 @@ export class Info implements InfoProps {
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
-  setLoaded = (files: UUID[]) => this.setInfoByKey(files, 'timeline', 'loaded');
+  setLoaded = (files: UUID[]) => {
+    this.setInfoByKey(files, 'timeline', 'loaded');
+
+    if (this.app.timeline.loaded.length === this.app.target.files.length) {
+      this.notes_reload();
+      this.links_reload();
+    }
+  }
 
   render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
 
@@ -724,17 +731,18 @@ export class Filter {
     
     const query = Filter.query(app, file);
 
-    return query ? `${base} AND ${query}` : base;
+    return query ? `${base} ${query}` : base;
   }
 
   /** 
    * @returns Стринговое поле фильтра
    */
   static query = (app: λApp, file: λFile) => {
-    const filters = Filter.find(app, file)
+    const filters = Filter.find(app, file);
     
     return filters.map((filter, index) => {
       const isLast = filters.length - 1 === index;
+
       let queryStringPart: string;
 
       const isParsable = Number.isNaN(Number(filter.value));
@@ -757,7 +765,7 @@ export class Filter {
     }).join('');
   }
 
-  public static operand = (filter: λFilter, processable: boolean) => filter.isOr ? ' OR ' : ' AND ';
+  public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
   static body = (app: λApp, file: λFile) => ({
     query_raw: {
@@ -827,6 +835,12 @@ export class Event {
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: UUID) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
 
+  public static findById = (app: λApp, eventId: string | string[]) => {
+    console.log(Array.from(app.target.events, ([k, v]) => v).flat().length);
+    
+    return Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e._id));
+  }
+
   public static formatToCreateRequest = (events: Arrayed<λEvent>): λEventFormForCreateRequest[] => Parser.array(events).map(e => ({
     id: e._id,
     timestamp: e.timestamp,
@@ -859,12 +873,39 @@ export class Note {
 }
 
 export class Link {
-  public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => ({
-    ...l,
-    file: l.src_file,
-    events: Event.parse(app, l.events),
-    _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
-  }));
+  public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
+    const events: λEvent['_id'][] = [];
+
+    if (!events.includes(l.data.src))
+      events.push(l.data.src);
+
+    if (l.data.events?.length) {
+      events.push(...l.data.events.map(e => e.id).filter(e => !events.includes(e)));
+    }
+
+    if (l.events) {
+      l.events.forEach(e => {
+        if (!events.includes(e.id)) events.push(e.id);
+      })
+    }
+
+    l.events = Event.findById(app, events).map(e => ({
+      '@timestamp': e.timestamp,
+      context: e.context,
+      id: e._id,
+      operation_id: e.operation_id,
+      src_file: e.file
+    }));
+
+    console.log(events, l.events);
+
+    return {
+      ...l,
+      file: l.src_file,
+      events: Event.parse(app, l.events),
+      _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
+    }
+  });
 
   public static findByFile = (use: λApp | λLink[], file: λFile | UUID): λLink[] => Parser.use(use, 'links').filter(l => l._uuid === Parser.useUUID(file));
   

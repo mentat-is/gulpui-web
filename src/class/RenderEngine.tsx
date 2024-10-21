@@ -194,6 +194,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public connection = (dots: Dot[], center?: XY) => {
+    if (!dots.length) return;
+
     this.ctx.beginPath();
     this.ctx.moveTo(dots[0].x, dots[0].y);
     this.ctx.lineWidth = 2;
