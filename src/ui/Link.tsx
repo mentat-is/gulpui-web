@@ -90,12 +90,6 @@ export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentP
             <Separator />
           </Fragment>
         }
-        {/* <div>
-          <Icon name='User' />
-          <span>Owner ID: </span>
-          <p>{link.owner_user_id}</p>
-        </div>
-        <Separator /> */}
         <div>
           <Icon name={link.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
           <span>{link.private ? 'Private' : 'Not private'}</span>

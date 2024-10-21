@@ -71,14 +71,14 @@
 }
 .general p {
   white-space: normal;
-  word-break: break-all;
+  word-break: normal;
   max-width: 80%;
   max-height: 256px;
   display: flex;
-  overflow: hidden;
+  overflow: scroll;
   min-height: 24px;
   text-overflow: ellipsis;
-  align-items: center;
+  align-items: flex-start;
 }
 .content {
   display: flex;

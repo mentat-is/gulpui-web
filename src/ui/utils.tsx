@@ -62,10 +62,14 @@ export const parse = (str: string) => parseFloat(str.replace('px', ''));
 export type JsonString<T> = string & { __jsonStringBrand: T };
 
 export const copy = (value: string) => {
-  navigator.clipboard.writeText(value);
-  toast('Data copied to clipboard successfully', {
-    description: 'Use CTRL + V to paste.'
-  })
+  try {
+    navigator.clipboard.writeText(value);
+    toast('Data copied to clipboard successfully', {
+      description: 'Use CTRL + V to paste.'
+    });
+  } catch (error) {
+    toast.error('Gulp doesn`t have access to clipboard');
+  }
 }
 
 export const ui = (path: string): string => `https://cdn.impactium.fun/ui/${path}.svg`

@@ -4,7 +4,7 @@ import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
-import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
+import { λEvent, λEventFormForCreateRequest } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
