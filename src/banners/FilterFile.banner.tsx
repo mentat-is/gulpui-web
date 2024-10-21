@@ -51,7 +51,11 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   const submit = async () => {
     setLoading(true);
-    Info.refetch(file.uuid).then(destroyBanner);
+    Info.refetch(file.uuid, true).then(() => {
+      
+      destroyBanner();
+      Info.render();
+    });
   }
 
   const addFilter = () => {

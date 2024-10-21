@@ -44,7 +44,7 @@ export class Info implements InfoProps {
     this.timeline = timeline;
   }
 
-  refetch = async (uuids: Arrayed<λFile['uuid']> = []) => {
+  refetch = async (uuids: Arrayed<λFile['uuid']> = [], hidden?: boolean) => {
     uuids = Parser.array(uuids);
 
     const operation = Operation.selected(this.app);
@@ -103,7 +103,9 @@ export class Info implements InfoProps {
       });
     });
 
-    this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
+    if (!hidden) {
+      this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
+    }
   }
   
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
@@ -111,6 +113,8 @@ export class Info implements InfoProps {
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
   setLoaded = (files: UUID[]) => this.setInfoByKey(files, 'timeline', 'loaded');
+
+  render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
 
   // 🔥 INDEXES
   index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));
