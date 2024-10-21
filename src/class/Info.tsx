@@ -18,7 +18,6 @@ import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
 import { UUID } from 'crypto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
-import { filter } from 'lodash';
 
 interface InfoProps {
   app: λApp,
@@ -115,7 +114,7 @@ export class Info implements InfoProps {
 
   setLoaded = (files: UUID[]) => {
     this.setInfoByKey(files, 'timeline', 'loaded');
-    
+
     if (this.app.timeline.loaded.length === this.app.target.files.length) {
       this.notes_reload();
       this.links_reload();
@@ -472,7 +471,7 @@ export class Info implements InfoProps {
     }
   });
 
-  filters_add = (uuid: UUID, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
+  filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
   filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
 
@@ -710,8 +709,6 @@ export type λFilter = {
   isOr?: boolean
 }
 
-export type GulpQueryFilterArray = λFilter[];
-
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
 
@@ -731,7 +728,7 @@ export class Filter {
     
     const query = Filter.query(app, file);
 
-    return query ? `${base} ${query}` : base;
+    return query ? `${base} AND ${query}` : base;
   }
 
   /** 
@@ -813,8 +810,6 @@ export class Event {
   public static parse = (app: λApp, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).reduce<λEvent[]>((result, e) => {
     const file = File.findByNameAndContextName(app, e.src_file, e.context);
 
-    if (!file) console.log(e);
-
     if (file) {
       result.push({
         _id: e.id,
@@ -892,8 +887,6 @@ export class Link {
       operation_id: e.operation_id,
       src_file: e.file
     }));
-
-    console.log(events, l.events);
 
     return {
       ...l,

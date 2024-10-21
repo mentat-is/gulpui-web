@@ -9,7 +9,7 @@ import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
-import { GulpQueryFilterArray, λFilter } from "@/class/Info";
+import { λFilter } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
