@@ -7,7 +7,7 @@ import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
-import { Context, Mapping, Operation } from "@/class/Info";
+import { Mapping, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn, formatBytes } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";

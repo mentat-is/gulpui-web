@@ -2,6 +2,7 @@
   position: absolute;
   height: 32px;
   width: 32px;
+  transition: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,8 +11,9 @@
   backdrop-filter: brightness(0.6) blur(3px);
   border-radius: 4px;
   transform: translate(-50%, -50%);
+  overflow: hidden;
 }
-.target img {
+.target svg {
   position: relative;
   top: -2px;
 }
@@ -20,8 +22,7 @@
   bottom: 0;
   left: 0;
   height: 4px;
-  width: 32px;
-  border-radius: 0px 0px 4px 4px;
+  width: 36px;
 }
 .tags {
   display: flex;

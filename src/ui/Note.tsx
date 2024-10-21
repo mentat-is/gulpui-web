@@ -1,13 +1,11 @@
 import { λNote } from '@/dto/Note.dto';
 import s from './styles/Link.module.css';
 import { copy } from './utils';
-import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
 import { Separator } from './Separator';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
-import { Fragment, useState } from 'react';
-import { Event } from '@/class/Info';
+import { Fragment } from 'react';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
@@ -20,9 +18,7 @@ interface NoteProps {
 }
 
 export function Note({ note, left, top }: NoteProps) {
-  const { Info } = useApplication();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [open, setOpen] = useState<boolean>(false);
+  const { spawnDialog } = useApplication();
 
   const iconMap: Array<λIcon> = [
     'Bookmark',
@@ -30,42 +26,30 @@ export function Note({ note, left, top }: NoteProps) {
     'SquareX'
   ];
 
-  const deleteNote = async () => {
-    setLoading(true);
-    await Info.notes_delete(note);
-    setLoading(false);
-  }
+  const openEvent = () => {
+    const dialog = note.events.length === 1
+      ? <DisplayEventDialog event={note.events[0]} />
+      : <DisplayGroupDialog events={note.events} />;
+
+    spawnDialog(dialog);
+  };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={s.target} style={{ left, top }}>
+      <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
         <Icon name={iconMap[note.level]} />
         <hr style={{ background: note.data.color }} />
-      </PopoverTrigger>
-      <PopoverContent className={s.content}>
-        <NoteContent loading={loading} note={note} deleteNote={deleteNote} />
-      </PopoverContent>
-    </Popover>
+      </Button>
   )
 }
 
 interface NoteContentProps extends Pick<NoteProps, 'note'> {
   loading: boolean;
   deleteNote: () => void;
+  openEvent?: () => void;
 }
 
-export function NoteContent({ note, loading, deleteNote }: NoteContentProps) {
-  const { app, spawnDialog, dialog } = useApplication();
-
-  const openEvent = () => {
-    const events = Event.findByIdAndUUID(app, note.events[0]._id, note._uuid);
-
-    const dialog = events.length === 1
-      ? <DisplayEventDialog event={events[0]} />
-      : <DisplayGroupDialog events={events} />;
-
-    spawnDialog(dialog);
-  };
+export function NoteContent({ note, loading, deleteNote, openEvent }: NoteContentProps) {
+  const { dialog } = useApplication();
 
   return (
     <Fragment>

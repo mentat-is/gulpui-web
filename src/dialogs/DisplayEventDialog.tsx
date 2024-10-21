@@ -1,3 +1,5 @@
+import SyntaxHighlighter from 'react-syntax-highlighter';
+import { darcula } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useApplication } from "@/context/Application.context";
 import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from "@/dto/ChunkEvent.dto";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
@@ -201,6 +203,30 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
       {detailedChunkEvent && (
         <>
+          <div className={s.buttons_group}>
+            <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
+            <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
+          </div>
+          <Tabs defaultValue='json' className={s.tabs}>
+            <TabsList className={s.tabs_list}>
+              <TabsTrigger value='smart'>Smart view</TabsTrigger>
+              <TabsTrigger value='raw'>Raw</TabsTrigger>
+              <TabsTrigger value='json'>JSON</TabsTrigger>
+            </TabsList>
+            <p className={s.hint}>Click on the block to copy the value</p>
+            <TabsContent className={s.tabs_content} value='smart'>
+              <SmartView />
+            </TabsContent>
+            <TabsContent className={s.tabs_content} value='raw'>
+              <XMLTree className={s.xml} xml={detailedChunkEvent.event.original} />
+            </TabsContent>
+            <TabsContent className={s.tabs_content} value='json'>
+              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
+              <SyntaxHighlighter language='JSON' style={darcula}>
+                {rawJSON}
+              </SyntaxHighlighter>
+            </TabsContent>
+          </Tabs>
           <Tabs defaultValue={notes.length ? 'notes' : 'layers'} className={s.tabs}>
             <TabsList className={s.tabs_list}>
               <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -217,28 +243,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 <Separator />
                 <div>{detailedChunkEvent.file}</div>
               </div>
-            </TabsContent>
-          </Tabs>
-          <div className={s.buttons_group}>
-            <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
-            <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
-          </div>
-          <Tabs defaultValue='smart' className={s.tabs}>
-            <TabsList className={s.tabs_list}>
-              <TabsTrigger value='smart'>Smart view</TabsTrigger>
-              <TabsTrigger value='raw'>Raw</TabsTrigger>
-              <TabsTrigger value='json'>JSON</TabsTrigger>
-            </TabsList>
-            <p className={s.hint}>Click on the block to copy the value</p>
-            <TabsContent className={s.tabs_content} value='smart'>
-              <SmartView />
-            </TabsContent>
-            <TabsContent className={s.tabs_content} value='raw'>
-              <XMLTree className={s.xml} xml={detailedChunkEvent.event.original} />
-            </TabsContent>
-            <TabsContent className={s.tabs_content} value='json'>
-              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
-              <pre className={s.json}>{rawJSON}</pre>
             </TabsContent>
           </Tabs>
         </>
