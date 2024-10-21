@@ -73,9 +73,9 @@ export class Info implements InfoProps {
       }, [])
       : File.selected(this.app))
 
-    await this.notes_reload(files);
+    await this.notes_reload();
 
-    await this.links_reload(files);
+    await this.links_reload();
 
     await this.fetchBucket();
     
@@ -215,14 +215,12 @@ export class Info implements InfoProps {
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
-  notes_reload = async (files?: λFile[]) => {
-    files = files || File.selected(this.app);
-
+  notes_reload = async () => {
     const src_file: λFile['name'][] = []
     const context: λContext['name'][] = []
     const operation_id: λOperation['id'][] = []
     
-    files.forEach(file => {
+    File.selected(this.app).forEach(file => {
       src_file.push(file.name);
 
       const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
@@ -267,14 +265,12 @@ export class Info implements InfoProps {
     }
   });
 
-  links_reload = async (files?: λFile[]) => {
-    files = files || File.selected(this.app);
-
+  links_reload = async () => {
     const src_file: λFile['name'][] = []
     const context: λContext['name'][] = []
     const operation_id: λOperation['id'][] = []
     
-    files.forEach(file => {
+    File.selected(this.app).forEach(file => {
       src_file.push(file.name);
 
       const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
