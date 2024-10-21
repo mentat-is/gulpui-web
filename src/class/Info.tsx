@@ -507,6 +507,10 @@ export class Info implements InfoProps {
     if (response.isSuccess()) {
       const fulfilled = Boolean(response.data.buckets.length);
 
+      if (!response.data.buckets[0]['*']['max_event.code']) {
+        return this.syncBucket();
+      }
+
       this.setBucket({
         total: response.data.total,
         fetched: this.app.target.bucket?.fetched || 0,

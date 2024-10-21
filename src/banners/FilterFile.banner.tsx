@@ -54,7 +54,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   }, []);
 
   const submit = async () => {
-    if (filters_length.current === app.target.filters[file.uuid].length) {
+    if (app.target.filters[file.uuid] && filters_length.current === app.target.filters[file.uuid].length) {
       destroyBanner();
       Info.render();
       return;
