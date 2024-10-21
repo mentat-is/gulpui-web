@@ -11,7 +11,6 @@
   backdrop-filter: brightness(0.6) blur(3px);
   border-radius: 4px;
   transform: translate(-50%, -50%);
-  overflow: hidden;
 }
 .target svg {
   position: relative;
@@ -22,7 +21,27 @@
   bottom: 0;
   left: 0;
   height: 4px;
+  border-radius: 0 0 3px 3px;
   width: 36px;
+}
+.desc {
+  position: absolute;
+  font-size: 10px;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  max-width: 36px;
+  width: 36px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 4px;
+  height: 12px;
+  background: var(--geist-background);
+  backdrop-filter: brightness(0.6) blur(3px);
+  padding: 2px 6px;
+  border: var(--geist-border);
+  border-radius: 4px;
+  line-height: 5px;
+  text-align: center;
 }
 .tags {
   display: flex;

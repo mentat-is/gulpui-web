@@ -48,6 +48,11 @@ export interface λApp {
     target: λEvent | null;
     loaded: UUID[];
     filter: string;
+    cache: {
+      data: Map<UUID, λEvent[]>;
+      filters: Record<UUID, λFilter[]>;
+    }
+    
   }
 }
 export const BaseInfo: λApp = {
@@ -67,7 +72,11 @@ export const BaseInfo: λApp = {
     scale: 1,
     target: null,
     loaded: [],
-    filter: ''
+    filter: '',
+    cache: {
+      data: new Map<λFile['uuid'], λEvent[]>(),
+      filters: {}
+    }
   },
   target: {
     indexes: [],
@@ -75,7 +84,7 @@ export const BaseInfo: λApp = {
     contexts: [],
     plugins: [],
     files: [],
-    events: new Map(),
+    events: new Map<λFile['uuid'], λEvent[]>(),
     filters: {},
     bucket: {
       total: 0,

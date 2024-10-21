@@ -4,7 +4,7 @@ import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Input } from '@/ui/Input';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button } from '@/ui/Button';
 import { Badge } from '@/ui/Badge';
@@ -36,6 +36,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const [filteringOptions, setFilteringOptions] = useState<FilterOptions>({})
   const [filter, setFilter] = useState<λFilter>(_baseFilter());
   const [loading, setLoading] = useState<boolean>(false);
+  const filters_length = useRef<number>((app.target.filters[file.uuid] || []).length)
 
   const filters = app.target.filters[file.uuid] || [];
 
@@ -53,9 +54,14 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   }, []);
 
   const submit = async () => {
+    if (filters_length.current === app.target.filters[file.uuid].length) {
+      destroyBanner();
+      Info.render();
+    }
+
     setLoading(true);
+    Info.filters_cache(file);
     Info.refetch(file.uuid, true).then(() => {
-      
       destroyBanner();
       Info.render();
     });
@@ -89,7 +95,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   const handleCheckedChange = (checked: boolean, filter: λFilter) => Info.filters_change(file, filter, { isOr: checked });
 
-  const undo = () => Info.filters_remove(file);
+  const undo = () => Info.filters_undo(file);
 
   return (
     <Banner

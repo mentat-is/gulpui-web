@@ -35,10 +35,13 @@ export function Note({ note, left, top }: NoteProps) {
   };
 
   return (
+    <>
       <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
         <Icon name={iconMap[note.level]} />
         <hr style={{ background: note.data.color }} />
       </Button>
+      <p className={s.desc} style={{ left, top: top+26 }}>{note.name}</p>
+    </>
   )
 }
 
@@ -68,12 +71,6 @@ export function NoteContent({ note, loading, deleteNote, openEvent }: NoteConten
           {note.text?.length > 128 && <Icon onClick={() => copy(note.text!)} className={s.__copy} name='Copy' />}
         </div>
         <Separator />
-        {/* <div>
-          <Icon name='User' />
-          <span>Owner ID: </span>
-          <p>{note.owner_user_id}</p>
-        </div>
-        <Separator /> */}
         <div>
           <Icon name={note.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
           <span>{note.private ? 'Private' : 'Not private'}</span>

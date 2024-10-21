@@ -145,6 +145,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
         tabIndex={0}
         onKeyUp={up}>
         {app.target.notes.map(note => {
+          if (!File.uuid(app, note._uuid).selected) return null;
+
           const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
           const top = File.getHeight(app, note._uuid, scrollY);
 
@@ -156,6 +158,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
           const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
           let top = 0;
           link.events.forEach(event => {
+            if (!File.uuid(app, event._uuid).selected) return;
+
             top += File.getHeight(app, event._uuid, scrollY)
           });
 

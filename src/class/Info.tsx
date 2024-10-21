@@ -77,7 +77,7 @@ export class Info implements InfoProps {
 
     await this.links_reload(files);
 
-    this.syncBucket();
+    await this.fetchBucket();
     
     files.forEach(file => {
       if (!file) return;
@@ -109,6 +109,43 @@ export class Info implements InfoProps {
     if (!hidden) {
       this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
     }
+  }
+
+  filters_cache = (file: λFile | λFile['uuid']) => {
+    const uuid = Parser.useUUID(file);
+    this.setInfoByKey({
+      data: this.app.timeline.cache.data.set(uuid, this.app.target.events.get(uuid) || []),
+      filters: { ...this.app.timeline.cache.filters, [uuid]: this.app.target.filters[uuid] }
+    }, 'timeline', 'cache');
+
+    this.render();
+  }
+
+  filters_undo = (file: λFile | λFile['uuid']) => {
+    const uuid = Parser.useUUID(file);
+
+    this.setInfoByKey({
+      ...this.app.target.filters,
+      [uuid]: this.app.timeline.cache.filters[uuid]
+    }, 'target', 'filters');
+
+    this.app.target.events.delete(uuid);
+    this.app.target.events.set(uuid, this.app.timeline.cache.data.get(uuid) || []);
+
+    this.setInfoByKey(this.app.target.events, 'target', 'events');
+    this.filters_delete_cache(file);
+    this.render();
+  }
+
+  filters_delete_cache = (file: λFile | λFile['uuid']) => {
+    const uuid = Parser.useUUID(file);
+
+    this.app.timeline.cache.data.delete(uuid);
+
+    this.setInfoByKey({
+      data: this.app.timeline.cache.data,
+      filters: { ...this.app.timeline.cache.filters, [uuid]: undefined }
+    }, 'timeline', 'cache');
   }
   
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
@@ -159,7 +196,12 @@ export class Info implements InfoProps {
 
   // 🔥 FILES
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
-  files_unselect = (files: Arrayed<λFile>) => this.setInfoByKey(File.unselect(this.app, files), 'target', 'files');
+  files_unselect = (files: Arrayed<λFile>) => {
+    if (this.app.timeline.target && Parser.array(files).map(file => file.uuid).includes(this.app.timeline.target._uuid)) {
+      this.setTimelineTarget(null);
+    }
+    this.setInfoByKey(File.unselect(this.app, files), 'target', 'files')
+  };
   files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
   files_replace = (file: λFile) => this.setInfoByKey(File.replace(file, this.app), 'target', 'files');

@@ -19,7 +19,6 @@ export function SelectFilesBanner() {
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [reloadLoading, setReloadLoading] = useState<boolean>(false);
 
   const handle = (checked: CheckedState, cu: Array<UUID>, pu?: Array<UUID>, fu?: Array<UUID>): void => {
     if (fu) {
@@ -103,19 +102,8 @@ export function SelectFilesBanner() {
     destroyBanner();
   }
 
-  const reload = async () => {
-    setReloadLoading(true);
-    const operations = await Info.operations_request();
-   
-    Info.operations_update(operations);
-
-    Info.refetch();
-
-    setReloadLoading(false);
-  }
-
   return (
-    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts} fixed={loading || reloadLoading}>
+    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts} fixed={loading}>
     <div className={s.wrapper}>
       <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       {!filter.length ? Operation.contexts(app).map(context => (
