@@ -9,7 +9,7 @@ import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
-import { GulpQueryFilterArray } from "@/class/Info";
+import { GulpQueryFilterArray, λFilter } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -29,7 +29,7 @@ export interface λApp {
     plugins: λPlugin[],
     files: λFile[],
     events: Map<UUID, λEvent[]>
-    filters: Record<UUID, GulpQueryFilterArray>;
+    filters: Record<UUID, λFilter[]>;
     notes: λNote[],
     links: λLink[],
   }

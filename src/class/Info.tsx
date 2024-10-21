@@ -18,6 +18,7 @@ import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
 import { UUID } from 'crypto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
+import { filter } from 'lodash';
 
 interface InfoProps {
   app: λApp,
@@ -414,6 +415,17 @@ export class Info implements InfoProps {
 
   filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
 
+  filters_change = (file: λFile | λFile['uuid'], filter: λFilter | λFilter['uuid'], obj: Partial<λFilter>) => {
+    const file_uuid = Parser.useUUID(file);
+    const filter_uuid = Parser.useUUID(filter);
+
+    const file_filters = this.app.target.filters[file_uuid];
+
+    Object.assign(file_filters.find(filter => filter.uuid === filter_uuid) || {}, obj);
+
+    this.setInfoByKey(this.app.target.filters, 'target', 'filters');
+  }
+
   mapping = () => this.api<MappingFileListRequest>('/mapping_file_list').then(async (res) => {
     const plugins = await this.plugins_fetch();
 
@@ -629,13 +641,15 @@ export enum FilterType {
 
 export type FilterOptions = Record<string, Acceptable>;
 
-export type GulpQueryFilterObject = {
+export type λFilter = {
+  uuid: UUID;
   key: string;
   type: FilterType;
   value: any;
+  isOr?: boolean
 }
 
-export type GulpQueryFilterArray = GulpQueryFilterObject[];
+export type GulpQueryFilterArray = λFilter[];
 
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
@@ -654,10 +668,22 @@ export class Filter {
   public static parse(app: λApp, file: λFile) {
     const base = Filter.base(app, file);
     
-    const query = Filter.find(app, file).map(filter => {
+    const query = Filter.query(app, file);
+
+    return query ? `${base} AND ${query}` : base;
+  }
+
+  /** 
+   * @returns Стринговое поле фильтра
+   */
+  static query = (app: λApp, file: λFile) => {
+    const filters = Filter.find(app, file)
+    
+    return filters.map((filter, index) => {
+      const isLast = filters.length - 1 === index;
       let queryStringPart: string;
 
-      const isParsable = !!parseInt(filter.value);
+      const isParsable = Number.isNaN(Number(filter.value));
 
       const value = isParsable ? filter.value : `"${filter.value}"`
 
@@ -673,11 +699,11 @@ export class Filter {
           break;
       }
 
-      return queryStringPart;
-    }).join(' AND ');
-
-    return query ? `${base} AND ${query}` : base;
+      return queryStringPart + this.operand(filter, isLast);
+    }).join('');
   }
+
+  public static operand = (filter: λFilter, processable: boolean) => filter.isOr ? ' OR ' : ' AND ';
   
   static body = (app: λApp, file: λFile) => ({
     query_raw: {
@@ -794,7 +820,7 @@ export class Parser {
 
   public static useId = (unknown: λEvent | string): string => typeof unknown === 'string' ? unknown : unknown._id;
 
-  public static useUUID = (unknown: λContext | λPlugin | λFile | string): UUID => typeof unknown === 'string' ? unknown as UUID : unknown.uuid;
+  public static useUUID = (unknown: λContext | λPlugin | λFile | λFilter | string): UUID => typeof unknown === 'string' ? unknown as UUID : unknown.uuid;
 
   public static useBoth = (unknown: λContext | λPlugin | λFile | string): UUID => typeof unknown === 'string' ? unknown as UUID : (unknown.uuid || unknown.name);
 
