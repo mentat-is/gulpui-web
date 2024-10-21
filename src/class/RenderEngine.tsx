@@ -61,9 +61,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   app!: λApp;
   getPixelPosition!: (timestamp: number) => number;
   scrollY!: number;
-  heightMap: Record<λFile['name'], HeightMap> = {};
-  statusMap: Record<λFile['name'], StatusMap> = {};
-  defaultMap: Record<λFile['name'], DefaultMap> = {};
+  heightMap: Record<λFile['uuid'], HeightMap> = {};
+  statusMap: Record<λFile['uuid'], StatusMap> = {};
+  defaultMap: Record<λFile['uuid'], DefaultMap> = {};
   private static instance: RenderEngine | null = null;
 
   constructor({ ctx, limits, app, getPixelPosition, scrollY }: RenderEngineConstructor) {
@@ -85,7 +85,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   default(file: λFile, y: number) {
     const heat = this.process(this.defaultMap, file)
-      ? this.defaultMap[file.name]
+      ? this.defaultMap[file.uuid]
       : this.getDefault(file);
 
     const max = Math.max(...[...heat.values()].map(v => v.code));
@@ -107,7 +107,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   
   async height(file: λFile, y: number) {
     const heat = this.process(this.heightMap, file)
-      ? this.heightMap[file.name]
+      ? this.heightMap[file.uuid]
       : this.getHeightmap(file);
 
     const max = Math.max(...[...heat.values()].map(v => v.height));
@@ -130,7 +130,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   async apache(file: λFile, y: number) {
     const heat = this.process(this.statusMap, file)
-      ? this.statusMap[file.name]
+      ? this.statusMap[file.uuid]
       : this.getStatusMap(file);
 
     [...heat].forEach(hit => {
@@ -272,7 +272,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     this.ctx.font = `12px Arial`;
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.name, 10, y);
+    this.ctx.fillText(file.uuid, 10, y);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
@@ -318,7 +318,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     heat[scale] = this.app.timeline.scale;
     this.defaultMap = {
       ...this.defaultMap,
-      [file.name]: heat
+      [file.uuid]: heat
     };
 
     return heat;
@@ -351,7 +351,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     heat[scale] = this.app.timeline.scale;
     this.heightMap = {
       ...this.heightMap,
-      [file.name]: heat
+      [file.uuid]: heat
     };
   
     return heat;
@@ -382,11 +382,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     heat[scale] = this.app.timeline.scale;
     this.statusMap = {
       ...this.statusMap,
-      [file.name]: heat,
+      [file.uuid]: heat,
     };
   
     return heat;
   }
 
-  private process = (map: Record<string, StatusMap | DefaultMap | HeightMap>, file: λFile): boolean => Boolean(map[file.name]?.[scale] === this.app.timeline.scale && file.doc_count === File.events(this.app, file).length);
+  private process = (map: Record<string, StatusMap | DefaultMap | HeightMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[scale] === this.app.timeline.scale && file.doc_count === File.events(this.app, file).length);
 }
