@@ -96,7 +96,7 @@ export function SelectFilesBanner() {
 
   const save = () => {
     setLoading(true);
-    const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid);
+    const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid || Event.get(app, file.uuid).length < file.doc_count);
 
     if (unfetched.length) return Info.refetch(unfetched).then(destroyBanner);
 

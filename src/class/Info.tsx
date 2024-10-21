@@ -115,12 +115,12 @@ export class Info implements InfoProps {
 
   setLoaded = (files: UUID[]) => {
     this.setInfoByKey(files, 'timeline', 'loaded');
-
+    
     if (this.app.timeline.loaded.length === this.app.target.files.length) {
       this.notes_reload();
       this.links_reload();
     }
-  }
+  };
 
   render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
 
@@ -835,11 +835,7 @@ export class Event {
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: UUID) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
 
-  public static findById = (app: λApp, eventId: string | string[]) => {
-    console.log(Array.from(app.target.events, ([k, v]) => v).flat().length);
-    
-    return Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e._id));
-  }
+  public static findById = (app: λApp, eventId: string | string[]) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e._id));
 
   public static formatToCreateRequest = (events: Arrayed<λEvent>): λEventFormForCreateRequest[] => Parser.array(events).map(e => ({
     id: e._id,
