@@ -97,9 +97,11 @@ export function Timeline() {
   const dragState = useRef(new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY }));
 
   useEffect(() => {
-    if (isResizing) return;
-
     dragState.current = new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY });
+  }, [timeline])
+
+  useEffect(() => {
+    if (isResizing) return;
 
     const handleResize = () => setBounding(null);
     window.addEventListener('resize', handleResize, { passive: true });
