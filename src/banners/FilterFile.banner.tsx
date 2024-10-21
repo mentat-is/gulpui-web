@@ -18,6 +18,7 @@ import React from 'react';
 import { Switch } from '@/ui/Switch';
 import { Card } from '@/ui/Card';
 import { cn, generateUUID } from '@/ui/utils';
+import { toast } from 'sonner';
 
 const _baseFilter = () => ({
   uuid: generateUUID(),
@@ -78,6 +79,12 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     const _filters = filters.filter(_filter => _filter.key !== filter.key)
     Info.filters_add(file.uuid, _filters);
   }
+
+  useEffect(() => {
+    api('/stats_cancel_request', {
+      data: { req_id: file.uuid }
+    }).then(res => res.isSuccess() && toast('Previous request for this file has been canceled'));
+  }, []);
 
   const resetFilter = () => setFilter(_baseFilter);
 

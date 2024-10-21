@@ -102,12 +102,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     canvas_ref.current?.addEventListener('mousedown', handleClick);
     window.addEventListener('resize', renderCanvas);
-    timeline.current?.addEventListener('resize', renderCanvas);
+    const debugInterval = setInterval(renderCanvas, 300);
 
     return () => {
       canvas_ref.current?.removeEventListener('mousedown', handleClick);
       window.removeEventListener('resize', renderCanvas);
-      timeline.current?.removeEventListener('resize', renderCanvas);
+      clearInterval(debugInterval) 
     };
   }, dependencies);
 

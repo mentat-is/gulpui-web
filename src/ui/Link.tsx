@@ -34,7 +34,7 @@ export function Link({ link, left, top }: LinkProps) {
 
   return (
     <>
-      <Button onClick={openEvent} className={s.target} style={{ left, top }}>
+      <Button variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
         <Icon name='Waypoints' />
         <hr style={{ background: link.data.color }} />
       </Button>

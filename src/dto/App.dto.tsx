@@ -52,7 +52,6 @@ export interface λApp {
       data: Map<UUID, λEvent[]>;
       filters: Record<UUID, λFilter[]>;
     }
-    
   }
 }
 export const BaseInfo: λApp = {
