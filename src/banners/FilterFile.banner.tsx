@@ -57,6 +57,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     if (filters_length.current === app.target.filters[file.uuid].length) {
       destroyBanner();
       Info.render();
+      return;
     }
 
     setLoading(true);
