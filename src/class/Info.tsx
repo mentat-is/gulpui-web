@@ -58,10 +58,6 @@ export class Info implements InfoProps {
       : this.events_reset();
     
     await this.mapping();
-    
-    await this.notes_reload();
-
-    await this.links_reload();
 
     const files = (uuids.length
       ? uuids.map(uuid => {
@@ -76,6 +72,10 @@ export class Info implements InfoProps {
         return null;
       })
       : File.selected(this.app))
+
+    await this.notes_reload(files.filter(f => !!f) as λFile[]);
+
+    await this.links_reload(files.filter(f => !!f) as λFile[]);
     
     files.forEach(file => {
       if (!file) return;
@@ -162,17 +162,44 @@ export class Info implements InfoProps {
   events_reset_in_file = (uuid: UUID) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
-  notes_set = (notes: RawNote[]) => this.setInfoByKey(Note.parse(this.app, notes), 'target', 'notes');
+  notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
-  notes_reload = () => this.api<ResponseBase<RawNote[]>>('/note_list', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ index: [Index.selected(this.app)?.name] })
-  }).then(res => res.isSuccess() ? this.notes_set(res.data) : toast('Error fetching notes', {
-    description: (res as unknown as ResponseError).data.exception.name
-  }));
+  notes_reload = async (files?: λFile[]) => {
+    files = files || File.selected(this.app);
+
+    const src_file: λFile['name'][] = []
+    const context: λContext['name'][] = []
+    const operation_id: λOperation['id'][] = []
+    
+    files.forEach(file => {
+      src_file.push(file.name);
+
+      const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
+
+      if (!name || !operation) return;
+
+      if (!context.includes(name))
+        context.push(name);
+
+      if (!operation_id.includes(operation.id))
+        operation_id.push(operation.id);
+    });
+
+    this.api<ResponseBase<RawNote[]>>('/note_list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        index: [Index.selected(this.app)?.name],
+        src_file, 
+        context,
+        operation_id
+      })
+    }).then(res => res.isSuccess() ? this.notes_set(Note.parse(this.app, res.data)) : toast('Error fetching notes', {
+      description: (res as unknown as ResponseError).data.exception.name
+    }));
+  }
 
   notes_delete = (note: λNote) => this.api<ResponseBase<boolean>>('/note_delete', {
     method: 'DELETE',
@@ -189,15 +216,42 @@ export class Info implements InfoProps {
     }
   });
 
-  links_reload = () => this.api<ResponseBase<RawLink[]>>('/link_list', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ index: [Index.selected(this.app)?.name] })
-  }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
-    description: (res as unknown as ResponseError).data.exception.name
-  }));
+  links_reload = async (files?: λFile[]) => {
+    files = files || File.selected(this.app);
+
+    const src_file: λFile['name'][] = []
+    const context: λContext['name'][] = []
+    const operation_id: λOperation['id'][] = []
+    
+    files.forEach(file => {
+      src_file.push(file.name);
+
+      const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
+
+      if (!name || !operation) return;
+
+      if (!context.includes(name))
+        context.push(name);
+
+      if (!operation_id.includes(operation.id))
+        operation_id.push(operation.id);
+    });
+    
+    await this.api<ResponseBase<RawLink[]>>('/link_list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        index: [Index.selected(this.app)?.name],
+        src_file,
+        context,
+        operation_id
+      })
+    }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
+      description: (res as unknown as ResponseError).data.exception.name
+    }));
+}
 
   links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
 
@@ -748,18 +802,28 @@ export class Event {
     return app.target.events;
   }
 
-  public static parse = (app: λApp, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).map(e => ({
-    _id: e.id,
-    operation_id: e.operation_id,
-    timestamp: e['@timestamp'],
-    file: e.src_file,
-    context: e.context,
-    event: {
-      duration: 1,
-      code: '0'
-    },
-    _uuid: File.findByNameAndContextName(app, e.src_file, e.context).uuid,
-  }));
+  public static parse = (app: λApp, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).reduce<λEvent[]>((result, e) => {
+    const file = File.findByNameAndContextName(app, e.src_file, e.context);
+
+    if (!file) console.log(e);
+
+    if (file) {
+      result.push({
+        _id: e.id,
+        operation_id: e.operation_id,
+        timestamp: e['@timestamp'],
+        file: e.src_file,
+        context: e.context,
+        event: {
+          duration: 1,
+          code: '0'
+        },
+        _uuid: file.uuid,
+      })
+    };
+    
+    return result
+  }, []);
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: UUID) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
 
