@@ -88,8 +88,9 @@ export function LoginPage() {
         toast('Error during authorization', {
           description: 'Wrong username or password'
         });
-        setLoading(false);
       }
+
+      setLoading(false);
     });
   }
 
