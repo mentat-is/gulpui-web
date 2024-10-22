@@ -157,11 +157,10 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
         {app.target.links.map(link => {
           const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
           let top = 0;
-          link.events.forEach(event => {
-            if (!File.uuid(app, event._uuid).selected) return;
 
-            top += File.getHeight(app, event._uuid, scrollY)
-          });
+          if (link.events.some(e => !File.uuid(app, e._uuid).selected)) return null;
+
+          link.events.forEach(event => top += File.getHeight(app, event._uuid, scrollY));
 
           if (top < 0) return null;
 
