@@ -272,7 +272,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     this.ctx.font = `12px Arial`;
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.uuid, 10, y);
+    this.ctx.fillText(file.name, 10, y);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
