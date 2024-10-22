@@ -120,7 +120,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
             <SelectValue placeholder="Choose filter" />
           </SelectTrigger>
           <SelectContent>
-            {Object.keys(app.timeline.filtering_options[file.uuid]).map((key, i) => (
+            {Object.keys(app.timeline.filtering_options[file.uuid] || {}).map((key, i) => (
               <SelectItem key={i} value={key}>
                 {key.startsWith('gulp.unmapped.') ? key.slice(14) : key}
               </SelectItem>
