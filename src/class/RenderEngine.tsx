@@ -141,33 +141,35 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     const heats = [...heat];
 
+    const max = Math.max(...heats.map(v => v[1].height));
+
     heats.forEach((hit, i) => {
       // eslint-disable-next-line
       const [_, { height, timestamp }] = hit;
       const [__, { height: λheight, timestamp: λtimestamp }] = heats[i + 1] || [0, { height: 0, timestamp: 0 }];
 
-      const y = _y + 47 - height;
+      const y = _y + 47 - Math.floor((height / max) * 47);
 
       if (throwableByTimestamp(timestamp, this.limits) && throwableByTimestamp(λtimestamp, this.limits)) return;
 
-      const pos = this.getPixelPosition(timestamp);
+      const x = this.getPixelPosition(timestamp);
 
-      const color = useGradient(file.color, height, { min: 0, max: 47 });
+      const color = useGradient(file.color, height, { min: 0, max });
 
       this.ctx.font = `12px Arial`;
       this.ctx.fillStyle = color;
-      this.ctx.fillText(height.toString(), pos - 3.5, y - 8);
+      this.ctx.fillText(height.toString(), x - 3.5, y - 8);
 
       const dot = {
-        x: pos,
+        x,
         y,
         color
       }
       
       const λdot = λtimestamp ? {
         x: this.getPixelPosition(λtimestamp),
-        y: _y + 47 - λheight,
-        color: useGradient(file.color, λheight, { min: 0, max: 47 })
+        y: _y + 47 - Math.floor((λheight / max) * 47),
+        color
       } : null;
 
       this.connection(λdot ? [dot, λdot] : [dot]);
@@ -377,21 +379,19 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   private getGraphMap = (file: λFile): GraphMap => {
     const heat: GraphMap = new Map() as GraphMap;
 
-    File.events(this.app, file).forEach(event => {
+    File.events(this.app, file).forEach((event, i) => {
       const timestamp = event.timestamp + file.offset;
       const λpos = this.getPixelPosition(timestamp);
+      const λposGroup = Math.floor(λpos / 8) * 8;
 
-      const obj: Graph = heat.get(λpos) || {
-        height: 1,
+      const obj: Graph = heat.get(λposGroup) || {
+        height: 0,
         timestamp
       };
 
-      const max = Math.max(...[...heat.values(), obj].map(v => v.height));
+      obj.height++;
 
-      heat.set(λpos, {
-        height: Math.round(1 + (47 - 1) * (obj.height / max)),
-        timestamp
-      });
+      heat.set(λposGroup, obj);
     });
 
     heat[scale] = this.app.timeline.scale;
