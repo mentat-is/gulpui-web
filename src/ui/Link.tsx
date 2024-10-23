@@ -1,11 +1,10 @@
 import s from './styles/Link.module.css';
 import { copy } from './utils';
-import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Badge } from './Badge';
 import { Separator } from './Separator';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 import { Event } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
@@ -46,11 +45,10 @@ export function Link({ link, left, top }: LinkProps) {
 interface LinkContentProps extends Pick<LinkProps, 'link'> {
   loading: boolean;
   deleteLink: () => void;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentProps) {
-  const { app, spawnDialog, dialog } = useApplication();
+export function LinkContent({ link, loading, deleteLink }: LinkContentProps) {
+  const { dialog } = useApplication();
 
   return (
     <Fragment>
