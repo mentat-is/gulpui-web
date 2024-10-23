@@ -146,6 +146,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     heats.forEach((hit, i) => {
       // eslint-disable-next-line
       const [_, { height, timestamp }] = hit;
+      // eslint-disable-next-line
       const [__, { height: λheight, timestamp: λtimestamp }] = heats[i + 1] || [0, { height: 0, timestamp: 0 }];
 
       const y = _y + 47 - Math.floor((height / max) * 47);
