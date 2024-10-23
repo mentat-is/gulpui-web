@@ -88,8 +88,9 @@ export function LoginPage() {
         toast('Error during authorization', {
           description: 'Wrong username or password'
         });
-        setLoading(false);
       }
+
+      setLoading(false);
     });
   }
 
@@ -240,12 +241,13 @@ export function LoginPage() {
             <Separator />
             <div className={s.group}>
               {!!sessions.length && <Popover>
-                <PopoverTrigger>
+                <PopoverTrigger asChild>
                   <Button variant='outline' img='Container'>Previous instances</Button>
                 </PopoverTrigger>
                 <PopoverContent>
                   {sessions.map(session => (
                     <Button
+                      key={session.token}
                       variant='ghost'
                       img='KeyRound'
                       loading={session.token === loadingSession}

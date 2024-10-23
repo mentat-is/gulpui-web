@@ -62,10 +62,10 @@ export interface RawDetailedChunkEvent extends RawChunkEvent {
 
 export interface λRawEventMinimized {
   '@timestamp': number
-  context: string
+  context: string | null;
   id: string
-  operation_id: number;
-  src_file: string
+  operation_id: number | null;
+  src_file: string | null;
 }
 
 export interface λEventFormForCreateRequest {

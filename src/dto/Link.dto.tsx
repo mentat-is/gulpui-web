@@ -8,6 +8,7 @@ export type λLink = {
   data: {
     src: string,
     color: string
+    events?: λRawEventMinimized[]
   }
   description: string
   edits: number[]
@@ -30,5 +31,5 @@ export type λLink = {
 }
 
 export type RawLink = Omit<λLink, 'events'> & {
-  events: λRawEventMinimized
+  events: λRawEventMinimized[]
 }

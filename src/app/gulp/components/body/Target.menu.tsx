@@ -41,6 +41,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
       <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={file} />)} img='Filter'>Filters</ContextMenuItem>
       {Filter.find(app, file) && <ContextMenuItem onClick={() => removeFilters(file)} img='FilterX'>Clear filters</ContextMenuItem>}
+      {Filter.find(app, file) && app.timeline.cache.data.has(file.uuid) && <ContextMenuItem onClick={() => Info.filters_undo(file)} img='Undo'>Return previous filters</ContextMenuItem>}
       <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={file} />)} img='Waypoints'>Links</ContextMenuItem>
       <ContextMenuItem onClick={() => Info.files_unselect(file)} img='EyeOff'>Hide</ContextMenuItem>
       <ContextMenuItem onClick={() => Info.files_reorder_upper(file.uuid)} img='ArrowBigUp'>Move upper</ContextMenuItem>

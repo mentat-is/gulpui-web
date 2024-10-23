@@ -25,8 +25,7 @@ export function Timeline() {
   const [target, setTarget] = useState<λFile>();
 
   const increaseScrollY = useCallback((λy: number) => {
-    const limit = File.selected(app).length * 48 - (timeline.current?.clientHeight || 0) + 42
-    setScrollY((y) => Math.max(0, Math.min(Math.round(limit), Math.round(y + λy))));
+    setScrollY((y) => Math.round(y + λy));
   }, [app, timeline]);
 
   const handleWheel = useCallback((event: WheelEvent) => {
@@ -52,10 +51,13 @@ export function Timeline() {
     setScrollX(scrollX => scrollX + left);
   }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);
 
-  const debouncedHandleWheel = useMemo(
-    () => debounce(handleWheel, 5),
-    [handleWheel]
-  );
+
+  /**
+   * Используется как лимитер на кол-во срабатываний скролла колёсиком мыши,
+   * так как в инном случае, реакт не успевает обовить дом древо,
+   * что производит к неправильным расчётам.
+   */
+  const debouncedHandleWheel = useMemo(() => debounce(handleWheel, 5), [handleWheel]);
 
   const handleMouseDown = useCallback((event: MouseEvent) => {
     dragState.current.dragStart(event);
@@ -95,9 +97,11 @@ export function Timeline() {
   const dragState = useRef(new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY }));
 
   useEffect(() => {
-    if (isResizing) return;
-
     dragState.current = new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY });
+  }, [timeline])
+
+  useEffect(() => {
+    if (isResizing) return;
 
     const handleResize = () => setBounding(null);
     window.addEventListener('resize', handleResize, { passive: true });

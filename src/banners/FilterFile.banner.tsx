@@ -4,7 +4,7 @@ import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Input } from '@/ui/Input';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button } from '@/ui/Button';
 import { Badge } from '@/ui/Badge';
@@ -12,16 +12,20 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
 import { ResponseBase } from '@/dto/ResponseBase.dto';
-import { Context, FilterOptions, FilterType, GulpQueryFilterObject, Plugin } from '@/class/Info';
+import { Context, Filter, FilterOptions, FilterType, λFilter, Plugin } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
 import React from 'react';
 import { Switch } from '@/ui/Switch';
+import { Card } from '@/ui/Card';
+import { cn, generateUUID } from '@/ui/utils';
+import { toast } from 'sonner';
 
-const _baseFilter = {
+const _baseFilter = () => ({
+  uuid: generateUUID(),
   key: '',
   type: FilterType.EQUAL,
   value: ''
-}
+})
 
 interface FilterFileBannerProps {
   file: λFile;
@@ -30,14 +34,14 @@ interface FilterFileBannerProps {
 export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const { app, api, Info, destroyBanner, spawnBanner } = useApplication();
   const [acceptable, setAcceptable] = useState<Acceptable>('text');
-  const [filteringOptions, setFilteringOptions] = useState<FilterOptions>({})
-  const [filter, setFilter] = useState<GulpQueryFilterObject>(_baseFilter);
+  const [filter, setFilter] = useState<λFilter>(_baseFilter());
   const [loading, setLoading] = useState<boolean>(false);
+  const filters_length = useRef<number>((app.target.filters[file.uuid] || []).length)
 
   const filters = app.target.filters[file.uuid] || [];
 
   useEffect(() => {
-    if (Object.keys(filteringOptions).length) return;
+    if (app.timeline.filtering_options[file.uuid]) return;
 
     const context = Context.uuid(app, Plugin.find(app, file._uuid)!._uuid)!.name;
 
@@ -46,12 +50,22 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         context,
         src: file.name
       }
-    }).then(res => res.isSuccess() && setFilteringOptions(res.data))
-  }, []);
+    }).then(res => res.isSuccess() && Info.setTimelineFilteringoptions(file, res.data));
+  }, [app.timeline.filtering_options]);
 
   const submit = async () => {
+    if (app.target.filters[file.uuid] && filters_length.current === app.target.filters[file.uuid].length) {
+      destroyBanner();
+      Info.render();
+      return;
+    }
+
     setLoading(true);
-    Info.refetch(file.uuid).then(destroyBanner);
+    Info.filters_cache(file);
+    Info.refetch(file.uuid, true).then(() => {
+      destroyBanner();
+      Info.render();
+    });
   }
 
   const addFilter = () => {
@@ -60,34 +74,40 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     resetFilter();
   }
 
-  const removeFilter = (filter: GulpQueryFilterObject) => {
+  const removeFilter = (filter: λFilter) => {
     const _filters = filters.filter(_filter => _filter.key !== filter.key)
     Info.filters_add(file.uuid, _filters);
   }
 
-  const changeFilter = (filter: GulpQueryFilterObject) => setFilter(filter);
+  useEffect(() => {
+    api('/stats_cancel_request', {
+      data: { req_id: file.uuid }
+    }).then(res => res.isSuccess() && toast('Previous request for this file has been canceled'));
+  }, []);
 
   const resetFilter = () => setFilter(_baseFilter);
 
   const setKey = (key: string) => {
-    const accept = filteringOptions[key];
+    const accept = app.timeline.filtering_options[file.uuid][key];
     if (acceptable !== accept) setValue('');
     setAcceptable(accept);
-    changeFilter({ ...filter || {}, key })
+    setFilter({ ...filter || {}, key })
   };
 
-  const setType = (type: FilterType) => changeFilter({...filter || {}, type });
+  const setType = (type: FilterType) => setFilter({...filter || {}, type });
 
-  const setValue = (value: string) => changeFilter({...filter || {}, value });
+  const setValue = (value: string) => setFilter({...filter || {}, value });
 
-  const setDate = (date: Date | undefined) => changeFilter({...filter || {}, value: date?.valueOf() });
+  const setDate = (date: Date | undefined) => setFilter({...filter || {}, value: date?.valueOf() });
 
-  const undo = () => Info.filters_remove(file);
+  const handleCheckedChange = (checked: boolean, filter: λFilter) => Info.filters_change(file, filter, { isOr: checked });
+
+  const undo = () => Info.filters_undo(file);
 
   return (
     <Banner
       title={'Choose filtering options'}
-      className={s.banner} loading={!Object.keys(filteringOptions).length}
+      className={s.banner} loading={!app.timeline.filtering_options[file.uuid]}
       subtitle={
         <Button
           onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
@@ -100,7 +120,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
             <SelectValue placeholder="Choose filter" />
           </SelectTrigger>
           <SelectContent>
-            {Object.keys(filteringOptions).map((key, i) => (
+            {Object.keys(app.timeline.filtering_options[file.uuid] || {}).map((key, i) => (
               <SelectItem key={i} value={key}>
                 {key.startsWith('gulp.unmapped.') ? key.slice(14) : key}
               </SelectItem>
@@ -108,10 +128,10 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           </SelectContent>
         </Select>
         <Select onValueChange={setType} value={filter?.type}>
-          <SelectTrigger>
+          <SelectTrigger className={s.select}>
             <SelectValue defaultValue={FilterType.GREATER_OR_EQUAL} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className={s.select}>
             {Object.values(FilterType).map((filterType, index) => (
               <SelectItem key={index} value={filterType}>
                 {filterType}
@@ -145,23 +165,27 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         {filters.map((filter, i) => {
           return (
             <React.Fragment key={i}>
-              {i !== 0 && (
-                <div className={s.switch}>
-                  <p>AND</p>
-                  <Switch />
-                  <p>OR</p>
-                </div>
-              )}
               <div className={s.filter}>
                 <code>{filter.key}</code>
                 <Badge value={filter.type} />
                 <p>{typeof filter.value !== 'string' ? format(filter.value, "LLL dd, y") : filter.value}</p>
                 <Button variant='destructive' img='Trash2' onClick={() => removeFilter(filter)} />
               </div>
+              {i !== filters.length - 1 && (
+                <div className={s.switch}>
+                  <p className={cn(!filter.isOr && s.active)}>AND</p>
+                  <Switch onCheckedChange={(checked) => handleCheckedChange(checked, filter)} />
+                  <p className={cn(filter.isOr && s.active)}>OR</p>
+                </div>
+              )}
             </React.Fragment>
           )
         })}
       </div>
+      <Card className={s.preview}>
+        <h4>Preview</h4>
+        <code><span>{Filter.base(app, file)}</span> AND {Filter.query(app, file)}</code>
+      </Card>
       <div className={s.bottom}>
         <Button img='Undo' variant='outline' onClick={undo}>Undo</Button>
         <Button img='Check' loading={loading} onClick={submit}>Submit</Button>

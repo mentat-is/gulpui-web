@@ -1,22 +1,16 @@
 .switch {
   display: inline-flex;
-  height: 26px;
-  width: 44px;
-  flex-shrink: 0;
+  height: 24px;
+  width: 48px;
   cursor: pointer;
-  align-items: center;
   border-radius: var(--round);
-  border: 2px solid transparent;
-  border-width: 2px;
+  padding: 2px;
   box-shadow: var(--shadow-border);
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 150ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-property: all 0.125s var(--transition);
   background: var(--meta-black);
 }
 
 .switch:focus-visible {
-  outline: none;
   box-shadow: var(--ring);
 }
 
@@ -26,7 +20,7 @@
 }
 
 .switch[data-state="checked"] {
-  background-color: var(--gray16);
+  background: var(--geist-background);
 }
 
 .switch[data-state="unchecked"] {
@@ -34,18 +28,16 @@
 }
 
 .thumb {
-  pointer-events: none;
-  display: block;
   height: 20px;
   width: 20px;
   border-radius: var(--round);
   background-color: var(--white);
   border: var(--geist-border);
-  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.125s var(--transition);
 }
 
 .thumb[data-state="checked"] {
-  transform: translateX(20px);
+  transform: translateX(24px);
 }
 
 .thumb[data-state="unchecked"] {

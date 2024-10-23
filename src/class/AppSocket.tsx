@@ -50,7 +50,6 @@ export class AppSocket extends WebSocket {
   
         this.info.bucket_increase_fetched(events.length);
         this.info.events_add(events);
-        
       } else if ((_chunk as UnknownChunk).type === λChunk.QUERY_RESULT && _chunk.matches_total > 0) {
         this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as UUID]);
       } else if ('collabs' in _chunk) {

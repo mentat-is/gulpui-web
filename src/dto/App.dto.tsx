@@ -9,7 +9,7 @@ import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID } from "@/ui/utils";
 import { UUID } from "crypto";
-import { GulpQueryFilterArray } from "@/class/Info";
+import { FilterOptions, λFilter } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -29,7 +29,7 @@ export interface λApp {
     plugins: λPlugin[],
     files: λFile[],
     events: Map<UUID, λEvent[]>
-    filters: Record<UUID, GulpQueryFilterArray>;
+    filters: Record<UUID, λFilter[]>;
     notes: λNote[],
     links: λLink[],
   }
@@ -48,6 +48,11 @@ export interface λApp {
     target: λEvent | null;
     loaded: UUID[];
     filter: string;
+    cache: {
+      data: Map<UUID, λEvent[]>;
+      filters: Record<UUID, λFilter[]>;
+    },
+    filtering_options: Record<λFile['uuid'], FilterOptions>
   }
 }
 export const BaseInfo: λApp = {
@@ -67,7 +72,12 @@ export const BaseInfo: λApp = {
     scale: 1,
     target: null,
     loaded: [],
-    filter: ''
+    filter: '',
+    cache: {
+      data: new Map<λFile['uuid'], λEvent[]>(),
+      filters: {}
+    },
+    filtering_options: {}
   },
   target: {
     indexes: [],
@@ -75,7 +85,7 @@ export const BaseInfo: λApp = {
     contexts: [],
     plugins: [],
     files: [],
-    events: new Map(),
+    events: new Map<λFile['uuid'], λEvent[]>(),
     filters: {},
     bucket: {
       total: 0,
@@ -85,12 +95,12 @@ export const BaseInfo: λApp = {
         max: 0
       },
       timestamp: {
-        min: 0,
-        max: 0
+        min: Date.now(),
+        max: Date.now()
       },
       selected: {
-        min: 0,
-        max: 0
+        min: Date.now(),
+        max: Date.now()
       }
     },
     notes: [],

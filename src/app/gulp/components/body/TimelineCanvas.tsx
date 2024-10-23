@@ -40,14 +40,17 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     const render = new RenderEngine({ ctx, limits, app, getPixelPosition, scrollY })
     
-    File.selected(app).forEach(file => {
+    File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY);
 
-      if (y + 48 < 0 || y > canvas_ref.current!.height + scrollY) return;
+      if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
         render[file.engine](file, y - 24);
       };
+
+      if (!i)
+        render.primary(file);
 
       render.lines(file);
       render.locals(file);
@@ -99,12 +102,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     canvas_ref.current?.addEventListener('mousedown', handleClick);
     window.addEventListener('resize', renderCanvas);
-    timeline.current?.addEventListener('resize', renderCanvas);
+    const debugInterval = setInterval(renderCanvas, 300);
 
     return () => {
       canvas_ref.current?.removeEventListener('mousedown', handleClick);
       window.removeEventListener('resize', renderCanvas);
-      timeline.current?.removeEventListener('resize', renderCanvas);
+      clearInterval(debugInterval) 
     };
   }, dependencies);
 
@@ -142,19 +145,22 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
         tabIndex={0}
         onKeyUp={up}>
         {app.target.notes.map(note => {
+          if (!File.uuid(app, note._uuid).selected) return null;
+
           const left = getPixelPosition(NoteClass.timestamp(note) + File.find(app, note._uuid)!.offset);
           const top = File.getHeight(app, note._uuid, scrollY);
 
           if (top < 0) return null;
 
-          return <Note note={note} left={left} top={top} />
+          return <Note key={note.id} note={note} left={left} top={top} />
         })}
         {app.target.links.map(link => {
           const left = getPixelPosition(LinkClass.timestamp(link) + File.find(app, link._uuid)!.offset);
           let top = 0;
-          link.events.forEach(event => {
-            top += File.getHeight(app, event._uuid, scrollY)
-          });
+
+          if (link.events.some(e => !File.uuid(app, e._uuid).selected)) return null;
+
+          link.events.forEach(event => top += File.getHeight(app, event._uuid, scrollY));
 
           if (top < 0) return null;
 

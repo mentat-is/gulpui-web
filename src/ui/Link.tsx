@@ -19,26 +19,27 @@ interface LinkProps {
 }
 
 export function Link({ link, left, top }: LinkProps) {
-  const { Info } = useApplication();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [open, setOpen] = useState<boolean>(false);
+  const { app, spawnDialog } = useApplication();
 
-  const deleteLink = async () => {
-    setLoading(true);
-    await Info.links_delete(link);
-    setLoading(false);
-  }
+  const openEvent = () => {
+    const events = link.events.map(event => Event.findByIdAndUUID(app, event._id, event._uuid)).flat()
+
+    const dialog = events.length === 1
+      ? <DisplayEventDialog event={events[0]} />
+      : <DisplayGroupDialog events={events} />;
+
+    spawnDialog(dialog);
+  };
+
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className={s.target} style={{ left, top }}>
+    <>
+      <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
         <Icon name='Waypoints' />
         <hr style={{ background: link.data.color }} />
-      </PopoverTrigger>
-      <PopoverContent className={s.content}>
-        <LinkContent loading={loading} link={link} setOpen={setOpen} deleteLink={deleteLink} />
-      </PopoverContent>
-    </Popover>
+      </Button>
+      <p className={s.desc} style={{ left, top: top+26 }}>{link.name}</p>
+    </>
   )
 }
 
@@ -50,17 +51,6 @@ interface LinkContentProps extends Pick<LinkProps, 'link'> {
 
 export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentProps) {
   const { app, spawnDialog, dialog } = useApplication();
-
-  const openEvent = () => {
-    const events = link.events.map(event => Event.findByIdAndUUID(app, event._id, event._uuid)).flat()
-
-    const dialog = events.length === 1
-      ? <DisplayEventDialog event={events[0]} />
-      : <DisplayGroupDialog events={events} />;
-
-    spawnDialog(dialog);
-    setOpen(false);
-  };
 
   return (
     <Fragment>
@@ -90,12 +80,6 @@ export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentP
             <Separator />
           </Fragment>
         }
-        {/* <div>
-          <Icon name='User' />
-          <span>Owner ID: </span>
-          <p>{link.owner_user_id}</p>
-        </div>
-        <Separator /> */}
         <div>
           <Icon name={link.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
           <span>{link.private ? 'Private' : 'Not private'}</span>
@@ -114,7 +98,7 @@ export function LinkContent({ link, setOpen, loading, deleteLink }: LinkContentP
         <Button className={s.copy} onClick={() => copy(JSON.stringify(link))} img='Copy'>Copy note as JSON</Button>
         <Button loading={loading} img='Trash2' onClick={deleteLink} variant='destructive' />
       </div>
-      {!!link.events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{link.events.length === 1 ? 'Open link`s event' : 'Open link`s events group'}</Button>}
+      {!!link.events.length && !dialog && <Button className={s.open_event} img='FileSearch'>{link.events.length === 1 ? 'Open link`s event' : 'Open link`s events group'}</Button>}
     </Fragment>
   )
 }

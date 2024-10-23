@@ -19,7 +19,6 @@ export function SelectFilesBanner() {
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [reloadLoading, setReloadLoading] = useState<boolean>(false);
 
   const handle = (checked: CheckedState, cu: Array<UUID>, pu?: Array<UUID>, fu?: Array<UUID>): void => {
     if (fu) {
@@ -96,24 +95,15 @@ export function SelectFilesBanner() {
 
   const save = () => {
     setLoading(true);
-    const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid);
+    const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid || Event.get(app, file.uuid).length < file.doc_count);
 
     if (unfetched.length) return Info.refetch(unfetched).then(destroyBanner);
 
     destroyBanner();
   }
 
-  const reload = async () => {
-    setReloadLoading(true);
-    const operations = await Info.operations_request();
-   
-    Info.operations_update(operations);
-
-    setReloadLoading(false);
-  }
-
   return (
-    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts}>
+    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts} fixed={loading}>
     <div className={s.wrapper}>
       <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       {!filter.length ? Operation.contexts(app).map(context => (
@@ -152,7 +142,6 @@ export function SelectFilesBanner() {
       ))}
       </div>
       <div className={s.group}>
-        <Button variant='ghost' onClick={reload} loading={reloadLoading}>Reload</Button>
         <Button variant='outline' onClick={selectAll}>Select all</Button>
         <Button loading={loading} onClick={save}>Save</Button>
       </div>

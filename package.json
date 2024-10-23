@@ -33,6 +33,7 @@
     "react-resizable-panels": "^2.0.20",
     "react-router-dom": "^6.24.0",
     "react-scripts": "5.0.1",
+    "react-syntax-highlighter": "^15.6.1",
     "simple-xml-to-json": "^1.2.2",
     "sonner": "^1.5.0",
     "tailwind-merge": "^2.4.0",
@@ -71,6 +72,7 @@
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@types/lodash": "^4.17.7",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
     "customize-cra": "^1.0.0",
     "react-app-rewired": "^2.2.1"

@@ -1,10 +1,10 @@
 import { ElasticListIndex, OperationsList, type λApp } from '@/dto';
 import { Api } from '@/dto/api.dto';
-import { Bucket, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
+import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
-import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
+import { λEvent, λEventFormForCreateRequest } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -44,7 +44,9 @@ export class Info implements InfoProps {
     this.timeline = timeline;
   }
 
-  refetch = async (uuids: Arrayed<λFile['uuid']> = []) => {
+  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({ ...this.app.timeline.filtering_options, [Parser.useUUID(file)]: options}, 'timeline', 'filtering_options');
+
+  refetch = async (uuids: Arrayed<λFile['uuid']> = [], hidden?: boolean) => {
     uuids = Parser.array(uuids);
 
     const operation = Operation.selected(this.app);
@@ -57,24 +59,27 @@ export class Info implements InfoProps {
       : this.events_reset();
     
     await this.mapping();
-    
+
+    const files: λFile[] = (uuids.length
+      ? uuids.reduce<λFile[]>((files, uuid) => {
+        const file = File.find(this.app, uuid);
+
+        if (file) files.push(file);
+        else {
+          toast('File not found in application data', {
+            description: `See console for further details. UUID: ${uuid}`
+          });
+        }
+
+        return files;
+      }, [])
+      : File.selected(this.app))
+
     await this.notes_reload();
 
     await this.links_reload();
 
-    const files = (uuids.length
-      ? uuids.map(uuid => {
-        const file = File.find(this.app, uuid);
-
-        if (file) return file;
-        
-        toast(`File with UUID_${uuid} not found in application data`, {
-          description: 'See console for further details'
-        });
-
-        return null;
-      })
-      : File.selected(this.app))
+    await this.fetchBucket();
     
     files.forEach(file => {
       if (!file) return;
@@ -103,14 +108,62 @@ export class Info implements InfoProps {
       });
     });
 
-    this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
+    if (!hidden) {
+      this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
+    }
+  }
+
+  filters_cache = (file: λFile | λFile['uuid']) => {
+    const uuid = Parser.useUUID(file);
+    this.setInfoByKey({
+      data: this.app.timeline.cache.data.set(uuid, this.app.target.events.get(uuid) || []),
+      filters: { ...this.app.timeline.cache.filters, [uuid]: this.app.target.filters[uuid] }
+    }, 'timeline', 'cache');
+
+    this.render();
+  }
+
+  filters_undo = (file: λFile | λFile['uuid']) => {
+    const uuid = Parser.useUUID(file);
+
+    this.setInfoByKey({
+      ...this.app.target.filters,
+      [uuid]: this.app.timeline.cache.filters[uuid]
+    }, 'target', 'filters');
+
+    this.app.target.events.delete(uuid);
+    this.app.target.events.set(uuid, this.app.timeline.cache.data.get(uuid) || []);
+
+    this.setInfoByKey(this.app.target.events, 'target', 'events');
+    this.filters_delete_cache(file);
+    this.render();
+  }
+
+  filters_delete_cache = (file: λFile | λFile['uuid']) => {
+    const uuid = Parser.useUUID(file);
+
+    this.app.timeline.cache.data.delete(uuid);
+
+    this.setInfoByKey({
+      data: this.app.timeline.cache.data,
+      filters: { ...this.app.timeline.cache.filters, [uuid]: undefined }
+    }, 'timeline', 'cache');
   }
   
   // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
-  setLoaded = (files: UUID[]) => this.setInfoByKey(files, 'timeline', 'loaded');
+  setLoaded = (files: UUID[]) => {
+    this.setInfoByKey(files, 'timeline', 'loaded');
+
+    if (this.app.timeline.loaded.length === this.app.target.files.length) {
+      this.notes_reload();
+      this.links_reload();
+    }
+  };
+
+  render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
 
   // 🔥 INDEXES
   index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));
@@ -145,7 +198,12 @@ export class Info implements InfoProps {
 
   // 🔥 FILES
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
-  files_unselect = (files: Arrayed<λFile>) => this.setInfoByKey(File.unselect(this.app, files), 'target', 'files');
+  files_unselect = (files: Arrayed<λFile>) => {
+    if (this.app.timeline.target && Parser.array(files).map(file => file.uuid).includes(this.app.timeline.target._uuid)) {
+      this.setTimelineTarget(null);
+    }
+    this.setInfoByKey(File.unselect(this.app, files), 'target', 'files')
+  };
   files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
   files_replace = (file: λFile) => this.setInfoByKey(File.replace(file, this.app), 'target', 'files');
@@ -157,17 +215,42 @@ export class Info implements InfoProps {
   events_reset_in_file = (uuid: UUID) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
-  notes_set = (notes: RawNote[]) => this.setInfoByKey(Note.parse(this.app, notes), 'target', 'notes');
+  notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
-  notes_reload = () => this.api<ResponseBase<RawNote[]>>('/note_list', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ index: [Index.selected(this.app)?.name] })
-  }).then(res => res.isSuccess() ? this.notes_set(res.data) : toast('Error fetching notes', {
-    description: (res as unknown as ResponseError).data.exception.name
-  }));
+  notes_reload = async () => {
+    const src_file: λFile['name'][] = []
+    const context: λContext['name'][] = []
+    const operation_id: λOperation['id'][] = []
+    
+    File.selected(this.app).forEach(file => {
+      src_file.push(file.name);
+
+      const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
+
+      if (!name || !operation) return;
+
+      if (!context.includes(name))
+        context.push(name);
+
+      if (!operation_id.includes(operation.id))
+        operation_id.push(operation.id);
+    });
+
+    this.api<ResponseBase<RawNote[]>>('/note_list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        index: [Index.selected(this.app)?.name],
+        src_file, 
+        context,
+        operation_id
+      })
+    }).then(res => res.isSuccess() ? this.notes_set(Note.parse(this.app, res.data)) : toast('Error fetching notes', {
+      description: (res as unknown as ResponseError).data.exception.name
+    }));
+  }
 
   notes_delete = (note: λNote) => this.api<ResponseBase<boolean>>('/note_delete', {
     method: 'DELETE',
@@ -184,15 +267,40 @@ export class Info implements InfoProps {
     }
   });
 
-  links_reload = () => this.api<ResponseBase<RawLink[]>>('/link_list', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ index: [Index.selected(this.app)?.name] })
-  }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
-    description: (res as unknown as ResponseError).data.exception.name
-  }));
+  links_reload = async () => {
+    const src_file: λFile['name'][] = []
+    const context: λContext['name'][] = []
+    const operation_id: λOperation['id'][] = []
+    
+    File.selected(this.app).forEach(file => {
+      src_file.push(file.name);
+
+      const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
+
+      if (!name || !operation) return;
+
+      if (!context.includes(name))
+        context.push(name);
+
+      if (!operation_id.includes(operation.id))
+        operation_id.push(operation.id);
+    });
+    
+    await this.api<ResponseBase<RawLink[]>>('/link_list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        index: [Index.selected(this.app)?.name],
+        src_file,
+        context,
+        operation_id
+      })
+    }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
+      description: (res as unknown as ResponseError).data.exception.name
+    }));
+}
 
   links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
 
@@ -345,7 +453,6 @@ export class Info implements InfoProps {
     }
   });
   // Timestamp - Full range
-  setBucketCustomRange = (min: number, max: number) => this.setBucket({ ...this.app.target.bucket!, selected: { max, min }});
   setBucketSelectedStart = (min: number) => this.setBucket({
     ...this.app.target.bucket!,
     selected: { ...this.app.target.bucket.selected, min }
@@ -354,6 +461,21 @@ export class Info implements InfoProps {
     ...this.app.target.bucket!,
     selected: { ...this.app.target.bucket.selected, max}
   });
+  
+  setBucketSelected = (minMax: MinMax) => this.setBucket({
+    ...this.app.target.bucket!,
+    selected: minMax
+  });
+
+  syncBucket = () => {
+    const files = File.selected(this.app);
+
+    const min = Math.min(...files.map(file => file.timestamp.min));
+    const max = Math.min(...files.map(file => file.timestamp.max));
+
+    this.setBucketSelected({ min, max });
+  }
+
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
 
   getBucketLocals = () => this.app.target.bucket.selected;
@@ -387,6 +509,10 @@ export class Info implements InfoProps {
     if (response.isSuccess()) {
       const fulfilled = Boolean(response.data.buckets.length);
 
+      if (!response.data.buckets[0]['*']['max_event.code']) {
+        return this.syncBucket();
+      }
+
       this.setBucket({
         total: response.data.total,
         fetched: this.app.target.bucket?.fetched || 0,
@@ -406,9 +532,20 @@ export class Info implements InfoProps {
     }
   });
 
-  filters_add = (uuid: UUID, filters: GulpQueryFilterArray): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
+  filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
   filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
+
+  filters_change = (file: λFile | λFile['uuid'], filter: λFilter | λFilter['uuid'], obj: Partial<λFilter>) => {
+    const file_uuid = Parser.useUUID(file);
+    const filter_uuid = Parser.useUUID(filter);
+
+    const file_filters = this.app.target.filters[file_uuid];
+
+    Object.assign(file_filters.find(filter => filter.uuid === filter_uuid) || {}, obj);
+
+    this.setInfoByKey(this.app.target.filters, 'target', 'filters');
+  }
 
   mapping = () => this.api<MappingFileListRequest>('/mapping_file_list').then(async (res) => {
     const plugins = await this.plugins_fetch();
@@ -625,13 +762,13 @@ export enum FilterType {
 
 export type FilterOptions = Record<string, Acceptable>;
 
-export type GulpQueryFilterObject = {
+export type λFilter = {
+  uuid: UUID;
   key: string;
   type: FilterType;
   value: any;
+  isOr?: boolean
 }
-
-export type GulpQueryFilterArray = GulpQueryFilterObject[];
 
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
@@ -650,10 +787,23 @@ export class Filter {
   public static parse(app: λApp, file: λFile) {
     const base = Filter.base(app, file);
     
-    const query = Filter.find(app, file).map(filter => {
+    const query = Filter.query(app, file);
+
+    return query ? `${base} AND ${query}` : base;
+  }
+
+  /** 
+   * @returns Стринговое поле фильтра
+   */
+  static query = (app: λApp, file: λFile) => {
+    const filters = Filter.find(app, file);
+    
+    return filters.map((filter, index) => {
+      const isLast = filters.length - 1 === index;
+
       let queryStringPart: string;
 
-      const isParsable = !!parseInt(filter.value);
+      const isParsable = Number.isNaN(Number(filter.value));
 
       const value = isParsable ? filter.value : `"${filter.value}"`
 
@@ -669,11 +819,11 @@ export class Filter {
           break;
       }
 
-      return queryStringPart;
-    }).join(' AND ');
-
-    return query ? `${base} AND ${query}` : base;
+      return queryStringPart + this.operand(filter, isLast);
+    }).join('');
   }
+
+  public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
   static body = (app: λApp, file: λFile) => ({
     query_raw: {
@@ -718,20 +868,34 @@ export class Event {
     return app.target.events;
   }
 
-  public static parse = (app: λApp, events: Arrayed<λRawEventMinimized>): λEvent[] => Parser.array(events).map(e => ({
-    _id: e.id,
-    operation_id: e.operation_id,
-    timestamp: e['@timestamp'],
-    file: e.src_file,
-    context: e.context,
-    event: {
-      duration: 1,
-      code: '0'
-    },
-    _uuid: File.findByNameAndContextName(app, e.src_file, e.context).uuid,
-  }));
+  public static parse = (app: λApp, original: RawNote | RawLink): λEvent[] => Parser.array(original.events).reduce<λEvent[]>((result, e) => {
+    e.context = e.context || original.context;
+    e.src_file = e.src_file || original.src_file;
+    e.operation_id = e.operation_id || original.operation_id;
+
+    const file = File.findByNameAndContextName(app, e.src_file, e.context);
+
+    if (file) {
+      result.push({
+        _id: e.id,
+        operation_id: e.operation_id,
+        timestamp: e['@timestamp'],
+        file: e.src_file,
+        context: e.context,
+        event: {
+          duration: 1,
+          code: '0'
+        },
+        _uuid: file.uuid,
+      })
+    };
+    
+    return result
+  }, []);
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: UUID) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
+
+  public static findById = (app: λApp, eventId: string | string[]) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e._id));
 
   public static formatToCreateRequest = (events: Arrayed<λEvent>): λEventFormForCreateRequest[] => Parser.array(events).map(e => ({
     id: e._id,
@@ -747,7 +911,7 @@ export class Note {
     const note: λNote = {
       ...n,
       file: n.src_file,
-      events: Event.parse(app, n.events),
+      events: Event.parse(app, n),
       _uuid: File.findByNameAndContextName(app, n.src_file, n.context).uuid
     }
     return note;
@@ -765,12 +929,37 @@ export class Note {
 }
 
 export class Link {
-  public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => ({
-    ...l,
-    file: l.src_file,
-    events: Event.parse(app, l.events),
-    _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
-  }));
+  public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
+    const events: λEvent['_id'][] = [];
+
+    if (!events.includes(l.data.src))
+      events.push(l.data.src);
+
+    if (l.data.events?.length) {
+      events.push(...l.data.events.map(e => e.id).filter(e => !events.includes(e)));
+    }
+
+    if (l.events) {
+      l.events.forEach(e => {
+        if (!events.includes(e.id)) events.push(e.id);
+      })
+    }
+
+    l.events = Event.findById(app, events).map(e => ({
+      '@timestamp': e.timestamp,
+      context: e.context,
+      id: e._id,
+      operation_id: e.operation_id,
+      src_file: e.file
+    }));
+
+    return {
+      ...l,
+      file: l.src_file,
+      events: Event.parse(app, l),
+      _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
+    }
+  });
 
   public static findByFile = (use: λApp | λLink[], file: λFile | UUID): λLink[] => Parser.use(use, 'links').filter(l => l._uuid === Parser.useUUID(file));
   
@@ -790,7 +979,7 @@ export class Parser {
 
   public static useId = (unknown: λEvent | string): string => typeof unknown === 'string' ? unknown : unknown._id;
 
-  public static useUUID = (unknown: λContext | λPlugin | λFile | string): UUID => typeof unknown === 'string' ? unknown as UUID : unknown.uuid;
+  public static useUUID = (unknown: λContext | λPlugin | λFile | λFilter | string): UUID => typeof unknown === 'string' ? unknown as UUID : unknown.uuid;
 
   public static useBoth = (unknown: λContext | λPlugin | λFile | string): UUID => typeof unknown === 'string' ? unknown as UUID : (unknown.uuid || unknown.name);
 
