@@ -134,22 +134,45 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
   };
   
-  graph(file: λFile, y: number) {
+  graph(file: λFile, _y: number) {
     const heat = this.process(this.graphMap, file)
       ? this.graphMap[file.uuid]
       : this.getGraphMap(file);
 
-    [...heat].forEach(hit => {
+    const heats = [...heat];
+
+    heats.forEach((hit, i) => {
       // eslint-disable-next-line
       const [_, { height, timestamp }] = hit;
+      const [__, { height: λheight, timestamp: λtimestamp }] = heats[i + 1] || [0, { height: 0, timestamp: 0 }];
+
+      const y = _y + 47 - height;
+
+      if (throwableByTimestamp(timestamp, this.limits) && throwableByTimestamp(λtimestamp, this.limits)) return;
+
+      const pos = this.getPixelPosition(timestamp);
+
+      const color = useGradient(file.color, height, { min: 0, max: 47 });
+
+      this.ctx.font = `12px Arial`;
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(height.toString(), pos - 3.5, y - 8);
+
+      const dot = {
+        x: pos,
+        y,
+        color
+      }
       
-      if (throwableByTimestamp(timestamp, this.limits)) return;
-      
-      this.ctx.fillStyle = useGradient(file.color, height, {
-        min: file.event.min || 0,
-        max: file.event.max || 599,
-      });
-      this.ctx.fillRect(this.getPixelPosition(timestamp), y + 47 - height, 1, 1);
+      const λdot = λtimestamp ? {
+        x: this.getPixelPosition(λtimestamp),
+        y: _y + 47 - λheight,
+        color: useGradient(file.color, λheight, { min: 0, max: 47 })
+      } : null;
+
+      this.connection(λdot ? [dot, λdot] : [dot]);
+
+      this.dot(dot);
     });
   }
 
@@ -366,7 +389,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const max = Math.max(...[...heat.values(), obj].map(v => v.height));
 
       heat.set(λpos, {
-        height: 1 + (47 - 1) * (obj.height / max),
+        height: Math.round(1 + (47 - 1) * (obj.height / max)),
         timestamp
       });
     });
