@@ -77,10 +77,23 @@
 .filter svg {
   min-width: 20px;
 }
-.menu {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 33vw;
-  height: 100vh;
+.menu > div {
+  gap: 8px;
+}
+.menu > div > button {
+  width: 100% !important;
+  justify-content: flex-start;
+}
+.stats {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  gap: 8px;
+}
+.stats > button {
+  flex: 1;
+}
+.separator {
+  flex: 1;
+  height: 100%;
 }

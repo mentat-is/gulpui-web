@@ -1,21 +1,18 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Body } from './components/body/Body'
-import { DataTransfered } from './components/header/DataTransfered'
 import { Limits } from './components/header/Limits'
-import { Logout } from './components/header/Logout'
-import { Menu } from './components/header/Menu'
+import { MenuDialog } from './components/header/Menu.dialog'
 import { Button } from '@/ui/Button'
+import { useApplication } from '@/context/Application.context'
 
 export function GulpPage() {
-  const [active, setActive] = useState(false);
+  const { spawnDialog } = useApplication();
 
   return (
     <React.Fragment>
       <header>
-        <Menu active={active} />
-        <Button img='Menu' onClick={() => setActive(!active)}>Menu</Button>
+        <Button img='Menu' onClick={() => spawnDialog(<MenuDialog />)}>Menu</Button>
         <Limits />
-        <Logout />
       </header>
       <Body />
     </React.Fragment>

@@ -75,11 +75,7 @@
   gap: 16px;
   overflow-y: auto;
   border-radius: 6px;
-}
-
-.content {
-  overflow: hidden;
-  overflow-y: auto;
+  min-height: calc(100% - 48px);
 }
 .content::-webkit-scrollbar {
   width: 8px;

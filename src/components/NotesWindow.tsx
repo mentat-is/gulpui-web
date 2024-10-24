@@ -13,6 +13,8 @@ interface FloatingWindowProps {
 export function NotesWindow({ onClose, focus }: FloatingWindowProps) {
   const { app } = useApplication();
 
+  console.log(app.target.notes);
+
   return (
     <Banner title='Notes' onClose={onClose} className={s.main}>
       {app.target.notes.map(note => {
