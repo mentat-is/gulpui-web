@@ -77,4 +77,10 @@
 .filter svg {
   min-width: 20px;
 }
-
+.menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 33vw;
+  height: 100vh;
+}
