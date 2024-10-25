@@ -7,7 +7,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizabl
 
 interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
-  description: React.ReactNode;
+  description?: React.ReactNode;
   loading?: boolean;
   icon?: string | React.ReactElement;
   callback?: () => void;

@@ -181,19 +181,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
   const spawnNoteBanner = () => {
     spawnBanner(<CreateNoteBanner
-      context={Plugin.find(app, File.find(app, event._uuid)!._uuid)!.context}
+      context={Plugin.uuid(app, File.uuid(app, event._uuid)!._uuid)!.context}
       filename={event.file}
       events={event} />);
     destroyDialog();
   }
 
   const spawnLinkBanner = () => {
-    const file = File.find(app, event._uuid);
+    const file = File.uuid(app, event._uuid);
 
     if (!file) return;
 
     spawnBanner(<CreateLinkBanner
-      context={Plugin.find(app, file._uuid)!.context}
+      context={Plugin.uuid(app, file._uuid)!.context}
       file={file}
       events={event} />);
     destroyDialog();

@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
 import { ResponseBase } from '@/dto/ResponseBase.dto';
-import { Context, Filter, FilterOptions, FilterType, λFilter, Plugin } from '@/class/Info';
+import { Context, Filter, FilterOptions, FilterType, λFilter, Plugin, μ } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
 import React from 'react';
 import { Switch } from '@/ui/Switch';
@@ -20,8 +20,8 @@ import { Card } from '@/ui/Card';
 import { cn, generateUUID } from '@/ui/utils';
 import { toast } from 'sonner';
 
-const _baseFilter = () => ({
-  uuid: generateUUID(),
+const _baseFilter = (): λFilter => ({
+  uuid: generateUUID() as μ.Filter,
   key: '',
   type: FilterType.EQUAL,
   value: ''
@@ -43,7 +43,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   useEffect(() => {
     if (app.timeline.filtering_options[file.uuid]) return;
 
-    const context = Context.uuid(app, Plugin.find(app, file._uuid)!._uuid)!.name;
+    const context = Context.uuid(app, Plugin.uuid(app, file._uuid)!._uuid)!.name;
 
     api<ResponseBase<FilterOptions>>('/elastic_get_mapping_by_source', {
       data: {

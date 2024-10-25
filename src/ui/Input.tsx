@@ -22,20 +22,20 @@ const inputVariants = cva(s.button, {
 });
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
-  img?: λIcon
+  img?: λIcon | null
   revert?: boolean
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, revert, variant, type, size, img, ...props }, ref) => {
-    return img || type === 'file' ? (
+    return img || (type === 'file' && img !== null) ? (
       <div className={cn(
         inputVariants({ variant, size, className }),
         s.input,
         s.image,
         revert && s.revert
       )}>
-        <Icon variant='dimmed' name={img || 'Upload'} alt='' />
+        <Icon variant='dimmed' name={img ?? 'Upload'} alt='' />
         <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
       </div>
     ) : (
@@ -53,5 +53,5 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   }
 )
 Input.displayName = "Input"
- 
+
 export { Input }

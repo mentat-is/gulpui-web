@@ -40,6 +40,9 @@
   width: 100%;
   height: calc(100vh - 64px);
   cursor: crosshair;
+  display: flex;
+  flex-direction: row;
+  padding-top: 64px;
 }
 .content {
   display: flex;
@@ -77,4 +80,44 @@
 .filter svg {
   min-width: 20px;
 }
-
+.menu > div {
+  gap: 8px;
+}
+.menu > div > button {
+  width: 100% !important;
+  justify-content: flex-start;
+}
+.stats {
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  gap: 8px;
+}
+.stats > button {
+  flex: 1;
+}
+.separator {
+  flex: 1;
+  height: 100%;
+}
+.upload_sigma_input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.remove_sigma svg {
+  min-width: 14px;
+  transform: translateY(1px);
+}
+.remove_sigma {
+  max-width: 256px;
+}
+.remove_sigma span {
+  max-width: 256px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

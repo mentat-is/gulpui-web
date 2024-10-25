@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
 import { TargetMenu } from './Target.menu';
+import { Input } from '@/ui/Input';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
@@ -126,7 +127,7 @@ export function Timeline() {
   }, [timeline, debouncedHandleWheel]);
 
   const handleContextMenu = useCallback((event: MouseEvent) => {
-    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 24) / 48)
+    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 88) / 48)
     setTarget(File.selected(app)[index]);
   }, [app, scrollY, timeline]);
 
@@ -142,6 +143,27 @@ export function Timeline() {
       spawnDialog(<DisplayEventDialog event={events[index] ?? app.timeline.target} />)
     }
   }, [app.timeline.target, spawnDialog]);
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleInputChange = () => {
+    if (!target) return
+
+    const file = inputRef.current?.files?.[0];
+    if (!file) return toast('No sigma rule selected', {
+      description: 'Please select a file with a sigma rule in YML format'
+    });
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target?.result;
+
+      await Info.sigma.set(target!, { name: file.name, content: content as string });
+
+      inputRef.current!.value = '';
+    };
+    reader.readAsText(file);
+  }
 
   return (
     <div
@@ -162,8 +184,9 @@ export function Timeline() {
           <ContextMenuTrigger>
             <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
+            <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
           </ContextMenuTrigger>
-          <TargetMenu file={target} />
+          <TargetMenu file={target} inputRef={inputRef} />
         </ContextMenu>
       </div>
     </div>

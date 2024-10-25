@@ -8,8 +8,7 @@ import { λFile } from "./File.dto";
 import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID } from "@/ui/utils";
-import { UUID } from "crypto";
-import { FilterOptions, λFilter } from "@/class/Info";
+import { FilterOptions, λFilter, μ } from "@/class/Info";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -28,10 +27,14 @@ export interface λApp {
     contexts: λContext[],
     plugins: λPlugin[],
     files: λFile[],
-    events: Map<UUID, λEvent[]>
-    filters: Record<UUID, λFilter[]>;
+    events: Map<μ.File, λEvent[]>
+    filters: Record<μ.File, λFilter[]>;
     notes: λNote[],
     links: λLink[],
+    sigma: Record<μ.File, {
+      name: string;
+      content: string;
+    }>;
   }
   general: {
     server: string;
@@ -46,13 +49,13 @@ export interface λApp {
   timeline: {
     scale: number;
     target: λEvent | null;
-    loaded: UUID[];
+    loaded: μ.File[];
     filter: string;
     cache: {
-      data: Map<UUID, λEvent[]>;
-      filters: Record<UUID, λFilter[]>;
+      data: Map<μ.File, λEvent[]>;
+      filters: Record<μ.File, λFilter[]>;
     },
-    filtering_options: Record<λFile['uuid'], FilterOptions>
+    filtering_options: Record<μ.File, FilterOptions>;
   }
 }
 export const BaseInfo: λApp = {
@@ -74,10 +77,10 @@ export const BaseInfo: λApp = {
     loaded: [],
     filter: '',
     cache: {
-      data: new Map<λFile['uuid'], λEvent[]>(),
+      data: new Map<μ.File, λEvent[]>(),
       filters: {}
     },
-    filtering_options: {}
+    filtering_options: {},
   },
   target: {
     indexes: [],
@@ -85,7 +88,7 @@ export const BaseInfo: λApp = {
     contexts: [],
     plugins: [],
     files: [],
-    events: new Map<λFile['uuid'], λEvent[]>(),
+    events: new Map<μ.File, λEvent[]>(),
     filters: {},
     bucket: {
       total: 0,
@@ -105,5 +108,6 @@ export const BaseInfo: λApp = {
     },
     notes: [],
     links: [],
+    sigma: {}
   }
 }

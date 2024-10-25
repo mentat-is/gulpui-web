@@ -15,9 +15,9 @@ import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
 import { generateUUID, Gradients } from '@/ui/utils';
 import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
-import { UUID } from 'crypto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
+import { UUID } from 'crypto';
 
 interface InfoProps {
   app: λApp,
@@ -62,7 +62,7 @@ export class Info implements InfoProps {
 
     const files: λFile[] = (uuids.length
       ? uuids.reduce<λFile[]>((files, uuid) => {
-        const file = File.find(this.app, uuid);
+        const file = File.uuid(this.app, uuid);
 
         if (file) files.push(file);
         else {
@@ -109,12 +109,12 @@ export class Info implements InfoProps {
     });
 
     if (!hidden) {
-      this.setLoaded(this.app.timeline.loaded.filter(l => !files.some(f => f?.uuid === l)));
+      this.deload(files.map(f => f.uuid));
     }
   }
 
-  filters_cache = (file: λFile | λFile['uuid']) => {
-    const uuid = Parser.useUUID(file);
+  filters_cache = (file: λFile | μ.File) => {
+    const uuid = Parser.useUUID(file) as μ.File;
     this.setInfoByKey({
       data: this.app.timeline.cache.data.set(uuid, this.app.target.events.get(uuid) || []),
       filters: { ...this.app.timeline.cache.filters, [uuid]: this.app.target.filters[uuid] }
@@ -123,8 +123,8 @@ export class Info implements InfoProps {
     this.render();
   }
 
-  filters_undo = (file: λFile | λFile['uuid']) => {
-    const uuid = Parser.useUUID(file);
+  filters_undo = (file: λFile | μ.File) => {
+    const uuid = Parser.useUUID(file) as μ.File;
 
     this.setInfoByKey({
       ...this.app.target.filters,
@@ -139,8 +139,8 @@ export class Info implements InfoProps {
     this.render();
   }
 
-  filters_delete_cache = (file: λFile | λFile['uuid']) => {
-    const uuid = Parser.useUUID(file);
+  filters_delete_cache = (file: λFile | μ.File) => {
+    const uuid = Parser.useUUID(file) as μ.File;
 
     this.app.timeline.cache.data.delete(uuid);
 
@@ -154,7 +154,7 @@ export class Info implements InfoProps {
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
-  setLoaded = (files: UUID[]) => {
+  setLoaded = (files: μ.File[]) => {
     this.setInfoByKey(files, 'timeline', 'loaded');
 
     if (this.app.timeline.loaded.length === this.app.target.files.length) {
@@ -162,6 +162,8 @@ export class Info implements InfoProps {
       this.links_reload();
     }
   };
+
+  deload = (uuids: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !uuids.includes(_uuid))]);
 
   render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
 
@@ -212,7 +214,7 @@ export class Info implements InfoProps {
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (uuid: UUID) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
+  events_reset_in_file = (uuid: μ.File) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
@@ -341,21 +343,21 @@ export class Info implements InfoProps {
         workflow_id: exist.workflow_id,
         selected: exist.selected,
         contexts: rawContexts.map(rawContext => {
-          const c_uuid = generateUUID();
+          const c_uuid = generateUUID() as λContext['uuid'];
           const context: λContext = {
             operation: { name, id },
             name: rawContext.name,
             doc_count: rawContext.doc_count,
             uuid: c_uuid,
             plugins: rawContext.plugins.map(rawPlugin => {
-              const p_uuid = generateUUID();
+              const p_uuid = generateUUID() as λPlugin['uuid'];
               const plugin: λPlugin = {
                 name: rawPlugin.name,
                 context: rawContext.name,
                 uuid: p_uuid,
                 _uuid: c_uuid,
                 files: rawPlugin.src_file.map(rawFile => {
-                  const f_uuid = generateUUID();
+                  const f_uuid = generateUUID() as λFile['uuid'];
                   const file: λFile = {
                     name: rawFile.name,
                     doc_count: rawFile.doc_count,
@@ -536,9 +538,9 @@ export class Info implements InfoProps {
 
   filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
 
-  filters_change = (file: λFile | λFile['uuid'], filter: λFilter | λFilter['uuid'], obj: Partial<λFilter>) => {
-    const file_uuid = Parser.useUUID(file);
-    const filter_uuid = Parser.useUUID(filter);
+  filters_change = (file: λFile | μ.File, filter: λFilter | λFilter['uuid'], obj: Partial<λFilter>) => {
+    const file_uuid = Parser.useUUID(file) as μ.File;
+    const filter_uuid = Parser.useUUID(filter) as μ.Filter;
 
     const file_filters = this.app.target.filters[file_uuid];
 
@@ -595,6 +597,52 @@ export class Info implements InfoProps {
 
     this.setInfoByKey(files, 'target', 'files');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
+  }
+
+  sigma = {
+    set: async (file: λFile | λFile['uuid'], sigma: { name: string, content: string }) => {
+      // eslint-disable-next-line
+      const uuid = Parser.useUUID(file) as μ.File;
+
+      this.setInfoByKey({
+        ...this.app.target.sigma,
+        [uuid]: {
+          name: sigma.name,
+          content: sigma.content
+        }
+      }, 'target', 'sigma');
+
+      this.events_reset_in_file(uuid);
+
+      await this.api('/query_sigma', {
+        method: 'POST',
+        data: {
+          ws_id: this.app.general.ws_id,
+          req_id: uuid
+        },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8'
+        },
+        body: JSON.stringify({
+          sigma: sigma.content,
+          options: {
+            '@timestamp': 'desc'
+          }
+        })
+      });
+
+      this.deload(uuid);
+    },
+  
+    remove: (file: λFile | λFile['uuid']) => {
+      // eslint-disable-next-line
+      const uuid = Parser.useUUID(file) as λFile['uuid'];
+
+      // eslint-disable-next-line
+      delete this.app.target.sigma[uuid];
+      this.setInfoByKey(this.app.target.sigma, 'target', 'sigma');
+      this.deload(uuid);
+    }
   }
 
   files_repin = (uuid: λFile['uuid']) => {
@@ -693,13 +741,11 @@ export class Plugin {
   // Ищем выбранные контексты где выбранная операция совпадает по имени
   public static selected = (use: λApp | λPlugin[]): λPlugin[] => Parser.use(use, 'plugins').filter(p => p.selected && ('target' in use ? Context.selected(use).some(c => c.name === p.context) : true));
 
-  public static find = (use: λApp | λPlugin[], plugin: λPlugin | λPlugin['uuid']): λPlugin | undefined => Parser.use(use, 'plugins').find(c => c.uuid === Parser.useUUID(plugin));
-
   public static select = (use: λApp | λPlugin[], selected: Arrayed<λPlugin | λPlugin['uuid']>): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(selected).find(s => p.name === Parser.useUUID(s)) ? Plugin._select(p) : p);
 
   public static unselect = (use: λApp | λPlugin[], unselected: Arrayed<λPlugin | λPlugin['uuid']>): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(unselected).find(s => p.name === Parser.useUUID(s)) ? Plugin._unselect(p) : p);
 
-  public static uuid = (use: λApp | λPlugin[], uuid: UUID) => Parser.use(use, 'plugins').find(p => p.uuid === uuid)!;
+  public static uuid = (use: λApp | λPlugin[], uuid: μ.Plugin) => Parser.use(use, 'plugins').find(p => p.uuid === uuid)!;
 
   public static context = (use: λApp, plugin: λPlugin) => Context.uuid(use, plugin._uuid);
 
@@ -718,9 +764,7 @@ export class File {
   public static reload = (files: Arrayed<λFile>, app: λApp): λFile[] => File.select(Parser.array(files), File.selected(app));
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid))).filter(f => f.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Plugin.find(app, f._uuid)?.context.toLowerCase().includes(app.timeline.filter.toLowerCase()));
-
-  public static find = (use: λApp | λFile[], file: λFile | UUID): λFile | undefined => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file));
+  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid))).filter(f => f.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Plugin.uuid(app, f._uuid)?.context.toLowerCase().includes(app.timeline.filter.toLowerCase()));
   
   public static select = (use: λApp | λFile[], selected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s)) ? File._select(f) : f);
 
@@ -732,19 +776,19 @@ export class File {
 
   public static findByNameAndContextName = (app: λApp, filename: λFile['name'], context: λContext['name']) => app.target.files.find(f => f.name === filename && Context.plugins(app, context).some(p => p.uuid === f._uuid))!;
 
-  public static uuid = (use: λApp | λFile[], file: λFile | UUID) => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))!;
+  public static uuid = (use: λApp | λFile[], file: λFile | μ.File) => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))!;
 
   public static unselect = (use: λApp | λFile[], unselected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(unselected).find(s => f.uuid === Parser.useUUID(s)) ? File._unselect(f) : f);
 
   public static check = (use: λApp | λFile[], selected: Arrayed<λFile | string>, check: boolean): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s) && check) ? File._select(f) : File._unselect(f));
 
-  public static events = (app: λApp, file: λFile | UUID): λEvent[] => Event.get(app, Parser.useUUID(file));
+  public static events = (app: λApp, file: λFile | μ.File): λEvent[] => Event.get(app, Parser.useUUID(file) as μ.File);
   
   public static notes = (app: λApp, files: Arrayed<λFile>): λNote[] => Parser.array(files).map(f => Note.findByFile(app, f)).flat();
 
-  public static index = (app: λApp, file: λFile | UUID) => File.selected(app).findIndex(f => f.uuid === Parser.useUUID(file));
+  public static index = (app: λApp, file: λFile | μ.File) => File.selected(app).findIndex(f => f.uuid === Parser.useUUID(file));
 
-  public static getHeight = (app: λApp, file: λFile | UUID, scrollY: number) => 48 * this.index(app, file) - scrollY + 24;
+  public static getHeight = (app: λApp, file: λFile | μ.File, scrollY: number) => 48 * this.index(app, file) - scrollY + 24;
 
   private static _select = (p: λFile): λFile => ({ ...p, selected: true });
 
@@ -763,7 +807,7 @@ export enum FilterType {
 export type FilterOptions = Record<string, Acceptable>;
 
 export type λFilter = {
-  uuid: UUID;
+  uuid: μ.Filter;
   key: string;
   type: FilterType;
   value: any;
@@ -851,13 +895,13 @@ export class Mapping {
 }
 
 export class Event {
-  public static delete = (app: λApp, uuid: UUID) => {
+  public static delete = (app: λApp, uuid: μ.File) => {
     app.target.events.delete(uuid);
     app.target.events.set(uuid, []);
     return app.target.events;
   }
 
-  public static get = (app: λApp, uuid: UUID): λEvent[] => app.target.events.get(uuid) || app.target.events.set(uuid, []).get(uuid)!;
+  public static get = (app: λApp, uuid: μ.File): λEvent[] => app.target.events.get(uuid) || app.target.events.set(uuid, []).get(uuid)!;
 
   public static selected = (app: λApp): λEvent[] => File.selected(app).map(f => Event.get(app, f.uuid)).flat();
 
@@ -893,7 +937,7 @@ export class Event {
     return result
   }, []);
 
-  public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: UUID) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
+  public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: μ.File) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
 
   public static findById = (app: λApp, eventId: string | string[]) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e._id));
 
@@ -961,7 +1005,7 @@ export class Link {
     }
   });
 
-  public static findByFile = (use: λApp | λLink[], file: λFile | UUID): λLink[] => Parser.use(use, 'links').filter(l => l._uuid === Parser.useUUID(file));
+  public static findByFile = (use: λApp | λLink[], file: λFile | μ.File): λLink[] => Parser.use(use, 'links').filter(l => l._uuid === Parser.useUUID(file));
   
   // public static findByEvent = (use: Information | λLink[], event: λEvent | string): λLink[] => Parser.use(use, 'links').filter(l => l.events.some(e => e._id === Parser.useId(event)));
 
@@ -979,11 +1023,40 @@ export class Parser {
 
   public static useId = (unknown: λEvent | string): string => typeof unknown === 'string' ? unknown : unknown._id;
 
-  public static useUUID = (unknown: λContext | λPlugin | λFile | λFilter | string): UUID => typeof unknown === 'string' ? unknown as UUID : unknown.uuid;
-
-  public static useBoth = (unknown: λContext | λPlugin | λFile | string): UUID => typeof unknown === 'string' ? unknown as UUID : (unknown.uuid || unknown.name);
+  public static useUUID = <T extends λContext | λPlugin | λFile | λFilter>(unknown: T | string): T['uuid'] => {
+    if (typeof unknown === 'string') {
+      return unknown as T['uuid'];
+    } else {
+      return (unknown as T).uuid;
+    }
+  };
+  
 
   public static array = <K extends unknown>(unknown: Arrayed<K>): K[] => Array.isArray(unknown) ? unknown : [unknown];
 }
 
 export type Arrayed<K> = K | K[];
+
+export type UUIDED<K extends λContext | λPlugin | λFile | λFilter> = K | K['uuid'];
+
+export namespace μ {
+  const File = Symbol('File');
+  export type File = UUID & {
+    readonly [File]: unique symbol;
+  };
+
+  const Filter = Symbol('Filter');
+  export type Filter = UUID & {
+    readonly [Filter]: unique symbol;
+  };
+  
+  const Plugin = Symbol('Plugin');
+  export type Plugin = UUID & {
+    readonly [Plugin]: unique symbol;
+  };
+
+  const Context = Symbol('Context');
+  export type Context = UUID & {
+    readonly [Context]: unique symbol;
+  };
+}

@@ -1,13 +1,13 @@
-import { UUID } from 'crypto';
-import { λPlugin, RawPlugin } from './Plugin.dto';
+import { RawPlugin } from './Plugin.dto';
+import { μ } from '@/class/Info';
 
 export interface λContext {
   operation: NameId;
-  plugins: UUID[],
+  plugins: μ.Plugin[],
   name: string,
   doc_count: number,
   selected?: boolean
-  uuid: UUID
+  uuid: μ.Context
 }
 
 export interface RawContext {

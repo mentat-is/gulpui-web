@@ -178,11 +178,6 @@ table {
 	border-collapse: collapse;
 	border-spacing: 0;
 }
-main {
-  display: flex;
-  flex-direction: row;
-  padding-top: 64px;
-}
 .no-scroll {
   overflow: hidden;
 }

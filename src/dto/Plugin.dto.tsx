@@ -1,15 +1,15 @@
-import { UUID } from 'crypto';
 import { RawFile } from './File.dto';
 import { ResponseBase } from './ResponseBase.dto';
 import { λMapping } from './MappingFileList.dto';
+import { μ } from '@/class/Info';
 
 export interface λPlugin {
   name: string,
   context: string
   files: string[],
   selected?: boolean;
-  _uuid: UUID
-  uuid: UUID
+  _uuid: μ.Context,
+  uuid: μ.Plugin
 }
 
 export interface RawPlugin {
