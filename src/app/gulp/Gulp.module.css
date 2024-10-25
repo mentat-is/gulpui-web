@@ -40,6 +40,9 @@
   width: 100%;
   height: calc(100vh - 64px);
   cursor: crosshair;
+  display: flex;
+  flex-direction: row;
+  padding-top: 64px;
 }
 .content {
   display: flex;
