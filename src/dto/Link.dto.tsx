@@ -1,5 +1,6 @@
 import { UUID } from "crypto";
 import { λEvent, λRawEventMinimized } from "./ChunkEvent.dto";
+import { μ } from "@/class/Info";
 
 export type λLink = {
   id: number;
@@ -27,7 +28,7 @@ export type λLink = {
   time_start: number
   time_updated: number
   type: number
-  _uuid: UUID
+  _uuid: μ.File
 }
 
 export type RawLink = Omit<λLink, 'events'> & {

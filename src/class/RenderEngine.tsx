@@ -346,7 +346,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public target = () => {
     if (!this.app.timeline.target) return;
 
-    const file = File.find(this.app, this.app.timeline.target._uuid);
+    const file = File.uuid(this.app, this.app.timeline.target._uuid);
 
     if (!file) return;
 

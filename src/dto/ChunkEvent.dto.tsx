@@ -1,3 +1,4 @@
+import { μ } from "@/class/Info"
 import { UUID } from "crypto"
 
 export interface λEvent {
@@ -11,7 +12,7 @@ export interface λEvent {
   file: string
   context: string
   pos?: number
-  _uuid: UUID
+  _uuid: μ.File
 }
 
 export interface DetailedChunkEvent extends λEvent {

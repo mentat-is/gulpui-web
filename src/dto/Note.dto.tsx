@@ -1,8 +1,9 @@
 import { UUID } from "crypto"
 import { λEvent, λRawEventMinimized } from "./ChunkEvent.dto"
+import { μ } from "@/class/Info"
 
 export interface λNote {
-  _uuid: UUID,
+  _uuid: μ.File,
   id: number,
   level: number,
   owner_user_id: number,

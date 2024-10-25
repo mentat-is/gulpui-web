@@ -1,9 +1,8 @@
-import { Info } from '@/class/Info';
+import { Info, μ } from '@/class/Info';
 import { λApp } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
 import { Chunk, isChunkDefault, UnknownChunk, λChunk } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
-import { UUID } from 'crypto';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -34,6 +33,8 @@ export class AppSocket extends WebSocket {
       const { data: _chunk } = JSON.parse(data) as AppSocketResponseData;
       this.info.setDownstream(new Blob([data]).size)
 
+      console.log(_chunk);
+
       if (isChunkDefault(_chunk)) {
         const events: Chunk['events'] = _chunk.events.map((event: RawChunkEvent): λEvent => ({
           _id: event._id,
@@ -51,7 +52,7 @@ export class AppSocket extends WebSocket {
         this.info.bucket_increase_fetched(events.length);
         this.info.events_add(events);
       } else if ((_chunk as UnknownChunk).type === λChunk.QUERY_RESULT && _chunk.matches_total > 0) {
-        this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as UUID]);
+        this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as μ.File]);
       } else if ('collabs' in _chunk) {
         this.info.notes_reload();
         this.info.links_reload();

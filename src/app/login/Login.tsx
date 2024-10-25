@@ -84,13 +84,13 @@ export function LoginPage() {
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
         cookie.set('last_used_server', app.general.server);
-      } else if (parseInt(res.status) < 500) {
+      } else {
         toast('Error during authorization', {
           description: 'Wrong username or password'
         });
+        setLoading(false);
       }
 
-      setLoading(false);
     });
   }
 

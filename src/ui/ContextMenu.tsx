@@ -1,6 +1,5 @@
 import React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
-import { Check, ChevronRight, Circle } from "lucide-react"
 import { cn } from "./utils"
 import s from './styles/ContextMenu.module.css';
 import { λIcon } from './utils';
@@ -21,8 +20,9 @@ const contextMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubTrigger> & {
     inset?: boolean
+    img?: λIcon
   }
->(({ className, inset, children, ...props }, ref) => (
+>(({ className, inset, img, children, ...props }, ref) => (
   <ContextMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
@@ -32,8 +32,9 @@ const contextMenuSubTrigger = React.forwardRef<
     )}
     {...props}
   >
+    {img && <Icon name={img} className={s.icon} />}
     {children}
-    <ChevronRight className={s.subTriggerIcon} />
+    <Icon name='ChevronRight' variant='white' size={14} className={s.subTriggerIcon} />
   </ContextMenuPrimitive.SubTrigger>
 ))
 contextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName
@@ -104,7 +105,7 @@ const contextMenuCheckboxItem = React.forwardRef<
   >
     <span className={s.checkboxItemIndicator}>
       <ContextMenuPrimitive.ItemIndicator>
-        <Check className={s.checkboxItemIcon} />
+        <Icon name='Check' className={s.checkboxItemIcon} />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -127,7 +128,7 @@ const contextMenuRadioItem = React.forwardRef<
   >
     <span className={s.radioItemIndicator}>
       <ContextMenuPrimitive.ItemIndicator>
-        <Circle className={s.radioItemIcon} />
+        <Icon name='Circle' className={s.radioItemIcon} />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}
