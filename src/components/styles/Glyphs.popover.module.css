@@ -1,0 +1,8 @@
+.map {
+  display: flex;
+  width: 422px;
+  gap: 8px;
+  max-height: calc(128px* 3);
+  flex-wrap: wrap;
+  overflow: auto;
+}

@@ -15,6 +15,8 @@ import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
+import { Popover } from '@/ui/Popover';
+import { GlyphsPopover } from '@/components/Glyphs.popover';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog } = useApplication();
@@ -97,6 +99,7 @@ export function MenuDialog() {
       <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
+      <GlyphsPopover />
       <div className={s.separator} />
       <div className={s.stats}>
         <Unit type='downstream' num={app.transfered?.down || 0} />
