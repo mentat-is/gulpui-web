@@ -9,22 +9,8 @@ export function DataTransfered() {
 
   return (
     <div className={s.transfered}>
-      <Unit type='downstream' num={app.transfered?.down || 0} />
-      <Unit type='upstream' num={app.transfered?.up || 0} />
-      <Button variant='outline' img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload</Button>
+      
+      
     </div>
-  )
-}
-
-interface UnitProps {
-  type: 'upstream' | 'downstream',
-  num: number
-}
-
-function Unit({ type, num }: UnitProps) {
-  return (
-    <Button variant='outline' img={type === 'upstream' ? 'CloudUpload' : 'CloudDownload'} className={s.unit}>
-      {formatBytes(num)}
-    </Button>
   )
 }

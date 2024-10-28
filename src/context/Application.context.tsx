@@ -86,20 +86,17 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       return null;
     });
 
-    if (!res) {
-      
-      return new λ();
-    }
+    if (!res) return new λ();
     
     const lambda = new λ(await res.json() as T)
     if (!res.ok && lambda.isError()) {
       if ((lambda.data.exception.name === 'SessionExpired' || lambda.data.exception.msg.startsWith('session token')) && app.general.token) {
         removeToken();
         setInfo(BaseInfo);
-        toast(lambda.data.exception.name, {
-          description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
-        })
       }
+      toast(lambda.data.exception.name, {
+        description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
+      })
     }
     const responseSize = parseInt(res.headers.get('content-length') || '0', 10);
     instance.setDownstream(responseSize);
