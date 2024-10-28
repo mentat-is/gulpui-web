@@ -99,7 +99,6 @@ export function MenuDialog() {
       <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
-      <GlyphsPopover />
       <div className={s.separator} />
       <div className={s.stats}>
         <Unit type='downstream' num={app.transfered?.down || 0} />

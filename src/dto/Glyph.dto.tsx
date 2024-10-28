@@ -47,4 +47,11 @@ export const GlyphMap: Array<λIcon | Glyph> = [
   'Sigma',
   'SquareSigma',
   'Radio',
+  'Package',
+  'Settings',
+  'Gift',
+  'Link',
+  'Wrench',
+  'Chrome',
+  'Zap'
 ]

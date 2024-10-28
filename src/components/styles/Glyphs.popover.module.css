@@ -6,3 +6,6 @@
   flex-wrap: wrap;
   overflow: auto;
 }
+.upload {
+  width: calc(36px * 3 + 8px * 2);
+}
