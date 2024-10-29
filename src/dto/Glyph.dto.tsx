@@ -53,3 +53,5 @@ export const GlyphMap: Array<λIcon> = [
   'Chrome',
   'Zap'
 ]
+
+export const CustomGlyphs: Record<number, string> = {}

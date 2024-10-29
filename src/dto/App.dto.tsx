@@ -9,6 +9,7 @@ import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID } from "@/ui/utils";
 import { FilterOptions, λFilter, μ } from "@/class/Info";
+import { λGlyph } from "./λGlyph.dto";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -31,6 +32,7 @@ export interface λApp {
     filters: Record<μ.File, λFilter[]>;
     notes: λNote[],
     links: λLink[],
+    glyphs: λGlyph[],
     sigma: Record<μ.File, {
       name: string;
       content: string;
@@ -108,6 +110,7 @@ export const BaseInfo: λApp = {
     },
     notes: [],
     links: [],
-    sigma: {}
+    sigma: {},
+    glyphs: []
   }
 }

@@ -18,6 +18,8 @@ import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
+import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
+import { λGlyph } from '@/dto/λGlyph.dto';
 
 interface InfoProps {
   app: λApp,
@@ -78,6 +80,8 @@ export class Info implements InfoProps {
     await this.notes_reload();
 
     await this.links_reload();
+
+    await this.glyphs_reload();
 
     await this.fetchBucket();
     
@@ -302,7 +306,7 @@ export class Info implements InfoProps {
     }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
       description: (res as unknown as ResponseError).data.exception.name
     }));
-}
+  }
 
   links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
 
@@ -320,6 +324,48 @@ export class Info implements InfoProps {
         description: (res as unknown as ResponseError).data.exception.name
       });
   });
+
+  glyphs_reload = () => {
+    const parse = (glyphs: λGlyph[]) => {
+      // Все иконки внутри приложения
+      const values = Object.values(GlyphMap);
+
+      values.forEach(async (value, id) => {
+        // Проверяем, есть ли такая иконка на бекенде
+        const exist = glyphs.find(g => g.id as unknown as number === id);
+
+        if (exist) return;
+
+        const formData = new FormData();
+        formData.append('glyph', new Blob([""], { type: 'image/png' }));
+
+        // Если нет, то создаём
+        await this.api<ResponseBase<unknown>>('/glyph_create', {
+          method: 'POST',
+          data: {
+            name: value,
+          },
+          body: formData
+        });
+      });
+
+      if (glyphs.length > values.length) {
+        glyphs.forEach(glyph => {
+          if (!values.map(v => v.toString()).includes(glyph.name)) {
+            CustomGlyphs[glyph.id as unknown as number] = glyph.img;
+          }
+        });
+      }
+
+      this.setInfoByKey(glyphs, 'target', 'glyphs');
+    }
+
+    this.api<ResponseBase<λGlyph[]>>('/glyph_list', {
+      method: 'POST',
+    }).then(res => res.isSuccess() ? parse(res.data) : toast('Error fetching glyphs', {
+      description: (res as unknown as ResponseError).data.exception.name
+    }));
+  }
 
   bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
 
@@ -1066,5 +1112,10 @@ export namespace μ {
   const Context = Symbol('Context');
   export type Context = UUID & {
     readonly [Context]: unique symbol;
+  };
+  
+  const Glyph = Symbol('Glyph');
+  export type Glyph = UUID & {
+    readonly [Glyph]: unique symbol;
   };
 }
