@@ -10,6 +10,7 @@ import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
 import { λIcon } from '@/ui/utils';
+import { GlyphMap } from '@/dto/Glyph.dto';
 
 interface NoteProps {
   note: λNote;
@@ -19,12 +20,6 @@ interface NoteProps {
 
 export function Note({ note, left, top }: NoteProps) {
   const { spawnDialog } = useApplication();
-
-  const iconMap: Array<λIcon> = [
-    'Bookmark',
-    'TriangleAlert',
-    'SquareX'
-  ];
 
   const openEvent = () => {
     const dialog = note.events.length === 1
@@ -37,8 +32,9 @@ export function Note({ note, left, top }: NoteProps) {
   return (
     <>
       <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
-        <Icon name={iconMap[note.level]} />
+        <Icon color={note.data.color} name={GlyphMap[note.glyph_id || -1] || 'Quote'} />
         <hr style={{ background: note.data.color }} />
+        <div className={s.backplate} style={{ background: note.data.color + '32' }} />
       </Button>
       <p className={s.desc} style={{ left, top: top+26 }}>{note.name}</p>
     </>

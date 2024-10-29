@@ -2,19 +2,37 @@
   position: absolute;
   height: 32px;
   width: 32px;
-  transition: none;
   display: flex;
   align-items: center;
   justify-content: center;
   border: var(--geist-border);
   background: var(--geist-background);
-  backdrop-filter: brightness(0.6) blur(3px);
+  backdrop-filter: brightness(0.3) blur(3px);
   border-radius: 4px;
   transform: translate(-50%, -50%);
+  overflow: hidden;
+  z-index: 0;
+  box-shadow: none;
+  transition: box-shadow 0.125s var(--transition);
+}
+.target:hover {
+  box-shadow: var(--ring);
+}
+.target:hover svg {
+  stroke: revert-layer;
 }
 .target svg {
   position: relative;
   top: -2px;
+  filter: drop-shadow(0 0 1px hsla(0, 0%, 100%, .145));
+}
+.target .backplate {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  z-index: -1;
 }
 .target hr {
   position: absolute;

@@ -3,6 +3,7 @@
 }
 .color p {
   text-wrap: nowrap;
+  flex: 1;
 }
 .save {
   width: min-content;

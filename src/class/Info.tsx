@@ -13,7 +13,7 @@ import { λFile } from '@/dto/File.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
-import { generateUUID, Gradients } from '@/ui/utils';
+import { generateUUID, Gradients, λColor } from '@/ui/utils';
 import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
@@ -956,6 +956,10 @@ export class Note {
       ...n,
       file: n.src_file,
       events: Event.parse(app, n),
+      data: {
+        ...n.data,
+        color: λColor['name -> hex'](n.data.color)
+      },
       _uuid: File.findByNameAndContextName(app, n.src_file, n.context).uuid
     }
     return note;
@@ -1000,6 +1004,10 @@ export class Link {
     return {
       ...l,
       file: l.src_file,
+      data: {
+        ...l.data,
+        color: λColor['name -> hex'](l.data.color)
+      },
       events: Event.parse(app, l),
       _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
     }

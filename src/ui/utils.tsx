@@ -234,3 +234,90 @@ export const formatBytes = (bytes: number): string => {
     return `${(bytes / 1024).toFixed(2)} KB`;
   }
 };
+
+export class λColor {
+  public static ['name -> hex'] = (color: string): string => {
+    const colours = {
+      aliceblue: '#f0f8ff',
+      antiquewhite: '#faebd7',
+      aqua: '#00ffff',
+      aquamarine: '#7fffd4',
+      azure: '#f0ffff',
+      darkviolet: '#9400d3',
+      deeppink: '#ff1493',
+      deepskyblue: '#00bfff',
+      dimgray: '#696969',
+      dodgerblue: '#1e90ff',
+      firebrick: '#b22222',
+      floralwhite: '#fffaf0',
+      forestgreen: '#228b22',
+      fuchsia: '#ff00ff',
+      gainsboro: '#dcdcdc',
+      ghostwhite: '#f8f8ff',
+      gold: '#ffd700',
+      goldenrod: '#daa520',
+      gray: '#808080',
+      green: '#008000',
+      greenyellow: '#adff2f',
+      honeydew: '#f0fff0',
+      hotpink: '#ff69b4',
+      indianred: '#cd5c5c',
+      indigo: '#4b0082',
+      ivory: '#fffff0',
+      khaki: '#f0e68c',
+      lavender: '#e6e6fa',
+      lavenderblush: '#fff0f5',
+      lawngreen: '#7cfc00',
+      lemonchiffon: '#fffacd',
+      lightblue: '#add8e6',
+      lightcoral: '#f08080',
+      lightcyan: '#e0ffff',
+      lightgoldenrodyellow: '#fafad2',
+      lightgrey: '#d3d3d3',
+      lightgreen: '#90ee90',
+      lightpink: '#ffb6c1',
+      oldlace: '#fdf5e6',
+      olive: '#808000',
+      olivedrab: '#6b8e23',
+      orange: '#ffa500',
+      orangered: '#ff4500',
+      orchid: '#da70d6',
+      palegoldenrod: '#eee8aa',
+      palegreen: '#98fb98',
+      paleturquoise: '#afeeee',
+      palevioletred: '#d87093',
+      papayawhip: '#ffefd5',
+      peachpuff: '#ffdab9',
+      saddlebrown: '#8b4513',
+      salmon: '#fa8072',
+      sandybrown: '#f4a460',
+      seagreen: '#2e8b57',
+      seashell: '#fff5ee',
+      sienna: '#a0522d',
+      silver: '#c0c0c0',
+      skyblue: '#87ceeb',
+      slateblue: '#6a5acd',
+      slategray: '#708090',
+      snow: '#fffafa',
+      springgreen: '#00ff7f',
+      steelblue: '#4682b4',
+      tan: '#d2b48c',
+      teal: '#008080',
+      thistle: '#d8bfd8',
+      tomato: '#ff6347',
+      turquoise: '#40e0d0',
+      violet: '#ee82ee',
+      wheat: '#f5deb3',
+      white: '#ffffff',
+      whitesmoke: '#f5f5f5',
+      yellow: '#ffff00',
+      yellowgreen: '#9acd32'
+    };
+  
+    if (color in colours) {
+      return colours[color as keyof typeof colours];
+    }
+  
+    return color;
+  }
+}

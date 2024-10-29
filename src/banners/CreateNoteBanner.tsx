@@ -9,7 +9,7 @@ import {
   ColorPickerPopover,
 } from "@/ui/Color";
 import { useRef, useState } from "react";
-import s from './styles/CreateNoteBanner.module.css'
+import s from './styles/CreateNoteBanner.module.css';
 import { Input } from "@/ui/Input";
 import { Badge } from "@/ui/Badge";
 import { format } from "date-fns";
@@ -54,7 +54,8 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
         ws_id: app.general.ws_id,
         color,
         level,
-        private: _private
+        private: _private,
+        glyph_id: icon
       },
       headers: {
         'Content-Type': 'application/json; charset=utf-8'

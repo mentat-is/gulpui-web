@@ -9,3 +9,7 @@
 .upload {
   width: calc(36px * 3 + 8px * 2);
 }
+.trigger {
+  display: flex;
+  gap: 8px;
+}

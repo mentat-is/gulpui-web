@@ -10,6 +10,7 @@ import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
 import { λLink } from '@/dto/Link.dto';
+import { GlyphMap } from '@/dto/Glyph.dto';
 
 interface LinkProps {
   link: λLink;
@@ -34,8 +35,9 @@ export function Link({ link, left, top }: LinkProps) {
   return (
     <>
       <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
-        <Icon name='Waypoints' />
+        <Icon name={GlyphMap[link.glyph_id || -1] || 'Link'} />
         <hr style={{ background: link.data.color }} />
+        <div className={s.backplate} style={{ background: link.data.color + '32' }} />
       </Button>
       <p className={s.desc} style={{ left, top: top+26 }}>{link.name}</p>
     </>

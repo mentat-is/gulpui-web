@@ -1,8 +1,6 @@
 import { λIcon } from "@/ui/utils";
 
-export type Glyph = 'Linux' | '';
-
-export const GlyphMap: Array<λIcon | Glyph> = [
+export const GlyphMap: Array<λIcon> = [
   'TriangleAlert',
   'CircleHelp',
   'CircleAlert',
