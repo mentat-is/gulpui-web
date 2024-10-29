@@ -332,7 +332,7 @@ export class Info implements InfoProps {
 
       values.forEach(async (value, id) => {
         // Проверяем, есть ли такая иконка на бекенде
-        const exist = glyphs.find(g => g.id as unknown as number === id);
+        const exist = glyphs.find(g => g.name === value || g.id === id);
 
         if (exist) return;
 
@@ -352,7 +352,7 @@ export class Info implements InfoProps {
       if (glyphs.length > values.length) {
         glyphs.forEach(glyph => {
           if (!values.map(v => v.toString()).includes(glyph.name)) {
-            CustomGlyphs[glyph.id as unknown as number] = glyph.img;
+            CustomGlyphs[glyph.id] = glyph.img;
           }
         });
       }
@@ -1112,10 +1112,5 @@ export namespace μ {
   const Context = Symbol('Context');
   export type Context = UUID & {
     readonly [Context]: unique symbol;
-  };
-  
-  const Glyph = Symbol('Glyph');
-  export type Glyph = UUID & {
-    readonly [Glyph]: unique symbol;
   };
 }

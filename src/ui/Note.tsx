@@ -11,6 +11,7 @@ import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
 import { λIcon } from '@/ui/utils';
 import { GlyphMap } from '@/dto/Glyph.dto';
+import { Glyph } from './Glyph';
 
 interface NoteProps {
   note: λNote;
@@ -32,7 +33,7 @@ export function Note({ note, left, top }: NoteProps) {
   return (
     <>
       <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
-        <Icon color={note.data.color} name={GlyphMap[note.glyph_id || -1] || 'Bookmark'} />
+        <Glyph glyph={note.glyph_id} color={note.data.color} />
         <hr style={{ background: note.data.color }} />
         <div className={s.backplate} style={{ background: note.data.color + '32' }} />
       </Button>

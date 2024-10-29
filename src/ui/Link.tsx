@@ -11,6 +11,7 @@ import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
 import { Icon } from './Icon';
 import { λLink } from '@/dto/Link.dto';
 import { GlyphMap } from '@/dto/Glyph.dto';
+import { Glyph } from './Glyph';
 
 interface LinkProps {
   link: λLink;
@@ -35,7 +36,7 @@ export function Link({ link, left, top }: LinkProps) {
   return (
     <>
       <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
-        <Icon name={GlyphMap[link.glyph_id || -1] || 'Link'} />
+        <Glyph glyph={link.glyph_id} color={link.data.color} />
         <hr style={{ background: link.data.color }} />
         <div className={s.backplate} style={{ background: link.data.color + '32' }} />
       </Button>
