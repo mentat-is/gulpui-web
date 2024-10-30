@@ -185,27 +185,6 @@ export const interpolateColor = (color1: string, color2: string, factor: number)
   return rgbToHex(result);
 };
 
-/**
- * Функция для выбора цвета из градиента на основе delta и deltaMax
- */
-export const useGradient = (target: Gradients, diff: number, delta: MinMax): string => {
-  const gradient = GradientsMap[target];
-  const numColors = gradient.length;
-
-  const percentage = (diff - delta.min) / (delta.max - delta.min);
-
-  if (Number.isNaN(percentage)) return `#${gradient[0]}`;
-  
-  // Находим индекс двух цветов в градиенте для интерполяции
-  const scaledIndex = percentage * (numColors - 1);
-  const lowerIndex = Math.floor(scaledIndex);
-  const upperIndex = Math.min(Math.ceil(scaledIndex), numColors - 1);
-  
-  // Интерполяция между двумя ближайшими цветами
-  const factor = scaledIndex - lowerIndex;
-  return interpolateColor(gradient[lowerIndex], gradient[upperIndex], factor);
-};
-
 export const arrayToLinearGradientCSS = (gradient: string[]): string => `linear-gradient(to right, ${gradient.map(g => '#' + g).join(', ')})`;
 
 export const getDateFormat = (diffInMilliseconds: number) => {
@@ -320,4 +299,27 @@ export class λColor {
   
     return color;
   }
+
+  /**
+   * Функция для выбора цвета из градиента на основе delta и deltaMax
+   */
+  public static gradient = (target: Gradients, diff: number, delta: MinMax): string => {
+    const gradient = GradientsMap[target];
+    const numColors = gradient.length;
+  
+    const percentage = (diff - delta.min) / (delta.max - delta.min);
+  
+    if (Number.isNaN(percentage)) return `#${gradient[0]}`;
+    
+    // Находим индекс двух цветов в градиенте для интерполяции
+    const scaledIndex = percentage * (numColors - 1);
+    const lowerIndex = Math.floor(scaledIndex);
+    const upperIndex = Math.min(Math.ceil(scaledIndex), numColors - 1);
+    
+    // Интерполяция между двумя ближайшими цветами
+    const factor = scaledIndex - lowerIndex;
+    return interpolateColor(gradient[lowerIndex], gradient[upperIndex], factor);
+  };
 }
+
+export const between = (num: number, min: number, max: number) => num >= min && num <= max;

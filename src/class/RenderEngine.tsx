@@ -2,7 +2,7 @@ import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File } from "./Info";
 import { λApp } from "@/dto";
-import { Color, stringToHexColor, throwableByTimestamp, useGradient } from "@/ui/utils";
+import { Color, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
@@ -105,7 +105,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       if (throwableByTimestamp(timestamp, this.limits, 0, this.app)) return;
 
 
-      this.ctx.fillStyle = useGradient(file.color, code, {
+      this.ctx.fillStyle = λColor.gradient(file.color, code, {
         min: file.event.min || 0,
         max: file.event.max || max,
       });
@@ -126,7 +126,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
-      this.ctx.fillStyle = useGradient(file.color, height, {
+      this.ctx.fillStyle = λColor.gradient(file.color, height, {
         min: 0,
         max,
       });
@@ -155,7 +155,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const x = this.getPixelPosition(timestamp);
 
-      const color = useGradient(file.color, height, { min: 0, max });
+      const color = λColor.gradient(file.color, height, { min: 0, max });
 
       this.ctx.font = `12px Arial`;
       this.ctx.fillStyle = color;
@@ -191,7 +191,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       if (throwableByTimestamp(timestamp, this.limits)) return;
 
       codes.forEach((code, i) => {
-        this.ctx.fillStyle = useGradient(file.color, code, {
+        this.ctx.fillStyle = λColor.gradient(file.color, code, {
           min: file.event.min || 0,
           max: file.event.max || 599,
         });
