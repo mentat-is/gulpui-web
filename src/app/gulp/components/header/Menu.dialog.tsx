@@ -15,8 +15,6 @@ import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
-import { Popover } from '@/ui/Popover';
-import { GlyphsPopover } from '@/components/Glyphs.popover';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog } = useApplication();
@@ -86,10 +84,10 @@ export function MenuDialog() {
 
 
   return (
-    <Dialog title='Menu' className={s.menu}>
+    <Dialog title='Menu' className={s.menu} defaultSize={30}>
       <div className={s.stats}>
         <Button img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
-        <Button img='Upload' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>
+        <Button img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>
       </div>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='Wrench' onClick={() => spawnBanner(<SelectFilesBanner />)}>Select Files</Button>
