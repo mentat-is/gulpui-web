@@ -8,6 +8,7 @@
   box-shadow: var(--shadow-border);
   transition-property: all 0.125s var(--transition);
   background: var(--meta-black);
+  align-items: center;
 }
 
 .switch:focus-visible {
@@ -28,8 +29,8 @@
 }
 
 .thumb {
-  height: 20px;
-  width: 20px;
+  height: 19.5px;
+  width: 19.5px;
   border-radius: var(--round);
   background-color: var(--white);
   border: var(--geist-border);
