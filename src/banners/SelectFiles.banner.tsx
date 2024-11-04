@@ -14,6 +14,7 @@ import { Input } from "@/ui/Input";
 import React from "react";
 import { Separator } from "@/ui/Separator";
 import { LimitsBanner } from "./Limits.banner";
+import { UploadBanner } from "./Upload.banner";
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -147,6 +148,8 @@ export function SelectFilesBanner() {
       ))}
       </div>
       <div className={s.group}>
+        <Button variant='ghost' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
+        <div className={s.splitter} />
         <Button variant='outline' onClick={selectAll}>Select all</Button>
         <Button loading={loading} onClick={save}>Save</Button>
       </div>

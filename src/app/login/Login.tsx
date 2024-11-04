@@ -208,7 +208,7 @@ export function LoginPage() {
   }
   
   return (
-    <Page options={{ center: true }} className={s.page}>
+    <Banner title='Login' className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
           <img className={s.logo} src='/gulp-no-text.svg' alt='' />
@@ -308,6 +308,6 @@ export function LoginPage() {
               )
         }
       </Card>
-    </Page>
+    </Banner>
   )
 }

@@ -5,13 +5,6 @@
   align-items: center;
   justify-content: flex-end;
 }
-.page {
-  gap: 32px;
-  padding: 32px;
-  flex-direction: row !important;
-  height: 100vh;
-  position: relative;  
-}
 .wrapper > div {
   display: flex;
   flex-direction: column;
