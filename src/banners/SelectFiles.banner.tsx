@@ -13,9 +13,10 @@ import { useState } from "react";
 import { Input } from "@/ui/Input";
 import React from "react";
 import { Separator } from "@/ui/Separator";
+import { LimitsBanner } from "./Limits.banner";
 
 export function SelectFilesBanner() {
-  const { app, destroyBanner, Info } = useApplication();
+  const { app, destroyBanner, Info, spawnBanner } = useApplication();
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -97,9 +98,13 @@ export function SelectFilesBanner() {
     setLoading(true);
     const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid || Event.get(app, file.uuid).length < file.doc_count);
 
-    if (unfetched.length) return Info.refetch(unfetched).then(destroyBanner);
+    if (unfetched.length && app.target.bucket.selected) {
+      return Info.refetch({
+        uuids: unfetched
+      }).then(destroyBanner);
+    }
 
-    destroyBanner();
+    spawnBanner(<LimitsBanner />);
   }
 
   return (

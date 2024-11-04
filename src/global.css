@@ -183,14 +183,14 @@ table {
 }
 header {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(1, 1fr);
   gap: var(--p4);
   height: 64px;
   position: fixed;
   top: 0;
   z-index: 3;
-  background: var(--accent-1);
+  background: var(--soft-black);
   width: 100%;
   padding: var(--p2) var(--p4);
   border-bottom: 1px solid var(--accent-3);

@@ -104,15 +104,17 @@ export const getColorByCode = (code: number, min: number, max: number): string =
   return ranges[ranges.length - 1].color;
 };
 
-export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number = 0, app?: λApp): boolean => {
+export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number, app: λApp): boolean => {
+  if (!app.target.bucket.selected) return true;
+
   const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {
     min: timestamp.min + offset,
     max: timestamp.max + offset
   };
 
   return typeof time === 'number' 
-    ? time < limits.min || time > limits.max || time < (app?.target.bucket.selected.min || 0) || time > (app?.target.bucket.selected.max || Infinity)
-    : time.max < limits.min || time.min > limits.max || time.max < (app?.target.bucket.selected.min || 0) || time.min > (app?.target.bucket.selected.max || Infinity);
+    ? time < limits.min || time > limits.max || time < (app.target.bucket.selected.min || 0) || time > (app.target.bucket.selected.max || Infinity)
+    : time.max < limits.min || time.min > limits.max || time.max < (app.target.bucket.selected.min || 0) || time.min > (app.target.bucket.selected.max || Infinity);
 }
 
 export function generateUUID(): UUID {
@@ -123,12 +125,16 @@ export function generateUUID(): UUID {
   }) as UUID;
 }
 export const getLimits = (app: λApp, Info: Info, timeline: RefObject<HTMLDivElement>, scrollX: number): MinMax => {
-  const min = app.target.bucket!.selected.min + 
-    (scrollX / Info.width) * (app.target.bucket!.selected.max - app.target.bucket!.selected.min);
+  if (!app.target.bucket.selected) {
+    return app.target.bucket.timestamp
+  }
 
-  const max = app.target.bucket!.selected.min + 
+  const min = app.target.bucket.selected.min + 
+    (scrollX / Info.width) * (app.target.bucket.selected.max - app.target.bucket.selected.min);
+
+  const max = app.target.bucket.selected.min + 
     ((scrollX + timeline.current!.clientWidth) / Info.width) * 
-    (app.target.bucket!.selected.max - app.target.bucket!.selected.min);
+    (app.target.bucket.selected.max - app.target.bucket.selected.min);
 
   return { min, max };
 };
@@ -200,7 +206,10 @@ export const getDateFormat = (diffInMilliseconds: number) => {
 }
 
 export const getTimestamp = (x: number, info: Info) => {
-  const { min, max } = info.getBucketLocals()
+  if (!info.app.target.bucket.selected) return 0;
+
+  const { min, max } = info.app.target.bucket.selected;
+
   const width = info.width;
 
   return min + (x / width) * (max - min);

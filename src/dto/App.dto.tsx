@@ -103,10 +103,7 @@ export const BaseInfo: λApp = {
         min: Date.now(),
         max: Date.now()
       },
-      selected: {
-        min: Date.now(),
-        max: Date.now()
-      }
+      selected: null,
     },
     notes: [],
     links: [],

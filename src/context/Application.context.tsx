@@ -53,6 +53,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       token?: string;
       isRaw?: boolean;
       isText?: boolean;
+      ignore?: boolean;
       data?: { [key: string]: any };
     } = {}
   ): Promise<λ<T>> => {
@@ -80,7 +81,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   
     const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
       console.error('[ API | ERROR ]: ', error);
-      toast(`Internal appliction error in ${(options.server || app.general.server)}`, {
+      !options.ignore && toast(`Internal appliction error in ${(options.server || app.general.server)}`, {
         description: JSON.stringify(error),
       });
       return null;
@@ -94,7 +95,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
         removeToken();
         setInfo(BaseInfo);
       }
-      toast(lambda.data.exception.name, {
+      !options.ignore && toast(lambda.data.exception.name, {
         description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
       })
     }

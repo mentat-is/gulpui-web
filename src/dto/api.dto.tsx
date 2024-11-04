@@ -8,6 +8,7 @@ export type Api = <T extends ResponseBase>(
     token?: string;
     isRaw?: boolean;
     isText?: boolean;
+    ignore?: boolean;
     data?: { [key: string]: any };
   }
 ) => Promise<λ<T>>;

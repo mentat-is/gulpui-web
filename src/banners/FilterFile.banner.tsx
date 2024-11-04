@@ -62,7 +62,10 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
     setLoading(true);
     Info.filters_cache(file);
-    Info.refetch(file.uuid, true).then(() => {
+    Info.refetch({
+      uuids: file.uuid,
+      hidden: true
+    }).then(() => {
       destroyBanner();
       Info.render();
     });

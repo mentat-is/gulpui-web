@@ -30,8 +30,11 @@
   border-bottom: 1px solid var(--accent-3);
   backdrop-filter: brightness(0.8);
   display: flex;
+  font-size: 8px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  padding: 4px;
+  border-left: 1px solid;
 }
 .wrapper div[data-even = 'true'] {
   background-color: var(--gray16);

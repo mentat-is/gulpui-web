@@ -7,11 +7,10 @@ import { Magnifier } from '@/ui/Magnifier';
 import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
 import { File } from '@/class/Info';
 import { StartEnd } from '@/dto/StartEnd.dto';
-import { Note } from '@/ui/Note';
-import { Link } from '@/ui/Link';
-import { Note as NoteClass, Link as LinkClass } from '@/class/Info';
 import { RenderEngine } from '@/class/RenderEngine';
 import { format } from 'date-fns';
+import { LinksDisplayer } from './Links.displayer';
+import { NotesDisplayer } from './Notes.displayer';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -24,6 +23,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
+  
   const { app, spawnDialog, Info, dialog } = useApplication();
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter];
   const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
@@ -45,7 +45,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
       if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
-      if (!throwableByTimestamp(file.timestamp, limits, file.offset)) {
+      if (!throwableByTimestamp(file.timestamp, limits, file.offset, app)) {
         render[file.engine](file, y - 24);
       };
 
@@ -62,8 +62,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     render.links();
 
     ctx.fillStyle = '#ff000080'
-    ctx.fillRect(getPixelPosition(app.target.bucket.selected.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
-    ctx.fillRect(getPixelPosition(app.target.bucket.selected.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
+    ctx.fillRect(getPixelPosition(app.target.bucket.selected?.min || app.target.bucket.timestamp?.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
+    ctx.fillRect(getPixelPosition(app.target.bucket.selected?.max || app.target.bucket.timestamp?.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
 
     if (timeline.current) {
       render.debug({
@@ -86,10 +86,10 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     const file = File.selected(app)[Math.floor(clickY / 48)];
     const limits = getLimits(app, Info, timeline, scrollX);
 
-    if (!file || throwableByTimestamp(file.timestamp, limits, file.offset)) return;
+    if (!file || throwableByTimestamp(file.timestamp, limits, file.offset, app)) return;
 
     File.events(app, file).forEach(event => {
-      if (throwableByTimestamp(event.timestamp + file.offset, limits)) return;
+      if (throwableByTimestamp(event.timestamp + file.offset, limits, 0, app)) return;
 
       const pos = getPixelPosition(event.timestamp + file.offset);      
 
@@ -133,52 +133,33 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     overlayCtx.fillRect(end - 1, 0, 3, overlay_ref.current.height);
   }
 
-  const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.target.bucket!.selected.min) / (app.target.bucket!.selected.max - app.target.bucket!.selected.min)) * Info.width) - scrollX;
+  const getPixelPosition = (timestamp: number) => {
+    if (!app.target.bucket.selected) return 0;
+    return Math.round(((timestamp - app.target.bucket.selected.min) / (app.target.bucket!.selected.max - app.target.bucket!.selected.min)) * Info.width) - scrollX;
+  }
 
   return (
-    <>
-      <div
-        ref={wrapper_ref}
-        className={cn(s.wrapper)}
-        onMouseMove={move}
-        onKeyDown={down}
-        tabIndex={0}
-        onKeyUp={up}>
-        {app.target.notes.map(note => {
-          if (!File.uuid(app, note._uuid)?.selected) return null;
-
-          const left = getPixelPosition(NoteClass.timestamp(note) + File.uuid(app, note._uuid)!.offset);
-          const top = File.getHeight(app, note._uuid, scrollY);
-
-          if (top < 0) return null;
-
-          return <Note key={note.id} note={note} left={left} top={top} />
-        })}
-        {app.target.links.map(link => {
-          const left = getPixelPosition(LinkClass.timestamp(link) + File.uuid(app, link._uuid)!.offset);
-          let top = 0;
-
-          if (link.events.some(e => !File.uuid(app, e._uuid)?.selected)) return null;
-
-          link.events.forEach(event => top += File.getHeight(app, event._uuid, scrollY));
-
-          if (top < 0) return null;
-
-          return <Link link={link} left={left} top={top / Math.max(link.events.length, 1)} />
-        })}
-        <canvas
-          ref={canvas_ref}
-          width={window.innerWidth}
-          height={timeline.current?.clientHeight}
-          />
-        <canvas
-          className={s.resize}
-          ref={overlay_ref} 
-          width={window.innerWidth}
-          height={timeline.current?.clientHeight} />
-        <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), getDateFormat(0))}</p>
-        <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isShiftPressed} />
-      </div>
-    </>
+    <div
+      ref={wrapper_ref}
+      className={cn(s.wrapper)}
+      onMouseMove={move}
+      onKeyDown={down}
+      tabIndex={0}
+      onKeyUp={up}>
+      <NotesDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
+      <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
+      <canvas
+        ref={canvas_ref}
+        width={window.innerWidth}
+        height={timeline.current?.clientHeight}
+        />
+      <canvas
+        className={s.resize}
+        ref={overlay_ref} 
+        width={window.innerWidth}
+        height={timeline.current?.clientHeight} />
+      <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), getDateFormat(0))}</p>
+      <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isShiftPressed} />
+    </div>
   );
 }

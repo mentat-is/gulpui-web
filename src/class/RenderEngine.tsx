@@ -124,7 +124,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       // eslint-disable-next-line
       const [_, { height, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
 
       this.ctx.fillStyle = λColor.gradient(file.color, height, {
         min: 0,
@@ -151,7 +151,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const y = _y + 47 - Math.floor((height / max) * 47);
 
-      if (throwableByTimestamp(timestamp, this.limits) && throwableByTimestamp(λtimestamp, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app) && throwableByTimestamp(λtimestamp, this.limits, file.offset, this.app)) return;
 
       const x = this.getPixelPosition(timestamp);
 
@@ -188,7 +188,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       // eslint-disable-next-line
       const [_, { codes, heights, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp, this.limits)) return;
+      if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
 
       codes.forEach((code, i) => {
         this.ctx.fillStyle = λColor.gradient(file.color, code, {

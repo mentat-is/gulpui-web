@@ -1,4 +1,5 @@
 .datelimit {
+  background: var(--accent-1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6,7 +7,7 @@
   border: 1px solid var(--accent-2);
   padding: 8px 12px;
   width: min-content;
-  justify-self: center;
+  justify-self: flex-end;
   cursor: pointer;
   color: var(--text-dimmed);
   height: 36px;

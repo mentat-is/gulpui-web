@@ -161,7 +161,6 @@ export function LoginPage() {
     if (stage < 3) return;
 
     Info.operations_request().then(operations => {
-      setLoading(false)
       const result = Info.operations_update(operations);
 
       spawnBanner(result.contexts.length && result.plugins.length && result.files.length

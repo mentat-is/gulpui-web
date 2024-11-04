@@ -20,6 +20,13 @@ import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
 import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/λGlyph.dto';
+import { differenceInMonths } from 'date-fns';
+
+interface RefetchOptions {
+  uuids?: Arrayed<λFile['uuid']>;
+  hidden?: boolean;
+  range?: MinMax;
+}
 
 interface InfoProps {
   app: λApp,
@@ -46,9 +53,13 @@ export class Info implements InfoProps {
     this.timeline = timeline;
   }
 
-  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({ ...this.app.timeline.filtering_options, [Parser.useUUID(file)]: options}, 'timeline', 'filtering_options');
+  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({
+    ...this.app.timeline.filtering_options,
+    [Parser.useUUID(file)]:
+    options
+  }, 'timeline', 'filtering_options');
 
-  refetch = async (uuids: Arrayed<λFile['uuid']> = [], hidden?: boolean) => {
+  refetch = async ({ uuids = [], hidden, range }: RefetchOptions = {}) => {
     uuids = Parser.array(uuids);
 
     const operation = Operation.selected(this.app);
@@ -83,12 +94,14 @@ export class Info implements InfoProps {
 
     await this.glyphs_reload();
 
-    await this.fetchBucket();
+    if (!hidden) {
+      this.deload(files.map(f => f.uuid));
+    }
     
-    files.forEach(file => {
-      if (!file) return;
+    await Promise.all(files.map(async file => {
+      if (!file || (!this.app.target.bucket.selected || !range)) return;
 
-      this.api<any>('/query_raw', {
+      return this.api('/query_raw', {
         method: 'POST',
         data: {
           ws_id: this.app.general.ws_id,
@@ -98,7 +111,7 @@ export class Info implements InfoProps {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...Filter.body(this.app, file),
+          ...Filter.body(this.app, file, range),
           options: {
             search_after_loop: false,
             sort: {
@@ -110,11 +123,15 @@ export class Info implements InfoProps {
           }
         })
       });
-    });
+    }));
+  }
 
-    if (!hidden) {
-      this.deload(files.map(f => f.uuid));
-    }
+  cancel = async (r: UUID) => {
+    return await this.api('/stats_cancel_request', {
+      method: 'PUT',
+      data: { r },
+      ignore: true
+    });
   }
 
   filters_cache = (file: λFile | μ.File) => {
@@ -267,7 +284,7 @@ export class Info implements InfoProps {
   }).then(async (res) => {
     if (res.isSuccess()) {
       await this.notes_reload();
-      toast('Note deleated successfully');
+      toast('Note deleted successfully');
     } else {
       toast((res as unknown as ResponseError).data.exception.name);
     }
@@ -325,7 +342,7 @@ export class Info implements InfoProps {
       });
   });
 
-  glyphs_reload = () => {
+  glyphs_reload = async () => {
     const parse = (glyphs: λGlyph[]) => {
       // Все иконки внутри приложения
       const values = Object.values(GlyphMap);
@@ -360,7 +377,7 @@ export class Info implements InfoProps {
       this.setInfoByKey(glyphs, 'target', 'glyphs');
     }
 
-    this.api<ResponseBase<λGlyph[]>>('/glyph_list', {
+    await this.api<ResponseBase<λGlyph[]>>('/glyph_list', {
       method: 'POST',
     }).then(res => res.isSuccess() ? parse(res.data) : toast('Error fetching glyphs', {
       description: (res as unknown as ResponseError).data.exception.name
@@ -455,10 +472,7 @@ export class Info implements InfoProps {
               min,
               max
             },
-            selected: {
-              min,
-              max
-            },
+            selected: null,
             total: files.map(file => file.doc_count).reduce((acc, curr) => acc + curr, 0)
           }
         }
@@ -469,60 +483,35 @@ export class Info implements InfoProps {
   };
   
   // Timestamp - 24 hours
-  setBucketOneDay = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.max - 24 * 60 * 60 * 1000
-    }
+  setBucketOneDay = () => this.setBucketSelected({
+    max: this.app.target.bucket.timestamp.max,
+    min: this.app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000
   });
   // Timestamp - 7 days
-  setBucketOneWeek = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.max - 7 * 24 * 60 * 60 * 1000
-    }
+  setBucketOneWeek = () => this.setBucketSelected({
+    max: this.app.target.bucket.timestamp.max,
+    min: this.app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000
   });
   // Timestamp - 30 days
-  setBucketOneMonth = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.max - 30 * 24 * 60 * 60 * 1000
-    }
+  setBucketOneMonth = () => this.setBucketSelected({
+    max: this.app.target.bucket.timestamp.max,
+    min: this.app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000
   });
   // Timestamp - Full range
-  setBucketFullRange = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.min + 1
-    }
-  });
-  // Timestamp - Full range
-  setBucketSelectedStart = (min: number) => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: { ...this.app.target.bucket.selected, min }
-  });
-  setBucketSelectedEnd = (max: number) => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: { ...this.app.target.bucket.selected, max}
+  setBucketFullRange = () => this.setBucketSelected({
+    max: this.app.target.bucket.timestamp.max,
+    min: this.app.target.bucket.timestamp.min - 1
   });
   
-  setBucketSelected = (minMax: MinMax) => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: minMax
-  });
-
-  syncBucket = () => {
-    const files = File.selected(this.app);
-
-    const min = Math.min(...files.map(file => file.timestamp.min));
-    const max = Math.min(...files.map(file => file.timestamp.max));
-
-    this.setBucketSelected({ min, max });
-  }
+  setBucketSelectedStart = (min: number) => this.setBucketSelected({ max: this.app.target.bucket.selected?.max || 0, min })
+  setBucketSelectedEnd = (max: number) => this.setBucketSelected({ min: this.app.target.bucket.selected?.min || 0, max });
+  
+  setBucketSelected = (minMax: MinMax) => {
+    this.setBucket({
+      ...this.app.target.bucket,
+      selected: minMax
+    });
+  };
 
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
 
@@ -557,9 +546,23 @@ export class Info implements InfoProps {
     if (response.isSuccess()) {
       const fulfilled = Boolean(response.data.buckets.length);
 
-      if (!response.data.buckets[0]['*']['max_event.code']) {
-        return this.syncBucket();
+      // To remove
+      // if (!response.data.buckets[0]['*']['max_event.code']) {
+      //   return this.syncBucket();
+      // }
+
+      const timestamp: MinMax = {
+        max: response.data.buckets[0]['*']['max_@timestamp'],
+        min: response.data.buckets[0]['*']['min_@timestamp'],
       }
+      const selected = this.app.target.bucket.selected
+        ? this.app.target.bucket.selected
+        : differenceInMonths(timestamp.max, timestamp.min) > 6
+          ? null
+          : {
+              ...timestamp,
+              min: timestamp.min - 1
+            };
 
       this.setBucket({
         total: response.data.total,
@@ -568,14 +571,8 @@ export class Info implements InfoProps {
           max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
           min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
         },
-        timestamp: {
-          max: fulfilled ? response.data.buckets[0]['*']['max_@timestamp'] : Date.now(),
-          min: fulfilled ? response.data.buckets[0]['*']['min_@timestamp'] : Date.now(),
-        },
-        selected: {
-          max: fulfilled ? response.data.buckets[0]['*']['max_@timestamp'] : Date.now(),
-          min: fulfilled ? response.data.buckets[0]['*']['min_@timestamp'] : Date.now()-1
-        }
+        timestamp,
+        selected
       });
     }
   });
@@ -863,7 +860,7 @@ export type λFilter = {
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
 
-  public static base = (app: λApp, file: λFile) => {
+  public static base = (app: λApp, file: λFile, range?: MinMax) => {
     const context = Context.findByPugin(app, file._uuid);
 
     if (!context) {
@@ -871,11 +868,11 @@ export class Filter {
     }
 
     //eslint-disable-next-line
-    return `(operation_id:${context.operation.id} AND (gulp.context: \"${context.name}\") AND gulp.source.file:"${file.name}" AND @timestamp:>=${file.timestamp.min} AND @timestamp:<=${file.timestamp.max})`
+    return `(operation_id:${context.operation.id} AND (gulp.context: \"${context.name}\") AND gulp.source.file:"${file.name}" AND @timestamp:>=${Math.max(file.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(file.timestamp.max, (range?.max || Infinity))})`
   }
 
-  public static parse(app: λApp, file: λFile) {
-    const base = Filter.base(app, file);
+  public static parse(app: λApp, file: λFile, range?: MinMax) {
+    const base = Filter.base(app, file, range);
     
     const query = Filter.query(app, file);
 
@@ -915,13 +912,13 @@ export class Filter {
 
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
-  static body = (app: λApp, file: λFile) => ({
+  static body = (app: λApp, file: λFile, range?: MinMax) => ({
     query_raw: {
       bool: {
         must: [
           {
             query_string: {
-              query: Filter.parse(app, file),
+              query: Filter.parse(app, file, range),
               analyze_wildcard: true
             }
           }

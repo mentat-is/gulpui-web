@@ -5,7 +5,7 @@ export interface Bucket {
   fetched: number
   event_code: MinMax,
   timestamp: MinMax,
-  selected: MinMax
+  selected: MinMax | null;
 }
 
 export type QueryMaxMin = ResponseBase<{

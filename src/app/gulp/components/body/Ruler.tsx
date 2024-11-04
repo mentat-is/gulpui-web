@@ -16,34 +16,33 @@ export function Ruler({ scrollX }: RulerProps) {
 
   const generateDates = () => {
     if (!timeline.current || !min || !max) return;
-  
+
     const totalMilliseconds = differenceInMilliseconds(new Date(max), new Date(min));
-  
+
+    // Вычисляем шаг в зависимости от масштаба и ширины видимой области
     const step = Math.max(totalMilliseconds / (Info.width / 100), 1);
     const visibleWidth = timeline.current.clientWidth || 0;
-  
+
     const dates: Date[] = [];
     
+    // Определяем начало и конец видимого диапазона
     const visibleStartTime = addMilliseconds(new Date(min), (scrollX / Info.width) * totalMilliseconds);
     const visibleEndTime = addMilliseconds(new Date(min), ((scrollX + visibleWidth) / Info.width) * totalMilliseconds);
-  
+
     let currentTime = visibleStartTime;
-  
+
     while (currentTime <= visibleEndTime) {
       dates.push(currentTime);
-  
       currentTime = addMilliseconds(currentTime, step);
     }
-  
+
     setVisibleDates(dates);
   };
-  
 
   useEffect(() => {
     if (!min || !max) return;
-
-    generateDates()
-  }, [min, max, scrollX, app.timeline.scale, ]);
+    generateDates();
+  }, [min, max, scrollX, app.timeline.scale]);
 
   useEffect(() => {
     window.addEventListener('resize', generateDates);
@@ -52,19 +51,24 @@ export function Ruler({ scrollX }: RulerProps) {
     return () => {
       window.removeEventListener('resize', generateDates);
       timeline.current?.removeEventListener('resize', generateDates);
-    }
+    };
   }, [ruler]);
 
-  const timeUnit = getDateFormat(differenceInMilliseconds(visibleDates[1], visibleDates[0])) || 'MMM yyyy';
+  // Автоматически выбираем формат даты в зависимости от шага времени
+  const timeUnit = visibleDates.length > 1
+    ? getDateFormat(differenceInMilliseconds(visibleDates[1], visibleDates[0])) || 'MMM yyyy'
+    : 'MMM yyyy';
 
   return (
     <div className={s.ruler} ref={ruler}>
       <div className={s.wrapper}>
         {visibleDates.map((date, index) => {
-          const isEven = !!(index % 2 === 0);
-          return <div key={index} className={s.date} style={{ left: index * 100 }} data-even={isEven}>
-            <p>{format(date, timeUnit)}</p>
-          </div>
+          const isEven = index % 2 === 0;
+          return (
+            <div key={index} className={s.date} style={{ left: index * 100 }} data-even={isEven}>
+              <p>{format(date, timeUnit)}</p>
+            </div>
+          );
         })}
       </div>
     </div>
