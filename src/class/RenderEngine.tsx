@@ -75,6 +75,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   statusMap: Record<λFile['uuid'], StatusMap> = {};
   defaultMap: Record<λFile['uuid'], DefaultMap> = {};
   graphMap: Record<λFile['uuid'], GraphMap> = {};
+  segmentSize: number = 500;
   private static instance: RenderEngine | null = null;
 
   constructor({ ctx, limits, app, getPixelPosition, scrollY }: RenderEngineConstructor) {
@@ -124,7 +125,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     [...heat].forEach((hit) => {
       // eslint-disable-next-line
       const [ segment, amount ] = hit;
-      const timestamp = segment * 3000;
+      const timestamp = segment * this.segmentSize;
 
       if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
 
@@ -137,49 +138,51 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   };
   
   graph(file: λFile, _y: number) {
-    const heat = this.process(this.graphMap, file)
-      ? this.graphMap[file.uuid]
-      : this.getGraphMap(file);
-
+    const heat = this.useCache(this.heightMap, file.uuid)
+      ? this.heightMap[file.uuid]
+      : this.getHeightmap(file);
+  
     const heats = [...heat];
-
-    const max = Math.max(...heats.map(v => v[1].height));
-
+    let max = heat[Max];
+  
+    let branch = { x: 0, a: 0 };
+  
     heats.forEach((hit, i) => {
-      // eslint-disable-next-line
-      const [_, { height, timestamp }] = hit;
-      // eslint-disable-next-line
-      const [__, { height: λheight, timestamp: λtimestamp }] = heats[i + 1] || [0, { height: 0, timestamp: 0 }];
+      const [segment, amount] = hit;
+      const timestamp = segment * this.segmentSize;
+      
+      const [λsegment, λheight] = heats[i + 1] || [0, 0];
+      const λtimestamp = λsegment * this.segmentSize;
 
-      const y = _y + 47 - Math.floor((height / max) * 47);
+      if (throwableByTimestamp(λtimestamp, this.limits, file.offset, this.app) && throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
+  
+      const x = Math.floor(this.getPixelPosition(timestamp) / 10) * 10;
+      const λx = Math.floor(this.getPixelPosition(λtimestamp) / 10) * 10;
 
-      if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app) && throwableByTimestamp(λtimestamp, this.limits, file.offset, this.app)) return;
-
-      const x = this.getPixelPosition(timestamp);
-
-      const color = λColor.gradient(file.color, height, { min: 0, max });
-
+      if (x === branch.x) {
+        branch.a += amount;
+        max = Math.max(max, branch.a);
+      } else {
+        branch = { x, a: amount };
+      }
+  
+      const color = λColor.gradient(file.color, branch.a, { min: 0, max });
+      const y = _y + 47 - Math.floor((branch.a / max) * 47);
+      const λy = _y + 47 - Math.floor((λheight / max) * 47);
+  
       this.ctx.font = `12px Arial`;
       this.ctx.fillStyle = color;
-      this.ctx.fillText(height.toString(), x - 3.5, y - 8);
-
-      const dot = {
-        x,
-        y,
-        color
-      }
-      
-      const λdot = λtimestamp ? {
-        x: this.getPixelPosition(λtimestamp),
-        y: _y + 47 - Math.floor((λheight / max) * 47),
-        color
-      } : null;
-
+      this.ctx.fillText(branch.a.toString(), branch.x - 3.5, y - 8);
+  
+      const dot = { x, y, color };
+      const λdot = λtimestamp ? { x: λx, y: λy, color } : null;
+  
       this.connection(λdot ? [dot, λdot] : [dot]);
-
+  
       this.dot(dot);
     });
   }
+  
 
   apache(file: λFile, y: number) {
     const heat = this.process(this.statusMap, file)
@@ -464,5 +467,5 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] === Event.get(this.app, uuid).length
 
-  private segment = (timestamp: number) => Math.floor((timestamp - (timestamp % 3000)) / 3000);
+  private segment = (timestamp: number) => Math.floor((timestamp - (timestamp % this.segmentSize)) / this.segmentSize);
 }
