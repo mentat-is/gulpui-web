@@ -160,8 +160,8 @@ export function LoginPage() {
   useEffect(() => {
     if (stage < 3) return;
 
-    Info.operations_request().then(operations => {
-      const result = Info.operations_update(operations);
+    Info.operations_request().then(async operations => {
+      const result = await Info.operations_update(operations);
 
       spawnBanner(result.contexts.length && result.plugins.length && result.files.length
         ? <SelectFilesBanner />
@@ -208,7 +208,7 @@ export function LoginPage() {
   }
   
   return (
-    <Banner title='Login' className={s.page}>
+    <Page options={{ center: true }} className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
           <img className={s.logo} src='/gulp-no-text.svg' alt='' />
@@ -308,6 +308,6 @@ export function LoginPage() {
               )
         }
       </Card>
-    </Banner>
+    </Page>
   )
 }

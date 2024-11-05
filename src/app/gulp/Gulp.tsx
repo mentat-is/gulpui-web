@@ -11,6 +11,7 @@ export function GulpPage() {
   const { app, spawnDialog, spawnBanner, Info } = useApplication();
 
   useEffect(() => {
+    if (app.target.bucket.timestamp) console.log('Has been defined');
     const { min, max } = app.target.bucket.timestamp;
 
     const diff = differenceInMonths(max, min);
@@ -19,6 +20,8 @@ export function GulpPage() {
       // spawnBanner(<LimitsBanner />)
     }
   }, [app.target.bucket.timestamp]);
+
+
 
   return (
     <React.Fragment>

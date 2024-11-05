@@ -1,3 +1,6 @@
+.page {
+  flex: 1;
+}
 .group {
   display: flex;
   flex-direction: row;

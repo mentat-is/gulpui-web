@@ -108,6 +108,8 @@ export function SelectFilesBanner() {
     spawnBanner(<LimitsBanner />);
   }
 
+  console.log(new Date(app.target.bucket.timestamp.min).toString());
+
   return (
     <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts} fixed={loading}>
     <div className={s.wrapper}>

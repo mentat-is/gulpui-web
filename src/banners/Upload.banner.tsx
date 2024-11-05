@@ -83,7 +83,7 @@ export function UploadBanner() {
 
     setLoading(false);
    
-    const result = Info.operations_update(operations);
+    const result = await Info.operations_update(operations);
     
     if (result.contexts.length && result.plugins.length && result.files.length) {
       spawnBanner(<SelectFilesBanner />);

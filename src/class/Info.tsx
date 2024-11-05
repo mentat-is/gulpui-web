@@ -388,11 +388,13 @@ export class Info implements InfoProps {
 
   operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.data || []);
 
-  operations_update = (rawOperations: RawOperation[]) => {
+  operations_update = async (rawOperations: RawOperation[]) => {
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const plugins: λPlugin[] = [];
     const files: λFile[] = [];
+
+    await this.bucket_reload();
 
     rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
       const exist = Operation.findByNameAndId(this.app, { id, name });
@@ -454,9 +456,6 @@ export class Info implements InfoProps {
       operations.push(operation);
     });
 
-    const min = Math.min(...files.map(file => file.timestamp.min));
-    const max = Math.max(...files.map(file => file.timestamp.max));
-    
     this.setInfo(app => ({
       ...app,
       ...{
@@ -465,16 +464,7 @@ export class Info implements InfoProps {
           operations,
           contexts,
           plugins,
-          files,
-          bucket: {
-            ...app.target.bucket,
-            timestamp: {
-              min,
-              max
-            },
-            selected: null,
-            total: files.map(file => file.doc_count).reduce((acc, curr) => acc + curr, 0)
-          }
+          files
         }
       }
     }));
@@ -534,7 +524,7 @@ export class Info implements InfoProps {
   
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
 
-  fetchBucket = () => this.api<QueryMaxMin>('/query_max_min', {
+  bucket_reload = () => this.api<QueryMaxMin>('/query_max_min', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=utf-8'
@@ -545,11 +535,6 @@ export class Info implements InfoProps {
   }).then(response => {
     if (response.isSuccess()) {
       const fulfilled = Boolean(response.data.buckets.length);
-
-      // To remove
-      // if (!response.data.buckets[0]['*']['max_event.code']) {
-      //   return this.syncBucket();
-      // }
 
       const timestamp: MinMax = {
         max: response.data.buckets[0]['*']['max_@timestamp'],
