@@ -30,6 +30,8 @@ export function LimitsBanner() {
 
   const save = async (_min?: number) => {
     const range = { min: _min ?? min, max };
+    
+    console.log(range);
 
     if (range) {
       setLoading(true);

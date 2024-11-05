@@ -99,7 +99,7 @@ export class Info implements InfoProps {
     }
     
     await Promise.all(files.map(async file => {
-      if (!file || (!this.app.target.bucket.selected || !range)) return;
+      if (!file || (!this.app.target.bucket.selected && !range)) return;
 
       return this.api('/query_raw', {
         method: 'POST',
@@ -384,8 +384,6 @@ export class Info implements InfoProps {
     }));
   }
 
-  bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
-
   operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.data || []);
 
   operations_update = async (rawOperations: RawOperation[]) => {
@@ -473,6 +471,7 @@ export class Info implements InfoProps {
   };
 
   setBucketSelected = (minMax: MinMax) => {
+    console.log(minMax);
     this.setBucket({
       ...this.app.target.bucket,
       selected: minMax
@@ -481,8 +480,6 @@ export class Info implements InfoProps {
   };
 
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
-
-  getBucketLocals = () => this.app.target.bucket.selected;
   
   // Methods to set general information (server, username, password, token)
   setServer = (server: string) => this.setInfoByKey(server, 'general', 'server');
@@ -521,14 +518,11 @@ export class Info implements InfoProps {
         ? this.app.target.bucket.selected
         : differenceInMonths(timestamp.max, timestamp.min) > 6
           ? null
-          : {
-              ...timestamp,
-              min: timestamp.min - 1
-            };
+          : timestamp;
 
       this.setBucket({
         total: response.data.total,
-        fetched: this.app.target.bucket?.fetched || 0,
+        fetched: this.app.target.bucket.fetched || 0,
         event_code: {
           max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
           min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
