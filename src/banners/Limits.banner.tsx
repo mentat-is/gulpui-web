@@ -22,36 +22,20 @@ export function LimitsBanner() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const map = [
-    { text: lang.last.day, do: () => {
-        Info.setBucketOneDay();
-        destroyBanner()
-      }
-    },
-    { text: lang.last.week, do: () => {
-        Info.setBucketOneWeek();
-        destroyBanner()
-      }
-    },
-    { text: lang.last.month, do: () => {
-        Info.setBucketOneMonth();
-        destroyBanner()
-      }
-    },
-      { text: lang.last.full, do: () => {
-        Info.setBucketFullRange();
-        destroyBanner()
-      }
-    },
+    { text: lang.last.day, do: () => save(app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000) },
+    { text: lang.last.week, do: () => save(app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000) },
+    { text: lang.last.month, do: () => save(app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000) },
+    { text: lang.last.full, do: () => save(app.target.bucket.timestamp.min) },
   ]
 
-  const save = async () => {
-    if (min && max) {
+  const save = async (_min?: number) => {
+    const range = { min: _min ?? min, max };
+
+    if (range) {
       setLoading(true);
       Info.setBucketSelected({ min, max })
 
-      Info.refetch({
-        range: { min, max }
-      }).then(destroyBanner);
+      await Info.refetch({ range }).then(destroyBanner);
     }
   }
 
@@ -77,7 +61,7 @@ export function LimitsBanner() {
         {map.map((_: any, index) => (
           <Button variant='outline' onClick={_.do} key={index}>{_.text}</Button>
         ))}
-        <Button variant={'default'} img='Bookmark' loading={loading} onClick={save}>Save</Button>
+        <Button variant={'default'} img='Bookmark' loading={loading} onClick={() => save()}>Save</Button>
       </div>
     </Banner>
   ) 

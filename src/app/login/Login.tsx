@@ -160,13 +160,10 @@ export function LoginPage() {
   useEffect(() => {
     if (stage < 3) return;
 
-    Info.operations_request().then(async operations => {
-      const result = await Info.operations_update(operations);
+    spawnBanner(<SelectFilesBanner />);
 
-      spawnBanner(result.contexts.length && result.plugins.length && result.files.length
-        ? <SelectFilesBanner />
-        : <UploadBanner />
-      );
+    Info.operations_request().then(async operations => {
+      await Info.operations_update(operations);
     });
   }, [stage]);
 

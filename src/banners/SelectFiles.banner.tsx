@@ -20,7 +20,7 @@ export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(!app.target.operations.length && !app.target.contexts.length);
 
   const handle = (checked: CheckedState, cu: Array<UUID>, pu?: Array<UUID>, fu?: Array<UUID>): void => {
     if (fu) {
@@ -95,12 +95,12 @@ export function SelectFilesBanner() {
     handle(true, app.target.contexts.map(context => context.uuid));
   }
 
-  const save = () => {
+  const save = async () => {
     setLoading(true);
     const unfetched = File.selected(app).filter(file => Event.get(app, file.uuid).length === 0).map(file => file.uuid || Event.get(app, file.uuid).length < file.doc_count);
 
     if (unfetched.length && app.target.bucket.selected) {
-      return Info.refetch({
+      return await Info.refetch({
         uuids: unfetched
       }).then(destroyBanner);
     }

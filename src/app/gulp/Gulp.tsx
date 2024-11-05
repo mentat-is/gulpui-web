@@ -15,13 +15,9 @@ export function GulpPage() {
     const { min, max } = app.target.bucket.timestamp;
 
     const diff = differenceInMonths(max, min);
-
-    if (diff > 1 && !app.target.bucket.selected) {
-      // spawnBanner(<LimitsBanner />)
-    }
   }, [app.target.bucket.timestamp]);
 
-
+  console.log(app.target.bucket);
 
   return (
     <React.Fragment>

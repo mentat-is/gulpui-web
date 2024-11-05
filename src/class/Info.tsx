@@ -126,7 +126,7 @@ export class Info implements InfoProps {
     }));
   }
 
-  cancel = async (r: UUID) => {
+  cancel = async (r: μ.File) => {
     return await this.api('/stats_cancel_request', {
       method: 'PUT',
       data: { r },
@@ -471,36 +471,13 @@ export class Info implements InfoProps {
 
     return { operations, contexts, plugins, files };
   };
-  
-  // Timestamp - 24 hours
-  setBucketOneDay = () => this.setBucketSelected({
-    max: this.app.target.bucket.timestamp.max,
-    min: this.app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000
-  });
-  // Timestamp - 7 days
-  setBucketOneWeek = () => this.setBucketSelected({
-    max: this.app.target.bucket.timestamp.max,
-    min: this.app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000
-  });
-  // Timestamp - 30 days
-  setBucketOneMonth = () => this.setBucketSelected({
-    max: this.app.target.bucket.timestamp.max,
-    min: this.app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000
-  });
-  // Timestamp - Full range
-  setBucketFullRange = () => this.setBucketSelected({
-    max: this.app.target.bucket.timestamp.max,
-    min: this.app.target.bucket.timestamp.min - 1
-  });
-  
-  setBucketSelectedStart = (min: number) => this.setBucketSelected({ max: this.app.target.bucket.selected?.max || 0, min })
-  setBucketSelectedEnd = (max: number) => this.setBucketSelected({ min: this.app.target.bucket.selected?.min || 0, max });
-  
+
   setBucketSelected = (minMax: MinMax) => {
     this.setBucket({
       ...this.app.target.bucket,
       selected: minMax
     });
+    return minMax;
   };
 
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
