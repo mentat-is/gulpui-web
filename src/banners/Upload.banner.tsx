@@ -79,12 +79,10 @@ export function UploadBanner() {
       await sendChunkedFiles(file, 0, i);
     }
 
-    const operations = await Info.operations_request();
+    const result = await Info.query_operations();
 
     setLoading(false);
-   
-    const result = await Info.operations_update(operations);
-    
+
     if (result.contexts.length && result.plugins.length && result.files.length) {
       spawnBanner(<SelectFilesBanner />);
     }

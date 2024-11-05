@@ -384,15 +384,16 @@ export class Info implements InfoProps {
     }));
   }
 
-  operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.data || []);
-
-  operations_update = async (rawOperations: RawOperation[]) => {
+  query_operations = async () => {
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const plugins: λPlugin[] = [];
     const files: λFile[] = [];
 
-    await this.bucket_reload();
+    const bucket = await this.query_max_min({ ignore: true });
+
+    const rawOperations =  await this.api<QueryOperations>('/query_operations').then(res => res.data || []);
+    
 
     rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
       const exist = Operation.findByNameAndId(this.app, { id, name });
@@ -436,7 +437,7 @@ export class Info implements InfoProps {
                     _uuid: p_uuid,
                     offset: 0,
                     color: 'thermal',
-                    engine: 'default',
+                    engine: 'height',
                     uuid: f_uuid
                   }
                   files.push(file)
@@ -459,6 +460,7 @@ export class Info implements InfoProps {
       ...{
         target: {
           ...app.target,
+          bucket,
           operations,
           contexts,
           plugins,
@@ -468,7 +470,7 @@ export class Info implements InfoProps {
     }));
 
     return { operations, contexts, plugins, files };
-  };
+  }
 
   setBucketSelected = (minMax: MinMax) => {
     console.log(minMax);
@@ -498,7 +500,7 @@ export class Info implements InfoProps {
   
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
 
-  bucket_reload = () => this.api<QueryMaxMin>('/query_max_min', {
+  query_max_min = ({ ignore }: { ignore?: boolean}) => this.api<QueryMaxMin>('/query_max_min', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=utf-8'
@@ -507,30 +509,34 @@ export class Info implements InfoProps {
       operation_id: [Operation.selected(this.app)?.id]
     })
   }).then(response => {
-    if (response.isSuccess()) {
-      const fulfilled = Boolean(response.data.buckets.length);
+    const fulfilled = Boolean(response.data.buckets.length);
 
-      const timestamp: MinMax = {
-        max: response.data.buckets[0]['*']['max_@timestamp'],
-        min: response.data.buckets[0]['*']['min_@timestamp'],
-      }
-      const selected = this.app.target.bucket.selected
-        ? this.app.target.bucket.selected
-        : differenceInMonths(timestamp.max, timestamp.min) > 6
-          ? null
-          : timestamp;
-
-      this.setBucket({
-        total: response.data.total,
-        fetched: this.app.target.bucket.fetched || 0,
-        event_code: {
-          max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
-          min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
-        },
-        timestamp,
-        selected
-      });
+    const timestamp: MinMax = {
+      max: response.data.buckets[0]['*']['max_@timestamp'],
+      min: response.data.buckets[0]['*']['min_@timestamp'],
     }
+    const selected = this.app.target.bucket.selected
+      ? this.app.target.bucket.selected
+      : differenceInMonths(timestamp.max, timestamp.min) > 6
+        ? null
+        : timestamp;
+
+    const bucket: Bucket = {
+      total: response.data.total,
+      fetched: this.app.target.bucket.fetched || 0,
+      event_code: {
+        max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
+        min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
+      },
+      timestamp,
+      selected
+    };
+
+    if (!ignore) {
+      this.setBucket(bucket);
+    }
+
+    return bucket;
   });
 
   filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');

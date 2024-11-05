@@ -5,10 +5,9 @@ import { Button } from '@/ui/Button'
 import { useApplication } from '@/context/Application.context'
 import { Timeline } from './components/body/Timeline'
 import { differenceInMonths } from 'date-fns'
-import { LimitsBanner } from '@/banners/Limits.banner'
 
 export function GulpPage() {
-  const { app, spawnDialog, spawnBanner, Info } = useApplication();
+  const { app, spawnDialog } = useApplication();
 
   useEffect(() => {
     if (app.target.bucket.timestamp) console.log('Has been defined');

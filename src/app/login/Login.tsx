@@ -162,9 +162,7 @@ export function LoginPage() {
 
     spawnBanner(<SelectFilesBanner />);
 
-    Info.operations_request().then(async operations => {
-      await Info.operations_update(operations);
-    });
+    Info.query_operations();
   }, [stage]);
 
   const spawnBannerToRequestDelete = (operation: λOperation) => {
