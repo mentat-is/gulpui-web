@@ -7,7 +7,8 @@ import { AppSocket } from "@/class/AppSocket";
 import { Index, Info } from "@/class/Info";
 import Cookies from "universal-cookie";
 import { parseTokensFromCookies } from "@/ui/utils";
-import { Console } from "@impactium/console";
+import { Console } from '@impactium/console';
+import { Logger } from "@/dto/Logger.class";
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -165,7 +166,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       {children}
       {banner}
       {dialog}
-      <Console history={[]} title='GULP' icon='' prefix='root@Gulp:/web-ui#' />
+      <Console noise history={Logger.history()} title='GULP' icon='' prefix='root@Gulp:/web-ui#' />
     </ApplicationContext.Provider>
   );
 };

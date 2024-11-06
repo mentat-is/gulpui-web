@@ -154,21 +154,24 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const [λsegment, λheight] = heats[i + 1] || [0, 0];
       const λtimestamp = λsegment * this.segmentSize;
 
-      if (throwableByTimestamp(λtimestamp, this.limits, file.offset, this.app) && throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
+      if (
+        throwableByTimestamp(λtimestamp, this.limits, file.offset, this.app) &&
+        throwableByTimestamp(timestamp, this.limits, file.offset, this.app)
+      ) return;
   
-      const x = Math.floor(this.getPixelPosition(timestamp) / 10) * 10;
-      const λx = Math.floor(this.getPixelPosition(λtimestamp) / 10) * 10;
+      const x = Math.floor(this.getPixelPosition(timestamp));
+      const λx = Math.floor(this.getPixelPosition(λtimestamp));
 
       if (x === branch.x) {
         branch.a += amount;
-        max = Math.max(max, branch.a);
-      } else {
-        branch = { x, a: amount };
-      }
+        return;
+      } 
+
+      max = Math.max(max, branch.a);
   
       const color = λColor.gradient(file.color, branch.a, { min: 0, max });
       const y = _y + 47 - Math.floor((branch.a / max) * 47);
-      const λy = _y + 47 - Math.floor((λheight / max) * 47);
+      const λy = _y + 47 - Math.floor((amount / max) * 47);
   
       this.ctx.font = `12px Arial`;
       this.ctx.fillStyle = color;
@@ -178,8 +181,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const λdot = λtimestamp ? { x: λx, y: λy, color } : null;
   
       this.connection(λdot ? [dot, λdot] : [dot]);
-  
+
       this.dot(dot);
+
+      branch = { x, a: amount };
     });
   }
   

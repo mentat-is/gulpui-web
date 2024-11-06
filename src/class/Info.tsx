@@ -21,6 +21,7 @@ import { UUID } from 'crypto';
 import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/λGlyph.dto';
 import { differenceInMonths } from 'date-fns';
+import { Logger } from '@/dto/Logger.class';
 
 interface RefetchOptions {
   uuids?: Arrayed<λFile['uuid']>;
@@ -259,7 +260,7 @@ export class Info implements InfoProps {
         operation_id.push(operation.id);
     });
 
-    this.api<ResponseBase<RawNote[]>>('/note_list', {
+    const response = await this.api<ResponseBase<RawNote[]>>('/note_list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -270,9 +271,19 @@ export class Info implements InfoProps {
         context,
         operation_id
       })
-    }).then(res => res.isSuccess() ? this.notes_set(Note.parse(this.app, res.data)) : toast('Error fetching notes', {
-      description: (res as unknown as ResponseError).data.exception.name
-    }));
+    });
+
+    if (response.isSuccess()) {
+      this.notes_set(Note.parse(this.app, response.data))
+    } else {
+      const error = (response as unknown as ResponseError).data.exception.name;
+      Logger.error(`Notes fetch was failed. Reason:
+${error}`, Info.name);
+
+      return;
+    };
+
+    Logger.log(`Notes has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
   }
 
   notes_delete = (note: λNote) => this.api<ResponseBase<boolean>>('/note_delete', {
@@ -309,7 +320,7 @@ export class Info implements InfoProps {
         operation_id.push(operation.id);
     });
     
-    await this.api<ResponseBase<RawLink[]>>('/link_list', {
+    const response = await this.api<ResponseBase<RawLink[]>>('/link_list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -320,9 +331,19 @@ export class Info implements InfoProps {
         context,
         operation_id
       })
-    }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
-      description: (res as unknown as ResponseError).data.exception.name
-    }));
+    });
+
+    if (response.isSuccess()) {
+      this.links_set(response.data)
+    } else {
+      const error = (response as unknown as ResponseError).data.exception.name;
+      Logger.error(`Links fetch was failed. Reason:
+${error}`, Info.name);
+
+      return;
+    };
+
+    Logger.log(`Links has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
   }
 
   links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
@@ -364,6 +385,8 @@ export class Info implements InfoProps {
           },
           body: formData
         });
+
+        Logger.log(`Glyph ${value} was copied to gulp-backend`, Info.name)
       });
 
       if (glyphs.length > values.length) {
@@ -374,6 +397,7 @@ export class Info implements InfoProps {
         });
       }
 
+      Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
       this.setInfoByKey(glyphs, 'target', 'glyphs');
     }
 
@@ -468,6 +492,12 @@ export class Info implements InfoProps {
         }
       }
     }));
+
+    Logger.log(`/query_operations has been successfully fetched. Total data:
+Operations: ${operations.length}
+Contexts: ${contexts.length}
+Plugins: ${plugins.length}
+Files: ${files.length}`, Info.name);
 
     return { operations, contexts, plugins, files };
   }
