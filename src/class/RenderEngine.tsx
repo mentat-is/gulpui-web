@@ -165,13 +165,13 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       if (x === branch.x) {
         branch.a += amount;
         return;
-      } 
+      }
 
       max = Math.max(max, branch.a);
   
       const color = λColor.gradient(file.color, branch.a, { min: 0, max });
-      const y = _y + 47 - Math.floor((branch.a / max) * 47);
-      const λy = _y + 47 - Math.floor((amount / max) * 47);
+      const y = _y + 47 - Math.floor((amount / max) * 47);
+      const λy = _y + 47 - Math.floor((λheight / max) * 47);
   
       this.ctx.font = `12px Arial`;
       this.ctx.fillStyle = color;
