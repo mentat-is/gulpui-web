@@ -503,7 +503,6 @@ Files: ${files.length}`, Info.name);
   }
 
   setBucketSelected = (minMax: MinMax) => {
-    console.log(minMax);
     this.setBucket({
       ...this.app.target.bucket,
       selected: minMax

@@ -143,49 +143,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       : this.getHeightmap(file);
   
     const heats = [...heat];
-    let max = heat[Max];
   
-    let branch = { x: 0, a: 0 };
-  
-    heats.forEach((hit, i) => {
-      const [segment, amount] = hit;
-      const timestamp = segment * this.segmentSize;
-      
-      const [λsegment, λheight] = heats[i + 1] || [0, 0];
-      const λtimestamp = λsegment * this.segmentSize;
-
-      if (
-        throwableByTimestamp(λtimestamp, this.limits, file.offset, this.app) &&
-        throwableByTimestamp(timestamp, this.limits, file.offset, this.app)
-      ) return;
-  
-      const x = Math.floor(this.getPixelPosition(timestamp));
-      const λx = Math.floor(this.getPixelPosition(λtimestamp));
-
-      if (x === branch.x) {
-        branch.a += amount;
-        return;
-      }
-
-      max = Math.max(max, branch.a);
-  
-      const color = λColor.gradient(file.color, branch.a, { min: 0, max });
-      const y = _y + 47 - Math.floor((amount / max) * 47);
-      const λy = _y + 47 - Math.floor((λheight / max) * 47);
-  
-      this.ctx.font = `12px Arial`;
-      this.ctx.fillStyle = color;
-      this.ctx.fillText(branch.a.toString(), branch.x - 3.5, y - 8);
-  
-      const dot = { x, y, color };
-      const λdot = λtimestamp ? { x: λx, y: λy, color } : null;
-  
-      this.connection(λdot ? [dot, λdot] : [dot]);
-
-      this.dot(dot);
-
-      branch = { x, a: amount };
-    });
+    heats.forEach((hit, i) => {});
   }
   
 
