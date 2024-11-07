@@ -1101,4 +1101,23 @@ export namespace μ {
   export type Context = UUID & {
     readonly [Context]: unique symbol;
   };
+
+
+}
+
+export namespace λ {
+  const Timestamp = Symbol('Timestamp');
+  export type Timestamp = number & {
+    readonly [Timestamp]: unique symbol;
+  };
+
+  const Height = Symbol('Height');
+  export type Height = number & {
+    readonly [Height]: unique symbol;
+  };
+
+  const X = Symbol('X');
+  export type X = number & {
+    readonly [X]: unique symbol;
+  };
 }
