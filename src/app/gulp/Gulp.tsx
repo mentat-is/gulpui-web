@@ -16,8 +16,6 @@ export function GulpPage() {
     const diff = differenceInMonths(max, min);
   }, [app.target.bucket.timestamp]);
 
-  console.log(app.target.bucket);
-
   return (
     <React.Fragment>
       <header>

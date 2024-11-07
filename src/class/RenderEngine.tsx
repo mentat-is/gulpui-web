@@ -134,15 +134,61 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.heightMap[file.uuid]
       : this.getHeightmap(file);
   
-    const heats = this.graphMap(heat);
+    const graph = this.graphMap(heat);
+
+    const hs = Array.from(graph.entries()).map(e => e[1]);
+    const max = Math.max(...hs);
+    const min = Math.min(...hs);
   
-    heats.forEach((hit, i) => {
-      const [ section, height ] = hit;
+    let last: Dot;
+
+    [...graph].forEach(g => {
+      const [x, height] = g;
+
+      const color = λColor.gradient(file.color, height, { min, max });
+      
+      const y = _y + 47 - Math.floor((height / max) * 47);
+
+      this.ctx.font = `12px Arial`;
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(height.toString(), x - 3.5, y - 8);
+
+      const dot = { x, y, color };
+
+      if (last) {
+        this.connection([dot, last]);
+      }
+
+      last = dot;
+      this.dot(dot);
     });
   }
 
   graphMap(map: HeightMap) {
-    return [...map];
+    const hits = [...map];
+
+    const result: Map<number, number> = new Map();
+
+    hits.forEach(([segment, height], i) => {
+      const timestamp = segment * this.segmentSize;
+
+      const h = hits[i + 1];
+      if (h && throwableByTimestamp(h[0] * this.segmentSize, this.limits, 0, this.app)) return;
+
+      const x = this.getPixelPosition(timestamp);
+
+      const [ lastX, lastHeight ] = Array.from(result.entries()).pop() || [];
+
+      if (lastX && lastHeight && Math.abs(lastX - x) < 32) {
+        const newLastResult = lastHeight + height;
+
+        result.set(lastX, newLastResult);
+      } else {
+        result.set(x, height);
+      }
+    });
+
+    return result;
   }
   
 
