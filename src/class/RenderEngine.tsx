@@ -48,13 +48,6 @@ export interface Max {
 
 export type DefaultMap = Map<number, Default> & Scale;
 
-export interface Graph {
-  timestamp: number,
-  height: number
-}
-
-export type GraphMap = Map<number, Graph> & Scale;
-
 type Engines = {
   [key in Engine]: (file: λFile, y: number) => void;
 };
@@ -74,7 +67,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   heightMap: Record<λFile['uuid'], HeightMap> = {};
   statusMap: Record<λFile['uuid'], StatusMap> = {};
   defaultMap: Record<λFile['uuid'], DefaultMap> = {};
-  graphMap: Record<λFile['uuid'], GraphMap> = {};
   segmentSize: number = 500;
   private static instance: RenderEngine | null = null;
 
@@ -142,9 +134,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.heightMap[file.uuid]
       : this.getHeightmap(file);
   
-    const heats = [...heat];
+    const heats = this.graphMap(heat);
   
-    heats.forEach((hit, i) => {});
+    heats.forEach((hit, i) => {
+      const [ section, height ] = hit;
+    });
+  }
+
+  graphMap(map: HeightMap) {
+    return [...map];
   }
   
 
@@ -346,33 +344,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return heat;
   }
 
-  private getGraphMap = (file: λFile): GraphMap => {
-    const heat: GraphMap = new Map() as GraphMap;
-
-    File.events(this.app, file).forEach((event, i) => {
-      const timestamp = event.timestamp + file.offset;
-      const λpos = this.getPixelPosition(timestamp);
-      const λposGroup = Math.floor(λpos / 8) * 8;
-
-      const obj: Graph = heat.get(λposGroup) || {
-        height: 0,
-        timestamp
-      };
-
-      obj.height++;
-
-      heat.set(λposGroup, obj);
-    });
-
-    heat[Scale] = this.app.timeline.scale;
-    this.graphMap = {
-      ...this.graphMap,
-      [file.uuid]: heat
-    };
-  
-    return heat;
-  }
-
   private getHeightmap = (file: λFile): HeightMap => {
     const heat = new Map() as HeightMap;
 
@@ -427,7 +398,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return heat;
   }
 
-  private process = (map: Record<string, StatusMap | DefaultMap | GraphMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.app.timeline.scale && file.doc_count === File.events(this.app, file).length);
+  private process = (map: Record<string, StatusMap | DefaultMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.app.timeline.scale && file.doc_count === File.events(this.app, file).length);
 
   private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] === Event.get(this.app, uuid).length
 
