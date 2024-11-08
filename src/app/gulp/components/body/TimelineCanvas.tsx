@@ -45,7 +45,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
       if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
-      if (!throwableByTimestamp(file.timestamp, limits, file.offset, app)) {
+      if (!throwableByTimestamp(file.timestamp, limits, app, file.offset)) {
         render[file.engine](file, y - 24);
       };
 
@@ -86,10 +86,10 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     const file = File.selected(app)[Math.floor(clickY / 48)];
     const limits = getLimits(app, Info, timeline, scrollX);
 
-    if (!file || throwableByTimestamp(file.timestamp, limits, file.offset, app)) return;
+    if (!file || throwableByTimestamp(file.timestamp, limits, app, file.offset)) return;
 
     File.events(app, file).forEach(event => {
-      if (throwableByTimestamp(event.timestamp + file.offset, limits, 0, app)) return;
+      if (throwableByTimestamp(event.timestamp + file.offset, limits, app)) return;
 
       const pos = getPixelPosition(event.timestamp + file.offset);      
 

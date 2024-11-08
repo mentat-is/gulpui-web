@@ -104,7 +104,7 @@ export const getColorByCode = (code: number, min: number, max: number): string =
   return ranges[ranges.length - 1].color;
 };
 
-export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, offset: number, app: λApp): boolean => {
+export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, app: λApp, offset: number = 0): boolean => {
   if (!app.target.bucket.selected) return true;
 
   const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {

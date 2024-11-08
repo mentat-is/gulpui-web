@@ -108,7 +108,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       // eslint-disable-next-line
       const [_, { code, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp, this.limits, 0, this.app)) return;
+      if (throwableByTimestamp(timestamp + file.offset, this.limits, this.app)) return;
 
 
       this.ctx.fillStyle = λColor.gradient(file.color, code, {
@@ -129,7 +129,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const [ segment, amount ] = hit;
       const timestamp = segment * this.segmentSize;
 
-      if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
+      if (throwableByTimestamp(timestamp + file.offset, this.limits, this.app)) return;
 
       this.ctx.fillStyle = λColor.gradient(file.color, amount, {
         min: 0,
@@ -183,9 +183,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     hits.forEach(([segment, height], i) => {
       const timestamp = segment * this.segmentSize;
       if (
-        throwableByTimestamp(timestamp - 30000, this.limits, file.offset, this.app) &&
-        throwableByTimestamp(timestamp + 30000, this.limits, file.offset, this.app) &&
-        (hits[i + 2] && throwableByTimestamp(hits[i + 2][0], this.limits, file.offset, this.app))
+        throwableByTimestamp(timestamp + file.offset - 30000, this.limits, this.app) &&
+        throwableByTimestamp(timestamp + file.offset + 30000, this.limits, this.app) &&
+        (hits[i + 2] && throwableByTimestamp(hits[i + 2][0], this.limits, this.app))
       ) return;
 
       const x = this.getPixelPosition(timestamp);
@@ -222,7 +222,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       // eslint-disable-next-line
       const [_, { codes, heights, timestamp }] = hit;
       
-      if (throwableByTimestamp(timestamp, this.limits, file.offset, this.app)) return;
+      if (throwableByTimestamp(timestamp + file.offset, this.limits, this.app)) return;
 
       codes.forEach((code, i) => {
         this.ctx.fillStyle = λColor.gradient(file.color, code, {

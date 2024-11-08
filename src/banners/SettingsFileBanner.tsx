@@ -13,6 +13,7 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Engine, enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
+import { Icon } from "@/ui/Icon";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -49,11 +50,6 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         variant='ghost'
         img='Filter'>{(app.target.filters[file.uuid] || []).length ? 'Change filters' : 'Set filters'}</Button>
       }>
-      <ColorPicker color={color} setColor={setColor}>
-        <ColorPickerTrigger />
-        <ColorPickerPopover gradients={GradientsMap} solids={[]} />
-      </ColorPicker>
-      <Separator />
       <Card>
         <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
         <div className={s.offset}>
@@ -62,6 +58,12 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60)}>+1 min</Button>
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60)}>+1 hour</Button>
           <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60 * 24)}>+1 day</Button>
+        </div>
+        <div className={s.offset}>
+          <Button variant='outline' onClick={() => setOffset(o => o - 1000)}>-1 sec</Button>
+          <Button variant='outline' onClick={() => setOffset(o => o - 1000 * 60)}>-1 min</Button>
+          <Button variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60)}>-1 hour</Button>
+          <Button variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60 * 24)}>-1 day</Button>
         </div>
       </Card>
       <Separator />
@@ -72,9 +74,17 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
             <SelectValue placeholder="Choose renderer" />
           </SelectTrigger>
           <SelectContent>
-            {enginesBase.map(i => <SelectItem value={i.plugin}><Button variant='ghost' img={i.img}>{i.title}</Button></SelectItem>)}
+            {enginesBase.map(i => <SelectItem value={i.plugin}><Icon name={i.img} />{i.title}</SelectItem>)}
           </SelectContent>
         </Select>
+      </Card>
+      <Separator />
+      <Card className={s.color}>
+        <p className={s.text}>Color palette:</p>
+        <ColorPicker color={color} setColor={setColor}>
+          <ColorPickerTrigger />
+          <ColorPickerPopover gradients={GradientsMap} solids={[]} />
+        </ColorPicker>
       </Card>
       <Button img='FileBox' onClick={save}>Save</Button>
     </Banner>
