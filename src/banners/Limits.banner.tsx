@@ -31,6 +31,9 @@ export function LimitsBanner() {
   const save = async (_min?: number) => {
     const range = { min: _min ?? min, max };
 
+    setMin(range.min);
+    setMax(range.max);
+
     if (range) {
       setLoading(true);
       Info.setBucketSelected(range)
