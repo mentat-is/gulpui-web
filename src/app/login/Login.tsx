@@ -24,10 +24,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
+  const [maxStage, setMaxStage] = useState<number>(0);
   const cookie = new Cookies();
   const [sessions, setSessions] = useState<Sessions>(parseTokensFromCookies(cookie.get('sessions')));
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingSession, setLoadingSession] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (stage >= maxStage) {
+      setMaxStage(stage);
+    }
+  }, [stage])
 
   useEffect(() => {
     if (!app.general.token || !app.general.server || !Index.selected(app)) return;
@@ -201,14 +208,22 @@ export function LoginPage() {
       return newSessions
     });
   }
+
+  console.log(stage)
   
   return (
     <Page options={{ center: true }} className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
-          <img className={s.logo} src='/gulp-no-text.svg' alt='' />
+          <img src='/gulp-no-text.svg' alt='' />
           Gulp
           <i>Web Client</i>
+        </div>
+        <div className={s.content}>
+        <div className={s.step}>
+          <Button disabled={stage <= 0} size='sm' img='ArrowLeft' onClick={() => setStage(s => s-1)} variant='ghost'>Previous step</Button>
+          <p>Authorization</p>
+          <Button disabled={maxStage < stage + 1} revert className={s.next_btn} onClick={() => setStage(s => s+1)} size='sm' img='ArrowRight' variant='ghost'>Next step</Button>
         </div>
         {stage === 0
           ? (
@@ -232,7 +247,6 @@ export function LoginPage() {
                 value={app.general.password}
                 tabIndex={3}
                 onChange={e => Info.setPassword(e.currentTarget.value)} />
-            <Separator />
             <div className={s.group}>
               {!!sessions.length && <Popover>
                 <PopoverTrigger asChild>
@@ -302,6 +316,7 @@ export function LoginPage() {
                 </>
               )
         }
+        </div>
       </Card>
     </Page>
   )
