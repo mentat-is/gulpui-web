@@ -14,6 +14,7 @@ import { Separator } from "@/ui/Separator";
 import { Engine, enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Icon } from "@/ui/Icon";
+import { Context } from "@/class/Info";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -50,20 +51,21 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         variant='ghost'
         img='Filter'>{(app.target.filters[file.uuid] || []).length ? 'Change filters' : 'Set filters'}</Button>
       }>
+      <h4>{file.name} in {Context.findByPugin(app, file._uuid)?.name}</h4>
       <Card>
         <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
+        <Input img='AlarmClockPlus' accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
         <div className={s.offset}>
-          <Input img='AlarmClockPlus' accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
-          <Button variant='outline' onClick={() => setOffset(o => o + 1000)}>+1 sec</Button>
-          <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60)}>+1 min</Button>
-          <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60)}>+1 hour</Button>
-          <Button variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60 * 24)}>+1 day</Button>
+          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000)}>1 second</Button>
+          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000 * 60)}>1 minute</Button>
+          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60)}>1 hour</Button>
+          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60 * 24)}>1 day</Button>
         </div>
         <div className={s.offset}>
-          <Button variant='outline' onClick={() => setOffset(o => o - 1000)}>-1 sec</Button>
-          <Button variant='outline' onClick={() => setOffset(o => o - 1000 * 60)}>-1 min</Button>
-          <Button variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60)}>-1 hour</Button>
-          <Button variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60 * 24)}>-1 day</Button>
+          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000)}>1 second</Button>
+          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000 * 60)}>1 minute</Button>
+          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60)}>1 hour</Button>
+          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60 * 24)}>1 day</Button>
         </div>
       </Card>
       <Separator />
@@ -86,7 +88,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
           <ColorPickerPopover gradients={GradientsMap} solids={[]} />
         </ColorPicker>
       </Card>
-      <Button img='FileBox' onClick={save}>Save</Button>
+      <Button style={{ alignSelf: 'flex-end' }} img='Bookmark' onClick={save}>Save file settings</Button>
     </Banner>
   )
 }

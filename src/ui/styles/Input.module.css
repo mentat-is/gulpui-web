@@ -8,6 +8,10 @@
   background-color: var(--soft-black);
   padding: 8px 12px;
   outline-offset: var(--white);
+  transition: all 0.125s var(--transition);
+}
+.input:hover {
+  box-shadow: var(--ring);
 }
 
 .image {
