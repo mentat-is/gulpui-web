@@ -1,5 +1,5 @@
 import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo, useCallback, useReducer } from "react";
-import { ResponseBase } from "@/dto/ResponseBase.dto";
+import { ResponseBase, ResponseError } from "@/dto/ResponseBase.dto";
 import { λApp, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";
 import { toast } from "sonner";
@@ -18,7 +18,7 @@ export class ApplicationError extends Error {
 
 // Define the shape of the application context properties
 interface ApplicationContextProps {
-  spawnBanner: (banner: ReactNode) => void;
+  spawnBanner: (banner: JSX.Element) => void;
   destroyBanner: () => void;
   banner: boolean;
   spawnDialog: (dialog: JSX.Element) => void;
@@ -82,10 +82,9 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     };
   
     const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
-      console.error('[ API | ERROR ]: ', error);
-      !options.ignore && toast(`Internal appliction error in ${(options.server || app.general.server)}`, {
-        description: JSON.stringify(error),
-      });
+      Logger.error(`Network error: ${error}.
+Server: ${options.server || app.general.server}.
+Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
       return null;
     });
 
@@ -94,8 +93,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     const lambda = new λ(await res.json() as T)
     if (!res.ok && lambda.isError()) {
       if ((lambda.data.exception.name === 'SessionExpired' || lambda.data.exception.msg.startsWith('session token')) && app.general.token) {
+        Logger.warn(`Session expired, logging out...`);
         removeToken();
         setInfo(BaseInfo);
+      } else {
+        Logger.error(`API Error: ${(lambda as ResponseError).data.exception.name}`, ApplicationProvider.name);
       }
       !options.ignore && toast(lambda.data.exception.name, {
         description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
@@ -128,7 +130,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
   }, [app.general.token])
 
-  const spawnBanner = (banner: ReactNode) => {
+  const spawnBanner = (banner: JSX.Element) => {
     setBanner(banner);
     document.querySelector('body')?.classList.add('no-scroll');
   }; // Function to place banner into DOM-tree
@@ -139,9 +141,13 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   }; // Function to unmount a banner
 
   
-  const spawnDialog = (dialog: JSX.Element) => setDialog(dialog);
+  const spawnDialog = (dialog: JSX.Element) => {
+    setDialog(dialog)
+  };
   
-  const destroyDialog = () => setDialog(() => null);
+  const destroyDialog = () => {
+    setDialog(() => null)
+  };
 
   // Application context properties
   const props: ApplicationContextProps = {

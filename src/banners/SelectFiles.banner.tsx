@@ -15,6 +15,7 @@ import React from "react";
 import { Separator } from "@/ui/Separator";
 import { LimitsBanner } from "./Limits.banner";
 import { UploadBanner } from "./Upload.banner";
+import { Logger } from "@/dto/Logger.class";
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -93,6 +94,7 @@ export function SelectFilesBanner() {
       return handle(true, cu, pu, fu);
     }
     handle(true, app.target.contexts.map(context => context.uuid));
+    Logger.log(`${SelectFilesBanner.name}.${selectAll.name} has been executed`, SelectFilesBanner.name);
   }
 
   const save = async () => {

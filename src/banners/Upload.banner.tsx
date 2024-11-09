@@ -14,6 +14,7 @@ import { Progress } from "@/ui/Progress";
 import { SelectFilesBanner } from "./SelectFiles.banner";
 import { PluginEntity } from "@/dto/Plugin.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
+import { Logger } from "@/dto/Logger.class";
 
 interface λIngestFileSettings {
   plugin?: PluginEntity['filename'],
@@ -77,6 +78,9 @@ export function UploadBanner() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       await sendChunkedFiles(file, 0, i);
+      Logger.log(`${file.name} has been uploaded.
+Size: ${file.size} bytes.
+Progress: ${progress}%`, UploadBanner.name);
     }
 
     const result = await Info.query_operations();

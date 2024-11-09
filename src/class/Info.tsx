@@ -80,6 +80,7 @@ export class Info implements InfoProps {
 
         if (file) files.push(file);
         else {
+          Logger.error(`File with uuid ${uuid} not found in application data`, `${Info.name}.${this.refetch.name}`);
           toast('File not found in application data', {
             description: `See console for further details. UUID: ${uuid}`
           });
@@ -100,9 +101,9 @@ export class Info implements InfoProps {
     }
     
     await Promise.all(files.map(async file => {
-      if (!file || (!this.app.target.bucket.selected && !range)) return;
+      if (!this.app.target.bucket.selected && !range) return Logger.error(`${Info.name}.${this.refetch.name} for file ${file?.uuid}-${file?.uuid} has been executed, but was cancelled bacause range is ${typeof range} and ${typeof this.app.target.bucket.selected}`, Info.name);
 
-      return this.api('/query_raw', {
+      return await this.api('/query_raw', {
         method: 'POST',
         data: {
           ws_id: this.app.general.ws_id,
@@ -183,7 +184,7 @@ export class Info implements InfoProps {
   setLoaded = (files: μ.File[]) => {
     const message = files.length > 1
       ? `Files: [${files.map(f => File.uuid(this.app, f).name).join(', ')}] has been fully loaded`
-      : `File: ${File.uuid(this.app, files[0])} has been fully loaded`;
+      : `File: ${File.uuid(this.app, files[0])?.name} with uuid ${files[0]} has been fully loaded`;
 
     Logger.log(message, Info.name);
 
@@ -259,7 +260,10 @@ export class Info implements InfoProps {
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (uuid: μ.File) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
+  events_reset_in_file = (uuid: μ.File) => {
+    Logger.log(`All events has been erased from file with uuid ${uuid}`, `${Info.name}.${this.events_reset_in_file.name}`);
+    this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events')
+  };
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');

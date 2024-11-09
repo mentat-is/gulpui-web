@@ -13,7 +13,6 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Button } from "@/ui/Button";
 import { λIndex } from "@/dto/Index.dto";
-import { Icon } from "@/ui/Icon";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";

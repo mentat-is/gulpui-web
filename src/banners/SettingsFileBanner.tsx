@@ -15,6 +15,7 @@ import { Engine, enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Icon } from "@/ui/Icon";
 import { Context } from "@/class/Info";
+import { Logger } from "@/dto/Logger.class";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -22,16 +23,20 @@ interface SettingsFileBannerProps {
 
 export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const { Info, app, spawnBanner, destroyBanner } = useApplication();
-  const [color, setColor] = useState<string>(file.color);
+  const [color, setColor] = useState<Gradients>(file.color);
   const [offset, setOffset] = useState<number>(file.offset);
   const [engine, setEngine] = useState<Engine>(file.engine);
 
   const save = () => {
+    const newFile = { color, offset, engine };
+
+    Logger.log(`Settings for file has been successfully updated.
+File: ${file.name}-${file.uuid}
+Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
+
     Info.files_replace({
       ...file,
-      color: color as Gradients,
-      offset,
-      engine
+      ...newFile
     });
     destroyBanner();
   }
@@ -83,7 +88,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Separator />
       <Card className={s.color}>
         <p className={s.text}>Color palette:</p>
-        <ColorPicker color={color} setColor={setColor}>
+        <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
           <ColorPickerTrigger />
           <ColorPickerPopover gradients={GradientsMap} solids={[]} />
         </ColorPicker>
