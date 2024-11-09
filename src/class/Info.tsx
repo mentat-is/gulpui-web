@@ -128,6 +128,8 @@ export class Info implements InfoProps {
   }
 
   cancel = async (r: μ.File) => {
+    Logger.log(`Request canselation has been requested for file ${File.uuid(this.app, r).name}`, Info.name);
+
     return await this.api('/stats_cancel_request', {
       method: 'PUT',
       data: { r },
@@ -136,6 +138,8 @@ export class Info implements InfoProps {
   }
 
   filters_cache = (file: λFile | μ.File) => {
+    Logger.log(`Caching has been requested for file ${File.uuid(this.app, file).name}`, Info.name);
+
     const uuid = Parser.useUUID(file) as μ.File;
     this.setInfoByKey({
       data: this.app.timeline.cache.data.set(uuid, this.app.target.events.get(uuid) || []),
@@ -177,6 +181,12 @@ export class Info implements InfoProps {
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
   setLoaded = (files: μ.File[]) => {
+    const message = files.length > 1
+      ? `Files: [${files.map(f => File.uuid(this.app, f).name).join(', ')}] has been fully loaded`
+      : `File: ${File.uuid(this.app, files[0])} has been fully loaded`;
+
+    Logger.log(message, Info.name);
+
     this.setInfoByKey(files, 'timeline', 'loaded');
 
     if (this.app.timeline.loaded.length === this.app.target.files.length) {
@@ -187,7 +197,10 @@ export class Info implements InfoProps {
 
   deload = (uuids: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !uuids.includes(_uuid))]);
 
-  render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
+  render = () => {
+    Logger.log(`Render requested`, Info.name);
+    this.setTimelineScale(this.app.timeline.scale + 0.000000001);
+  };
 
   // 🔥 INDEXES
   index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));
@@ -195,7 +208,17 @@ export class Info implements InfoProps {
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
   // 🔥 OPERATIONS
-  operations_reload = () => this.api<OperationsList>('/operation_list', { method: 'POST' }).then(response => response.isSuccess() && this.setInfoByKey(Operation.reload(response.data, this.app), 'target', 'operations'));
+  operations_reload = () => this.api<OperationsList>('/operation_list', {
+    method: 'POST'
+  }).then(response => {
+    if (response.isSuccess()) {
+      Logger.log(`API /operation_list has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
+      this.setInfoByKey(Operation.reload(response.data, this.app), 'target', 'operations');
+    } else {
+      Logger.error(response, Info.name);
+    }
+  });
+
   operations_select = (operation: λOperation) => this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations');
   
   operations_set = (operations: λOperation[]) => this.setInfoByKey(Operation.reload(operations, this.app), 'target', 'operations');
@@ -810,7 +833,7 @@ export class File {
 
   public static findByNameAndContextName = (app: λApp, filename: λFile['name'], context: λContext['name']) => app.target.files.find(f => f.name === filename && Context.plugins(app, context).some(p => p.uuid === f._uuid))!;
 
-  public static uuid = (use: λApp | λFile[], file: λFile | μ.File) => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))!;
+  public static uuid = (use: λApp | λFile[], file: λFile | μ.File) => typeof file === 'string' ? Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))! : file;
 
   public static unselect = (use: λApp | λFile[], unselected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(unselected).find(s => f.uuid === Parser.useUUID(s)) ? File._unselect(f) : f);
 

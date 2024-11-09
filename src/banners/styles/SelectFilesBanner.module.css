@@ -6,7 +6,8 @@
   padding-right: 8px;
   overflow-y: auto;
   overflow-x: hidden;
-  scrollbar-width: 8px;  
+  scrollbar-width: 8px;
+  width: calc(100% + 6px);
 }
 
 .context {
@@ -16,7 +17,7 @@
   padding: 12px 16px;
   background: var(--gray16);
   border: 1px solid var(--accent-2);
-  border-radius: var(--border-m);
+  border-radius: var(--border-s);
 }
 .contextHeading {
   display: flex;

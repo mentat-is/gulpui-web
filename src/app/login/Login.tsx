@@ -3,7 +3,6 @@ import Cookies from "universal-cookie";
 import s from './Login.module.css';
 import { useApplication } from "@/context/Application.context";
 import { parseTokensFromCookies } from '@/ui/utils'
-import { Page } from "@/components/Page";
 import { Card } from "@/ui/Card";
 import { Session, Sessions } from "@/dto/Session.dto";
 import { Index } from "@/class/Info";
@@ -213,7 +212,7 @@ export function LoginPage() {
   }
 
   return (
-    <Page options={{ center: true }} className={s.page}>
+    <div className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
           <img src='/gulp-no-text.svg' alt='' />
@@ -274,7 +273,6 @@ export function LoginPage() {
           : stage === 1
             ? (
               <div className={s.chooser}>
-                <p className={s.cluster}><Icon name='Combine' />Choose database index</p>
                 {app.target.indexes.map((index) => 
                   <Button
                     loading={loading}
@@ -288,7 +286,6 @@ export function LoginPage() {
             :  stage === 2 
               ? (
                 <div className={s.chooser}>
-                  <p className={s.cluster}><Icon name='Hexagon' />Choose operation node</p>
                   {app.target.operations.map((operation) => (
                     <div className={s.unit_group} key={operation.id}>
                       <Button onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
@@ -333,6 +330,6 @@ export function LoginPage() {
         }
         </div>
       </Card>
-    </Page>
+    </div>
   )
 }

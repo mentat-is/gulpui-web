@@ -3,6 +3,7 @@ import { λApp } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
 import { Chunk, isChunkDefault, UnknownChunk, λChunk } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
+import { Logger } from '@/dto/Logger.class';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -23,6 +24,7 @@ export class AppSocket extends WebSocket {
     AppSocket.instance = this;
 
     this.onopen = (ev) => {
+      Logger.log(`WebSocket has been initialized with id: ${this.info.app.general.ws_id}`, AppSocket.name);
       this.send(JSON.stringify({
         token: this.info.app.general.token,
         ws_id: this.info.app.general.ws_id,
@@ -53,16 +55,18 @@ export class AppSocket extends WebSocket {
       } else if ('collabs' in _chunk) {
         this.info.notes_reload();
         this.info.links_reload();
+      } else {
+        Logger.warn(`WebSocket recived unknown type of chunk: ${JSON.stringify(_chunk, null, 2)}`, AppSocket.name); 
       }
     }
 
     this.onerror = (error) => {
-      console.error('[ WebSocket | ERROR ]:', error);
+      Logger.error(`WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`, AppSocket.name);
       AppSocket.instance = null;
     };
 
     this.onclose = (event) => {
-      console.log('[ WebSocket | CLOSE ]:', event);
+      Logger.error(`WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`, AppSocket.name);
       AppSocket.instance = null;
     };
   }

@@ -1,6 +1,9 @@
 .page {
   flex: 1;
-  background: var(--gray32);
+  background: var(--gray24);
+  align-items: center;
+  justify-content: center;
+  display: flex;
 }
 .group {
   display: flex;

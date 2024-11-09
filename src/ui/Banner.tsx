@@ -1,9 +1,9 @@
 import { ReactNode, useEffect } from 'react';
 import { useApplication } from '../context/Application.context';
-import { useClasses } from '../decorator/useClasses';
 import { Children } from '../dto';
 import s from './styles/Banner.module.css';
 import { Button } from './Button';
+import { cn } from './utils';
 
 type BannerProps = Children & {
   className?: string | string[];
@@ -45,7 +45,7 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
 
   return (
     <div className={s.wrapper}>
-      <div className={useClasses(s.banner, className, loading ? s.loading : '')}>
+      <div className={cn(s.banner, className, loading ? s.loading : '')}>
         <h6>
           {title}
           {subtitle}
