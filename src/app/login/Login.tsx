@@ -15,12 +15,12 @@ import { Separator } from "@/ui/Separator";
 import { Button } from "@/ui/Button";
 import { λIndex } from "@/dto/Index.dto";
 import { Icon } from "@/ui/Icon";
-import { Banner } from "@/ui/Banner";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
+import { Stack } from "@/ui/Stack";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -30,6 +30,12 @@ export function LoginPage() {
   const [sessions, setSessions] = useState<Sessions>(parseTokensFromCookies(cookie.get('sessions')));
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingSession, setLoadingSession] = useState<string | null>(null);
+
+  const stageMap = [
+    'Authorization',
+    'Select index',
+    'Select operation'
+  ]
 
   useEffect(() => {
     if (stage >= maxStage) {
@@ -181,18 +187,6 @@ export function LoginPage() {
     Info.query_operations();
   }, [stage]);
 
-  const spawnBannerToRequestDelete = (operation: λOperation) => {
-    spawnBanner(
-      <Banner title={`Delete operation -> ${operation.name}`}>
-        <Button
-          loading={loading}
-          onClick={() => deleteOperation(operation.id)}
-          variant='destructive'
-          img='Trash2'>Yes, delete!</Button>
-      </Banner>
-    )
-  }
-
   const handleSessionButtonClick = async ({ server, token, ...session }: Session) => {
     setLoadingSession(token);
     const response = await api('/version', { server, token });
@@ -229,7 +223,7 @@ export function LoginPage() {
         <div className={s.content}>
         <div className={s.step}>
           <Button disabled={stage <= 0} size='sm' img='ArrowLeft' onClick={() => setStage(s => s-1)} variant='ghost'>Previous step</Button>
-          <p>Authorization</p>
+          <p>{stageMap[stage]}</p>
           <Button disabled={maxStage < stage + 1} revert className={s.next_btn} onClick={() => setStage(s => s+1)} size='sm' img='ArrowRight' variant='ghost'>Next step</Button>
         </div>
         {stage === 0
@@ -298,16 +292,30 @@ export function LoginPage() {
                   {app.target.operations.map((operation) => (
                     <div className={s.unit_group} key={operation.id}>
                       <Button onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
-                      <Button
-                        size='icon'
-                        onClick={() => spawnBannerToRequestDelete(operation)}
-                        variant='destructive'
-                        img='Trash2' />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            size='icon'
+                            variant='ghost'
+                            img='Trash2' />
+                        </PopoverTrigger>
+                        <PopoverContent>
+                          <Stack dir='column'>
+                            <p>Are you shure?</p>
+                            <Button
+                              loading={loading}
+                              onClick={() => deleteOperation(operation.id)}
+                              variant='destructive'
+                              img='Trash2'>Yes, delete operation {operation.name}!</Button>
+                          </Stack>
+                        </PopoverContent>
+                      </Popover>
+                      
                       </div>
                   ))}
                   <Separator />
                   <Button
-                    variant='outline'
+                    variant='glass'
                     img='Plus'
                     style={{ width: '100%' }}
                     onClick={() => spawnBanner(<CreateOperationBanner />)}>Create new operation</Button>

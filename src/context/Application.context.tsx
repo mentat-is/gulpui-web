@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, ReactNode, useRef, useEffect } from "react";
+import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo, useCallback, useReducer } from "react";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { λApp, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";
@@ -174,14 +174,20 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     link.click();
     URL.revokeObjectURL(url);
   };
+  
+  const prefix = useMemo(() => {
+    return 'root@Gulp:/web-ui#';
+  }, []);
 
   const onCommand = (cmd: string) => {
+    Logger.push(prefix + cmd);
     switch (true) {
       case cmd === 'export':
         handleLoggerExportCommand();
         break;
     
       default:
+        Logger.error('Unknown command', Logger.name)
         break;
     }
   }
@@ -191,7 +197,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       {children}
       {banner}
       {dialog}
-      <Console noise onCommand={onCommand} history={Logger.history()} title='GULP' icon='' prefix='root@Gulp:/web-ui#' />
+      <Console noise={true} onCommand={onCommand} history={Logger.history()} title='Gulp Web Client' trigger='/' icon={<img style={{filter: `var(--filter-to-white)`, width: 14 }} src='/gulp-no-text.svg' alt='' />} prefix={prefix} />
     </ApplicationContext.Provider>
   );
 };
