@@ -20,6 +20,7 @@ import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
+import { Logger } from "@/dto/Logger.class";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -87,6 +88,14 @@ export function LoginPage() {
       }
     }).then((res) => {
       if (res.isSuccess()) {
+        Logger.log(`User has been authentificated with next credentials:`, LoginPage.name)
+        Logger.log({
+          username: app.general.username,
+          password: app.general.password,
+          token: res.data.token,
+          user_id: res.data.user_id,
+          expires: res.data.time_expire
+        }, LoginPage.name)
         Info.setToken(res.data.token);
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
@@ -209,8 +218,6 @@ export function LoginPage() {
     });
   }
 
-  console.log(stage)
-  
   return (
     <Page options={{ center: true }} className={s.page}>
       <Card className={s.wrapper}>

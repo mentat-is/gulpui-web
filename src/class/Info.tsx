@@ -1101,8 +1101,6 @@ export namespace μ {
   export type Context = UUID & {
     readonly [Context]: unique symbol;
   };
-
-
 }
 
 export namespace λ {

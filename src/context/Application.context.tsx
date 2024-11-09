@@ -161,12 +161,37 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     logout
   };
 
+  const handleLoggerExportCommand = () => {
+    const content = Logger.history()
+      .map(l => l.message.replace(/\x1b\[[0-9;]*m/g, ''))
+      .join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `gulpui-web_log_${Date.now()}.log`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const onCommand = (cmd: string) => {
+    switch (true) {
+      case cmd === 'export':
+        handleLoggerExportCommand();
+        break;
+    
+      default:
+        break;
+    }
+  }
+
   return (
     <ApplicationContext.Provider value={props}>
       {children}
       {banner}
       {dialog}
-      <Console noise history={Logger.history()} title='GULP' icon='' prefix='root@Gulp:/web-ui#' />
+      <Console noise onCommand={onCommand} history={Logger.history()} title='GULP' icon='' prefix='root@Gulp:/web-ui#' />
     </ApplicationContext.Provider>
   );
 };

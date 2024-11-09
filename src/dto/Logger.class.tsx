@@ -53,7 +53,7 @@ export class Logger {
     const contextInfo = context ? `[${context}] ` : '';
     const traceInfo = trace ? ` ${trace}` : '';
 
-    return (λLogger[Logger.preformat[level]] as (text?: string | null) => string)(`[Gulp]${pid} - ${λLogger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${λLogger.yellow(contextInfo)}${message}${traceInfo}`);
+    return (λLogger[Logger.preformat[level]] as (text?: string | null) => string)(`[Gulp]${pid} - ${λLogger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${λLogger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, null, 2) : message}${traceInfo}`);
   }
 }
 
