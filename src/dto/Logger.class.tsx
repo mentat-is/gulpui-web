@@ -1,7 +1,8 @@
-import { History, LogLevel } from '@impactium/console';
+import { Console } from '@impactium/console';
+import { MinMax } from './QueryMaxMin.dto';
 
 export class Logger {
-  protected static messages: History[] = [];
+  protected static messages: Console.History[] = [];
 
   static log(message: any, context?: string) {
     Logger.store('log', message, context);
@@ -28,7 +29,7 @@ export class Logger {
     Logger.store('fatal', message, context);
   }
 
-  public static store(level: LogLevel, message: string, context?: string, trace?: string) {
+  public static store(level: Console.LogLevel, message: string, context?: string, trace?: string) {
     Logger.messages.push({ level, message: Logger.format(level, message, context, trace) });
   }
 
@@ -38,7 +39,7 @@ export class Logger {
 
   public static push = (message: string) => Logger.messages.push({ level: 'fatal', message });
 
-  private static preformat: Record<LogLevel, keyof typeof λLogger> = {
+  private static preformat: Record<Console.LogLevel, keyof typeof λLogger> = {
     log: 'green',
     warn: 'yellow',
     error: 'red',
@@ -47,7 +48,7 @@ export class Logger {
     fatal: 'white'
   }
 
-  private static format(level: LogLevel, message: any, context?: string, trace?: string) {
+  private static format(level: Console.LogLevel, message: any, context?: string, trace?: string) {
     const timestamp = new Date().toISOString();
     const pid = `${typeof process !== 'undefined' ? ` ${process.pid}` : ''}`;
     const contextInfo = context ? `[${context}] ` : '';
@@ -57,6 +58,24 @@ export class Logger {
   }
 }
 
+export class LoggerHandler {
+  public static bucketSelection = (selected: MinMax, timestamp: MinMax) => {
+    if (selected.min >= selected.max) {
+      Logger.error(`Dates: "selected.min" value > then "selected.max" value.
+Values: ${JSON.stringify({ selected }, null, 2)}`, LoggerHandler.name);
+    }
+
+    if (selected.min < timestamp.min) {
+      Logger.warn(`Dates: "selected.min" value is < then "timestamp.min"
+Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`, LoggerHandler.name);
+    } else if (selected.max > timestamp.max) {
+      Logger.warn(`Dates: "selected.max" value is > then "timestamp.max"
+Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`, LoggerHandler.name);
+    }
+
+    Logger.log(`Has been selected date from ${new Date(selected.min).toDateString()} to ${new Date(selected.max).toDateString()}`, LoggerHandler.name);
+  }
+}
 
 export class λLogger {
   public static red = (text?: string | null) => `\x1b[31m${text}\x1b[0m`;

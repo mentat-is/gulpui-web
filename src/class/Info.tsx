@@ -21,7 +21,7 @@ import { UUID } from 'crypto';
 import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/λGlyph.dto';
 import { differenceInMonths } from 'date-fns';
-import { Logger } from '@/dto/Logger.class';
+import { Logger, LoggerHandler } from '@/dto/Logger.class';
 
 interface RefetchOptions {
   uuids?: Arrayed<λFile['uuid']>;
@@ -529,12 +529,14 @@ Files: ${files.length}`, Info.name);
     return { operations, contexts, plugins, files };
   }
 
-  setBucketSelected = (minMax: MinMax) => {
+  setBucketSelected = (range: MinMax) => {
+    LoggerHandler.bucketSelection(range, this.app.target.bucket.timestamp);
+
     this.setBucket({
       ...this.app.target.bucket,
-      selected: minMax
+      selected: range
     });
-    return minMax;
+    return range;
   };
 
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');

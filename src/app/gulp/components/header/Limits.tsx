@@ -3,13 +3,9 @@ import { getReadableDate } from '@/decorator/getReadableDate';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import s from '../../Gulp.module.css';
 import { Button } from '@/ui/Button';
-import { useEffect } from 'react';
 
 export function Limits() {
   const { app, spawnBanner } = useApplication();
-
-  useEffect(() => {
-  }, []);
 
   return (
     <Button variant='secondary' onClick={() => spawnBanner(<LimitsBanner />)} className={s.datelimit}>
