@@ -488,7 +488,7 @@ ${error}`, Info.name);
                     _uuid: p_uuid,
                     offset: 0,
                     color: 'thermal',
-                    engine: 'height',
+                    engine: 'default',
                     uuid: f_uuid
                   }
                   files.push(file)

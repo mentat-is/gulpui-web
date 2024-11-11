@@ -11,6 +11,8 @@ import { RenderEngine } from '@/class/RenderEngine';
 import { format } from 'date-fns';
 import { LinksDisplayer } from './Links.displayer';
 import { NotesDisplayer } from './Notes.displayer';
+import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
+import { Logger, LoggerHandler } from '@/dto/Logger.class';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -88,13 +90,21 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     if (!file || throwableByTimestamp(file.timestamp, limits, app, file.offset)) return;
 
-    File.events(app, file).forEach(event => {
-      if (throwableByTimestamp(event.timestamp + file.offset, limits, app)) return;
+    const clickPosition = Math.round(clickX);
 
-      const pos = getPixelPosition(event.timestamp + file.offset);      
+    const events = File.events(app, file).filter(e => {
+      const pos = getPixelPosition(e.timestamp + file.offset);
 
-      if (Math.round(clickX) === Math.round(pos)) spawnDialog(<DisplayEventDialog event={event} />);
+      return clickPosition === Math.round(pos);
     });
+
+    LoggerHandler.canvasClick(file, events, clickPosition);
+
+    if (events.length > 0) {
+      spawnDialog(events.length > 1
+        ? <DisplayGroupDialog events={events} />
+        : <DisplayEventDialog event={events[0]} />)
+    }
   };
 
   useEffect(() => {

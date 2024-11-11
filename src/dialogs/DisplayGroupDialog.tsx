@@ -5,13 +5,18 @@ import { SymmetricSvg } from "@/ui/SymmetricSvg";
 import { DisplayEventDialog } from "./DisplayEventDialog";
 import { useApplication } from "@/context/Application.context";
 import { λEvent } from "@/dto/ChunkEvent.dto";
+import { useEffect } from "react";
 
 interface DisplayGroupDialogProps {
   events: λEvent[];
 }
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
-  const { spawnDialog } = useApplication();
+  const { Info, spawnDialog } = useApplication();
+
+  useEffect(() => {
+    Info.setTimelineTarget(events[0]);
+  }, [events]);
 
   return (
     <Dialog title='Choose event' description='Choose event from list below'>

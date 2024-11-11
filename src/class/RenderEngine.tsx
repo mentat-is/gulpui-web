@@ -55,7 +55,7 @@ export interface Rendered {
   [End]: λ.Timestamp;
 }
 
-export type DefaultMap = Map<number, Default> & Scale;
+export type DefaultMap = Map<number, Default> & Scale & Max;
 
 type Engines = {
   [key in Engine]: (file: λFile, y: number) => void;
@@ -102,18 +102,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.defaultMap[file.uuid]
       : this.getDefault(file);
 
-    const max = Math.max(...[...heat.values()].map(v => v.code));
-
-    [...heat].forEach(hit => {
-      // eslint-disable-next-line
-      const [_, { code, timestamp }] = hit;
+    Array.from(heat.values()).forEach(hit => {
+      const { code, timestamp } = hit;
       
       if (throwableByTimestamp(timestamp + file.offset, this.limits, this.app)) return;
 
 
       this.ctx.fillStyle = λColor.gradient(file.color, code, {
         min: file.event.min || 0,
-        max: file.event.max || max,
+        max: heat[Max],
       });
       this.ctx.fillRect(this.getPixelPosition(timestamp), y, 1, 47);
     });
@@ -124,8 +121,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.heightMap[file.uuid]
       : this.getHeightmap(file);
 
-    [...heat].forEach((hit) => {
-      // eslint-disable-next-line
+    Array.from(heat).forEach((hit) => {
       const [ segment, amount ] = hit;
       const timestamp = segment * this.segmentSize;
 
@@ -347,7 +343,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public locals = (file: λFile) => {
-    const loading = ' Loading... ';
     const y = File.getHeight(this.app, file, this.scrollY);
 
     this.ctx.fillStyle = '#e8e8e8';
@@ -365,9 +360,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
     this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    const isLoading = !this.app.timeline.loaded.includes(file.uuid);
-    this.ctx.fillText(file.doc_count.toString() + (isLoading ? loading : ''), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
-    this.ctx.fillText(file.doc_count.toString() + (isLoading ? loading : ''), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
+    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
+    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
   }
 
   public info = (file: λFile) => {
@@ -419,6 +413,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
 
     heat[Scale] = this.app.timeline.scale;
+    heat[Max] = Math.max(...Array.from(heat.values()).map(h => h.code)) as λ.Height;
     this.defaultMap = {
       ...this.defaultMap,
       [file.uuid]: heat
