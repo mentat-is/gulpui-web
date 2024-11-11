@@ -34,16 +34,19 @@ export interface Default {
 }
 
 const Scale = Symbol('Scale');
+// eslint-disable-next-line
 export interface Scale {
   [Scale]: number
 }
 
 const Amount = Symbol('Amount');
+// eslint-disable-next-line
 export interface Amount {
   [Amount]: λ.Height;
 }
 
 const Max = Symbol('Max');
+// eslint-disable-next-line
 export interface Max {
   [Max]: λ.Height;
 }
@@ -106,7 +109,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const { code, timestamp } = hit;
       
       if (throwableByTimestamp(timestamp + file.offset, this.limits, this.app)) return;
-
 
       this.ctx.fillStyle = λColor.gradient(file.color, code, {
         min: file.event.min || 0,

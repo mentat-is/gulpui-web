@@ -48,6 +48,7 @@ export function Timeline() {
     const diff = scrollX + event.clientX - rect.left;
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
+    if (newScale < app.timeline.scale && newScale < 0.01) return;
     Info.setTimelineScale(newScale);
     setScrollX(scrollX => scrollX + left);
   }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);
