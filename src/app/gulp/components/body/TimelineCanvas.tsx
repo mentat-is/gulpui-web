@@ -73,7 +73,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
         y: timeline.current.clientHeight - 36
       }, [
         `X: ${scrollX} Y: ${scrollY}`,
-        `Scale: ${app.timeline.scale.toPrecision(2)}`
+        `Scale: ${app.timeline.scale > 1 ? Math.round(app.timeline.scale) : app.timeline.scale.toPrecision(2)}`
       ]);
     }
   };
