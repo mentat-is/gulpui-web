@@ -93,7 +93,7 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
           <ColorPickerPopover gradients={GradientsMap} solids={[]} />
         </ColorPicker>
       </Card>
-      <Button style={{ alignSelf: 'flex-end' }} img='Bookmark' onClick={save}>Save file settings</Button>
+      <Button style={{ alignSelf: 'flex-end' }} img='CheckCheck' onClick={save}>Apply new file settings</Button>
     </Banner>
   )
 }

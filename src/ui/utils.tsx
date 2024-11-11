@@ -145,22 +145,22 @@ export const Icons = icons;
 
 export const GradientsMap = {
   thermal: [
-    'ffffaf',
-    'ffff01',
-    'ffd800',
-    'ffbe00',
-    'ff9f00',
-    'ff7800',
-    'ff4600',
-    'ff014f',
-    'ea004f',
-    'd00086',
-    'af00af',
-    '8600d0',
-    '4f00ea',
-    '0000c1',
-    '010198',
-    '01016f',
+    "01016f",
+    "010198",
+    "0000c1",
+    "4f00ea",
+    "8600d0",
+    "af00af",
+    "d00086",
+    "ea004f",
+    "ff014f",
+    "ff4600",
+    "ff7800",
+    "ff9f00",
+    "ffbe00",
+    "ffd800",
+    "ffff01",
+    "ffffaf"
   ],
   sepal: ['fe2400', 'fcfafd', '7e51fe'],
   deep: ['54aef3', '142f48'],
@@ -306,7 +306,7 @@ export class λColor {
       return colours[color as keyof typeof colours];
     }
   
-    return color;
+    return '#ffffff';
   }
 
   /**
