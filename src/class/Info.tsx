@@ -986,7 +986,7 @@ export class Event {
       result.push({
         _id: e.id,
         operation_id: e.operation_id,
-        timestamp: e['@timestamp'],
+        timestamp: e['@timestamp'] as λ.Timestamp,
         file: e.src_file,
         context: e.context,
         event: {

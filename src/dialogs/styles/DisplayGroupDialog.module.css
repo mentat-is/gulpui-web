@@ -17,6 +17,7 @@
   flex-direction: row;
   gap: var(--card-gap);
   overflow: hidden;
+  flex: 1;
 }
 .group {
   display: flex;

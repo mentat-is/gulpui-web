@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { LinksDisplayer } from './Links.displayer';
 import { NotesDisplayer } from './Notes.displayer';
 import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
-import { Logger, LoggerHandler } from '@/dto/Logger.class';
+import { LoggerHandler } from '@/dto/Logger.class';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -79,7 +79,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
   };
 
   const handleClick = (event: MouseEvent) => {
-    if (event.button === 2) return event.preventDefault();
+    if (event.button === 2)
+      return event.preventDefault();
 
     const { top, left } = canvas_ref.current!.getBoundingClientRect();
     const clickX = event.clientX - left;

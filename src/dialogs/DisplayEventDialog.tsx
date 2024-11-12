@@ -13,7 +13,7 @@ import { convertXML } from 'simple-xml-to-json';
 import { cn, copy, λIcon } from "@/ui/utils";
 import { Button } from "@/ui/Button";
 import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
-import { File, Note, Plugin } from '@/class/Info';
+import { File, Note, Plugin, λ } from '@/class/Info';
 import { Separator } from "@/ui/Separator";
 import { Notes } from "./components/Notes";
 import { λNote } from "@/dto/Note.dto";
@@ -104,7 +104,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           level: res.data["log.level"],
           _id: res.data._id,
           operation_id: res.data.operation_id,
-          timestamp: res.data["@timestamp"],
+          timestamp: res.data["@timestamp"] as λ.Timestamp,
           file: res.data["gulp.source.file"],
           context: res.data["gulp.context"],
           _uuid: event._uuid
