@@ -1,7 +1,6 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File, Info, λ, μ } from "./Info";
-import { λApp } from "@/dto";
 import { Color, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
@@ -412,7 +411,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
 
     heat[Scale] = this.info.app.timeline.scale;
-    heat[Max] = Math.max(...Array.from(heat.values()).map(h => h.code)) as λ.Height;
+    heat[Max] = (file.event.max ?? Math.max(...Array.from(heat.values()).map(h => h.code))) as λ.Height;
     this.defaultMap = {
       ...this.defaultMap,
       [file.uuid]: heat

@@ -6,14 +6,12 @@ import { DisplayEventDialog } from "./DisplayEventDialog";
 import { useApplication } from "@/context/Application.context";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { useEffect } from "react";
-import { λ } from "@/class/Info";
 
 interface DisplayGroupDialogProps {
   events: λEvent[];
-  timestamp?: λ.Timestamp;
 }
 
-export function DisplayGroupDialog({ events, timestamp }: DisplayGroupDialogProps) {
+export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const { Info, spawnDialog } = useApplication();
 
   useEffect(() => {

@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { Card } from '@/ui/Card';
 
 export function LimitsBanner() {
-  const { lang } = useLanguage();
   const { Info, destroyBanner, app } = useApplication();
   const [manual, setManual] = useState<boolean>(false);
   const [min, setMin] = useState<number>(app.target.bucket.selected?.min || app.target.bucket.timestamp.min);
@@ -22,10 +21,10 @@ export function LimitsBanner() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const map = [
-    { text: lang.last.day, do: () => save(app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000) },
-    { text: lang.last.week, do: () => save(app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000) },
-    { text: lang.last.month, do: () => save(app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000) },
-    { text: lang.last.full, do: () => save(app.target.bucket.timestamp.min) },
+    { text: 'Day', do: () => save(app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000) },
+    { text: 'Week', do: () => save(app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000) },
+    { text: 'Month', do: () => save(app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000) },
+    { text: 'All range', do: () => save(app.target.bucket.timestamp.min) },
   ]
 
   const save = async (_min?: number) => {
@@ -43,7 +42,7 @@ export function LimitsBanner() {
   }
 
   return (
-    <Banner className={s.banner} title='Limits'>
+    <Banner className={s.banner} title='Visibility range'>
       <div className={s.date_input_choose_option}>
         <p className={cn(!manual && s.selected)}>Select from limits</p>
         <Switch checked={manual} onCheckedChange={setManual} />
@@ -64,7 +63,8 @@ export function LimitsBanner() {
         {map.map((_: any, index) => (
           <Button variant='outline' onClick={_.do} key={index}>{_.text}</Button>
         ))}
-        <Button variant={'default'} img='Bookmark' loading={loading} onClick={() => save()}>Save</Button>
+        <hr style={{ opacity: 0, flex: 1 }} />
+        <Button style={{ justifySelf: 'flex-end' }} variant='default' img='CheckCheck' loading={loading} onClick={() => save()}>Apply</Button>
       </div>
     </Banner>
   ) 
