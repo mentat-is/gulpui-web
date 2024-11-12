@@ -17,7 +17,7 @@
   flex-direction: column;
 }
 .tabs_list {
-  align-self: flex-end;
+  align-self: flex-start;
   border: var(--geist-border);
 }
 .tabs_content * {

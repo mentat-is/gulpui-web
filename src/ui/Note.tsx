@@ -6,11 +6,9 @@ import { Separator } from './Separator';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
 import { Fragment } from 'react';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from './Icon';
-import { λIcon } from '@/ui/utils';
-import { GlyphMap } from '@/dto/Glyph.dto';
 import { Glyph } from './Glyph';
 
 interface NoteProps {

@@ -4,6 +4,7 @@ import { cn } from './utils';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizable';
+import { Loading } from './Loading';
 
 interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -32,7 +33,7 @@ export function Dialog({ className, callback, icon, description, defaultSize = 5
             </div>
           </div>
           <div className={cn(s.content, loading && s.loading)}>
-            {loading ? <Button variant='disabled' loading size='icon' /> : children}
+            {loading ? <Loading size='lg' variant='white' no_text /> : children}
           </div>
         </div>
       </ResizablePanel>

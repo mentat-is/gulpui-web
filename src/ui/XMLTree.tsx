@@ -13,7 +13,7 @@ export function XMLTree({ xml, ...props }: XMLTreeProps) {
 
   return (
     <div {...props}>
-      <Button onClick={() => copy(xml)} style={{ width: '100%', marginBottom: '8px' }}>Copy</Button>
+      <Button img='Copy' onClick={() => copy(xml)} style={{ width: '100%', marginBottom: '8px' }}>Copy XML</Button>
       {parseXML(xml).map((part, index) => {
         if (part.startsWith('</')) indentLevel--;
         

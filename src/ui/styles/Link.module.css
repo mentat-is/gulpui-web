@@ -13,7 +13,7 @@
   overflow: hidden;
   z-index: 0;
   box-shadow: none;
-  transition: box-shadow 0.125s var(--transition);
+  transition: box-shadow 0.125s var(--transition) !important;
 }
 .target:hover {
   box-shadow: var(--ring);

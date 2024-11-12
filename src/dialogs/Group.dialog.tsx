@@ -2,7 +2,7 @@ import { Button } from "@/ui/Button";
 import { Dialog } from "@/ui/Dialog";
 import s from './styles/DisplayGroupDialog.module.css';
 import { SymmetricSvg } from "@/ui/SymmetricSvg";
-import { DisplayEventDialog } from "./DisplayEventDialog";
+import { DisplayEventDialog } from "./Event.dialog";
 import { useApplication } from "@/context/Application.context";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { useEffect } from "react";

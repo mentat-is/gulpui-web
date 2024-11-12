@@ -9,7 +9,7 @@ import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
@@ -48,7 +48,7 @@ export function Timeline() {
     const diff = scrollX + event.clientX - rect.left;
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
-    if (newScale < app.timeline.scale && newScale < 0.01 || (newScale > app.timeline.scale && newScale > 9999999)) return;
+    if ((newScale < app.timeline.scale && newScale < 0.01) || (newScale > app.timeline.scale && newScale > 9999999)) return;
     Info.setTimelineScale(newScale);
     setScrollX(scrollX => scrollX + left);
   }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);

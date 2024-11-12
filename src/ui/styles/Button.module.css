@@ -139,7 +139,7 @@
 .loading {
   pointer-events: none;
 }
-.loading > svg {
+.loading_icon {
   animation: spin 1s linear infinite;
 }
 @keyframes spin {

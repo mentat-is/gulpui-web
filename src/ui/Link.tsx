@@ -6,11 +6,10 @@ import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
 import { Fragment } from 'react';
 import { Event } from '@/class/Info';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from './Icon';
 import { λLink } from '@/dto/Link.dto';
-import { GlyphMap } from '@/dto/Glyph.dto';
 import { Glyph } from './Glyph';
 
 interface LinkProps {

@@ -4,14 +4,14 @@ import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
 import { Magnifier } from '@/ui/Magnifier';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { File } from '@/class/Info';
 import { StartEnd } from '@/dto/StartEnd.dto';
 import { RenderEngine } from '@/class/RenderEngine';
 import { format } from 'date-fns';
 import { LinksDisplayer } from './Links.displayer';
 import { NotesDisplayer } from './Notes.displayer';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
 
 interface TimelineCanvasProps {

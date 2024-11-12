@@ -14,7 +14,6 @@ import { cn, copy, λIcon } from "@/ui/utils";
 import { Button } from "@/ui/Button";
 import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
 import { File, Note, Plugin, λ } from '@/class/Info';
-import { Separator } from "@/ui/Separator";
 import { Notes } from "./components/Notes";
 import { λNote } from "@/dto/Note.dto";
 import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
@@ -80,38 +79,45 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event]);
 
   const reloadDetailedChunkEvent = () => {
+    const startTime = Date.now();
+  
     api<ResponseBase<RawDetailedChunkEvent>>('/query_single_event', {
       data: {
         gulp_id: event._id
       }
     }).then(res => {
+      const elapsedTime = Date.now() - startTime;
+      const delay = Math.max(1500 - elapsedTime, 0);
+  
       if (res.isSuccess()) {
-        setRawJSON(JSON.stringify(res.data, null, 4));
-        setDetailedChunkEvent({
-          operation: res.data.operation,
-          agent: {
-            type: res.data["agent.type"],
-            id: res.data["agent.id"]
-          },
-          event: {
-            code: res.data["event.code"],
-            duration: res.data["event.duration"],
-            id: res.data["event.id"],
-            hash: res.data["event.hash"],
-            category: res.data["event.category"],
-            original: res.data["event.original"]
-          },
-          level: res.data["log.level"],
-          _id: res.data._id,
-          operation_id: res.data.operation_id,
-          timestamp: res.data["@timestamp"] as λ.Timestamp,
-          file: res.data["gulp.source.file"],
-          context: res.data["gulp.context"],
-          _uuid: event._uuid
-        })
+        setTimeout(() => {
+          setRawJSON(JSON.stringify(res.data, null, 4));
+          setDetailedChunkEvent({
+            operation: res.data.operation,
+            agent: {
+              type: res.data["agent.type"],
+              id: res.data["agent.id"]
+            },
+            event: {
+              code: res.data["event.code"],
+              duration: res.data["event.duration"],
+              id: res.data["event.id"],
+              hash: res.data["event.hash"],
+              category: res.data["event.category"],
+              original: res.data["event.original"]
+            },
+            level: res.data["log.level"],
+            _id: res.data._id,
+            operation_id: res.data.operation_id,
+            timestamp: res.data["@timestamp"] as λ.Timestamp,
+            file: res.data["gulp.source.file"],
+            context: res.data["gulp.context"],
+            _uuid: event._uuid
+          });
+        }, delay);
       }
     });
-  }
+  };  
 
   const iconsMap: Record<string, λIcon> = {
     Provider: 'Waypoints',
@@ -210,10 +216,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Tabs defaultValue='json' className={s.tabs}>
             <TabsList className={s.tabs_list}>
               <TabsTrigger value='smart'>Smart view</TabsTrigger>
-              <TabsTrigger value='raw'>Raw</TabsTrigger>
+              <TabsTrigger value='raw'>XML</TabsTrigger>
               <TabsTrigger value='json'>JSON</TabsTrigger>
             </TabsList>
-            <p className={s.hint}>Click on the block to copy the value</p>
             <TabsContent className={s.tabs_content} value='smart'>
               <SmartView />
             </TabsContent>
@@ -227,24 +232,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               </SyntaxHighlighter>
             </TabsContent>
           </Tabs>
-          <Tabs defaultValue={notes.length ? 'notes' : 'layers'} className={s.tabs}>
-            <TabsList className={s.tabs_list}>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="layers">Layers</TabsTrigger>
-            </TabsList>
-            <TabsContent value="notes">
-              <Notes notes={notes} />
-            </TabsContent>
-            <TabsContent value="layers">
-              <div className={s.layers}>
-                <div>{detailedChunkEvent.context}</div>
-                <Separator />
-                <div>{detailedChunkEvent.agent.type}</div>
-                <Separator />
-                <div>{detailedChunkEvent.file}</div>
-              </div>
-            </TabsContent>
-          </Tabs>
+          <Notes notes={notes} />
         </>
       )}
     </Dialog>

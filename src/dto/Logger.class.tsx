@@ -3,8 +3,8 @@ import { MinMax } from './QueryMaxMin.dto';
 import { λEvent } from './ChunkEvent.dto';
 import { λFile } from './File.dto';
 import { Arrayed, Parser } from '@/class/Info';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 
 export class Logger {
   protected static messages: Console.History[] = [];

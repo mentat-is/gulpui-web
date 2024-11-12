@@ -1,7 +1,6 @@
 import s from './styles/LimitsBanner.module.css'
 import { useState } from "react";
 import { Banner } from "../ui/Banner";
-import { useLanguage } from "../context/Language.context";
 import { Button } from '../ui/Button';
 import { useApplication } from '../context/Application.context';
 import { eachDayOfInterval, eachMonthOfInterval, eachYearOfInterval, format } from 'date-fns';
@@ -24,7 +23,7 @@ export function LimitsBanner() {
     { text: 'Day', do: () => save(app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000) },
     { text: 'Week', do: () => save(app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000) },
     { text: 'Month', do: () => save(app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000) },
-    { text: 'All range', do: () => save(app.target.bucket.timestamp.min) },
+    { text: 'Full range', do: () => save(app.target.bucket.timestamp.min) },
   ]
 
   const save = async (_min?: number) => {
