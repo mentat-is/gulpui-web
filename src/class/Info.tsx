@@ -534,7 +534,10 @@ Files: ${files.length}`, Info.name);
 
     this.setBucket({
       ...this.app.target.bucket,
-      selected: range
+      selected: {
+        min: Math.max(range.min, 1),
+        max: range.max
+      }
     });
     return range;
   };

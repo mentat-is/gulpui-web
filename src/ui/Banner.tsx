@@ -4,6 +4,7 @@ import { Children } from '../dto';
 import s from './styles/Banner.module.css';
 import { Button } from './Button';
 import { cn } from './utils';
+import { Skeleton } from './Skeleton';
 
 type BannerProps = Children & {
   className?: string | string[];
@@ -45,13 +46,13 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
 
   return (
     <div className={s.wrapper}>
-      <div className={cn(s.banner, className, loading ? s.loading : '')}>
+      <div className={cn(s.banner, s.loading, className)}>
         <h6>
-          {title}
-          {subtitle}
-          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' size='icon' /></div>}
+          {loading ? <Skeleton variant='button' width={256} height={24} /> : title}
+          {subtitle ? (loading ? <Skeleton size='short' width={128} height={24} /> : subtitle) : null}
+          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' /></div>}
         </h6>
-        {children}
+        {loading ? <Skeleton height={256} width={'100%'} /> : children}
       </div>
     </div>
   );

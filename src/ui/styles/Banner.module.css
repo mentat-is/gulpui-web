@@ -42,29 +42,6 @@
   box-shadow: none !important;
   background: none !important;
 }
-.loading::before {
-  content: '';
-  display: flex;
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  width: 100%;
-  background: #00000080;
-  z-index: 2;
-  backdrop-filter: blur(3px);
-}
-.loading::after {
-  content: url('https://cdn.impactium.fun/ui/action/reload.svg');
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  z-index: 3; 
-  animation: Rotate 1s linear infinite;
-  height: 24px;
-  width: 24px;
-}
-
 @keyframes Rotate {
   0% {
     transform: rotateZ(360deg);

@@ -1,0 +1,39 @@
+.skeleton {
+  background-color: var(--gray24);
+  animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
+  border-radius: 12px;
+  width: 256px;
+  height: 14px;
+}
+
+.avatar {
+  border-radius: var(--round);
+  height: 36px;
+  width: 36px;
+  min-height: 36px;
+  min-width: 36px;
+}
+
+.short {
+  width: 40%;
+}
+
+.badge {
+  height: 30px;
+  width: 100px;
+  border-radius: var(--round);
+}
+
+.button {
+  min-height: 36px;
+  height: 36px;
+  min-width: 36px;
+  width: 36px;
+  border-radius: 6px;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: .5;
+  }
+}

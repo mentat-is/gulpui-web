@@ -33,7 +33,7 @@ export function Dialog({ className, callback, icon, description, defaultSize = 5
             </div>
           </div>
           <div className={cn(s.content, loading && s.loading)}>
-            {loading ? <Loading size='lg' variant='white' no_text /> : children}
+            {loading ? <Loading size={48} variant='white' no_text /> : children}
           </div>
         </div>
       </ResizablePanel>
