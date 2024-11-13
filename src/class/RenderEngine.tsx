@@ -136,7 +136,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     let isEven = Math.floor(new Date(time).getTime() / step) % 2 === 0;
   
     while (time <= roundedEnd) {
-      this.drawRulerSection(time, format, isEven);
+      this.drawRulerSection(time, format, step, isEven);
       time += step;
       isEven = !isEven;
     }
@@ -195,7 +195,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.stroke();
   }
 
-  private drawRulerSection(timestamp: number, format: string, even: boolean) {
+  private drawRulerSection(timestamp: number, format: string, step: number, even: boolean) {
     const position = this.getPixelPosition(timestamp);
 
     this.ctx.fillStyle = even ? '#161616' : '#202020'
@@ -213,7 +213,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     // @ts-ignore:next-line
     this.ctx.textRendering = 'optimizeLegibility';
     this.ctx.fillStyle = "#fff";
-    this.ctx.fillText(label, position + 6, 14);
+    this.ctx.textAlign = 'center';
+    this.ctx.fillText(label, this.getPixelPosition(timestamp + step / 2), 14);
   }
 
   default(file: λFile, y: number) {
