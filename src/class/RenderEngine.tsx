@@ -1,9 +1,9 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File, Info, λ, μ } from "./Info";
-import { Color, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
+import { Color, getDateFormat, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
-import { format } from "date-fns";
+import { addMilliseconds, differenceInMilliseconds, format, formatDate } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
 import { λLink } from "@/dto/Link.dto";
 
@@ -11,6 +11,7 @@ interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
   limits: MinMax,
   info: Info,
+  scrollX: number;
   scrollY: number;
   getPixelPosition: (timestamp: number) => number,
 }
@@ -74,6 +75,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   limits!: MinMax;
   info!: Info;
   getPixelPosition!: (timestamp: number) => number;
+  scrollX!: number;
   scrollY!: number;
   heightMap: Record<λFile['uuid'], HeightMap> = {};
   statusMap: Record<λFile['uuid'], StatusMap> = {};
@@ -81,12 +83,22 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   graphMap: Record<λFile['uuid'], GraphMap> = {};
   segmentSize: number = 500;
   private static instance: RenderEngine | null = null;
+  private static INTERVALS = [
+    { unit: 'milliseconds', values: [100, 250, 500] },
+    { unit: 'seconds', values: [1, 2, 5, 10, 15, 30] },
+    { unit: 'minutes', values: [1, 2, 5, 10, 15, 30] },
+    { unit: 'hours', values: [1, 2, 4, 8, 16] },
+    { unit: 'days', values: [1, 2, 5, 10, 15] },
+    { unit: 'months', values: [1, 2, 3, 4, 6] },
+    { unit: 'years', values: [1, 2, 3, 5, 10, 25, 50, 100] },
+  ];
 
-  constructor({ ctx, limits, info, getPixelPosition, scrollY }: RenderEngineConstructor) {
+  constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
       RenderEngine.instance.ctx = ctx;
       RenderEngine.instance.limits = limits;
       RenderEngine.instance.info = info;
+      RenderEngine.instance.scrollX = scrollX;
       RenderEngine.instance.scrollY = scrollY;
       RenderEngine.instance.getPixelPosition = getPixelPosition;
       return RenderEngine.instance;
@@ -97,6 +109,86 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.info = info;
     this.getPixelPosition = getPixelPosition;
     RenderEngine.instance = this;
+  }
+
+  ruler() {
+    if (!this.info.app.target.bucket.selected)
+      return;
+
+    this.drawRulerSeparator();
+
+    const { max, min } = this.info.app.target.bucket.selected;
+
+    const total = differenceInMilliseconds(max, min);
+
+    const step = Math.max(total / (this.info.width / 100), 1);
+    const width = (this.info.width / this.info.app.timeline.scale) || 0;
+    
+    const start = addMilliseconds(min, (this.scrollX / this.info.width) * total).valueOf();
+    const end = addMilliseconds(min, ((this.scrollX + width) / this.info.width) * total).valueOf();
+    const format = getDateFormat(differenceInMilliseconds(start, end) * 8);
+
+    let time = start;
+    let isEven = false;
+
+    while (time <= end) {
+      this.drawRulerSection(time, format, isEven);
+
+      time += step;
+      isEven = !isEven;
+    }
+  }
+
+  getOptimalStep(totalMilliseconds: number): number {
+    for (const { unit, values } of RenderEngine.INTERVALS) {
+      for (const value of values) {
+        const intervalMs = value * {
+          milliseconds: 1,
+          seconds: 1000,
+          minutes: 60 * 1000,
+          hours: 60 * 60 * 1000,
+          days: 24 * 60 * 60 * 1000,
+          months: 30 * 24 * 60 * 60 * 1000,
+          years: 365 * 24 * 60 * 60 * 1000,
+        }[unit]!;
+  
+        const numSections = totalMilliseconds / intervalMs;
+        if (numSections >= 4 && numSections <= 40) {
+          return intervalMs;
+        }
+      }
+    }
+    
+    return RenderEngine.INTERVALS[0].values[0];
+  }
+
+  private drawRulerSeparator() {
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, 24);
+    this.ctx.lineTo(2048, 24);
+    this.ctx.strokeStyle = "#ffffff12";
+    this.ctx.stroke();
+  }
+
+  private drawRulerSection(timestamp: number, format: string, even: boolean) {
+    const position = this.getPixelPosition(timestamp);
+
+    this.ctx.fillStyle = even ? '#161616' : '#202020'
+    this.ctx.fillRect(position, 25, this.ctx.canvas.width, this.ctx.canvas.height);
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(position, 0);
+    this.ctx.lineTo(position, this.ctx.canvas.height);
+    this.ctx.strokeStyle = "#ffffff12";
+    this.ctx.stroke();
+
+    const timeUnit = format || 'MMM yyyy';
+    const label = formatDate(timestamp, timeUnit);
+    this.ctx.font = "10px Arial";
+    // @ts-ignore:next-line
+    this.ctx.textRendering = 'optimizeLegibility';
+    this.ctx.fillStyle = "#fff";
+    this.ctx.fillText(label, position + 6, 14);
   }
 
   default(file: λFile, y: number) {
@@ -472,10 +564,4 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   private process = (map: Record<string, StatusMap | DefaultMap | GraphMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.info.app.timeline.scale);
 
   private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] === Event.get(this.info.app, uuid).length
-
-  // private segment = (timestamp: number) => Math.floor((timestamp - (timestamp % this.segmentSize)) / this.segmentSize);
-
-  private wait = (file: λFile, y: number) => {
-
-  }
 }

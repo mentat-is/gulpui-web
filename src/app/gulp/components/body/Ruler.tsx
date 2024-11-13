@@ -54,7 +54,6 @@ export function Ruler({ scrollX }: RulerProps) {
     };
   }, [ruler]);
 
-  // Автоматически выбираем формат даты в зависимости от шага времени
   const timeUnit = visibleDates.length > 1
     ? getDateFormat(differenceInMilliseconds(visibleDates[1], visibleDates[0])) || 'MMM yyyy'
     : 'MMM yyyy';

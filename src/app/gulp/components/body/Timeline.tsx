@@ -179,7 +179,7 @@ export function Timeline() {
       onContextMenu={handleContextMenu}
       ref={timeline}
     >
-      <Ruler scrollX={scrollX} />
+      {/* <Ruler scrollX={scrollX} /> */}
       <div className={s.content} id="timeline_content">
         <ContextMenu>
           <ContextMenuTrigger>

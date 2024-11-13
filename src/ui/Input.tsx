@@ -3,7 +3,6 @@ import s from './styles/Input.module.css'
 import { cn, λIcon } from "./utils"
 import { cva, type VariantProps } from "class-variance-authority"; 
 import { Icon } from "./Icon";
-import { Skeleton } from "./Skeleton";
 
 const inputVariants = cva(s.button, {
   variants: {

@@ -40,7 +40,9 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     const limits = getLimits(app, Info, timeline, scrollX);
 
-    const render = new RenderEngine({ ctx, limits, info: Info, getPixelPosition, scrollY })
+    const render = new RenderEngine({ ctx, limits, info: Info, getPixelPosition, scrollX, scrollY })
+
+    render.ruler();
     
     File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY);
