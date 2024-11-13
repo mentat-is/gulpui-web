@@ -1,7 +1,7 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File, Info, λ, μ } from "./Info";
-import { Color, getDateFormat, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
+import { between, Color, getDateFormat, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { addMilliseconds, differenceInMilliseconds, format, formatDate } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
@@ -114,53 +114,78 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   ruler() {
     if (!this.info.app.target.bucket.selected)
       return;
-
+  
     this.drawRulerSeparator();
-
+  
     const { max, min } = this.info.app.target.bucket.selected;
-
+  
     const total = differenceInMilliseconds(max, min);
-
-    const step = Math.max(total / (this.info.width / 100), 1);
     const width = (this.info.width / this.info.app.timeline.scale) || 0;
-    
+  
     const start = addMilliseconds(min, (this.scrollX / this.info.width) * total).valueOf();
     const end = addMilliseconds(min, ((this.scrollX + width) / this.info.width) * total).valueOf();
-    const format = getDateFormat(differenceInMilliseconds(start, end) * 8);
-
-    let time = start;
-    let isEven = false;
-
-    while (time <= end) {
+  
+    const step = this.getOptimalStep(end - start);
+  
+    const roundedStart = Math.floor(start / step) * step;
+    const roundedEnd = Math.ceil(end / step) * step;
+  
+    const format = getDateFormat(step);
+  
+    let time = roundedStart;
+    let isEven = Math.floor(new Date(time).getTime() / step) % 2 === 0;
+  
+    while (time <= roundedEnd) {
       this.drawRulerSection(time, format, isEven);
-
       time += step;
       isEven = !isEven;
     }
-  }
+  }  
 
-  getOptimalStep(totalMilliseconds: number): number {
-    for (const { unit, values } of RenderEngine.INTERVALS) {
-      for (const value of values) {
+  getOptimalStep(totalMilliseconds: number) {
+    let optimalInterval = 0;
+    let bestNumSections = Infinity;
+
+    const intervals = [
+      { unit: 'milliseconds', values: [100, 250, 500] },
+      { unit: 'seconds', values: [1, 2, 5, 10, 15, 30] },
+      { unit: 'minutes', values: [1, 2, 5, 10, 15, 30] },
+      { unit: 'hours', values: [1, 2, 4, 8, 16] },
+      { unit: 'days', values: [1, 2, 5, 10, 15] },
+      { unit: 'months', values: [1, 2, 3, 4, 6] },
+      { unit: 'years', values: [1, 2, 3, 5, 10, 25, 50, 100] }
+    ];
+    
+    // Для каждого интервала мы рассчитываем подходящий шаг
+    intervals.forEach(({ unit, values }) => {
+      values.forEach(value => {
         const intervalMs = value * {
           milliseconds: 1,
           seconds: 1000,
           minutes: 60 * 1000,
           hours: 60 * 60 * 1000,
           days: 24 * 60 * 60 * 1000,
-          months: 30 * 24 * 60 * 60 * 1000,
-          years: 365 * 24 * 60 * 60 * 1000,
+          months: 30 * 24 * 60 * 60 * 1000, // 30 дней в месяце
+          years: 365 * 24 * 60 * 60 * 1000, // 365 дней в году
         }[unit]!;
-  
+        
         const numSections = totalMilliseconds / intervalMs;
+        
+        // Проверяем, что количество шагов в пределах 4-40
         if (numSections >= 4 && numSections <= 40) {
-          return intervalMs;
+          // Выбираем минимальный интервал, который дает наименьшее число шагов
+          if (numSections < bestNumSections) {
+            bestNumSections = numSections;
+            optimalInterval = intervalMs;
+          }
         }
-      }
-    }
-    
-    return RenderEngine.INTERVALS[0].values[0];
+      });
+    });
+
+    // Возвращаем оптимальный интервал
+    return optimalInterval;
   }
+
 
   private drawRulerSeparator() {
     this.ctx.beginPath();
@@ -178,7 +203,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     this.ctx.beginPath();
     this.ctx.moveTo(position, 0);
-    this.ctx.lineTo(position, this.ctx.canvas.height);
+    this.ctx.lineTo(position, 9999);
     this.ctx.strokeStyle = "#ffffff12";
     this.ctx.stroke();
 
