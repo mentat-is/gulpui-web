@@ -7,6 +7,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: 8px;
+  position: relative;
+  min-height: 436px;
   width: calc(100% + 6px);
 }
 

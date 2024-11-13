@@ -16,6 +16,8 @@ import { Separator } from "@/ui/Separator";
 import { LimitsBanner } from "./Limits.banner";
 import { UploadBanner } from "./Upload.banner";
 import { Logger } from "@/dto/Logger.class";
+import { Stack } from "@/ui/Stack";
+import { Skeleton } from "@/ui/Skeleton";
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -110,11 +112,12 @@ export function SelectFilesBanner() {
     spawnBanner(<LimitsBanner />);
   }
 
-  console.log(new Date(app.target.bucket.timestamp.min).toString());
+  const fulfilled = !Operation.selected(app)?.contexts;
 
   return (
-    <Banner title={lang.select_context.title} loading={!Operation.selected(app)?.contexts} fixed={loading}>
-    <div className={s.wrapper}>
+    <Banner title={lang.select_context.title} fixed={loading}>
+      <div className={s.wrapper}>
+      <SelectFilesLoadingContent enable={fulfilled} />
       <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       {!filter.length ? Operation.contexts(app).map(context => (
         <div className={s.context} key={context.uuid}>
@@ -151,12 +154,34 @@ export function SelectFilesBanner() {
       </div>
       ))}
       </div>
-      <div className={s.group}>
+      {fulfilled ? null : <div className={s.group}>
         <Button variant='ghost' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
         <div className={s.splitter} />
         <Button variant='outline' onClick={selectAll}>Select all</Button>
         <Button loading={loading} onClick={save}>Save</Button>
-      </div>
+      </div>}
     </Banner>
   );
+}
+
+interface SelectFilesLoadingContentProps {
+  enable: boolean;
+}
+
+function SelectFilesLoadingContent({ enable }: SelectFilesLoadingContentProps) {
+  if (!enable) return null;
+
+  return (
+    <Stack style={{ background: 'var(--soft-black)', width: '100%', height: '100%' }} pos='absolute' dir='column' gap={12}>
+      <Skeleton width='full'  />
+      <Skeleton height={256} width='full' />
+      <Skeleton height={256} width='full' />
+      <Stack dir='row' gap={12}>
+        <Skeleton />
+        <Separator style={{ opacity: 0 }} />
+        <Skeleton />
+        <Skeleton />
+      </Stack>
+    </Stack>
+  )
 }

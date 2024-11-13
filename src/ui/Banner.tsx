@@ -48,11 +48,11 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
     <div className={s.wrapper}>
       <div className={cn(s.banner, s.loading, className)}>
         <h6>
-          {loading ? <Skeleton variant='button' width={256} height={24} /> : title}
-          {subtitle ? (loading ? <Skeleton size='short' width={128} height={24} /> : subtitle) : null}
+          {loading ? <Skeleton variant='button' width='long' height={24} /> : title}
+          {subtitle ? (loading ? <Skeleton height={24} /> : subtitle) : null}
           {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' /></div>}
         </h6>
-        {loading ? <Skeleton height={256} width={'100%'} /> : children}
+        {children}
       </div>
     </div>
   );

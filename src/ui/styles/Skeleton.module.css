@@ -1,9 +1,22 @@
 .skeleton {
   background-color: var(--gray24);
   animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
-  border-radius: 12px;
-  width: 256px;
-  height: 14px;
+}
+.defaultWidth {
+  min-width: 128px;
+}
+.defaultHeight {
+  min-height: 36px;
+}
+.defaultBorder,
+.border_s {
+  border-radius: var(--border-s);
+}
+.border_m {
+  border-radius: var(--border-m);
+}
+.border_l {
+  border-radius: var(--border-l);
 }
 
 .avatar {
@@ -15,7 +28,19 @@
 }
 
 .short {
-  width: 40%;
+  width: 64px;
+}
+.long {
+  width: 256px;
+}
+.full {
+  width: 100%;
+}
+.low {
+  min-height: 24px;
+}
+.high {
+  min-height: 48px;
 }
 
 .badge {
@@ -34,6 +59,6 @@
 
 @keyframes pulse {
   50% {
-    opacity: .5;
+    background-color: var(--gray16);
   }
 }

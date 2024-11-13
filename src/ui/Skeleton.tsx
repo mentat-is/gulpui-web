@@ -1,7 +1,7 @@
 import s from './styles/Skeleton.module.css'
-import { cva, VariantProps } from "class-variance-authority";
+import { cva, VariantProps } from 'class-variance-authority';
 
-const { avatar, short, badge, button } = s;
+const { avatar, short, badge, button, long, full, low, high } = s;
 
 const skeletonVariants = cva(s.skeleton, {
   variants: {
@@ -11,35 +11,64 @@ const skeletonVariants = cva(s.skeleton, {
       badge,
       button
     },
-    size: {
-      default: s.defaultSize,
-      short
+    width: {
+      default: s.defaultWidth,
+      short,
+      long,
+      full
     },
+    height: {
+      default: s.defaultHeight,
+      low,
+      high
+    },
+    border: {
+      default: s.defaultBorder,
+      s: s.border_s,
+      m: s.border_m,
+      l: s.border_l
+    }
   },
   defaultVariants: {
-    variant: "default",
-    size: "default",
+    variant: 'default',
+    width: 'default',
+    height: 'default',
+    border: 'default'
   },
 });
 
-type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof skeletonVariants> & {
-  height?: number | string;
-  width?: number | string
+type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & Omit<VariantProps<typeof skeletonVariants>, 'height' | 'width'> & {
+  height?: VariantProps<typeof skeletonVariants>['height'] | number | `${number}`;
+  width?: VariantProps<typeof skeletonVariants>['width'] | number | `${number}`;
 };
 
 const Skeleton = ({
   className,
   variant,
-  size,
-  height = '',
-  width = '',
+  height,
+  width,
+  border,
   style = {},
   ...props
 }: SkeletonProps) => {
   return (
     <div
-      style={{...style, height, width }}
-      className={skeletonVariants({ variant, size, className })}
+      style={{
+        ...style,
+        height: Number.isNaN(Number(height))
+          ? undefined!
+          : height!,
+        width: Number.isNaN(Number(width))
+        ? undefined!
+        : width!
+      }}
+      className={skeletonVariants({
+        variant,
+        width: width as VariantProps<typeof skeletonVariants>['width'],
+        height: height as VariantProps<typeof skeletonVariants>['height'],
+        border,
+        className
+      })}
       {...props}
     />
   )
