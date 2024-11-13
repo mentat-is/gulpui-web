@@ -78,6 +78,9 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
         `Scale: ${app.timeline.scale > 1 ? Math.round(app.timeline.scale) : app.timeline.scale.toPrecision(2)}`
       ]);
     }
+
+    render.ruler_cache.map(c => render.rulerSection(c));
+    render.rulerSeparator();
   };
 
   const handleClick = (event: MouseEvent) => {

@@ -1,7 +1,7 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
 import { Event, File, Info, λ, μ } from "./Info";
-import { between, Color, getDateFormat, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
+import { Color, getDateFormat, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
 import { Engine } from "@/dto/Engine.dto";
 import { addMilliseconds, differenceInMilliseconds, format, formatDate } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
@@ -70,6 +70,16 @@ export interface Dot {
   color: string;
 }
 
+interface RulerSectionProps {
+  timestamp: number;
+  position: number;
+  format: string;
+  step: number;
+  unit: string;
+  value: number;
+  even: boolean;
+}
+
 export class RenderEngine implements RenderEngineConstructor, Engines {
   ctx!: CanvasRenderingContext2D;
   limits!: MinMax;
@@ -111,11 +121,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine.instance = this;
   }
 
+  ruler_cache: RulerSectionProps[] = [];
+
   ruler() {
+    this.ruler_cache = [];
     if (!this.info.app.target.bucket.selected)
       return;
-  
-    this.drawRulerSeparator();
   
     const { max, min } = this.info.app.target.bucket.selected;
   
@@ -125,38 +136,41 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const start = addMilliseconds(min, (this.scrollX / this.info.width) * total).valueOf();
     const end = addMilliseconds(min, ((this.scrollX + width) / this.info.width) * total).valueOf();
   
-    const step = this.getOptimalStep(end - start);
+    const [ step, unit, value ] = this.step(end - start);
   
     const roundedStart = Math.floor(start / step) * step;
     const roundedEnd = Math.ceil(end / step) * step;
   
     const format = getDateFormat(step);
   
-    let time = roundedStart;
-    let isEven = Math.floor(new Date(time).getTime() / step) % 2 === 0;
+    let timestamp = roundedStart;
+    let even = Math.floor(new Date(timestamp).getTime() / step) % 2 === 0;
   
-    while (time <= roundedEnd) {
-      this.drawRulerSection(time, format, step, isEven);
-      time += step;
-      isEven = !isEven;
+    while (timestamp <= roundedEnd) {
+      const position = this.getPixelPosition(timestamp);
+      this.ruler_cache.push({ timestamp, position, format, step, unit, value, even })
+      this.rulerWall({ even, position });
+      timestamp += step;
+      even = !even;
     }
   }  
 
-  getOptimalStep(totalMilliseconds: number) {
+  step(totalMilliseconds: number): [number, string, number] {
     let optimalInterval = 0;
+    let _unit = 'milliseconds';
+    let _value = 0;
     let bestNumSections = Infinity;
 
     const intervals = [
       { unit: 'milliseconds', values: [100, 250, 500] },
       { unit: 'seconds', values: [1, 2, 5, 10, 15, 30] },
       { unit: 'minutes', values: [1, 2, 5, 10, 15, 30] },
-      { unit: 'hours', values: [1, 2, 4, 8, 16] },
-      { unit: 'days', values: [1, 2, 5, 10, 15] },
-      { unit: 'months', values: [1, 2, 3, 4, 6] },
+      { unit: 'hours', values: [1, 3, 6, 12] },
+      { unit: 'days', values: [1, 2, 5, 10] },
+      { unit: 'months', values: [1, 3, 6] },
       { unit: 'years', values: [1, 2, 3, 5, 10, 25, 50, 100] }
     ];
     
-    // Для каждого интервала мы рассчитываем подходящий шаг
     intervals.forEach(({ unit, values }) => {
       values.forEach(value => {
         const intervalMs = value * {
@@ -165,56 +179,57 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
           minutes: 60 * 1000,
           hours: 60 * 60 * 1000,
           days: 24 * 60 * 60 * 1000,
-          months: 30 * 24 * 60 * 60 * 1000, // 30 дней в месяце
-          years: 365 * 24 * 60 * 60 * 1000, // 365 дней в году
+          months: 30 * 24 * 60 * 60 * 1000,
+          years: 365 * 24 * 60 * 60 * 1000,
         }[unit]!;
         
         const numSections = totalMilliseconds / intervalMs;
-        
-        // Проверяем, что количество шагов в пределах 4-40
-        if (numSections >= 4 && numSections <= 40) {
-          // Выбираем минимальный интервал, который дает наименьшее число шагов
-          if (numSections < bestNumSections) {
-            bestNumSections = numSections;
-            optimalInterval = intervalMs;
-          }
+
+        if (numSections >= 4 && numSections <= 40 && numSections < bestNumSections) {
+          bestNumSections = numSections;
+          _unit = unit;
+          _value = value;
+          optimalInterval = intervalMs;
         }
       });
     });
 
-    // Возвращаем оптимальный интервал
-    return optimalInterval;
+    return [optimalInterval, _unit, _value];
   }
 
 
-  private drawRulerSeparator() {
+  rulerSeparator() {
     this.ctx.beginPath();
-    this.ctx.moveTo(0, 24);
-    this.ctx.lineTo(2048, 24);
+    this.ctx.moveTo(0, 25);
+    this.ctx.lineTo(this.ctx.canvas.width, 25);
+    this.ctx.strokeStyle = "#ffffff25";
+    this.ctx.stroke();
+  }
+
+  private rulerWall(props: Pick<RulerSectionProps, 'even' | 'position'>) {
+    this.ctx.fillStyle = props.even ? '#161616' : '#202020'
+    this.ctx.fillRect(props.position, 25, this.ctx.canvas.width, this.ctx.canvas.height);
+    this.ctx.beginPath();
+    this.ctx.moveTo(props.position, 0);
+    this.ctx.lineTo(props.position, this.ctx.canvas.height);
     this.ctx.strokeStyle = "#ffffff12";
     this.ctx.stroke();
   }
 
-  private drawRulerSection(timestamp: number, format: string, step: number, even: boolean) {
-    const position = this.getPixelPosition(timestamp);
+  rulerSection(props: RulerSectionProps) {
+    this.ctx.fillStyle = props.even ? '#121212' : '#161616'
+    this.ctx.fillRect(props.position, 0, this.ctx.canvas.width, 25);
 
-    this.ctx.fillStyle = even ? '#161616' : '#202020'
-    this.ctx.fillRect(position, 25, this.ctx.canvas.width, this.ctx.canvas.height);
-
-    this.ctx.beginPath();
-    this.ctx.moveTo(position, 0);
-    this.ctx.lineTo(position, 9999);
-    this.ctx.strokeStyle = "#ffffff12";
-    this.ctx.stroke();
-
-    const timeUnit = format || 'MMM yyyy';
-    const label = formatDate(timestamp, timeUnit);
-    this.ctx.font = "10px Arial";
     // @ts-ignore:next-line
     this.ctx.textRendering = 'optimizeLegibility';
-    this.ctx.fillStyle = "#fff";
+    const timeUnit = props.format || 'MMM yyyy';
+    const label = formatDate(props.timestamp, timeUnit);
+    this.ctx.font = "10px Arial";
+    this.ctx.fillStyle = "#ffffff";
     this.ctx.textAlign = 'center';
-    this.ctx.fillText(label, this.getPixelPosition(timestamp + step / 2), 14);
+    this.ctx.fillText(label, props.position, 14);
+    this.ctx.fillStyle = "#e8e8e880";
+    this.ctx.fillText(`${props.value} ${props.unit}`, this.getPixelPosition(props.timestamp + props.step / 2), 14);
   }
 
   default(file: λFile, y: number) {
