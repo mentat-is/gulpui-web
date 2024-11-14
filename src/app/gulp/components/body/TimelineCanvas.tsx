@@ -42,7 +42,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     const render = new RenderEngine({ ctx, limits, info: Info, getPixelPosition, scrollX, scrollY })
 
-    render.ruler();
+    render.ruler.draw();
     
     File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY);
@@ -79,8 +79,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       ]);
     }
 
-    render.ruler_cache.map(c => render.rulerSection(c));
-    render.rulerSeparator();
+    render.ruler.sections();
   };
 
   const handleClick = (event: MouseEvent) => {
