@@ -36,7 +36,7 @@
 .long {
   width: 256px;
 }
-.full {
+.w_full {
   width: 100%;
 }
 .low {
@@ -44,6 +44,9 @@
 }
 .high {
   min-height: 48px;
+}
+.h_full {
+  height: 100%;
 }
 
 .badge {

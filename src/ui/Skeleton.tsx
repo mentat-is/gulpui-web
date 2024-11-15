@@ -1,7 +1,7 @@
 import s from './styles/Skeleton.module.css'
 import { cva, VariantProps } from 'class-variance-authority';
 
-const { avatar, short, badge, button, long, full, low, high } = s;
+const { avatar, short, badge, button, long, low, high } = s;
 
 const skeletonVariants = cva(s.skeleton, {
   variants: {
@@ -15,12 +15,13 @@ const skeletonVariants = cva(s.skeleton, {
       default: s.defaultWidth,
       short,
       long,
-      full
+      full: s.w_full
     },
     height: {
       default: s.defaultHeight,
       low,
-      high
+      high,
+      full: s.h_full
     },
     border: {
       default: s.defaultBorder,
@@ -38,9 +39,11 @@ const skeletonVariants = cva(s.skeleton, {
   },
 });
 
+export type ChadNumber = number | `${number}` | `${number}%`;
+
 type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & Omit<VariantProps<typeof skeletonVariants>, 'height' | 'width'> & {
-  height?: VariantProps<typeof skeletonVariants>['height'] | number | `${number}` | `${number}%`;
-  width?: VariantProps<typeof skeletonVariants>['width'] | number | `${number}` | `${number}%`;
+  height?: VariantProps<typeof skeletonVariants>['height'] | ChadNumber;
+  width?: VariantProps<typeof skeletonVariants>['width'] | ChadNumber;
 };
 
 const Skeleton = ({
@@ -56,12 +59,8 @@ const Skeleton = ({
     <div
       style={{
         ...style,
-        height: Number.isNaN(Number(height)) && !String(height).endsWith('%')
-          ? undefined!
-          : height!,
-        width: Number.isNaN(Number(width)) && !String(height).endsWith('%')
-        ? undefined!
-        : width!
+        height: height as ChadNumber,
+        width: width as ChadNumber
       }}
       className={skeletonVariants({
         variant,

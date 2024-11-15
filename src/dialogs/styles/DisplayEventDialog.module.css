@@ -20,9 +20,6 @@
   align-self: flex-start;
   border: var(--geist-border);
 }
-.tabs_content * {
-  font-size: 16px;
-}
 .tabs_content code {
   white-space: break-spaces !important;
   overflow-wrap: break-word;

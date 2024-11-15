@@ -1,25 +1,24 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import { useApplication } from "@/context/Application.context";
-import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from "@/dto/ChunkEvent.dto";
-import { ResponseBase } from "@/dto/ResponseBase.dto";
-import { Dialog } from "@/ui/Dialog";
-import { SymmetricSvg } from "@/ui/SymmetricSvg";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { useApplication } from '@/context/Application.context';
+import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from '@/dto/ChunkEvent.dto';
+import { ResponseBase } from '@/dto/ResponseBase.dto';
+import { Dialog } from '@/ui/Dialog';
+import { SymmetricSvg } from '@/ui/SymmetricSvg';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
-import { XMLTree } from "@/ui/XMLTree";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { convertXML } from 'simple-xml-to-json';
-import { cn, copy, λIcon } from "@/ui/utils";
-import { Button } from "@/ui/Button";
-import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
+import { cn, copy, λIcon } from '@/ui/utils';
+import { Button } from '@/ui/Button';
+import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 import { File, Note, Plugin, λ } from '@/class/Info';
-import { Notes } from "./components/Notes";
-import { λNote } from "@/dto/Note.dto";
-import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
-import { Icon } from "@/ui/Icon";
+import { Notes } from './components/Notes';
+import { λNote } from '@/dto/Note.dto';
+import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
+import { Icon } from '@/ui/Icon';
 import { Stack } from '@/ui/Stack';
-import { Skeleton } from '@/ui/Skeleton';
+import { ChadNumber, Skeleton } from '@/ui/Skeleton';
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -97,23 +96,23 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           setDetailedChunkEvent({
             operation: res.data.operation,
             agent: {
-              type: res.data["agent.type"],
-              id: res.data["agent.id"]
+              type: res.data['agent.type'],
+              id: res.data['agent.id']
             },
             event: {
-              code: res.data["event.code"],
-              duration: res.data["event.duration"],
-              id: res.data["event.id"],
-              hash: res.data["event.hash"],
-              category: res.data["event.category"],
-              original: res.data["event.original"]
+              code: res.data['event.code'],
+              duration: res.data['event.duration'],
+              id: res.data['event.id'],
+              hash: res.data['event.hash'],
+              category: res.data['event.category'],
+              original: res.data['event.original']
             },
-            level: res.data["log.level"],
+            level: res.data['log.level'],
             _id: res.data._id,
             operation_id: res.data.operation_id,
-            timestamp: res.data["@timestamp"] as λ.Timestamp,
-            file: res.data["gulp.source.file"],
-            context: res.data["gulp.context"],
+            timestamp: res.data['@timestamp'] as λ.Timestamp,
+            file: res.data['gulp.source.file'],
+            context: res.data['gulp.context'],
             _uuid: event._uuid
           });
         }, delay);
@@ -212,8 +211,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       {detailedChunkEvent ? (
         <Fragment>
           <div className={s.buttons_group}>
-            <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
-            <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
+            <Button className={s.createNote} onClick={spawnNoteBanner} img='StickyNote'>New note</Button>
+            <Button className={s.createNote} onClick={spawnLinkBanner} img='Link'>New link / Connect link</Button>
           </div>
           <Tabs defaultValue='json' className={s.tabs}>
             <TabsList className={s.tabs_list}>
@@ -224,12 +223,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             <TabsContent className={s.tabs_content} value='smart'>
               <SmartView />
             </TabsContent>
-            <TabsContent className={s.tabs_content} value='raw'>
-              <XMLTree className={s.xml} xml={detailedChunkEvent.event.original} />
+            <TabsContent className={s.tabs_content} value='raw'> 
+              <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='XML' style={darcula}>
+                {detailedChunkEvent.event.original}
+              </SyntaxHighlighter>
             </TabsContent>
             <TabsContent className={s.tabs_content} value='json'>
               <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
-              <SyntaxHighlighter language='JSON' style={darcula}>
+              <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='JSON' style={darcula}>
                 {rawJSON}
               </SyntaxHighlighter>
             </TabsContent>
@@ -237,19 +238,21 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Notes notes={notes} />
         </Fragment>
       ) : (
-        <Stack flex dir='column' gap={16}>
-          <Stack ai='flex-start' jc='flex-end' gap={12} dir='row' flex={0}>
-            <Skeleton width={120} />
-            <Skeleton width={200} />
-          </Stack>
-          <Stack dir='column' gap={12}>
-            <Stack ai='flex-start' gap={12} dir='row' flex={0}>
-              <Skeleton width={220} />
+        <Stack flex dir='row' style={{ paddingRight: 8 }}>
+          <Stack flex dir='column' gap={16}>
+            <Stack ai='flex-start' jc='flex-end' gap={12} dir='row' flex={0}>
+              <Skeleton width={120} />
+              <Skeleton width={200} />
             </Stack>
-            <Skeleton />
-            <Skeleton height='100%' width='full' />
+            <Stack dir='column' gap={12}>
+              <Stack ai='flex-start' gap={12} dir='row' flex={0}>
+                <Skeleton width={220} />
+              </Stack>
+              <Skeleton />
+              <Skeleton height='100%' width='full' />
+            </Stack>
           </Stack>
-          
+          <Skeleton style={{ position: 'absolute', right: 8 }} width={10} height={'calc(100% - 96px)  ' as ChadNumber} />
         </Stack>
       )}
     </Dialog>
