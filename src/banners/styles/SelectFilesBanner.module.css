@@ -4,8 +4,6 @@
   gap: 12px;
   max-height: 64vh;
   padding-right: 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
   scrollbar-width: 8px;
   position: relative;
   min-height: 436px;

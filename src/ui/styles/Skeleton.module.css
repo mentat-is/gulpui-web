@@ -1,12 +1,16 @@
 .skeleton {
   background-color: var(--gray24);
   animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
+  flex-shrink: 0;
+}
+.skeleton * {
+  opacity: 0;
 }
 .defaultWidth {
-  min-width: 128px;
+  width: 128px;
 }
 .defaultHeight {
-  min-height: 36px;
+  height: 36px;
 }
 .defaultBorder,
 .border_s {

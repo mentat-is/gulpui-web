@@ -117,8 +117,7 @@ export function SelectFilesBanner() {
   return (
     <Banner title={lang.select_context.title} fixed={loading}>
       <div className={s.wrapper}>
-      <SelectFilesLoadingContent enable={fulfilled} />
-      <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       {!filter.length ? Operation.contexts(app).map(context => (
         <div className={s.context} key={context.uuid}>
           <div className={s.contextHeading}>
@@ -154,12 +153,12 @@ export function SelectFilesBanner() {
       </div>
       ))}
       </div>
-      {fulfilled ? null : <div className={s.group}>
-        <Button variant='ghost' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
+      <div className={s.group}>
+        <Button variant='ghost' skeleton={fulfilled} onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
         <div className={s.splitter} />
-        <Button variant='outline' onClick={selectAll}>Select all</Button>
-        <Button loading={loading} onClick={save}>Save</Button>
-      </div>}
+        <Button variant='outline' skeleton={fulfilled} onClick={selectAll}>Select all</Button>
+        <Button img='CheckCheck' skeleton={fulfilled} loading={loading} onClick={save}>Save</Button>
+      </div>
     </Banner>
   );
 }
@@ -176,12 +175,6 @@ function SelectFilesLoadingContent({ enable }: SelectFilesLoadingContentProps) {
       <Skeleton width='full'  />
       <Skeleton height={256} width='full' />
       <Skeleton height={256} width='full' />
-      <Stack dir='row' gap={12}>
-        <Skeleton />
-        <Separator style={{ opacity: 0 }} />
-        <Skeleton />
-        <Skeleton />
-      </Stack>
     </Stack>
   )
 }

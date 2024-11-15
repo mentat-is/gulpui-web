@@ -1,3 +1,4 @@
+import React from 'react';
 import s from './styles/Skeleton.module.css'
 import { cva, VariantProps } from 'class-variance-authority';
 
@@ -42,21 +43,23 @@ const skeletonVariants = cva(s.skeleton, {
 export type ChadNumber = number | `${number}` | `${number}%`;
 
 type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & Omit<VariantProps<typeof skeletonVariants>, 'height' | 'width'> & {
+  enable?: boolean;
   height?: VariantProps<typeof skeletonVariants>['height'] | ChadNumber;
   width?: VariantProps<typeof skeletonVariants>['width'] | ChadNumber;
 };
 
-const Skeleton = ({
-  className,
-  variant,
-  height,
-  width,
-  border,
-  style = {},
-  ...props
-}: SkeletonProps) => {
-  return (
+const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({
+    className,
+    variant,
+    height,
+    width,
+    border,
+    style = {},
+    enable,
+    ...props
+  }, ref) => enable || !props.children ? (  
     <div
+      ref={ref}
       style={{
         ...style,
         height: height as ChadNumber,
@@ -64,14 +67,14 @@ const Skeleton = ({
       }}
       className={skeletonVariants({
         variant,
-        width: width as VariantProps<typeof skeletonVariants>['width'],
-        height: height as VariantProps<typeof skeletonVariants>['height'],
+        width: enable ? null : width as VariantProps<typeof skeletonVariants>['width'],
+        height: enable ? null : height as VariantProps<typeof skeletonVariants>['height'],
         border,
         className
       })}
-      {...props}
-    />
-  )
-}
+      {...props} />
+  ) : props.children as never
+);
+Skeleton.displayName = "Skeleton";
 
-export { Skeleton }
+export { Skeleton, skeletonVariants };

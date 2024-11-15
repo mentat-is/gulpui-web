@@ -6,6 +6,7 @@ import s from "./styles/Button.module.css";
 import { Loading } from "./Loading";
 import { Icon, IconProps } from "./Icon";
 import { λIcon } from './utils';
+import { Skeleton } from "./Skeleton";
 
 const buttonVariants = cva(s.button, {
   variants: {
@@ -40,11 +41,13 @@ export interface ButtonProps
   img?: λIcon;
   revert?: boolean;
   loading?: boolean;
+  skeleton?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, img, revert, disabled, loading, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
+  ({ className, skeleton, variant, size, img, revert, disabled, loading, asChild = false, ...props }, ref) => {
+    let Comp: React.ElementType = asChild ? Slot : "button";
+
     const paddingClass = img ? (props.children ? (revert ? s.revert : s.withImage) : s.onlyImage) : null;
 
     const children = !asChild && props.children;
@@ -54,18 +57,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }
 
     return (
-      <Comp
-        className={cn(buttonVariants({ variant: disabled ? 'disabled' : variant, size, className }), paddingClass, loading && s.loading)}
-        ref={ref}
-        {...props}>
-        {asChild ? props.children : (loading
-          ? <Loading variant={convertButtonVariantToImageVariant(variant)} size={convertButtonSizeToImageSize(size)} no_text={!children} />
-          : <React.Fragment>
-              {img && <Icon name={img} size={convertButtonSizeToImageSize(size)} variant={convertButtonVariantToImageVariant(variant)} />}
-              {children}
-            </React.Fragment>
-        )}
-      </Comp>
+      <Skeleton enable={skeleton}>
+        <Comp
+          className={cn(buttonVariants({ variant: disabled ? 'disabled' : variant, size, className }), paddingClass, loading && s.loading)}
+          ref={ref}
+          {...props}>
+          {asChild ? props.children : (loading
+            ? <Loading variant={convertButtonVariantToImageVariant(variant)} size={convertButtonSizeToImageSize(size)} no_text={!children} />
+            : <React.Fragment>
+                {img && <Icon name={img} size={convertButtonSizeToImageSize(size)} variant={convertButtonVariantToImageVariant(variant)} />}
+                {children}
+              </React.Fragment>
+          )}
+        </Comp>
+      </Skeleton>
     )
   }
 );

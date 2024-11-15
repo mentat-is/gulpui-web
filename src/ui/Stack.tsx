@@ -15,7 +15,7 @@ const Stack = React.forwardRef<HTMLDivElement, StackProps>(
     flex = 'inherit',
     gap = 6,
     dir: flexDirection = 'row',
-    pos: position = 'inherit',
+    pos: position = 'unset',
     style,
     jc: justifyContent = 'normal',
     ai: alignItems = 'normal',
