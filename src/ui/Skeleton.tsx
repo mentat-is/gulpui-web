@@ -56,10 +56,10 @@ const Skeleton = ({
     <div
       style={{
         ...style,
-        height: Number.isNaN(Number(height)) && String(height).endsWith('%')
+        height: Number.isNaN(Number(height)) && !String(height).endsWith('%')
           ? undefined!
           : height!,
-        width: Number.isNaN(Number(width)) && String(height).endsWith('%')
+        width: Number.isNaN(Number(width)) && !String(height).endsWith('%')
         ? undefined!
         : width!
       }}

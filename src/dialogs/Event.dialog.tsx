@@ -5,7 +5,7 @@ import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from "@/dto/ChunkE
 import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { Dialog } from "@/ui/Dialog";
 import { SymmetricSvg } from "@/ui/SymmetricSvg";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import s from './styles/DisplayEventDialog.module.css';
 import { XMLTree } from "@/ui/XMLTree";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
@@ -18,6 +18,8 @@ import { Notes } from "./components/Notes";
 import { λNote } from "@/dto/Note.dto";
 import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
 import { Icon } from "@/ui/Icon";
+import { Stack } from '@/ui/Stack';
+import { Skeleton } from '@/ui/Skeleton';
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -206,9 +208,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   return (
-    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
-      {detailedChunkEvent && (
-        <>
+    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
+      {detailedChunkEvent ? (
+        <Fragment>
           <div className={s.buttons_group}>
             <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
             <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
@@ -233,7 +235,22 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             </TabsContent>
           </Tabs>
           <Notes notes={notes} />
-        </>
+        </Fragment>
+      ) : (
+        <Stack flex dir='column' gap={16}>
+          <Stack ai='flex-start' jc='flex-end' gap={12} dir='row' flex={0}>
+            <Skeleton width={120} />
+            <Skeleton width={200} />
+          </Stack>
+          <Stack dir='column' gap={12}>
+            <Stack ai='flex-start' gap={12} dir='row' flex={0}>
+              <Skeleton width={220} />
+            </Stack>
+            <Skeleton />
+            <Skeleton height='100%' width='full' />
+          </Stack>
+          
+        </Stack>
       )}
     </Dialog>
   )
