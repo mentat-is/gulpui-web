@@ -46,6 +46,7 @@ type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & Omit<VariantProps<ty
   enable?: boolean;
   height?: VariantProps<typeof skeletonVariants>['height'] | ChadNumber;
   width?: VariantProps<typeof skeletonVariants>['width'] | ChadNumber;
+  delay?: boolean | number
 };
 
 const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({
@@ -56,6 +57,7 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({
     border,
     style = {},
     enable,
+    delay,
     ...props
   }, ref) => enable || !props.children ? (  
     <div
@@ -64,7 +66,7 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({
         ...style,
         height: height as ChadNumber,
         width: width as ChadNumber,
-        animationDelay: `-${Math.random()}s`,
+        animationDelay: (typeof delay === 'undefined' || typeof delay === 'number' || delay === true) ? `-${Math.random() * Math.abs(Number(delay || 1))}s` : undefined!,
       }}
       className={skeletonVariants({
         variant,

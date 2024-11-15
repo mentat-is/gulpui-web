@@ -52,7 +52,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     return RulerDrawer.instance;
   }
 
-draw() {
+  draw() {
     this.cache = [];
     if (!this.selected)
       return;
@@ -91,7 +91,8 @@ draw() {
     let bestNumSections = Infinity;
 
     const intervals = [
-      { unit: 'milliseconds', values: [100, 250, 500] },
+      { unit: 'nanoseconds', values: [1, 10, 100, 250, 500] },
+      { unit: 'milliseconds', values: [1, 10, 100, 250, 500] },
       { unit: 'seconds', values: [1, 2, 5, 10, 15, 30] },
       { unit: 'minutes', values: [1, 2, 5, 10, 15, 30] },
       { unit: 'hours', values: [1, 3, 6, 12] },

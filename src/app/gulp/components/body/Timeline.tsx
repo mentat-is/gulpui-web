@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'r
 import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
-import { Ruler } from './Ruler';
 import { DragDealer } from '@/class/dragDealer.class';
 import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';

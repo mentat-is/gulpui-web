@@ -113,14 +113,14 @@ export function SelectFilesBanner() {
     spawnBanner(<LimitsBanner />);
   }
 
-  const fulfilled = true || !Operation.selected(app)?.contexts;
+  const fulfilled = !Operation.selected(app)?.contexts;
 
   return (
     <Banner title={lang.select_context.title} fixed={loading} className={s.banner}>
       <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       <Skeleton style={{ flex: 1 }} enable={fulfilled}>
       <div className={s.wrapper}>
-        {!filter.length ? ([] as λContext[]).map(context => (
+        {!filter.length ? Operation.contexts(app).map(context => (
           <div className={s.branch} key={context.uuid}>
             <div className={s.contextHeading}>
               <Checkbox id={context.name} checked={Context.plugins(app, context).every(p => p.selected) ? true : (Context.plugins(app, context).some(p => p.selected) ? 'indeterminate' : false)} onCheckedChange={checked => handle(checked, [context.uuid])} />
