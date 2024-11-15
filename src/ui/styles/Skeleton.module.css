@@ -18,6 +18,9 @@
 .border_l {
   border-radius: var(--border-l);
 }
+.border_r {
+  border-radius: var(--round);
+}
 
 .avatar {
   border-radius: var(--round);

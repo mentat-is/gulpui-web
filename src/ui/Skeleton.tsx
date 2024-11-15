@@ -26,7 +26,8 @@ const skeletonVariants = cva(s.skeleton, {
       default: s.defaultBorder,
       s: s.border_s,
       m: s.border_m,
-      l: s.border_l
+      l: s.border_l,
+      r: s.border_r
     }
   },
   defaultVariants: {
@@ -38,8 +39,8 @@ const skeletonVariants = cva(s.skeleton, {
 });
 
 type SkeletonProps = React.HTMLAttributes<HTMLDivElement> & Omit<VariantProps<typeof skeletonVariants>, 'height' | 'width'> & {
-  height?: VariantProps<typeof skeletonVariants>['height'] | number | `${number}`;
-  width?: VariantProps<typeof skeletonVariants>['width'] | number | `${number}`;
+  height?: VariantProps<typeof skeletonVariants>['height'] | number | `${number}` | `${number}%`;
+  width?: VariantProps<typeof skeletonVariants>['width'] | number | `${number}` | `${number}%`;
 };
 
 const Skeleton = ({
@@ -55,10 +56,10 @@ const Skeleton = ({
     <div
       style={{
         ...style,
-        height: Number.isNaN(Number(height))
+        height: Number.isNaN(Number(height)) && String(height).endsWith('%')
           ? undefined!
           : height!,
-        width: Number.isNaN(Number(width))
+        width: Number.isNaN(Number(width)) && String(height).endsWith('%')
         ? undefined!
         : width!
       }}

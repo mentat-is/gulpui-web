@@ -8,9 +8,8 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  backdrop-filter: blur(8px);
   overflow: hidden;
-  background: #00000080;
+  background: #000000d8;
 }
 .banner {
   min-width: 600px;
