@@ -57,9 +57,9 @@
 }
 
 .secondary {
-  background-color: var(--soft-black);
+  background-color: var(--gray16);
   color: var(--white);
-  border: 1px solid var(--accent-2);
+  border: 1px solid var(--accent-3);
 }
 
 .ghost {

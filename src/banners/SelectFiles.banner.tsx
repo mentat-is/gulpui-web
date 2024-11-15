@@ -18,6 +18,7 @@ import { UploadBanner } from "./Upload.banner";
 import { Logger } from "@/dto/Logger.class";
 import { Stack } from "@/ui/Stack";
 import { Skeleton } from "@/ui/Skeleton";
+import { λContext } from "@/dto/Context.dto";
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -112,69 +113,58 @@ export function SelectFilesBanner() {
     spawnBanner(<LimitsBanner />);
   }
 
-  const fulfilled = !Operation.selected(app)?.contexts;
+  const fulfilled = true || !Operation.selected(app)?.contexts;
 
   return (
-    <Banner title={lang.select_context.title} fixed={loading}>
-      <div className={s.wrapper}>
+    <Banner title={lang.select_context.title} fixed={loading} className={s.banner}>
       <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
-      {!filter.length ? Operation.contexts(app).map(context => (
-        <div className={s.context} key={context.uuid}>
-          <div className={s.contextHeading}>
-            <Checkbox id={context.name} checked={Context.plugins(app, context).every(p => p.selected) ? true : (Context.plugins(app, context).some(p => p.selected) ? 'indeterminate' : false)} onCheckedChange={checked => handle(checked, [context.uuid])} />
-            <Label htmlFor={context.name}>{context.name}</Label>
-            <Badge value='Context' />
-          </div>
-          {Context.plugins(app, context).map(plugin => (
-            <div className={s.plugin} key={plugin.uuid}>
-              <div className={s.pluginHeading}>
-                <Checkbox id={plugin.name} checked={Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length === Plugin.files(app, plugin).length ? true : Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length > 0 ? 'indeterminate' : false} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid])} />
-                <Label htmlFor={plugin.name}>{plugin.name}</Label>
-                <Badge value='Plugin' variant='secondary' />
-              </div>
-              {Plugin.files(app, plugin).map((file, i) => (
-                <React.Fragment key={i}>
-                  {i !== 0 && <Separator color='var(--accent-3)' />}
-                  <div key={file.uuid} className={s.file}>
-                    <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid], [file.uuid])} />
-                    <Label htmlFor={file.name}>{file.name}</Label>
-                    <Badge value='File' variant='outline' />
-                  </div>
-                </React.Fragment>
-              ))}
+      <Skeleton style={{ flex: 1 }} enable={fulfilled}>
+      <div className={s.wrapper}>
+        {!filter.length ? ([] as λContext[]).map(context => (
+          <div className={s.branch} key={context.uuid}>
+            <div className={s.contextHeading}>
+              <Checkbox id={context.name} checked={Context.plugins(app, context).every(p => p.selected) ? true : (Context.plugins(app, context).some(p => p.selected) ? 'indeterminate' : false)} onCheckedChange={checked => handle(checked, [context.uuid])} />
+              <Label htmlFor={context.name}>{context.name}</Label>
+              <hr style={{ flex: 1 }} />
+              <Badge value='Context' />
             </div>
-          ))}
+            {Context.plugins(app, context).map(plugin => (
+              <div className={s.branch} key={plugin.uuid}>
+                <div className={s.pluginHeading}>
+                  <Checkbox id={plugin.name} checked={Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length === Plugin.files(app, plugin).length ? true : Plugin.files(app, plugin).map(f => f.selected).filter(f => !!f).length > 0 ? 'indeterminate' : false} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid])} />
+                  <Label htmlFor={plugin.name}>{plugin.name}</Label>
+                  <hr style={{ flex: 1 }} />
+                  <Badge value='Plugin' />
+                </div>
+                <div className={s.branch}>
+                {Plugin.files(app, plugin).map((file, i) => (
+                  <div className={s.file} key={file.uuid}>
+                    {/* {i !== 0 && <Separator color='var(--accent-3)' />} */}
+                      <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [context.uuid], [plugin.uuid], [file.uuid])} />
+                      <Label htmlFor={file.name}>{file.name}</Label>
+                      <hr style={{ flex: 1 }} />
+                      <Badge value='File' />
+                  </div>
+                ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )) : app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).map(file => (
+          <div key={file.uuid} className={s.file}>
+            <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [Context.findByPugin(app, file._uuid)!.uuid], [file._uuid], [file.uuid])} />
+            <Label htmlFor={file.name}>{file.name}</Label>
+            <Badge value='File' variant='outline' />
         </div>
-      )) : app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).map(file => (
-        <div key={file.uuid} className={s.file}>
-          <Checkbox id={file.name} checked={file.selected} onCheckedChange={checked => handle(checked, [Context.findByPugin(app, file._uuid)!.uuid], [file._uuid], [file.uuid])} />
-          <Label htmlFor={file.name}>{file.name}</Label>
-          <Badge value='File' variant='outline' />
-      </div>
-      ))}
-      </div>
+        ))}
+        </div>
+      </Skeleton>
       <div className={s.group}>
-        <Button variant='ghost' skeleton={fulfilled} onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
+        <Button img='Upload' variant='ghost' skeleton={fulfilled} onClick={() => spawnBanner(<UploadBanner />)}>Upload and analize</Button>
         <div className={s.splitter} />
-        <Button variant='outline' skeleton={fulfilled} onClick={selectAll}>Select all</Button>
+        <Button variant='secondary' skeleton={fulfilled} onClick={selectAll}>Select all</Button>
         <Button img='CheckCheck' skeleton={fulfilled} loading={loading} onClick={save}>Save</Button>
       </div>
     </Banner>
   );
-}
-
-interface SelectFilesLoadingContentProps {
-  enable: boolean;
-}
-
-function SelectFilesLoadingContent({ enable }: SelectFilesLoadingContentProps) {
-  if (!enable) return null;
-
-  return (
-    <Stack style={{ background: 'var(--soft-black)', width: '100%', height: '100%' }} pos='absolute' dir='column' gap={12}>
-      <Skeleton width='full'  />
-      <Skeleton height={256} width='full' />
-      <Skeleton height={256} width='full' />
-    </Stack>
-  )
 }

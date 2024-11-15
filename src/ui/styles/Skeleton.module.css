@@ -2,6 +2,7 @@
   background-color: var(--gray24);
   animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
   flex-shrink: 0;
+  pointer-events: none;
 }
 .skeleton * {
   opacity: 0;

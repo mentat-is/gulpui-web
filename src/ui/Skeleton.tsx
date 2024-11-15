@@ -63,12 +63,13 @@ const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(({
       style={{
         ...style,
         height: height as ChadNumber,
-        width: width as ChadNumber
+        width: width as ChadNumber,
+        animationDelay: `-${Math.random()}s`,
       }}
       className={skeletonVariants({
         variant,
-        width: enable ? null : width as VariantProps<typeof skeletonVariants>['width'],
-        height: enable ? null : height as VariantProps<typeof skeletonVariants>['height'],
+        width: enable && props.children ? null : width as VariantProps<typeof skeletonVariants>['width'],
+        height: enable && props.children ? null : height as VariantProps<typeof skeletonVariants>['height'],
         border,
         className
       })}
