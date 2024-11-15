@@ -86,12 +86,12 @@ export class RulerDrawer implements RulerDrawerConstructor {
 
   step(totalMilliseconds: number): [number, string, number] {
     let optimalInterval = 0;
-    let _unit = 'milliseconds';
+    let _unit = 'nanoseconds';
     let _value = 0;
     let bestNumSections = Infinity;
 
     const intervals = [
-      { unit: 'nanoseconds', values: [1, 10, 100, 250, 500] },
+      { unit: 'nanoseconds', values: [1, 10, 100, 500] },
       { unit: 'milliseconds', values: [1, 10, 100, 250, 500] },
       { unit: 'seconds', values: [1, 2, 5, 10, 15, 30] },
       { unit: 'minutes', values: [1, 2, 5, 10, 15, 30] },
@@ -104,6 +104,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     intervals.forEach(({ unit, values }) => {
       values.forEach(value => {
         const intervalMs = value * {
+          nanoseconds: 0.001,
           milliseconds: 1,
           seconds: 1000,
           minutes: 60 * 1000,

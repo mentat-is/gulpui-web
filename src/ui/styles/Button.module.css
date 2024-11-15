@@ -13,6 +13,9 @@
   border: 1px solid transparent;
   gap: 8px
 }
+.button:focus-visible {
+  box-shadow: var(--ring);
+}
 
 .button svg {
   transition: all 0.15s var(--transition);

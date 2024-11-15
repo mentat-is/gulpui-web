@@ -1,13 +1,13 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import { Sessions } from "@/dto/Session.dto";
-import { toast } from "sonner";
-import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { UUID } from "crypto";
-import { λApp } from "@/dto";
-import { Info } from "@/class/Info";
-import { RefObject } from "react";
-import { icons } from "lucide-react";
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+import { Sessions } from '@/dto/Session.dto';
+import { toast } from 'sonner';
+import { MinMax } from '@/dto/QueryMaxMin.dto';
+import { UUID } from 'crypto';
+import { λApp } from '@/dto';
+import { Info } from '@/class/Info';
+import { RefObject } from 'react';
+import { icons } from 'lucide-react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -145,22 +145,13 @@ export const Icons = icons;
 
 export const GradientsMap = {
   thermal: [
-    "01016f",
-    "010198",
-    "0000c1",
-    "4f00ea",
-    "8600d0",
-    "af00af",
-    "d00086",
-    "ea004f",
-    "ff014f",
-    "ff4600",
-    "ff7800",
-    "ff9f00",
-    "ffbe00",
-    "ffd800",
-    "ffff01",
-    "ffffaf"
+    '0000c1',
+    '8600d0',
+    'd00086',
+    'ff014f',
+    'ff7800',
+    'ffbe00',
+    'ffff01'
   ],
   sepal: ['fe2400', 'fcfafd', '7e51fe'],
   deep: ['54aef3', '142f48'],

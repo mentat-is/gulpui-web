@@ -220,9 +220,9 @@ export function LoginPage() {
         </div>
         <div className={s.content}>
         <div className={s.step}>
-          <Button disabled={stage <= 0} size='sm' img='ArrowLeft' onClick={() => setStage(s => s-1)} variant='ghost'>Previous step</Button>
+          <Button tabIndex={-1} disabled={stage <= 0} size='sm' img='ArrowLeft' onClick={() => setStage(s => s-1)} variant='ghost'>Previous step</Button>
           <p>{stageMap[stage]}</p>
-          <Button disabled={maxStage < stage + 1} revert className={s.next_btn} onClick={() => setStage(s => s+1)} size='sm' img='ArrowRight' variant='ghost'>Next step</Button>
+          <Button tabIndex={-1} disabled={maxStage < stage + 1} revert className={s.next_btn} onClick={() => setStage(s => s+1)} size='sm' img='ArrowRight' variant='ghost'>Next step</Button>
         </div>
         {stage === 0
           ? (
@@ -285,12 +285,13 @@ export function LoginPage() {
             :  stage === 2 
               ? (
                 <div className={s.chooser}>
-                  {app.target.operations.map((operation) => (
+                  {app.target.operations.map((operation, i) => (
                     <div className={s.unit_group} key={operation.id}>
-                      <Button onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
+                      <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
+                            tabIndex={-1}
                             size='icon'
                             variant='ghost'
                             img='Trash2' />

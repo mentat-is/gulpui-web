@@ -56,6 +56,10 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'icon'
     }
 
+    if (disabled) {
+      props.tabIndex = -1;
+    }
+
     return (
       <Skeleton enable={skeleton}>
         <Comp

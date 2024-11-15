@@ -6,6 +6,7 @@
   border-radius: var(--round);
   padding: 2px;
   box-shadow: var(--shadow-border);
+  flex-shrink: 0;
   transition-property: all 0.125s var(--transition);
   background: var(--meta-black);
   align-items: center;
@@ -29,11 +30,10 @@
 }
 
 .thumb {
-  height: 19.5px;
-  width: 19.5px;
+  height: 20px;
+  width: 20px;
   border-radius: var(--round);
   background-color: var(--white);
-  border: var(--geist-border);
   transition: all 0.125s var(--transition);
 }
 
