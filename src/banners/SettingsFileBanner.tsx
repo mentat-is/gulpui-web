@@ -13,7 +13,7 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Engine, enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
-import { Icon } from "@/ui/Icon";
+import { Icon } from "@impactium/icons";
 import { Context } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
 

@@ -19,6 +19,7 @@ import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { Stack } from "@/ui/Stack";
+import { Icon } from "@impactium/icons";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();

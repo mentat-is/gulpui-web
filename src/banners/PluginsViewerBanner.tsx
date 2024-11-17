@@ -4,7 +4,7 @@ import s from './styles/PluginsViewerBanner.module.css';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/ui/Select';
 import { useState } from 'react';
 import { PluginEntity } from '@/dto/Plugin.dto';
-import { Icon } from '@/ui/Icon';
+import { Icon } from '@impactium/icons';
 
 export function PluginsViewerBanner() {
   const { app } = useApplication();

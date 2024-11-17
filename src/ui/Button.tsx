@@ -4,8 +4,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./utils";
 import s from "./styles/Button.module.css";
 import { Loading } from "./Loading";
-import { Icon, IconProps } from "./Icon";
-import { λIcon } from './utils';
+import { Icon } from "@impactium/icons";
 import { Skeleton } from "./Skeleton";
 
 const buttonVariants = cva(s.button, {
@@ -38,7 +37,7 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  img?: λIcon;
+  img?: Icon.Name;
   revert?: boolean;
   loading?: boolean;
   skeleton?: boolean;
@@ -80,7 +79,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 Button.displayName = "Button";
 
-const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): IconProps['variant'] => ({
+const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): Icon.Variant => ({
   default: 'black',
   destructive: 'white',
   outline: 'dimmed',
@@ -90,11 +89,11 @@ const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): Ic
   disabled: 'dimmed',
   hardline: 'white',
   glass: 'dimmed'
-} as Record<NonNullable<ButtonProps['variant']>, IconProps['variant']>)[variant!] ?? 'black';
+} as Record<NonNullable<ButtonProps['variant']>, Icon.Variant>)[variant!] ?? 'black';
 
-const convertButtonSizeToImageSize = (variant: ButtonProps['size']): IconProps['size'] => ({
+const convertButtonSizeToImageSize = (variant: ButtonProps['size']): Icon.Props['size'] => ({
   sm: 16,
   lg: 24
-} as Record<NonNullable<ButtonProps['size']>, IconProps['size']>)[variant!] ?? 20;
+} as Record<NonNullable<ButtonProps['size']>, Icon.Props['size']>)[variant!] ?? 20;
 
 export { Button, buttonVariants };

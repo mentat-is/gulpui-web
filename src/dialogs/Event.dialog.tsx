@@ -9,14 +9,14 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { convertXML } from 'simple-xml-to-json';
-import { cn, copy, λIcon } from '@/ui/utils';
+import { cn, copy } from '@/ui/utils';
 import { Button } from '@/ui/Button';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 import { File, Note, Plugin, λ } from '@/class/Info';
 import { Notes } from './components/Notes';
 import { λNote } from '@/dto/Note.dto';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
-import { Icon } from '@/ui/Icon';
+import { Icon } from '@impactium/icons';
 import { Stack } from '@/ui/Stack';
 import { ChadNumber, Skeleton } from '@/ui/Skeleton';
 
@@ -120,10 +120,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     });
   };  
 
-  const iconsMap: Record<string, λIcon> = {
+  const iconsMap: Record<string, Icon.Name> = {
     Provider: 'Waypoints',
     Level: 'Layers2',
-    Version: 'GitBranch',
+    Version: 'FunctionGo',
     EventId: 'Hexagon',
     EventID: 'Hexagon',
     Task: 'StickyNote',
@@ -157,7 +157,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
       return (
         <div className={cn(s.pod, _key === 'PrivilegeList' && s.wrap)} key={λkey + value + _key + _value}>
-          {iconsMap[λkey] && <Icon name={iconsMap[λkey]} />}
+          {iconsMap[λkey] && <Icon color='#ff00ff' name={iconsMap[λkey]} />}
           {_key}
           {_value}
         </div>

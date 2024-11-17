@@ -1,8 +1,8 @@
 import { CustomGlyphs, GlyphMap } from "@/dto/Glyph.dto";
 import { λGlyph } from "@/dto/λGlyph.dto";
-import { Icon, IconProps } from "./Icon";
+import { Icon } from "@impactium/icons";
 
-interface GlyphProps extends Omit<IconProps, 'name'> {
+interface GlyphProps extends Omit<Icon.Props, 'name'> {
   glyph: λGlyph['id'] | null;
 }
 

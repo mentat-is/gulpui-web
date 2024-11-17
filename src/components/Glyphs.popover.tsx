@@ -1,10 +1,9 @@
-import { GlyphMap } from "@/dto/Glyph.dto";
-import { Button } from "@/ui/Button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
-import { λIcon } from "@/ui/utils";
+import { GlyphMap } from '@/dto/Glyph.dto';
+import { Button } from '@/ui/Button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import s from './styles/Glyphs.popover.module.css';
-import { toast } from "sonner";
-import { Fragment, useState } from "react";
+import { toast } from 'sonner';
+import { Icon } from '@impactium/icons';
 
 interface GlyphPopoverProps {
   icon: number,
@@ -12,7 +11,6 @@ interface GlyphPopoverProps {
 }
 
 export function GlyphsPopover({ icon, setIcon }: GlyphPopoverProps) {
-  const [open, setOpen] = useState(false);
   const uploadGlyph = () => {
     toast.info('This is paid feature', {
       description: 'Leave 5 bucks in the disk drive of your PC',
@@ -27,12 +25,12 @@ export function GlyphsPopover({ icon, setIcon }: GlyphPopoverProps) {
           <Button variant='glass' img={icon !== -1 ? GlyphMap[icon] : 'ScanSearch'} />
         </div>
       </PopoverTrigger>
-      <PopoverContent align="end" className={s.map}>
+      <PopoverContent align='end' className={s.map}>
         {GlyphMap.map((glyph, index) => (
           <Button
             key={glyph}
             variant={icon === index ? 'default' : 'outline'}
-            img={glyph as λIcon}
+            img={glyph as Icon.Name}
             onClick={() => setIcon(index)}
           />
         ))}

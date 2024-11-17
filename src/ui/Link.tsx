@@ -8,7 +8,7 @@ import { Fragment } from 'react';
 import { Event } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
-import { Icon } from './Icon';
+import { Icon } from '@impactium/icons';
 import { λLink } from '@/dto/Link.dto';
 import { Glyph } from './Glyph';
 

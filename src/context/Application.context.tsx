@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo, useCallback, useReducer } from "react";
+import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from "react";
 import { ResponseBase, ResponseError } from "@/dto/ResponseBase.dto";
 import { λApp, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";
@@ -169,7 +169,7 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
 
   const handleLoggerExportCommand = () => {
     const content = Logger.history()
-      .map(l => l.message.replace(/\x1b\[[0-9;]*m/g, ''))
+      .map(l => l.message.replace(/x1b\[[0-9;]*m/g, ''))
       .join('\n');
     const blob = new Blob([content], { type: 'text/plain' });
 

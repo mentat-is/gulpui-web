@@ -7,7 +7,6 @@ import { UUID } from 'crypto';
 import { λApp } from '@/dto';
 import { Info } from '@/class/Info';
 import { RefObject } from 'react';
-import { icons } from 'lucide-react';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -138,10 +137,6 @@ export const getLimits = (app: λApp, Info: Info, timeline: RefObject<HTMLDivEle
 
   return { min, max };
 };
-
-export type λIcon = keyof typeof icons;
-
-export const Icons = icons;
 
 export const GradientsMap = {
   thermal: [

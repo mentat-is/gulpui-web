@@ -116,7 +116,7 @@ img {
   -webkit-user-drag: none;
 }
 
-* {  
+*:not(svg, path, g) {  
   user-select: none;
   -webkit-user-select: none;
   color: var(--text-white);
@@ -131,6 +131,9 @@ img {
   padding: 0;
   margin: 0;
   transition: none;
+}
+svg {
+  color: inherit !important;
 }
 
 html, body, div, span, applet, object, iframe,

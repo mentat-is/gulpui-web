@@ -1,6 +1,6 @@
-import { λIcon } from "@/ui/utils";
+import { Icon } from '@impactium/icons';
 
-export const GlyphMap: Array<λIcon> = [
+export const GlyphMap: Array<Icon.Name> = [
   'TriangleAlert',
   'CircleHelp',
   'CircleAlert',

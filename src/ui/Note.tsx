@@ -8,7 +8,7 @@ import { useApplication } from '@/context/Application.context';
 import { Fragment } from 'react';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
-import { Icon } from './Icon';
+import { Icon } from '@impactium/icons';
 import { Glyph } from './Glyph';
 
 interface NoteProps {

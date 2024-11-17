@@ -1,9 +1,9 @@
 import React from "react"
 import s from './styles/Input.module.css' 
-import { cn, λIcon } from "./utils"
+import { cn } from "./utils"
 import { cva, type VariantProps } from "class-variance-authority"; 
-import { Icon } from "./Icon";
 import { Skeleton } from "./Skeleton";
+import { Icon } from "@impactium/icons";
 
 const inputVariants = cva(s.button, {
   variants: {
@@ -23,7 +23,7 @@ const inputVariants = cva(s.button, {
 });
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
-  img?: λIcon | null;
+  img?: Icon.Name | null;
   revert?: boolean;
   skeleton?: boolean;
 }
@@ -38,7 +38,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           s.image,
           revert && s.revert
         )}>
-          <Icon variant='dimmed' name={img ?? 'Upload'} alt='' />
+          <Icon variant='dimmed' name={img ?? 'Upload'} />
           <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
         </div>
       </Skeleton>

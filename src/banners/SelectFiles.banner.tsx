@@ -11,14 +11,10 @@ import { Context, Plugin, Operation, File, Event } from "@/class/Info";
 import { UUID } from "crypto";
 import { useState } from "react";
 import { Input } from "@/ui/Input";
-import React from "react";
-import { Separator } from "@/ui/Separator";
 import { LimitsBanner } from "./Limits.banner";
 import { UploadBanner } from "./Upload.banner";
 import { Logger } from "@/dto/Logger.class";
-import { Stack } from "@/ui/Stack";
 import { Skeleton } from "@/ui/Skeleton";
-import { λContext } from "@/dto/Context.dto";
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
