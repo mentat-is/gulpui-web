@@ -26,18 +26,22 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   img?: Icon.Name | null;
   revert?: boolean;
   skeleton?: boolean;
+  valid?: boolean
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, revert, skeleton, variant, type, size, img, ...props }, ref) => {
+  ({ className, valid = true, revert, skeleton, variant, type, size, img, ...props }, ref) => {
+    const classes = cn(
+      inputVariants({ variant, size, className }),
+      s.input,
+      img || type === 'file' ? s.image : null,
+      revert && s.revert,
+      !valid && s.invalid
+    );
+
     return img || (type === 'file' && img !== null) ? (
       <Skeleton enable={skeleton}>
-        <div className={cn(
-          inputVariants({ variant, size, className }),
-          s.input,
-          s.image,
-          revert && s.revert
-        )}>
+        <div className={classes}>
           <Icon variant='dimmed' name={img ?? 'Upload'} />
           <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
         </div>
@@ -45,11 +49,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ) : (
       <Skeleton enable={skeleton}>
         <input
-          className={cn(
-            inputVariants({ variant, size, className }),
-            s.input,
-            img && s.image
-          )}
+          className={classes}
           type={variant === 'color' ? 'color' : type}
           ref={ref}
           {...props}

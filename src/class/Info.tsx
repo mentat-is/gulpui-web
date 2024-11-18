@@ -6,7 +6,7 @@ import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
 import { λEvent, λEventFormForCreateRequest } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
-import React from 'react';
+import React, { Dispatch, SetStateAction } from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { ResponseBase, ResponseError } from '@/dto/ResponseBase.dto';
 import { λFile } from '@/dto/File.dto';
@@ -34,6 +34,14 @@ interface InfoProps {
   setInfo: React.Dispatch<React.SetStateAction<λApp>>, 
   api: Api
   timeline: React.RefObject<HTMLDivElement>;
+}
+
+interface QueryExternalProps {
+  operation_id: number;
+  plugin: λPlugin['name'];
+  server: string;
+  username: string;
+  password: string;
 }
 
 export class Info implements InfoProps {
@@ -600,6 +608,32 @@ Files: ${files.length}`, Info.name);
     return bucket;
   });
 
+  query_external = ({
+    operation_id,
+    server,
+    username,
+    password
+  }: QueryExternalProps) => {
+    this.api('/query_external', {
+      data: {
+        operation_id,
+        client_id: this.app.general.user_id,
+        ws_id: this.app.general.ws_id,
+        plugin: ''
+      },
+      body: JSON.stringify({
+        plugin_params: {
+          extra: {
+            index: 0,
+            url: server,
+            username,
+            password, 
+          }
+        }
+      })
+    })
+  };
+
   filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
   filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
@@ -1150,4 +1184,10 @@ export namespace λ {
   export type X = number & {
     readonly [X]: unique symbol;
   };
+}
+
+export const Pattern = {
+  Server: /^(https?:\/\/)(((\d{1,3}\.){3}\d{1,3})|([\w-]+\.)+[\w-]+)(\/[\w-./?%&=]*)?$/,
+  Username: /^[\s\S]{3,48}$/,
+  Password: /^[\s\S]{3,48}$/
 }

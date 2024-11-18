@@ -11,6 +11,7 @@ import { cn } from '@/ui/utils';
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner';
 import { Card } from '@/ui/Card';
+import { Toggle } from '@/ui/Toggle';
 
 export function LimitsBanner() {
   const { Info, destroyBanner, app } = useApplication();
@@ -42,11 +43,7 @@ export function LimitsBanner() {
 
   return (
     <Banner className={s.banner} title='Visibility range'>
-      <div className={s.date_input_choose_option}>
-        <p className={cn(!manual && s.selected)}>Select from limits</p>
-        <Switch checked={manual} onCheckedChange={setManual} />
-        <p className={cn(manual && s.selected)}>ISO String</p>
-      </div>
+      <Toggle checked={manual} onCheckedChange={setManual} option={['Select from limits', 'ISO String']} />
       <Card>
         <div className={s.wrapper}>
           <span>Start:</span>

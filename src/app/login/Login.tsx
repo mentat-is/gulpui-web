@@ -5,7 +5,7 @@ import { useApplication } from "@/context/Application.context";
 import { parseTokensFromCookies } from '@/ui/utils'
 import { Card } from "@/ui/Card";
 import { Session, Sessions } from "@/dto/Session.dto";
-import { Index } from "@/class/Info";
+import { Index, Pattern } from "@/class/Info";
 import { toast } from "sonner";
 import { Login, λOperation } from "@/dto";
 import React from "react";
@@ -19,7 +19,6 @@ import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { Stack } from "@/ui/Stack";
-import { Icon } from "@impactium/icons";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -74,7 +73,7 @@ export function LoginPage() {
     ? removeOverload(str.slice(0, -1))
     : str;
 
-    const validate = (str: string): string | void => /^(https?:\/\/)(((\d{1,3}\.){3}\d{1,3})|([\w-]+\.)+[\w-]+)(\/[\w-./?%&=]*)?$/.test(str)
+    const validate = (str: string): string | void => Pattern.Server.test(str)
       ? (() => { toast('Server URL didn`t match pattern') })()
       : removeOverload(str);
 
