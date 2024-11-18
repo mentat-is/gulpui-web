@@ -6,7 +6,7 @@ import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
 import { λEvent, λEventFormForCreateRequest } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
-import React, { Dispatch, SetStateAction } from 'react';
+import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { ResponseBase, ResponseError } from '@/dto/ResponseBase.dto';
 import { λFile } from '@/dto/File.dto';
@@ -613,26 +613,25 @@ Files: ${files.length}`, Info.name);
     server,
     username,
     password
-  }: QueryExternalProps) => {
-    this.api('/query_external', {
-      data: {
-        operation_id,
-        client_id: this.app.general.user_id,
-        ws_id: this.app.general.ws_id,
-        plugin: ''
-      },
-      body: JSON.stringify({
-        plugin_params: {
-          extra: {
-            index: 0,
-            url: server,
-            username,
-            password, 
-          }
+  }: QueryExternalProps) => this.api('/query_external', {
+    method: 'POST',
+    data: {
+      operation_id,
+      client_id: this.app.general.user_id,
+      ws_id: this.app.general.ws_id,
+      plugin: ''
+    },
+    body: JSON.stringify({
+      plugin_params: {
+        extra: {
+          index: 0,
+          url: server,
+          username,
+          password, 
         }
-      })
+      }
     })
-  };
+  }).then(console.log);
 
   filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 
@@ -1187,7 +1186,7 @@ export namespace λ {
 }
 
 export const Pattern = {
-  Server: /^(https?:\/\/)(((\d{1,3}\.){3}\d{1,3})|([\w-]+\.)+[\w-]+)(\/[\w-./?%&=]*)?$/,
+  Server: new RegExp(/https?:\/\/(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})?(:\d+)?(\/[^\s]*)?/),
   Username: /^[\s\S]{3,48}$/,
   Password: /^[\s\S]{3,48}$/
 }

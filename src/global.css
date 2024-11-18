@@ -108,8 +108,8 @@
   overflow: hidden;
 }
 
-html {
-  background: var(--gray16);
+html, body {
+  background: var(--gray16) !important;
 }
 
 img {

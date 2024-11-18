@@ -10,11 +10,7 @@ import { Stack, StackProps } from "@/ui/Stack";
 import { Toggle } from "@/ui/Toggle";
 import { useEffect, useState } from "react";
 
-interface QueryExternalBannerProps {
-
-}
-
-export function QueryExternalBanner({}: QueryExternalBannerProps) {
+export function QueryExternalBanner() {
   const { Info } = useApplication();
   const [server, setServer] = useState<string>('');
   const [isServerValid, setIsServerValid] = useState<boolean>(true);
@@ -32,26 +28,34 @@ export function QueryExternalBanner({}: QueryExternalBannerProps) {
   useEffect(() => {
     setIsServerValid(true);
   }, [server]);
+
   useEffect(() => {
     setIsUsernameValid(true);
   }, [username]);
+
   useEffect(() => {
     setIsPasswordValid(true);
   }, [password]);
 
   const query = async () => {
+    setLoading(true);
+
+    let err = null;
     if (!Pattern.Server.test(server)) {
       setIsServerValid(false);
+      err = true;
     }
     if (!Pattern.Username.test(username)) {
       setIsUsernameValid(false);
+      err = true;
     }
     if (!Pattern.Password.test(password)) {
       setIsPasswordValid(false);
+      err = true;
     }
-
-    setLoading(true);
-    Info.query_external({
+    if (err) return;
+    
+    await Info.query_external({
       server,
       username,
       password,
@@ -100,7 +104,7 @@ export function QueryExternalBanner({}: QueryExternalBannerProps) {
         <Toggle option={['Select from limits', 'ISO String']} />
         
       </Card>
-      <Button loading={loading} img='CheckCheck'>Apply query</Button>
+      <Button loading={loading} img='CheckCheck' onClick={query}>Apply query</Button>
     </Banner>
   )
 }

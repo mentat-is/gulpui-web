@@ -88,7 +88,10 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
       return null;
     });
 
-    if (!res) return new λ();
+    if (!res) {
+      const data = new λ<any>();
+      return data;
+    };
     
     const lambda = new λ(await res.json() as T)
     if (!res.ok && lambda.isError()) {
@@ -203,7 +206,7 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
       {children}
       {banner}
       {dialog}
-      <Console noise={true} onCommand={onCommand} history={Logger.history()} title='Gulp Web Client' trigger='/' icon={<img style={{filter: `var(--filter-to-white)`, width: 14 }} src='/gulp-no-text.svg' alt='' />} prefix={prefix} />
+      <Console noise={true} onCommand={onCommand} history={Logger.history()} title='Gulp Web Client' trigger='\' icon={<img style={{filter: `var(--filter-to-white)`, width: 14 }} src='/gulp-no-text.svg' alt='' />} prefix={prefix} />
     </ApplicationContext.Provider>
   );
 };

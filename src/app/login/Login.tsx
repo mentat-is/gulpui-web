@@ -73,7 +73,7 @@ export function LoginPage() {
     ? removeOverload(str.slice(0, -1))
     : str;
 
-    const validate = (str: string): string | void => Pattern.Server.test(str)
+    const validate = (str: string): string | void => !Pattern.Server.test(str)
       ? (() => { toast('Server URL didn`t match pattern') })()
       : removeOverload(str);
 
