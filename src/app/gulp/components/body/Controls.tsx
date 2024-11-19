@@ -51,7 +51,7 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
         size_minus.current?.click();
         break;
 
-      case event.key === '=':
+      case event.key === '+':
         resetScaleAndScroll();
         break;
     
