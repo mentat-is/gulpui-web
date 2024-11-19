@@ -1099,28 +1099,9 @@ export class Note {
 
 export class Link {
   public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
-    const events: λEvent['_id'][] = [];
+    l.events = [...l.data.events || [], ...l.events].filter(e => Object.values(e).every(v => !!v));
 
-    if (!events.includes(l.data.src))
-      events.push(l.data.src);
-
-    if (l.data.events?.length) {
-      events.push(...l.data.events.map(e => e.id).filter(e => !events.includes(e)));
-    }
-
-    if (l.events) {
-      l.events.forEach(e => {
-        if (!events.includes(e.id)) events.push(e.id);
-      })
-    }
-
-    l.events = Event.findById(app, events).map(e => ({
-      '@timestamp': e.timestamp,
-      context: e.context,
-      id: e._id,
-      operation_id: e.operation_id,
-      src_file: e.file
-    }));
+    delete l.data.events;
 
     return {
       ...l,

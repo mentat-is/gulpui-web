@@ -316,7 +316,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       this.ctx.lineTo(end.x, end.y);
       this.ctx.stroke();
   
-      if (center) {
+      if (center && center.x && center.y) {
         const centerGradient = this.ctx.createLinearGradient(end.x, end.y, center.x, center.y);
         centerGradient.addColorStop(0, end.color + '48');
         centerGradient.addColorStop(1, end.color);
@@ -347,6 +347,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     center: XY
   } => {
     const center = XYBase(0);
+
     const dots: Dot[] = link.events.map(e => {
       const index = File.selected(this.info.app).findIndex(f => f.uuid === e._uuid);
 
@@ -359,6 +360,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       return { x, y, color: color.endsWith('48') ? color.slice(-2) : color };
     });
+
+    center.x = center.x / (dots.length || 1);
+    center.y = center.y / (dots.length || 1);
 
     return { dots, center }
   }
