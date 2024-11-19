@@ -1,6 +1,6 @@
 import { ElasticListIndex, OperationsList, type λApp } from '@/dto';
 import { Api } from '@/dto/api.dto';
-import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
+import { Bucket, MinMax } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
@@ -449,10 +449,7 @@ ${error}`, Info.name);
     const plugins: λPlugin[] = [];
     const files: λFile[] = [];
 
-    const bucket = await this.query_max_min({ ignore: true });
-
     const rawOperations =  await this.api<QueryOperations>('/query_operations').then(res => res.data || []);
-    
 
     rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
       const exist = Operation.findByNameAndId(this.app, { id, name });
@@ -514,6 +511,27 @@ ${error}`, Info.name);
       operations.push(operation);
     });
 
+    const bucket: Bucket = {
+      total: files.map(f => f.doc_count).reduce((acc, n) => acc + n, 0),
+      fetched: 0,
+      event_code: {
+        min: Math.min(...files.map(f => f.event.min)),
+        max: Math.min(...files.map(f => f.event.max)),
+      },
+      timestamp: {
+        min: Math.min(...files.map(f => f.timestamp.min)),
+        max: Math.min(...files.map(f => f.timestamp.max)),
+      },
+      selected: null
+    }
+
+    bucket.selected = this.app.target.bucket.selected
+    ? this.app.target.bucket.selected
+    : differenceInMonths(bucket.timestamp.max, bucket.timestamp.min) > 6
+      ? null
+      : bucket.timestamp;
+
+
     this.setInfo(app => ({
       ...app,
       ...{
@@ -568,46 +586,6 @@ Files: ${files.length}`, Info.name);
   increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
   
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
-
-  query_max_min = ({ ignore }: { ignore?: boolean}) => this.api<QueryMaxMin>('/query_max_min', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8'
-    },
-    body: JSON.stringify({
-      operation_id: [Operation.selected(this.app)?.id]
-    })
-  }).then(response => {
-    const fulfilled = Boolean(response.data.buckets.length);
-    const base = response.data.buckets[0]['*'];
-
-    const timestamp: MinMax = {
-      max: base['max_@timestamp'],
-      min: base['min_@timestamp'],
-    }
-    const selected = this.app.target.bucket.selected
-      ? this.app.target.bucket.selected
-      : differenceInMonths(timestamp.max, timestamp.min) > 6
-        ? null
-        : timestamp;
-
-    const bucket: Bucket = {
-      total: response.data.total,
-      fetched: this.app.target.bucket.fetched || 0,
-      event_code: {
-        max: fulfilled ? base['max_event.code'] : 1,
-        min: fulfilled ? base['min_event.code'] : 0
-      },
-      timestamp,
-      selected
-    };
-
-    if (!ignore) {
-      this.setBucket(bucket);
-    }
-
-    return bucket;
-  });
 
   query_external = ({
     operation_id,
