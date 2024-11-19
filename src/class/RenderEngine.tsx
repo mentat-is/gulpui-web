@@ -143,8 +143,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? this.heightMap[file.uuid]
       : this.getHeightmap(file);
 
-      for (const [timestamp, amount] of heat) {
-        if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) continue;
+      
+      Array.from(heat.entries()).forEach(([timestamp, amount]) => {
+        if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) return;
       
         this.ctx.fillStyle = λColor.gradient(file.color, amount, {
           min: 0,
@@ -157,7 +158,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
           1, 
           -(1 + (47 - 1) * (amount / heat[Max]))
         );
-      }
+      })
   };
   
   graph(file: λFile, _y: number) {
@@ -344,8 +345,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   } => {
     const center = XYBase(0);
     const dots: Dot[] = [];
-
-    console.log(link.events);
 
     link.events.forEach(e => {
       const index = File.selected(this.info.app).findIndex(f => f.uuid === e._uuid);

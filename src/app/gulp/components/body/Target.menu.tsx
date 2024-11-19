@@ -21,7 +21,9 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
   const removeFilters = (file: λFile) => {
     Info.filters_remove(file);
     setTimeout(() => {
-      Info.refetch(file.uuid);
+      Info.refetch({
+        uuids: file.uuid
+      });
     }, 300);
   }
 
@@ -39,7 +41,7 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
       </TooltipProvider>
       <ContextMenuSeparator />
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
-      <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={file} />)} img='Waypoints'>Links</ContextMenuItem>
+      <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={file} />)} img='Link'>Links</ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>

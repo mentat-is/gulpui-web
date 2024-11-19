@@ -163,6 +163,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
       <canvas
         ref={canvas_ref}
+        id='canvas'
         width={window.innerWidth}
         height={timeline.current?.clientHeight}
         />

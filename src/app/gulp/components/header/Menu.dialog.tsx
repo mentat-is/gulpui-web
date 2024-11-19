@@ -83,6 +83,20 @@ export function MenuDialog() {
     }
   };
 
+  const exportCanvasAsImage = () => {
+    const canvas = document.body.querySelector('#canvas') as HTMLCanvasElement | null;
+
+    if (canvas) {
+      const url = canvas.toDataURL('image/png');
+    
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `gulp-canvas_${Date.now()}`;
+      
+      link.click();
+      link.remove();
+    }
+  }
 
   return (
     <Dialog title='Menu' className={s.menu} defaultSize={30}>
@@ -100,6 +114,8 @@ export function MenuDialog() {
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='FunctionPython' onClick={() => spawnBanner(<QueryExternalBanner />)}>Query external resourse</Button>
+      <Separator color='var(--accent-5)' />
+      <Button variant='outline' img='Image' onClick={exportCanvasAsImage}>Export canvas as image</Button>
       <div className={s.separator} />
       <div className={s.stats}>
         <Unit type='downstream' num={app.transfered?.down || 0} />
