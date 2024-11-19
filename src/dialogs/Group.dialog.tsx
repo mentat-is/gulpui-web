@@ -28,8 +28,6 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   }, [events]);
 
   useEffect(() => {
-    console.log(loaded);
-
     if (loaded < visible) {
       setTimeout(() => {
         setLoaded(l => l+1);

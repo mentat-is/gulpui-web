@@ -579,10 +579,11 @@ Files: ${files.length}`, Info.name);
     })
   }).then(response => {
     const fulfilled = Boolean(response.data.buckets.length);
+    const base = response.data.buckets[0]['*'];
 
     const timestamp: MinMax = {
-      max: response.data.buckets[0]['*']['max_@timestamp'],
-      min: response.data.buckets[0]['*']['min_@timestamp'],
+      max: base['max_@timestamp'],
+      min: base['min_@timestamp'],
     }
     const selected = this.app.target.bucket.selected
       ? this.app.target.bucket.selected
@@ -594,8 +595,8 @@ Files: ${files.length}`, Info.name);
       total: response.data.total,
       fetched: this.app.target.bucket.fetched || 0,
       event_code: {
-        max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
-        min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
+        max: fulfilled ? base['max_event.code'] : 1,
+        min: fulfilled ? base['min_event.code'] : 0
       },
       timestamp,
       selected
@@ -631,7 +632,7 @@ Files: ${files.length}`, Info.name);
         }
       }
     })
-  }).then(console.log);
+  });
 
   filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
 

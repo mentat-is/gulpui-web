@@ -121,17 +121,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   };  
 
   const iconsMap: Record<string, Icon.Name> = {
-    Provider: 'Waypoints',
-    Level: 'Layers2',
-    Version: 'FunctionGo',
-    EventId: 'Hexagon',
-    EventID: 'Hexagon',
-    Task: 'StickyNote',
-    Opcode: 'Binary',
-    Keywords: 'Key',
-    Channel: 'RailSymbol',
-    Computer: 'HardDrive',
-    TimeCreated: 'AlarmClockPlus'
+    Provider: 'Link',
+    Computer: 'Server',
+    TimeCreated: 'AlarmClockPlus',
+    Correlation: 'Blend',
+    Execution: 'FunctionSquare'
   };
 
   const SmartView = useCallback(() => {
@@ -157,8 +151,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
       return (
         <div className={cn(s.pod, _key === 'PrivilegeList' && s.wrap)} key={λkey + value + _key + _value}>
-          {iconsMap[λkey] && <Icon color='#ff00ff' name={iconsMap[λkey]} />}
-          {_key}
+          <Stack ai='center'>
+            {iconsMap[λkey] && <Icon name={iconsMap[λkey]} />}
+            {_key}
+          </Stack>
           {_value}
         </div>
       )

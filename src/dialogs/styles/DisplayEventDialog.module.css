@@ -68,29 +68,30 @@
   width: 100%;
   flex-direction: column;
   padding: 12px;
-  gap: 12px;
+  gap: 10px;
   background: var(--geist-background);
+  backdrop-filter: brightness(0.01);
   border: var(--geist-border);
-  border-radius: var(--border-s);
+  border-radius: var(--border-m);
 }
 .pod {
   border-radius: var(--border-s);
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
-  padding: 2px 2px 2px 12px;
+  padding-left: 8px;
   width: min-content;
+  height: 36px;
   max-width: 100%;
   overflow: hidden;
   gap: 8px;
   border: var(--geist-border);
-}
-.cluster > .pod {
   font-weight: 400;
   background: var(--gray16);
+  width: 100%;
 }
 .node h6 {
-  height: 32px;
+  height: 20px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -98,13 +99,17 @@
 .property {
   white-space: nowrap;
   background: var(--gray24);
-  padding: 8px 12px;
+  padding: 0 8px;
+  text-align: end;
+  display: flex;
+  height: 36px;
   border-radius: var(--border-s);
   overflow: hidden;
   max-width: 100%;
   text-overflow: ellipsis;
   font-weight: 200;
   font-family: var(--font-mono);
+  align-items: center;
 }
 .wrap {
   flex-wrap: wrap;
