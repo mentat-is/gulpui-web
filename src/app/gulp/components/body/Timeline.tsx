@@ -18,7 +18,7 @@ import { Input } from '@/ui/Input';
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
   const [scrollX, setScrollX] = useState<number>(0);
-  const [scrollY, setScrollY] = useState<number>(0);
+  const [scrollY, setScrollY] = useState<number>(-26);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);

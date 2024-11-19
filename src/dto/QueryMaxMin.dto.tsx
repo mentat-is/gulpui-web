@@ -8,6 +8,21 @@ export interface Bucket {
   selected: MinMax | null;
 }
 
+export type QueryMaxMin = ResponseBase<{
+  buckets: [
+    {
+      '*': {
+        doc_count: number,
+        'max_event.code': number,
+        'min_event.code': number,
+        'max_@timestamp': number,
+        'min_@timestamp': number,
+      }
+    }
+  ],
+  total: number;
+}>;
+
 export interface MinMax {
   min: number;
   max: number

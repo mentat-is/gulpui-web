@@ -120,8 +120,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine.instance = this;
   }
 
-  default(file: λFile, y: number) {
-    const heat = this.process(this.defaultMap, file)
+  default(file: λFile, y: number, force?: boolean) {
+    const heat = this.scaleCache(this.defaultMap, file) && !force
       ? this.defaultMap[file.uuid]
       : this.getDefault(file);
 
@@ -228,7 +228,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   apache(file: λFile, y: number) {
-    const heat = this.process(this.statusMap, file)
+    const heat = this.scaleCache(this.statusMap, file)
       ? this.statusMap[file.uuid]
       : this.getStatusMap(file);
 
@@ -490,7 +490,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return heat;
   }
 
-  private process = (map: Record<string, StatusMap | DefaultMap | GraphMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.info.app.timeline.scale);
+  private scaleCache = (map: Record<string, StatusMap | DefaultMap | GraphMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.info.app.timeline.scale);
 
-  private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] === Event.get(this.info.app, uuid).length
+  private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] >= Event.get(this.info.app, uuid).length
 }

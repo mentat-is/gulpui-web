@@ -30,7 +30,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter];
   const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
-  const renderCanvas = () => {
+  const renderCanvas = (force?: boolean) => {
     if (!canvas_ref.current) return;
     const ctx = canvas_ref.current.getContext('2d')!;
     ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
@@ -48,7 +48,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, app, file.offset)) {
-        render[file.engine](file, y - 24);
+        render[file.engine](file, y - 24, force);
       };
 
       if (!i)
@@ -114,12 +114,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     renderCanvas();
 
     canvas_ref.current?.addEventListener('mousedown', handleClick);
-    window.addEventListener('resize', renderCanvas);
-    const debugInterval = setInterval(renderCanvas, 300);
+    window.addEventListener('resize', () => renderCanvas());
+    const debugInterval = setInterval(() => renderCanvas(true), 300);
 
     return () => {
       canvas_ref.current?.removeEventListener('mousedown', handleClick);
-      window.removeEventListener('resize', renderCanvas);
+      window.removeEventListener('resize', () => renderCanvas());
       clearInterval(debugInterval) 
     };
   }, dependencies);
