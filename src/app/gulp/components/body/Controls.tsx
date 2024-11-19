@@ -9,11 +9,11 @@ interface ControlsProps {
 }
 
 export function Controls({ scrollX, setScrollX }: ControlsProps) {
-  const { Info, timeline, app } = useApplication();
+  const { Info, timeline, app, dialog } = useApplication();
 
   const resetScaleAndScroll = () => {
-    setScrollX(0);
-    Info.setTimelineScale(1)
+    Info.setTimelineScale(dialog ? 0.5 : 1)
+    setScrollX(dialog ? 16 : 0);
   }
 
   const zoom = (out: boolean = false) => {
