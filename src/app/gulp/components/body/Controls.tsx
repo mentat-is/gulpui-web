@@ -2,6 +2,7 @@ import { Button } from '@/ui/Button';
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@/ui/Input';
+import { useEffect, useRef } from 'react';
 
 interface ControlsProps {
   scrollX: number;
@@ -10,6 +11,9 @@ interface ControlsProps {
 
 export function Controls({ scrollX, setScrollX }: ControlsProps) {
   const { Info, timeline, app, dialog } = useApplication();
+  const size_plus = useRef<HTMLButtonElement>(null);
+  const size_reset = useRef<HTMLButtonElement>(null);
+  const size_minus = useRef<HTMLButtonElement>(null);
 
   const resetScaleAndScroll = () => {
     Info.setTimelineScale(dialog ? 0.5 : 1)
@@ -17,22 +21,59 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
   }
 
   const zoom = (out: boolean = false) => {
-    const width = Info.width;
-    const timelineWidth = timeline.current?.clientWidth || 1
-    const newScale = out ? (app.timeline.scale - app.timeline.scale / 4) : (app.timeline.scale + app.timeline.scale / 4)
+    const timelineWidth = timeline.current?.clientWidth || 1;
+    const currentScale = app.timeline.scale;
+  
+    const newScale = out
+      ? currentScale - currentScale / 4
+      : currentScale + currentScale / 4;
+  
+    const clampedScale = Math.min(Math.max(newScale, 0.01), 9999999);
 
-    const diff = scrollX + timelineWidth / 2;
-    const left = Math.round(diff * (newScale * timelineWidth) / width - diff);
+    const centerOffset = (scrollX + timelineWidth / 2);
+    const scaledOffset = (centerOffset * clampedScale) / currentScale;
+    const left = scaledOffset - centerOffset;
+  
+    Info.setTimelineScale(clampedScale);
+    setScrollX(scrollX + left);
+  };
+  
+  
+  const handleControllers = (event: KeyboardEvent) => {
+    console.log(event.key);
 
-    Info.setTimelineScale(newScale);
-    setScrollX(scrollX => scrollX + left);
+    switch (true) {
+      case event.key === '-':
+        size_plus.current?.click();
+        break;
+        
+        case event.key === '=':
+        size_minus.current?.click();
+        break;
+
+      case event.key === '=':
+        resetScaleAndScroll();
+        break;
+    
+      default:
+        break;
+    }
   }
+
+  useEffect(() => {
+    window.addEventListener('keypress', handleControllers);
+
+    return () => {
+      window.removeEventListener('keypress', handleControllers);
+    }
+
+  }, []);
 
   return (
     <div className={s.controls}>
-      <Button onClick={() => zoom(true)} img='ZoomOut'>Zoom Out</Button>
-      <Button onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween'>Zoom Fit</Button>
-      <Button onClick={() => zoom(false)} img='ZoomIn'>Zoom In</Button>
+      <Button ref={size_plus} onClick={() => zoom(true)} img='ZoomOut'>Zoom Out</Button>
+      <Button ref={size_reset} onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween'>Zoom Fit</Button>
+      <Button ref={size_minus} onClick={() => zoom(false)} img='ZoomIn'>Zoom In</Button>
       <Input className={s.filter} value={app.timeline.filter} placeholder='Filter by filenames and context' onChange={(e) => Info.setTimelineFilter(e.target.value)} img='Filter' />
     </div>
   )
