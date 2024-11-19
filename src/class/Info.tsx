@@ -4,7 +4,7 @@ import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
-import { λEvent, λEventFormForCreateRequest } from '@/dto/ChunkEvent.dto';
+import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -1099,7 +1099,8 @@ export class Note {
 
 export class Link {
   public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
-    l.events = [...l.data.events || [], ...l.events].filter(e => Object.values(e).every(v => !!v));
+    const seenIds = new Set<λRawEventMinimized['id']>();
+    l.events = [...(l.data.events || []), ...l.events].filter(e => Object.values(e).every(v => !!v) && !seenIds.has(e.id) && seenIds.add(e.id));
 
     delete l.data.events;
 

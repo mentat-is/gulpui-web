@@ -288,9 +288,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const { dots, center } = this.calcDots(link);
 
-      console.log(dots, center);
-
-      this.connection(dots);
       this.connection(dots, center);
       dots.forEach(dot => this.dot(dot));
     });
@@ -299,12 +296,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public connection = (dots: Dot[], center?: XY) => {
     if (dots.length < 2) return;
   
-    this.ctx.lineWidth = 2;
-  
-    for (let i = 1; i < dots.length; i++) {
-      const start = dots[i - 1];
-      const end = dots[i];
-  
+    for (let i = 0; i < dots.length; i++) {
+      this.ctx.lineWidth = 2;
+      const start = dots[i];
+      const end = dots[i + 1] || dots[0];
+
       const gradient = this.ctx.createLinearGradient(start.x, start.y, end.x, end.y);
       gradient.addColorStop(0, start.color);
       gradient.addColorStop(1, end.color);
@@ -316,7 +312,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       this.ctx.lineTo(end.x, end.y);
       this.ctx.stroke();
   
-      if (center && center.x && center.y) {
+      if (center?.x && center?.y) {
         const centerGradient = this.ctx.createLinearGradient(end.x, end.y, center.x, center.y);
         centerGradient.addColorStop(0, end.color + '48');
         centerGradient.addColorStop(1, end.color);
@@ -347,18 +343,26 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     center: XY
   } => {
     const center = XYBase(0);
+    const dots: Dot[] = [];
 
-    const dots: Dot[] = link.events.map(e => {
+    console.log(link.events);
+
+    link.events.forEach(e => {
       const index = File.selected(this.info.app).findIndex(f => f.uuid === e._uuid);
 
       const x = this.getPixelPosition(e.timestamp + (File.selected(this.info.app)[index]?.offset || 0));
-      const y = index * 48 + 20 - this.scrollY;
+      const y = (index * 48 + 20 - this.scrollY || 0);
       const color = (link.data.color || stringToHexColor(link.events.map(e => e._id).toString()))
 
       center.x += x;
       center.y += y;
 
-      return { x, y, color: color.endsWith('48') ? color.slice(-2) : color };
+      dots.push({
+        x,
+        y,
+        color: color.endsWith('48')
+          ? color.slice(-2)
+          : color });
     });
 
     center.x = center.x / (dots.length || 1);
