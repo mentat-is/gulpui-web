@@ -449,8 +449,6 @@ ${error}`, Info.name);
     const plugins: λPlugin[] = [];
     const files: λFile[] = [];
 
-    const bucket = await this.query_max_min({ ignore: true });
-
     const rawOperations =  await this.api<QueryOperations>('/query_operations').then(res => res.data || []);
 
     rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
@@ -513,25 +511,25 @@ ${error}`, Info.name);
       operations.push(operation);
     });
 
-    // const bucket: Bucket = {
-    //   total: files.map(f => f.doc_count).reduce((acc, n) => acc + n, 0),
-    //   fetched: 0,
-    //   event_code: {
-    //     min: Math.min(...files.map(f => f.event.min)),
-    //     max: Math.min(...files.map(f => f.event.max)),
-    //   },
-    //   timestamp: {
-    //     min: Math.min(...files.map(f => f.timestamp.min)),
-    //     max: Math.min(...files.map(f => f.timestamp.max)),
-    //   },
-    //   selected: null
-    // }
+    const bucket: Bucket = await this.query_max_min({ ignore: true }) || {
+      total: files.map(f => f.doc_count).reduce((acc, n) => acc + n, 0),
+      fetched: 0,
+      event_code: {
+        min: Math.min(...files.map(f => f.event.min)),
+        max: Math.min(...files.map(f => f.event.max)),
+      },
+      timestamp: {
+        min: Math.min(...files.map(f => f.timestamp.min)),
+        max: Math.min(...files.map(f => f.timestamp.max)),
+      },
+      selected: null
+    }
 
-    // bucket.selected = this.app.target.bucket.selected
-    // ? this.app.target.bucket.selected
-    // : differenceInMonths(bucket.timestamp.max, bucket.timestamp.min) > 6
-    //   ? null
-    //   : bucket.timestamp;
+    bucket.selected = this.app.target.bucket.selected
+    ? this.app.target.bucket.selected
+    : differenceInMonths(bucket.timestamp.max, bucket.timestamp.min) > 6
+      ? null
+      : bucket.timestamp;
 
     this.setInfo(app => ({
       ...app,
@@ -566,7 +564,11 @@ Files: ${files.length}`, Info.name);
     })
   }).then(response => {
     const fulfilled = Boolean(response.data.buckets.length);
-    const base = response.data.buckets[0]['*'];
+    const base = response.data.buckets[0]?.['*'];
+
+    if (!base) {
+      return
+    }
 
     const timestamp: MinMax = {
       max: base['max_@timestamp'],
