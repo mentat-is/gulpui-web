@@ -6,13 +6,12 @@ import { File, μ } from "./Info";
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null;
-  static target: Map<number, number> & Scale;
+  static target: Map<Hardcode.X, [ Hardcode.Height, Hardcode.Timestamp ]> & Scale;
   private renderer!: RenderEngine;
   map = new Map<μ.File, typeof DefaultEngine.target>();
 
   constructor(renderer: Engine.Constructor) {
     if (DefaultEngine.instance) {
-      console.log(DefaultEngine.instance);
       DefaultEngine.instance.renderer = renderer;
       return DefaultEngine.instance;
     }
@@ -21,10 +20,10 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     DefaultEngine.instance = this;
   }
 
-  render(file: λFile, y: number) {
-    const map = this.get(file);
+  render(file: λFile, y: number, force?: boolean) {
+    const map = this.get(file, force);
 
-    Array.from(map.entries()).forEach(([timestamp, code]) => {
+    Array.from(map.entries()).forEach(([_, [ code, timestamp ]]) => {
       if (throwableByTimestamp(timestamp + file.offset, this.renderer.limits, this.renderer.info.app)) return;
 
       const position = this.renderer.getPixelPosition(timestamp);
@@ -37,21 +36,19 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     });
   }
   
-  get(file: λFile): typeof DefaultEngine.target {
-    if (this.is(file)) return this.map.get(file.uuid)! as typeof DefaultEngine.target;
+  get(file: λFile, force?: boolean): typeof DefaultEngine.target {
+    if (this.is(file) && !force) return this.map.get(file.uuid)! as typeof DefaultEngine.target;
 
     const map = new Map() as typeof DefaultEngine.target;
-    const cache = new Set<number>();
 
     File.events(this.renderer.info.app, file).forEach(event => {
-      const timestamp = event.timestamp + file.offset;
-      const pos = this.renderer.getPixelPosition(timestamp);
+      const timestamp = event.timestamp + file.offset as Hardcode.Timestamp;
+      const pos = this.renderer.getPixelPosition(timestamp) as Hardcode.X;
 
-      if (cache.has(pos))
+      if (map.has(pos))
         return;
 
-      cache.add(pos);
-      map.set(timestamp, parseInt(event.event.code) || file.event.max);
+      map.set(pos, [(parseInt(event.event.code) || file.event.max) as Hardcode.Height, timestamp ]);
     });
 
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;

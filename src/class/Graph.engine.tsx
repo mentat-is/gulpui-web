@@ -1,8 +1,8 @@
 import { λFile } from "@/dto/File.dto";
-import { End, Engine, Hardcode, Height, Length, MaxHeight, Scale, Start, StartEnd } from "./Engine.dto";
+import { End, Engine, Hardcode, Length, MaxHeight, Scale, Start, StartEnd } from "./Engine.dto";
 import { Dot, RenderEngine } from "./RenderEngine";
 import { throwableByTimestamp, λColor } from "@/ui/utils";
-import { Event, File } from "./Info";
+import { Event } from "./Info";
 import { HeightEngine } from "./Height.engine";
 
 type Target = typeof HeightEngine.target & MaxHeight & Length & Scale & StartEnd;

@@ -3,7 +3,7 @@ import { RenderEngine } from "./RenderEngine";
 
 export namespace Engine {
   export interface Interface<T> {
-    render: (file: λFile, y: number) => void;
+    render: (file: λFile, y: number, force?: boolean) => void;
     map: Map<λFile['uuid'], T>;
     get: (file: λFile) => T;
     is: (file: λFile) => boolean;
@@ -43,21 +43,25 @@ export namespace Hardcode {
 
 
 export const Scale = Symbol('Scale');
+// eslint-disable-next-line
 export interface Scale {
   [Scale]: Hardcode.Scale
 }
 
 export const Height = Symbol('Height');
+// eslint-disable-next-line
 export interface Height {
   [Height]: Hardcode.Height;
 }
 
 export const MaxHeight = Symbol('MaxHeight');
+// eslint-disable-next-line
 export interface MaxHeight {
   [MaxHeight]: Hardcode.Height;
 }
 
 export const Length = Symbol('Length');
+// eslint-disable-next-line
 export interface Length {
   [Length]: Hardcode.Length;
 }
