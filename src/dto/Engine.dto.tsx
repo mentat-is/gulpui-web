@@ -1,11 +1,10 @@
+import { EngineList } from "@/class/Engine.dto";
 import { Icon } from "@impactium/icons";
-
-export type Engine = 'height' | 'graph' | 'apache' | 'default';
 
 export interface EngineMap {
   img: Icon.Name;
   title: string;
-  plugin: Engine;
+  plugin: EngineList;
 }
 
 export const enginesBase: EngineMap[] = [

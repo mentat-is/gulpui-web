@@ -1044,7 +1044,7 @@ export class Event {
       result.push({
         _id: e.id,
         operation_id: e.operation_id,
-        timestamp: e['@timestamp'] as λ.Timestamp,
+        timestamp: e['@timestamp'],
         file: e.src_file,
         context: e.context,
         event: {
@@ -1169,23 +1169,6 @@ export namespace μ {
   const Context = Symbol('Context');
   export type Context = UUID & {
     readonly [Context]: unique symbol;
-  };
-}
-
-export namespace λ {
-  const Timestamp = Symbol('Timestamp');
-  export type Timestamp = number & {
-    readonly [Timestamp]: unique symbol;
-  };
-
-  const Height = Symbol('Height');
-  export type Height = number & {
-    readonly [Height]: unique symbol;
-  };
-
-  const X = Symbol('X');
-  export type X = number & {
-    readonly [X]: unique symbol;
   };
 }
 

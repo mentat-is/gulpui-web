@@ -12,13 +12,14 @@ import { convertXML } from 'simple-xml-to-json';
 import { cn, copy } from '@/ui/utils';
 import { Button } from '@/ui/Button';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { File, Note, Plugin, λ } from '@/class/Info';
+import { File, Note, Plugin } from '@/class/Info';
 import { Notes } from './components/Notes';
 import { λNote } from '@/dto/Note.dto';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
 import { Icon } from '@impactium/icons';
 import { Stack } from '@/ui/Stack';
 import { ChadNumber, Skeleton } from '@/ui/Skeleton';
+import { Hardcode } from '@/class/Engine.dto';
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -110,7 +111,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             level: res.data['log.level'],
             _id: res.data._id,
             operation_id: res.data.operation_id,
-            timestamp: res.data['@timestamp'] as λ.Timestamp,
+            timestamp: res.data['@timestamp'] as Hardcode.Timestamp,
             file: res.data['gulp.source.file'],
             context: res.data['gulp.context'],
             _uuid: event._uuid

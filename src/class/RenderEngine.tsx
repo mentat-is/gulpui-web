@@ -1,12 +1,13 @@
 import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { Event, File, Info, λ, μ } from "./Info";
+import { Event, File, Info, μ } from "./Info";
 import { Color, stringToHexColor, throwableByTimestamp, λColor } from "@/ui/utils";
-import { Engine } from "@/dto/Engine.dto";
 import { format } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
 import { λLink } from "@/dto/Link.dto";
 import { RulerDrawer } from "./Ruler.drawer";
+import { DefaultEngine } from "./Default.engine";
+import { Hardcode, Height, MaxHeight, StartEnd, Scale, Engine, EngineList } from "./Engine.dto";
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
@@ -17,7 +18,7 @@ interface RenderEngineConstructor {
   getPixelPosition: (timestamp: number) => number,
 }
 
-export type HeightMap = Map<λ.Timestamp, λ.Height> & Amount & Max;
+export type HeightMap = Map<Hardcode.Timestamp, Hardcode.Height> & Height & MaxHeight;
 
 export interface Status {
   codes: number[],
@@ -27,42 +28,10 @@ export interface Status {
 
 export type StatusMap = Map<number, Status> & Scale;
 
-export type GraphMap = HeightMap & Scale & Rendered;
-
-export interface Default {
-  timestamp: number,
-  code: number
-}
-
-const Scale = Symbol('Scale');
-// eslint-disable-next-line
-export interface Scale {
-  [Scale]: number
-}
-
-const Amount = Symbol('Amount');
-// eslint-disable-next-line
-export interface Amount {
-  [Amount]: λ.Height;
-}
-
-const Max = Symbol('Max');
-// eslint-disable-next-line
-export interface Max {
-  [Max]: λ.Height;
-}
-
-const Start = Symbol('Start');
-const End = Symbol('End');
-export interface Rendered {
-  [Start]: λ.Timestamp;
-  [End]: λ.Timestamp;
-}
-
-export type DefaultMap = Map<number, Default> & Scale & Max;
+export type GraphMap = HeightMap & Scale & StartEnd;
 
 type Engines = {
-  [key in Engine]: (file: λFile, y: number) => void;
+  [key in EngineList]: Engine;
 };
 
 export interface Dot {
@@ -80,11 +49,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   scrollY!: number;
   heightMap: Record<λFile['uuid'], HeightMap> = {};
   statusMap: Record<λFile['uuid'], StatusMap> = {};
-  defaultMap: Record<λFile['uuid'], DefaultMap> = {};
   graphMap: Record<λFile['uuid'], GraphMap> = {};
   segmentSize: number = 500;
   ruler!: RulerDrawer;
   private static instance: RenderEngine | null = null;
+  default: DefaultEngine;
 
   constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
@@ -102,6 +71,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.scrollX = scrollX;
       RenderEngine.instance.scrollY = scrollY;
       RenderEngine.instance.getPixelPosition = getPixelPosition;
+      this.default = new DefaultEngine(RenderEngine.instance);
       return RenderEngine.instance;
     }
 
@@ -118,31 +88,13 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.info = info;
     this.getPixelPosition = getPixelPosition;
     RenderEngine.instance = this;
-  }
-
-  default(file: λFile, y: number, force?: boolean) {
-    const heat = this.scaleCache(this.defaultMap, file) && !force
-      ? this.defaultMap[file.uuid]
-      : this.getDefault(file);
-
-    Array.from(heat.values()).forEach(hit => {
-      const { code, timestamp } = hit;
-      
-      if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) return;
-
-      this.ctx.fillStyle = λColor.gradient(file.color, code, {
-        min: file.event.min || 0,
-        max: heat[Max],
-      });
-      this.ctx.fillRect(this.getPixelPosition(timestamp), y, 1, 47);
-    });
+    this.default = new DefaultEngine(RenderEngine.instance);
   }
   
   height(file: λFile, y: number) {
     const heat = this.useCache(this.heightMap, file.uuid)
       ? this.heightMap[file.uuid]
       : this.getHeightmap(file);
-
       
       Array.from(heat.entries()).forEach(([timestamp, amount]) => {
         if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) return;
@@ -425,29 +377,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = '#e8e8e8'
     this.ctx.fillRect(0, File.selected(this.info.app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - this.scrollY, window.innerWidth, 1)
     this.ctx.fillRect(this.getPixelPosition(this.info.app.timeline.target.timestamp + file.offset), 0, 1, window.innerWidth)
-  }
-
-  private getDefault = (file: λFile): DefaultMap => {
-    const heat: DefaultMap = new Map() as DefaultMap;
-
-    File.events(this.info.app, file).forEach(event => {
-      const timestamp = event.timestamp + file.offset;
-      const λpos = this.getPixelPosition(timestamp);
-
-      heat.set(λpos, {
-        code: parseInt(event.event.code) || 0,
-        timestamp
-      });
-    });
-
-    heat[Scale] = this.info.app.timeline.scale;
-    heat[Max] = (file.event.max ?? Math.max(...Array.from(heat.values()).map(h => h.code))) as λ.Height;
-    this.defaultMap = {
-      ...this.defaultMap,
-      [file.uuid]: heat
-    };
-
-    return heat;
   }
 
   private getHeightmap = (file: λFile): HeightMap => {

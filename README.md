@@ -93,3 +93,9 @@ If you need to report a bug or an issue, you can export all the logs into a file
 3. The logs will be saved into a file named gulpui-web_log_<timestamp>.log.
 4. This log file can be used when creating a new issue in GitHub, providing valuable context to help developers diagnose the problem.
 It is recommended to include the exported logs in your GitHub issues to assist in quicker resolution of bugs.
+
+## Render Engines
+
+### Default.engine
+
+Если event.code не число, то будет установлено максимально возможное число в рамках лимитов файла
