@@ -11,11 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Gradients, GradientsMap } from "@/ui/utils";
 import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
-import { Engine, enginesBase } from '@/dto/Engine.dto';
+import { enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Icon } from "@impactium/icons";
 import { Context } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
+import { Engine } from "@/class/Engine.dto";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -25,7 +26,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const { Info, app, spawnBanner, destroyBanner } = useApplication();
   const [color, setColor] = useState<Gradients>(file.color);
   const [offset, setOffset] = useState<number>(file.offset);
-  const [engine, setEngine] = useState<Engine>(file.engine);
+  const [engine, setEngine] = useState<Engine.List>(file.engine);
 
   const save = () => {
     const newFile = { color, offset, engine };
@@ -76,7 +77,7 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
       <Separator />
       <Card className={s.engines}>
         <p className={s.text}>Renderer:</p>
-        <Select onValueChange={(v: Engine) => setEngine(v)} value={engine}>
+        <Select onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
           <SelectTrigger className={s.trigger}>
             <SelectValue placeholder="Choose renderer" />
           </SelectTrigger>

@@ -4,17 +4,16 @@ import { RenderEngine } from "./RenderEngine";
 import { throwableByTimestamp, λColor } from "@/ui/utils";
 import { Event, File } from "./Info";
 
-type Target = Map<number, number> & MaxHeight & Length;
-
-export class HeightEngine implements Engine.Interface<Target> {
+export class HeightEngine implements Engine.Interface<typeof HeightEngine.target> {
+  static target: Map<number, number> & MaxHeight & Length;
   private renderer: RenderEngine;
-  map = new Map();
+  map = new Map<λFile['uuid'], typeof HeightEngine.target>();
 
   constructor(renderer: Engine.Constructor) {
     this.renderer = renderer;
   }
 
-  public render(file: λFile, y: number) {
+  render(file: λFile, y: number) {
     const map = this.get(file);
     const max = map[MaxHeight];
     
@@ -35,10 +34,10 @@ export class HeightEngine implements Engine.Interface<Target> {
     })
   }
   
-  get(file: λFile): Target {
-    if (this.is(file)) return this.map.get(file.uuid)! as Target;
+  get(file: λFile): typeof HeightEngine.target {
+    if (this.is(file)) return this.map.get(file.uuid)! as typeof HeightEngine.target;
 
-    const map = new Map() as Target;
+    const map = new Map() as typeof HeightEngine.target;
 
     File.events(this.renderer.info.app, file).forEach(event =>
       map.set(event.timestamp, (map.get(event.timestamp) || 0) + 1));

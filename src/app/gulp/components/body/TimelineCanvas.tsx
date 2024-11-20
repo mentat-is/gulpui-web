@@ -1,5 +1,5 @@
 import { useApplication } from '@/context/Application.context';
-import { cn, getDateFormat, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
+import { cn, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
 import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
@@ -48,7 +48,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
       if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, app, file.offset)) {
-        render[file.engine](file, y - 24, force);
+        render[file.engine].render(file, y - 24);
       };
 
       if (!i)

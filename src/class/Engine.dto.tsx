@@ -4,14 +4,14 @@ import { RenderEngine } from "./RenderEngine";
 export namespace Engine {
   export interface Interface<T> {
     render: (file: λFile, y: number) => void;
+    map: Map<λFile['uuid'], T>;
     get: (file: λFile) => T;
     is: (file: λFile) => boolean;
-    map: Map<λFile['uuid'], T>;
   }
 
   export type Constructor = RenderEngine;
 
-  export type List = 'height' | 'graph' | 'apache' | 'default';
+  export type List = 'height' | 'graph' | 'default';
 }
 
 export namespace Hardcode {

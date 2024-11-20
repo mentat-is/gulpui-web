@@ -1,9 +1,10 @@
-import { Info, λ, μ } from '@/class/Info';
+import { Info, μ } from '@/class/Info';
 import { λApp } from '@/dto';
 import { AppSocketResponse, AppSocketResponseData } from '@/dto/AppSocket.dto';
 import { Chunk, isChunkDefault, UnknownChunk, λChunk } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
+import { Hardcode } from './Engine.dto';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -39,7 +40,7 @@ export class AppSocket extends WebSocket {
         const events: Chunk['events'] = _chunk.events.map((event: RawChunkEvent): λEvent => ({
           _id: event._id,
           operation_id: event.operation_id,
-          timestamp: event['@timestamp'] as λ.Timestamp,
+          timestamp: event['@timestamp'] as Hardcode.Timestamp,
           event: {
             code: event['gulp.event.code'],
             duration: event['event.duration']

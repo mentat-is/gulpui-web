@@ -1,10 +1,10 @@
-import { EngineList } from "@/class/Engine.dto";
+import { Engine } from "@/class/Engine.dto";
 import { Icon } from "@impactium/icons";
 
 export interface EngineMap {
   img: Icon.Name;
   title: string;
-  plugin: EngineList;
+  plugin: Engine.List;
 }
 
 export const enginesBase: EngineMap[] = [
@@ -23,9 +23,9 @@ export const enginesBase: EngineMap[] = [
     title: 'Graph',
     plugin: 'graph'
   },
-  {
-    img: 'CodeXml',
-    title: 'Status codes',
-    plugin: 'apache'
-  }
+  // {
+  //   img: 'CodeXml',
+  //   title: 'Status codes',
+  //   plugin: 'apache'
+  // }
 ]
