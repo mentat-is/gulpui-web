@@ -22,6 +22,7 @@ import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/λGlyph.dto';
 import { differenceInMonths } from 'date-fns';
 import { Logger, LoggerHandler } from '@/dto/Logger.class';
+import { Hardcode } from './Engine.dto';
 
 interface RefetchOptions {
   uuids?: Arrayed<λFile['uuid']>;
@@ -1044,7 +1045,7 @@ export class Event {
       result.push({
         _id: e.id,
         operation_id: e.operation_id,
-        timestamp: e['@timestamp'],
+        timestamp: e['@timestamp'] as Hardcode.Timestamp,
         file: e.src_file,
         context: e.context,
         event: {

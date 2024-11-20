@@ -1,41 +1,39 @@
 import { λFile } from "@/dto/File.dto";
-import { Engine, EngineConstructor } from "./Engine.dto";
-import { RenderEngine, Scale } from "./RenderEngine";
-import { throwableByTimestamp } from "@/ui/utils";
+import { Engine, Hardcode, Scale } from "./Engine.dto";
+import { RenderEngine } from "./RenderEngine";
+import { throwableByTimestamp, λColor } from "@/ui/utils";
 import { File } from "./Info";
 
 type Target = Map<number, number> & Scale;
 
-type Targets = Map<λFile['uuid'], Target>;
-
-export class DefaultEngine implements Engine {
-  private map: Targets = new Map() as Targets;
+export class DefaultEngine implements Engine.Interface<Target> {
   private renderer: RenderEngine;
+  map = new Map();
 
-  constructor(renderer: EngineConstructor) {
+  constructor(renderer: Engine.Constructor) {
     this.renderer = renderer;
   }
 
-  public render(file: λFile, y: number, force?: boolean) {
-    const map = this.map.get(file.uuid);
+  public render(file: λFile, y: number) {
+    const map = this.get(file);
 
-    Array.from(heat.entries()).forEach(([hit, ]) => {
-      const { code, timestamp } = hit;
-      const λpos = this.renderer.getPixelPosition(timestamp);
-      if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) return;
+    Array.from(map.entries()).forEach(([timestamp, code]) => {
+      if (throwableByTimestamp(timestamp + file.offset, this.renderer.limits, this.renderer.info.app)) return;
 
-      this.ctx.fillStyle = λColor.gradient(file.color, code, {
+      const position = this.renderer.getPixelPosition(timestamp);
+
+      this.renderer.ctx.fillStyle = λColor.gradient(file.color, code, {
         min: file.event.min,
         max: file.event.max,
       });
-      this.ctx.fillRect(this.getPixelPosition(timestamp), y, 1, 47);
+      this.renderer.ctx.fillRect(position, y, 1, 47);
     });
   }
   
-  private get(file: λFile) {
-    if (this.is(file)) return this.map.get(file.uuid)!;
+  get(file: λFile): Target {
+    if (this.is(file)) return this.map.get(file.uuid)! as Target;
 
-    const map: Target = new Map() as Target;
+    const map = new Map() as Target;
 
     File.events(this.renderer.info.app, file).forEach(event => {
       const timestamp = event.timestamp + file.offset;
@@ -44,13 +42,14 @@ export class DefaultEngine implements Engine {
       map.set(timestamp, parseInt(event.event.code) || file.event.max);
     });
 
-    map[Scale] = this.info.app.timeline.scale;
+    map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;
     this.map.set(file.uuid, map)
 
-    return map;
+    return map as Target;
   };
   
-  private is(file: λFile) {
+  is(file: λFile) {
+    Boolean(this.map.get(file.uuid)?.[Scale] === this.renderer.info.app.timeline.scale)
     return Boolean(this.map.get(file.uuid));
   }
 }

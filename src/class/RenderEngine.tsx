@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
 import { λLink } from "@/dto/Link.dto";
 import { RulerDrawer } from "./Ruler.drawer";
-import { DefaultEngine } from "./Default.engine";
+import DefaultEngine from "./Default.engine";
 import { Hardcode, Height, MaxHeight, StartEnd, Scale, Engine, EngineList } from "./Engine.dto";
 
 interface RenderEngineConstructor {
@@ -90,28 +90,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine.instance = this;
     this.default = new DefaultEngine(RenderEngine.instance);
   }
-  
-  height(file: λFile, y: number) {
-    const heat = this.useCache(this.heightMap, file.uuid)
-      ? this.heightMap[file.uuid]
-      : this.getHeightmap(file);
-      
-      Array.from(heat.entries()).forEach(([timestamp, amount]) => {
-        if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) return;
-      
-        this.ctx.fillStyle = λColor.gradient(file.color, amount, {
-          min: 0,
-          max: heat[Max],
-        });
-        
-        this.ctx.fillRect(
-          this.getPixelPosition(timestamp), 
-          y + 47, 
-          1, 
-          -(1 + (47 - 1) * (amount / heat[Max]))
-        );
-      })
-  };
   
   graph(file: λFile, _y: number) {
     const heat = this.useCache(this.heightMap, file.uuid)
@@ -378,24 +356,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(0, File.selected(this.info.app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - this.scrollY, window.innerWidth, 1)
     this.ctx.fillRect(this.getPixelPosition(this.info.app.timeline.target.timestamp + file.offset), 0, 1, window.innerWidth)
   }
-
-  private getHeightmap = (file: λFile): HeightMap => {
-    const heat = new Map() as HeightMap;
-
-    File.events(this.info.app, file).forEach(event => heat.set(event.timestamp as λ.Timestamp, (((heat.get(event.timestamp as λ.Timestamp) || 0) as number) + 1) as λ.Height));
-
-    heat[Amount] = Event.get(this.info.app, file.uuid).length as λ.Height;
-    let maxHeight = -Infinity;
-    for (const value of heat.values()) {
-      if (value > maxHeight) {
-        maxHeight = value;
-      }
-    }
-    heat[Max] = maxHeight as λ.Height;
-    this.heightMap[file.uuid] = heat;
-  
-    return heat;
-  };
 
   private getStatusMap = (file: λFile): StatusMap => {
     const heat: StatusMap = new Map() as StatusMap;

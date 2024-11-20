@@ -1,17 +1,17 @@
 import { λFile } from "@/dto/File.dto";
 import { RenderEngine } from "./RenderEngine";
 
-export type EngineList = 'height' | 'graph' | 'apache' | 'default';
+export namespace Engine {
+  export interface Interface<T> {
+    render: (file: λFile, y: number) => void;
+    get: (file: λFile) => T;
+    is: (file: λFile) => boolean;
+    map: Map<λFile['uuid'], T>;
+  }
 
-export type EngineConstructor = RenderEngine;
+  export type Constructor = RenderEngine;
 
-class EngineDeclarations {
-  declare private get: <T = Map<any, any>>(file: λFile) => T;
-  declare private is: (file: λFile) => boolean;
-}
-
-export interface Engine extends EngineDeclarations {
-  render: (file: λFile, y: number) => void;
+  export type List = 'height' | 'graph' | 'apache' | 'default';
 }
 
 export namespace Hardcode {
@@ -34,26 +34,38 @@ export namespace Hardcode {
   export type Scale = number & {
     readonly [Scale]: unique symbol;
   };
+
+  export const Length = Symbol('Length');
+  export type Length = number & {
+    readonly [Length]: unique symbol;
+  };
 }
 
 
-const Scale = Symbol('Scale');
+export const Scale = Symbol('Scale');
 export interface Scale {
   [Scale]: Hardcode.Scale
 }
 
-const Height = Symbol('Height');
+export const Height = Symbol('Height');
 export interface Height {
   [Height]: Hardcode.Height;
 }
 
-const MaxHeight = Symbol('MaxHeight');
+export const MaxHeight = Symbol('MaxHeight');
 export interface MaxHeight {
   [MaxHeight]: Hardcode.Height;
 }
 
-const Start = Symbol('Start');
-const End = Symbol('End');
+export const Length = Symbol('Length');
+export interface Length {
+  [Length]: Hardcode.Length;
+}
+
+
+
+export const Start = Symbol('Start');
+export const End = Symbol('End');
 export interface StartEnd {
   [Start]: Hardcode.Timestamp;
   [End]: Hardcode.Timestamp;
