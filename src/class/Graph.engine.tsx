@@ -56,7 +56,7 @@ export class GraphEngine implements Engine.Interface<Target> {
   get(file: λFile): Target {
     const result = new Map() as Target;
 
-    for (const [timestamp, height] of this.map.get(file.uuid)!) {
+    for (const [timestamp, height] of Array.from(this.renderer.height.get(file).entries())) {
       if (throwableByTimestamp(timestamp, {
         min: this.renderer.limits.min - 3000,
         max: this.renderer.limits.max + 3000,
