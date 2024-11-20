@@ -4,6 +4,7 @@ import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
+import { enginesBase } from '@/dto/Engine.dto';
 import { λFile } from '@/dto/File.dto';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
@@ -40,6 +41,12 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
         </Tooltip>
       </TooltipProvider>
       <ContextMenuSeparator />
+      <ContextMenuSub>
+        <ContextMenuSubTrigger img='Cpu'>Render method</ContextMenuSubTrigger>
+        <ContextMenuSubContent>
+          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.files_replace({ ...file, engine: i.plugin})} img={i.img}>{i.title}</ContextMenuItem>)}
+        </ContextMenuSubContent>
+      </ContextMenuSub>
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
       <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={file} />)} img='Link'>Links</ContextMenuItem>
       <ContextMenuSeparator />
