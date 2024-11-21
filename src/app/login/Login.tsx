@@ -202,7 +202,7 @@ export function LoginPage() {
                 <div className={s.chooser}>
                   {app.target.operations.map((operation, i) => (
                     <div className={s.unit_group} key={operation.id}>
-                      <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'Workflow'}>{operation.name}</Button>
+                      <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'ScanSearch'}>{operation.name}</Button>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button
@@ -210,7 +210,7 @@ export function LoginPage() {
                             size='icon'
                             variant='ghost'
                             img='Trash2' />
-                        </PopoverTrigger>
+                        </PopoverTrigger> 
                         <PopoverContent>
                           <Stack dir='column'>
                             <p>Are you shure?</p>
