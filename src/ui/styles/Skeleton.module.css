@@ -1,5 +1,5 @@
 .skeleton {
-  background-color: var(--gray24);
+  background-color: var(--accent-5);
   animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
   flex-shrink: 0;
   pointer-events: none;
@@ -70,6 +70,6 @@
 
 @keyframes pulse {
   50% {
-    background-color: var(--gray16);
+    background-color: var(--accent-2);
   }
 }

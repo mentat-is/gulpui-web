@@ -253,8 +253,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         </Stack>
       )}
       <Stack>
-        <Button onClick={() => Info.setTimelineTarget(-1)}>Prev event</Button>
-        <Button onClick={() => Info.setTimelineTarget(1)}>Next event</Button>
+        <Button onClick={() => Info.setTimelineTarget(1)}>Prev event</Button>
+        <hr style={{ flex: 1 }} />
+        <Button onClick={() => Info.setTimelineTarget(-1)}>Next event</Button>
       </Stack>
     </Dialog>
   )
