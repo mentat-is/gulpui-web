@@ -96,6 +96,7 @@
   background: var(--geist-background);
   border: var(--geist-border);
   color: var(--text-dimmed);
+  backdrop-filter: blur(8px);
 }
 .glass:hover {
   color: var(--white);

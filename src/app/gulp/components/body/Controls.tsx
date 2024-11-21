@@ -68,9 +68,9 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
 
   return (
     <div className={s.controls}>
-      <Button ref={size_plus} onClick={() => zoom(true)} img='ZoomOut'>Zoom Out</Button>
-      <Button ref={size_reset} onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween'>Zoom Fit</Button>
-      <Button ref={size_minus} onClick={() => zoom(false)} img='ZoomIn'>Zoom In</Button>
+      <Button variant='glass' ref={size_minus} onClick={() => zoom(false)} img='ZoomIn' />  
+      <Button variant='glass' ref={size_plus} onClick={() => zoom(true)} img='ZoomOut' />
+      <Button variant='glass' ref={size_reset} onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween' />
       <Input className={s.filter} value={app.timeline.filter} placeholder='Filter by filenames and context' onChange={(e) => Info.setTimelineFilter(e.target.value)} img='Filter' />
     </div>
   )
