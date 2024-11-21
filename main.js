@@ -1,33 +1,35 @@
-import { app, BrowserWindow, Tray, Menu } from 'electron';
-import path from 'path';
+const { app, BrowserWindow, Tray, Menu } = require('electron');
+const path = require('path');
 
-let mainWindow: BrowserWindow | null = null;
-let tray: Tray | null = null;
+let window;
+let tray;
 
 app.on('ready', () => {
-  mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    icon: path.join(__dirname, 'build/favicon.ico'),
+  window = new BrowserWindow({
+    icon: path.join(__dirname, 'build/favicon.png'),
     webPreferences: {
       nodeIntegration: true,
     },
+    show: false
   });
+
+  window.setMenu(null);
+
+  window.maximize();
+
+  window.show();
 
   app.commandLine.appendSwitch('enable-gpu-rasterization');
   app.commandLine.appendSwitch('force_high_performance_gpu');
 
-  // mainWindow.loadURL(`file://${path.join(__dirname, 'build/index.html')}`);
-  mainWindow.loadURL('http://localhost:3000');
+  window.loadURL('http://localhost:3000');
 
-  tray = new Tray(path.join(__dirname, 'build/favicon.ico'));
+  tray = new Tray(path.join(__dirname, 'build/favicon.png'));
   const contextMenu = Menu.buildFromTemplate([
     {
       label: 'Открыть приложение',
       click: () => {
-        if (mainWindow) {
-          mainWindow.show();
-        }
+        window.show();
       },
     },
     {
@@ -41,35 +43,11 @@ app.on('ready', () => {
   tray.setContextMenu(contextMenu);
   tray.setToolTip('Мое приложение');
   tray.on('click', () => {
-    if (mainWindow) {
-      mainWindow.isVisible() ? mainWindow.hide() : mainWindow.show();
-    }
+    window.isVisible() ? window.hide() : window.show();
   });
 
-  mainWindow.on('close', (event) => {
+  window.on('close', (event) => {
     event.preventDefault();
-    if (mainWindow) {
-      mainWindow.hide();
-    }
+    window.hide();
   });
-});
-
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if (mainWindow === null) {
-    mainWindow = new BrowserWindow({
-      width: 800,
-      height: 600,
-      icon: path.join(__dirname, 'build/favicon.ico'),
-      webPreferences: {
-        nodeIntegration: true,
-      },
-    });
-    mainWindow.loadURL('http://localhost:3000');
-  }
 });

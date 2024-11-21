@@ -5,14 +5,12 @@
       "name": "Browser",
       "request": "launch",
       "command": "npm run start",
-      "preLaunchTask": "wsl-up"
     },
     {
       "type": "node-terminal",
       "name": "Native",
       "request": "launch",
-      "command": "npm run electron",
-      "preLaunchTask": "wsl-up"
+      "command": "npm run electron"
     },
     {
       "type": "node-terminal",
