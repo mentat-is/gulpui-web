@@ -19,50 +19,13 @@ import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { Stack } from "@/ui/Stack";
+import { GlyphMap } from "@/dto/Glyph.dto";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
-  const [maxStage, setMaxStage] = useState<number>(0);
-  const cookie = new Cookies();
-  const [sessions, setSessions] = useState<Sessions>(parseTokensFromCookies(cookie.get('sessions')));
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingSession, setLoadingSession] = useState<string | null>(null);
-
-  const stageMap = [
-    'Authorization',
-    'Select index',
-    'Select operation'
-  ]
-
-  useEffect(() => {
-    if (stage >= maxStage) {
-      setMaxStage(stage);
-    }
-  }, [stage])
-
-  useEffect(() => {
-    if (!app.general.token || !app.general.server || !Index.selected(app)) return;
-
-    cookie.set('last_used_server', app.general.server);
-
-    !sessions.find(session => session.token === app.general.token) && sessions.push({
-      token: app.general.token,
-      server: app.general.server,
-      expires: app.general.expires!,
-      user_id: app.general.user_id
-    })
-
-    cookie.set('sessions', sessions);
-  }, [app.general.token, app.general.server, app.general.expires, app.target.indexes]);
-
-  useEffect(() => {
-    if (sessions.some(s => s.expires < Date.now())) {
-      const newSessions = sessions.filter(s => s.expires > Date.now());
-      cookie.set('sessions', newSessions);
-      setSessions(newSessions);
-    }
-  }, [sessions]);
+  const cookie = new Cookies();
 
   // AUTH
 
@@ -136,16 +99,16 @@ export function LoginPage() {
   
   const handleIndexSelection = async (index: λIndex) => {
     setLoading(true);
-    Info.index_select(index)
+    Info.index_select(index);
   };
   /** 
    * При выборе индекса фетчим {λOperation[], λContext[], λPlugin[]} и перехоим на третий этап
   */
   useEffect(() => {
-    if (!Index.selected(app)) return 
+    if (!Index.selected(app)) return;
     
     Info.operations_reload().then(() => {
-      setStage(2)
+      setStage(2) 
       setLoading(false);
     });
   }, [app.target.indexes]);
@@ -185,45 +148,15 @@ export function LoginPage() {
     Info.query_operations();
   }, [stage]);
 
-  const handleSessionButtonClick = async ({ server, token, ...session }: Session) => {
-    setLoadingSession(token);
-    const response = await api('/version', { server, token });
-
-    if (response.isSuccess()) {
-      Info.setToken(token);
-      Info.setServer(server);
-      Info.setExpire(session.expires);
-      Info.setUserId(session.user_id);
-      setStage(1);
-    } else {
-      toast('Session expired');
-      deleteSession({...session, server, token });
-    }
-    setLoadingSession(null);
-  }
-
-  const deleteSession = (session: Session) => {
-    setSessions((sessions) => {
-      const newSessions = sessions.filter(s => s.token !== session.token);
-      new Cookies().set('sessions', newSessions);
-      return newSessions
-    });
-  }
-
   return (
     <div className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
-          <img src='/gulp-no-text.svg' alt='' />
+          <img src='/favicon.svg' alt='' />
           Gulp
           <i>Web Client</i>
         </div>
         <div className={s.content}>
-        <div className={s.step}>
-          <Button tabIndex={-1} disabled={stage <= 0} size='sm' img='ArrowLeft' onClick={() => setStage(s => s-1)} variant='ghost'>Previous step</Button>
-          <p>{stageMap[stage]}</p>
-          <Button tabIndex={-1} disabled={maxStage < stage + 1} revert className={s.next_btn} onClick={() => setStage(s => s+1)} size='sm' img='ArrowRight' variant='ghost'>Next step</Button>
-        </div>
         {stage === 0
           ? (
             <React.Fragment>
@@ -239,34 +172,16 @@ export function LoginPage() {
                 value={app.general.username}
                 tabIndex={2}
                 onChange={e => Info.setUsername(e.currentTarget.value)} />
-              <Input
-                img='KeyRound'
-                placeholder="Password"
-                type='password'
-                value={app.general.password}
-                tabIndex={3}
-                onChange={e => Info.setPassword(e.currentTarget.value)} />
-            <div className={s.group}>
-              {!!sessions.length && <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant='outline' img='Container'>Previous instances</Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  {sessions.map(session => (
-                    <Button
-                      key={session.token}
-                      variant='ghost'
-                      img='KeyRound'
-                      loading={session.token === loadingSession}
-                      disabled={!!loadingSession}
-                      onClick={() => handleSessionButtonClick(session)}>
-                        User {session.user_id} at {session.server}
-                    </Button>
-                ))}
-                </PopoverContent>
-              </Popover>}
-              <Button loading={loading}tabIndex ={4} onClick={login}>Log in</Button>
-            </div>
+              <Stack gap={12}>
+                <Input
+                  img='KeyRound'
+                  placeholder="Password"
+                  type='password'
+                  value={app.general.password}
+                  tabIndex={3}
+                  onChange={e => Info.setPassword(e.currentTarget.value)} />
+                <Button loading={loading} tabIndex={4} onClick={login}>Log in</Button>
+              </Stack>
           </React.Fragment>
           )
           : stage === 1
@@ -287,7 +202,7 @@ export function LoginPage() {
                 <div className={s.chooser}>
                   {app.target.operations.map((operation, i) => (
                     <div className={s.unit_group} key={operation.id}>
-                      <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
+                      <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'Workflow'}>{operation.name}</Button>
                       <Popover>
                         <PopoverTrigger asChild>
                           <Button

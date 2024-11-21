@@ -92,7 +92,7 @@
   --filter-to-white: brightness(100);
   --filter-to-e8e8e8: brightness(0.58);
 
-  --ring: 0 0 0 1px var(--white), 0 0 0 4px hsla(0, 0%, 100%, .24);
+  --ring: 0 0 0 1px var(--white), 0 0 0 2px hsla(0, 0%, 100%, .24);
 }
 
 *::-webkit-scrollbar {
