@@ -49,13 +49,12 @@
   "scripts": {
     "start": "react-app-rewired start",
     "build": "react-app-rewired build",
-    "test": "react-app-rewired test",
-    "eject": "react-scripts eject"
+    "start_app": "npm run build && electron ./dist/main.js",
+    "electron": "electron ./main.js"
   },
   "eslintConfig": {
     "extends": [
-      "react-app",
-      "react-app/jest"
+      "react-app"
     ],
     "rules": {
       "react-hooks/exhaustive-deps": "off"
@@ -79,6 +78,8 @@
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
     "customize-cra": "^1.0.0",
+    "electron": "^33.2.0",
+    "electron-packager": "^17.1.2",
     "react-app-rewired": "^2.2.1"
   }
 }

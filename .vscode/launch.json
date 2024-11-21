@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "type": "node-terminal",
+      "name": "Browser",
+      "request": "launch",
+      "command": "npm run start",
+      "preLaunchTask": "wsl-up"
+    },
+    {
+      "type": "node-terminal",
+      "name": "Native",
+      "request": "launch",
+      "command": "npm run electron",
+      "preLaunchTask": "wsl-up"
+    },
+    {
+      "type": "node-terminal",
+      "name": "Build",
+      "request": "launch",
+      "command": "npm run build"
+    }
+  ]
+}
