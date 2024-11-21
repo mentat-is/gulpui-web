@@ -136,11 +136,8 @@ export function Timeline() {
 
     if (app.timeline.target && (key === 'd' || key === 'a')) {
       event.preventDefault();
-      const delta = Number(key === 'a') || -1;
-      const events = File.events(app, app.timeline.target._uuid);
-      const index = events.findIndex(evevt => evevt._id === app.timeline.target!._id) + delta
-
-      spawnDialog(<DisplayEventDialog event={events[index] ?? app.timeline.target} />)
+      const delta = Number(key === 'a') ? 1 : -1;
+      Info.setTimelineTarget(delta);
     }
   }, [app.timeline.target, spawnDialog]);
 
@@ -178,7 +175,6 @@ export function Timeline() {
       onContextMenu={handleContextMenu}
       ref={timeline}
     >
-      {/* <Ruler scrollX={scrollX} /> */}
       <div className={s.content} id="timeline_content">
         <ContextMenu>
           <ContextMenuTrigger>

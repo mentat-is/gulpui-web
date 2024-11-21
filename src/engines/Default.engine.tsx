@@ -1,8 +1,8 @@
 import { λFile } from "@/dto/File.dto";
-import { Engine, Hardcode, Scale } from "./Engine.dto";
-import { RenderEngine } from "./RenderEngine";
+import { Engine, Hardcode, Scale } from "../class/Engine.dto";
+import { RenderEngine } from "../class/RenderEngine";
 import { throwableByTimestamp, λColor } from "@/ui/utils";
-import { File, μ } from "./Info";
+import { File, μ } from "../class/Info";
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null;

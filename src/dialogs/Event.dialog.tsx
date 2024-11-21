@@ -252,6 +252,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Skeleton style={{ position: 'absolute', right: 8 }} width={10} height={'calc(100% - 96px)  ' as ChadNumber} />
         </Stack>
       )}
+      <Stack>
+        <Button onClick={() => Info.setTimelineTarget(-1)}>Prev event</Button>
+        <Button onClick={() => Info.setTimelineTarget(1)}>Next event</Button>
+      </Stack>
     </Dialog>
   )
 };

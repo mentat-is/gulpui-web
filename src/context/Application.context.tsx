@@ -9,6 +9,7 @@ import Cookies from "universal-cookie";
 import { parseTokensFromCookies } from "@/ui/utils";
 import { Console } from '@impactium/console';
 import { Logger } from "@/dto/Logger.class";
+import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -200,6 +201,14 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
         break;
     }
   }
+  
+  useEffect(() => {
+    if (app.timeline.target) {
+      spawnDialog(<DisplayEventDialog event={app.timeline.target} />)
+    } else {
+      destroyBanner();
+    }
+  }, [app.timeline.target]);
 
   return (
     <ApplicationContext.Provider value={props}>

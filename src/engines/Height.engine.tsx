@@ -1,8 +1,8 @@
 import { λFile } from "@/dto/File.dto";
-import { Engine, Hardcode, Length, MaxHeight } from "./Engine.dto";
-import { RenderEngine } from "./RenderEngine";
+import { Engine, Hardcode, Length, MaxHeight } from "../class/Engine.dto";
+import { RenderEngine } from "../class/RenderEngine";
 import { throwableByTimestamp, λColor } from "@/ui/utils";
-import { Event, File } from "./Info";
+import { Event, File } from "../class/Info";
 
 export class HeightEngine implements Engine.Interface<typeof HeightEngine.target> {
   static target: Map<number, number> & MaxHeight & Length;

@@ -40,8 +40,6 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
   
   
   const handleControllers = (event: KeyboardEvent) => {
-    console.log(event.key);
-
     switch (true) {
       case event.key === '-':
         size_plus.current?.click();
@@ -66,7 +64,6 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
     return () => {
       window.removeEventListener('keypress', handleControllers);
     }
-
   }, []);
 
   return (

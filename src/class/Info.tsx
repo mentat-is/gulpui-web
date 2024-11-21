@@ -624,7 +624,19 @@ Files: ${files.length}`, Info.name);
   
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
-  setTimelineTarget = (event?: λEvent | null) => this.setInfoByKey(event, 'timeline', 'target');
+  setTimelineTarget = (event?: λEvent | null | 1 | -1) => {
+    if (typeof event === 'number' && this.app.timeline.target) {
+      const events = File.events(this.app, this.app.timeline.target._uuid);
+      const index = events.findIndex(event => event._id === this.app.timeline.target!._id) + event;
+      event = events[index];
+    }
+
+    if (!event)
+      return Logger.warn(`Executed ${this.setTimelineTarget.name} with event: ${typeof event}`, Info.name);
+
+    this.setInfoByKey(event, 'timeline', 'target');
+  }
+
   setTimelineFilter = (filter: string) => this.setInfoByKey(filter, 'timeline', 'filter');
   
   increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
