@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import Cookies from "universal-cookie";
 import s from './Login.module.css';
 import { useApplication } from "@/context/Application.context";
-import { parseTokensFromCookies } from '@/ui/utils'
 import { Card } from "@/ui/Card";
-import { Session, Sessions } from "@/dto/Session.dto";
 import { Index, Pattern } from "@/class/Info";
 import { toast } from "sonner";
 import { Login, λOperation } from "@/dto";
@@ -16,11 +14,11 @@ import { λIndex } from "@/dto/Index.dto";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { Stack } from "@/ui/Stack";
 import { GlyphMap } from "@/dto/Glyph.dto";
 import { GeneralSettings } from "@/components/GeneralSettings";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -203,28 +201,20 @@ export function LoginPage() {
                 <div className={s.chooser}>
                   {app.target.operations.map((operation, i) => (
                     <div className={s.unit_group} key={operation.id}>
-                      <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'ScanSearch'}>{operation.name}</Button>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            tabIndex={-1}
-                            size='icon'
-                            variant='ghost'
-                            img='Trash2' />
-                        </PopoverTrigger> 
-                        <PopoverContent>
-                          <Stack dir='column'>
-                            <p>Are you shure?</p>
-                            <Button
-                              loading={loading}
-                              onClick={() => deleteOperation(operation.id)}
-                              variant='destructive'
-                              img='Trash2'>Yes, delete operation {operation.name}!</Button>
-                          </Stack>
-                        </PopoverContent>
-                      </Popover>
-                      
-                      </div>
+                      <ContextMenu>
+                        <ContextMenuTrigger style={{ width: '100%' }}>
+                          <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'ScanSearch'}>{operation.name}</Button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuSub>
+                            <ContextMenuSubTrigger img='Trash2'>Delete!</ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                              <ContextMenuItem onClick={() => deleteOperation(operation.id)} img='Trash2'>Yes, delete operation {operation.name}!</ContextMenuItem>
+                            </ContextMenuSubContent>
+                          </ContextMenuSub>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    </div>
                   ))}
                   <Separator />
                   <Button
