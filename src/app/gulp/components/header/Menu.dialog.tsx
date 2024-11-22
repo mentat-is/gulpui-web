@@ -16,6 +16,7 @@ import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
+import { GeneralSettings } from '@/components/GeneralSettings';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog } = useApplication();

@@ -22,7 +22,7 @@ import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/λGlyph.dto';
 import { differenceInMonths } from 'date-fns';
 import { Logger, LoggerHandler } from '@/dto/Logger.class';
-import { Hardcode } from './Engine.dto';
+import { Engine, Hardcode } from './Engine.dto';
 
 interface RefetchOptions {
   uuids?: Arrayed<λFile['uuid']>;
@@ -499,8 +499,8 @@ ${error}`, Info.name);
                     plugin: rawPlugin.name,
                     _uuid: p_uuid,
                     offset: 0,
-                    color: 'thermal',
-                    engine: 'graph',
+                    color: this.app.general.settings.color ?? 'thermal',
+                    engine: this.app.general.settings.engine ?? 'default',
                     uuid: f_uuid
                   }
                   files.push(file)
@@ -797,6 +797,20 @@ Files: ${files.length}`, Info.name);
   
   get width(): number {
     return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
+  }
+
+  setDefaultEngine = (engine: Engine.List) => {
+    this.setInfoByKey({
+      ...this.app.general.settings,
+      engine
+    }, 'general', 'settings');
+  }
+
+  setDefaultColor = (color: Gradients) => {
+    this.setInfoByKey({
+      ...this.app.general.settings,
+      color
+    }, 'general', 'settings');
   }
   
   // Private method to update a specific key in the application state

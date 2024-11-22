@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { Stack } from "@/ui/Stack";
 import { GlyphMap } from "@/dto/Glyph.dto";
+import { GeneralSettings } from "@/components/GeneralSettings";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
@@ -245,6 +246,7 @@ export function LoginPage() {
         }
         </div>
       </Card>
+      <GeneralSettings />
     </div>
   )
 }
