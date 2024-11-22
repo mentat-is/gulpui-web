@@ -1,10 +1,11 @@
+import { Hardcode } from "@/class/Engine.dto"
 import { μ } from "@/class/Info"
 import { UUID } from "crypto"
 
 export interface λEvent {
   _id: string
   operation_id: number
-  timestamp: number
+  timestamp: Hardcode.Timestamp
   event: {
     code: string,
     duration: number

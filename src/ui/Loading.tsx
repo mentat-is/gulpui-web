@@ -1,18 +1,17 @@
-import { useLanguage } from "../context/Language.context";
-import { Icon, IconProps } from "./Icon";
+import { Icon } from "@impactium/icons";
 import s from './styles/Button.module.css';
 
 interface LoadingProps {
-  size: "default" | "sm" | "lg" | "icon" | undefined | null;
-  variant?: IconProps['variant']
+  size: undefined | `${number}` | number;
+  variant?: Icon.Variant;
+  no_text?: boolean;
 }
 
-export function Loading({ size, variant = 'black' }: LoadingProps) {
-  const { lang } = useLanguage();
+export function Loading({ no_text, size, variant = 'black' }: LoadingProps) {
   return (
     <>
-      <Icon className={s.loading} variant={variant} name='LoaderCircle' />
-      {size !== 'icon' && lang._please_wait}
+      <Icon size={Number(size)} className={s.loading_icon} variant={variant} name='LoaderCircle' />
+      {!no_text && 'Please wait'}
     </>
   )
 }

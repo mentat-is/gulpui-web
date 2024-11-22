@@ -4,6 +4,7 @@ import { cn } from './utils';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizable';
+import { Loading } from './Loading';
 
 interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   title: string;
@@ -11,16 +12,17 @@ interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   loading?: boolean;
   icon?: string | React.ReactElement;
   callback?: () => void;
+  defaultSize?: number
 }
 
-export function Dialog({ className, callback, icon,description, title, loading, children, ...props }: DialogProps) {
+export function Dialog({ className, callback, icon, description, defaultSize = 50, title, loading, children, ...props }: DialogProps) {
   const { destroyDialog } = useApplication();
 
   return (
     <ResizablePanelGroup className={s.resize} direction="horizontal">
-      <ResizablePanel className={s.not} defaultSize={50} />
+      <ResizablePanel className={s.not} defaultSize={100 - defaultSize} />
       <ResizableHandle />
-      <ResizablePanel maxSize={50} minSize={20} defaultSize={50}>
+      <ResizablePanel maxSize={50} minSize={20} defaultSize={defaultSize}>
         <div className={cn(s.dialog, className)} {...props}>
           <div className={s.wrapper}>
             {typeof icon === 'string' ? <img src={icon} alt='' /> : icon}
@@ -31,7 +33,7 @@ export function Dialog({ className, callback, icon,description, title, loading, 
             </div>
           </div>
           <div className={cn(s.content, loading && s.loading)}>
-            {loading ? <Button variant='disabled' loading size='icon' /> : children}
+            {loading ? <Loading size={48} variant='white' no_text /> : children}
           </div>
         </div>
       </ResizablePanel>

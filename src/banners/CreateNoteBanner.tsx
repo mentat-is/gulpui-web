@@ -9,7 +9,7 @@ import {
   ColorPickerPopover,
 } from "@/ui/Color";
 import { useRef, useState } from "react";
-import s from './styles/CreateNoteBanner.module.css'
+import s from './styles/CreateNoteBanner.module.css';
 import { Input } from "@/ui/Input";
 import { Badge } from "@/ui/Badge";
 import { format } from "date-fns";
@@ -20,6 +20,7 @@ import { Separator } from "@/ui/Separator";
 import { NoteCreateRequest } from "@/dto/NoteCreateRequest.dto";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { Switch } from "@/ui/Switch";
+import { GlyphsPopover } from "@/components/Glyphs.popover";
 
 interface CreateNoteBannerProps {
   context: string,
@@ -35,6 +36,7 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
   const [level, setLevel] = useState<0 | 1 | 2>(0);
   const [title, setTitle] = useState<string>('');
   const [text, setText] = useState<string>('');
+  const [icon, setIcon] = useState<number>(-1);
   const [_private, _setPrivate] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const tag_ref = useRef<HTMLInputElement>(null);
@@ -52,7 +54,8 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
         ws_id: app.general.ws_id,
         color,
         level,
-        private: _private
+        private: _private,
+        glyph_id: icon
       },
       headers: {
         'Content-Type': 'application/json; charset=utf-8'
@@ -105,6 +108,11 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
               {levelMap.map(l => <SelectItem value={l}>{l}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+        <Separator />
+        <div className={s.unit}>
+          <p>Glyph:</p>
+          <GlyphsPopover icon={icon} setIcon={setIcon} />
         </div>
         <Separator />
         <div className={s.unit}>

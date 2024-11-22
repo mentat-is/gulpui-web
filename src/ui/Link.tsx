@@ -6,10 +6,11 @@ import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
 import { Fragment } from 'react';
 import { Event } from '@/class/Info';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
-import { Icon } from './Icon';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
+import { Icon } from '@impactium/icons';
 import { λLink } from '@/dto/Link.dto';
+import { Glyph } from './Glyph';
 
 interface LinkProps {
   link: λLink;
@@ -34,8 +35,9 @@ export function Link({ link, left, top }: LinkProps) {
   return (
     <>
       <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
-        <Icon name='Waypoints' />
+        <Glyph glyph={link.glyph_id} color={link.data.color} />
         <hr style={{ background: link.data.color }} />
+        <div className={s.backplate} style={{ background: link.data.color + '32' }} />
       </Button>
       <p className={s.desc} style={{ left, top: top+26 }}>{link.name}</p>
     </>

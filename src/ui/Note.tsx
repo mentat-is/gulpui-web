@@ -6,10 +6,10 @@ import { Separator } from './Separator';
 import { Button } from './Button';
 import { useApplication } from '@/context/Application.context';
 import { Fragment } from 'react';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
-import { Icon } from './Icon';
-import { λIcon } from '@/ui/utils';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
+import { Icon } from '@impactium/icons';
+import { Glyph } from './Glyph';
 
 interface NoteProps {
   note: λNote;
@@ -19,12 +19,6 @@ interface NoteProps {
 
 export function Note({ note, left, top }: NoteProps) {
   const { spawnDialog } = useApplication();
-
-  const iconMap: Array<λIcon> = [
-    'Bookmark',
-    'TriangleAlert',
-    'SquareX'
-  ];
 
   const openEvent = () => {
     const dialog = note.events.length === 1
@@ -37,8 +31,9 @@ export function Note({ note, left, top }: NoteProps) {
   return (
     <>
       <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
-        <Icon name={iconMap[note.level]} />
+        <Glyph glyph={note.glyph_id} color={note.data.color} />
         <hr style={{ background: note.data.color }} />
+        <div className={s.backplate} style={{ background: note.data.color + '32' }} />
       </Button>
       <p className={s.desc} style={{ left, top: top+26 }}>{note.name}</p>
     </>

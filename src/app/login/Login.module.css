@@ -1,3 +1,10 @@
+.page {
+  flex: 1;
+  background: var(--gray24);
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
 .group {
   display: flex;
   flex-direction: row;
@@ -5,15 +12,14 @@
   align-items: center;
   justify-content: flex-end;
 }
-.page {
-  gap: 32px;
-  padding: 32px;
-  flex-direction: row !important;
-  height: 100vh;
-  position: relative;  
+.wrapper {
+  border: 1px solid var(--accent-6);
+  width: 450px;
 }
 .wrapper > div {
+  padding: 0 !important;
   display: flex;
+  gap: 8px;
   flex-direction: column;
   max-width: 600px;
   overflow: hidden;
@@ -22,14 +28,16 @@
   border: 1px solid var(--accent-5);
   border-radius: var(--border-s);
 }
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 24px 16px 24px;
+}
 .chooser {
   display: flex;
   flex-direction: column;
   gap: var(--p2);
-  padding: var(--p3);
-  background-color: var(--soft-black);
-  border-radius: var(--border-m);
-  border: 1px solid var(--accent-2);
 }
 .chooser p {
   font-size: 16px;
@@ -82,14 +90,18 @@
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
-  font-size: 56px;
+  font-size: 48px;
   color: var(--white);
   font-weight: 400;
   margin-bottom: 8px;
+  background: var(--geist-background);
+  border-radius: 12px 12px 0 0;
+  border-bottom: var(--geist-border);
+  padding: 24px;
 }
 .logo img {
   filter: var(--filter-to-white);
-  height: 64px;
+  height: 48px;
 }
 .logo i {
   color: var(--text-dimmed);
@@ -99,7 +111,7 @@
   align-self: flex-end;
   width: 100%;
   text-align: center;
-  transform: translateY(-12px);
+  transform: translateY(-3px);
 }
 .cluster {
   display: flex;

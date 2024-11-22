@@ -7,8 +7,10 @@ import { PluginEntity, λPlugin } from "./Plugin.dto";
 import { λFile } from "./File.dto";
 import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
-import { generateUUID } from "@/ui/utils";
+import { generateUUID, Gradients, GradientsMap } from "@/ui/utils";
 import { FilterOptions, λFilter, μ } from "@/class/Info";
+import { λGlyph } from "./λGlyph.dto";
+import { Engine } from "@/class/Engine.dto";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -31,6 +33,7 @@ export interface λApp {
     filters: Record<μ.File, λFilter[]>;
     notes: λNote[],
     links: λLink[],
+    glyphs: λGlyph[],
     sigma: Record<μ.File, {
       name: string;
       content: string;
@@ -45,6 +48,7 @@ export interface λApp {
     token?: string;
     expires?: number;
     ingest: PluginEntity[];
+    settings: Pick<λFile, 'engine' | 'color'>;
   },
   timeline: {
     scale: number;
@@ -69,7 +73,11 @@ export const BaseInfo: λApp = {
     password: 'admin',
     ws_id: generateUUID(),
     ingest: [],
-    user_id: -1
+    user_id: -1,
+    settings: {
+      engine: (localStorage.getItem('settings.__engine') || 'default') as Engine.List,
+      color: (localStorage.getItem('settings.__color') || 'thermal') as Gradients
+    }
   },
   timeline: {
     scale: 1,
@@ -101,13 +109,11 @@ export const BaseInfo: λApp = {
         min: Date.now(),
         max: Date.now()
       },
-      selected: {
-        min: Date.now(),
-        max: Date.now()
-      }
+      selected: null,
     },
     notes: [],
     links: [],
-    sigma: {}
+    sigma: {},
+    glyphs: []
   }
 }

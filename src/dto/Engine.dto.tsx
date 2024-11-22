@@ -1,11 +1,10 @@
-import { λIcon } from "@/ui/utils";
-
-export type Engine = 'height' | 'graph' | 'apache' | 'default';
+import { Engine } from "@/class/Engine.dto";
+import { Icon } from "@impactium/icons";
 
 export interface EngineMap {
-  img: λIcon;
+  img: Icon.Name;
   title: string;
-  plugin: Engine;
+  plugin: Engine.List;
 }
 
 export const enginesBase: EngineMap[] = [
@@ -15,7 +14,7 @@ export const enginesBase: EngineMap[] = [
     plugin: 'default'
   },
   {
-    img: 'AreaChart',
+    img: 'ChartBar',
     title: 'HeightMap',
     plugin: 'height'
   },
@@ -24,9 +23,9 @@ export const enginesBase: EngineMap[] = [
     title: 'Graph',
     plugin: 'graph'
   },
-  {
-    img: 'CodeXml',
-    title: 'Status codes',
-    plugin: 'apache'
-  }
+  // {
+  //   img: 'CodeXml',
+  //   title: 'Status codes',
+  //   plugin: 'apache'
+  // }
 ]

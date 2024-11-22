@@ -1,0 +1,21 @@
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.toggle p {
+  font-size: 14px;
+  flex: 1;
+  color: var(--text-dimmed);
+  transition: all 0.125s var(--transition);
+}
+.toggle p:first-child {
+  text-align: right;
+}
+.toggle p:last-child {
+  text-align: left;
+}
+.toggle p.selected {
+  font-weight: 500;
+  color: var(--text-white);
+}

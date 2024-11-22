@@ -5,7 +5,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "./utils";
 import { Button } from './Button'
-import { Icon } from './Icon'
+import { Icon } from '@impactium/icons'
  
 const Sheet = SheetPrimitive.Root
  
@@ -67,7 +67,7 @@ const SheetContent = React.forwardRef<
       {children}
       <Button variant='ghost' asChild size='icon' onClick={action}>
         <SheetPrimitive.Close className={s.close}>
-          <Icon name='X' alt='' />
+          <Icon name='X' />
           <span className={s.sr}>Close</span>
         </SheetPrimitive.Close>
       </Button>

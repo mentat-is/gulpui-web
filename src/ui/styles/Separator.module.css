@@ -1,6 +1,7 @@
 .separator {
   min-height: 1px;
   min-width: 1px;
+  border-radius: 1px;
 }
 .horizontal {
   width: 100%;

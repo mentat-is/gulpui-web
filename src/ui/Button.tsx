@@ -4,8 +4,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./utils";
 import s from "./styles/Button.module.css";
 import { Loading } from "./Loading";
-import { Icon, IconProps } from "./Icon";
-import { λIcon } from './utils';
+import { Icon } from "@impactium/icons";
+import { Skeleton } from "./Skeleton";
 
 const buttonVariants = cva(s.button, {
   variants: {
@@ -37,14 +37,16 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
-  img?: λIcon;
+  img?: Icon.Name;
   revert?: boolean;
   loading?: boolean;
+  skeleton?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, img, revert, disabled, loading, asChild = false, ...props }, ref) => {
-    const Comp = asChild ? Slot : "button";
+  ({ className, skeleton, variant, size, img, revert, disabled, loading, asChild = false, ...props }, ref) => {
+    let Comp: React.ElementType = asChild ? Slot : "button";
+
     const paddingClass = img ? (props.children ? (revert ? s.revert : s.withImage) : s.onlyImage) : null;
 
     const children = !asChild && props.children;
@@ -53,25 +55,31 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'icon'
     }
 
+    if (disabled) {
+      props.tabIndex = -1;
+    }
+
     return (
-      <Comp
-        className={cn(buttonVariants({ variant: disabled ? 'disabled' : variant, size, className }), paddingClass, loading && s.loading)}
-        ref={ref}
-        {...props}>
-        {asChild ? props.children : (loading
-          ? <Loading variant={convertButtonVariantToImageVariant(variant)} size={size} />
-          : <React.Fragment>
-              {img && <Icon name={img} variant={convertButtonVariantToImageVariant(variant)} />}
-              {children}
-            </React.Fragment>
-        )}
-      </Comp>
+      <Skeleton enable={skeleton}>
+        <Comp
+          className={cn(buttonVariants({ variant: disabled ? 'disabled' : variant, size, className }), paddingClass, loading && s.loading)}
+          ref={ref}
+          {...props}>
+          {asChild ? props.children : (loading
+            ? <Loading variant={convertButtonVariantToImageVariant(variant)} size={convertButtonSizeToImageSize(size)} no_text={!children} />
+            : <React.Fragment>
+                {img && <Icon name={img} size={convertButtonSizeToImageSize(size)} variant={convertButtonVariantToImageVariant(variant)} />}
+                {children}
+              </React.Fragment>
+          )}
+        </Comp>
+      </Skeleton>
     )
   }
 );
 Button.displayName = "Button";
 
-const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): IconProps['variant'] => ({
+const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): Icon.Variant => ({
   default: 'black',
   destructive: 'white',
   outline: 'dimmed',
@@ -81,6 +89,11 @@ const convertButtonVariantToImageVariant = (variant: ButtonProps['variant']): Ic
   disabled: 'dimmed',
   hardline: 'white',
   glass: 'dimmed'
-} as Record<NonNullable<ButtonProps['variant']>, IconProps['variant']>)[variant!] ?? 'black';
+} as Record<NonNullable<ButtonProps['variant']>, Icon.Variant>)[variant!] ?? 'black';
+
+const convertButtonSizeToImageSize = (variant: ButtonProps['size']): Icon.Props['size'] => ({
+  sm: 16,
+  lg: 24
+} as Record<NonNullable<ButtonProps['size']>, Icon.Props['size']>)[variant!] ?? 20;
 
 export { Button, buttonVariants };

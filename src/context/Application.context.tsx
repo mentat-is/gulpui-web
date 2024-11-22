@@ -1,5 +1,5 @@
-import React, { useState, createContext, useContext, ReactNode, useRef, useEffect } from "react";
-import { ResponseBase } from "@/dto/ResponseBase.dto";
+import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from "react";
+import { ResponseBase, ResponseError } from "@/dto/ResponseBase.dto";
 import { λApp, BaseInfo, λ } from '@/dto';
 import { Api } from "@/dto/api.dto";
 import { toast } from "sonner";
@@ -7,6 +7,9 @@ import { AppSocket } from "@/class/AppSocket";
 import { Index, Info } from "@/class/Info";
 import Cookies from "universal-cookie";
 import { parseTokensFromCookies } from "@/ui/utils";
+import { Console } from '@impactium/console';
+import { Logger } from "@/dto/Logger.class";
+import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -16,7 +19,7 @@ export class ApplicationError extends Error {
 
 // Define the shape of the application context properties
 interface ApplicationContextProps {
-  spawnBanner: (banner: ReactNode) => void;
+  spawnBanner: (banner: JSX.Element) => void;
   destroyBanner: () => void;
   banner: boolean;
   spawnDialog: (dialog: JSX.Element) => void;
@@ -53,6 +56,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       token?: string;
       isRaw?: boolean;
       isText?: boolean;
+      ignore?: boolean;
       data?: { [key: string]: any };
     } = {}
   ): Promise<λ<T>> => {
@@ -79,22 +83,27 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     };
   
     const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
-      console.error('[ API | ERROR ]: ', error);
-      toast(`Internal appliction error in ${(options.server || app.general.server)}`, {
-        description: JSON.stringify(error),
-      });
+      Logger.error(`Network error: ${error}.
+Server: ${options.server || app.general.server}.
+Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
       return null;
     });
 
-    if (!res) return new λ();
+    if (!res) {
+      const data = new λ<any>();
+      return data;
+    };
     
     const lambda = new λ(await res.json() as T)
     if (!res.ok && lambda.isError()) {
       if ((lambda.data.exception.name === 'SessionExpired' || lambda.data.exception.msg.startsWith('session token')) && app.general.token) {
+        Logger.warn(`Session expired, logging out...`);
         removeToken();
         setInfo(BaseInfo);
+      } else {
+        Logger.error(`API Error: ${(lambda as ResponseError).data.exception.name}`, ApplicationProvider.name);
       }
-      toast(lambda.data.exception.name, {
+      !options.ignore && toast(lambda.data.exception.name, {
         description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
       })
     }
@@ -125,7 +134,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
   }, [app.general.token])
 
-  const spawnBanner = (banner: ReactNode) => {
+  const spawnBanner = (banner: JSX.Element) => {
     setBanner(banner);
     document.querySelector('body')?.classList.add('no-scroll');
   }; // Function to place banner into DOM-tree
@@ -136,9 +145,13 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   }; // Function to unmount a banner
 
   
-  const spawnDialog = (dialog: JSX.Element) => setDialog(dialog);
+  const spawnDialog = (dialog: JSX.Element) => {
+    setDialog(dialog)
+  };
   
-  const destroyDialog = () => setDialog(() => null);
+  const destroyDialog = () => {
+    setDialog(() => null)
+  };
 
   // Application context properties
   const props: ApplicationContextProps = {
@@ -158,11 +171,51 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     logout
   };
 
+  const handleLoggerExportCommand = () => {
+    const content = Logger.history()
+      .map(l => l.message.replace(/x1b\[[0-9;]*m/g, ''))
+      .join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `gulpui-web_log_${Date.now()}.log`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+  
+  const prefix = useMemo(() => {
+    return 'root@Gulp:/web-ui#';
+  }, []);
+
+  const onCommand = (cmd: string) => {
+    Logger.push(prefix + cmd);
+    switch (true) {
+      case cmd === 'export':
+        handleLoggerExportCommand();
+        break;
+    
+      default:
+        Logger.error('Unknown command', Logger.name)
+        break;
+    }
+  }
+  
+  useEffect(() => {
+    if (app.timeline.target) {
+      spawnDialog(<DisplayEventDialog event={app.timeline.target} />)
+    } else {
+      destroyBanner();
+    }
+  }, [app.timeline.target]);
+
   return (
     <ApplicationContext.Provider value={props}>
       {children}
       {banner}
       {dialog}
+      <Console noise={true} onCommand={onCommand} history={Logger.history()} title='Gulp Web Client' trigger='\' icon={<img style={{filter: `var(--filter-to-white)`, width: 14 }} src='/gulp-no-text.svg' alt='' />} prefix={prefix} />
     </ApplicationContext.Provider>
   );
 };

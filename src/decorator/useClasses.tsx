@@ -1,1 +1,0 @@
-export const useClasses = (...className: Array<string | string[] | undefined>): string => Array.isArray(className) ? className.join(' ') : className;

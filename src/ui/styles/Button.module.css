@@ -13,11 +13,12 @@
   border: 1px solid transparent;
   gap: 8px
 }
+.button:focus-visible {
+  box-shadow: var(--ring);
+}
 
 .button svg {
   transition: all 0.15s var(--transition);
-  height: 20px;
-  width: 20px;
 }
 
 .default {
@@ -59,9 +60,9 @@
 }
 
 .secondary {
-  background-color: var(--soft-black);
+  background-color: var(--gray16);
   color: var(--white);
-  border: 1px solid var(--accent-2);
+  border: 1px solid var(--accent-3);
 }
 
 .ghost {
@@ -95,6 +96,7 @@
   background: var(--geist-background);
   border: var(--geist-border);
   color: var(--text-dimmed);
+  backdrop-filter: blur(8px);
 }
 .glass:hover {
   color: var(--white);
@@ -141,7 +143,7 @@
 .loading {
   pointer-events: none;
 }
-.loading > svg {
+.loading_icon {
   animation: spin 1s linear infinite;
 }
 @keyframes spin {

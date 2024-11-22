@@ -1,8 +1,9 @@
 import React from "react"
 import s from './styles/Input.module.css' 
-import { cn, λIcon } from "./utils"
+import { cn } from "./utils"
 import { cva, type VariantProps } from "class-variance-authority"; 
-import { Icon } from "./Icon";
+import { Skeleton } from "./Skeleton";
+import { Icon } from "@impactium/icons";
 
 const inputVariants = cva(s.button, {
   variants: {
@@ -22,33 +23,38 @@ const inputVariants = cva(s.button, {
 });
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
-  img?: λIcon | null
-  revert?: boolean
+  img?: Icon.Name | null;
+  revert?: boolean;
+  skeleton?: boolean;
+  valid?: boolean
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, revert, variant, type, size, img, ...props }, ref) => {
+  ({ className, valid = true, revert, skeleton, variant, type, size, img, ...props }, ref) => {
+    const classes = cn(
+      inputVariants({ variant, size, className }),
+      s.input,
+      img || type === 'file' ? s.image : null,
+      revert && s.revert,
+      !valid && s.invalid
+    );
+
     return img || (type === 'file' && img !== null) ? (
-      <div className={cn(
-        inputVariants({ variant, size, className }),
-        s.input,
-        s.image,
-        revert && s.revert
-      )}>
-        <Icon variant='dimmed' name={img ?? 'Upload'} alt='' />
-        <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
-      </div>
+      <Skeleton enable={skeleton}>
+        <div className={classes}>
+          <Icon variant='dimmed' name={img ?? 'Upload'} />
+          <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
+        </div>
+      </Skeleton>
     ) : (
-      <input
-        className={cn(
-          inputVariants({ variant, size, className }),
-          s.input,
-          img && s.image
-        )}
-        type={variant === 'color' ? 'color' : type}
-        ref={ref}
-        {...props}
-      />
+      <Skeleton enable={skeleton}>
+        <input
+          className={classes}
+          type={variant === 'color' ? 'color' : type}
+          ref={ref}
+          {...props}
+        />
+      </Skeleton>
     )
   }
 )

@@ -1,9 +1,10 @@
 import { ReactNode, useEffect } from 'react';
 import { useApplication } from '../context/Application.context';
-import { useClasses } from '../decorator/useClasses';
 import { Children } from '../dto';
 import s from './styles/Banner.module.css';
 import { Button } from './Button';
+import { cn } from './utils';
+import { Skeleton } from './Skeleton';
 
 type BannerProps = Children & {
   className?: string | string[];
@@ -45,11 +46,11 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
 
   return (
     <div className={s.wrapper}>
-      <div className={useClasses(s.banner, className, loading ? s.loading : '')}>
+      <div className={cn(s.banner, s.loading, className)}>
         <h6>
-          {title}
-          {subtitle}
-          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' size='icon' /></div>}
+          {loading ? <Skeleton variant='button' width='long' height={24} /> : title}
+          {subtitle ? (loading ? <Skeleton height={24} /> : subtitle) : null}
+          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' /></div>}
         </h6>
         {children}
       </div>

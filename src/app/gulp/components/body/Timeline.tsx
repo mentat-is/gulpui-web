@@ -2,14 +2,13 @@ import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'r
 import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
-import { Ruler } from './Ruler';
 import { DragDealer } from '@/class/dragDealer.class';
 import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
@@ -19,7 +18,7 @@ import { Input } from '@/ui/Input';
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
   const [scrollX, setScrollX] = useState<number>(0);
-  const [scrollY, setScrollY] = useState<number>(0);
+  const [scrollY, setScrollY] = useState<number>(-26);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
@@ -48,6 +47,7 @@ export function Timeline() {
     const diff = scrollX + event.clientX - rect.left;
     const left = Math.round(diff * (newScale * timeline.current.clientWidth) / width - diff);
 
+    if ((newScale < app.timeline.scale && newScale < 0.01) || (newScale > app.timeline.scale && newScale > 9999999)) return;
     Info.setTimelineScale(newScale);
     setScrollX(scrollX => scrollX + left);
   }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);
@@ -136,11 +136,8 @@ export function Timeline() {
 
     if (app.timeline.target && (key === 'd' || key === 'a')) {
       event.preventDefault();
-      const delta = Number(key === 'a') || -1;
-      const events = File.events(app, app.timeline.target._uuid);
-      const index = events.findIndex(evevt => evevt._id === app.timeline.target!._id) + delta
-
-      spawnDialog(<DisplayEventDialog event={events[index] ?? app.timeline.target} />)
+      const delta = Number(key === 'a') ? 1 : -1;
+      Info.setTimelineTarget(delta);
     }
   }, [app.timeline.target, spawnDialog]);
 
@@ -178,7 +175,6 @@ export function Timeline() {
       onContextMenu={handleContextMenu}
       ref={timeline}
     >
-      <Ruler scrollX={scrollX} />
       <div className={s.content} id="timeline_content">
         <ContextMenu>
           <ContextMenuTrigger>

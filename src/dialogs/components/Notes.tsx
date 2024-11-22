@@ -19,13 +19,19 @@ export function Notes({ notes }: NotesProps) {
     setLoading(false);
   }
 
+  if (!notes.length)
+    return null;
+
   return (
-    <div className={s.notes}>
-      {notes.map(note => (
-        <Card key={note.id}>
-          <NoteContent loading={loading} deleteNote={() => deleteNote(note)} note={note} />
-        </Card>
-      ))}
-    </div>
+    <Card >
+      <h6>Notes</h6>
+      <div className={s.notes}>
+        {notes.map(note => (
+          <Card key={note.id}>
+            <NoteContent loading={loading} deleteNote={() => deleteNote(note)} note={note} />
+          </Card>
+        ))}
+      </div>
+    </Card>
   )
 }

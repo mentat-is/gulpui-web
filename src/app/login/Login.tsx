@@ -2,11 +2,8 @@ import { useEffect, useState } from "react";
 import Cookies from "universal-cookie";
 import s from './Login.module.css';
 import { useApplication } from "@/context/Application.context";
-import { parseTokensFromCookies } from '@/ui/utils'
-import { Page } from "@/components/Page";
 import { Card } from "@/ui/Card";
-import { Session, Sessions } from "@/dto/Session.dto";
-import { Index } from "@/class/Info";
+import { Index, Pattern } from "@/class/Info";
 import { toast } from "sonner";
 import { Login, λOperation } from "@/dto";
 import React from "react";
@@ -14,43 +11,20 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Button } from "@/ui/Button";
 import { λIndex } from "@/dto/Index.dto";
-import { Icon } from "@/ui/Icon";
-import { Banner } from "@/ui/Banner";
 import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
+import { Logger } from "@/dto/Logger.class";
+import { Stack } from "@/ui/Stack";
+import { GlyphMap } from "@/dto/Glyph.dto";
+import { GeneralSettings } from "@/components/GeneralSettings";
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
 
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
-  const cookie = new Cookies();
-  const [sessions, setSessions] = useState<Sessions>(parseTokensFromCookies(cookie.get('sessions')));
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingSession, setLoadingSession] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!app.general.token || !app.general.server || !Index.selected(app)) return;
-
-    cookie.set('last_used_server', app.general.server);
-
-    !sessions.find(session => session.token === app.general.token) && sessions.push({
-      token: app.general.token,
-      server: app.general.server,
-      expires: app.general.expires!,
-      user_id: app.general.user_id
-    })
-
-    cookie.set('sessions', sessions);
-  }, [app.general.token, app.general.server, app.general.expires, app.target.indexes]);
-
-  useEffect(() => {
-    if (sessions.some(s => s.expires < Date.now())) {
-      const newSessions = sessions.filter(s => s.expires > Date.now());
-      cookie.set('sessions', newSessions);
-      setSessions(newSessions);
-    }
-  }, [sessions]);
+  const cookie = new Cookies();
 
   // AUTH
 
@@ -61,7 +35,7 @@ export function LoginPage() {
     ? removeOverload(str.slice(0, -1))
     : str;
 
-    const validate = (str: string): string | void => /^(https?:\/\/)(((\d{1,3}\.){3}\d{1,3})|([\w-]+\.)+[\w-]+)(\/[\w-./?%&=]*)?$/.test(str)
+    const validate = (str: string): string | void => !Pattern.Server.test(str)
       ? (() => { toast('Server URL didn`t match pattern') })()
       : removeOverload(str);
 
@@ -80,6 +54,14 @@ export function LoginPage() {
       }
     }).then((res) => {
       if (res.isSuccess()) {
+        Logger.log(`User has been authentificated with next credentials:`, LoginPage.name)
+        Logger.log({
+          username: app.general.username,
+          password: app.general.password,
+          token: res.data.token,
+          user_id: res.data.user_id,
+          expires: res.data.time_expire
+        }, LoginPage.name)
         Info.setToken(res.data.token);
         Info.setUserId(res.data.user_id);
         Info.setExpire(res.data.time_expire);
@@ -116,16 +98,16 @@ export function LoginPage() {
   
   const handleIndexSelection = async (index: λIndex) => {
     setLoading(true);
-    Info.index_select(index)
+    Info.index_select(index);
   };
   /** 
    * При выборе индекса фетчим {λOperation[], λContext[], λPlugin[]} и перехоим на третий этап
   */
   useEffect(() => {
-    if (!Index.selected(app)) return 
+    if (!Index.selected(app)) return;
     
     Info.operations_reload().then(() => {
-      setStage(2)
+      setStage(2) 
       setLoading(false);
     });
   }, [app.target.indexes]);
@@ -160,62 +142,20 @@ export function LoginPage() {
   useEffect(() => {
     if (stage < 3) return;
 
-    Info.operations_request().then(operations => {
-      setLoading(false)
-      const result = Info.operations_update(operations);
+    spawnBanner(<SelectFilesBanner />);
 
-      spawnBanner(result.contexts.length && result.plugins.length && result.files.length
-        ? <SelectFilesBanner />
-        : <UploadBanner />
-      );
-    });
+    Info.query_operations();
   }, [stage]);
 
-  const spawnBannerToRequestDelete = (operation: λOperation) => {
-    spawnBanner(
-      <Banner title={`Delete operation -> ${operation.name}`}>
-        <Button
-          loading={loading}
-          onClick={() => deleteOperation(operation.id)}
-          variant='destructive'
-          img='Trash2'>Yes, delete!</Button>
-      </Banner>
-    )
-  }
-
-  const handleSessionButtonClick = async ({ server, token, ...session }: Session) => {
-    setLoadingSession(token);
-    const response = await api('/version', { server, token });
-
-    if (response.isSuccess()) {
-      Info.setToken(token);
-      Info.setServer(server);
-      Info.setExpire(session.expires);
-      Info.setUserId(session.user_id);
-      setStage(1);
-    } else {
-      toast('Session expired');
-      deleteSession({...session, server, token });
-    }
-    setLoadingSession(null);
-  }
-
-  const deleteSession = (session: Session) => {
-    setSessions((sessions) => {
-      const newSessions = sessions.filter(s => s.token !== session.token);
-      new Cookies().set('sessions', newSessions);
-      return newSessions
-    });
-  }
-  
   return (
-    <Page options={{ center: true }} className={s.page}>
+    <div className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
-          <img className={s.logo} src='/gulp-no-text.svg' alt='' />
+          <img src='/favicon.svg' alt='' />
           Gulp
           <i>Web Client</i>
         </div>
+        <div className={s.content}>
         {stage === 0
           ? (
             <React.Fragment>
@@ -231,41 +171,21 @@ export function LoginPage() {
                 value={app.general.username}
                 tabIndex={2}
                 onChange={e => Info.setUsername(e.currentTarget.value)} />
-              <Input
-                img='KeyRound'
-                placeholder="Password"
-                type='password'
-                value={app.general.password}
-                tabIndex={3}
-                onChange={e => Info.setPassword(e.currentTarget.value)} />
-            <Separator />
-            <div className={s.group}>
-              {!!sessions.length && <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant='outline' img='Container'>Previous instances</Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                  {sessions.map(session => (
-                    <Button
-                      key={session.token}
-                      variant='ghost'
-                      img='KeyRound'
-                      loading={session.token === loadingSession}
-                      disabled={!!loadingSession}
-                      onClick={() => handleSessionButtonClick(session)}>
-                        User {session.user_id} at {session.server}
-                    </Button>
-                ))}
-                </PopoverContent>
-              </Popover>}
-              <Button loading={loading}tabIndex ={4} onClick={login}>Log in</Button>
-            </div>
+              <Stack gap={12}>
+                <Input
+                  img='KeyRound'
+                  placeholder="Password"
+                  type='password'
+                  value={app.general.password}
+                  tabIndex={3}
+                  onChange={e => Info.setPassword(e.currentTarget.value)} />
+                <Button loading={loading} tabIndex={4} onClick={login}>Log in</Button>
+              </Stack>
           </React.Fragment>
           )
           : stage === 1
             ? (
               <div className={s.chooser}>
-                <p className={s.cluster}><Icon name='Combine' />Choose database index</p>
                 {app.target.indexes.map((index) => 
                   <Button
                     loading={loading}
@@ -279,20 +199,26 @@ export function LoginPage() {
             :  stage === 2 
               ? (
                 <div className={s.chooser}>
-                  <p className={s.cluster}><Icon name='Hexagon' />Choose operation node</p>
-                  {app.target.operations.map((operation) => (
+                  {app.target.operations.map((operation, i) => (
                     <div className={s.unit_group} key={operation.id}>
-                      <Button onClick={() => handleOperationSelect(operation)} img='Workflow'>{operation.name}</Button>
-                      <Button
-                        size='icon'
-                        onClick={() => spawnBannerToRequestDelete(operation)}
-                        variant='destructive'
-                        img='Trash2' />
-                      </div>
+                      <ContextMenu>
+                        <ContextMenuTrigger style={{ width: '100%' }}>
+                          <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'ScanSearch'}>{operation.name}</Button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent>
+                          <ContextMenuSub>
+                            <ContextMenuSubTrigger img='Trash2'>Delete!</ContextMenuSubTrigger>
+                            <ContextMenuSubContent>
+                              <ContextMenuItem onClick={() => deleteOperation(operation.id)} img='Trash2'>Yes, delete operation {operation.name}!</ContextMenuItem>
+                            </ContextMenuSubContent>
+                          </ContextMenuSub>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                    </div>
                   ))}
                   <Separator />
                   <Button
-                    variant='outline'
+                    variant='glass'
                     img='Plus'
                     style={{ width: '100%' }}
                     onClick={() => spawnBanner(<CreateOperationBanner />)}>Create new operation</Button>
@@ -308,7 +234,9 @@ export function LoginPage() {
                 </>
               )
         }
+        </div>
       </Card>
-    </Page>
+      <GeneralSettings />
+    </div>
   )
 }

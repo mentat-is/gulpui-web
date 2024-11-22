@@ -6,7 +6,7 @@
   padding: var(--card-padding);
   display: flex;
   background: var(--geist-background);
-  backdrop-filter: blur(6px) brightness(0.15);
+  backdrop-filter: brightness(0);
   flex-direction: column;
   gap: var(--card-gap);
   height: calc(100% - 64px);

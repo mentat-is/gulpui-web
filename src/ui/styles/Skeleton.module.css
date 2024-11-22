@@ -1,0 +1,75 @@
+.skeleton {
+  background-color: var(--accent-5);
+  animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
+  flex-shrink: 0;
+  pointer-events: none;
+}
+.skeleton * {
+  opacity: 0;
+}
+.defaultWidth {
+  width: 128px;
+}
+.defaultHeight {
+  height: 36px;
+}
+.defaultBorder,
+.border_s {
+  border-radius: var(--border-s);
+}
+.border_m {
+  border-radius: var(--border-m);
+}
+.border_l {
+  border-radius: var(--border-l);
+}
+.border_r {
+  border-radius: var(--round);
+}
+
+.avatar {
+  border-radius: var(--round);
+  height: 36px;
+  width: 36px;
+  min-height: 36px;
+  min-width: 36px;
+}
+
+.short {
+  width: 64px;
+}
+.long {
+  width: 256px;
+}
+.w_full {
+  width: 100%;
+}
+.low {
+  min-height: 24px;
+}
+.high {
+  min-height: 48px;
+}
+.h_full {
+  height: 100%;
+}
+
+.badge {
+  height: 30px;
+  width: 100px;
+  border-radius: var(--round);
+}
+
+.button {
+  min-height: 36px;
+  height: 36px;
+  min-width: 36px;
+  width: 36px;
+  border-radius: 6px;
+}
+
+@keyframes pulse {
+  50% {
+    background-color: var(--accent-2);
+  }
+}

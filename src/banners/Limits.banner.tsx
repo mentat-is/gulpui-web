@@ -1,67 +1,64 @@
 import s from './styles/LimitsBanner.module.css'
 import { useState } from "react";
 import { Banner } from "../ui/Banner";
-import { useLanguage } from "../context/Language.context";
 import { Button } from '../ui/Button';
 import { useApplication } from '../context/Application.context';
 import { eachDayOfInterval, eachMonthOfInterval, eachYearOfInterval, format } from 'date-fns';
-import { Switch } from '@/ui/Switch';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
 import { Separator } from '@/ui/Separator';
-import { cn } from '@/ui/utils';
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner';
+import { Card } from '@/ui/Card';
+import { Toggle } from '@/ui/Toggle';
 
 export function LimitsBanner() {
-  const { lang } = useLanguage();
   const { Info, destroyBanner, app } = useApplication();
   const [manual, setManual] = useState<boolean>(false);
+  const [min, setMin] = useState<number>(app.target.bucket.selected?.min || app.target.bucket.timestamp.min);
+  const [max, setMax] = useState<number>(app.target.bucket.selected?.max || app.target.bucket.timestamp.max);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const map = [
-    { text: lang.last.day, do: () => {
-        Info.setBucketOneDay();
-        destroyBanner()
-      }
-    },
-    { text: lang.last.week, do: () => {
-        Info.setBucketOneWeek();
-        destroyBanner()
-      }
-    },
-    { text: lang.last.month, do: () => {
-        Info.setBucketOneMonth();
-        destroyBanner()
-      }
-    },
-      { text: lang.last.full, do: () => {
-        Info.setBucketFullRange();
-        destroyBanner()
-      }
-    },
+    { text: 'Day', do: () => save(app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000) },
+    { text: 'Week', do: () => save(app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000) },
+    { text: 'Month', do: () => save(app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000) },
+    { text: 'Full range', do: () => save(app.target.bucket.timestamp.min) },
   ]
 
+  const save = async (_min?: number) => {
+    const range = { min: _min ?? min, max };
+
+    setMin(range.min);
+    setMax(range.max);
+
+    if (range) {
+      setLoading(true);
+      Info.setBucketSelected(range)
+
+      await Info.refetch({ range }).then(destroyBanner);
+    }
+  }
+
   return (
-    <Banner className={s.banner} title='Timeline'>
-      <div className={s.date_input_choose_option}>
-        <p className={cn(!manual && s.selected)}>Select from limits</p>
-        <Switch checked={manual} onCheckedChange={setManual} />
-        <p className={cn(manual && s.selected)}>ISO String</p>
-      </div>
-      <Separator />
-      <div className={s.wrapper}>
-        <span>Start:</span>
-        <DateSelection initialDate={app.target.bucket.selected.min} onDateChange={Info.setBucketSelectedStart} manual={manual} />
-      </div>
-      <div className={s.wrapper}>  
-        <span>End:</span>
-        <DateSelection initialDate={app.target.bucket.selected.max} onDateChange={Info.setBucketSelectedEnd} manual={manual} />
-      </div>
-      <Separator />
+    <Banner className={s.banner} title='Visibility range'>
+      <Toggle checked={manual} onCheckedChange={setManual} option={['Select from limits', 'ISO String']} />
+      <Card>
+        <div className={s.wrapper}>
+          <span>Start:</span>
+          <DateSelection initialDate={min} onDateChange={setMin} manual={manual} />
+        </div>
+        <Separator />
+        <div className={s.wrapper}>  
+          <span>End:</span>
+          <DateSelection initialDate={max} onDateChange={setMax} manual={manual} />
+        </div>
+      </Card>
       <div className={s.button_group}>
         {map.map((_: any, index) => (
           <Button variant='outline' onClick={_.do} key={index}>{_.text}</Button>
         ))}
-        <Button variant={'default'} img='Bookmark' onClick={destroyBanner}>Save</Button>
+        <hr style={{ opacity: 0, flex: 1 }} />
+        <Button style={{ justifySelf: 'flex-end' }} variant='default' img='CheckCheck' loading={loading} onClick={() => save()}>Apply</Button>
       </div>
     </Banner>
   ) 
@@ -118,7 +115,7 @@ export function DateSelection({ initialDate, onDateChange, manual }: { initialDa
   const years = eachYearOfInterval({
     start: new Date(app.target.bucket.timestamp.min),
     end: new Date(app.target.bucket.timestamp.max),
-  });
+  }).reverse();
 
   const months = eachMonthOfInterval({
     start: new Date(`${selectedDate.getFullYear()}-01-01`),

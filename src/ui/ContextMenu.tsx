@@ -2,8 +2,7 @@ import React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
 import { cn } from "./utils"
 import s from './styles/ContextMenu.module.css';
-import { λIcon } from './utils';
-import { Icon } from "./Icon";
+import { Icon } from "@impactium/icons";
 const ContextMenu = ContextMenuPrimitive.Root
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
@@ -20,7 +19,7 @@ const contextMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubTrigger> & {
     inset?: boolean
-    img?: λIcon
+    img?: Icon.Name
   }
 >(({ className, inset, img, children, ...props }, ref) => (
   <ContextMenuPrimitive.SubTrigger
@@ -75,7 +74,7 @@ const contextMenuItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
     inset?: boolean
-    img?: λIcon
+    img?: Icon.Name
   }
 >(({ className, img, children, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Item

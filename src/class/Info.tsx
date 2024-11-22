@@ -4,7 +4,7 @@ import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
 import { QueryOperations } from '@/dto/QueryOperations.dto';
-import { λEvent, λEventFormForCreateRequest } from '@/dto/ChunkEvent.dto';
+import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -13,17 +13,36 @@ import { λFile } from '@/dto/File.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
-import { generateUUID, Gradients } from '@/ui/utils';
+import { generateUUID, Gradients, λColor } from '@/ui/utils';
 import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
 import { ApplicationError } from '@/context/Application.context';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
+import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
+import { λGlyph } from '@/dto/λGlyph.dto';
+import { differenceInMonths } from 'date-fns';
+import { Logger, LoggerHandler } from '@/dto/Logger.class';
+import { Engine, Hardcode } from './Engine.dto';
+
+interface RefetchOptions {
+  uuids?: Arrayed<λFile['uuid']>;
+  hidden?: boolean;
+  range?: MinMax;
+}
 
 interface InfoProps {
   app: λApp,
   setInfo: React.Dispatch<React.SetStateAction<λApp>>, 
   api: Api
   timeline: React.RefObject<HTMLDivElement>;
+}
+
+interface QueryExternalProps {
+  operation_id: number;
+  plugin: λPlugin['name'];
+  server: string;
+  username: string;
+  password: string;
 }
 
 export class Info implements InfoProps {
@@ -44,9 +63,13 @@ export class Info implements InfoProps {
     this.timeline = timeline;
   }
 
-  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({ ...this.app.timeline.filtering_options, [Parser.useUUID(file)]: options}, 'timeline', 'filtering_options');
+  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({
+    ...this.app.timeline.filtering_options,
+    [Parser.useUUID(file)]:
+    options
+  }, 'timeline', 'filtering_options');
 
-  refetch = async (uuids: Arrayed<λFile['uuid']> = [], hidden?: boolean) => {
+  refetch = async ({ uuids = [], hidden, range }: RefetchOptions = {}) => {
     uuids = Parser.array(uuids);
 
     const operation = Operation.selected(this.app);
@@ -66,6 +89,7 @@ export class Info implements InfoProps {
 
         if (file) files.push(file);
         else {
+          Logger.error(`File with uuid ${uuid} not found in application data`, `${Info.name}.${this.refetch.name}`);
           toast('File not found in application data', {
             description: `See console for further details. UUID: ${uuid}`
           });
@@ -79,12 +103,16 @@ export class Info implements InfoProps {
 
     await this.links_reload();
 
-    await this.fetchBucket();
-    
-    files.forEach(file => {
-      if (!file) return;
+    await this.glyphs_reload();
 
-      this.api<any>('/query_raw', {
+    if (!hidden) {
+      this.deload(files.map(f => f.uuid));
+    }
+    
+    await Promise.all(files.map(async file => {
+      if (!this.app.target.bucket.selected && !range) return Logger.error(`${Info.name}.${this.refetch.name} for file ${file?.uuid}-${file?.uuid} has been executed, but was cancelled bacause range is ${typeof range} and ${typeof this.app.target.bucket.selected}`, Info.name);
+
+      return await this.api('/query_raw', {
         method: 'POST',
         data: {
           ws_id: this.app.general.ws_id,
@@ -94,7 +122,7 @@ export class Info implements InfoProps {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...Filter.body(this.app, file),
+          ...Filter.body(this.app, file, range),
           options: {
             search_after_loop: false,
             sort: {
@@ -106,14 +134,22 @@ export class Info implements InfoProps {
           }
         })
       });
-    });
+    }));
+  }
 
-    if (!hidden) {
-      this.deload(files.map(f => f.uuid));
-    }
+  cancel = async (r: μ.File) => {
+    Logger.log(`Request canselation has been requested for file ${File.uuid(this.app, r).name}`, Info.name);
+
+    return await this.api('/stats_cancel_request', {
+      method: 'PUT',
+      data: { r },
+      ignore: true
+    });
   }
 
   filters_cache = (file: λFile | μ.File) => {
+    Logger.log(`Caching has been requested for file ${File.uuid(this.app, file).name}`, Info.name);
+
     const uuid = Parser.useUUID(file) as μ.File;
     this.setInfoByKey({
       data: this.app.timeline.cache.data.set(uuid, this.app.target.events.get(uuid) || []),
@@ -155,6 +191,12 @@ export class Info implements InfoProps {
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
   setLoaded = (files: μ.File[]) => {
+    const message = files.length > 1
+      ? `Files: [${files.map(f => File.uuid(this.app, f).name).join(', ')}] has been fully loaded`
+      : `File: ${File.uuid(this.app, files[0])?.name} with uuid ${files[0]} has been fully loaded`;
+
+    Logger.log(message, Info.name);
+
     this.setInfoByKey(files, 'timeline', 'loaded');
 
     if (this.app.timeline.loaded.length === this.app.target.files.length) {
@@ -165,15 +207,34 @@ export class Info implements InfoProps {
 
   deload = (uuids: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !uuids.includes(_uuid))]);
 
-  render = () => this.setTimelineScale(this.app.timeline.scale + 0.000000001);
+  render = () => {
+    Logger.log(`Render requested`, Info.name);
+    this.setTimelineScale(this.app.timeline.scale + 0.000000001);
+  };
 
   // 🔥 INDEXES
-  index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => this.setInfoByKey(response.isSuccess() ? response.data : [], 'target', 'indexes'));
+  index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => {
+    this.app.target.indexes = response.data || [];
+    this.setInfoByKey(response.isSuccess()
+      ? response.data.length === 1 ? Index.select(this.app, response.data[0]) : response.data
+      : [],
+    'target', 'indexes');
+  });
 
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
   // 🔥 OPERATIONS
-  operations_reload = () => this.api<OperationsList>('/operation_list', { method: 'POST' }).then(response => response.isSuccess() && this.setInfoByKey(Operation.reload(response.data, this.app), 'target', 'operations'));
+  operations_reload = () => this.api<OperationsList>('/operation_list', {
+    method: 'POST'
+  }).then(response => {
+    if (response.isSuccess()) {
+      Logger.log(`API /operation_list has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
+      this.setInfoByKey(Operation.reload(response.data, this.app), 'target', 'operations');
+    } else {
+      Logger.error(response, Info.name);
+    }
+  });
+
   operations_select = (operation: λOperation) => this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations');
   
   operations_set = (operations: λOperation[]) => this.setInfoByKey(Operation.reload(operations, this.app), 'target', 'operations');
@@ -214,7 +275,10 @@ export class Info implements InfoProps {
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (uuid: μ.File) => this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events');
+  events_reset_in_file = (uuid: μ.File) => {
+    Logger.log(`All events has been erased from file with uuid ${uuid}`, `${Info.name}.${this.events_reset_in_file.name}`);
+    this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events')
+  };
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
@@ -238,7 +302,7 @@ export class Info implements InfoProps {
         operation_id.push(operation.id);
     });
 
-    this.api<ResponseBase<RawNote[]>>('/note_list', {
+    const response = await this.api<ResponseBase<RawNote[]>>('/note_list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -249,9 +313,19 @@ export class Info implements InfoProps {
         context,
         operation_id
       })
-    }).then(res => res.isSuccess() ? this.notes_set(Note.parse(this.app, res.data)) : toast('Error fetching notes', {
-      description: (res as unknown as ResponseError).data.exception.name
-    }));
+    });
+
+    if (response.isSuccess()) {
+      this.notes_set(Note.parse(this.app, response.data))
+    } else {
+      const error = (response as unknown as ResponseError).data.exception.name;
+      Logger.error(`Notes fetch was failed. Reason:
+${error}`, Info.name);
+
+      return;
+    };
+
+    Logger.log(`Notes has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
   }
 
   notes_delete = (note: λNote) => this.api<ResponseBase<boolean>>('/note_delete', {
@@ -263,7 +337,7 @@ export class Info implements InfoProps {
   }).then(async (res) => {
     if (res.isSuccess()) {
       await this.notes_reload();
-      toast('Note deleated successfully');
+      toast('Note deleted successfully');
     } else {
       toast((res as unknown as ResponseError).data.exception.name);
     }
@@ -288,7 +362,7 @@ export class Info implements InfoProps {
         operation_id.push(operation.id);
     });
     
-    await this.api<ResponseBase<RawLink[]>>('/link_list', {
+    const response = await this.api<ResponseBase<RawLink[]>>('/link_list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -299,10 +373,20 @@ export class Info implements InfoProps {
         context,
         operation_id
       })
-    }).then(res => res.isSuccess() ? this.links_set(res.data) : toast('Error fetching links', {
-      description: (res as unknown as ResponseError).data.exception.name
-    }));
-}
+    });
+
+    if (response.isSuccess()) {
+      this.links_set(response.data)
+    } else {
+      const error = (response as unknown as ResponseError).data.exception.name;
+      Logger.error(`Links fetch was failed. Reason:
+${error}`, Info.name);
+
+      return;
+    };
+
+    Logger.log(`Links has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
+  }
 
   links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
 
@@ -321,15 +405,58 @@ export class Info implements InfoProps {
       });
   });
 
-  bucket_increase_fetched = (fetched: number) => this.setInfoByKey({...this.app.target.bucket, fetched: this.app.target.bucket.fetched + fetched}, 'target', 'bucket');
+  glyphs_reload = async () => {
+    const parse = (glyphs: λGlyph[]) => {
+      // Все иконки внутри приложения
+      const values = Object.values(GlyphMap);
 
-  operations_request = (): Promise<RawOperation[]> => this.api<QueryOperations>('/query_operations').then(res => res.data || []);
+      values.forEach(async (value, id) => {
+        // Проверяем, есть ли такая иконка на бекенде
+        const exist = glyphs.find(g => g.name === value || g.id === id);
 
-  operations_update = (rawOperations: RawOperation[]) => {
+        if (exist) return;
+
+        const formData = new FormData();
+        formData.append('glyph', new Blob([""], { type: 'image/png' }));
+
+        // Если нет, то создаём
+        await this.api<ResponseBase<unknown>>('/glyph_create', {
+          method: 'POST',
+          data: {
+            name: value,
+          },
+          body: formData
+        });
+
+        Logger.log(`Glyph ${value} was copied to gulp-backend`, Info.name)
+      });
+
+      if (glyphs.length > values.length) {
+        glyphs.forEach(glyph => {
+          if (!values.map(v => v.toString()).includes(glyph.name)) {
+            CustomGlyphs[glyph.id] = glyph.img;
+          }
+        });
+      }
+
+      Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
+      this.setInfoByKey(glyphs, 'target', 'glyphs');
+    }
+
+    await this.api<ResponseBase<λGlyph[]>>('/glyph_list', {
+      method: 'POST',
+    }).then(res => res.isSuccess() ? parse(res.data) : toast('Error fetching glyphs', {
+      description: (res as unknown as ResponseError).data.exception.name
+    }));
+  }
+
+  query_operations = async () => {
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const plugins: λPlugin[] = [];
     const files: λFile[] = [];
+
+    const rawOperations =  await this.api<QueryOperations>('/query_operations').then(res => res.data || []);
 
     rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
       const exist = Operation.findByNameAndId(this.app, { id, name });
@@ -372,8 +499,8 @@ export class Info implements InfoProps {
                     plugin: rawPlugin.name,
                     _uuid: p_uuid,
                     offset: 0,
-                    color: 'thermal',
-                    engine: 'default',
+                    color: this.app.general.settings.color ?? 'thermal',
+                    engine: this.app.general.settings.engine ?? 'default',
                     uuid: f_uuid
                   }
                   files.push(file)
@@ -391,96 +518,107 @@ export class Info implements InfoProps {
       operations.push(operation);
     });
 
-    const min = Math.min(...files.map(file => file.timestamp.min));
-    const max = Math.max(...files.map(file => file.timestamp.max));
-    
+    const bucket: Bucket = await this.query_max_min({ ignore: true }) || {
+      total: files.map(f => f.doc_count).reduce((acc, n) => acc + n, 0),
+      fetched: 0,
+      event_code: {
+        min: Math.min(...files.map(f => f.event.min)),
+        max: Math.min(...files.map(f => f.event.max)),
+      },
+      timestamp: {
+        min: Math.min(...files.map(f => f.timestamp.min)),
+        max: Math.min(...files.map(f => f.timestamp.max)),
+      },
+      selected: null
+    }
+
+    bucket.selected = this.app.target.bucket.selected
+    ? this.app.target.bucket.selected
+    : differenceInMonths(bucket.timestamp.max, bucket.timestamp.min) > 6
+      ? null
+      : bucket.timestamp;
+
     this.setInfo(app => ({
       ...app,
       ...{
         target: {
           ...app.target,
+          bucket,
           operations,
           contexts,
           plugins,
-          files,
-          bucket: {
-            ...app.target.bucket,
-            timestamp: {
-              min,
-              max
-            },
-            selected: {
-              min,
-              max
-            },
-            total: files.map(file => file.doc_count).reduce((acc, curr) => acc + curr, 0)
-          }
+          files
         }
       }
     }));
 
+    Logger.log(`/query_operations has been successfully fetched. Total data:
+Operations: ${operations.length}
+Contexts: ${contexts.length}
+Plugins: ${plugins.length}
+Files: ${files.length}`, Info.name);
+
     return { operations, contexts, plugins, files };
-  };
-  
-  // Timestamp - 24 hours
-  setBucketOneDay = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.max - 24 * 60 * 60 * 1000
-    }
-  });
-  // Timestamp - 7 days
-  setBucketOneWeek = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.max - 7 * 24 * 60 * 60 * 1000
-    }
-  });
-  // Timestamp - 30 days
-  setBucketOneMonth = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.max - 30 * 24 * 60 * 60 * 1000
-    }
-  });
-  // Timestamp - Full range
-  setBucketFullRange = () => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: {
-      max: this.app.target.bucket!.timestamp.max,
-      min: this.app.target.bucket!.timestamp.min + 1
-    }
-  });
-  // Timestamp - Full range
-  setBucketSelectedStart = (min: number) => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: { ...this.app.target.bucket.selected, min }
-  });
-  setBucketSelectedEnd = (max: number) => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: { ...this.app.target.bucket.selected, max}
-  });
-  
-  setBucketSelected = (minMax: MinMax) => this.setBucket({
-    ...this.app.target.bucket!,
-    selected: minMax
-  });
-
-  syncBucket = () => {
-    const files = File.selected(this.app);
-
-    const min = Math.min(...files.map(file => file.timestamp.min));
-    const max = Math.min(...files.map(file => file.timestamp.max));
-
-    this.setBucketSelected({ min, max });
   }
 
-  private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
+  query_max_min = ({ ignore }: { ignore?: boolean}) => this.api<QueryMaxMin>('/query_max_min', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8'
+    },
+    body: JSON.stringify({
+      operation_id: [Operation.selected(this.app)?.id]
+    })
+  }).then(response => {
+    const fulfilled = Boolean(response.data.buckets.length);
+    const base = response.data.buckets[0]?.['*'];
 
-  getBucketLocals = () => this.app.target.bucket.selected;
+    if (!base) {
+      return
+    }
+
+    const timestamp: MinMax = {
+      max: base['max_@timestamp'],
+      min: base['min_@timestamp'],
+    }
+    const selected = this.app.target.bucket.selected
+      ? this.app.target.bucket.selected
+      : differenceInMonths(timestamp.max, timestamp.min) > 6
+        ? null
+        : timestamp;
+
+    const bucket: Bucket = {
+      total: response.data.total,
+      fetched: this.app.target.bucket.fetched || 0,
+      event_code: {
+        max: fulfilled ? base['max_event.code'] : 1,
+        min: fulfilled ? base['min_event.code'] : 0
+      },
+      timestamp,
+      selected
+    };
+
+    if (!ignore) {
+      this.setBucket(bucket);
+    }
+
+    return bucket;
+  });
+
+  setBucketSelected = (range: MinMax) => {
+    LoggerHandler.bucketSelection(range, this.app.target.bucket.timestamp);
+
+    this.setBucket({
+      ...this.app.target.bucket,
+      selected: {
+        min: Math.max(range.min, 1),
+        max: range.max
+      }
+    });
+    return range;
+  };
+
+  private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
   
   // Methods to set general information (server, username, password, token)
   setServer = (server: string) => this.setInfoByKey(server, 'general', 'server');
@@ -492,46 +630,48 @@ export class Info implements InfoProps {
   
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
-  setTimelineTarget = (event?: λEvent | null) => this.setInfoByKey(event, 'timeline', 'target');
+  setTimelineTarget = (event?: λEvent | null | 1 | -1) => {
+    if (typeof event === 'number' && this.app.timeline.target) {
+      const events = File.events(this.app, this.app.timeline.target._uuid);
+      const index = events.findIndex(event => event._id === this.app.timeline.target!._id) + event;
+      event = events[index];
+    }
+
+    if (!event)
+      return Logger.warn(`Executed ${this.setTimelineTarget.name} with event: ${typeof event}`, Info.name);
+
+    this.setInfoByKey(event, 'timeline', 'target');
+  }
+
   setTimelineFilter = (filter: string) => this.setInfoByKey(filter, 'timeline', 'filter');
   
   increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
   
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
 
-  fetchBucket = () => this.api<QueryMaxMin>('/query_max_min', {
+  query_external = ({
+    operation_id,
+    server,
+    username,
+    password
+  }: QueryExternalProps) => this.api('/query_external', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8'
+    data: {
+      operation_id,
+      client_id: this.app.general.user_id,
+      ws_id: this.app.general.ws_id,
+      plugin: ''
     },
     body: JSON.stringify({
-      operation_id: [Operation.selected(this.app)?.id]
-    })
-  }).then(response => {
-    if (response.isSuccess()) {
-      const fulfilled = Boolean(response.data.buckets.length);
-
-      if (!response.data.buckets[0]['*']['max_event.code']) {
-        return this.syncBucket();
-      }
-
-      this.setBucket({
-        total: response.data.total,
-        fetched: this.app.target.bucket?.fetched || 0,
-        event_code: {
-          max: fulfilled ? response.data.buckets[0]['*']['max_event.code'] : 1,
-          min: fulfilled ? response.data.buckets[0]['*']['min_event.code'] : 0
-        },
-        timestamp: {
-          max: fulfilled ? response.data.buckets[0]['*']['max_@timestamp'] : Date.now(),
-          min: fulfilled ? response.data.buckets[0]['*']['min_@timestamp'] : Date.now(),
-        },
-        selected: {
-          max: fulfilled ? response.data.buckets[0]['*']['max_@timestamp'] : Date.now(),
-          min: fulfilled ? response.data.buckets[0]['*']['min_@timestamp'] : Date.now()-1
+      plugin_params: {
+        extra: {
+          index: 0,
+          url: server,
+          username,
+          password, 
         }
-      });
-    }
+      }
+    })
   });
 
   filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
@@ -658,6 +798,20 @@ export class Info implements InfoProps {
   get width(): number {
     return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
   }
+
+  setDefaultEngine = (engine: Engine.List) => {
+    this.setInfoByKey({
+      ...this.app.general.settings,
+      engine
+    }, 'general', 'settings');
+  }
+
+  setDefaultColor = (color: Gradients) => {
+    this.setInfoByKey({
+      ...this.app.general.settings,
+      color
+    }, 'general', 'settings');
+  }
   
   // Private method to update a specific key in the application state
   private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(value: any, section: K, key: S, self: boolean = true) => {
@@ -776,7 +930,7 @@ export class File {
 
   public static findByNameAndContextName = (app: λApp, filename: λFile['name'], context: λContext['name']) => app.target.files.find(f => f.name === filename && Context.plugins(app, context).some(p => p.uuid === f._uuid))!;
 
-  public static uuid = (use: λApp | λFile[], file: λFile | μ.File) => Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))!;
+  public static uuid = (use: λApp | λFile[], file: λFile | μ.File) => typeof file === 'string' ? Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))! : file;
 
   public static unselect = (use: λApp | λFile[], unselected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(unselected).find(s => f.uuid === Parser.useUUID(s)) ? File._unselect(f) : f);
 
@@ -817,7 +971,7 @@ export type λFilter = {
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
 
-  public static base = (app: λApp, file: λFile) => {
+  public static base = (app: λApp, file: λFile, range?: MinMax) => {
     const context = Context.findByPugin(app, file._uuid);
 
     if (!context) {
@@ -825,11 +979,11 @@ export class Filter {
     }
 
     //eslint-disable-next-line
-    return `(operation_id:${context.operation.id} AND (gulp.context: \"${context.name}\") AND gulp.source.file:"${file.name}" AND @timestamp:>=${file.timestamp.min} AND @timestamp:<=${file.timestamp.max})`
+    return `(operation_id:${context.operation.id} AND (gulp.context: \"${context.name}\") AND gulp.source.file:"${file.name}" AND @timestamp:>=${Math.max(file.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(file.timestamp.max, (range?.max || Infinity))})`
   }
 
-  public static parse(app: λApp, file: λFile) {
-    const base = Filter.base(app, file);
+  public static parse(app: λApp, file: λFile, range?: MinMax) {
+    const base = Filter.base(app, file, range);
     
     const query = Filter.query(app, file);
 
@@ -869,13 +1023,13 @@ export class Filter {
 
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
-  static body = (app: λApp, file: λFile) => ({
+  static body = (app: λApp, file: λFile, range?: MinMax) => ({
     query_raw: {
       bool: {
         must: [
           {
             query_string: {
-              query: Filter.parse(app, file),
+              query: Filter.parse(app, file, range),
               analyze_wildcard: true
             }
           }
@@ -923,7 +1077,7 @@ export class Event {
       result.push({
         _id: e.id,
         operation_id: e.operation_id,
-        timestamp: e['@timestamp'],
+        timestamp: e['@timestamp'] as Hardcode.Timestamp,
         file: e.src_file,
         context: e.context,
         event: {
@@ -956,6 +1110,10 @@ export class Note {
       ...n,
       file: n.src_file,
       events: Event.parse(app, n),
+      data: {
+        ...n.data,
+        color: λColor['name -> hex'](n.data.color)
+      },
       _uuid: File.findByNameAndContextName(app, n.src_file, n.context).uuid
     }
     return note;
@@ -974,32 +1132,18 @@ export class Note {
 
 export class Link {
   public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
-    const events: λEvent['_id'][] = [];
+    const seenIds = new Set<λRawEventMinimized['id']>();
+    l.events = [...(l.data.events || []), ...l.events].filter(e => Object.values(e).every(v => !!v) && !seenIds.has(e.id) && seenIds.add(e.id));
 
-    if (!events.includes(l.data.src))
-      events.push(l.data.src);
-
-    if (l.data.events?.length) {
-      events.push(...l.data.events.map(e => e.id).filter(e => !events.includes(e)));
-    }
-
-    if (l.events) {
-      l.events.forEach(e => {
-        if (!events.includes(e.id)) events.push(e.id);
-      })
-    }
-
-    l.events = Event.findById(app, events).map(e => ({
-      '@timestamp': e.timestamp,
-      context: e.context,
-      id: e._id,
-      operation_id: e.operation_id,
-      src_file: e.file
-    }));
+    delete l.data.events;
 
     return {
       ...l,
       file: l.src_file,
+      data: {
+        ...l.data,
+        color: λColor['name -> hex'](l.data.color)
+      },
       events: Event.parse(app, l),
       _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
     }
@@ -1059,4 +1203,10 @@ export namespace μ {
   export type Context = UUID & {
     readonly [Context]: unique symbol;
   };
+}
+
+export const Pattern = {
+  Server: new RegExp(/https?:\/\/(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})?(:\d+)?(\/[^\s]*)?/),
+  Username: /^[\s\S]{3,48}$/,
+  Password: /^[\s\S]{3,48}$/
 }

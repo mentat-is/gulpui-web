@@ -5,8 +5,8 @@ import { useApplication } from '@/context/Application.context';
 import { formatBytes } from '@/ui/utils';
 import { Dialog } from '@/ui/Dialog';
 import { useEffect, useRef, useState } from 'react';
-import { DisplayGroupDialog } from '@/dialogs/DisplayGroupDialog';
-import { DisplayEventDialog } from '@/dialogs/DisplayEventDialog';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { λNote } from '@/dto/Note.dto';
 import ReactDOM from 'react-dom';
 import { NotesWindow } from '@/components/NotesWindow';
@@ -15,6 +15,7 @@ import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
+import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog } = useApplication();
@@ -82,12 +83,26 @@ export function MenuDialog() {
     }
   };
 
+  const exportCanvasAsImage = () => {
+    const canvas = document.body.querySelector('#canvas') as HTMLCanvasElement | null;
+
+    if (canvas) {
+      const url = canvas.toDataURL('image/png');
+    
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `gulp-canvas_${Date.now()}`;
+      
+      link.click();
+      link.remove();
+    }
+  }
 
   return (
-    <Dialog title='Menu' className={s.menu}>
+    <Dialog title='Menu' className={s.menu} defaultSize={30}>
       <div className={s.stats}>
         <Button img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
-        <Button img='Upload' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>
+        <Button img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>
       </div>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='Wrench' onClick={() => spawnBanner(<SelectFilesBanner />)}>Select Files</Button>
@@ -97,6 +112,10 @@ export function MenuDialog() {
       <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
+      <Separator color='var(--accent-5)' />
+      <Button variant='outline' img='FunctionPython' onClick={() => spawnBanner(<QueryExternalBanner />)}>Query external resourse</Button>
+      <Separator color='var(--accent-5)' />
+      <Button variant='outline' img='Image' onClick={exportCanvasAsImage}>Export canvas as image</Button>
       <div className={s.separator} />
       <div className={s.stats}>
         <Unit type='downstream' num={app.transfered?.down || 0} />

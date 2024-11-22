@@ -92,7 +92,7 @@
   --filter-to-white: brightness(100);
   --filter-to-e8e8e8: brightness(0.58);
 
-  --ring: 0 0 0 1px var(--white), 0 0 0 4px hsla(0, 0%, 100%, .24);
+  --ring: 0 0 0 1px var(--white), 0 0 0 2px hsla(0, 0%, 100%, .24);
 }
 
 *::-webkit-scrollbar {
@@ -108,15 +108,15 @@
   overflow: hidden;
 }
 
-html {
-  background: var(--gray16);
+html, body {
+  background: var(--gray16) !important;
 }
 
 img {
   -webkit-user-drag: none;
 }
 
-* {  
+*:not(svg, path, g) {  
   user-select: none;
   -webkit-user-select: none;
   color: var(--text-white);
@@ -131,6 +131,9 @@ img {
   padding: 0;
   margin: 0;
   transition: none;
+}
+svg {
+  color: inherit !important;
 }
 
 html, body, div, span, applet, object, iframe,
@@ -183,14 +186,14 @@ table {
 }
 header {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(1, 1fr);
   gap: var(--p4);
   height: 64px;
   position: fixed;
   top: 0;
   z-index: 3;
-  background: var(--accent-1);
+  background: var(--soft-black);
   width: 100%;
   padding: var(--p2) var(--p4);
   border-bottom: 1px solid var(--accent-3);

@@ -1,24 +1,25 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import { useApplication } from "@/context/Application.context";
-import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from "@/dto/ChunkEvent.dto";
-import { ResponseBase } from "@/dto/ResponseBase.dto";
-import { Dialog } from "@/ui/Dialog";
-import { SymmetricSvg } from "@/ui/SymmetricSvg";
-import { useCallback, useEffect, useState } from "react";
+import { useApplication } from '@/context/Application.context';
+import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from '@/dto/ChunkEvent.dto';
+import { ResponseBase } from '@/dto/ResponseBase.dto';
+import { Dialog } from '@/ui/Dialog';
+import { SymmetricSvg } from '@/ui/SymmetricSvg';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
-import { XMLTree } from "@/ui/XMLTree";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { convertXML } from 'simple-xml-to-json';
-import { cn, copy, λIcon } from "@/ui/utils";
-import { Button } from "@/ui/Button";
-import { CreateNoteBanner } from "@/banners/CreateNoteBanner";
+import { cn, copy } from '@/ui/utils';
+import { Button } from '@/ui/Button';
+import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 import { File, Note, Plugin } from '@/class/Info';
-import { Separator } from "@/ui/Separator";
-import { Notes } from "./components/Notes";
-import { λNote } from "@/dto/Note.dto";
-import { CreateLinkBanner } from "@/banners/CreateLinkBanner";
-import { Icon } from "@/ui/Icon";
+import { Notes } from './components/Notes';
+import { λNote } from '@/dto/Note.dto';
+import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
+import { Icon } from '@impactium/icons';
+import { Stack } from '@/ui/Stack';
+import { ChadNumber, Skeleton } from '@/ui/Skeleton';
+import { Hardcode } from '@/class/Engine.dto';
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -80,51 +81,52 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event]);
 
   const reloadDetailedChunkEvent = () => {
+    const startTime = Date.now();
+  
     api<ResponseBase<RawDetailedChunkEvent>>('/query_single_event', {
       data: {
         gulp_id: event._id
       }
     }).then(res => {
+      const elapsedTime = Date.now() - startTime;
+      const delay = Math.max(1500 - elapsedTime, 0);
+  
       if (res.isSuccess()) {
-        setRawJSON(JSON.stringify(res.data, null, 4));
-        setDetailedChunkEvent({
-          operation: res.data.operation,
-          agent: {
-            type: res.data["agent.type"],
-            id: res.data["agent.id"]
-          },
-          event: {
-            code: res.data["event.code"],
-            duration: res.data["event.duration"],
-            id: res.data["event.id"],
-            hash: res.data["event.hash"],
-            category: res.data["event.category"],
-            original: res.data["event.original"]
-          },
-          level: res.data["log.level"],
-          _id: res.data._id,
-          operation_id: res.data.operation_id,
-          timestamp: res.data["@timestamp"],
-          file: res.data["gulp.source.file"],
-          context: res.data["gulp.context"],
-          _uuid: event._uuid
-        })
+        setTimeout(() => {
+          setRawJSON(JSON.stringify(res.data, null, 4));
+          setDetailedChunkEvent({
+            operation: res.data.operation,
+            agent: {
+              type: res.data['agent.type'],
+              id: res.data['agent.id']
+            },
+            event: {
+              code: res.data['event.code'],
+              duration: res.data['event.duration'],
+              id: res.data['event.id'],
+              hash: res.data['event.hash'],
+              category: res.data['event.category'],
+              original: res.data['event.original']
+            },
+            level: res.data['log.level'],
+            _id: res.data._id,
+            operation_id: res.data.operation_id,
+            timestamp: res.data['@timestamp'] as Hardcode.Timestamp,
+            file: res.data['gulp.source.file'],
+            context: res.data['gulp.context'],
+            _uuid: event._uuid
+          });
+        }, delay);
       }
     });
-  }
+  };  
 
-  const iconsMap: Record<string, λIcon> = {
-    Provider: 'Waypoints',
-    Level: 'Layers2',
-    Version: 'GitBranch',
-    EventId: 'Hexagon',
-    EventID: 'Hexagon',
-    Task: 'StickyNote',
-    Opcode: 'Binary',
-    Keywords: 'Key',
-    Channel: 'RailSymbol',
-    Computer: 'HardDrive',
-    TimeCreated: 'AlarmClockPlus'
+  const iconsMap: Record<string, Icon.Name> = {
+    Provider: 'Link',
+    Computer: 'Server',
+    TimeCreated: 'AlarmClockPlus',
+    Correlation: 'Blend',
+    Execution: 'FunctionSquare'
   };
 
   const SmartView = useCallback(() => {
@@ -150,8 +152,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
       return (
         <div className={cn(s.pod, _key === 'PrivilegeList' && s.wrap)} key={λkey + value + _key + _value}>
-          {iconsMap[λkey] && <Icon name={iconsMap[λkey]} />}
-          {_key}
+          <Stack ai='center'>
+            {iconsMap[λkey] && <Icon name={iconsMap[λkey]} />}
+            {_key}
+          </Stack>
           {_value}
         </div>
       )
@@ -200,53 +204,59 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   return (
-    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} loading={!detailedChunkEvent} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
-      {detailedChunkEvent && (
-        <>
+    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
+      {detailedChunkEvent ? (
+        <Fragment>
           <div className={s.buttons_group}>
-            <Button className={s.createNote} onClick={spawnNoteBanner} img='Bookmark'>New note</Button>
-            <Button className={s.createNote} onClick={spawnLinkBanner} img='Waypoints'>New link / Connect link</Button>
+            <Button className={s.createNote} onClick={spawnNoteBanner} img='StickyNote'>New note</Button>
+            <Button className={s.createNote} onClick={spawnLinkBanner} img='Link'>New link / Connect link</Button>
           </div>
           <Tabs defaultValue='json' className={s.tabs}>
             <TabsList className={s.tabs_list}>
               <TabsTrigger value='smart'>Smart view</TabsTrigger>
-              <TabsTrigger value='raw'>Raw</TabsTrigger>
+              <TabsTrigger value='raw'>XML</TabsTrigger>
               <TabsTrigger value='json'>JSON</TabsTrigger>
             </TabsList>
-            <p className={s.hint}>Click on the block to copy the value</p>
             <TabsContent className={s.tabs_content} value='smart'>
               <SmartView />
             </TabsContent>
-            <TabsContent className={s.tabs_content} value='raw'>
-              <XMLTree className={s.xml} xml={detailedChunkEvent.event.original} />
+            <TabsContent className={s.tabs_content} value='raw'> 
+              <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='XML' style={darcula}>
+                {detailedChunkEvent.event.original}
+              </SyntaxHighlighter>
             </TabsContent>
             <TabsContent className={s.tabs_content} value='json'>
               <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
-              <SyntaxHighlighter language='JSON' style={darcula}>
+              <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='JSON' style={darcula}>
                 {rawJSON}
               </SyntaxHighlighter>
             </TabsContent>
           </Tabs>
-          <Tabs defaultValue={notes.length ? 'notes' : 'layers'} className={s.tabs}>
-            <TabsList className={s.tabs_list}>
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-              <TabsTrigger value="layers">Layers</TabsTrigger>
-            </TabsList>
-            <TabsContent value="notes">
-              <Notes notes={notes} />
-            </TabsContent>
-            <TabsContent value="layers">
-              <div className={s.layers}>
-                <div>{detailedChunkEvent.context}</div>
-                <Separator />
-                <div>{detailedChunkEvent.agent.type}</div>
-                <Separator />
-                <div>{detailedChunkEvent.file}</div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </>
+          <Notes notes={notes} />
+        </Fragment>
+      ) : (
+        <Stack flex dir='row' style={{ paddingRight: 8 }}>
+          <Stack flex dir='column' gap={16}>
+            <Stack ai='flex-start' jc='flex-end' gap={12} dir='row' flex={0}>
+              <Skeleton width={120} />
+              <Skeleton width={200} />
+            </Stack>
+            <Stack dir='column' gap={12}>
+              <Stack ai='flex-start' gap={12} dir='row' flex={0}>
+                <Skeleton width={220} />
+              </Stack>
+              <Skeleton />
+              <Skeleton height='100%' width='full' />
+            </Stack>
+          </Stack>
+          <Skeleton style={{ position: 'absolute', right: 8 }} width={10} height={'calc(100% - 96px)  ' as ChadNumber} />
+        </Stack>
       )}
+      <Stack>
+        <Button onClick={() => Info.setTimelineTarget(1)}>Prev event</Button>
+        <hr style={{ flex: 1 }} />
+        <Button onClick={() => Info.setTimelineTarget(-1)}>Next event</Button>
+      </Stack>
     </Dialog>
   )
 };
