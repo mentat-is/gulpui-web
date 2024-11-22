@@ -76,7 +76,7 @@ export const BaseInfo: λApp = {
     user_id: -1,
     settings: {
       engine: (localStorage.getItem('settings.__engine') || 'default') as Engine.List,
-      color: (localStorage.getItem('settings.__color') || GradientsMap.thermal) as Gradients
+      color: (localStorage.getItem('settings.__color') || 'thermal') as Gradients
     }
   },
   timeline: {
