@@ -72,9 +72,8 @@ export class GraphEngine implements Engine.Interface<Target> {
           const steps = Math.floor(Math.abs(x - lastX) / 16);
           const deltaTimestamp = (timestamp - lastTimestamp) / (steps + 1);
     
-          for (let i = 1; i <= steps; i++) {
+          for (let i = 1; i <= steps; i++)
             result.set(lastTimestamp + deltaTimestamp * i, 0 as Hardcode.Height);
-          }
         }
       }
     
