@@ -2,9 +2,10 @@
   "name": "gulp-web-client",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@impactium/console": "^1.0.7",
-    "@impactium/icons": "^1.0.7",
+    "@impactium/icons": "^1.1.0",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-context-menu": "^2.2.1",
     "@radix-ui/react-dialog": "^1.1.1",
@@ -18,19 +19,13 @@
     "@radix-ui/react-switch": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.2",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
     "@types/node": "^16.18.101",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",
     "geist": "^1.3.1",
-    "geist-icons": "^1.2.3",
     "lodash": "^4.17.21",
-    "lucide-react": "^0.408.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -47,17 +42,36 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-app-rewired start",
+    "start": "react-app-rewired start --no-open",
     "build": "react-app-rewired build",
-    "start_app": "npm run build && electron ./dist/main.js",
-    "electron": "electron ./main.js"
+    "start:electron": "npm run build && concurrently \"npm run server\" \"wait-on http://localhost:80 && electron ./public/electron.js\"",
+    "build:electron": "npm run build && electron-builder --win --x64 --win --linux",
+    "server": "serve -s build -l 80"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
+  "build": {
+    "appId": "com.example.gulp",
+    "files": [
+      "build/**/*",
+      "public/electron.js"
     ],
-    "rules": {
-      "react-hooks/exhaustive-deps": "off"
+    "extraResources": [
+      {
+        "from": "public/",
+        "to": ".",
+        "filter": ["**/*"]
+      }
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "public/gulp.png"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "public/gulp.png"
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm"],
+      "icon": "public/gulp.png"
     }
   },
   "browserslist": {
@@ -77,8 +91,12 @@
     "@types/lodash": "^4.17.7",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^10.0.0",
+    "concurrently": "^9.1.0",
     "customize-cra": "^1.0.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
     "electron-packager": "^17.1.2",
-    "react-app-rewired": "^2.2.1"
+    "react-app-rewired": "^2.2.1",
+    "wait-on": "^8.0.1"
   }
 }

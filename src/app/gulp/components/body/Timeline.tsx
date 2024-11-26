@@ -8,7 +8,6 @@ import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
-import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
