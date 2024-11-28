@@ -85,7 +85,7 @@
   align-items: center;
   padding-left: 8px;
   width: min-content;
-  height: 36px;
+  height: 32px;
   max-width: 100%;
   overflow: hidden;
   gap: 8px;
@@ -106,7 +106,7 @@
   padding: 0 8px;
   text-align: end;
   display: flex;
-  height: 36px;
+  height: 32px;
   border-radius: var(--border-s);
   overflow: hidden;
   max-width: 100%;
@@ -129,7 +129,7 @@
   font-family: var(--font-mono);
 }
 .createNote {
-  min-height: 36px;
+  min-height: 32px;
 }
 .buttons_group {
   display: flex;

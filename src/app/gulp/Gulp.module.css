@@ -10,7 +10,7 @@
   justify-self: flex-end;
   cursor: pointer;
   color: var(--text-dimmed);
-  height: 36px;
+  height: 32px;
   gap: 8px;
 }
 .transfered {
@@ -70,7 +70,7 @@
 .filter {
   will-change: width;
   transition: width 0.3s var(--transition);
-  width: 36px !important;
+  width: 32px !important;
   overflow: hidden !important;
   padding: 7px !important;
 }

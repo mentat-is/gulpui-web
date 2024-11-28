@@ -40,15 +40,15 @@
   left: 0;
   height: 4px;
   border-radius: 0 0 3px 3px;
-  width: 36px;
+  width: 32px;
 }
 .desc {
   position: absolute;
   font-size: 8px;
   transform: translate(-50%, -50%);
   font-family: var(--font-mono);
-  max-width: 36px;
-  width: 36px;
+  max-width: 32px;
+  width: 32px;
   overflow: hidden;
   text-overflow: ellipsis;
   border: 4px;

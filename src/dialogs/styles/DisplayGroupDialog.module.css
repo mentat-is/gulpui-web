@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: row;
   gap: 8px;
-  min-height: 36px;
+  min-height: 32px;
   width: 100%;
   overflow: hidden;
 }
@@ -36,6 +36,6 @@
 }
 .icon {
   border-radius: var(--round);
-  min-width: 36px;
+  min-width: 32px;
   border: var(--geist-border);
 }
