@@ -151,8 +151,8 @@ export function LoginPage() {
     <div className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
-          <img src='/favicon.svg' alt='' />
-          Gulp
+          <img src='/gulp-geist.svg' alt='' />
+          <h1>Gulp</h1>
           <i>Web Client</i>
         </div>
         <div className={s.content}>

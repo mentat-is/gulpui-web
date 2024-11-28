@@ -116,6 +116,9 @@ export function SelectFilesBanner() {
       <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       <Skeleton style={{ flex: 1 }} enable={fulfilled}>
       <div className={s.wrapper}>
+        {Operation.contexts(app).length === 0 && (
+          <p className={s.noData}>There is no any data to analyze. Click below to upload...</p>
+        )}
         {!filter.length ? Operation.contexts(app).map(context => (
           <div className={s.branch} key={context.uuid}>
             <div className={s.contextHeading}>
