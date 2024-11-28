@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context';
 import { cn, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
 import { Magnifier } from '@/ui/Magnifier';
@@ -13,21 +13,24 @@ import { LinksDisplayer } from './Links.displayer';
 import { NotesDisplayer } from './Notes.displayer';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
+import { λFile } from '@/dto/File.dto';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
+  shifted: λFile[];
+  setShifted: React.Dispatch<React.SetStateAction<λFile[]>>;
   scrollX: number;
   scrollY: number;
   resize: StartEnd;
 }
 
-export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineCanvasProps) {
+export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted, setShifted }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   
   const { app, spawnDialog, Info, dialog } = useApplication();
-  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter];
+  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted];
   const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = (force?: boolean) => {
@@ -38,7 +41,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
 
     const limits = getLimits(app, Info, timeline, scrollX);
 
-    const render = new RenderEngine({ ctx, limits, info: Info, getPixelPosition, scrollX, scrollY })
+    const render = new RenderEngine({ ctx, limits, info: Info, getPixelPosition, scrollX, scrollY, shifted })
 
     render.ruler.draw();
     
@@ -88,10 +91,17 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize }: TimelineC
     const clickX = event.clientX - left;
     const clickY = event.clientY - top + scrollY;
 
-    const file = File.selected(app)[Math.floor(clickY / 48)];
-    const limits = getLimits(app, Info, timeline, scrollX);
+    const index = Math.floor(clickY / 48);
 
-    if (!file || throwableByTimestamp(file.timestamp, limits, app, file.offset)) return;
+    const file = File.selected(app)[index];
+
+    if (!file) return;
+
+    if (isShiftPressed) {
+      return setShifted(files => [...files, file]);
+    } else {
+      setShifted([]);
+    }
 
     const clickPosition = Math.round(clickX);
 

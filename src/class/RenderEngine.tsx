@@ -18,6 +18,7 @@ interface RenderEngineConstructor {
   scrollX: number;
   scrollY: number;
   getPixelPosition: (timestamp: number) => number,
+  shifted: λFile[]
 }
 
 export interface Status {
@@ -51,8 +52,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   default!: DefaultEngine;
   height!: HeightEngine;
   graph!: GraphEngine;
+  shifted: λFile[] = []
 
-  constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX }: RenderEngineConstructor) {
+  constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX, shifted }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
       RenderEngine.instance.ruler = new RulerDrawer({
         ctx,
@@ -60,12 +62,13 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         scrollX,
         scale: info.app.timeline.scale,
         selected: info.app.target.bucket.selected,
-        width: info.width
+        width: info.width,
       });
       RenderEngine.instance.ctx = ctx;
       RenderEngine.instance.limits = limits;
       RenderEngine.instance.info = info;
       RenderEngine.instance.scrollX = scrollX;
+      RenderEngine.instance.shifted = shifted;
       RenderEngine.instance.scrollY = scrollY;
       RenderEngine.instance.getPixelPosition = getPixelPosition;
       RenderEngine.instance.default = new DefaultEngine(RenderEngine.instance);
@@ -84,6 +87,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
     this.ctx = ctx;
     this.limits = limits;
+    this.shifted = shifted;
     this.info = info;
     this.getPixelPosition = getPixelPosition;
     
@@ -125,7 +129,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, y + 23, window.innerWidth, 1);
 
-    this.fill(color, y);
+    this.fill(color, y, !this.shifted.find(shiftedFile => shiftedFile.uuid === file.uuid));
   }
 
   /**
@@ -143,8 +147,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
    * @param color `Color` - цвет заливки
    * @param y `number` - позиция по середине `λFile`
    */
-  public fill = (color: Color, y: number) => {
-    this.ctx.fillStyle = color + 12;
+  public fill = (color: Color, y: number, isShifted: boolean) => {
+    this.ctx.fillStyle = color + (isShifted ? 24 : 12);
     this.ctx.fillRect(0, y - 24, window.innerWidth, 48);
   }
 
@@ -323,8 +327,4 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   
   //   return heat;
   // }
-
-  // private scaleCache = (map: Record<string, StatusMap | GraphMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.info.app.timeline.scale);
-
-  // private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] >= Event.get(this.info.app, uuid).length
 }

@@ -269,7 +269,7 @@ export class Info implements InfoProps {
   };
   files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
-  files_replace = (file: λFile) => this.setInfoByKey(File.replace(file, this.app), 'target', 'files');
+  files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(File.replace(files, this.app), 'target', 'files');
   file_find_by_filename_and_context = (filename: λFile['name'], context: λContext['name']) => File.findByNameAndContextName(this.app, filename, context);
 
   // 🔥 EVENTS 
@@ -913,7 +913,9 @@ export class Plugin {
 }
 
 export class File {
-  public static replace = (file: λFile, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(f => file.uuid === f.uuid ? file : f);
+  public static replace = (newFiles: Arrayed<λFile>, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(file => Parser.array(newFiles).find(f => f.uuid === file.uuid) || file);
+
+  public static single = <K extends keyof λFile>(files: λFile[], field: K): λFile[K] | undefined => Parser.array(files)[0]?.[field];
 
   public static reload = (files: Arrayed<λFile>, app: λApp): λFile[] => File.select(Parser.array(files), File.selected(app));
 
@@ -970,6 +972,19 @@ export type λFilter = {
 
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
+
+  public static findMany = (app: λApp, files: λFile[]) => {
+    const filters: λFilter[][] = [];
+
+    files.forEach(file => {
+      const filter = Filter.find(app, file);
+      if (filter) {
+        filters.push(filter)
+      }
+    });
+
+    return filters;
+  }
 
   public static base = (app: λApp, file: λFile, range?: MinMax) => {
     const context = Context.findByPugin(app, file._uuid);
@@ -1177,6 +1192,8 @@ export class Parser {
   
 
   public static array = <K extends unknown>(unknown: Arrayed<K>): K[] => Array.isArray(unknown) ? unknown : [unknown];
+
+  public static isSingle = (arr: Array<any>) => arr.length === 1;
 }
 
 export type Arrayed<K> = K | K[];

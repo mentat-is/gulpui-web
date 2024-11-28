@@ -22,6 +22,7 @@ export function Timeline() {
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
   const [target, setTarget] = useState<λFile>();
+  const [shifted, setShifted] = useState<λFile['uuid'][]>([]);
 
   const increaseScrollY = useCallback((λy: number) => {
     setScrollY((y) => Math.round(y + λy));
@@ -104,7 +105,7 @@ export function Timeline() {
     if (isResizing) return;
 
     const handleResize = () => setBounding(null);
-    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -177,7 +178,7 @@ export function Timeline() {
       <div className={s.content} id="timeline_content">
         <ContextMenu>
           <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
+            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} setShifted={setShifted} />
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
             <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
           </ContextMenuTrigger>
