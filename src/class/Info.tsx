@@ -78,7 +78,7 @@ export class Info implements InfoProps {
     if (!operation || !contexts.length) return;
 
     uuids.length
-      ? uuids.forEach(uuid => this.events_reset_in_file(uuid))
+      ? uuids.forEach(uuid => this.events_reset_in_file(File.uuid(this.app, uuid)))
       : this.events_reset();
     
     await this.mapping();
@@ -275,9 +275,8 @@ export class Info implements InfoProps {
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (uuid: μ.File) => {
-    Logger.log(`All events has been erased from file with uuid ${uuid}`, `${Info.name}.${this.events_reset_in_file.name}`);
-    this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events')
+  events_reset_in_file = (files: Arrayed<λFile>) => {
+    this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
   };
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
@@ -740,38 +739,45 @@ Files: ${files.length}`, Info.name);
   }
 
   sigma = {
-    set: async (file: λFile | λFile['uuid'], sigma: { name: string, content: string }) => {
-      // eslint-disable-next-line
-      const uuid = Parser.useUUID(file) as μ.File;
+    set: async (files: Arrayed<λFile>, sigma: { name: string, content: string }) => {
+      files = Parser.array(files);
 
-      this.setInfoByKey({
-        ...this.app.target.sigma,
-        [uuid]: {
+      const newSigma: typeof this.app.target.sigma = {}
+
+      files.forEach(file => {
+        newSigma[file.uuid] = {
           name: sigma.name,
           content: sigma.content
         }
+      })
+
+      this.setInfoByKey({
+        ...this.app.target.sigma,
+        ...newSigma
       }, 'target', 'sigma');
 
-      this.events_reset_in_file(uuid);
+      this.events_reset_in_file(files);
 
-      await this.api('/query_sigma', {
-        method: 'POST',
-        data: {
-          ws_id: this.app.general.ws_id,
-          req_id: uuid
-        },
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: JSON.stringify({
-          sigma: sigma.content,
-          options: {
-            '@timestamp': 'desc'
-          }
-        })
-      });
+      files.forEach(file => {
+        this.api('/query_sigma', {
+          method: 'POST',
+          data: {
+            ws_id: this.app.general.ws_id,
+            req_id: file.uuid
+          },
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          body: JSON.stringify({
+            sigma: sigma.content,
+            options: {
+              '@timestamp': 'desc'
+            }
+          })
+        });
+      })
 
-      this.deload(uuid);
+      this.deload(files.map(file => file.uuid));
     },
   
     remove: (file: λFile | λFile['uuid']) => {
@@ -1064,9 +1070,14 @@ export class Mapping {
 }
 
 export class Event {
-  public static delete = (app: λApp, uuid: μ.File) => {
-    app.target.events.delete(uuid);
-    app.target.events.set(uuid, []);
+  public static delete = (app: λApp, files: Arrayed<λFile>) => {
+    files = Parser.array(files);
+
+    files.forEach(file => {
+      app.target.events.delete(file.uuid);
+      app.target.events.set(file.uuid, []);
+    })
+    
     return app.target.events;
   }
 

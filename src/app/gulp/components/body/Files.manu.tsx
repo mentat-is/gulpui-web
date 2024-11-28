@@ -1,7 +1,4 @@
 import s from './../../Gulp.module.css';
-import { FilterFileBanner } from '@/banners/FilterFile.banner';
-import { LinkVisualizer } from '@/banners/LinksVisualizer';
-import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { Engine } from '@/class/Engine.dto';
 import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
@@ -15,8 +12,8 @@ interface TargetMenuProps {
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
-export function TargetMenu({ files, inputRef }: TargetMenuProps) {
-  const { Info, spawnBanner, app } = useApplication();
+export function FilesMenu({ files, inputRef }: TargetMenuProps) {
+  const { Info, app } = useApplication();
 
   if (!files.length) return null;
 

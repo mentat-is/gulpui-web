@@ -13,6 +13,7 @@ import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
 import { TargetMenu } from './Target.menu';
 import { Input } from '@/ui/Input';
+import { FilesMenu } from './Files.manu';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
@@ -21,8 +22,7 @@ export function Timeline() {
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
-  const [target, setTarget] = useState<λFile>();
-  const [shifted, setShifted] = useState<λFile['uuid'][]>([]);
+  const [shifted, setShifted] = useState<λFile[]>([]);
 
   const increaseScrollY = useCallback((λy: number) => {
     setScrollY((y) => Math.round(y + λy));
@@ -128,7 +128,18 @@ export function Timeline() {
 
   const handleContextMenu = useCallback((event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 88) / 48)
-    setTarget(File.selected(app)[index]);
+
+    const file = File.selected(app)[index];
+
+    if (!file && !shifted.length) {
+      return;
+    }
+
+    if (!shifted.length) {
+      setShifted([file])  
+    }
+
+    setShifted(list => [...list, file]);
   }, [app, scrollY, timeline]);
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -144,7 +155,7 @@ export function Timeline() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = () => {
-    if (!target) return
+    if (shifted.length === 0) return
 
     const file = inputRef.current?.files?.[0];
     if (!file) return toast('No sigma rule selected', {
@@ -155,12 +166,20 @@ export function Timeline() {
     reader.onload = async (e) => {
       const content = e.target?.result;
 
-      await Info.sigma.set(target!, { name: file.name, content: content as string });
+      await Info.sigma.set(shifted, { name: file.name, content: content as string });
 
       inputRef.current!.value = '';
     };
     reader.readAsText(file);
   }
+
+  const Menu = useCallback(() => {
+    if (shifted.length === 1) {
+      return <TargetMenu file={shifted[0]} inputRef={inputRef} />
+    }
+
+    return <FilesMenu files={shifted} inputRef={inputRef} />
+  }, [shifted]);
 
   return (
     <div
@@ -182,7 +201,7 @@ export function Timeline() {
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
             <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
           </ContextMenuTrigger>
-          <TargetMenu file={target} inputRef={inputRef} />
+          <Menu />
         </ContextMenu>
       </div>
     </div>
