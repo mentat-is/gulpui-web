@@ -11,7 +11,7 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Button } from "@/ui/Button";
 import { λIndex } from "@/dto/Index.dto";
-import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
+import { CreateOperationBanner } from "@/banners/CreateOperation.banner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Logger } from "@/dto/Logger.class";

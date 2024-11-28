@@ -1,0 +1,11 @@
+.paramName {
+  white-space: nowrap;
+  font-size: 12px;
+  flex: 1;
+}
+.input {
+  width: 256px;
+}
+.doneButton {
+  align-self: flex-end;
+}
