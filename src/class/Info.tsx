@@ -644,9 +644,9 @@ Files: ${files.length}`, Info.name);
 
   setTimelineFilter = (filter: string) => this.setInfoByKey(filter, 'timeline', 'filter');
   
-  increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
+  increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 8);
   
-  decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
+  decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 8;
 
   query_external = ({
     operation_id,

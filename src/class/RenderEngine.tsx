@@ -148,10 +148,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
    * @param y `number` - позиция по середине `λFile`
    */
   public fill = (color: Color, y: number, isShifted: boolean) => {
-    this.ctx.fillStyle = color + (isShifted ? 24 : 12);
+    this.ctx.fillStyle = color + (isShifted ? 12 : 32 );
     this.ctx.fillRect(0, y - 24, window.innerWidth, 48);
   }
-
 
   public links = () => {
     this.info.app.target.links.forEach(link => {

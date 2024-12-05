@@ -18,20 +18,19 @@ import { λFile } from '@/dto/File.dto';
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
   shifted: λFile[];
-  setShifted: React.Dispatch<React.SetStateAction<λFile[]>>;
   scrollX: number;
   scrollY: number;
   resize: StartEnd;
 }
 
-export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted, setShifted }: TimelineCanvasProps) {
+export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: TimelineCanvasProps) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   
   const { app, spawnDialog, Info, dialog } = useApplication();
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted];
-  const { up, down, move, magnifier_ref, isShiftPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
+  const { up, down, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = (force?: boolean) => {
     if (!canvas_ref.current) return;
@@ -96,12 +95,6 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted, se
     const file = File.selected(app)[index];
 
     if (!file) return;
-
-    if (isShiftPressed) {
-      return setShifted(files => [...files, file]);
-    } else {
-      setShifted([]);
-    }
 
     const clickPosition = Math.round(clickX);
 
@@ -183,7 +176,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted, se
         width={window.innerWidth}
         height={timeline.current?.clientHeight} />
       <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), 'yyyy/mm/dd HH:mm:SS SSS')}ms</p>
-      <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isShiftPressed} />
+      <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
     </div>
   );
 }

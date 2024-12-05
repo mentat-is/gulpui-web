@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 
 export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dependencies: Array<any>, magnifierSize = 100, magnificationFactor = 2) => {
   const magnifier_ref = useRef<HTMLCanvasElement>(null);
-  const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
+  const [isAltPressed, setIsAltPressed] = useState<boolean>(false);
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const drawMagnifier = () => {
@@ -27,8 +27,8 @@ export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dep
   };
 
   useEffect(() => {
-    isShiftPressed && drawMagnifier();
-  }, [isShiftPressed, mousePosition, ...dependencies]);
+    isAltPressed && drawMagnifier();
+  }, [isAltPressed, mousePosition, ...dependencies]);
 
   const handleMouseMove = ({ clientX, clientY }: React.MouseEvent<HTMLDivElement>) => {
     const { left, top } = canvas_ref.current!.getBoundingClientRect();
@@ -39,16 +39,16 @@ export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dep
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Shift') {
-      setIsShiftPressed(true);
+    if (event.key === 'Alt') {
+      setIsAltPressed(true);
     }
   };
 
   const handleKeyUp = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Shift') {
-      setIsShiftPressed(false);
+    if (event.key === 'Alt') {
+      setIsAltPressed(false);
     }
   };
 
-  return { up: handleKeyUp, down: handleKeyDown, move: handleMouseMove, magnifier_ref, isShiftPressed, mousePosition };
+  return { up: handleKeyUp, down: handleKeyDown, move: handleMouseMove, magnifier_ref, isAltPressed, mousePosition };
 };
