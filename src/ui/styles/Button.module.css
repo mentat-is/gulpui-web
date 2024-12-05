@@ -46,9 +46,6 @@
   border: 1px solid var(--white);
   color: var(--white);
 }
-.outline:hover svg {
-  stroke: var(--white);
-}
 
 .hardline {
   border: 1px solid var(--white);

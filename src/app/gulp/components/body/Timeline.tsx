@@ -6,7 +6,6 @@ import { DragDealer } from '@/class/dragDealer.class';
 import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
-import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
@@ -184,7 +183,7 @@ export function Timeline() {
   return (
     <div
       id="timeline"
-      className={cn(s.timeline)}
+      className={s.timeline}
       onMouseLeave={handleMouseUpOrLeave}
       onMouseUp={handleMouseUpOrLeave}
       onMouseDown={handleMouseDown}

@@ -15,6 +15,7 @@ import { SelectFilesBanner } from "./SelectFiles.banner";
 import { PluginEntity } from "@/dto/Plugin.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
+import { QueryExternalBanner } from "./QueryExternal.banner";
 
 interface λIngestFileSettings {
   plugin?: PluginEntity['filename'],
@@ -214,6 +215,10 @@ Progress: ${progress}%`, UploadBanner.name);
     setSettings(settings);
   }
 
+  function addFromExternalQueryButtonHandler() {
+    spawnBanner(<QueryExternalBanner />)
+  }
+
 
   return (
     <Banner title='Upload files'>
@@ -260,6 +265,11 @@ Progress: ${progress}%`, UploadBanner.name);
       )}
       <div className={s.bottom}>
         {loading && <Progress value={progress} />}
+        <Button
+          variant='outline'
+          onClick={addFromExternalQueryButtonHandler}
+          img='Kv'
+        >Add from external query</Button>
         <Button
           variant={files?.length && context && Object.values(settings).every(s => s.plugin) ? 'default' : 'disabled'}
           onClick={submitFiles}
