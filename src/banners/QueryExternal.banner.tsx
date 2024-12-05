@@ -8,7 +8,7 @@ import { Label } from "@/ui/Label";
 import { Separator } from "@/ui/Separator";
 import { Stack, StackProps } from "@/ui/Stack";
 import { Toggle } from "@/ui/Toggle";
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 
 export function QueryExternalBanner() {
   const { Info } = useApplication();
@@ -19,6 +19,7 @@ export function QueryExternalBanner() {
   const [password, setPassword] = useState<string>('');
   const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
+  const [isSplunk, toggleIsSplunk] = useReducer((state: boolean) => !state, false);
 
   const stackProps: StackProps = ({
     ai: 'center',
@@ -67,6 +68,10 @@ export function QueryExternalBanner() {
 
   return (
     <Banner title='Query External Resourse'>
+      <Stack ai='center'>
+        <p>Plugin:</p>
+        <Toggle option={['OpenSearch', 'Splunk']} checked={isSplunk} onCheckedChange={toggleIsSplunk} />
+      </Stack>
       <Card>
         <Stack {...stackProps}>
           <Label style={{ minWidth: 80 }} htmlFor='server'>Server:</Label>
