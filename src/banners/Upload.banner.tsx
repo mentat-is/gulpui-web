@@ -16,6 +16,7 @@ import { PluginEntity } from "@/dto/Plugin.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { QueryExternalBanner } from "./QueryExternal.banner";
+import { MaybeArray } from "@impactium/types";
 
 interface λIngestFileSettings {
   plugin?: PluginEntity['filename'],
@@ -102,7 +103,7 @@ Progress: ${progress}%`, UploadBanner.name);
       }
     }));
 
-    const mappings = Mapping.find(app, settings[filename].plugin!);
+    const mappings = Mapping.find(app, settings[filename].plugin!) || [];
 
     if (mappings.length) {
       setMapping(mappings[0].filename, filename);
@@ -117,28 +118,64 @@ Progress: ${progress}%`, UploadBanner.name);
     }
   }));
 
-  const getExtensionMapping = (file: File) => {
-    const extension = file.name.split('.').pop()!;
-    const map: Record<string, PluginEntity['filename']> = {
-      'csv': 'csv.py',
-    };
-
-    const plugin = map[extension];
-
-    if (!plugin) return undefined;
-
-    return app.general.ingest.find(p => p.filename === plugin);
+  const initializeFileSigmatures = () => {
+    const list: Record<string, MaybeArray<Uint8Array>> = {};
+    list['win_evtx.py'] = new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65]);
+    list['systemd_journal.py'] = new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])
+    list['sqlite.py'] = new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])
+    list['pcap.py'] = new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A ]);
+    list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4 ]);
+    list['pcap.py'] = new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1 ]);
+    list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d ]);
+    list['pcap.py'] = new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1 ]);
+    list['win_reg.py'] = new Uint8Array([0x72,0x65,0x67,0x66]);
+    return list;
   }
 
+  const getExtensionMapping = async (file: File): Promise<string> => {
+    const signaturesList = initializeFileSigmatures();
+
+    const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
+        const slice = new Uint8Array(buffer.slice(0, uint.byteLength));
+        return slice.every((value, index) => value === uint[index]);
+    };
+
+    const buffer = await file.arrayBuffer();
+
+    const matchedKey = Object.keys(signaturesList).find(key => {
+        const signature = signaturesList[key];
+        return Array.isArray(signature)
+            ? signature.some(uint => isEqual(buffer, uint))
+            : isEqual(buffer, signature);
+    });
+
+    return matchedKey || mapExtensions[file.name.split('.')[1]] || 'regex';
+  };
+
+  const mapExtensions: Record<string, string> = {
+    csv: 'csv.py',
+    eml: 'eml.py',
+    mbox: 'mbox.py'
+  }
+
+  useEffect(() => {
+    if (!files) {
+      return; 
+    }
+
+    [...files].forEach(async file => {
+      const plugin = await getExtensionMapping(file);
+
+      setPlugin(plugin, file.name);
+    })
+  }, [files]);
+
+
   const PluginSelection = ({ file }: { file: File }) => {
-    const placeholder = app.general.ingest[0];
-
-    if (!settings[file.name].plugin && placeholder) setPlugin(placeholder.filename, file.name);
-
     return (  
       <Select onValueChange={plugin => setPlugin(plugin, file.name)} value={settings[file.name].plugin}>
         <SelectTrigger>
-          <SelectValue defaultValue={getExtensionMapping(file)?.filename} placeholder="Choose filename" />
+          <SelectValue defaultValue={settings[file.name].plugin} placeholder="Choose filename">{settings[file.name].plugin}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {app.general.ingest.map(i => (
@@ -149,7 +186,7 @@ Progress: ${progress}%`, UploadBanner.name);
     );
   };
 
-  const MappingSelection = useCallback(({ file }: {
+  const MappingSelection = ({ file }: {
     file: File
   }) => {
     const mappings = Mapping.find(app, settings[file.name].plugin!) || [];
@@ -176,7 +213,7 @@ Progress: ${progress}%`, UploadBanner.name);
         </SelectContent>
       </Select>
     );
-  }, [settings, files]);
+  };
 
   const ContextSelection = () => {
     const contexts = Operation.contexts(app);

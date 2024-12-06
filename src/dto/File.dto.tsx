@@ -2,6 +2,7 @@ import { MinMax } from "./QueryMaxMin.dto";
 import { Gradients } from "@/ui/utils";
 import { μ } from "@/class/Info";
 import { Engine } from "@/class/Engine.dto";
+import { λEvent } from "./ChunkEvent.dto";
 
 export interface λFile {
   name: string,
@@ -14,6 +15,7 @@ export interface λFile {
   color: Gradients,
   engine: Engine.List,
   pinned?: boolean;
+  target: keyof λEvent | null;
   uuid: μ.File,
   _uuid: μ.Plugin,
 }

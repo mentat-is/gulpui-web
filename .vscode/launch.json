@@ -10,7 +10,7 @@
       "type": "node-terminal",
       "name": "Native",
       "request": "launch",
-      "command": "npm run electron"
+      "command": "npm run electron:start"
     },
     {
       "type": "node-terminal",

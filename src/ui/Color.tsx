@@ -1,4 +1,3 @@
-import { Paintbrush } from 'lucide-react';
 import { createContext, HTMLAttributes, useContext, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Button } from './Button';
@@ -8,6 +7,7 @@ import { Input } from './Input';
 import s from './styles/Color.module.css';
 import { Children } from '@/dto';
 import { capitalize } from 'lodash';
+import { Icon } from '@impactium/icons';
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[],
@@ -73,7 +73,7 @@ export function ColorPickerTrigger({ className, ...props }: ColorPickerTriggerPr
               style={{ background: Object.keys(GradientsMap).includes(color) ? arrayToLinearGradientCSS(GradientsMap[color as Gradients]) : color}}
             />
           ) : (
-            <Paintbrush className={s.icon} />
+            <Icon name='Paintbrush' className={s.icon} />
           )}
           {color ? capitalize(color) : 'Pick a color'}
       </Button>

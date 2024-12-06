@@ -342,6 +342,8 @@ ${error}`, Info.name);
     }
   });
 
+  file_set_target = (file: λFile, target: keyof λEvent) => this.setInfoByKey(File.replace({ ...file, target }, this.app), 'target', 'files');
+
   links_reload = async () => {
     const src_file: λFile['name'][] = []
     const context: λContext['name'][] = []
@@ -496,6 +498,7 @@ ${error}`, Info.name);
                       max: rawFile['max_@timestamp']
                     },
                     plugin: rawPlugin.name,
+                    target: null,
                     _uuid: p_uuid,
                     offset: 0,
                     color: this.app.general.settings.color ?? 'thermal',

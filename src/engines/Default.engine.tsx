@@ -48,7 +48,20 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       if (map.has(pos))
         return;
 
-      map.set(pos, [(parseInt(event.event.code) || file.event.max) as Hardcode.Height, timestamp ]);
+      const isTargetValid = file.target !== null && file.target in event;
+
+      let target = isTargetValid
+        ? event[file.target!]
+        : event.event.code;
+
+      if (typeof target === 'undefined') {
+        target = event.event.code;
+      }
+      if (typeof target === 'object') {
+        target = target.code;
+      }
+
+      map.set(pos, [(parseInt(target.toString()) || file.event.max) as Hardcode.Height, timestamp ]);
     });
 
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;

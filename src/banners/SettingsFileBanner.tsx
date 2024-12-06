@@ -17,6 +17,7 @@ import { Icon } from "@impactium/icons";
 import { Context } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
 import { Engine } from "@/class/Engine.dto";
+import { Stack } from "@/ui/Stack";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -88,11 +89,17 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
       </Card>
       <Separator />
       <Card className={s.color}>
-        <p className={s.text}>Color palette:</p>
-        <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
-          <ColorPickerTrigger />
-          <ColorPickerPopover gradients={GradientsMap} solids={[]} />
-        </ColorPicker>
+        <Stack>
+          <p className={s.text}>Color palette:</p>
+          <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
+            <ColorPickerTrigger />
+            <ColorPickerPopover gradients={GradientsMap} solids={[]} />
+          </ColorPicker>
+        </Stack>
+        <Stack>
+          <p className={s.text}>Target key: (to finish*)</p>
+          <Input placeholder='Render engine target key' />
+        </Stack>
       </Card>
       <Button style={{ alignSelf: 'flex-end' }} img='CheckCheck' onClick={save}>Apply new file settings</Button>
     </Banner>

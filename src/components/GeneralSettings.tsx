@@ -16,7 +16,6 @@ export function GeneralSettings() {
   useEffect(() => {
     localStorage.setItem('settings.__engine', app.general.settings.engine);
     localStorage.setItem('settings.__color', app.general.settings.color)
-
   }, [app.general.settings]);
 
   const fontStyle: CSSProperties = {
