@@ -12,7 +12,8 @@
   background: #000000d8;
 }
 .banner {
-  width: 600px;
+  min-width: 600px;
+  max-width: 90vw;
   padding: var(--p5) var(--p6);
   border-radius: var(--border-l);
   background: var(--soft-black);

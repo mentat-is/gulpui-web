@@ -61,30 +61,28 @@
   max-height: 384px;
   padding-right: 12px;
 }
-.node {
-  align-items: center;
-  gap: 8px;
-  display: grid;
-  grid-template-rows: repeat(1, 1fr);
-  grid-template-columns: repeat(4, 1fr);
-  min-height: 32px;
+.filePreview {
+  border-radius: 4px;
+  width: 100%;
+  height: 28px;
+  border: 1px solid var(--accent-3);
+  background: var(--soft-black);
+  padding: 0 6px;
 }
-.node p {
-  text-align: center;
-  flex: 1;
-  font-size: 14px;
-  color: var(--text-dimmed);
+.filePreview * {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-white);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.filePreview button[role = 'combobox'] {
+  height: 24px;
   overflow: hidden;
+  min-height: unset;
+  border: none;
 }
-.node p:first-child,
-.popover {
-  color: var(--text-white);
-  text-align: left;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.node p:nth-child(2) {
-  font-family: var(--font-mono);
+.filename {
+  width: 128px;
+  overflow: hidden;
 }

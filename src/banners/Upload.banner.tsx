@@ -135,14 +135,31 @@ Progress: ${progress}%`, UploadBanner.name);
     }
   }
 
-  const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => setSettings(s => ({
-    ...s,
-    [filename]: {
-      ...s[filename],
-      mapping
-    }
-  }));
+  const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => {
+    setSettings(s => ({
+      ...s,
+      [filename]: {
+        ...s[filename],
+        mapping
+      }
+    }));
+  };
 
+  useEffect(() => {
+    const newSettings: typeof settings = {};
+
+    Object.entries(settings).forEach(file => {
+      const [filename, settings] = file;
+
+      if (settings.plugin && !settings.mapping) {
+        const plugin = app.general.ingest.find(p => p.filename === settings.plugin);
+
+        if (plugin && plugin.mappings.length) {
+          newSettings[filename].mapping = plugin.mappings[0].filename
+        }
+      }
+    });
+  }, [settings]);
   
   const setMethod = (method: λIngestFileSettings['method'], filename: File['name']) => setSettings(s => ({
     ...s,
@@ -247,20 +264,22 @@ Progress: ${progress}%`, UploadBanner.name);
 
     const methods = findMethodsByPluginAndMappingName(fileSettings.plugin, fileSettings.mapping);
 
-    if (methods.length === 0) {
-      <Select disabled>
-        <SelectTrigger>
-          <SelectValue defaultValue={'no_mappings'} placeholder="No methods available for this mapping" />
-        </SelectTrigger>
-      </Select>
+    if (methods.length <= 1) {
+      if (!fileSettings.method && methods.length === 1) {
+        setMethod(methods[0], file.name);
+      }
+
+      return null;
     }
 
-    // if (!fileSettings.method) setMethod(methods[0], file.name);
+    if (!fileSettings.method) {
+      setMethod(methods[0], file.name);
+    }
 
     return (
       <Select disabled={!fileSettings.mapping} onValueChange={mapping => setMethod(mapping, file.name)} value={fileSettings.method}>
         <SelectTrigger>
-          <SelectValue defaultValue={methods[0]} placeholder="Choose mapping" />
+          <SelectValue defaultValue={fileSettings.method} placeholder="Choose method" />
         </SelectTrigger>
         <SelectContent>
           {methods.map(m => (
@@ -314,20 +333,22 @@ Progress: ${progress}%`, UploadBanner.name);
 
   function FilePreview({ file }: TargetSelection) {
     return (
-      <Stack className={s.filePreview}>
+      <Stack className={s.filePreview} gap={16}>
         <Stack>
           <Icon name='File' fromGeist />
+          <p>{formatBytes(file.size)}</p>
           <Popover>
             <PopoverTrigger asChild>
-              <p>{file.name}</p>
+              <p className={s.filename}>{file.name}</p>
             </PopoverTrigger>
             <PopoverContent className={s.popover}>{file.name}</PopoverContent>
           </Popover>
         </Stack>
-        <p>{formatBytes(file.size)}</p>
-        <PluginSelection file={file} />
-        <MappingSelection file={file} />
-        <MethodSelection file={file} />
+        <Stack gap={3}>
+          <PluginSelection file={file} />
+          <MappingSelection file={file} />
+          <MethodSelection file={file} />
+        </Stack>
       </Stack>
     )
   }
@@ -351,13 +372,6 @@ Progress: ${progress}%`, UploadBanner.name);
       <Separator />
       {files && (
         <Card className={s.preview}>
-          <div className={cn(s.node, s.defines)}>
-            <p>Filename</p>
-            <p>Size</p>
-            <p>Plugin</p>
-            <p>Method</p>
-          </div>
-          <Separator />
           <div className={s.files}>
             {Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}
           </div>

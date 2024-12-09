@@ -14,15 +14,6 @@
   flex-direction: column;
   position: relative;
 }
-.content h6 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-.content p {
-  font-size: var(--text-medium);
-  font-weight: 400;
-}
 .description {
   min-height: 56px;
   border-top: 1px solid var(--accent-3);
