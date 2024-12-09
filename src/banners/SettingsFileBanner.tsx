@@ -17,7 +17,7 @@ import { Icon } from "@impactium/icons";
 import { Context } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
 import { Engine } from "@/class/Engine.dto";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 
 interface SettingsFileBannerProps {
   file: λFile;

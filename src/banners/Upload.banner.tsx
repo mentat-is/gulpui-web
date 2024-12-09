@@ -3,7 +3,7 @@ import { Banner } from "@/ui/Banner";
 import { Input } from "@/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
@@ -17,11 +17,36 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { QueryExternalBanner } from "./QueryExternal.banner";
 import { MaybeArray } from "@impactium/types";
+import { Stack } from "@impactium/components";
+import { Icon } from "@impactium/icons";
 
 interface λIngestFileSettings {
+  // plugin name
   plugin?: PluginEntity['filename'],
+
+  // plugin mapping definitions
   mapping?: PluginEntity['mappings'][number]['filename'],
+
+  // plugin parse settings
   method?: PluginEntity['mappings'][number]['mapping_ids'][number]
+}
+
+const FILE_SIGNATURES = (() => {
+  const list: Record<string, MaybeArray<Uint8Array>> = {};
+  list['win_evtx.py'] = new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65]);
+  list['systemd_journal.py'] = new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])
+  list['sqlite.py'] = new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])
+  list['pcap.py'] = new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A ]);
+  list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4 ]);
+  list['pcap.py'] = new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1 ]);
+  list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d ]);
+  list['pcap.py'] = new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1 ]);
+  list['win_reg.py'] = new Uint8Array([0x72,0x65,0x67,0x66]);
+  return list;
+})();
+
+interface TargetSelection {
+  file: File
 }
 
 export function UploadBanner() {
@@ -118,23 +143,16 @@ Progress: ${progress}%`, UploadBanner.name);
     }
   }));
 
-  const initializeFileSigmatures = () => {
-    const list: Record<string, MaybeArray<Uint8Array>> = {};
-    list['win_evtx.py'] = new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65]);
-    list['systemd_journal.py'] = new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])
-    list['sqlite.py'] = new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])
-    list['pcap.py'] = new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A ]);
-    list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4 ]);
-    list['pcap.py'] = new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1 ]);
-    list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d ]);
-    list['pcap.py'] = new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1 ]);
-    list['win_reg.py'] = new Uint8Array([0x72,0x65,0x67,0x66]);
-    return list;
-  }
+  
+  const setMethod = (method: λIngestFileSettings['method'], filename: File['name']) => setSettings(s => ({
+    ...s,
+    [filename]: {
+      ...s[filename],
+      method
+    }
+  }));
 
   const getExtensionMapping = async (file: File): Promise<string> => {
-    const signaturesList = initializeFileSigmatures();
-
     const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
         const slice = new Uint8Array(buffer.slice(0, uint.byteLength));
         return slice.every((value, index) => value === uint[index]);
@@ -142,8 +160,8 @@ Progress: ${progress}%`, UploadBanner.name);
 
     const buffer = await file.arrayBuffer();
 
-    const matchedKey = Object.keys(signaturesList).find(key => {
-        const signature = signaturesList[key];
+    const matchedKey = Object.keys(FILE_SIGNATURES).find(key => {
+        const signature = FILE_SIGNATURES[key];
         return Array.isArray(signature)
             ? signature.some(uint => isEqual(buffer, uint))
             : isEqual(buffer, signature);
@@ -171,7 +189,7 @@ Progress: ${progress}%`, UploadBanner.name);
   }, [files]);
 
 
-  const PluginSelection = ({ file }: { file: File }) => {
+  const PluginSelection = ({ file }: TargetSelection) => {
     return (  
       <Select onValueChange={plugin => setPlugin(plugin, file.name)} value={settings[file.name].plugin}>
         <SelectTrigger>
@@ -186,15 +204,13 @@ Progress: ${progress}%`, UploadBanner.name);
     );
   };
 
-  const MappingSelection = ({ file }: {
-    file: File
-  }) => {
+  const MappingSelection = ({ file }: TargetSelection) => {
     const mappings = Mapping.find(app, settings[file.name].plugin!) || [];
 
     if (!mappings.length) return (
       <Select disabled>
         <SelectTrigger>
-          <SelectValue defaultValue={'no_mappings'} placeholder="Choose mapping" />
+          <SelectValue defaultValue={'no_mappings'} placeholder="No mappings available for this plugin" />
         </SelectTrigger>
       </Select>
     );
@@ -214,6 +230,46 @@ Progress: ${progress}%`, UploadBanner.name);
       </Select>
     );
   };
+
+  const findMethodsByPluginAndMappingName = (plugin?: λIngestFileSettings['plugin'], mapping?: λIngestFileSettings['mapping']) => {
+    const mappings = plugin ? app.general.ingest.find(p => p.filename === plugin)?.mappings : null;
+
+    if (!mappings) {
+      return [];
+    }
+
+    return mappings.find(m => m.filename === mapping)?.mapping_ids || [];
+  }
+
+  const MethodSelection = ({ file }: TargetSelection) => {
+    console.log('z');
+    const fileSettings = settings[file.name];
+
+    const methods = findMethodsByPluginAndMappingName(fileSettings.plugin, fileSettings.mapping);
+
+    if (methods.length === 0) {
+      <Select disabled>
+        <SelectTrigger>
+          <SelectValue defaultValue={'no_mappings'} placeholder="No methods available for this mapping" />
+        </SelectTrigger>
+      </Select>
+    }
+
+    // if (!fileSettings.method) setMethod(methods[0], file.name);
+
+    return (
+      <Select disabled={!fileSettings.mapping} onValueChange={mapping => setMethod(mapping, file.name)} value={fileSettings.method}>
+        <SelectTrigger>
+          <SelectValue defaultValue={methods[0]} placeholder="Choose mapping" />
+        </SelectTrigger>
+        <SelectContent>
+          {methods.map(m => (
+            <SelectItem key={m} value={m}>{m}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    )
+  }
 
   const ContextSelection = () => {
     const contexts = Operation.contexts(app);
@@ -256,6 +312,25 @@ Progress: ${progress}%`, UploadBanner.name);
     spawnBanner(<QueryExternalBanner />)
   }
 
+  function FilePreview({ file }: TargetSelection) {
+    return (
+      <Stack className={s.filePreview}>
+        <Stack>
+          <Icon name='File' fromGeist />
+          <Popover>
+            <PopoverTrigger asChild>
+              <p>{file.name}</p>
+            </PopoverTrigger>
+            <PopoverContent className={s.popover}>{file.name}</PopoverContent>
+          </Popover>
+        </Stack>
+        <p>{formatBytes(file.size)}</p>
+        <PluginSelection file={file} />
+        <MappingSelection file={file} />
+        <MethodSelection file={file} />
+      </Stack>
+    )
+  }
 
   return (
     <Banner title='Upload files'>
@@ -284,19 +359,7 @@ Progress: ${progress}%`, UploadBanner.name);
           </div>
           <Separator />
           <div className={s.files}>
-            {Object.keys(settings).map((filename, i) => (
-              <div className={s.node}>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <p>{filename}</p>
-                  </PopoverTrigger>
-                  <PopoverContent className={s.popover}>{filename}</PopoverContent>
-                </Popover>
-                <p>{formatBytes(files.item(i)!.size)}</p>
-                <PluginSelection file={files.item(i)!} />
-                <MappingSelection file={files.item(i)!} />
-              </div>
-            ))}
+            {Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}
           </div>
         </Card>
       )}

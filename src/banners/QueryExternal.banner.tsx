@@ -6,7 +6,7 @@ import { Card } from "@/ui/Card";
 import { Input } from "@/ui/Input";
 import { Label } from "@/ui/Label";
 import { Separator } from "@/ui/Separator";
-import { Stack, StackProps } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 import { Toggle } from "@/ui/Toggle";
 import { useEffect, useReducer, useState } from "react";
 
@@ -21,7 +21,8 @@ export function QueryExternalBanner() {
   const [loading, setLoading] = useState<boolean>(false);
   const [isSplunk, toggleIsSplunk] = useReducer((state: boolean) => !state, false);
 
-  const stackProps: StackProps = ({
+  // @ts-ignore
+  const stackProps: Stack.Props = ({
     ai: 'center',
     gap: 12
   });

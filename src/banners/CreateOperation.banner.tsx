@@ -6,7 +6,7 @@ import { useApplication } from "../context/Application.context";
 import { OperationCreate } from "../dto/OperationCreate.dto";
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
 import { GlyphsPopover } from "@/components/Glyphs.popover";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 import s from './styles/CreateOperationBanner.module.css'
 import { Card } from "@/ui/Card";
 import { Separator } from "@/ui/Separator";

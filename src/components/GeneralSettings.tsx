@@ -5,7 +5,7 @@ import { Button } from "@/ui/Button";
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 import { Gradients, GradientsMap } from "@/ui/utils";
 import { Icon } from "@impactium/icons";
 import { CSSProperties, useEffect } from "react";

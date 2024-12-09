@@ -7,7 +7,7 @@ import { useApplication } from "@/context/Application.context";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/ui/Skeleton";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 
 interface DisplayGroupDialogProps {
   events: λEvent[];

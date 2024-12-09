@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Switch, SwitchProps } from './Switch';
 import s from './styles/Toggle.module.css';
 import { cn } from './utils';
-import { Stack } from './Stack';
+import { Stack } from '@impactium/components';
 
 interface ToggleProps extends SwitchProps {
   option: [string, string];

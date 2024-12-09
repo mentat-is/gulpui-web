@@ -15,7 +15,7 @@ import { CreateOperationBanner } from "@/banners/CreateOperation.banner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Logger } from "@/dto/Logger.class";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 import { GlyphMap } from "@/dto/Glyph.dto";
 import { GeneralSettings } from "@/components/GeneralSettings";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
