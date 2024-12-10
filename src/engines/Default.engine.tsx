@@ -1,7 +1,7 @@
 import { λFile } from "@/dto/File.dto";
 import { Engine, Hardcode, Scale } from "../class/Engine.dto";
 import { RenderEngine } from "../class/RenderEngine";
-import { throwableByTimestamp, λColor } from "@/ui/utils";
+import { numericRepresentationOfAnyString, numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from "@/ui/utils";
 import { File, μ } from "../class/Info";
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
@@ -48,20 +48,9 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       if (map.has(pos))
         return;
 
-      const isTargetValid = file.target !== null && file.target in event;
+      const value = numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file, event);
 
-      let target = isTargetValid
-        ? event[file.target!]
-        : event.event.code;
-
-      if (typeof target === 'undefined') {
-        target = event.event.code;
-      }
-      if (typeof target === 'object') {
-        target = target.code;
-      }
-
-      map.set(pos, [(parseInt(target.toString()) || file.event.max) as Hardcode.Height, timestamp ]);
+      map.set(pos, [value, timestamp ]);
     });
 
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;

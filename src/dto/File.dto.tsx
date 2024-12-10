@@ -15,7 +15,7 @@ export interface λFile {
   color: Gradients,
   engine: Engine.List,
   pinned?: boolean;
-  target: keyof λEvent | null;
+  key: keyof λEvent | null;
   uuid: μ.File,
   _uuid: μ.Plugin,
 }

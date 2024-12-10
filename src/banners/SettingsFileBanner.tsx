@@ -104,7 +104,7 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
           <p className={s.text}>Target key:</p>
           {isCustomKeyField
             ? <Input placeholder='Render engine target key' />
-            : <Select onValueChange={(field: keyof λEvent) => Info.file_set_target(file, field)}>
+            : <Select onValueChange={(field: keyof λEvent) => Info.fileKey(file, field || null)}>
                 <SelectTrigger className={s.trigger} value={engine}>
                   <SelectValue placeholder="event.code" />
                 </SelectTrigger>
