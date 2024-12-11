@@ -128,16 +128,16 @@ export function Timeline() {
   }, [timeline, debouncedHandleWheel]);
 
   const handleContextMenu = (event: MouseEvent) => {
-    if (!isShiftPressed) {
-      return;
-    }
-
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 64) / 48)
 
     const file = File.selected(app)[index];
 
     if (!file) {
       return;
+    }
+
+    if (!isShiftPressed) {
+      return setShifted([file]);
     }
 
     if (shifted.find(f => f.uuid === file.uuid)) {
