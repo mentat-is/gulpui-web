@@ -133,11 +133,7 @@ Progress: ${progress}%`, UploadBanner.name);
       }
     }));
 
-    const mappings = Mapping.find(app, settings[filename].plugin!) || [];
-
-    if (mappings.length) {
-      setMapping(mappings[0].filename, filename);
-    }
+    setMapping(undefined, filename);
   }
 
   const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => {
@@ -148,7 +144,17 @@ Progress: ${progress}%`, UploadBanner.name);
         mapping
       }
     }));
+
+    setMethod(undefined, filename);
   };
+
+  const setMethod = (method: λIngestFileSettings['method'], filename: File['name']) => setSettings(s => ({
+    ...s,
+    [filename]: {
+      ...s[filename],
+      method
+    }
+  }))
 
   useEffect(() => {
     const newSettings: typeof settings = {};
@@ -167,14 +173,9 @@ Progress: ${progress}%`, UploadBanner.name);
       }
     });
   }, [settings]);
-  
-  const setMethod = (method: λIngestFileSettings['method'], filename: File['name']) => setSettings(s => ({
-    ...s,
-    [filename]: {
-      ...s[filename],
-      method
-    }
-  }));
+
+  console.log(settings)
+  console.log(app.general.ingest)
 
   const getExtensionMapping = async (file: File): Promise<string> => {
     const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
