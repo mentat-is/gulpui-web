@@ -69,7 +69,12 @@ export function UploadBanner() {
     const end = Math.min(file.size, start + CHUNK_SIZE);
 
     const formData = new FormData();
-    formData.append('payload', JSON.stringify(end >= file.size ? { plugin_params: { mapping_file: settings[file.name].mapping } } : {}));
+    formData.append('payload', JSON.stringify(end >= file.size ? {
+      plugin_params: {
+        mapping_file: settings[file.name].mapping,
+        mapping_id: settings[file.name].method
+      }
+    } : {}));
     formData.append('file', file.slice(start, end), file.name);
 
     await api<any>('/ingest_file', {
@@ -128,11 +133,7 @@ Progress: ${progress}%`, UploadBanner.name);
       }
     }));
 
-    const mappings = Mapping.find(app, settings[filename].plugin!) || [];
-
-    if (mappings.length) {
-      setMapping(mappings[0].filename, filename);
-    }
+    setMapping(undefined, filename);
   }
 
   const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => {
@@ -143,31 +144,38 @@ Progress: ${progress}%`, UploadBanner.name);
         mapping
       }
     }));
+
+    setMethod(undefined, filename);
   };
 
-  useEffect(() => {
-    const newSettings: typeof settings = {};
-
-    Object.entries(settings).forEach(file => {
-      const [filename, settings] = file;
-
-      if (settings.plugin && !settings.mapping) {
-        const plugin = app.general.ingest.find(p => p.filename === settings.plugin);
-
-        if (plugin && plugin.mappings.length) {
-          newSettings[filename].mapping = plugin.mappings[0].filename
-        }
-      }
-    });
-  }, [settings]);
-  
   const setMethod = (method: λIngestFileSettings['method'], filename: File['name']) => setSettings(s => ({
     ...s,
     [filename]: {
       ...s[filename],
       method
     }
-  }));
+  }))
+
+  useEffect(() => {
+    const newSettings: typeof settings = {};
+
+    Object.entries(settings).forEach(file => {
+      const [filename, settings] = file;
+      
+      newSettings[filename] = settings;
+
+      if (settings.plugin && !settings.mapping) {
+        const plugin = app.general.ingest.find(p => p.filename === settings.plugin);
+
+        if (plugin && plugin.mappings.length) {
+          newSettings[filename].mapping = plugin.mappings[0].filename;
+        }
+      }
+    });
+  }, [settings]);
+
+  console.log(settings)
+  console.log(app.general.ingest)
 
   const getExtensionMapping = async (file: File): Promise<string> => {
     const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
@@ -390,7 +398,7 @@ Progress: ${progress}%`, UploadBanner.name);
           img='Check'
           className={s.done}
           loading={loading}
-        >Done</Button>
+        >Upload</Button>
       </div>
     </Banner>
   );

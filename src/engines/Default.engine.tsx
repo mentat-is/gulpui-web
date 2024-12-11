@@ -1,12 +1,12 @@
 import { λFile } from "@/dto/File.dto";
-import { Engine, Hardcode, Scale } from "../class/Engine.dto";
+import { Engine, Hardcode, MaxHeight, MinHeight, Scale } from "../class/Engine.dto";
 import { RenderEngine } from "../class/RenderEngine";
-import { throwableByTimestamp, λColor } from "@/ui/utils";
+import { numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from "@/ui/utils";
 import { File, μ } from "../class/Info";
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null;
-  static target: Map<Hardcode.X, [ Hardcode.Height, Hardcode.Timestamp ]> & Scale;
+  static target: Map<Hardcode.X, [ Hardcode.Height, Hardcode.Timestamp ]> & Scale & MinHeight & MaxHeight;
   private renderer!: RenderEngine;
   map = new Map<μ.File, typeof DefaultEngine.target>();
 
@@ -29,8 +29,8 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       const position = this.renderer.getPixelPosition(timestamp);
 
       this.renderer.ctx.fillStyle = λColor.gradient(file.color, code, {
-        min: file.event.min,
-        max: file.event.max,
+        min: map[MinHeight],
+        max: map[MaxHeight],
       });
       this.renderer.ctx.fillRect(position, y, 1, 47);
     });
@@ -48,23 +48,16 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       if (map.has(pos))
         return;
 
-      const isTargetValid = file.target !== null && file.target in event;
+      const value = numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file, event);
 
-      let target = isTargetValid
-        ? event[file.target!]
-        : event.event.code;
-
-      if (typeof target === 'undefined') {
-        target = event.event.code;
-      }
-      if (typeof target === 'object') {
-        target = target.code;
-      }
-
-      map.set(pos, [(parseInt(target.toString()) || file.event.max) as Hardcode.Height, timestamp ]);
+      map.set(pos, [value, timestamp]);
     });
 
+    const values = Array.from(map).map(v => v[1][0]);
+
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;
+    map[MinHeight] = Math.min(...values) as Hardcode.Height;
+    map[MaxHeight] = Math.max(...values) as Hardcode.Height;
     this.map.set(file.uuid, map)
 
     return map as typeof DefaultEngine.target;
