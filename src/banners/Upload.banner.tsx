@@ -397,7 +397,7 @@ Progress: ${progress}%`, UploadBanner.name);
           img='Check'
           className={s.done}
           loading={loading}
-        >Done</Button>
+        >Upload</Button>
       </div>
     </Banner>
   );
