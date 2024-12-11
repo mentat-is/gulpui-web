@@ -691,6 +691,11 @@ Files: ${files.length}`, Info.name);
     this.setInfoByKey(this.app.target.filters, 'target', 'filters');
   }
 
+  useReverseScroll = (bool: boolean) => {
+    localStorage.setItem('settings.__isScrollReversed', String(bool));
+    this.setInfoByKey(bool, 'timeline', 'isScrollReversed')
+  }
+
   mapping = () => this.api<MappingFileListRequest>('/mapping_file_list').then(async (res) => {
     const plugins = await this.plugins_fetch();
 
