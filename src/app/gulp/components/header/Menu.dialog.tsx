@@ -18,7 +18,7 @@ import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
 
 export function MenuDialog() {
-  const { spawnBanner, app, spawnDialog } = useApplication();
+  const { spawnBanner, app, spawnDialog, Info, destroyDialog } = useApplication();
   const [windowRef, setWindowRef] = useState<Window | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -60,7 +60,12 @@ export function MenuDialog() {
     });
   
     setWindowRef(newWindow);
-  };  
+  };
+
+  const backToOperations = () => {
+    Info.files_unselect(app.target.files);
+    destroyDialog();
+  }
   
   useEffect(() => {
     if (windowRef) {
@@ -121,6 +126,7 @@ export function MenuDialog() {
         <Unit type='downstream' num={app.transfered?.down || 0} />
         <Unit type='upstream' num={app.transfered?.up || 0} />
       </div>
+      <Button className={s.logout} variant='outline' img='ChartBarStacked' onClick={backToOperations}>Back to Operations</Button>
       <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>
       {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
     </Dialog>
