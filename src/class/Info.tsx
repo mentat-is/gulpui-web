@@ -280,6 +280,10 @@ export class Info implements InfoProps {
   };
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
+  setDialogSize = (number: number) => {
+    this.setInfoByKey(number, 'timeline', 'dialogSize');
+  }
+
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
   notes_reload = async () => {

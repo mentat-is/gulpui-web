@@ -99,7 +99,7 @@ export function MenuDialog() {
   }
 
   return (
-    <Dialog title='Menu' className={s.menu} defaultSize={30}>
+    <Dialog title='Menu' className={s.menu}>
       <div className={s.stats}>
         <Button img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
         <Button img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>

@@ -174,9 +174,6 @@ Progress: ${progress}%`, UploadBanner.name);
     });
   }, [settings]);
 
-  console.log(settings)
-  console.log(app.general.ingest)
-
   const getExtensionMapping = async (file: File): Promise<string> => {
     const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
         const slice = new Uint8Array(buffer.slice(0, uint.byteLength));
