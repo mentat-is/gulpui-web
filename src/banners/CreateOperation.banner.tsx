@@ -19,13 +19,18 @@ export function CreateOperationBanner() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const createOperation = () => {
+    const body: Record<string, any> = {
+      name
+    }
+
+    if (icon >= 0) {
+      body.glyph_id = icon;
+    }
+
     setLoading(true)
     api<OperationCreate>('/operation_create', {
       method: 'POST',
-      data: {
-        name,
-        glyph_id: icon
-      },
+      data: body,
       body: description
     }).then(response => response.isSuccess() ? Info.operations_reload().then(_ => (destroyBanner())) : null);
   };
