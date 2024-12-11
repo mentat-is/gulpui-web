@@ -71,8 +71,8 @@ export function UploadBanner() {
     const formData = new FormData();
     formData.append('payload', JSON.stringify(end >= file.size ? {
       plugin_params: {
-        mapping_file: settings[file.name].mapping
-        // method
+        mapping_file: settings[file.name].mapping,
+        mapping_id: settings[file.name].method
       }
     } : {}));
     formData.append('file', file.slice(start, end), file.name);
