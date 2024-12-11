@@ -1,5 +1,5 @@
 .popover {
-  z-index: 5;
+  z-index: 6;
   width: min-content;
   border-radius: var(--border-s);
   border: var(--geist-border);

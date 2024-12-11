@@ -7,6 +7,9 @@ import { UUID } from 'crypto';
 import { λApp } from '@/dto';
 import { Info } from '@/class/Info';
 import { RefObject } from 'react';
+import { λEvent } from '@/dto/ChunkEvent.dto';
+import { λFile } from '@/dto/File.dto';
+import { Hardcode } from '@/class/Engine.dto';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -211,6 +214,10 @@ export const formatBytes = (bytes: number): string => {
 
 export class λColor {
   public static ['name -> hex'] = (color: string): string => {
+    if (!color) {
+      return '#ffffff'
+    }
+
     const colours = {
       aliceblue: '#f0f8ff',
       antiquewhite: '#faebd7',
@@ -292,7 +299,7 @@ export class λColor {
       return colours[color as keyof typeof colours];
     }
   
-    return '#ffffff';
+    return color.startsWith('#') ? color : '#ff0000';
   }
 
   /**
@@ -318,3 +325,38 @@ export class λColor {
 }
 
 export const between = (num: number, min: number, max: number) => num >= min && num <= max;
+
+export function numericRepresentationOfAnyString(input: string): number {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+      const charCode = input.charCodeAt(i);
+      hash = (hash * 31 + charCode) % Number.MAX_SAFE_INTEGER;
+  }
+  return Math.abs(hash);
+}
+
+export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file: λFile, event: λEvent): Hardcode.Height {
+  const isTargetValid = file.key && file.key in event;
+
+  let key: unknown = isTargetValid ? event[file.key!] : event.event.code;
+
+  if (key === undefined) {
+    key = event.event.code;
+  }
+
+  if (typeof key === 'object' && key !== null) {
+    key = Object.values(key).reduce((sum, value) => {
+      return (
+        sum +
+        (parseInt(value.toString(), 10) || numericRepresentationOfAnyString(value.toString()))
+      );
+    }, 0);
+  }
+
+  return (
+    (typeof key === 'string' && numericRepresentationOfAnyString(key)) ||
+    (typeof key === 'number' ? key : NaN) ||
+    (file.event?.max) ||
+    0
+  ) as Hardcode.Height;
+}

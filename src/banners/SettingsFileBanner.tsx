@@ -14,9 +14,12 @@ import { Separator } from "@/ui/Separator";
 import { enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Icon } from "@impactium/icons";
-import { Context } from "@/class/Info";
+import { Context, Event } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
 import { Engine } from "@/class/Engine.dto";
+import { Stack } from "@impactium/components";
+import { λEvent } from "@/dto/ChunkEvent.dto";
+import { Toggle } from "@/ui/Toggle";
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -27,9 +30,11 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [color, setColor] = useState<Gradients>(file.color);
   const [offset, setOffset] = useState<number>(file.offset);
   const [engine, setEngine] = useState<Engine.List>(file.engine);
+  const [isCustomKeyField, setIsCustomKeyField] = useState<boolean>(false);
+  const [key, setKey] = useState<keyof λEvent | null>(file.key);
 
   const save = () => {
-    const newFile = { color, offset, engine };
+    const newFile = { color, offset, engine, key };
 
     Logger.log(`Settings for file has been successfully updated.
 File: ${file.name}-${file.uuid}
@@ -88,11 +93,28 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
       </Card>
       <Separator />
       <Card className={s.color}>
-        <p className={s.text}>Color palette:</p>
-        <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
-          <ColorPickerTrigger />
-          <ColorPickerPopover gradients={GradientsMap} solids={[]} />
-        </ColorPicker>
+        <Stack jc='space-between'>
+          <p className={s.text}>Color palette:</p>
+          <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
+            <ColorPickerTrigger />
+            <ColorPickerPopover gradients={GradientsMap} solids={[]} />
+          </ColorPicker>
+        </Stack>
+        <Toggle option={['Use key from list', 'Custom key (unsave)']} checked={isCustomKeyField} onCheckedChange={setIsCustomKeyField}  />
+        <Stack jc='space-between'>
+          <p className={s.text}>Target key:</p>
+          {isCustomKeyField
+            ? <Input placeholder='Render engine target key' />
+            : <Select onValueChange={(field: keyof λEvent) => setKey(field)}>
+                <SelectTrigger className={s.trigger} value={engine}>
+                  <SelectValue placeholder="event.code" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(Event.get(app, file.uuid)[0] || {}).map(key => <SelectItem value={key}>{key}</SelectItem>)}
+                </SelectContent>
+              </Select>
+          }
+        </Stack>
       </Card>
       <Button style={{ alignSelf: 'flex-end' }} img='CheckCheck' onClick={save}>Apply new file settings</Button>
     </Banner>

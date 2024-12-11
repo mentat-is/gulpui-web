@@ -46,9 +46,6 @@
   border: 1px solid var(--white);
   color: var(--white);
 }
-.outline:hover svg {
-  stroke: var(--white);
-}
 
 .hardline {
   border: 1px solid var(--white);
@@ -106,8 +103,8 @@
 }
 
 .defaultSize {
-  height: 36px;
-  min-height: 36px;
+  height: 32px;
+  min-height: 32px;
   padding: 0 12px;
 }
 .sm {
@@ -121,10 +118,10 @@
   padding: 0 16px;
 }
 .icon {
-  height: 36px;
-  width: 36px;
-  min-height: 36px;
-  min-width: 36px;
+  height: 32px;
+  width: 32px;
+  min-height: 32px;
+  min-width: 32px;
 }
 .withImage {
   padding: 0 12px 0 8px;

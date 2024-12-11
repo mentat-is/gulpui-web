@@ -8,12 +8,6 @@
     },
     {
       "type": "node-terminal",
-      "name": "Native",
-      "request": "launch",
-      "command": "npm run electron"
-    },
-    {
-      "type": "node-terminal",
       "name": "Build",
       "request": "launch",
       "command": "npm run build"

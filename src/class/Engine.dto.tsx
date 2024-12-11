@@ -60,6 +60,12 @@ export interface MaxHeight {
   [MaxHeight]: Hardcode.Height;
 }
 
+export const MinHeight = Symbol('MinHeight');
+// eslint-disable-next-line
+export interface MinHeight {
+  [MinHeight]: Hardcode.Height;
+}
+
 export const Length = Symbol('Length');
 // eslint-disable-next-line
 export interface Length {

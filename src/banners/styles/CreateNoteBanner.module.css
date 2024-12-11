@@ -28,7 +28,7 @@
 }
 .trigger {
   width: min-content;
-  height: 36px;
+  height: 32px;
 }
 .trigger:hover {
   border: 1px solid var(--white);

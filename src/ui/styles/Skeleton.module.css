@@ -11,7 +11,7 @@
   width: 128px;
 }
 .defaultHeight {
-  height: 36px;
+  height: 32px;
 }
 .defaultBorder,
 .border_s {
@@ -29,10 +29,10 @@
 
 .avatar {
   border-radius: var(--round);
-  height: 36px;
-  width: 36px;
-  min-height: 36px;
-  min-width: 36px;
+  height: 32px;
+  width: 32px;
+  min-height: 32px;
+  min-width: 32px;
 }
 
 .short {
@@ -61,10 +61,10 @@
 }
 
 .button {
-  min-height: 36px;
-  height: 36px;
-  min-width: 36px;
-  width: 36px;
+  min-height: 32px;
+  height: 32px;
+  min-width: 32px;
+  width: 32px;
   border-radius: 6px;
 }
 

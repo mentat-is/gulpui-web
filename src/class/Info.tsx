@@ -78,7 +78,7 @@ export class Info implements InfoProps {
     if (!operation || !contexts.length) return;
 
     uuids.length
-      ? uuids.forEach(uuid => this.events_reset_in_file(uuid))
+      ? uuids.forEach(uuid => this.events_reset_in_file(File.uuid(this.app, uuid)))
       : this.events_reset();
     
     await this.mapping();
@@ -269,17 +269,20 @@ export class Info implements InfoProps {
   };
   files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
-  files_replace = (file: λFile) => this.setInfoByKey(File.replace(file, this.app), 'target', 'files');
+  files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(File.replace(files, this.app), 'target', 'files');
   file_find_by_filename_and_context = (filename: λFile['name'], context: λContext['name']) => File.findByNameAndContextName(this.app, filename, context);
 
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (uuid: μ.File) => {
-    Logger.log(`All events has been erased from file with uuid ${uuid}`, `${Info.name}.${this.events_reset_in_file.name}`);
-    this.setInfoByKey(Event.delete(this.app, uuid), 'target', 'events')
+  events_reset_in_file = (files: Arrayed<λFile>) => {
+    this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
   };
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
+
+  setDialogSize = (number: number) => {
+    this.setInfoByKey(number, 'timeline', 'dialogSize');
+  }
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
@@ -342,6 +345,8 @@ ${error}`, Info.name);
       toast((res as unknown as ResponseError).data.exception.name);
     }
   });
+
+  fileKey = (file: λFile, key: keyof λEvent) => this.setInfoByKey(File.replace({ ...file, key }, this.app), 'target', 'files');
 
   links_reload = async () => {
     const src_file: λFile['name'][] = []
@@ -497,6 +502,7 @@ ${error}`, Info.name);
                       max: rawFile['max_@timestamp']
                     },
                     plugin: rawPlugin.name,
+                    key: null,
                     _uuid: p_uuid,
                     offset: 0,
                     color: this.app.general.settings.color ?? 'thermal',
@@ -645,9 +651,9 @@ Files: ${files.length}`, Info.name);
 
   setTimelineFilter = (filter: string) => this.setInfoByKey(filter, 'timeline', 'filter');
   
-  increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 16);
+  increasedTimelineScale = (current: number = this.app.timeline.scale) => current + (current / 8);
   
-  decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 16;
+  decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 8;
 
   query_external = ({
     operation_id,
@@ -687,6 +693,11 @@ Files: ${files.length}`, Info.name);
     Object.assign(file_filters.find(filter => filter.uuid === filter_uuid) || {}, obj);
 
     this.setInfoByKey(this.app.target.filters, 'target', 'filters');
+  }
+
+  useReverseScroll = (bool: boolean) => {
+    localStorage.setItem('settings.__isScrollReversed', String(bool));
+    this.setInfoByKey(bool, 'timeline', 'isScrollReversed')
   }
 
   mapping = () => this.api<MappingFileListRequest>('/mapping_file_list').then(async (res) => {
@@ -740,38 +751,45 @@ Files: ${files.length}`, Info.name);
   }
 
   sigma = {
-    set: async (file: λFile | λFile['uuid'], sigma: { name: string, content: string }) => {
-      // eslint-disable-next-line
-      const uuid = Parser.useUUID(file) as μ.File;
+    set: async (files: Arrayed<λFile>, sigma: { name: string, content: string }) => {
+      files = Parser.array(files);
 
-      this.setInfoByKey({
-        ...this.app.target.sigma,
-        [uuid]: {
+      const newSigma: typeof this.app.target.sigma = {}
+
+      files.forEach(file => {
+        newSigma[file.uuid] = {
           name: sigma.name,
           content: sigma.content
         }
+      })
+
+      this.setInfoByKey({
+        ...this.app.target.sigma,
+        ...newSigma
       }, 'target', 'sigma');
 
-      this.events_reset_in_file(uuid);
+      this.events_reset_in_file(files);
 
-      await this.api('/query_sigma', {
-        method: 'POST',
-        data: {
-          ws_id: this.app.general.ws_id,
-          req_id: uuid
-        },
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: JSON.stringify({
-          sigma: sigma.content,
-          options: {
-            '@timestamp': 'desc'
-          }
-        })
-      });
+      files.forEach(file => {
+        this.api('/query_sigma', {
+          method: 'POST',
+          data: {
+            ws_id: this.app.general.ws_id,
+            req_id: file.uuid
+          },
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          body: JSON.stringify({
+            sigma: sigma.content,
+            options: {
+              '@timestamp': 'desc'
+            }
+          })
+        });
+      })
 
-      this.deload(uuid);
+      this.deload(files.map(file => file.uuid));
     },
   
     remove: (file: λFile | λFile['uuid']) => {
@@ -913,7 +931,9 @@ export class Plugin {
 }
 
 export class File {
-  public static replace = (file: λFile, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(f => file.uuid === f.uuid ? file : f);
+  public static replace = (newFiles: Arrayed<λFile>, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(file => Parser.array(newFiles).find(f => f.uuid === file.uuid) || file);
+
+  public static single = <K extends keyof λFile>(files: λFile[], field: K): λFile[K] | undefined => Parser.array(files)[0]?.[field];
 
   public static reload = (files: Arrayed<λFile>, app: λApp): λFile[] => File.select(Parser.array(files), File.selected(app));
 
@@ -970,6 +990,19 @@ export type λFilter = {
 
 export class Filter {
   public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
+
+  public static findMany = (app: λApp, files: λFile[]) => {
+    const filters: λFilter[][] = [];
+
+    files.forEach(file => {
+      const filter = Filter.find(app, file);
+      if (filter) {
+        filters.push(filter)
+      }
+    });
+
+    return filters;
+  }
 
   public static base = (app: λApp, file: λFile, range?: MinMax) => {
     const context = Context.findByPugin(app, file._uuid);
@@ -1049,9 +1082,14 @@ export class Mapping {
 }
 
 export class Event {
-  public static delete = (app: λApp, uuid: μ.File) => {
-    app.target.events.delete(uuid);
-    app.target.events.set(uuid, []);
+  public static delete = (app: λApp, files: Arrayed<λFile>) => {
+    files = Parser.array(files);
+
+    files.forEach(file => {
+      app.target.events.delete(file.uuid);
+      app.target.events.set(file.uuid, []);
+    })
+    
     return app.target.events;
   }
 
@@ -1177,6 +1215,8 @@ export class Parser {
   
 
   public static array = <K extends unknown>(unknown: Arrayed<K>): K[] => Array.isArray(unknown) ? unknown : [unknown];
+
+  public static isSingle = (arr: Array<any>) => arr.length === 1;
 }
 
 export type Arrayed<K> = K | K[];

@@ -31,7 +31,6 @@ export function Link({ link, left, top }: LinkProps) {
     spawnDialog(dialog);
   };
 
-
   return (
     <>
       <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>

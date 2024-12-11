@@ -17,7 +17,7 @@ import { Notes } from './components/Notes';
 import { λNote } from '@/dto/Note.dto';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
 import { Icon } from '@impactium/icons';
-import { Stack } from '@/ui/Stack';
+import { Stack } from "@impactium/components";
 import { ChadNumber, Skeleton } from '@/ui/Skeleton';
 import { Hardcode } from '@/class/Engine.dto';
 
@@ -253,9 +253,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         </Stack>
       )}
       <Stack>
-        <Button onClick={() => Info.setTimelineTarget(1)}>Prev event</Button>
+        <Button onClick={() => Info.setTimelineTarget(1)} img='ArrowLeft'>Previous</Button>
         <hr style={{ flex: 1 }} />
-        <Button onClick={() => Info.setTimelineTarget(-1)}>Next event</Button>
+        <Button onClick={() => Info.setTimelineTarget(-1)} img='ArrowRight' revert>Next</Button>
       </Stack>
     </Dialog>
   )

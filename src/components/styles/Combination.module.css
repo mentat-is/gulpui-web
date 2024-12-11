@@ -1,12 +1,12 @@
 .unit {
-  height: 36px;
+  height: 32px;
   display: flex;
   gap: 12px;
   cursor: pointer;
 }
 .unit svg {
-  min-height: 36px;
-  min-width: 36px;
+  min-height: 32px;
+  min-width: 32px;
   border-radius: var(--round);
   border: var(--geist-border);
 }

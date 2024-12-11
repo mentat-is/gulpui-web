@@ -1,4 +1,4 @@
-import { HTMLAttributes } from 'react';
+import { HTMLAttributes, useEffect } from 'react';
 import s from './styles/Dialog.module.css';
 import { cn } from './utils';
 import { Button } from './Button';
@@ -12,17 +12,30 @@ interface DialogProps extends HTMLAttributes<HTMLDivElement> {
   loading?: boolean;
   icon?: string | React.ReactElement;
   callback?: () => void;
-  defaultSize?: number
 }
 
-export function Dialog({ className, callback, icon, description, defaultSize = 50, title, loading, children, ...props }: DialogProps) {
-  const { destroyDialog } = useApplication();
+export function Dialog({ className, callback, icon, description, title, loading, children, ...props }: DialogProps) {
+  const { app, destroyDialog, Info } = useApplication();
+
+  const handleDialogClose = (event: KeyboardEvent) => {
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      destroyDialog();
+    }
+  }
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleDialogClose)
+
+    return () => {
+      document.removeEventListener('keydown', handleDialogClose)
+    }
+  }, [])
 
   return (
     <ResizablePanelGroup className={s.resize} direction="horizontal">
-      <ResizablePanel className={s.not} defaultSize={100 - defaultSize} />
+      <ResizablePanel className={s.not} />
       <ResizableHandle />
-      <ResizablePanel maxSize={50} minSize={20} defaultSize={defaultSize}>
+      <ResizablePanel className={s.main} maxSize={50} minSize={20} defaultSize={app.timeline.dialogSize} onResize={Info.setDialogSize}>
         <div className={cn(s.dialog, className)} {...props}>
           <div className={s.wrapper}>
             {typeof icon === 'string' ? <img src={icon} alt='' /> : icon}

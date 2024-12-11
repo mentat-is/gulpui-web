@@ -60,6 +60,8 @@ export interface λApp {
       filters: Record<μ.File, λFilter[]>;
     },
     filtering_options: Record<μ.File, FilterOptions>;
+    isScrollReversed: boolean;
+    dialogSize: number;
   }
 }
 export const BaseInfo: λApp = {
@@ -89,6 +91,8 @@ export const BaseInfo: λApp = {
       filters: {}
     },
     filtering_options: {},
+    isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
+    dialogSize: 50
   },
   target: {
     indexes: [],

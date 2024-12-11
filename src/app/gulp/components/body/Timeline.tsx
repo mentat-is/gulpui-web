@@ -6,14 +6,14 @@ import { DragDealer } from '@/class/dragDealer.class';
 import { TimelineCanvas } from './TimelineCanvas';
 import { File } from '@/class/Info';
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
-import { cn } from '@/ui/utils';
 import { λFile } from '@/dto/File.dto';
-import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
 import { TargetMenu } from './Target.menu';
 import { Input } from '@/ui/Input';
+import { FilesMenu } from './Files.manu';
+import { useKeyHandler } from '@/app/use';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
@@ -22,7 +22,8 @@ export function Timeline() {
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
-  const [target, setTarget] = useState<λFile>();
+  const [shifted, setShifted] = useState<λFile[]>([]);
+  const [ isShiftPressed ] = useKeyHandler('Shift');
 
   const increaseScrollY = useCallback((λy: number) => {
     setScrollY((y) => Math.round(y + λy));
@@ -37,7 +38,9 @@ export function Timeline() {
     }
 
     const width = Info.width;
-    const newScale = event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
+    const newScale = app.timeline.isScrollReversed
+    ? event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale()
+    : event.deltaY < 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
 
     const rect = bounding || timeline.current.getBoundingClientRect();
     if (!bounding) {
@@ -66,7 +69,7 @@ export function Timeline() {
       setResize({ start: event.clientX, end: event.clientX });
       setIsResizing(true);
     }
-  }, []);
+  }, [setResize]);
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (isResizing) return setResize((prev) => ({ ...prev, end: event.clientX }))
@@ -105,7 +108,7 @@ export function Timeline() {
     if (isResizing) return;
 
     const handleResize = () => setBounding(null);
-    window.addEventListener('resize', handleResize, { passive: true });
+    window.addEventListener('resize', handleResize);
 
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -126,10 +129,25 @@ export function Timeline() {
     };
   }, [timeline, debouncedHandleWheel]);
 
-  const handleContextMenu = useCallback((event: MouseEvent) => {
-    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 88) / 48)
-    setTarget(File.selected(app)[index]);
-  }, [app, scrollY, timeline]);
+  const handleContextMenu = (event: MouseEvent) => {
+    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 64) / 48)
+
+    const file = File.selected(app)[index];
+
+    if (!file) {
+      return;
+    }
+
+    if (!isShiftPressed) {
+      return setShifted([file]);
+    }
+
+    if (shifted.find(f => f.uuid === file.uuid)) {
+      setShifted(shifted => shifted.filter(f => f.uuid !== file.uuid));
+      return
+    }
+    setShifted(list => [...list, file]);
+  }
 
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
     const key = event.key.toLowerCase();
@@ -144,7 +162,7 @@ export function Timeline() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = () => {
-    if (!target) return
+    if (shifted.length === 0) return
 
     const file = inputRef.current?.files?.[0];
     if (!file) return toast('No sigma rule selected', {
@@ -155,17 +173,25 @@ export function Timeline() {
     reader.onload = async (e) => {
       const content = e.target?.result;
 
-      await Info.sigma.set(target!, { name: file.name, content: content as string });
+      await Info.sigma.set(shifted, { name: file.name, content: content as string });
 
       inputRef.current!.value = '';
     };
     reader.readAsText(file);
   }
 
+  const Menu = useCallback(() => {
+    if (shifted.length === 1) {
+      return <TargetMenu file={shifted[0]} inputRef={inputRef} />
+    }
+
+    return <FilesMenu files={shifted} inputRef={inputRef} />
+  }, [shifted]);
+
   return (
     <div
       id="timeline"
-      className={cn(s.timeline)}
+      className={s.timeline}
       onMouseLeave={handleMouseUpOrLeave}
       onMouseUp={handleMouseUpOrLeave}
       onMouseDown={handleMouseDown}
@@ -178,11 +204,11 @@ export function Timeline() {
       <div className={s.content} id="timeline_content">
         <ContextMenu>
           <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} />
+            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} />
             <Controls setScrollX={setScrollX} scrollX={scrollX} />
             <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
           </ContextMenuTrigger>
-          <TargetMenu file={target} inputRef={inputRef} />
+          <Menu />
         </ContextMenu>
       </div>
     </div>

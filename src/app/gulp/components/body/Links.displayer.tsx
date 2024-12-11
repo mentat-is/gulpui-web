@@ -15,7 +15,7 @@ export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProp
   return (
     <Fragment>
       {app.target.links.map(link => {
-        const left = getPixelPosition(LinkClass.timestamp(link) + File.uuid(app, link._uuid)!.offset);
+        const left = getPixelPosition(LinkClass.timestamp(link) + (File.uuid(app, link._uuid)?.offset || 0));
         let top = 0;
 
         if (link.events.some(e => !File.uuid(app, e._uuid)?.selected)) return null;

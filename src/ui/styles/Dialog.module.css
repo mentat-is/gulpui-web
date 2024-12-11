@@ -1,3 +1,6 @@
+.main {
+  z-index: 5;
+}
 .resize {
   position: absolute;
   pointer-events: none;
@@ -10,7 +13,7 @@
   flex-direction: column;
   gap: var(--card-gap);
   height: calc(100% - 64px);
-  align-items: flex-start;
+  align-items: flex-start;  
   justify-content: flex-start;
   margin-top: 64px;
   pointer-events: all;
@@ -19,14 +22,14 @@
   display: flex;
   flex-direction: row;
   width: 100%;
-  min-height: 36px;
+  min-height: 32px;
   gap: var(--card-gap);
   overflow: hidden;
 }
 .wrapper > img,
 .wrapper > svg {
   border-radius: var(--round);
-  min-width: 36px;
+  min-width: 32px;
 }
 .header {
   display: flex;
@@ -37,14 +40,14 @@
   gap: 2px;
   text-align: center;
   width: 100%;
-  min-height: 36px;
+  min-height: 32px;
   align-items: flex-start;
   justify-content: center;
 }
 
 .header > h2 {
   font-size: 18px;
-  max-width: calc(100% - 36px - 8px);
+  max-width: calc(100% - 32px - 8px);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -56,7 +59,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: calc(100% - 36px - 8px);
+  max-width: calc(100% - 32px - 8px);
   font-size: 14px;
   color: var(--text-dimmed);
 }

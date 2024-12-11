@@ -16,8 +16,8 @@ export function Controls({ scrollX, setScrollX }: ControlsProps) {
   const size_minus = useRef<HTMLButtonElement>(null);
 
   const resetScaleAndScroll = () => {
-    Info.setTimelineScale(dialog ? 0.5 : 1)
-    setScrollX(dialog ? 16 : 0);
+    Info.setTimelineScale(1 - app.timeline.dialogSize / 100)
+    setScrollX(0);
   }
 
   const zoom = (out: boolean = false) => {

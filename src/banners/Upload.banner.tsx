@@ -3,7 +3,7 @@ import { Banner } from "@/ui/Banner";
 import { Input } from "@/ui/Input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
-import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
 import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
@@ -15,11 +15,38 @@ import { SelectFilesBanner } from "./SelectFiles.banner";
 import { PluginEntity } from "@/dto/Plugin.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
+import { QueryExternalBanner } from "./QueryExternal.banner";
+import { MaybeArray } from "@impactium/types";
+import { Stack } from "@impactium/components";
+import { Icon } from "@impactium/icons";
 
 interface λIngestFileSettings {
+  // plugin name
   plugin?: PluginEntity['filename'],
+
+  // plugin mapping definitions
   mapping?: PluginEntity['mappings'][number]['filename'],
+
+  // plugin parse settings
   method?: PluginEntity['mappings'][number]['mapping_ids'][number]
+}
+
+const FILE_SIGNATURES = (() => {
+  const list: Record<string, MaybeArray<Uint8Array>> = {};
+  list['win_evtx.py'] = new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65]);
+  list['systemd_journal.py'] = new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])
+  list['sqlite.py'] = new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])
+  list['pcap.py'] = new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A ]);
+  list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4 ]);
+  list['pcap.py'] = new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1 ]);
+  list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d ]);
+  list['pcap.py'] = new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1 ]);
+  list['win_reg.py'] = new Uint8Array([0x72,0x65,0x67,0x66]);
+  return list;
+})();
+
+interface TargetSelection {
+  file: File
 }
 
 export function UploadBanner() {
@@ -42,7 +69,12 @@ export function UploadBanner() {
     const end = Math.min(file.size, start + CHUNK_SIZE);
 
     const formData = new FormData();
-    formData.append('payload', JSON.stringify(end >= file.size ? { plugin_params: { mapping_file: settings[file.name].mapping } } : {}));
+    formData.append('payload', JSON.stringify(end >= file.size ? {
+      plugin_params: {
+        mapping_file: settings[file.name].mapping,
+        mapping_id: settings[file.name].method
+      }
+    } : {}));
     formData.append('file', file.slice(start, end), file.name);
 
     await api<any>('/ingest_file', {
@@ -101,43 +133,89 @@ Progress: ${progress}%`, UploadBanner.name);
       }
     }));
 
-    const mappings = Mapping.find(app, settings[filename].plugin!);
-
-    if (mappings.length) {
-      setMapping(mappings[0].filename, filename);
-    }
+    setMapping(undefined, filename);
   }
 
-  const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => setSettings(s => ({
+  const setMapping = (mapping: λIngestFileSettings['mapping'], filename: File['name']) => {
+    setSettings(s => ({
+      ...s,
+      [filename]: {
+        ...s[filename],
+        mapping
+      }
+    }));
+
+    setMethod(undefined, filename);
+  };
+
+  const setMethod = (method: λIngestFileSettings['method'], filename: File['name']) => setSettings(s => ({
     ...s,
     [filename]: {
       ...s[filename],
-      mapping
+      method
     }
-  }));
+  }))
 
-  const getExtensionMapping = (file: File) => {
-    const extension = file.name.split('.').pop()!;
-    const map: Record<string, PluginEntity['filename']> = {
-      'csv': 'csv.py',
+  useEffect(() => {
+    const newSettings: typeof settings = {};
+
+    Object.entries(settings).forEach(file => {
+      const [filename, settings] = file;
+      
+      newSettings[filename] = settings;
+
+      if (settings.plugin && !settings.mapping) {
+        const plugin = app.general.ingest.find(p => p.filename === settings.plugin);
+
+        if (plugin && plugin.mappings.length) {
+          newSettings[filename].mapping = plugin.mappings[0].filename;
+        }
+      }
+    });
+  }, [settings]);
+
+  const getExtensionMapping = async (file: File): Promise<string> => {
+    const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
+        const slice = new Uint8Array(buffer.slice(0, uint.byteLength));
+        return slice.every((value, index) => value === uint[index]);
     };
 
-    const plugin = map[extension];
+    const buffer = await file.arrayBuffer();
 
-    if (!plugin) return undefined;
+    const matchedKey = Object.keys(FILE_SIGNATURES).find(key => {
+        const signature = FILE_SIGNATURES[key];
+        return Array.isArray(signature)
+            ? signature.some(uint => isEqual(buffer, uint))
+            : isEqual(buffer, signature);
+    });
 
-    return app.general.ingest.find(p => p.filename === plugin);
+    return matchedKey || mapExtensions[file.name.split('.')[1]] || 'regex';
+  };
+
+  const mapExtensions: Record<string, string> = {
+    csv: 'csv.py',
+    eml: 'eml.py',
+    mbox: 'mbox.py'
   }
 
-  const PluginSelection = ({ file }: { file: File }) => {
-    const placeholder = app.general.ingest[0];
+  useEffect(() => {
+    if (!files) {
+      return; 
+    }
 
-    if (!settings[file.name].plugin && placeholder) setPlugin(placeholder.filename, file.name);
+    [...files].forEach(async file => {
+      const plugin = await getExtensionMapping(file);
 
+      setPlugin(plugin, file.name);
+    })
+  }, [files]);
+
+
+  const PluginSelection = ({ file }: TargetSelection) => {
     return (  
       <Select onValueChange={plugin => setPlugin(plugin, file.name)} value={settings[file.name].plugin}>
         <SelectTrigger>
-          <SelectValue defaultValue={getExtensionMapping(file)?.filename} placeholder="Choose filename" />
+          <SelectValue defaultValue={settings[file.name].plugin} placeholder="Choose filename">{settings[file.name].plugin}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {app.general.ingest.map(i => (
@@ -148,15 +226,13 @@ Progress: ${progress}%`, UploadBanner.name);
     );
   };
 
-  const MappingSelection = useCallback(({ file }: {
-    file: File
-  }) => {
+  const MappingSelection = ({ file }: TargetSelection) => {
     const mappings = Mapping.find(app, settings[file.name].plugin!) || [];
 
     if (!mappings.length) return (
       <Select disabled>
         <SelectTrigger>
-          <SelectValue defaultValue={'no_mappings'} placeholder="Choose mapping" />
+          <SelectValue defaultValue={'no_mappings'} placeholder="No mappings available for this plugin" />
         </SelectTrigger>
       </Select>
     );
@@ -175,7 +251,49 @@ Progress: ${progress}%`, UploadBanner.name);
         </SelectContent>
       </Select>
     );
-  }, [settings, files]);
+  };
+
+  const findMethodsByPluginAndMappingName = (plugin?: λIngestFileSettings['plugin'], mapping?: λIngestFileSettings['mapping']) => {
+    const mappings = plugin ? app.general.ingest.find(p => p.filename === plugin)?.mappings : null;
+
+    if (!mappings) {
+      return [];
+    }
+
+    return mappings.find(m => m.filename === mapping)?.mapping_ids || [];
+  }
+
+  const MethodSelection = ({ file }: TargetSelection) => {
+    console.log('z');
+    const fileSettings = settings[file.name];
+
+    const methods = findMethodsByPluginAndMappingName(fileSettings.plugin, fileSettings.mapping);
+
+    if (methods.length <= 1) {
+      if (!fileSettings.method && methods.length === 1) {
+        setMethod(methods[0], file.name);
+      }
+
+      return null;
+    }
+
+    if (!fileSettings.method) {
+      setMethod(methods[0], file.name);
+    }
+
+    return (
+      <Select disabled={!fileSettings.mapping} onValueChange={mapping => setMethod(mapping, file.name)} value={fileSettings.method}>
+        <SelectTrigger>
+          <SelectValue defaultValue={fileSettings.method} placeholder="Choose method" />
+        </SelectTrigger>
+        <SelectContent>
+          {methods.map(m => (
+            <SelectItem key={m} value={m}>{m}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    )
+  }
 
   const ContextSelection = () => {
     const contexts = Operation.contexts(app);
@@ -214,6 +332,31 @@ Progress: ${progress}%`, UploadBanner.name);
     setSettings(settings);
   }
 
+  function addFromExternalQueryButtonHandler() {
+    spawnBanner(<QueryExternalBanner />)
+  }
+
+  function FilePreview({ file }: TargetSelection) {
+    return (
+      <Stack className={s.filePreview} gap={16}>
+        <Stack>
+          <Icon name='File' fromGeist />
+          <p>{formatBytes(file.size)}</p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <p className={s.filename}>{file.name}</p>
+            </PopoverTrigger>
+            <PopoverContent className={s.popover}>{file.name}</PopoverContent>
+          </Popover>
+        </Stack>
+        <Stack gap={3}>
+          <PluginSelection file={file} />
+          <MappingSelection file={file} />
+          <MethodSelection file={file} />
+        </Stack>
+      </Stack>
+    )
+  }
 
   return (
     <Banner title='Upload files'>
@@ -234,39 +377,25 @@ Progress: ${progress}%`, UploadBanner.name);
       <Separator />
       {files && (
         <Card className={s.preview}>
-          <div className={cn(s.node, s.defines)}>
-            <p>Filename</p>
-            <p>Size</p>
-            <p>Plugin</p>
-            <p>Method</p>
-          </div>
-          <Separator />
           <div className={s.files}>
-            {Object.keys(settings).map((filename, i) => (
-              <div className={s.node}>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <p>{filename}</p>
-                  </PopoverTrigger>
-                  <PopoverContent className={s.popover}>{filename}</PopoverContent>
-                </Popover>
-                <p>{formatBytes(files.item(i)!.size)}</p>
-                <PluginSelection file={files.item(i)!} />
-                <MappingSelection file={files.item(i)!} />
-              </div>
-            ))}
+            {Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}
           </div>
         </Card>
       )}
       <div className={s.bottom}>
         {loading && <Progress value={progress} />}
         <Button
+          variant='outline'
+          onClick={addFromExternalQueryButtonHandler}
+          img='Kv'
+        >Add from external query</Button>
+        <Button
           variant={files?.length && context && Object.values(settings).every(s => s.plugin) ? 'default' : 'disabled'}
           onClick={submitFiles}
           img='Check'
           className={s.done}
           loading={loading}
-        >Done</Button>
+        >Upload</Button>
       </div>
     </Banner>
   );

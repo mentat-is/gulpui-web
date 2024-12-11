@@ -11,11 +11,11 @@ import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
 import { Button } from "@/ui/Button";
 import { λIndex } from "@/dto/Index.dto";
-import { CreateOperationBanner } from "@/banners/CreateOperationBanner";
+import { CreateOperationBanner } from "@/banners/CreateOperation.banner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Logger } from "@/dto/Logger.class";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
 import { GlyphMap } from "@/dto/Glyph.dto";
 import { GeneralSettings } from "@/components/GeneralSettings";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
@@ -151,8 +151,8 @@ export function LoginPage() {
     <div className={s.page}>
       <Card className={s.wrapper}>
         <div className={s.logo}>
-          <img src='/favicon.svg' alt='' />
-          Gulp
+          <img src='/gulp-geist.svg' alt='' />
+          <h1>Gulp</h1>
           <i>Web Client</i>
         </div>
         <div className={s.content}>

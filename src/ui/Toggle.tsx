@@ -2,22 +2,18 @@ import { useState } from 'react';
 import { Switch, SwitchProps } from './Switch';
 import s from './styles/Toggle.module.css';
 import { cn } from './utils';
+import { Stack } from '@impactium/components';
 
 interface ToggleProps extends SwitchProps {
   option: [string, string];
 }
 
-export function Toggle({ option, ...props }: ToggleProps) {
-  const [checked, setChecked] = useState<boolean>(Boolean(props.defaultChecked));
-
-  props.checked = props.checked ?? checked;
-  props.onCheckedChange = props.onCheckedChange ?? setChecked;
-
+export function Toggle({ option, className, ...props }: ToggleProps) {
   return (
-    <div className={s.toggle}>
-      <p className={cn(!checked && s.selected)}>{option[0]}</p>
+    <Stack ai='center' flex className={cn(s.toggle, className)}>
+      <p className={cn(!props.checked && s.selected)}>{option[0]}</p>
       <Switch {...props} />
-      <p className={cn(checked && s.selected)}>{option[1]}</p>
-    </div>
+      <p className={cn(props.checked && s.selected)}>{option[1]}</p>
+    </Stack>
   );
 };

@@ -18,6 +18,7 @@ interface RenderEngineConstructor {
   scrollX: number;
   scrollY: number;
   getPixelPosition: (timestamp: number) => number,
+  shifted: λFile[]
 }
 
 export interface Status {
@@ -51,8 +52,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   default!: DefaultEngine;
   height!: HeightEngine;
   graph!: GraphEngine;
+  shifted: λFile[] = []
 
-  constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX }: RenderEngineConstructor) {
+  constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX, shifted }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
       RenderEngine.instance.ruler = new RulerDrawer({
         ctx,
@@ -60,12 +62,13 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         scrollX,
         scale: info.app.timeline.scale,
         selected: info.app.target.bucket.selected,
-        width: info.width
+        width: info.width,
       });
       RenderEngine.instance.ctx = ctx;
       RenderEngine.instance.limits = limits;
       RenderEngine.instance.info = info;
       RenderEngine.instance.scrollX = scrollX;
+      RenderEngine.instance.shifted = shifted;
       RenderEngine.instance.scrollY = scrollY;
       RenderEngine.instance.getPixelPosition = getPixelPosition;
       RenderEngine.instance.default = new DefaultEngine(RenderEngine.instance);
@@ -84,6 +87,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     });
     this.ctx = ctx;
     this.limits = limits;
+    this.shifted = shifted;
     this.info = info;
     this.getPixelPosition = getPixelPosition;
     
@@ -93,27 +97,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine.instance = this;
     return this;
   }
-
-  // apache(file: λFile, y: number) {
-  //   const heat = this.scaleCache(this.statusMap, file)
-  //     ? this.statusMap[file.uuid]
-  //     : this.getStatusMap(file);
-
-  //   [...heat].forEach(hit => {
-  //     // eslint-disable-next-line
-  //     const [_, { codes, heights, timestamp }] = hit;
-      
-  //     if (throwableByTimestamp(timestamp + file.offset, this.limits, this.info.app)) return;
-
-  //     codes.forEach((code, i) => {
-  //       this.ctx.fillStyle = λColor.gradient(file.color, code, {
-  //         min: file.event.min || 0,
-  //         max: file.event.max || 599,
-  //       });
-  //       this.ctx.fillRect(this.getPixelPosition(timestamp), y + 47 - heights[i], 1, 1);
-  //     })
-  //   });
-  // };
 
   /**
    * Рисует линию разграничения снизу исходя из названия контекста
@@ -125,7 +108,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, y + 23, window.innerWidth, 1);
 
-    this.fill(color, y);
+    this.fill(color, y, !this.shifted.find(shiftedFile => shiftedFile.uuid === file.uuid));
   }
 
   /**
@@ -143,15 +126,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
    * @param color `Color` - цвет заливки
    * @param y `number` - позиция по середине `λFile`
    */
-  public fill = (color: Color, y: number) => {
-    this.ctx.fillStyle = color + 12;
+  public fill = (color: Color, y: number, isShifted: boolean) => {
+    this.ctx.fillStyle = color + (isShifted ? 12 : 32 );
     this.ctx.fillRect(0, y - 24, window.innerWidth, 48);
   }
 
-
   public links = () => {
     this.info.app.target.links.forEach(link => {
-      if (link.events.some(e => !File.uuid(this.info.app, e._uuid).selected)) return;
+      if (link.events.some(e => !File.uuid(this.info.app, e._uuid)?.selected)) return;
 
       const { dots, center } = this.calcDots(link);
 
@@ -292,39 +274,4 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(0, File.selected(this.info.app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - this.scrollY, window.innerWidth, 1)
     this.ctx.fillRect(this.getPixelPosition(this.info.app.timeline.target.timestamp + file.offset), 0, 1, window.innerWidth)
   }
-
-  // private getStatusMap = (file: λFile): StatusMap => {
-  //   const heat: StatusMap = new Map() as StatusMap;
-
-  //   File.events(this.info.app, file).forEach(event => {
-  //     const timestamp = event.timestamp + file.offset;
-  //     const λpos = this.getPixelPosition(timestamp);
-
-  //     const code = parseInt(event.event.code);
-
-  //     const obj: Status = heat.get(λpos) || {
-  //       codes: [],
-  //       heights: [],
-  //       timestamp
-  //     };
-
-  //     heat.set(λpos, {
-  //       codes: [...obj.codes, code],
-  //       heights: [...obj.heights, Math.round(((code - file.event.min) / (file.event.max - file.event.min)) * 46 + 1)],
-  //       timestamp
-  //     });
-  //   });
-
-  //   heat[Scale] = this.info.app.timeline.scale;
-  //   this.statusMap = {
-  //     ...this.statusMap,
-  //     [file.uuid]: heat,
-  //   };
-  
-  //   return heat;
-  // }
-
-  // private scaleCache = (map: Record<string, StatusMap | GraphMap>, file: λFile): boolean => Boolean(map[file.uuid]?.[Scale] === this.info.app.timeline.scale);
-
-  // private useCache = (map: Record<string, HeightMap>, uuid: μ.File): boolean => map[uuid]?.[Amount] >= Event.get(this.info.app, uuid).length
 }

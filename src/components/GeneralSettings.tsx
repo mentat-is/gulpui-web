@@ -5,7 +5,8 @@ import { Button } from "@/ui/Button";
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Stack } from "@/ui/Stack";
+import { Stack } from "@impactium/components";
+import { Switch } from "@/ui/Switch";
 import { Gradients, GradientsMap } from "@/ui/utils";
 import { Icon } from "@impactium/icons";
 import { CSSProperties, useEffect } from "react";
@@ -16,7 +17,6 @@ export function GeneralSettings() {
   useEffect(() => {
     localStorage.setItem('settings.__engine', app.general.settings.engine);
     localStorage.setItem('settings.__color', app.general.settings.color)
-
   }, [app.general.settings]);
 
   const fontStyle: CSSProperties = {
@@ -49,6 +49,10 @@ export function GeneralSettings() {
               <ColorPickerTrigger />
               <ColorPickerPopover gradients={GradientsMap} solids={[]} />
             </ColorPicker>
+          </Stack>
+          <Stack ai='center'>
+            <span style={fontStyle}>Reverse scroll:</span>
+            <Switch checked={app.timeline.isScrollReversed} onCheckedChange={Info.useReverseScroll} />
           </Stack>
         </Stack>
       </PopoverContent>

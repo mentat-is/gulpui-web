@@ -61,17 +61,28 @@ export class GraphEngine implements Engine.Interface<Target> {
         min: this.renderer.limits.min - 3000,
         max: this.renderer.limits.max + 3000,
       }, this.renderer.info.app)) continue;
-
+    
       const x = this.renderer.getPixelPosition(timestamp);
       const [lastTimestamp, lastHeight] = Array.from(result).pop() || [];
+    
+      if (lastTimestamp && lastHeight) {
+        const lastX = this.renderer.getPixelPosition(lastTimestamp);
 
+        if (Math.abs(x - lastX) > 16) {
+          const steps = Math.floor(Math.abs(x - lastX) / 16);
+          const deltaTimestamp = (timestamp - lastTimestamp) / (steps + 1);
+    
+          for (let i = 1; i <= steps; i++)
+            result.set(lastTimestamp + deltaTimestamp * i, 0 as Hardcode.Height);
+        }
+      }
+    
       if (lastTimestamp && lastHeight && Math.abs(this.renderer.getPixelPosition(lastTimestamp) - x) < 8) {
-        const newLastResult = lastHeight + height;
-        result.set(lastTimestamp, newLastResult as Hardcode.Height);
+        result.set(lastTimestamp, lastHeight + height as Hardcode.Height);
       } else {
         result.set(timestamp, height);
       }
-    }
+    }    
 
     const max = Math.max(...Array.from(result).map(v => v[1]));
 

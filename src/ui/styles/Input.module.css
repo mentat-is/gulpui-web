@@ -1,8 +1,8 @@
 .input {
   display: flex;
   align-items: center;
-  height: 36px;
-  min-height: 36px;
+  height: 32px;
+  min-height: 32px;
   width: 100%;
   border-radius: var(--border-s);
   border: 1px solid var(--accent-3);
