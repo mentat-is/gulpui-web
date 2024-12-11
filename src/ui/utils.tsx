@@ -214,6 +214,10 @@ export const formatBytes = (bytes: number): string => {
 
 export class λColor {
   public static ['name -> hex'] = (color: string): string => {
+    if (!color) {
+      return '#ffffff'
+    }
+
     const colours = {
       aliceblue: '#f0f8ff',
       antiquewhite: '#faebd7',
@@ -295,7 +299,7 @@ export class λColor {
       return colours[color as keyof typeof colours];
     }
   
-    return '#ffffff';
+    return color.startsWith('#') ? color : '#ff0000';
   }
 
   /**

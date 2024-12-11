@@ -8,7 +8,7 @@ import {
   ColorPickerTrigger,
   ColorPickerPopover,
 } from "@/ui/Color";
-import { useState } from "react";
+import { SetStateAction, useState } from "react";
 import s from './styles/CreateNoteBanner.module.css'
 import { Input } from "@/ui/Input";
 import { format } from "date-fns";
@@ -23,6 +23,7 @@ import { λFile } from "@/dto/File.dto";
 import { λLink } from "@/dto/Link.dto";
 import { LinkCombination } from "@/components/LinkCombination";
 import { EventCombination } from "@/components/EventCombination";
+import { GlyphsPopover } from "@/components/Glyphs.popover";
 
 interface CreateLinkBannerProps {
   context: string,
@@ -34,6 +35,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   const { app, api, destroyBanner, Info } = useApplication();
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
+  const [glyph_id, setGlyphId] = useState<number>(-1);
   const [name, setName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [_private, _setPrivate] = useState<boolean>(false);
@@ -42,20 +44,26 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   const levelMap = ['DEFAULT', 'WARNING', 'ERROR'];
 
   const send = async () => {
+    const data: any = {
+      operation_id: Operation.selected(app)?.id,
+      context,
+      src_file: file.name,
+      ws_id: app.general.ws_id,
+      src: Parser.array(events)[0]._id,
+      color,
+      level,
+      private: _private,
+      name
+    };
+
+    if (glyph_id >= 0) {
+      data.glyph_id = glyph_id
+    }
+
     setLoading(true);
     api<ResponseBase<unknown>>('/link_create', {
       method: 'POST',
-      data: {
-        operation_id: Operation.selected(app)?.id,
-        context,
-        src_file: file.name,
-        ws_id: app.general.ws_id,
-        src: Parser.array(events)[0]._id,
-        color,
-        level,
-        private: _private,
-        name
-      },
+      data,
       headers: {
         'Content-Type': 'application/json; charset=utf-8'
       },
@@ -102,9 +110,9 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   return (
     <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).length && <Subtitle />}>
       <Card className={s.overview}>
-        <p>Name: {<Input placeholder='*Required' revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
+        <p>Name: <Input placeholder='*Required' revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/></p>
         <Separator />
-        <p>Description: {<Input placeholder='*Required' revert img='Heading2' value={description} onChange={e => setDescription(e.currentTarget.value)}/>}</p>
+        <p>Description: <Input placeholder='*Required' revert img='Heading2' value={description} onChange={e => setDescription(e.currentTarget.value)}/></p>
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
@@ -137,6 +145,8 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
           <p>Private: {_private ? 'Yes' : 'No'}</p>
           <Switch checked={_private} onCheckedChange={_setPrivate}></Switch>
         </div>
+        <Separator />
+        <GlyphsPopover icon={glyph_id} setIcon={setGlyphId} />
       </Card>
       <Card>
         {Parser.array(events).map(event => <EventCombination event={event} />)}

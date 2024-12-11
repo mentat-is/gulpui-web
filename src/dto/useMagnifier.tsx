@@ -39,16 +39,10 @@ export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dep
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Alt') {
-      setIsAltPressed(true);
+    if (event.ctrlKey) {
+      setIsAltPressed(v => !v);
     }
   };
 
-  const handleKeyUp = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Alt') {
-      setIsAltPressed(false);
-    }
-  };
-
-  return { up: handleKeyUp, down: handleKeyDown, move: handleMouseMove, magnifier_ref, isAltPressed, mousePosition };
+  return { toggler: handleKeyDown, move: handleMouseMove, magnifier_ref, isAltPressed, mousePosition };
 };

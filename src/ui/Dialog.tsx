@@ -1,4 +1,4 @@
-import { HTMLAttributes, useEffect, useState } from 'react';
+import { HTMLAttributes, useEffect } from 'react';
 import s from './styles/Dialog.module.css';
 import { cn } from './utils';
 import { Button } from './Button';
@@ -35,7 +35,7 @@ export function Dialog({ className, callback, icon, description, title, loading,
     <ResizablePanelGroup className={s.resize} direction="horizontal">
       <ResizablePanel className={s.not} />
       <ResizableHandle />
-      <ResizablePanel maxSize={50} minSize={20} defaultSize={app.timeline.dialogSize} onResize={Info.setDialogSize}>
+      <ResizablePanel className={s.main} maxSize={50} minSize={20} defaultSize={app.timeline.dialogSize} onResize={Info.setDialogSize}>
         <div className={cn(s.dialog, className)} {...props}>
           <div className={s.wrapper}>
             {typeof icon === 'string' ? <img src={icon} alt='' /> : icon}

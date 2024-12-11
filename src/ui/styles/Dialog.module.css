@@ -1,3 +1,6 @@
+.main {
+  z-index: 5;
+}
 .resize {
   position: absolute;
   pointer-events: none;
@@ -10,7 +13,7 @@
   flex-direction: column;
   gap: var(--card-gap);
   height: calc(100% - 64px);
-  align-items: flex-start;
+  align-items: flex-start;  
   justify-content: flex-start;
   margin-top: 64px;
   pointer-events: all;

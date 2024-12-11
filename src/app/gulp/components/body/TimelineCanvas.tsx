@@ -30,7 +30,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
   
   const { app, spawnDialog, Info, dialog } = useApplication();
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted];
-  const { up, down, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
+  const { toggler, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = (force?: boolean) => {
     if (!canvas_ref.current) return;
@@ -159,9 +159,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
       ref={wrapper_ref}
       className={cn(s.wrapper)}
       onMouseMove={move}
-      onKeyDown={down}
-      tabIndex={0}
-      onKeyUp={up}>
+      onKeyDown={toggler}
+      tabIndex={0}>
       <NotesDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
       <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
       <canvas
