@@ -133,7 +133,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public links = () => {
     this.info.app.target.links.forEach(link => {
-      if (link.events.some(e => !File.uuid(this.info.app, e._uuid).selected)) return;
+      if (link.events.some(e => !File.uuid(this.info.app, e._uuid)?.selected)) return;
 
       const { dots, center } = this.calcDots(link);
 
