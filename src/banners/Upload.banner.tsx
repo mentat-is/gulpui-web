@@ -69,7 +69,12 @@ export function UploadBanner() {
     const end = Math.min(file.size, start + CHUNK_SIZE);
 
     const formData = new FormData();
-    formData.append('payload', JSON.stringify(end >= file.size ? { plugin_params: { mapping_file: settings[file.name].mapping } } : {}));
+    formData.append('payload', JSON.stringify(end >= file.size ? {
+      plugin_params: {
+        mapping_file: settings[file.name].mapping
+        // method
+      }
+    } : {}));
     formData.append('file', file.slice(start, end), file.name);
 
     await api<any>('/ingest_file', {
@@ -150,12 +155,14 @@ Progress: ${progress}%`, UploadBanner.name);
 
     Object.entries(settings).forEach(file => {
       const [filename, settings] = file;
+      
+      newSettings[filename] = settings;
 
       if (settings.plugin && !settings.mapping) {
         const plugin = app.general.ingest.find(p => p.filename === settings.plugin);
 
         if (plugin && plugin.mappings.length) {
-          newSettings[filename].mapping = plugin.mappings[0].filename
+          newSettings[filename].mapping = plugin.mappings[0].filename;
         }
       }
     });
