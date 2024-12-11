@@ -31,9 +31,10 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [offset, setOffset] = useState<number>(file.offset);
   const [engine, setEngine] = useState<Engine.List>(file.engine);
   const [isCustomKeyField, setIsCustomKeyField] = useState<boolean>(false);
+  const [key, setKey] = useState<keyof λEvent | null>(file.key);
 
   const save = () => {
-    const newFile = { color, offset, engine };
+    const newFile = { color, offset, engine, key };
 
     Logger.log(`Settings for file has been successfully updated.
 File: ${file.name}-${file.uuid}
@@ -104,7 +105,7 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
           <p className={s.text}>Target key:</p>
           {isCustomKeyField
             ? <Input placeholder='Render engine target key' />
-            : <Select onValueChange={(field: keyof λEvent) => Info.fileKey(file, field || null)}>
+            : <Select onValueChange={(field: keyof λEvent) => setKey(field)}>
                 <SelectTrigger className={s.trigger} value={engine}>
                   <SelectValue placeholder="event.code" />
                 </SelectTrigger>
