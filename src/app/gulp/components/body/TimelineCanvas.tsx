@@ -174,7 +174,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
         ref={overlay_ref} 
         width={window.innerWidth}
         height={timeline.current?.clientHeight} />
-      <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), 'yyyy/mm/dd HH:mm:SS SSS')}ms</p>
+      <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), 'yyyy/MM/dd HH:mm:ss SSS')}ms</p>
       <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
     </div>
   );
