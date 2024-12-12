@@ -24,13 +24,8 @@ function Root() {
 
 function Main() {
   const { app } = useApplication();
-  const [preflighted, setPreflighted] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (File.selected(app).length) setPreflighted(true);
-  }, [app.target.files]);
-
-  return (preflighted
+  return (File.selected(app).length
     // if app has operation and index defined
     ? <GulpPage />
     // if not

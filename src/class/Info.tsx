@@ -191,12 +191,6 @@ export class Info implements InfoProps {
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
   setLoaded = (files: μ.File[]) => {
-    const message = files.length > 1
-      ? `Files: [${files.map(f => File.uuid(this.app, f).name).join(', ')}] has been fully loaded`
-      : `File: ${File.uuid(this.app, files[0])?.name} with uuid ${files[0]} has been fully loaded`;
-
-    Logger.log(message, Info.name);
-
     this.setInfoByKey(files, 'timeline', 'loaded');
 
     if (this.app.timeline.loaded.length === this.app.target.files.length) {
