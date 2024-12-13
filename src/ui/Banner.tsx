@@ -5,17 +5,19 @@ import s from './styles/Banner.module.css';
 import { Button } from './Button';
 import { cn } from './utils';
 import { Skeleton } from './Skeleton';
+import { Cell, Stack } from '@impactium/components';
 
 type BannerProps = Children & {
   className?: string | string[];
   title?: string;
   subtitle?: ReactNode | null;
+  done?: ReactNode | null;
   fixed?: boolean;
   loading?: boolean;
   onClose?: () => void
 }
 
-export function Banner({ children, className, title, fixed, loading, subtitle = null, onClose }: BannerProps) {
+export function Banner({ children, className, title, fixed, loading, done, subtitle = null, onClose }: BannerProps) {
   const { destroyBanner } = useApplication();
 
   const close = () => {
@@ -44,13 +46,21 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
 
   return (
     <div className={s.wrapper}>
-      <div className={cn(s.banner, s.loading, className)}>
+      <div className={cn(s.banner, s.loading, className)} style={{['--gray-400']: 'var(--accent-3)' }}>
+        <Cell className={s.cell} top left />
+        <Cell className={s.cell} top right />
+        <Cell className={s.cell} bottom left />
+        <Cell className={s.cell} bottom right>
+          {done}
+        </Cell>
         <h6>
           {loading ? <Skeleton variant='button' width='long' height={24} /> : title}
           {subtitle ? (loading ? <Skeleton height={24} /> : subtitle) : null}
           {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' /></div>}
         </h6>
-        {children}
+        <Stack dir='column' ai='unset' gap={16} className={s.content}>
+          {children}
+        </Stack>
       </div>
     </div>
   );

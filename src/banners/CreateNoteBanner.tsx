@@ -2,7 +2,7 @@ import { Operation, Parser } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
+import { Button } from "@impactium/components";
 import {
   ColorPicker,
   ColorPickerTrigger,
@@ -77,7 +77,7 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
   const deleteTag = (tag: string) => setTags(tags => tags.filter(t => t !== tag));
 
   return (
-    <Banner title='Create note'>
+    <Banner title='Create note' done={<Button loading={loading} className={s.save} onClick={send} variant={title && text ? 'glass' : 'disabled'} img='Check'/>}>
       <Card className={s.overview}>
         <p>Title: {<Input revert img='Heading1' value={title} onChange={e => setTitle(e.currentTarget.value)}/>}</p>
         <Separator />
@@ -129,7 +129,6 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
           <Button img='Plus' variant={tag.length > 0 ? 'outline' : 'disabled'} className={cn(tag.length > 0 && s.focus)} onClick={addTag}>Add</Button>
         </div>
       </Card>
-      <Button loading={loading} className={s.save} onClick={send} variant={title && text ? 'default' : 'disabled'} img='Check'>Create</Button>
     </Banner>
   )
 }

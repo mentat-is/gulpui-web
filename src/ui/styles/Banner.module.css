@@ -15,13 +15,12 @@
   min-width: 600px;
   max-width: 90vw;
   padding: var(--p5) var(--p6);
-  border-radius: var(--border-l);
   background: var(--soft-black);
   position: absolute;
-  border: var(--border);
+  border: 1px solid var(--accent-3);
   display: flex;
+  max-height: 64vh;
   gap: 16px;
-  overflow: hidden;
   flex-direction: column;
 }
 .banner > h6 {
@@ -49,4 +48,11 @@
   100% {
     transform: rotateZ(0deg);
   }
+}
+.content {
+  padding-right: 8px;
+  overflow: scroll;
+}
+.cell {
+  background-color: var(--soft-black);
 }
