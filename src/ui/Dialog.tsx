@@ -18,7 +18,7 @@ export function Dialog({ className, callback, icon, description, title, loading,
   const { app, destroyDialog, Info } = useApplication();
 
   const handleDialogClose = (event: KeyboardEvent) => {
-    if (event.key === 'Backspace' || event.key === 'Delete') {
+    if (event.key === 'Escape') {
       destroyDialog();
     }
   }
