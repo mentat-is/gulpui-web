@@ -1,155 +1,158 @@
-
 # Introduction
 
-Gulp ui web это браузерное приложение которое используется для анализа и взаимодейсвия с бекенд частью гульпа, написанное на базе React и shadcn/ui библиотек
-Документация:
-1. Разворачивание приложения 
-2. Минимальные требования
+**Gulp UI Web** is a browser-based application designed for analyzing and interacting with the backend of Gulp. It is built using React and the Shadcn/UI libraries.
+
+**Documentation**:
+1. [Setup Instructions](./docs/SETUP.md)
+2. [Minimum Requirements](./docs/SETUP.md)
+3. [Workflow Overview](#Workflow)
+   1. [Authorization](#Authorization)
+   2. [Timeline](#Timeline)
+   3. [Upload Files](#Ingest-files)
 
 # Workflow
+
 ## Authorization
 
-#### Этап номер 1: Авторизация
-Войдите в приложение как это описано [здесь][./docs/setup.md]. В веб-интерфейсе появится окно авторизации при помощи имени пользователя, пароля, и ссылки на сервер gulp как это изображено на рисунке №1
+### Authentication
+Log in to the application as described in the [Setup Instructions](./docs/SETUP.md). Upon opening the web interface, you will see the login page requiring a username, password, and the Gulp server URL, as shown in **Figure 1**:
+<div align="center">
+   <img src="./docs/login-page.png" alt="Login Page">
+</div>
 
-| ![[./docs/login-page.png]] |
-| :-----------------: |
-|    *Picture №1*     |
+### Select Operation
+After successful authentication, an operation selection screen will appear, as shown in **Figure 2**:
+<div align="center">
+   <img src="./docs/operation-chooser.png" alt="Operation Chooser">
+</div>
 
-#### Select operation
-После успешной авторизации отобразится окно выбора operation, как изображено на рисунке №2
+### Select Files
+At this stage, you can select contexts (groups), plugins (categories), and files (documents) for display. You can modify your selection later via the [application menu](#Menu). The "Upload and Analyze" button allows you to open the [Ingest File](#Ingest-file) banner to upload and process [files](./docs/DEFINITIONS.md#file). You can also choose all contexts, plugins, or files individually or collectively by clicking "Select All," as shown in **Figure 3**:
+<div align="center">
+   <img src="./docs/select-files.png" alt="Select Files">
+</div>
 
-| ![[./docs/operation-chooser.png]] |
-| :-----------------: |
-|    *Picture №2*    |
+### Set Visibility Range
+Using the provided interface, you can adjust the time range for data displayed on the [Timeline](#Timeline).
 
-#### Select files
-Третий этап входа в систему: Выбор контекстов (групп), плагинов (категорий), и файлов (документов) к отображению. В последующем выбор можно изменить через [меню приложения](#application-menu). Кнопка "Upload and analyze" позволяет открыть [Ingest file](./docs/banners/INGEST_FILE) баннер (ingestion) [файлов](./docs/DEFINITIONS.md#file). Также доступна возможность выбора всего контекста, плагинов, или файлов по отдельности. Предоставляется возможность выбора всех данных при нажатии на Select all как это изображено на рисунке №3
+**Available Options:**
+1. Last day from the most recent log
+2. Last week from the most recent log
+3. Last month from the most recent log
+4. Entire period
 
-| ![[./docs/select-files.png]] |
-| :-------------------: |
-|     *Picture №3*      |
+For finer control, switch to "ISO String" mode for custom date selection, as explained in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601).
+<div align="center">
+   <img src="./docs/range.png" alt="Set Visibility Range">
+</div>
 
-#### Set visibility range
-При помощи предоставленного интерфейса можно изменить временные рамки для отображения данных на [Timeline](#timeline).
-Доступные опции:
-1. Последний день с момента последнего лога
-2. Последняя неделя с момента последнего лога
-3. Последний месяц с момента последнего лога
-4. Весь период
-Предоставлена возможность более точной настройки выбора временного промежутка, при помощи переключения в режим "ISO String", о котором можно подробнее почитать [здесь](https://en.wikipedia.org/wiki/ISO_8601).
+### Timeline
 
-| ![[./docs/range.png]] |
-| :-------------------: |
-|     *Picture №4*      |
+The timeline visualization provides a structured view of system log data over a defined period. Each horizontal row corresponds to a specific log file or data source, showcasing activity through color-coded bars and graphical overlays. This feature helps analyze system events, correlations, and trends across multiple data streams.
 
-
-#### Timeline
-The timeline visualization represents a structured view of system log data over a defined period. Each horizontal row corresponds to a specific log file or data source, showcasing its activity through color-coded bars and graphical overlays. This tool facilitates the analysis of system events, correlations, and trends across multiple data streams.
-###### Components
+#### Components
 
 1. **Time Scale**
-- Located at the top of the visualization, the time scale divides the timeline into intervals (e.g., 10-day spans in this example).
-- Allows precise navigation and identification of event occurrences within the selected period.
+   - Located at the top, it divides the timeline into intervals (e.g., 10-day spans).
+   - Facilitates precise navigation and event identification within the selected period.
 
 2. **Rows and Data Sources**
-- Each horizontal row corresponds to a specific log file (e.g., `Security.evtx`, `System.evtx`).
-- The log file name and its unique identifier are displayed on the left side of the row.
+   - Each row corresponds to a specific log file (e.g., `Security.evtx`, `System.evtx`).
+   - The log file name and unique identifier are displayed on the left side.
 
-**Example Rows:**
-- `Microsoft-Windows-Ntfs%4Operational.evtx` logs file system operations.
-- `Security.evtx` records security-related events.
+   **Example Rows:**
+   - `Microsoft-Windows-Ntfs%4Operational.evtx` logs file system operations.
+   - `Security.evtx` records security-related events.
 
 3. **Color-Coded Activity**
-- **Yellow Bars:** Indicate significant or high-intensity activity.
-- **Purple Bars:** Represent less intensive or background processes.
+   - **Yellow Bars:** Indicate significant or high-intensity activity.
+   - **Purple Bars:** Represent less intensive or background processes.
 
-This differentiation highlights priority areas for investigation.
+   This differentiation highlights priority areas for investigation.
 
 4. **Graphical Overlays**
-- Lines with nodes and numerical labels represent quantitative metrics (e.g., event counts, errors).
-- Peaks and valleys in the graph highlight activity fluctuations over time.
+   - Lines with nodes and numerical labels represent metrics (e.g., event counts).
+   - Peaks and valleys highlight fluctuations in activity.
 
-**Example:** A peak labeled `2625` in `Microsoft-Windows-Ntfs%4Operational.evtx` indicates a high volume of events at that moment.
+   **Example:** A peak labeled `2625` in `Microsoft-Windows-Ntfs%4Operational.evtx` indicates a high volume of events.
 
 5. **Event Markers**
-- Icons (e.g., settings, cryptocurrency, book symbols) pinpoint specific types of events or milestones.
-- Custom markers can be used to denote key system states or anomalies.
+   - Icons pinpoint specific events or milestones.
+   - Custom markers denote key system states or anomalies.
 
-**Example:** A marker at `2024/07/18` aligns peaks in `System.evtx` and `Microsoft-Windows-SMBServer%4Operational.evtx`.
+   **Example:** A marker at `2024/07/18` aligns peaks in `System.evtx` and `Microsoft-Windows-SMBServer%4Operational.evtx`.
 
-###### Use Cases
-- **Anomaly Detection:** Identify unusual spikes or dips in activity (e.g., a sudden surge in security events).
-- **Correlation Analysis:** Explore relationships between simultaneous events across different logs.
-- **Performance Monitoring:** Track recurring patterns or trends to optimize system performance.
+#### Use Cases
 
-###### Example Interpretation
+- **Anomaly Detection:** Identify unusual spikes or dips in activity.
+- **Correlation Analysis:** Explore relationships between events across different logs.
+- **Performance Monitoring:** Track recurring patterns to optimize performance.
+
+#### Example Interpretation
+
 1. **High Activity Periods:**
-   - `Security.evtx` shows intense yellow bars in early August 2024, indicating a possible security incident.
+   - `Security.evtx` shows intense yellow bars in early August 2024, indicating a potential security incident.
 
 2. **Co-occurring Events:**
    - A vertical marker highlights synchronized activities between `Microsoft-Windows-Hyper-V-Switch-Operational.evtx` and `System.evtx`.
 
 3. **Specific Metrics:**
-   - In `Microsoft-Windows-Ntfs%4Operational.evtx`, consistent peaks suggest periodic file system operations.
+   - Peaks in `Microsoft-Windows-Ntfs%4Operational.evtx` suggest periodic file system operations.
+<div align="center">
+   <img src="./docs/timeline.png" alt="Timeline Visualization">
+</div>
 
-| ![[./docs/timeline.png]] |
-| :---------------: |
-|   *Picture №4*    |
+## Menu
 
-#### Menu
-Меню приложения которое можно вызывается при нажатии на кнопку "Menu" которая находится в верхней части приложения, как изображено на рисунке №5
+The application menu is accessible via the "Menu" button located at the top of the application, as shown in **Figure 5**:
+<div align="center">
+   <img src="./docs/menu-button.png" alt="Menu Button">
+</div>
 
-| ![[./docs/menu-button.png]] |
-| :---------------: |
-|   *Picture №5*    |
+Clicking it opens the settings interface, shown in **Figure 6**.
 
-После нажатия открывается соответствующий интерфейс с настройками, который изображён на рисунке 6.
-Основные опции:
-1. [Upload files](#Ingest-files)
-2. Загрузить sigma-rule
+### Key Options:
+1. [Upload Files](#Ingest-files)
+2. Upload Sigma Rule
 3. [Select Files](#Select-files)
-4. Open notes window
-5. [Change visible limits](#Set-visibility-range)
-6. Query external sourse
-7. Export canvas as image
+4. Open Notes Window
+5. [Change Visible Limits](#Set-visibility-range)
+6. Query External Sources
+7. Export Canvas as Image
 
-Отладночная информация:
-1. Кол-во переданных данных с начала сессии
-2. Кол-во полученных данных с начала сессии
+### Debugging Information:
+1. Data sent since session start
+2. Data received since session start
 
-Дополнительные опции:
+### Additional Options:
 1. [Back to Operations](#Select-operation)
 2. Logout
+<div align="center">
+   <img src="./docs/menu.png" alt="Menu Interface">
+</div>
 
-| ![[./docs/menu.png]] |
-| :-----------: |
-| *Picture №6*  |
+## Ingest Files
 
-#### Ingest files
-Интерфейс предназначенный для загрузки файлов на бекенд gulp с целью их дальнейшего анализа.
+The interface for uploading files to the Gulp backend for further analysis.
 
-Вверху интерфейса находится кнопка для вызова диалогового окна выбора файла/файлов для загрузки. 
-Ниже находится переключатель, который позволяет создать новый [контекст](./docs/DEFINITIONS#context), или, если его включить, будет предоставлена возможность добавления файлов в уже существующий контекст
+At the top, there is a button to open a file selection dialog for upload. Below it, a toggle allows you to either create a new [context](./docs/DEFINITIONS#context) or add [files](./docs/DEFINITIONS.md#file) to an existing one if enabled.
+<div align="center">
+   <img src="./docs/upload-files.png" alt="Upload Files">
+</div>
 
-| ![[./docs/upload-files.png]] |
-| :-----------: |
-| *Picture №7*  |
+Here is how the completed upload appears:
+<div align="center">
+   <img src="./docs/upload-files-fulfilled.png" alt="Completed Upload">
+</div>
 
-Вот как выглядит зак
-
-| ![[./docs/upload-files-fulfilled.png]] |
-| :-----------: |
-| *Picture №8*  |
-
-### Accessing the Internal Logs
-To access the internal logs of the application, you can open the command line interface (CLI) by pressing `/`. This will open a console with all the logs generated by the program, allowing you to inspect any issues or debug information.
+### Accessing Internal Logs
+To access internal logs, open the command line interface (CLI) by pressing `/`. This opens a console displaying all logs generated by the program for inspection and debugging.
 
 ### Exporting Logs for Bug Reporting
-If you need to report a bug or an issue, you can export all the logs into a file that can be attached to a GitHub issue.
+To report a bug or issue, export all logs into a file for attachment to a GitHub issue.
 
-1. Press F8 to open the command line.
-2. Type the command export and press Enter.
-3. The logs will be saved into a file named gulpui-web_log_timestamp.log
-4. This log file can be used when creating a new issue in GitHub, providing valuable context to help developers diagnose the problem.
-It is recommended to include the exported logs in your GitHub issues to assist in quicker resolution of bugs.
+1. Press `F8` to open the command line.
+2. Type `export` and press Enter.
+3. The logs are saved to a file named `gulpui-web_log_timestamp.log`.
+4. Include this file when creating a GitHub issue to provide valuable context for developers.
+
