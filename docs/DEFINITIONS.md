@@ -1,38 +1,38 @@
-# Application Entities Hierarchy
-
-This document contains general definitions used in the application. Entities are sorted by importance in the hierarchy, from the most significant to the least significant. Each entity can include multiple lower-ranked entities.
+# Application Jargon & Terminology
+This document contains general definitions used in the application.
 
 ## Index
-**Index** — a catalog in the database, representing the most important entity in the application hierarchy.
-
-**Example:** A database of product categories in an e-commerce platform, serving as the main organizational structure.
+The elastic **index** used to store documents. In the context of gULP, documents should be refferred to as [events](#event).
 
 ## Operation
-**Operation** — a group of events consolidated into a logical structure. It is similar to a section in a library or a volume on a disk.
+An **operation** is a group of log sources from different [contexes](#context) for a given incident.
+It can be thought of as a "Project".
 
-**Example:** A transaction log that records all updates to an account within a specific period.
+> **Example:** Upon starting an investigation a new Operation is created to handle the incident.
 
 ## Context
-**Context** — groups used to organize [plugins](#plugins) and [files](#file). It is akin to folders on a desktop.
+By **context** we mean a logical container of all data from a given [source](#source) (e.g. all relevant logs from a given hostname).
 
-**Example:** A "Project A" context containing related plugins for parsing and analyzing project-specific files.
+> **Example:** A "webserver_01" context could contain, for example, the apache access logs and the linux system logs from a specific webserver.
 
-## Plugins
-**Plugins** — a set of configurations for decoding, interpreting, and processing uploaded [files](#file). Plugins are divided into three subtypes:
+## Source
+Any file containing a collection of logs/events is called a **source**.
+Sources contains [events](#event). Used in the [Ingestion](./ingestion.md) process.
 
-1. **Open-source community** — plugins developed by our community.
-   - **Example:** A free text parser plugin contributed by developers.
-2. **Paid** — licensed plugins distributed individually. Created and maintained exclusively by [Mentat](https://mentat.is/).
-   - **Example:** A proprietary video analysis plugin available for purchase.
-3. **Built-in** — plugins included in the base version of the application.
-   - **Example:** A built-in JSON parser for default data processing.
-
-## File
-**File** — a collection of events. Contains [events](#event) and [triggers](#event) in chronological order. Used in the [Ingestion](./ingestion) process.
-
-**Example:** A server log file containing timestamped entries of user actions and system responses in [evtx](https://github.com/libyal/libevtx/blob/main/documentation/Windows%20XML%20Event%20Log%20(EVTX).asciidoc) or [csv](https://en.wikipedia.org/wiki/Comma-separated_values) format.
+> **Example:** Windows' system logs in the [evtx](https://github.com/libyal/libevtx/blob/main/documentation/Windows%20XML%20Event%20Log%20(EVTX).asciidoc) format.
 
 ## Event
-**Event** (also called Document) — the smallest resolvable data unit. In real-world terms, it can be represented as an A4 sheet documenting events at a specific point in time, including parameters, memory addresses, and other automatically collected information.
+An **event** is a single event for a given file format. In the context of elastic, an event is referred to as "document".
 
-**Example:** A system-generated report recording the PORT usage and memory allocation during a specific trigger.
+## Plugins
+**Plugins** — gULP supports differnt kind of plugins.
+  - **extension**: extend or override the gULP APIs
+  - **query**: support ingestion from remote sources directly (e.g. Splunk)
+  - **ingestion**: extend support for ingesting a specific [source](#source)'s file format (e.g. pcap, evtx, journald, etc)
+  - **renderer**: a client-side plugin used to render data in a custom way.
+
+Plugins can be either:
+1. **Open-source** — free, open-source plugins developed by the community.
+2. **Paid** — licensed plugins available to paid customers. Created and maintained exclusively by [Mentat](https://mentat.is/).
+3. **Built-in** — plugins included in the base version of the application.
+   - **Example:** The [pcap](https://github.com/mentat-is/gulp/blob/develop/src/gulp/plugins/ingestion/pcap.py) ingestion plugin is part of our built-in plugins.
