@@ -15,9 +15,10 @@ type BannerProps = Children & {
   fixed?: boolean;
   loading?: boolean;
   onClose?: () => void
+  option?: ReactNode | null;
 }
 
-export function Banner({ children, className, title, fixed, loading, done, subtitle = null, onClose }: BannerProps) {
+export function Banner({ children, className, title, fixed, option, loading, done, subtitle = null, onClose }: BannerProps) {
   const { destroyBanner } = useApplication();
 
   const close = () => {
@@ -48,15 +49,18 @@ export function Banner({ children, className, title, fixed, loading, done, subti
     <div className={s.wrapper}>
       <div className={cn(s.banner, s.loading, className)} style={{['--gray-400']: 'var(--accent-3)' }}>
         <Cell className={s.cell} top left />
-        <Cell className={s.cell} top right />
-        <Cell className={s.cell} bottom left />
+        <Cell className={s.cell} top right>
+          <Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' />
+        </Cell>
+        <Cell className={s.cell} bottom left>
+          {option}
+        </Cell>
         <Cell className={s.cell} bottom right>
           {done}
         </Cell>
         <h6>
           {loading ? <Skeleton variant='button' width='long' height={24} /> : title}
           {subtitle ? (loading ? <Skeleton height={24} /> : subtitle) : null}
-          {!fixed && <div className={s.button_wrapper}><Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' /></div>}
         </h6>
         <Stack dir='column' ai='unset' gap={16} className={s.content}>
           {children}

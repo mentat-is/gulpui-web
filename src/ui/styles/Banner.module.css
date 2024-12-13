@@ -50,6 +50,7 @@
   }
 }
 .content {
+  padding: 2px;
   padding-right: 8px;
   overflow: scroll;
 }

@@ -5,7 +5,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/ui/Separator";
 import { ChangeEvent, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
-import { Button } from "@/ui/Button";
 import { Switch } from "@/ui/Switch";
 import { Mapping, Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
@@ -17,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { QueryExternalBanner } from "./QueryExternal.banner";
 import { MaybeArray } from "@impactium/types";
-import { Stack } from "@impactium/components";
+import { Stack, Button } from "@impactium/components";
 import { Icon } from "@impactium/icons";
 
 interface λIngestFileSettings {
@@ -358,8 +357,22 @@ Progress: ${progress}%`, UploadBanner.name);
     )
   }
 
+  const done = <Button
+    variant={files?.length && context && Object.values(settings).every(s => s.plugin) ? 'glass' : 'disabled'}
+    onClick={submitFiles}
+    img='Check'
+    className={s.done}
+    loading={loading}
+  />
+
+  const option = <Button
+    variant='ghost'
+    onClick={addFromExternalQueryButtonHandler}
+    img='Kv'
+  />
+
   return (
-    <Banner title='Upload files'>
+    <Banner title='Upload files' done={done} option={option}>
       <Input
         type='file'
         id='ingest_input'
@@ -382,21 +395,7 @@ Progress: ${progress}%`, UploadBanner.name);
           </div>
         </Card>
       )}
-      <div className={s.bottom}>
-        {loading && <Progress value={progress} />}
-        <Button
-          variant='outline'
-          onClick={addFromExternalQueryButtonHandler}
-          img='Kv'
-        >Add from external query</Button>
-        <Button
-          variant={files?.length && context && Object.values(settings).every(s => s.plugin) ? 'default' : 'disabled'}
-          onClick={submitFiles}
-          img='Check'
-          className={s.done}
-          loading={loading}
-        >Upload</Button>
-      </div>
+      {loading && <Progress value={progress} />}
     </Banner>
   );
 }
