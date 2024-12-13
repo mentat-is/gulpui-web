@@ -5,9 +5,10 @@ import { cn } from "./utils";
 interface SymmetricSvgProps extends HTMLAttributes<HTMLCanvasElement> {
   text: string;
   loading?: boolean;
+  size?: number
 }
 
-export const SymmetricSvg = ({ text, loading, className, ...props }: SymmetricSvgProps) => {
+export const SymmetricSvg = ({ text, loading, className, size = 36, ...props }: SymmetricSvgProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const generateRandom = useCallback((str: string) => {
@@ -75,8 +76,8 @@ export const SymmetricSvg = ({ text, loading, className, ...props }: SymmetricSv
     <canvas
       ref={canvasRef}
       className={cn(s.canvas, loading && s.loading, className)}
-      width="36"
-      height="36"
+      width={size}
+      height={size}
       {...props}
     />
   );

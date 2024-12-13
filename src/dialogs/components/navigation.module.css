@@ -1,0 +1,25 @@
+.navigation {
+  height: 36px;
+}
+
+.navigation > button {
+  border-radius: var(--round);
+}
+
+.content {
+  max-width: calc(100% - 196px);
+  padding: 2px;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 50%, transparent 100%)
+}
+.content canvas {
+  cursor: pointer;
+  margin-top: 1px;
+}
+.content canvas:not(.focus) {
+  filter: brightness(0.75);  
+}
+.focus {
+  border: 1px solid var(--geist-border);
+  filter: brightness(1.3);
+  box-shadow: var(--ring);
+}

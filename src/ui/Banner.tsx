@@ -26,18 +26,16 @@ export function Banner({ children, className, title, fixed, loading, subtitle = 
 
   useEffect(() => {
     if (fixed) return;
-    // Function to handle keydown event for Esc key
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         close();
       }
     };
 
-    // Add event listeners for keydown and popstate
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('popstate', close);
 
-    // Cleanup event listeners on component unmount
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('popstate', close);
