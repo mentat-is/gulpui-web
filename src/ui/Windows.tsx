@@ -1,11 +1,13 @@
 import { μ } from "@/class/Info";
 import { Button, Stack } from "@impactium/components";
 import React, { useState, createContext, useContext, useEffect, useCallback } from "react";
-import { generateUUID } from "./utils";
+import { cn, generateUUID } from "./utils";
 import { Timeline } from "@/app/gulp/components/body/Timeline";
 import s from './styles/Windows.module.css';
 import { Icon } from "@impactium/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import { UploadBanner } from "@/banners/Upload.banner";
+import { useApplication } from "@/context/Application.context";
 
 export namespace Windows {
   export interface Props {
@@ -123,7 +125,10 @@ const Navigator = () => {
           <Button img='Plus' className={s.new} size='icon' variant='glass' />
         </PopoverTrigger>
         <PopoverContent>
-          GG
+          <Button>Open timeline</Button>
+          <Button>Open notes</Button>
+          <Button>Open links</Button>
+          <Button>Open upload</Button>
         </PopoverContent>
       </Popover>
       
@@ -133,6 +138,7 @@ const Navigator = () => {
 
 const NoWindows = () => {
   const { newWindow } = useWindows();
+  const { spawnBanner } = useApplication();
 
   const openTimeline = () => {
     newWindow({
@@ -143,12 +149,14 @@ const NoWindows = () => {
   }
 
   return (
-    <Stack>
+    <Stack className={cn(s.window, s.noWindows)} dir='column' jc='center'>
       <h3>Welcome to gULP workspace</h3>
       <p>Choose action below</p>
       <Stack>
-        <Button onClick={openTimeline}>Open timeline</Button>
+        <Button size='lg' img='Upload' variant='secondary' className={s.rounded} onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
+        <Button size='lg' img='Edge' className={s.rounded} onClick={openTimeline}>Open timeline</Button>
       </Stack>
+      <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button> 
     </Stack>
   )
 }

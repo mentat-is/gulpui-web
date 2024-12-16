@@ -3,6 +3,7 @@
   height: 32px;
   padding: 0 4px;
   border-bottom: 1px solid var(--accent-3);
+  background: var(--soft-black);
 }
 .tab {
   display: flex;
@@ -40,4 +41,23 @@
   min-width: unset;
   align-self: center;
   padding: 2px;
+}
+.noWindows {
+  height: calc(100vh - 108px);
+}
+.noWindows h3 {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+.noWindows p {
+  margin-bottom: 48px;
+  color: var(--text-dimmed);
+  font-size: 22px;
+}
+.rounded {
+  border-radius: var(--round);
+}
+.hint {
+  color: var(--text-dimmed);
 }
