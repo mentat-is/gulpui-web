@@ -39,7 +39,7 @@
 .timeline {
   position: relative;
   width: 100%;
-  height: calc(100vh - 98px);
+  height: calc(100vh - 32px);
   cursor: crosshair;
   display: flex;
   flex-direction: row;

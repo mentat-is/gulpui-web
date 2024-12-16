@@ -199,18 +199,15 @@ export function Timeline() {
       onKeyDown={handleKeyDown}
       onWheel={e => !!e}
       onContextMenu={handleContextMenu}
-      ref={timeline}
-    >
-      <div className={s.content} id="timeline_content">
-        <ContextMenu>
-          <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} />
-            <Controls setScrollX={setScrollX} scrollX={scrollX} />
-            <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
-          </ContextMenuTrigger>
-          <Menu />
-        </ContextMenu>
-      </div>
+      ref={timeline}>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} />
+          <Controls setScrollX={setScrollX} scrollX={scrollX} />
+          <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
+        </ContextMenuTrigger>
+        <Menu />
+      </ContextMenu>
     </div>
   );
 }

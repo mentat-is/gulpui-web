@@ -1,5 +1,4 @@
 .navigation {
-  top: 64px;
   height: 32px;
   padding: 0 4px;
   border-bottom: 1px solid var(--accent-3);
@@ -8,12 +7,14 @@
 .tab {
   display: flex;
   border-radius: 6px 6px 0 0;
-  background: var(--geist-background);
+  background: var(--soft-black);
   border: var(--geist-border);
   border-bottom: none;
   align-items: center;
   padding: 0 6px;
   height: 28px;
+  cursor: pointer;
+  transition: all 0.125s var(--transition);
 }
 .tab p {
   font-size: 12px;
@@ -21,7 +22,6 @@
   font-family: var(--font-mono);
 }
 .window {
-  top: 64px;
   position: relative !important;
 }
 .x {
@@ -45,12 +45,12 @@
 .noWindows {
   height: calc(100vh - 108px);
 }
-.noWindows h3 {
+.noWindows > h3 {
   font-family: var(--font-mono);
   font-size: 32px;
   margin-bottom: 12px;
 }
-.noWindows p {
+.noWindows > p {
   margin-bottom: 48px;
   color: var(--text-dimmed);
   font-size: 22px;
@@ -60,4 +60,12 @@
 }
 .hint {
   color: var(--text-dimmed);
+}
+.loading p {
+  color: var(--soft-black);
+  font-size: 16px;
+  line-height: 16px;
+}
+.active {
+  background: var(--geist-background);
 }

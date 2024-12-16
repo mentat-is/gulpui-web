@@ -10,6 +10,7 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
 import { Glyph } from './Glyph';
+import { useWindows } from './Windows';
 
 interface NoteProps {
   note: λNote;
@@ -19,13 +20,18 @@ interface NoteProps {
 
 export function Note({ note, left, top }: NoteProps) {
   const { spawnDialog } = useApplication();
+  const { newWindow } = useWindows();
 
   const openEvent = () => {
     const dialog = note.events.length === 1
       ? <DisplayEventDialog event={note.events[0]} />
       : <DisplayGroupDialog events={note.events} />;
 
-    spawnDialog(dialog);
+      newWindow({
+        icon: 'StickyNote',
+        name: note.events.length === 1 ? 'Note' : 'Notes',
+        children: dialog
+      })
   };
 
   return (

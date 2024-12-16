@@ -8,6 +8,7 @@ import { Icon } from "@impactium/icons";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { useApplication } from "@/context/Application.context";
+import { Loading } from "@impactium/components";
 
 export namespace Windows {
   export interface Props {
@@ -20,7 +21,8 @@ export namespace Windows {
   export interface Window extends Stack.Props {
     name: string;
     uuid: μ.Window;
-    active: boolean;
+    active?: boolean;
+    fixed?: boolean;
     icon: Icon.Name;
   }
 
@@ -35,32 +37,41 @@ export namespace Windows {
       icon: window.icon || 'Window'
     });
 
-    public static activate = (setWindows: Windows.Props['setWindows']) => {
-      setWindows(windows => {
-        const [activate, ...winds] = windows;
-
-        if (!activate) {
-          return windows;
-        }
-
-        activate.active = true;
-
-        return [activate, ...winds];
-      })
+    public static activate = (setWindows: Windows.Props['setWindows'], uuid?: Window['uuid']) => {
+      setWindows(windows => windows.map(w => ({
+        ...w,
+        active: uuid ? w.uuid === uuid : windows[0]?.uuid === w.uuid
+      })))
     }
   }
+
+  const DEFAULT_WINDOWS: Window[] = [
+    λWindow.normalize({
+      active: false,
+      icon: 'Menu',
+      name: 'Menu',
+      fixed: true,
+      // children: <MenuWindow />
+    })
+  ]
 
   export const Context = createContext<Windows.Props | undefined>(undefined);
   
   export const Provider = () => {
-    const [windows, setWindows] = useState<Window[]>([]);
+    const [windows, setWindows] = useState<Window[]>(DEFAULT_WINDOWS);
 
-    const newWindow = (window: Omit<Window, 'uuid' | 'active'>) => {
+    const newWindow = (window: Omit<Window, 'uuid'>) => {
       setWindows(windows => [...windows, λWindow.normalize(window)]);
     }
 
     const closeWindow = (window: Window['uuid']) => {  
-      setWindows(winds => winds.filter(w => w.uuid !== window));
+      setWindows(winds => {
+        const newWindows = winds.filter(w => w.uuid !== window);
+
+        newWindows[newWindow.length - 1].active = true;
+
+        return newWindows;
+      });
     }
 
     useEffect(() => {
@@ -78,13 +89,6 @@ export namespace Windows {
       closeWindow
     };
 
-    useEffect(() => {
-      if (λWindow.active(windows))
-        return;
-
-      λWindow.activate(setWindows);
-    }, [windows]);
-
     const ActiveWindow = useCallback(() => {
       const active = λWindow.active(windows);
 
@@ -92,9 +96,9 @@ export namespace Windows {
         return <NoWindows />;
       }
 
-      const { uuid, ...props } = active;
+      const { uuid, className, ...props } = active;
 
-      return <Stack key={uuid} className={s.window} {...props} />
+      return <Stack key={uuid} className={cn(s.window, className)} {...props} />
     }, [windows]);
 
     return (
@@ -106,18 +110,29 @@ export namespace Windows {
   };
 }
 
+export const λWindow = Windows.λWindow;
+
 export const useWindows = (): Windows.Props => useContext(Windows.Context)!;
 
 const Navigator = () => {
-  const { windows, closeWindow } = useWindows();
+  const { windows, setWindows, closeWindow } = useWindows();
+
+  const CloseButton = useCallback((w: Windows.Window) => {
+    if (w.fixed) {
+      return null;
+      
+    }
+
+    return <Button className={s.x} img='X' size='icon' variant='ghost' onClick={() => closeWindow(w.uuid)} />
+  }, [windows]);
 
   return (
     <Stack pos='relative' ai='flex-end' className={s.navigation}>
       {windows.map(w => 
-        <Stack ai='center' className={s.tab}>
+        <Stack ai='center' className={cn(w.active && s.active, s.tab)} onClick={() => λWindow.activate(setWindows, w.uuid)}>
           <Icon name={w.icon} size={14} />
           <p>{w.name}</p>
-          <Button className={s.x} img='X' size='icon' variant='ghost' onClick={() => closeWindow(w.uuid)} />
+          <CloseButton {...w} />
         </Stack>
       )}
       <Popover>
@@ -131,7 +146,6 @@ const Navigator = () => {
           <Button>Open upload</Button>
         </PopoverContent>
       </Popover>
-      
     </Stack>
   )
 }
@@ -140,12 +154,18 @@ const NoWindows = () => {
   const { newWindow } = useWindows();
   const { spawnBanner } = useApplication();
 
+  const [loading, setLoading] = useState<boolean>(false);
+
   const openTimeline = () => {
-    newWindow({
-      icon: 'Edge',
-      children: <Timeline />,
-      name: 'Timeline'
-    })
+    setLoading(true);
+
+    setTimeout(() => {
+      newWindow({
+        icon: 'Edge',
+        children: <Timeline />,
+        name: 'Timeline'
+      });
+    }, 500);
   }
 
   return (
@@ -154,7 +174,9 @@ const NoWindows = () => {
       <p>Choose action below</p>
       <Stack>
         <Button size='lg' img='Upload' variant='secondary' className={s.rounded} onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
-        <Button size='lg' img='Edge' className={s.rounded} onClick={openTimeline}>Open timeline</Button>
+        {loading
+        ? <Button size='lg' img='LoaderCircle' className={cn(s.rounded, s.loading)} asChild><Loading size='lg' variant='default' /></Button>
+        : <Button size='lg' img='Edge' className={s.rounded} onClick={openTimeline}>Open timeline</Button>}
       </Stack>
       <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button> 
     </Stack>
