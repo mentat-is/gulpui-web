@@ -10,7 +10,7 @@ interface LoadingProps {
 export function Loading({ no_text, size, variant = 'black' }: LoadingProps) {
   return (
     <>
-      <Icon size={Number(size)} className={s.loading_icon} variant={variant} name='LoaderCircle' />
+      <Icon size={Number(size)} className={s.loading_icon} variant={variant} name='LoaderCircle' fromGeist />
       {!no_text && 'Please wait'}
     </>
   )

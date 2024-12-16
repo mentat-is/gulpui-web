@@ -3,7 +3,7 @@ import { Limits } from './components/header/Limits'
 import { MenuDialog } from './components/header/Menu.dialog'
 import { Button } from '@/ui/Button'
 import { useApplication } from '@/context/Application.context'
-import { Timeline } from './components/body/Timeline'
+import { Windows } from '@/ui/Windows'
 
 export function GulpPage() {
   const { spawnDialog } = useApplication();
@@ -14,7 +14,7 @@ export function GulpPage() {
         <Button img='Menu' onClick={() => spawnDialog(<MenuDialog />)}>Menu</Button>
         <Limits />
       </header>
-      <Timeline />
+      <Windows.Provider />
     </React.Fragment>
   )
 };

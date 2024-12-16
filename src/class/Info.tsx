@@ -1237,6 +1237,11 @@ export namespace μ {
   export type Context = UUID & {
     readonly [Context]: unique symbol;
   };
+
+  const Window = Symbol('Window');
+  export type Window = UUID & {
+    readonly [Window]: unique symbol;
+  };
 }
 
 export const Pattern = {
