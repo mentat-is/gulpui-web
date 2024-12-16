@@ -67,9 +67,14 @@ export function LoginPage() {
         Info.setExpire(res.data.time_expire);
         cookie.set('last_used_server', app.general.server);
       } else {
-        toast('Error during authorization', {
-          description: 'Wrong username or password'
-        });
+        if (res?.req_id !== '0') {
+          toast('Authorization failed', {
+            description: 'Wrong username or password'
+          });
+        } else {
+          toast('Couldn’t connect to server. Gateway actively refused connection');
+        }
+        
         setLoading(false);
       }
 
@@ -179,7 +184,7 @@ export function LoginPage() {
                   value={app.general.password}
                   tabIndex={3}
                   onChange={e => Info.setPassword(e.currentTarget.value)} />
-                <Button loading={loading} tabIndex={4} onClick={login}>Log in</Button>
+                <Button img='LogIn' revert loading={loading} tabIndex={4} onClick={login}>Log in</Button>
               </Stack>
           </React.Fragment>
           )
