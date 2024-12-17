@@ -181,11 +181,13 @@ export function Timeline() {
   }
 
   const Menu = useCallback(() => {
-    if (shifted.length === 1) {
-      return <TargetMenu file={shifted[0]} inputRef={inputRef} />
+    if (shifted.length === 0 ) {
+      return null;
     }
 
-    return <FilesMenu files={shifted} inputRef={inputRef} />
+    return shifted.length === 1
+      ? <TargetMenu file={shifted[0]} inputRef={inputRef} />
+      : <FilesMenu files={shifted} inputRef={inputRef} />
   }, [shifted]);
 
   return (
