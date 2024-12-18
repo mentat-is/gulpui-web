@@ -116,6 +116,8 @@ export function MenuDialog() {
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
       <Separator color='var(--accent-5)' />
+      <Button variant='outline' img='Image' onClick={exportCanvasAsImage}>Open story line</Button>
+      <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='FunctionPython' onClick={() => spawnBanner(<QueryExternalBanner />)}>Query external resourse</Button>
