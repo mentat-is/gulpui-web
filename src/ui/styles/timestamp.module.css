@@ -1,0 +1,5 @@
+.timestamp {
+  font-size: 12px;
+  color: var(--text-white);
+  font-family: var(--font-mono);
+}

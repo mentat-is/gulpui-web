@@ -14,6 +14,7 @@ import { NotesDisplayer } from './Notes.displayer';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
 import { λFile } from '@/dto/File.dto';
+import { Timestamp } from '@/ui/timestamp';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -174,7 +175,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
         ref={overlay_ref} 
         width={window.innerWidth}
         height={timeline.current?.clientHeight} />
-      <p style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position}>{format(getTimestamp(scrollX + mousePosition.x, Info), 'yyyy/MM/dd HH:mm:ss SSS')}ms</p>
+      <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
       <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
     </div>
   );
