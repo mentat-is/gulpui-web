@@ -3,11 +3,12 @@ import { Banner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import { cn } from "@/ui/utils";
 import { Stack } from "@impactium/components";
-import { format } from "date-fns";
 import s from './storyline.module.css';
-import { HTMLAttributes, useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Timestamp } from "@/ui/timestamp";
-import { Operation } from "@/class/Info";
+import { Operation, Note as NoteEntity } from "@/class/Info";
+import { Note } from "@/ui/Note";
+import { λNote } from "@/dto/Note.dto";
 
 export function StorylineBanner() {
   const { app, Info } = useApplication();
@@ -40,9 +41,7 @@ export function StorylineBanner() {
 
   return (
     <Banner title='Storyline' done={done}>
-      <Stack>
-        <Graph min={min} max={max} />
-      </Stack>
+      <Graph min={min} max={max} notes={notes} />
     </Banner>
   )
 }
@@ -51,15 +50,32 @@ namespace Graph {
   export interface Props extends Stack.Props {
     min: number;
     max: number;
+    notes: λNote[];
   }
 }
 
 
-export function Graph({ min, max, className, ...props }: Graph.Props) {
+export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
+  const graph = useRef<HTMLCanvasElement>(null);
+
+  props.dir = props.dir ?? 'column';
+
+  const getNoteXPositionFromTimestamp = useCallback((timestamp: number) => Math.round(((timestamp - min) / (max - min)) * (graph.current?.width || 0)), [min, max]);
+
+  useEffect(() => {
+
+  }, []);
 
   return (
     <Stack className={cn(s.graph, className)} {...props}>
-      <Stack jc='space-between'>
+      <div className={s.wrapper}>
+        <canvas ref={graph} className={s.canvas} />
+        {notes.map(note => {
+        const timestamp = NoteEntity.timestamp(note);
+        return <Note note={note} left={getNoteXPositionFromTimestamp(timestamp)} top='50%' />
+      })}
+      </div>
+      <Stack jc='space-between' className={s.minMax}>
         <Timestamp value={min} />
         <Timestamp value={max} />
       </Stack>

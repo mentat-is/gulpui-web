@@ -1,3 +1,17 @@
 .graph {
-  
+  height: 300px;
+  width: 100%;
+}
+.minMax {
+  width: 100%; 
+}
+.canvas {
+  background-color: var(--black);
+  border: 1px solid var(--gray-400);
+  border-radius: 4px;
+  width: 100%;
+}
+.wrapper {
+  position: relative;
+  width: 100%;
 }

@@ -10,11 +10,12 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
 import { Glyph } from './Glyph';
+import { ChadNumber } from '@impactium/components';
 
 interface NoteProps {
   note: λNote;
   left: number;
-  top: number;
+  top: ChadNumber;
 }
 
 export function Note({ note, left, top }: NoteProps) {
@@ -35,7 +36,7 @@ export function Note({ note, left, top }: NoteProps) {
         <hr style={{ background: note.data.color }} />
         <div className={s.backplate} style={{ background: note.data.color + '32' }} />
       </Button>
-      <p className={s.desc} style={{ left, top: top+26 }}>{note.name}</p>
+      <p className={s.desc} style={{ left, top, transform: 'translateY(26px)' }}>{note.name}</p>
     </>
   )
 }
