@@ -16,6 +16,7 @@ import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
+import { StorylineBanner } from '../storyline';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog, Info, destroyDialog } = useApplication();
@@ -116,7 +117,7 @@ export function MenuDialog() {
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
       <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='Image' onClick={exportCanvasAsImage}>Open story line</Button>
+      <Button variant='outline' img='Image' onClick={() => spawnBanner(<StorylineBanner />)}>Open story line</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
       <Separator color='var(--accent-5)' />

@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import s from './storyline.module.css';
 import { HTMLAttributes, useCallback } from "react";
 import { Timestamp } from "@/ui/timestamp";
+import { Operation } from "@/class/Info";
 
 export function StorylineBanner() {
   const { app, Info } = useApplication();
@@ -18,7 +19,24 @@ export function StorylineBanner() {
   const min = Math.min(...timespamps);
   const max = Math.max(...timespamps);
 
-  const done = <Button img='Download' />
+  const exportStorylineAsJSON = () => {
+    const data = JSON.stringify(notes, null, 2);
+  
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+  
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `storyline_${Operation.selected(app)}.json`;
+  
+    link.click();
+  
+    URL.revokeObjectURL(url);
+    link.remove();
+  };
+  
+
+  const done = <Button onClick={exportStorylineAsJSON} variant='glass' img='Download' />
 
   return (
     <Banner title='Storyline' done={done}>
