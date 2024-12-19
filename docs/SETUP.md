@@ -2,7 +2,7 @@
 
 There are three options for setting up the Gulp web client depending on your needs:
 	Production version,
-	Development version, 
+	Development version,
 	Deploying a downloadable build on your server.
 
 ## 1. Production Version
@@ -16,7 +16,7 @@ To set up the production version of `gulpui-web`, follow these steps:
 ### Installation:
 1. Open a terminal and run the following commands:
     ```sh
-    git clone https://<your-repository-url>/
+    git clone https://github.com/mentat-is/gulpui-web
     cd gulpui-web
     npm ci
     npm run build
@@ -40,7 +40,7 @@ For development, you can run `gulpui-web` in watch mode, which automatically rel
 ### Installation:
 1. Open a terminal and run the following commands:
     ```sh
-    git clone https://<your-repository-url>/
+    git clone https://github.com/mentat-is/gulpui-web
     cd gulpui-web
     npm install
     npm start
