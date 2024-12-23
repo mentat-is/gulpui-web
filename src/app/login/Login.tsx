@@ -19,7 +19,8 @@ import { Stack } from "@impactium/components";
 import { GlyphMap } from "@/dto/Glyph.dto";
 import { GeneralSettings } from "@/components/GeneralSettings";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
-  
+import { SelectSession } from "@/banners/SelectSession";
+
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
@@ -91,6 +92,12 @@ export function LoginPage() {
   */
   useEffect(() => {
     if (app.general.token) {
+      Info.getSessions().then(sessions => {
+        if (Object.keys(sessions).length) {
+          spawnBanner(<SelectSession sessions={sessions} />)
+        }
+      });
+
       const processStage = async () => {
         await Info.mapping()
         await Info.index_reload()

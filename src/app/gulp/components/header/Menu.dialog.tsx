@@ -136,10 +136,8 @@ export function MenuDialog() {
         <Unit type='upstream' num={app.transfered?.up || 0} />
       </div>
       <Button className={s.logout} variant='outline' img='ChartBarStacked' onClick={backToOperations}>Back to Operations</Button>
-      <Stack style={{ width: '100%' }}>
-        <Button style={{ flex: 1 }} variant='outline' img='FloppyDisk' onClick={saveSessionAndLogout}>Save session and logout</Button>
-        <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>
-      </Stack>
+      <Button variant='outline' img='FloppyDisk' onClick={saveSessionAndLogout}>Save session and logout</Button>
+      <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>
       {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
     </Dialog>
   )

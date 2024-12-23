@@ -840,17 +840,23 @@ Files: ${files.length}`, Info.name);
     this.setInfoByKey('', 'general', 'sessions');
   }
 
-  getSessions = (): Promise<Session[]> => {
-    return this.api<ResponseBase<Session[]>>('/user_data_list', {
+  getSessions = (): Promise<λApp['general']['sessions']> => {
+    return this.api<ResponseBase<any>>('/user_data_list', {
       method: 'POST',
       body: JSON.stringify({
         owner_id: [this.app.general.user_id]
       })
     }).then(res => {
       if (res.isSuccess()) {
-        return res.data;
+        const data: λApp['general']['sessions'] = {};
+
+        res.data.map((e: any) => {
+          data[e.name as string] = e.data
+        })
+
+        return data;
       } else {
-        return []
+        return {}
       }
       
     })
