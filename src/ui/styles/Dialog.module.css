@@ -8,8 +8,7 @@
 .dialog {
   padding: var(--card-padding);
   display: flex;
-  background: var(--geist-background);
-  backdrop-filter: brightness(0.25) blur(8px);
+  background: var(--soft-black);
   flex-direction: column;
   gap: var(--card-gap);
   height: calc(100% - 64px);

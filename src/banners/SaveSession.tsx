@@ -12,9 +12,12 @@ export function SaveSession() {
   const [sessionName, setSessionName ] = useState<string>('');
   const { api, app, Info, logout } = useApplication();
   const [loading, setLoading] = useState<boolean>(false);
+  const [isNameValid, setIsNameValid] = useState<boolean>(true);
 
   const changeSessionNameHandler = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target;
+
+    setIsNameValid(value.length > 0);
 
     setSessionName(value);
   }
@@ -30,12 +33,15 @@ export function SaveSession() {
 
     const resp = await api('/user_data_create', {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       data: {
         name: sessionName,
         user_id: app.general.user_id,
         operation_id: operation.id,
       },
-      body: JSON.stringify(Info.getUserData()),
+      body: JSON.stringify(Info.getCurrentSessionOptions()),
     });
 
     setLoading(false);
@@ -45,8 +51,12 @@ export function SaveSession() {
       return;
     }
 
+    if (resp.data.exception.name === 'ObjectAlreadyExists') {
+      setIsNameValid(false);
+    }
+
     toast('Cannot save data', {
-      description: `Cannot allocate data settings: ${resp.data.name}`
+      description: `Cannot allocate data settings: ${resp.data.exception.name}`
     });
   }
 
@@ -80,7 +90,7 @@ export function SaveSession() {
     <Banner title='Save session' done={done}>
       <Stack className={s.param}>
         <Label className={s.nameLabel} htmlFor='session_name'>Session name:</Label>
-        <Input img='TextHeading' id='session_name' className={s.inp} value={sessionName} onChange={changeSessionNameHandler} />
+        <Input valid={isNameValid} img='TextHeading' id='session_name' className={s.inp} value={sessionName} onChange={changeSessionNameHandler} />
       </Stack>
     </Banner>
   )

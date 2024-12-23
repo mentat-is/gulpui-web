@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
-import { Sessions } from '@/dto/Session.dto';
 import { toast } from 'sonner';
 import { MinMax } from '@/dto/QueryMaxMin.dto';
 import { UUID } from 'crypto';
@@ -19,7 +18,7 @@ export type ClassName = ClassValue | ClassValue[]
 
 export type Color = `#${string}`;
 
-export const parseTokensFromCookies = (tokens: string | Sessions): Sessions => {
+export const parseTokensFromCookies = (tokens: string) => {
   try {
     return JSON.parse(tokens as string);
   } catch (_) {

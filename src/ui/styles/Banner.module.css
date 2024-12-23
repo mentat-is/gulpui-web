@@ -53,6 +53,7 @@
   padding: 2px;
   padding-right: 8px;
   overflow: scroll;
+  min-height: calc(100% - 40px);
 }
 .cell {
   background-color: var(--soft-black);

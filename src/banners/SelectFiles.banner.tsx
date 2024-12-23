@@ -111,7 +111,7 @@ export function SelectFilesBanner() {
 
   const fulfilled = !Operation.selected(app)?.contexts;
 
-  const done = <Button img='Check' skeleton={fulfilled} loading={loading} onClick={save} />;
+  const done = <Button img='Check' loading={loading} variant='glass' onClick={save} />;
 
   return (
     <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done}>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Cookies from "universal-cookie";
 import s from './Login.module.css';
 import { useApplication } from "@/context/Application.context";
@@ -19,12 +19,17 @@ import { Stack } from "@impactium/components";
 import { GlyphMap } from "@/dto/Glyph.dto";
 import { GeneralSettings } from "@/components/GeneralSettings";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
-
+  
 export function LoginPage() {
   const { Info, app, api, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
+  const loginButton = useRef<HTMLButtonElement>(null);
   const cookie = new Cookies();
+
+  useEffect(() => {
+
+  }, [loginButton])
 
   // AUTH
 
@@ -184,7 +189,7 @@ export function LoginPage() {
                   value={app.general.password}
                   tabIndex={3}
                   onChange={e => Info.setPassword(e.currentTarget.value)} />
-                <Button img='LogIn' revert loading={loading} tabIndex={4} onClick={login}>Log in</Button>
+                <Button img='LogIn' revert ref={loginButton} loading={loading} tabIndex={4} onClick={login}>Log in</Button>
               </Stack>
           </React.Fragment>
           )

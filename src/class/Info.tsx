@@ -23,7 +23,7 @@ import { λGlyph } from '@/dto/λGlyph.dto';
 import { differenceInMonths } from 'date-fns';
 import { Logger, LoggerHandler } from '@/dto/Logger.class';
 import { Engine, Hardcode } from './Engine.dto';
-import { UserCustomData } from '@/dto/App.dto';
+import { Session } from '@/dto/App.dto';
 
 interface RefetchOptions {
   uuids?: Arrayed<λFile['uuid']>;
@@ -826,13 +826,35 @@ Files: ${files.length}`, Info.name);
     }, 'general', 'settings');
   }
 
-  getUserData = (): UserCustomData => ({
-    render: [],
-    scroll: {
-      x: 0,
-      y: 0
-    }
-  });
+  getCurrentSessionOptions = (): Session => {
+    return ({
+      render: [],
+      scroll: {
+        x: 0,
+        y: 0
+      }
+    });
+  };
+
+  setCurrentSessionOptions = (session: Session) => {
+    this.setInfoByKey('', 'general', 'sessions');
+  }
+
+  getSessions = (): Promise<Session[]> => {
+    return this.api<ResponseBase<Session[]>>('/user_data_list', {
+      method: 'POST',
+      body: JSON.stringify({
+        owner_id: [this.app.general.user_id]
+      })
+    }).then(res => {
+      if (res.isSuccess()) {
+        return res.data;
+      } else {
+        return []
+      }
+      
+    })
+  }
   
   // Private method to update a specific key in the application state
   private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(value: any, section: K, key: S, self: boolean = true) => {

@@ -98,7 +98,6 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
     if (!res.ok && lambda.isError()) {
       if ((lambda.data.exception.name === 'SessionExpired' || lambda.data.exception.msg.startsWith('session token')) && app.general.token) {
         Logger.warn(`Session expired, logging out...`);
-        removeToken();
         setInfo(BaseInfo);
       } else {
         Logger.error(`API Error: ${(lambda as ResponseError).data.exception.name}`, ApplicationProvider.name);
@@ -112,13 +111,10 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
     return lambda;
   };
 
-  const removeToken = () => cookie.set('sessions', parseTokensFromCookies(cookie.get('sessions')).filter(session => session.token !== app.general.token))
-
   const logout = () => {
     api('/logout', {
       method: 'DELETE',
     }).then(() => {
-      removeToken();
       destroyBanner();
       destroyDialog();
       setInfo(BaseInfo);

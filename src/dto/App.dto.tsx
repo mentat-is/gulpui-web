@@ -51,6 +51,7 @@ export interface λApp {
     expires?: number;
     ingest: PluginEntity[];
     settings: Pick<λFile, 'engine' | 'color'>;
+    sessions: Session[];
   },
   timeline: {
     scale: number;
@@ -81,7 +82,8 @@ export const BaseInfo: λApp = {
     settings: {
       engine: (localStorage.getItem('settings.__engine') || 'default') as Engine.List,
       color: (localStorage.getItem('settings.__color') || 'thermal') as Gradients
-    }
+    },
+    sessions: []
   },
   timeline: {
     scale: 1,
@@ -124,7 +126,7 @@ export const BaseInfo: λApp = {
   }
 }
 
-export interface UserCustomData {
+export interface Session {
   render: Array<{ filename: string, context: string, engine: Engine.List, selected: boolean }>;
   scroll: XY;
 }
