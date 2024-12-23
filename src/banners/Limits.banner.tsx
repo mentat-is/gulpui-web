@@ -1,5 +1,5 @@
 import s from './styles/LimitsBanner.module.css'
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Banner } from "../ui/Banner";
 import { Button } from '../ui/Button';
 import { useApplication } from '../context/Application.context';
@@ -39,8 +39,10 @@ export function LimitsBanner() {
     }
   }
 
+  const done = <Button variant='ghost' img='Check' loading={loading} onClick={() => save()} size='icon' />;
+
   return (
-    <Banner className={s.banner} title='Visibility range'>
+    <Banner className={s.banner} title='Visibility range' done={done}>
       <Toggle checked={manual} onCheckedChange={setManual} option={['Select from limits', 'ISO String']} />
       <Card>
         <div className={s.wrapper}>
@@ -57,8 +59,6 @@ export function LimitsBanner() {
         {map.map((_: any, index) => (
           <Button variant='outline' onClick={_.do} key={index}>{_.text}</Button>
         ))}
-        <hr style={{ opacity: 0, flex: 1 }} />
-        <Button style={{ justifySelf: 'flex-end' }} variant='default' img='CheckCheck' loading={loading} onClick={() => save()}>Apply</Button>
       </div>
     </Banner>
   ) 

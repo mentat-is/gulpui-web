@@ -1,6 +1,3 @@
-.wrapper {
-  z-index: 1;
-}
 .resize {
   position: absolute;
   left: 0px;
@@ -10,7 +7,7 @@
 .shifted {
   cursor: pointer;
 }
-.position {
+.wrapper:hover .position {
   position: absolute;
   font-size: 10px;
   font-weight: 600;

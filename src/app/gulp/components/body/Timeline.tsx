@@ -181,11 +181,13 @@ export function Timeline() {
   }
 
   const Menu = useCallback(() => {
-    if (shifted.length === 1) {
-      return <TargetMenu file={shifted[0]} inputRef={inputRef} />
+    if (shifted.length === 0 ) {
+      return null;
     }
 
-    return <FilesMenu files={shifted} inputRef={inputRef} />
+    return shifted.length === 1
+      ? <TargetMenu file={shifted[0]} inputRef={inputRef} />
+      : <FilesMenu files={shifted} inputRef={inputRef} />
   }, [shifted]);
 
   return (
@@ -199,18 +201,15 @@ export function Timeline() {
       onKeyDown={handleKeyDown}
       onWheel={e => !!e}
       onContextMenu={handleContextMenu}
-      ref={timeline}
-    >
-      <div className={s.content} id="timeline_content">
-        <ContextMenu>
-          <ContextMenuTrigger>
-            <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} />
-            <Controls setScrollX={setScrollX} scrollX={scrollX} />
-            <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
-          </ContextMenuTrigger>
-          <Menu />
-        </ContextMenu>
-      </div>
+      ref={timeline}>
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} />
+          <Controls setScrollX={setScrollX} scrollX={scrollX} />
+          <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
+        </ContextMenuTrigger>
+        <Menu />
+      </ContextMenu>
     </div>
   );
 }
