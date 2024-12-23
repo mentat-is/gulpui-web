@@ -111,8 +111,10 @@ export function SelectFilesBanner() {
 
   const fulfilled = !Operation.selected(app)?.contexts;
 
+  const done = <Button img='Check' skeleton={fulfilled} loading={loading} onClick={save} />;
+
   return (
-    <Banner title={lang.select_context.title} fixed={loading} className={s.banner}>
+    <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done}>
       <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       <Skeleton style={{ flex: 1 }} enable={fulfilled}>
       <div className={s.wrapper}>
@@ -162,7 +164,7 @@ export function SelectFilesBanner() {
         <Button img='Upload' variant='ghost' skeleton={fulfilled} onClick={() => spawnBanner(<UploadBanner />)}>Upload and analize</Button>
         <div className={s.splitter} />
         <Button variant='secondary' skeleton={fulfilled} onClick={selectAll}>Select all</Button>
-        <Button img='CheckCheck' skeleton={fulfilled} loading={loading} onClick={save}>Save</Button>
+        
       </div>
     </Banner>
   );

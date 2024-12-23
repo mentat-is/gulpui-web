@@ -1,0 +1,6 @@
+.inp {
+  background-color: var(--black);
+}
+.nameLabel {
+  white-space: nowrap;
+}

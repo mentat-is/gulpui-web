@@ -23,6 +23,7 @@ import { λGlyph } from '@/dto/λGlyph.dto';
 import { differenceInMonths } from 'date-fns';
 import { Logger, LoggerHandler } from '@/dto/Logger.class';
 import { Engine, Hardcode } from './Engine.dto';
+import { UserCustomData } from '@/dto/App.dto';
 
 interface RefetchOptions {
   uuids?: Arrayed<λFile['uuid']>;
@@ -824,6 +825,14 @@ Files: ${files.length}`, Info.name);
       color
     }, 'general', 'settings');
   }
+
+  getUserData = (): UserCustomData => ({
+    render: [],
+    scroll: {
+      x: 0,
+      y: 0
+    }
+  });
   
   // Private method to update a specific key in the application state
   private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(value: any, section: K, key: S, self: boolean = true) => {

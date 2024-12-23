@@ -17,6 +17,8 @@ import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
 import { StorylineBanner } from '../storyline';
+import { Stack } from '@impactium/components';
+import { SaveSession } from '@/banners/SaveSession';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog, Info, destroyDialog } = useApplication();
@@ -104,6 +106,10 @@ export function MenuDialog() {
     }
   }
 
+  const saveSessionAndLogout = () => {
+    spawnBanner(<SaveSession />)
+  }
+
   return (
     <Dialog title='Menu' className={s.menu}>
       <div className={s.stats}>
@@ -130,7 +136,10 @@ export function MenuDialog() {
         <Unit type='upstream' num={app.transfered?.up || 0} />
       </div>
       <Button className={s.logout} variant='outline' img='ChartBarStacked' onClick={backToOperations}>Back to Operations</Button>
-      <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>
+      <Stack style={{ width: '100%' }}>
+        <Button style={{ flex: 1 }} variant='outline' img='FloppyDisk' onClick={saveSessionAndLogout}>Save session and logout</Button>
+        <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>
+      </Stack>
       {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
     </Dialog>
   )
