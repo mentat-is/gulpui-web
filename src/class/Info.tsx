@@ -208,7 +208,7 @@ export class Info implements InfoProps {
   };
 
   // 🔥 INDEXES
-  index_reload = () => this.api<ElasticListIndex>('/elastic_list_index').then(response => {
+  index_reload = () => this.api<ElasticListIndex>('/opensearch_list_index').then(response => {
     this.app.target.indexes = response.data || [];
     this.setInfoByKey(response.isSuccess()
       ? response.data.length === 1 ? Index.select(this.app, response.data[0]) : response.data

@@ -55,8 +55,9 @@ export function LoginPage() {
       server,
       method: 'PUT',
       data: {
-        username: app.general.username,
-        password: app.general.password
+        user_id: app.general.username,
+        password: app.general.password,
+        ws_id: app.general.ws_id
       }
     }).then((res) => {
       if (res.isSuccess()) {
