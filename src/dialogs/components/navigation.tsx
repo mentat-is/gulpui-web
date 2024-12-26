@@ -3,7 +3,7 @@ import { λEvent } from "@/dto/ChunkEvent.dto";
 import { Button, Stack } from "@impactium/components";
 import s from './navigation.module.css';
 import { useEffect, useState } from "react";
-import { Event, Source } from "@/class/Info";
+import { Event, File } from "@/class/Info";
 import { SymmetricSvg } from "@/ui/SymmetricSvg";
 import { DisplayEventDialog } from "../Event.dialog";
 import { cn } from "@/ui/utils";
@@ -19,9 +19,9 @@ export function Navigation({ event }: Navigation.Props) {
   const [events, setEvents] = useState<λEvent[]>([]);
 
   useEffect(() => {
-    const source = Source.id(Info.app, event.source_id);
+    const file = File.id(Info.app, event.file_id);
     
-    const events = Event.get(Info.app, source.id);
+    const events = Event.get(Info.app, file.id);
 
     const index = events.findIndex(ev => ev.id === event.id);
 

@@ -14,7 +14,7 @@ export function EventCombination({ event, children, className, ...props }: Event
       <SymmetricSvg text={event.id} />
       <div className={s.text}>
         <p className={s.top}>{event.id}</p>
-        <p className={s.bottom}>{event.source_id}</p>
+        <p className={s.bottom}>{event.file_id}</p>
       </div>
       {children}
     </div>

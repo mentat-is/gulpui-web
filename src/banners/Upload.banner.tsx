@@ -122,7 +122,7 @@ Progress: ${progress}%`, UploadBanner.name);
 
     // setLoading(false);
 
-    // if (result.contexts.length && result.sources.length) {
+    // if (result.contexts.length && result.files.length) {
     //   spawnBanner(<SelectFilesBanner />);
     // }
   };

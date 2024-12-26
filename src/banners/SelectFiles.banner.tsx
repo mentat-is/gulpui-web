@@ -7,7 +7,7 @@ import { Badge } from "@/ui/Badge";
 import { Label } from "@/ui/Label";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { Button } from "@/ui/Button";
-import { Context, Operation, Event, Source } from "@/class/Info";
+import { Context, Operation, Event, File } from "@/class/Info";
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { Input } from "@/ui/Input";
 import { LimitsBanner } from "./Limits.banner";
@@ -15,7 +15,7 @@ import { UploadBanner } from "./Upload.banner";
 import { Logger } from "@/dto/Logger.class";
 import { Skeleton } from "@/ui/Skeleton";
 import { UUID } from "crypto";
-import { λContext, λSource } from "@/dto/Operation.dto";
+import { λContext, λFile } from "@/dto/Operation.dto";
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -25,7 +25,7 @@ export function SelectFilesBanner() {
  
   const save = async () => {
     setLoading(true);
-    const unfetched = Source.selected(app).filter(source => Event.get(app, source.id).length === 0).map(source => source.id || Event.get(app, source.id).length < source.detailed.doc_count);
+    const unfetched = File.selected(app).filter(file => Event.get(app, file.id).length === 0).map(file => file.id || Event.get(app, file.id).length < file.detailed.doc_count);
 
     if (unfetched.length && app.target.bucket.selected) {
       return await Info.refetch({
@@ -61,49 +61,57 @@ export function SelectFilesBanner() {
       return <FilteredView />
     }
 
-    const sources = Context.sources(app, context);
+    const files = Context.files(app, context);
 
-    const Sources = useCallback(() => {
+    const Files = useCallback(() => {
       return (
         <Fragment>
-          {sources.map(source => <SourceComponent {...source} />)}
+          {files.map(file => <FileComponent {...file} />)}
         </Fragment>
       )
-    }, [app.target.sources]);
+    }, [app.target.files]);
+
+    const handleContextCheck = (value: boolean) => {
+      const newContexts = value
+        ? Context.select(app, context)
+        : Context.unselect(app, context)
+
+      Info.contexts_select(newContexts)
+    }
 
     return (
       <div className={s.branch} key={context.id}>
         <div className={s.contextHeading}>
-          <Checkbox />
+          <Checkbox checked={context.selected ? Context.files(app, context).every(f => f.selected) ? true : 'indeterminate' : false} onCheckedChange={handleContextCheck} />
           <Label htmlFor={context.name}>{context.name}</Label>
           <hr style={{ flex: 1 }} />
           <Badge value='Context' />
         </div>
-        <Sources />
+        <Files />
       </div>
     )
   }
 
-  function SourceComponent(source: λSource) {
+  function FileComponent(file: λFile) {
     return (
-      <div className={s.pluginHeading} key={source.id}>
-        <Checkbox id={source.name} checked={source.selected} />
-        <Label htmlFor={source.name}>{Source.wellFormatedName(source)}</Label>
+      <div className={s.pluginHeading} key={file.id}>
+        <Checkbox id={file.name} checked={file.selected} />
+        <Label htmlFor={file.name}>{File.wellFormatedName(file)}</Label>
         <hr style={{ flex: 1 }} />
-        <Badge value={Source.pluginName(source)} />
+        <Badge value={File.pluginName(file)} />
       </div>
     )
   }
 
   const FilteredView = () => {
-    const filteredSources = app.target.sources.filter(source => source.name.toLowerCase().includes(filter.toLowerCase()));
+    const filteredFiles = app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
     return (
       <Fragment>
-        {filteredSources.map(source => (
-          <div key={source.id} className={s.source}>
-            <Checkbox id={source.name} checked={source.selected} />
-            <Label htmlFor={source.name}>{source.name}</Label>
+        {filteredFiles.map(file => (
+          <div key={file.id} className={s.file}>
+            <Checkbox id={file.name} checked={file.selected} />
+            <Label htmlFor={file.name}>{file.name}</Label>
             <Badge value='File' variant='outline' />
           </div>
           )
@@ -114,7 +122,7 @@ export function SelectFilesBanner() {
 
   return (
     <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done}>
-      <Input img='Search' skeleton={fulfilled} placeholder='Filter sources by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
+      <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
       <Skeleton style={{ flex: 1 }} enable={fulfilled}>
       <div className={s.wrapper}>
         <Contexts />  

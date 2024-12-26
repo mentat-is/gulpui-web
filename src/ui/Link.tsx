@@ -22,7 +22,7 @@ export function Link({ link, left, top }: LinkProps) {
   const { app, spawnDialog } = useApplication();
 
   const openEvent = () => {
-    const events = link.events.map(event => Event.findByIdAndUUID(app, event.id, event.source_id)).flat()
+    const events = link.events.map(event => Event.findByIdAndUUID(app, event.id, event.file_id)).flat()
 
     const dialog = events.length === 1
       ? <DisplayEventDialog event={events[0]} />

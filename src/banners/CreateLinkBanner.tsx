@@ -22,15 +22,15 @@ import { λLink } from "@/dto/Link.dto";
 import { LinkCombination } from "@/components/LinkCombination";
 import { EventCombination } from "@/components/EventCombination";
 import { GlyphsPopover } from "@/components/Glyphs.popover";
-import { λSource } from "@/dto/Operation.dto";
+import { λFile } from "@/dto/Operation.dto";
 
 interface CreateLinkBannerProps {
   context: string,
-  source: λSource,
+  file: λFile,
   events: λEvent[] | λEvent
 }
 
-export function CreateLinkBanner({ context, source, events }: CreateLinkBannerProps) {
+export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProps) {
   const { app, destroyBanner, Info } = useApplication();
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
@@ -46,7 +46,7 @@ export function CreateLinkBanner({ context, source, events }: CreateLinkBannerPr
     const data: any = {
       operation_id: Operation.selected(app)?.id,
       context,
-      src_file: source.name,
+      src_file: file.name,
       ws_id: app.general.ws_id,
       src: Parser.array(events)[0].id,
       color,
@@ -103,7 +103,7 @@ export function CreateLinkBanner({ context, source, events }: CreateLinkBannerPr
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
-        <p>File: <span>{source.name}</span></p>
+        <p>File: <span>{file.name}</span></p>
         <Separator />
         <p>At: <span>{format((Parser.array(events)[0]?.timestamp || 0), 'yyyy.MM.dd HH:mm:ss')}</span></p>
       </Card>

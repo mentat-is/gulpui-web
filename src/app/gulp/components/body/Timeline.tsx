@@ -12,8 +12,8 @@ import { TargetMenu } from './Target.menu';
 import { Input } from '@/ui/Input';
 import { FilesMenu } from './Files.manu';
 import { useKeyHandler } from '@/app/use';
-import { λSource } from '@/dto/Operation.dto';
-import { Source } from '@/class/Info';
+import { λFile } from '@/dto/Operation.dto';
+import { File } from '@/class/Info';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
@@ -22,7 +22,7 @@ export function Timeline() {
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [bounding, setBounding] = useState<DOMRect | null>(null);
-  const [shifted, setShifted] = useState<λSource[]>([]);
+  const [shifted, setShifted] = useState<λFile[]>([]);
   const [ isShiftPressed ] = useKeyHandler('Shift');
 
   const increaseScrollY = useCallback((λy: number) => {
@@ -132,7 +132,7 @@ export function Timeline() {
   const handleContextMenu = (event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 64) / 48)
 
-    const file = Source.selected(app)[index];
+    const file = File.selected(app)[index];
 
     if (!file) {
       return;
@@ -186,8 +186,8 @@ export function Timeline() {
     }
 
     return shifted.length === 1
-      ? <TargetMenu source={shifted[0]} inputRef={inputRef} />
-      : <FilesMenu sources={shifted} inputRef={inputRef} />
+      ? <TargetMenu file={shifted[0]} inputRef={inputRef} />
+      : <FilesMenu files={shifted} inputRef={inputRef} />
   }, [shifted]);
 
   return (

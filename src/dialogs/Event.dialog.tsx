@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { copy } from '@/ui/utils';
 import { Button } from '@/ui/Button';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { Note, Source } from '@/class/Info';
+import { Note, File } from '@/class/Info';
 import { Notes } from './components/Notes';
 import { λNote } from '@/dto/Note.dto';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
@@ -78,9 +78,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           operation_id: data.operation_id,
           timestamp: data['@timestamp'] as Hardcode.Timestamp,
           // @ts-ignore
-          source: data['gulp.source.source'],
+          file: data['gulp.file.file'],
           context: data['gulp.context'],
-          _uuid: event.source_id
+          _uuid: event.file_id
         });
       }, delay);
     });
@@ -89,20 +89,20 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
   const spawnNoteBanner = () => {
     spawnBanner(<CreateNoteBanner
-      context={Source.id(app, event.source_id)!.context_id}
-      filename={event.source_id}
+      context={File.id(app, event.file_id)!.context_id}
+      filename={event.file_id}
       events={event} />);
     destroyDialog();
   }
 
   const spawnLinkBanner = () => {
-    const source = Source.id(app, event.source_id);
+    const file = File.id(app, event.file_id);
 
-    if (!source) return;
+    if (!file) return;
 
     spawnBanner(<CreateLinkBanner
-      context={source.context_id}
-      source={source}
+      context={file.context_id}
+      file={file}
       events={event} />);
     destroyDialog();
   }

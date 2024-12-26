@@ -13,7 +13,7 @@ export function LinkCombination({ link, children, className, ...props }: LinkCom
     <div className={cn(s.unit, className)} {...props}>
       <SymmetricSvg text={link.events.map(e => e.id).join('')} />
       <div className={s.text}>
-        <p className={s.top}>{link.name || link.source_id}</p>
+        <p className={s.top}>{link.name || link.file_id}</p>
         <p className={s.bottom}>{link.description || link.context}</p>
       </div>
       {children}

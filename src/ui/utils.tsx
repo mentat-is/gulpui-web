@@ -8,7 +8,7 @@ import { Info } from '@/class/Info';
 import { RefObject } from 'react';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Hardcode } from '@/class/Engine.dto';
-import { λSource } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Operation.dto';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -334,11 +334,11 @@ export function numericRepresentationOfAnyString(input: string): number {
   return Math.abs(hash);
 }
 
-export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(source: λSource, event: λEvent): Hardcode.Height {
-  const isTargetValid = source.settings.focusField && source.settings.focusField[0] in event;
+export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file: λFile, event: λEvent): Hardcode.Height {
+  const isTargetValid = file.settings.focusField && file.settings.focusField[0] in event;
 
   // @ts-ignore
-  let key: unknown = isTargetValid ? event[source.settings.focusField[0]] : event.event.code;
+  let key: unknown = isTargetValid ? event[file.settings.focusField[0]] : event.event.code;
 
   if (key === undefined) {
     key = event.event.code;

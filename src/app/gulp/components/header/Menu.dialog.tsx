@@ -66,7 +66,7 @@ export function MenuDialog() {
   };
 
   const backToOperations = () => {
-    Info.files_unselect(app.target.sources);
+    Info.files_unselect(app.target.files);
     destroyDialog();
   }
   

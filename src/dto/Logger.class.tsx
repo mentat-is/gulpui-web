@@ -4,7 +4,7 @@ import { λEvent } from './ChunkEvent.dto';
 import { Arrayed, Parser } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
-import { λSource } from './Operation.dto';
+import { λFile } from './Operation.dto';
 
 export class Logger {
   protected static messages: Console.History[] = [];
@@ -81,10 +81,10 @@ Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`, LoggerHandler.name
     Logger.log(`Has been selected date from ${new Date(selected.min).toDateString()} to ${new Date(selected.max).toDateString()}`, LoggerHandler.name);
   }
 
-  public static canvasClick = (source: λSource, events: λEvent[], position: number) => {
+  public static canvasClick = (file: λFile, events: λEvent[], position: number) => {
     const loggerContext = [LoggerHandler.name, this.name];
 
-    Logger.log(`Canvas has been clicked and source ${source.name}-${source.id} was trigerred. Position: ${position}`, loggerContext);
+    Logger.log(`Canvas has been clicked and file ${file.name}-${file.id} was trigerred. Position: ${position}`, loggerContext);
 
     if (!events.length) {
       return Logger.log(`No events on click position. Skipping...`, loggerContext);

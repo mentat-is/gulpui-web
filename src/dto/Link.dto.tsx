@@ -1,7 +1,7 @@
 import { UUID } from "crypto";
 import { λEvent, λRawEventMinimized } from "./ChunkEvent.dto";
 import { μ } from "@/class/Info";
-import { λContext, λOperation, λSource } from "./Operation.dto";
+import { λContext, λOperation, λFile } from "./Operation.dto";
 import { λGlyph } from "./λGlyph.dto";
 
 export type λLink = {
@@ -28,7 +28,7 @@ export type λLink = {
   time_start: number
   time_updated: number
   type: number
-  source_id: λSource['id']
+  file_id: λFile['id']
 }
 
 export type RawLink = any;

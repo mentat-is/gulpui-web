@@ -11,7 +11,7 @@ import { λGlyph } from "./λGlyph.dto";
 import { Engine } from "@/class/Engine.dto";
 import { RenderEngine } from "@/class/RenderEngine";
 import { XY } from "./XY.dto";
-import { λContext, λSource } from "./Operation.dto";
+import { λContext, λFile } from "./Operation.dto";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -28,13 +28,13 @@ export interface λApp {
     indexes: λIndex[]
     operations: λOperation[],
     contexts: λContext[],
-    sources: λSource[],
-    events: Map<λSource['id'], λEvent[]>
-    filters: Record<λSource['id'], λFilter[]>;
+    files: λFile[],
+    events: Map<λFile['id'], λEvent[]>
+    filters: Record<λFile['id'], λFilter[]>;
     notes: λNote[],
     links: λLink[],
     glyphs: λGlyph[],
-    sigma: Record<λSource['id'], {
+    sigma: Record<λFile['id'], {
       name: string;
       content: string;
     }>;
@@ -44,19 +44,19 @@ export interface λApp {
     password: string;
     ws_id: string;
     plugins: λPlugin[];
-    settings: λSource['settings'];
+    settings: λFile['settings'];
     sessions: Record<string, Session>
   },
   timeline: {
     scale: number;
     target: λEvent | null;
-    loaded: μ.Source[];
+    loaded: μ.File[];
     filter: string;
     cache: {
-      data: Map<μ.Source, λEvent[]>;
-      filters: Record<λSource['id'], λFilter[]>;
+      data: Map<μ.File, λEvent[]>;
+      filters: Record<λFile['id'], λFilter[]>;
     },
-    filtering_options: Record<μ.Source, FilterOptions>;
+    filtering_options: Record<μ.File, FilterOptions>;
     isScrollReversed: boolean;
     dialogSize: number;
   }
@@ -88,7 +88,7 @@ export const BaseInfo: λApp = {
     loaded: [],
     filter: '',
     cache: {
-      data: new Map<μ.Source, λEvent[]>(),
+      data: new Map<μ.File, λEvent[]>(),
       filters: {}
     },
     filtering_options: {},
@@ -99,8 +99,8 @@ export const BaseInfo: λApp = {
     indexes: [],
     operations: [],
     contexts: [],
-    sources: [],
-    events: new Map<μ.Source, λEvent[]>(),
+    files: [],
+    events: new Map<μ.File, λEvent[]>(),
     filters: {},
     bucket: {
       total: 0,

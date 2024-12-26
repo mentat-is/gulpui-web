@@ -1,14 +1,14 @@
-import { λSource } from "@/dto/Operation.dto";
+import { λFile } from "@/dto/Operation.dto";
 import { Engine, Hardcode, MaxHeight, MinHeight, Scale } from "../class/Engine.dto";
 import { RenderEngine } from "../class/RenderEngine";
 import { Gradients, numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from "@/ui/utils";
-import { Source } from "@/class/Info";
+import { File } from "@/class/Info";
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null;
   static target: Map<Hardcode.X, [ Hardcode.Height, Hardcode.Timestamp ]> & Scale & MinHeight & MaxHeight;
   private renderer!: RenderEngine;
-  map = new Map<λSource['id'], typeof DefaultEngine.target>();
+  map = new Map<λFile['id'], typeof DefaultEngine.target>();
 
   constructor(renderer: Engine.Constructor) {
     if (DefaultEngine.instance) {
@@ -20,35 +20,35 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     DefaultEngine.instance = this;
   }
 
-  render(source: λSource, y: number, force?: boolean) {
-    const map = this.get(source, force);
+  render(file: λFile, y: number, force?: boolean) {
+    const map = this.get(file, force);
 
     Array.from(map.entries()).forEach(([_, [ code, timestamp ]]) => {
-      if (throwableByTimestamp(timestamp + source.settings.offset, this.renderer.limits, this.renderer.info.app)) return;
+      if (throwableByTimestamp(timestamp + file.settings.offset, this.renderer.limits, this.renderer.info.app)) return;
 
       const position = this.renderer.getPixelPosition(timestamp);
 
-      this.renderer.ctx.fillStyle = λColor.gradient(source.settings.color as Gradients, code, {
-        min: Math.min(map[MinHeight], source.detailed.event.min),
-        max: Math.max(map[MaxHeight], source.detailed.event.min),
+      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color as Gradients, code, {
+        min: Math.min(map[MinHeight], file.detailed.event.min),
+        max: Math.max(map[MaxHeight], file.detailed.event.min),
       });
       this.renderer.ctx.fillRect(position, y, 1, 47);
     });
   }
   
-  get(source: λSource, force?: boolean): typeof DefaultEngine.target {
-    if (this.is(source) && !force) return this.map.get(source.id)! as typeof DefaultEngine.target;
+  get(file: λFile, force?: boolean): typeof DefaultEngine.target {
+    if (this.is(file) && !force) return this.map.get(file.id)! as typeof DefaultEngine.target;
 
     const map = new Map() as typeof DefaultEngine.target;
 
-    Source.events(this.renderer.info.app, source).forEach(event => {
-      const timestamp = event.timestamp + source.settings.offset as Hardcode.Timestamp;
+    File.events(this.renderer.info.app, file).forEach(event => {
+      const timestamp = event.timestamp + file.settings.offset as Hardcode.Timestamp;
       const pos = this.renderer.getPixelPosition(timestamp) as Hardcode.X;
 
       if (map.has(pos))
         return;
 
-      const value = numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(source, event);
+      const value = numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file, event);
 
       map.set(pos, [value, timestamp]);
     });
@@ -58,10 +58,10 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;
     map[MinHeight] = Math.min(...values) as Hardcode.Height;
     map[MaxHeight] = Math.max(...values) as Hardcode.Height;
-    this.map.set(source.id, map)
+    this.map.set(file.id, map)
 
     return map as typeof DefaultEngine.target;
   };
   
-  is = (source: λSource) => Boolean(this.map.get(source.id)?.[Scale] === this.renderer.info.app.timeline.scale);
+  is = (file: λFile) => Boolean(this.map.get(file.id)?.[Scale] === this.renderer.info.app.timeline.scale);
 }

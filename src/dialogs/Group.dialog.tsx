@@ -29,7 +29,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
           <div className={s.combination}>
             <SymmetricSvg text={event.id} className={s.icon} />
             <div className={s.group}>
-              <p className={s.title}>{event.source_id}</p>
+              <p className={s.title}>{event.file_id}</p>
               <p className={s.description}>{event.event.code}</p>
             </div>
           </div>

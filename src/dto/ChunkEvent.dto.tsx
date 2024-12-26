@@ -1,7 +1,7 @@
 import { Hardcode } from "@/class/Engine.dto"
 import { μ } from "@/class/Info"
 import { UUID } from "crypto"
-import { λContext, λOperation, λSource } from "./Operation.dto"
+import { λContext, λOperation, λFile } from "./Operation.dto"
 
 export interface λEvent {
   id: μ.Event;
@@ -13,7 +13,7 @@ export interface λEvent {
   },
   pos?: number
   context: λContext['id']
-  source_id: λSource['id']
+  file_id: λFile['id']
 }
 
 export interface DetailedChunkEvent extends λEvent {
@@ -40,7 +40,7 @@ export interface RawChunkEvent {
   'gulp.event.code': string
   'event.duration': number
   // λFile
-  'gulp.source.file': string
+  'gulp.file.file': string
   // λContext
   'gulp.context': string
 }
@@ -51,7 +51,7 @@ export interface RawDetailedChunkEvent extends RawChunkEvent {
   "gulp.context": λContext['id'],
   "agent.type": string,
   "log.level": number,
-  "gulp.source.file": λSource['id'],
+  "gulp.file.file": λFile['id'],
   "agent.id": string,
   "event.id": string,
   "event.category": string,
@@ -64,7 +64,7 @@ export interface RawDetailedChunkEvent extends RawChunkEvent {
 
 export type λRawEventMinimized = Pick<λEvent, 'context' | 'id' | 'operation_id'> & {
   '@timestamp': number
-  src_file: λSource['id'];
+  src_file: λFile['id'];
 }
 
 export interface λEventFormForCreateRequest {

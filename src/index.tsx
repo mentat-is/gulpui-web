@@ -6,7 +6,7 @@ import { ApplicationProvider, useApplication } from './context/Application.conte
 import { GulpPage } from './app/gulp/Gulp';
 import { LoginPage } from './app/login/Login';
 import { Toaster } from './ui/Toaster';
-import { Source } from './class/Info';
+import { File } from './class/Info';
 import { Api } from './class/API';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(Root());
@@ -33,7 +33,7 @@ function Main() {
   console.log(app);
 
 
-  return (Source.selected(app).length
+  return (File.selected(app).length
     // if app has operation and index defined
     ? <GulpPage />
     // if not

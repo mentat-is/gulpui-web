@@ -1,11 +1,11 @@
 import { λEvent, λRawEventMinimized } from "./ChunkEvent.dto"
 import { μ } from "@/class/Info"
-import { λContext, λOperation, λSource } from "./Operation.dto"
+import { λContext, λOperation, λFile } from "./Operation.dto"
 import { λGlyph } from "./λGlyph.dto"
 import { Color } from "@impactium/types"
 
 export interface λNote {
-  source_id: λSource['id'],
+  file_id: λFile['id'],
   id: μ.Note,
   level: 0 | 1 | 2,
   owner_user_id: number,

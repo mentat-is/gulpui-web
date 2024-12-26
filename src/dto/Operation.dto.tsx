@@ -6,7 +6,7 @@ import { Gradients } from "@/ui/utils";
 import { Engine } from "@/class/Engine.dto";
 import { intersection } from "lodash";
 
-export type GulpDataType = 'operation' | 'context' | 'source';
+export type GulpDataType = 'operation' | 'context' | 'file';
 
 interface ΞSelectionField {
   selected?: boolean;
@@ -38,7 +38,7 @@ export type λOperation = ΞOperation<{
 
 export type OperationTree = ΞOperation<{
   contexts: ΞContext<{
-    sources: ΞSource[]
+    sources: ΞFile[]
   }>[]
 }>
 
@@ -48,16 +48,16 @@ type ΞContext<T extends Extendable = {}> = GulpObject<μ.Context, T> & {
 }
 
 export type λContext = ΞContext<{
-  sources: λSource['id'][];
+  files: λFile['id'][];
 }>
 
-type ΞSource<T extends Extendable = {}> = GulpObject<μ.Source, T> & {
+type ΞFile<T extends Extendable = {}> = GulpObject<μ.File, T> & {
   operation_id: λOperation['id'];
   context_id: ΞContext['id'];
   description: string | null;
 }
 
-export type λSource = ΞSource & {
+export type λFile = ΞFile & {
   pinned?: boolean;
   settings: ΞSettings;
   detailed: ΞDetailed;

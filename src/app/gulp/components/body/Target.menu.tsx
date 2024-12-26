@@ -5,25 +5,25 @@ import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { enginesBase } from '@/dto/Engine.dto';
-import { λSource } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Operation.dto';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 
 interface TargetMenuProps {
-  source?: λSource;
+  file?: λFile;
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
-export function TargetMenu({ source, inputRef }: TargetMenuProps) {
+export function TargetMenu({ file, inputRef }: TargetMenuProps) {
   const { Info, spawnBanner, app } = useApplication();
 
-  if (!source) return null;
+  if (!file) return null;
 
-  const removeFilters = (source: λSource) => {
-    Info.filters_remove(source);
+  const removeFilters = (file: λFile) => {
+    Info.filters_remove(file);
     setTimeout(() => {
       Info.refetch({
-        ids: source.id
+        ids: file.id
       });
     }, 300);
   }
@@ -33,10 +33,10 @@ export function TargetMenu({ source, inputRef }: TargetMenuProps) {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <ContextMenuLabel className={s.cm_title}>{source.name}</ContextMenuLabel>
+            <ContextMenuLabel className={s.cm_title}>{file.name}</ContextMenuLabel>
           </TooltipTrigger>
           <TooltipContent>
-            {source.name}
+            {file.name}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -44,28 +44,28 @@ export function TargetMenu({ source, inputRef }: TargetMenuProps) {
       <ContextMenuSub>
         <ContextMenuSubTrigger img='Cpu'>Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
-          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.files_replace({ ...source, settings: {...source.settings, engine: i.plugin}})} img={i.img}>{i.title}</ContextMenuItem>)}
+          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.files_replace({ ...file, settings: {...file.settings, engine: i.plugin}})} img={i.img}>{i.title}</ContextMenuItem>)}
         </ContextMenuSubContent>
       </ContextMenuSub>
-      <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner source={source} />)} img='Settings'>Settings</ContextMenuItem>
-      <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer source={source} />)} img='Link'>Links</ContextMenuItem>
+      <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
+      <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={file} />)} img='Link'>Links</ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner source={source} />)} img='Filter'>Filters</ContextMenuItem>
-        {Filter.find(app, source) && <ContextMenuItem onClick={() => removeFilters(source)} img='FilterX'>Clear all filters</ContextMenuItem>}
-        {Filter.find(app, source) && app.timeline.cache.data.has(source.id) && <ContextMenuItem onClick={() => Info.filters_undo(source)} img='Undo'>Undo last filters change</ContextMenuItem>}
+        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={file} />)} img='Filter'>Filters</ContextMenuItem>
+        {Filter.find(app, file) && <ContextMenuItem onClick={() => removeFilters(file)} img='FilterX'>Clear all filters</ContextMenuItem>}
+        {Filter.find(app, file) && app.timeline.cache.data.has(file.id) && <ContextMenuItem onClick={() => Info.filters_undo(file)} img='Undo'>Undo last filters change</ContextMenuItem>}
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Actions</ContextMenuLabel>
-        <ContextMenuItem onClick={() => Info.files_unselect(source)} img='EyeOff'>Hide</ContextMenuItem>
+        <ContextMenuItem onClick={() => Info.files_unselect(file)} img='EyeOff'>Hide</ContextMenuItem>
         <ContextMenuSub>
         <ContextMenuSubTrigger img='Move'>Reorder</ContextMenuSubTrigger>
         <ContextMenuSubContent>
-          <ContextMenuItem onClick={() => Info.files_repin(source.id)} img={source.pinned ? 'PinOff' : 'Pin'}>{source ? source.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
-          <ContextMenuItem onClick={() => Info.files_reorder_upper(source.id)} img='ArrowBigUp'>Move upper</ContextMenuItem>
-          <ContextMenuItem onClick={() => Info.files_reorder_lower(source.id)} img='ArrowBigDown'>Move lower</ContextMenuItem>
+          <ContextMenuItem onClick={() => Info.files_repin(file.id)} img={file.pinned ? 'PinOff' : 'Pin'}>{file ? file.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
+          <ContextMenuItem onClick={() => Info.files_reorder_upper(file.id)} img='ArrowBigUp'>Move upper</ContextMenuItem>
+          <ContextMenuItem onClick={() => Info.files_reorder_lower(file.id)} img='ArrowBigDown'>Move lower</ContextMenuItem>
         </ContextMenuSubContent>
       </ContextMenuSub>
       </ContextMenuGroup>
@@ -73,7 +73,7 @@ export function TargetMenu({ source, inputRef }: TargetMenuProps) {
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
         <ContextMenuItem onClick={() => inputRef.current?.click()} img='Sigma'>Upload rule</ContextMenuItem>
-        {app.target.sigma[source.id] && <ContextMenuItem className={s.remove_sigma} onClick={() => Info.sigma.remove(source)} img='X'><span>Disable rule: {app.target.sigma[source.id].name}</span></ContextMenuItem>}
+        {app.target.sigma[file.id] && <ContextMenuItem className={s.remove_sigma} onClick={() => Info.sigma.remove(file)} img='X'><span>Disable rule: {app.target.sigma[file.id].name}</span></ContextMenuItem>}
       </ContextMenuGroup>
     </ContextMenuContent>
   )

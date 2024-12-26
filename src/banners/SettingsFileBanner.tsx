@@ -19,29 +19,29 @@ import { Engine } from "@/class/Engine.dto";
 import { Stack } from "@impactium/components";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { Toggle } from "@/ui/Toggle";
-import { λSource } from "@/dto/Operation.dto";
+import { λFile } from "@/dto/Operation.dto";
 
 interface SettingsFileBannerProps {
-  source: λSource;
+  file: λFile;
 }
 
-export function SettingsFileBanner({ source }: SettingsFileBannerProps) {
+export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const { Info, app, spawnBanner, destroyBanner } = useApplication();
-  const [color, setColor] = useState<any>(source.color);
-  const [offset, setOffset] = useState<number>(source.settings.offset);
-  const [engine, setEngine] = useState<Engine.List>(source.settings.engine);
+  const [color, setColor] = useState<any>(file.color);
+  const [offset, setOffset] = useState<number>(file.settings.offset);
+  const [engine, setEngine] = useState<Engine.List>(file.settings.engine);
   const [isCustomKeyField, setIsCustomKeyField] = useState<boolean>(false);
-  const [key, setKey] = useState<string | string[]>(source.settings.focusField);
+  const [key, setKey] = useState<string | string[]>(file.settings.focusField);
 
   const save = () => {
     const newFile = { color, offset, engine, key };
 
-    Logger.log(`Settings for source has been successfully updated.
-File: ${source.name}-${source.id}
+    Logger.log(`Settings for file has been successfully updated.
+File: ${file.name}-${file.id}
 Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
 
     Info.files_replace({
-      ...source,
+      ...file,
       ...newFile
     });
     destroyBanner();
@@ -58,11 +58,11 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
   return (
     <Banner title='File settings' subtitle={
       <Button
-        onClick={() => spawnBanner(<FilterFileBanner source={source} />)}
+        onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
         variant='ghost'
-        img='Filter'>{(app.target.filters[source.id] || []).length ? 'Change filters' : 'Set filters'}</Button>
+        img='Filter'>{(app.target.filters[file.id] || []).length ? 'Change filters' : 'Set filters'}</Button>
       }>
-      <h4>{source.name} in {Context.find(app, source.context_id)?.name}</h4>
+      <h4>{file.name} in {Context.find(app, file.context_id)?.name}</h4>
       <Card>
         <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
         <Input img='AlarmClockPlus' accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
@@ -110,13 +110,13 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
                   <SelectValue placeholder="event.code" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(Event.get(app, source.id)[0] || {}).map(key => <SelectItem value={key}>{key}</SelectItem>)}
+                  {Object.keys(Event.get(app, file.id)[0] || {}).map(key => <SelectItem value={key}>{key}</SelectItem>)}
                 </SelectContent>
               </Select>
           }
         </Stack>
       </Card>
-      <Button style={{ alignSelf: 'flex-end' }} img='CheckCheck' onClick={save}>Apply new source settings</Button>
+      <Button style={{ alignSelf: 'flex-end' }} img='CheckCheck' onClick={save}>Apply new file settings</Button>
     </Banner>
   )
 }
