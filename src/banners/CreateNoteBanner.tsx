@@ -1,6 +1,5 @@
 import { Operation, Parser } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
-import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { Banner } from "@/ui/Banner";
 import { Button } from "@impactium/components";
 import {
@@ -29,7 +28,7 @@ interface CreateNoteBannerProps {
 }
 
 export function CreateNoteBanner({ context, filename, events }: CreateNoteBannerProps) {
-  const { app, api, destroyBanner, Info } = useApplication();
+  const { app, destroyBanner, Info } = useApplication();
   const [tag, setTag] = useState<string>('');
   const [tags, setTags] = useState<Array<string>>([]);
   const [color, setColor] = useState<string>('#ffffff');
@@ -45,16 +44,16 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
 
   const send = async () => {
     setLoading(true);
-    api<ResponseBase<unknown>>('/note_create', {
+    api('/note_create', {
       method: 'POST',
-      data: {
-        operation_id: Operation.selected(app)?.id,
+      query: {
+        operation_id: Operation.selected(app)?.id!,
         context,
         src_file: filename,
         ws_id: app.general.ws_id,
         color,
         level,
-        private: _private,
+        private: String(_private),
         glyph_id: icon
       },
       headers: {

@@ -16,9 +16,9 @@ interface LinkCreateRequestFulfilled {
 }
 
 export class LinkCreateRequest {
-  public static body = ({ name, events, description }: LinkCreateRequestProps): JsonString<LinkCreateRequestFulfilled> => JSON.stringify({
-    name,
-    description,
-    events: Event.formatToCreateRequest(events)
-  }) as JsonString<LinkCreateRequestFulfilled>;
+  public static body = ({ name, events, description }: LinkCreateRequestProps): LinkCreateRequestFulfilled => ({
+  name: name || 'Unknown link',
+  description,
+  events: Event.formatToCreateRequest(events)
+  })
 }

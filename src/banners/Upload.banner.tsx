@@ -49,7 +49,7 @@ interface TargetSelection {
 }
 
 export function UploadBanner() {
-  const { Info, app, api, spawnBanner } = useApplication();
+  const { Info, app, spawnBanner } = useApplication();
   const [files, setFiles] = useState<FileList>();
   const [settings, setSettings] = useState<Record<File['name'], λIngestFileSettings>>({});
   const [context, setContext] = useState<string>('');
@@ -83,9 +83,9 @@ export function UploadBanner() {
         'size': file.size.toString(),
         'continue_offset': start.toString(),
       },
-      data: {
+      query: {
         req_id,
-        plugin: settings[file.name].plugin,
+        plugin: settings[file.name].plugin!,
         operation_id: Operation.selected(app)!.id,
         context,
         client_id: app.general.user_id,

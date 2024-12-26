@@ -7,9 +7,14 @@ import { GulpPage } from './app/gulp/Gulp';
 import { LoginPage } from './app/login/Login';
 import { Toaster } from './ui/Toaster';
 import { File } from './class/Info';
-import { useEffect, useState } from 'react';
+import { Api } from './class/API';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(Root());
+
+declare global {
+  var api: Api;
+  var useOptionStyling: (options: Record<string, any> | undefined, base: Record<string, string>) => string;
+}
 
 function Root() {
   return (

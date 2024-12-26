@@ -1,15 +1,11 @@
 import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from "react";
-import { ResponseBase, ResponseError } from "@/dto/ResponseBase.dto";
-import { λApp, BaseInfo, λ } from '@/dto';
-import { Api } from "@/dto/api.dto";
-import { toast } from "sonner";
+import { λApp, BaseInfo } from '@/dto';
 import { AppSocket } from "@/class/AppSocket";
-import { Index, Info } from "@/class/Info";
-import Cookies from "universal-cookie";
-import { parseTokensFromCookies } from "@/ui/utils";
+import { Info } from "@/class/Info";
 import { Console } from '@impactium/console';
 import { Logger } from "@/dto/Logger.class";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
+import '@/class/API';
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -25,7 +21,6 @@ interface ApplicationContextProps {
   spawnDialog: (dialog: JSX.Element) => void;
   destroyDialog: () => void;
   dialog: boolean;
-  api: Api;
   app: λApp;
   ws: AppSocket | undefined;
   setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
@@ -43,73 +38,10 @@ export const useApplication = (): ApplicationContextProps => useContext(Applicat
 
 // Application provider component to wrap the application with context
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
-  const cookie = new Cookies();
   const [app, setInfo] = useState<λApp>(BaseInfo);
   const [banner, setBanner] = useState<ReactNode>();
   const [dialog, setDialog] = useState<ReactNode>();
   const timeline = useRef<HTMLDivElement>(null);
-
-  const api: Api = async <T extends ResponseBase>(
-    path: RequestInfo | URL,
-    options: RequestInit & {
-      server?: string;
-      token?: string;
-      isRaw?: boolean;
-      isText?: boolean;
-      ignore?: boolean;
-      data?: { [key: string]: any };
-    } = {}
-  ): Promise<λ<T>> => {
-    options.data = options.data || {};
-    // Include token in request data if available
-    if (options.token || app.general.token) options.headers = {
-      ...options.headers,
-      token: options.token! || app.general.token!
-    };
-
-    const index = Index.selected(app);
-    // Include index in request data if available
-    if (index) options.data.index = index.name;
-  
-    if (options.data) {
-      const requestData = new URLSearchParams(options.data).toString();
-      instance.setUpstream(new Blob([requestData]).size);
-      path = `${path}?${requestData}`;
-    }
-  
-    const requestOptions: RequestInit = {
-      method: 'GET',
-      ...options,
-    };
-  
-    const res = await fetch((options.server || app.general.server) + path, requestOptions).catch(error => {
-      Logger.error(`Network error: ${error}.
-Server: ${options.server || app.general.server}.
-Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
-      return null;
-    });
-
-    if (!res) {
-      const data = new λ<any>();
-      return data;
-    };
-    
-    const lambda = new λ(await res.json() as T)
-    if (!res.ok && lambda.isError()) {
-      if ((lambda.data.exception.name === 'SessionExpired' || lambda.data.exception.msg.startsWith('session token')) && app.general.token) {
-        Logger.warn(`Session expired, logging out...`);
-        setInfo(BaseInfo);
-      } else {
-        Logger.error(`API Error: ${(lambda as ResponseError).data.exception.name}`, ApplicationProvider.name);
-      }
-      !options.ignore && toast(lambda.data.exception.name, {
-        description: typeof lambda.data.exception.msg === 'string' ? lambda.data.exception.msg : JSON.stringify(lambda.data.exception.msg),
-      })
-    }
-    const responseSize = parseInt(res.headers.get('content-length') || '0', 10);
-    instance.setDownstream(responseSize);
-    return lambda;
-  };
 
   const logout = () => {
     api('/logout', {
@@ -121,7 +53,7 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
     })
   };
   
-  const instance = new Info({app, setInfo, api, timeline});
+  const instance = new Info({app, setInfo, timeline});
 
   const [ws, setWs] = useState<AppSocket>();
 
@@ -158,7 +90,6 @@ Options: ${JSON.stringify(requestOptions, null, 2)}`, ApplicationProvider.name);
     destroyDialog,
     dialog: !!dialog,
     ws,
-    api,
     app,
     setWs,
     setInfo,

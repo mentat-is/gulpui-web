@@ -11,7 +11,6 @@ import { Badge } from '@/ui/Badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
-import { ResponseBase } from '@/dto/ResponseBase.dto';
 import { Context, Filter, FilterOptions, FilterType, λFilter, Plugin, μ } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
 import React from 'react';
@@ -32,7 +31,7 @@ interface FilterFileBannerProps {
 }
 
 export function FilterFileBanner({ file }: FilterFileBannerProps) {
-  const { app, api, Info, destroyBanner, spawnBanner } = useApplication();
+  const { app, Info, destroyBanner, spawnBanner } = useApplication();
   const [acceptable, setAcceptable] = useState<Acceptable>('text');
   const [filter, setFilter] = useState<λFilter>(_baseFilter());
   const [loading, setLoading] = useState<boolean>(false);
@@ -45,12 +44,12 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
     const context = Context.uuid(app, Plugin.uuid(app, file._uuid)!._uuid)!.name;
 
-    api<ResponseBase<FilterOptions>>('/elastic_get_mapping_by_source', {
-      data: {
+    api<FilterOptions>('/elastic_get_mapping_by_source', {
+      query: {
         context,
         src: file.name
       }
-    }).then(res => res.isSuccess() && Info.setTimelineFilteringoptions(file, res.data));
+    }).then(data => Info.setTimelineFilteringoptions(file, data));
   }, [app.timeline.filtering_options]);
 
   const submit = async () => {
@@ -84,8 +83,8 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   useEffect(() => {
     api('/stats_cancel_request', {
-      data: { req_id: file.uuid }
-    }).then(res => res.isSuccess() && toast('Previous request for this file has been canceled'));
+      query: { req_id: file.uuid }
+    }).then(res => toast('Previous request for this file has been canceled succesfully'));
   }, []);
 
   const resetFilter = () => setFilter(_baseFilter);

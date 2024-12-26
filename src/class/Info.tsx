@@ -1,14 +1,11 @@
-import { ElasticListIndex, OperationsList, type λApp } from '@/dto';
-import { Api } from '@/dto/api.dto';
+import { type λApp } from '@/dto';
 import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { RawOperation, λOperation } from '@/dto/Operation.dto';
 import { λContext } from '@/dto/Context.dto';
-import { QueryOperations } from '@/dto/QueryOperations.dto';
 import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
 import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
-import { ResponseBase, ResponseError } from '@/dto/ResponseBase.dto';
 import { λFile } from '@/dto/File.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
@@ -34,7 +31,6 @@ interface RefetchOptions {
 interface InfoProps {
   app: λApp,
   setInfo: React.Dispatch<React.SetStateAction<λApp>>, 
-  api: Api
   timeline: React.RefObject<HTMLDivElement>;
 }
 
@@ -49,18 +45,15 @@ interface QueryExternalProps {
 export class Info implements InfoProps {
   app: λApp;
   setInfo: React.Dispatch<React.SetStateAction<λApp>>;
-  api: Api;
   timeline: React.RefObject<HTMLDivElement>;
 
   constructor({
     app,
     setInfo, 
-    api,
     timeline
   }: InfoProps) {
     this.app = app;
     this.setInfo = setInfo;
-    this.api = api;
     this.timeline = timeline;
   }
 
@@ -113,9 +106,9 @@ export class Info implements InfoProps {
     await Promise.all(files.map(async file => {
       if (!this.app.target.bucket.selected && !range) return Logger.error(`${Info.name}.${this.refetch.name} for file ${file?.uuid}-${file?.uuid} has been executed, but was cancelled bacause range is ${typeof range} and ${typeof this.app.target.bucket.selected}`, Info.name);
 
-      return await this.api('/query_raw', {
+      return await api('/query_raw', {
         method: 'POST',
-        data: {
+        query: {
           ws_id: this.app.general.ws_id,
           req_id: file.uuid
         },
@@ -141,10 +134,9 @@ export class Info implements InfoProps {
   cancel = async (r: μ.File) => {
     Logger.log(`Request canselation has been requested for file ${File.uuid(this.app, r).name}`, Info.name);
 
-    return await this.api('/stats_cancel_request', {
+    return await api('/stats_cancel_request', {
       method: 'PUT',
-      data: { r },
-      ignore: true
+      query: { r }
     });
   }
 
@@ -208,26 +200,22 @@ export class Info implements InfoProps {
   };
 
   // 🔥 INDEXES
-  index_reload = () => this.api<ElasticListIndex>('/opensearch_list_index').then(response => {
-    this.app.target.indexes = response.data || [];
-    this.setInfoByKey(response.isSuccess()
-      ? response.data.length === 1 ? Index.select(this.app, response.data[0]) : response.data
+  index_reload = () => api<λIndex[]>('/opensearch_list_index').then(data => {
+    this.app.target.indexes = data || [];
+    this.setInfoByKey(data
+      ? data.length === 1 ? Index.select(this.app, data[0]) : data
       : [],
     'target', 'indexes');
   });
-
-  index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
+  
+index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
   // 🔥 OPERATIONS
-  operations_reload = () => this.api<OperationsList>('/operation_list', {
+  operations_reload = () => api<λOperation[]>('/operation_list', {
     method: 'POST'
-  }).then(response => {
-    if (response.isSuccess()) {
-      Logger.log(`API /operation_list has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
-      this.setInfoByKey(Operation.reload(response.data, this.app), 'target', 'operations');
-    } else {
-      Logger.error(response, Info.name);
-    }
+  }).then(data => {
+    Logger.log(`API /operation_list has been fetched successfully. Total amount: ${data.length}`, Info.name);
+    this.setInfoByKey(Operation.reload(data, this.app), 'target', 'operations');
   });
 
   operations_select = (operation: λOperation) => this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations');
@@ -244,15 +232,7 @@ export class Info implements InfoProps {
   // 🔥 PLUGINS
   plugins_set = (plugins: λPlugin[]) => this.setInfoByKey(plugins, 'target', 'plugins');
 
-  plugins_fetch = () => this.api<PluginEntityResponse>('/plugin_list').then(res => {
-    if (res.isSuccess()) {
-      return res.data;
-    } else {
-      toast('Error fetching plugin_list', {
-        description: (res as unknown as ResponseError).data.exception.msg
-      })
-    }
-  });
+plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
 
   // 🔥 FILES
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
@@ -300,7 +280,7 @@ export class Info implements InfoProps {
         operation_id.push(operation.id);
     });
 
-    const response = await this.api<ResponseBase<RawNote[]>>('/note_list', {
+    api<RawNote[]>('/note_list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -311,35 +291,15 @@ export class Info implements InfoProps {
         context,
         operation_id
       })
-    });
-
-    if (response.isSuccess()) {
-      this.notes_set(Note.parse(this.app, response.data))
-    } else {
-      const error = (response as unknown as ResponseError).data.exception.name;
-      Logger.error(`Notes fetch was failed. Reason:
-${error}`, Info.name);
-
-      return;
-    };
-
-    Logger.log(`Notes has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
+    }, (data) => this.notes_set(Note.parse(this.app, data)));
   }
 
-  notes_delete = (note: λNote) => this.api<ResponseBase<boolean>>('/note_delete', {
-    method: 'DELETE',
-    data: {
+  notes_delete = (note: λNote) => api<boolean>('/note_delete', {
+    query: {
       note_id: note.id,
       ws_id: this.app.general.ws_id
     }
-  }).then(async (res) => {
-    if (res.isSuccess()) {
-      await this.notes_reload();
-      toast('Note deleted successfully');
-    } else {
-      toast((res as unknown as ResponseError).data.exception.name);
-    }
-  });
+  })
 
   fileKey = (file: λFile, key: keyof λEvent) => this.setInfoByKey(File.replace({ ...file, key }, this.app), 'target', 'files');
 
@@ -362,7 +322,7 @@ ${error}`, Info.name);
         operation_id.push(operation.id);
     });
     
-    const response = await this.api<ResponseBase<RawLink[]>>('/link_list', {
+    api<RawLink[]>('/link_list', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -373,37 +333,18 @@ ${error}`, Info.name);
         context,
         operation_id
       })
-    });
-
-    if (response.isSuccess()) {
-      this.links_set(response.data)
-    } else {
-      const error = (response as unknown as ResponseError).data.exception.name;
-      Logger.error(`Links fetch was failed. Reason:
-${error}`, Info.name);
-
-      return;
-    };
-
-    Logger.log(`Links has been fetched successfully. Total amount: ${response.data.length}`, Info.name);
+    }, this.links_set);
   }
 
   links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
 
-  links_delete = (link: λLink) => this.api<ResponseBase>('/link_delete', {
+  links_delete = (link: λLink) => api('/link_delete', {
     method: 'DELETE',
-    data: {
+    query: {
       link_id: link.id,
       ws_id: this.app.general.ws_id
     }
-  }).then(res => {
-    if (res.isSuccess())
-      this.links_reload();
-    else
-      toast('Error deleting link', {
-        description: (res as unknown as ResponseError).data.exception.name
-      });
-  });
+  }, this.links_reload);
 
   glyphs_reload = async () => {
     const parse = (glyphs: λGlyph[]) => {
@@ -420,9 +361,9 @@ ${error}`, Info.name);
         formData.append('glyph', new Blob([""], { type: 'image/png' }));
 
         // Если нет, то создаём
-        await this.api<ResponseBase<unknown>>('/glyph_create', {
+        await api<unknown>('/glyph_create', {
           method: 'POST',
-          data: {
+          query: {
             name: value,
           },
           body: formData
@@ -443,11 +384,9 @@ ${error}`, Info.name);
       this.setInfoByKey(glyphs, 'target', 'glyphs');
     }
 
-    await this.api<ResponseBase<λGlyph[]>>('/glyph_list', {
+    await api<λGlyph[]>('/glyph_list', {
       method: 'POST',
-    }).then(res => res.isSuccess() ? parse(res.data) : toast('Error fetching glyphs', {
-      description: (res as unknown as ResponseError).data.exception.name
-    }));
+    }, parse);
   }
 
   query_operations = async () => {
@@ -456,7 +395,7 @@ ${error}`, Info.name);
     const plugins: λPlugin[] = [];
     const files: λFile[] = [];
 
-    const rawOperations =  await this.api<QueryOperations>('/query_operations').then(res => res.data || []);
+    const rawOperations =  await api<RawOperation[]>('/query_operations').then(data => data || []);
 
     rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
       const exist = Operation.findByNameAndId(this.app, { id, name });
@@ -562,7 +501,7 @@ Files: ${files.length}`, Info.name);
     return { operations, contexts, plugins, files };
   }
 
-  query_max_min = ({ ignore }: { ignore?: boolean}) => this.api<QueryMaxMin>('/query_max_min', {
+  query_max_min = ({ ignore }: { ignore?: boolean}) => api<QueryMaxMin>('/query_max_min', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json; charset=utf-8'
@@ -570,9 +509,9 @@ Files: ${files.length}`, Info.name);
     body: JSON.stringify({
       operation_id: [Operation.selected(this.app)?.id]
     })
-  }).then(response => {
-    const fulfilled = Boolean(response.data.buckets.length);
-    const base = response.data.buckets[0]?.['*'];
+  }).then(data => {
+    const fulfilled = Boolean(data.buckets.length);
+    const base = data.buckets[0]?.['*'];
 
     if (!base) {
       return
@@ -589,7 +528,7 @@ Files: ${files.length}`, Info.name);
         : timestamp;
 
     const bucket: Bucket = {
-      total: response.data.total,
+      total: data.total,
       fetched: this.app.target.bucket.fetched || 0,
       event_code: {
         max: fulfilled ? base['max_event.code'] : 1,
@@ -655,9 +594,9 @@ Files: ${files.length}`, Info.name);
     server,
     username,
     password
-  }: QueryExternalProps) => this.api('/query_external', {
+  }: QueryExternalProps) => api('/query_external', {
     method: 'POST',
-    data: {
+    query: {
       operation_id,
       client_id: this.app.general.user_id,
       ws_id: this.app.general.ws_id,
@@ -695,27 +634,27 @@ Files: ${files.length}`, Info.name);
     this.setInfoByKey(bool, 'timeline', 'isScrollReversed')
   }
 
-  mapping = () => this.api<MappingFileListRequest>('/mapping_file_list').then(async (res) => {
+  mapping = async () => {
+    const data = await api<MappingFileListRequest>('/mapping_file_list')
     const plugins = await this.plugins_fetch();
 
     if (!plugins) return;
 
-    plugins.forEach(plugin => { plugin.mappings = [] });
+    plugins.forEach(plugin => { plugin.mappings = []; });
 
-    if (res.isSuccess()) {
-      const mappings = res.data;
 
-      mappings.forEach(mapping => {
-        const plugin = plugins.find(p => mapping.metadata.plugin.some(_plugin => _plugin === p.filename));
+    const mappings = data;
 
-        delete (mapping as Partial<RawMapping>).metadata;
+    mappings.forEach(mapping => {
+      const plugin = plugins.find(p => mapping.metadata.plugin.some(_plugin => _plugin === p.filename));
 
-        plugin?.mappings.push(mapping);
-      })
+      delete (mapping as Partial<RawMapping>).metadata;
 
-      this.setInfoByKey(plugins, 'general', 'ingest');
-    }
-  });
+      plugin?.mappings.push(mapping);
+    });
+
+    this.setInfoByKey(plugins, 'general', 'ingest');
+  };
 
   files_reorder_upper = (uuid: λFile['uuid']) => {
     const files = this.app.target.files
@@ -766,9 +705,9 @@ Files: ${files.length}`, Info.name);
       this.events_reset_in_file(files);
 
       files.forEach(file => {
-        this.api('/query_sigma', {
+        api('/query_sigma', {
           method: 'POST',
-          data: {
+          query: {
             ws_id: this.app.general.ws_id,
             req_id: file.uuid
           },
@@ -841,25 +780,7 @@ Files: ${files.length}`, Info.name);
   }
 
   getSessions = (): Promise<λApp['general']['sessions']> => {
-    return this.api<ResponseBase<any>>('/user_data_list', {
-      method: 'POST',
-      body: JSON.stringify({
-        owner_id: [this.app.general.user_id]
-      })
-    }).then(res => {
-      if (res.isSuccess()) {
-        const data: λApp['general']['sessions'] = {};
-
-        res.data.map((e: any) => {
-          data[e.name as string] = e.data
-        })
-
-        return data;
-      } else {
-        return {}
-      }
-      
-    })
+    return {} as Promise<λApp['general']['sessions']>;
   }
   
   // Private method to update a specific key in the application state

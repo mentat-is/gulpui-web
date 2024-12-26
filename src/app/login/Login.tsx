@@ -22,7 +22,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, Conte
 import { SelectSession } from "@/banners/SelectSession";
 
 export function LoginPage() {
-  const { Info, app, api, spawnBanner } = useApplication();
+  const { Info, app, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const loginButton = useRef<HTMLButtonElement>(null);
@@ -50,41 +50,28 @@ export function LoginPage() {
     if (!server) return;
 
     Info.setServer(server);
-    setLoading(true);
+
     await api<Login>('/login', {
-      server,
       method: 'PUT',
-      data: {
+      setLoading,
+      query: {
         user_id: app.general.username,
         password: app.general.password,
         ws_id: app.general.ws_id
       }
-    }).then((res) => {
-      if (res.isSuccess()) {
-        Logger.log(`User has been authentificated with next credentials:`, LoginPage.name)
-        Logger.log({
-          username: app.general.username,
-          password: app.general.password,
-          token: res.data.token,
-          user_id: res.data.user_id,
-          expires: res.data.time_expire
-        }, LoginPage.name)
-        Info.setToken(res.data.token);
-        Info.setUserId(res.data.user_id);
-        Info.setExpire(res.data.time_expire);
-        cookie.set('last_used_server', app.general.server);
-      } else {
-        if (res?.req_id !== '0') {
-          toast('Authorization failed', {
-            description: 'Wrong username or password'
-          });
-        } else {
-          toast('Couldn’t connect to server. Gateway actively refused connection');
-        }
-        
-        setLoading(false);
-      }
-
+    }, (data) => {
+      Logger.log(`User has been authentificated with next credentials:`, LoginPage.name)
+      Logger.log({
+        username: app.general.username,
+        password: app.general.password,
+        token: data.token,
+        user_id: data.user_id,
+        expires: data.time_expire
+      }, LoginPage.name)
+      Info.setToken(data.token);
+      Info.setUserId(data.user_id);
+      Info.setExpire(data.time_expire);
+      cookie.set('last_used_server', app.general.server);
     });
   }
 
@@ -135,19 +122,20 @@ export function LoginPage() {
 
 
   const deleteOperation = (operation_id: number) => {
-    setLoading(true);
+    const index = Index.selected(app)
+
+    if (!index) {
+      return;
+    }
 
     api('/operation_delete', {
       method: 'DELETE',
-      data: {
+      query: {
         operation_id,
-        index: Index.selected(app)
-      }
-    }).then(() => {
-      Info.operations_reload().then(() => {
-        setLoading(false);
-      });
-    });
+        index: index.name
+      },
+      setLoading
+    }, Info.operations_reload)
   };
 
   const handleOperationSelect = (operation: λOperation) => {

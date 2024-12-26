@@ -1,0 +1,8 @@
+.generalSettings > div {
+  width: 100%;
+}
+.generalSettings > div > span {
+  min-width: 192px;
+  font-family: var(--font-mono);
+  font-size: 12px !important;
+}

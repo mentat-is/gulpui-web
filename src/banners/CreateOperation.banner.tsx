@@ -12,7 +12,7 @@ import { Card } from "@/ui/Card";
 import { Separator } from "@/ui/Separator";
 
 export function CreateOperationBanner() {
-  const { api, Info, destroyBanner } = useApplication();
+  const { Info, destroyBanner } = useApplication();
   const [name, setName] = useState<string>('');
   const [icon, setIcon] = useState<number>(-1);
   const [description, setDescription] = useState<string>('');
@@ -27,12 +27,12 @@ export function CreateOperationBanner() {
       body.glyph_id = icon;
     }
 
-    setLoading(true)
     api<OperationCreate>('/operation_create', {
       method: 'POST',
-      data: body,
-      body: description
-    }).then(response => response.isSuccess() ? Info.operations_reload().then(_ => (destroyBanner())) : null);
+      setLoading,
+      query: body,
+      body: description,
+    }, Info.operations_reload).then(destroyBanner);
   };
 
   return (

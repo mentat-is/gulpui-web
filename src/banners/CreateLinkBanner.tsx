@@ -1,6 +1,5 @@
 import { Operation, Parser } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
-import { ResponseBase } from "@/dto/ResponseBase.dto";
 import { Banner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import {
@@ -32,7 +31,7 @@ interface CreateLinkBannerProps {
 }
 
 export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProps) {
-  const { app, api, destroyBanner, Info } = useApplication();
+  const { app, destroyBanner, Info } = useApplication();
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
   const [glyph_id, setGlyphId] = useState<number>(-1);
@@ -61,12 +60,9 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
     }
 
     setLoading(true);
-    api<ResponseBase<unknown>>('/link_create', {
+    api('/link_create', {
       method: 'POST',
-      data,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8'
-      },
+      query: data,
       body: LinkCreateRequest.body({ name, description, events })
     }).then(() => {
       destroyBanner();
@@ -74,23 +70,14 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
     });
   }
 
-  const update = async (link: λLink) => {
-    api<any>('/link_update', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      data: {
-        link_id: link.id,
-        ws_id: app.general.ws_id,
-      },
-      body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...link.events as λEvent[]] })
-    }).then(() => {
-      Info.links_reload().then(() => {
-        destroyBanner();
-      });
-    });
-  }
+  const update = async (link: λLink) =>api<any>('/link_update', {
+    method: 'PUT',
+    query: {
+      link_id: link.id,
+      ws_id: app.general.ws_id,
+    },
+    body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...link.events as λEvent[]] })
+  }, Info.links_reload).then(destroyBanner);
 
   const Subtitle = () => (
     <Popover>

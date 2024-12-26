@@ -1,5 +1,3 @@
-import { ResponseBase } from "./ResponseBase.dto";
-
 interface Event {
   "@timestamp": number;
   "_id": string;
@@ -19,7 +17,7 @@ interface QueryResult {
   query_name: string;
 }
 
-export type QueryGulp = ResponseBase<{
+export type QueryGulp = {
   id: null;
   type: number;
   req_id: string;
@@ -43,4 +41,4 @@ export type QueryGulp = ResponseBase<{
   matched_events_total: number;
   ingest_errors: null | string; // Adjust based on actual data
   current_src_file: null | string; // Adjust based on actual data
-}>;
+};

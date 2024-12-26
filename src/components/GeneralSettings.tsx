@@ -10,6 +10,7 @@ import { Switch } from "@/ui/Switch";
 import { Gradients, GradientsMap } from "@/ui/utils";
 import { Icon } from "@impactium/icons";
 import { CSSProperties, useEffect } from "react";
+import s from './styles/GeneralSettings.module.css'
 
 export function GeneralSettings() {
   const { app, Info } = useApplication();
@@ -31,7 +32,7 @@ export function GeneralSettings() {
         <Button variant='glass' img='Settings' style={{ position: 'absolute', top: 32, right: 32 }}>General settings</Button>
       </PopoverTrigger>
       <PopoverContent>
-        <Stack dir='column' gap={12}>
+        <Stack dir='column' gap={12} className={s.generalSettings}>
           <Stack ai='center' gap={12}>
             <span style={fontStyle}>Renderer by default:</span>
             <Select onValueChange={(v: Engine.List) => Info.setDefaultEngine(v)} value={app.general.settings.engine}>
@@ -39,7 +40,7 @@ export function GeneralSettings() {
                 <SelectValue placeholder="Choose renderer" />
               </SelectTrigger>
               <SelectContent>
-                {enginesBase.map(i => <SelectItem value={i.plugin}><Icon name={i.img} />{i.title}</SelectItem>)}
+                {enginesBase.map(i => <SelectItem key={i.title} value={i.plugin}><Icon name={i.img} />{i.title}</SelectItem>)}
               </SelectContent>
             </Select>
           </Stack>

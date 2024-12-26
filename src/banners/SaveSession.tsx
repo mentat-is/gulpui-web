@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export function SaveSession() {
   const [sessionName, setSessionName ] = useState<string>('');
-  const { api, app, Info, logout } = useApplication();
+  const { app, Info, logout } = useApplication();
   const [loading, setLoading] = useState<boolean>(false);
   const [isNameValid, setIsNameValid] = useState<boolean>(true);
 
@@ -29,34 +29,24 @@ export function SaveSession() {
       return;
     }
 
-    setLoading(true);
-
     const resp = await api('/user_data_create', {
       method: 'POST',
+      setLoading,
       headers: {
         'Content-Type': 'application/json'
       },
-      data: {
+      query: {
         name: sessionName,
         user_id: app.general.user_id,
         operation_id: operation.id,
       },
       body: JSON.stringify(Info.getCurrentSessionOptions()),
-    });
-
-    setLoading(false);
-
-    if (resp.isSuccess()) {
+    }, (data: any) => {
+      if (data.exception.name === 'ObjectAlreadyExists') {
+        setIsNameValid(false);
+      }
+  
       logout();
-      return;
-    }
-
-    if (resp.data.exception.name === 'ObjectAlreadyExists') {
-      setIsNameValid(false);
-    }
-
-    toast('Cannot save data', {
-      description: `Cannot allocate data settings: ${resp.data.exception.name}`
     });
   }
 

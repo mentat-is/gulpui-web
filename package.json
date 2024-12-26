@@ -8,6 +8,7 @@
     "@impactium/console": "^1.0.7",
     "@impactium/icons": "^1.1.2",
     "@impactium/types": "^1.0.0",
+    "@impactium/utils": "^1.0.2",
     "@radix-ui/react-checkbox": "^1.1.1",
     "@radix-ui/react-context-menu": "^2.2.1",
     "@radix-ui/react-dialog": "^1.1.1",

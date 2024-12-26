@@ -2,7 +2,6 @@ import SyntaxHighlighter from 'react-syntax-highlighter';
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useApplication } from '@/context/Application.context';
 import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from '@/dto/ChunkEvent.dto';
-import { ResponseBase } from '@/dto/ResponseBase.dto';
 import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useState } from 'react';
@@ -26,7 +25,7 @@ interface DisplayEventDialogProps {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { api, Info, app, spawnBanner, destroyDialog } = useApplication();
+  const { Info, app, spawnBanner, destroyDialog } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
   const [rawJSON, setRawJSON] = useState<string>('');
@@ -49,41 +48,39 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const reloadDetailedChunkEvent = () => {
     const startTime = Date.now();
   
-    api<ResponseBase<RawDetailedChunkEvent>>('/query_single_event', {
-      data: {
+    api<RawDetailedChunkEvent>('/query_single_event', {
+      query: {
         gulp_id: event._id
       }
-    }).then(res => {
+    }).then(data => {
       const elapsedTime = Date.now() - startTime;
       const delay = Math.max(1500 - elapsedTime, 0);
-  
-      if (res.isSuccess()) {
-        setTimeout(() => {
-          setRawJSON(JSON.stringify(res.data, null, 4));
-          setDetailedChunkEvent({
-            operation: res.data.operation,
-            agent: {
-              type: res.data['agent.type'],
-              id: res.data['agent.id']
-            },
-            event: {
-              code: res.data['event.code'],
-              duration: res.data['event.duration'],
-              id: res.data['event.id'],
-              hash: res.data['event.hash'],
-              category: res.data['event.category'],
-              original: res.data['event.original']
-            },
-            level: res.data['log.level'],
-            _id: res.data._id,
-            operation_id: res.data.operation_id,
-            timestamp: res.data['@timestamp'] as Hardcode.Timestamp,
-            file: res.data['gulp.source.file'],
-            context: res.data['gulp.context'],
-            _uuid: event._uuid
-          });
-        }, delay);
-      }
+
+      setTimeout(() => {
+        setRawJSON(JSON.stringify(data, null, 4));
+        setDetailedChunkEvent({
+          operation: data.operation,
+          agent: {
+            type: data['agent.type'],
+            id: data['agent.id']
+          },
+          event: {
+            code: data['event.code'],
+            duration: data['event.duration'],
+            id: data['event.id'],
+            hash: data['event.hash'],
+            category: data['event.category'],
+            original: data['event.original']
+          },
+          level: data['log.level'],
+          _id: data._id,
+          operation_id: data.operation_id,
+          timestamp: data['@timestamp'] as Hardcode.Timestamp,
+          file: data['gulp.source.file'],
+          context: data['gulp.context'],
+          _uuid: event._uuid
+        });
+      }, delay);
     });
   };  
 

@@ -1,5 +1,3 @@
-import { ResponseBase } from "./ResponseBase.dto";
-
 export interface Bucket {
   total: number;
   fetched: number;
@@ -8,7 +6,7 @@ export interface Bucket {
   selected: MinMax | null;
 }
 
-export type QueryMaxMin = ResponseBase<{
+export interface QueryMaxMin {
   buckets: [
     {
       '*': {
@@ -21,7 +19,7 @@ export type QueryMaxMin = ResponseBase<{
     }
   ],
   total: number;
-}>;
+};
 
 export interface MinMax {
   min: number;

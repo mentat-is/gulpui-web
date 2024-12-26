@@ -1,5 +1,4 @@
 import { RawFile } from './File.dto';
-import { ResponseBase } from './ResponseBase.dto';
 import { λMapping } from './MappingFileList.dto';
 import { μ } from '@/class/Info';
 
@@ -17,7 +16,7 @@ export interface RawPlugin {
   src_file: RawFile[]
 }
 
-export type PluginEntityResponse = ResponseBase<PluginEntity[]>
+export type PluginEntityResponse = PluginEntity[];
 
 export interface PluginEntity {
   display_name: string;
