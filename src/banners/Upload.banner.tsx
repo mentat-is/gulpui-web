@@ -6,12 +6,12 @@ import { Separator } from "@/ui/Separator";
 import { ChangeEvent, useEffect, useState } from "react";
 import s from './styles/UploadBanner.module.css';
 import { Switch } from "@/ui/Switch";
-import { Mapping, Operation } from "@/class/Info";
+import { Operation } from "@/class/Info";
 import { Card } from "@/ui/Card";
 import { cn, formatBytes } from "@/ui/utils";
 import { Progress } from "@/ui/Progress";
 import { SelectFilesBanner } from "./SelectFiles.banner";
-import { PluginEntity } from "@/dto/Plugin.dto";
+import { λPlugin } from "@/dto/Plugin.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { QueryExternalBanner } from "./QueryExternal.banner";
@@ -21,13 +21,13 @@ import { Icon } from "@impactium/icons";
 
 interface λIngestFileSettings {
   // plugin name
-  plugin?: PluginEntity['filename'],
+  plugin?: λPlugin['filename'],
 
   // plugin mapping definitions
-  mapping?: PluginEntity['mappings'][number]['filename'],
+  mapping?: λPlugin['mappings'][number]['filename'],
 
   // plugin parse settings
-  method?: PluginEntity['mappings'][number]['mapping_ids'][number]
+  method?: λPlugin['mappings'][number]['mapping_ids'][number]
 }
 
 const FILE_SIGNATURES = (() => {
@@ -88,7 +88,7 @@ export function UploadBanner() {
         plugin: settings[file.name].plugin!,
         operation_id: Operation.selected(app)!.id,
         context,
-        client_id: app.general.user_id,
+        client_id: app.general.id,
         ws_id: app.general.ws_id,
       },
     });
@@ -103,7 +103,7 @@ export function UploadBanner() {
   const submitFiles = async () => {
     if (!files) return;
 
-    setLoading(() => true);
+    setLoading(true);
     setProgress(0);
   
     for (let i = 0; i < files.length; i++) {
@@ -114,13 +114,17 @@ Size: ${file.size} bytes.
 Progress: ${progress}%`, UploadBanner.name);
     }
 
-    const result = await Info.query_operations();
+    // const result = await Info.query_operations();
 
-    setLoading(false);
+    // if (!result) {
+    //   return;
+    // }
 
-    if (result.contexts.length && result.plugins.length && result.files.length) {
-      spawnBanner(<SelectFilesBanner />);
-    }
+    // setLoading(false);
+
+    // if (result.contexts.length && result.sources.length) {
+    //   spawnBanner(<SelectFilesBanner />);
+    // }
   };
   
   const setPlugin = (plugin: λIngestFileSettings['plugin'], filename: File['name']) => {
@@ -164,7 +168,7 @@ Progress: ${progress}%`, UploadBanner.name);
       newSettings[filename] = settings;
 
       if (settings.plugin && !settings.mapping) {
-        const plugin = app.general.ingest.find(p => p.filename === settings.plugin);
+        const plugin = app.general.plugins.find(p => p.filename === settings.plugin);
 
         if (plugin && plugin.mappings.length) {
           newSettings[filename].mapping = plugin.mappings[0].filename;
@@ -217,7 +221,7 @@ Progress: ${progress}%`, UploadBanner.name);
           <SelectValue defaultValue={settings[file.name].plugin} placeholder="Choose filename">{settings[file.name].plugin}</SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {app.general.ingest.map(i => (
+          {app.general.plugins.map(i => (
             <SelectItem key={i.filename} value={i.filename}>{i.display_name}</SelectItem>
           ))}
         </SelectContent>
@@ -226,40 +230,42 @@ Progress: ${progress}%`, UploadBanner.name);
   };
 
   const MappingSelection = ({ file }: TargetSelection) => {
-    const mappings = Mapping.find(app, settings[file.name].plugin!) || [];
+    return null;
+    // const mappings = Mapping.find(app, settings[file.name].plugin!) || [];
 
-    if (!mappings.length) return (
-      <Select disabled>
-        <SelectTrigger>
-          <SelectValue defaultValue={'no_mappings'} placeholder="No mappings available for this plugin" />
-        </SelectTrigger>
-      </Select>
-    );
+    // if (!mappings.length) return (
+    //   <Select disabled>
+    //     <SelectTrigger>
+    //       <SelectValue defaultValue={'no_mappings'} placeholder="No mappings available for this plugin" />
+    //     </SelectTrigger>
+    //   </Select>
+    // );
 
-    if (!settings[file.name].mapping) setMapping(mappings[0]?.filename, file.name);
+    // if (!settings[file.name].mapping) setMapping(mappings[0]?.filename, file.name);
 
-    return (
-      <Select disabled={!settings[file.name].plugin} onValueChange={mapping => setMapping(mapping, file.name)} value={settings[file.name].mapping}>
-        <SelectTrigger>
-          <SelectValue defaultValue={mappings[0].filename} placeholder="Choose mapping" />
-        </SelectTrigger>
-        <SelectContent>
-          {mappings.map(m => (
-            <SelectItem key={m.filename} value={m.filename}>{m.filename}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
+    // return (
+    //   <Select disabled={!settings[file.name].plugin} onValueChange={mapping => setMapping(mapping, file.name)} value={settings[file.name].mapping}>
+    //     <SelectTrigger>
+    //       <SelectValue defaultValue={mappings[0].filename} placeholder="Choose mapping" />
+    //     </SelectTrigger>
+    //     <SelectContent>
+    //       {mappings.map(m => (
+    //         <SelectItem key={m.filename} value={m.filename}>{m.filename}</SelectItem>
+    //       ))}
+    //     </SelectContent>
+    //   </Select>
+    // );
   };
 
   const findMethodsByPluginAndMappingName = (plugin?: λIngestFileSettings['plugin'], mapping?: λIngestFileSettings['mapping']) => {
-    const mappings = plugin ? app.general.ingest.find(p => p.filename === plugin)?.mappings : null;
+    const mappings = plugin ? app.general.plugins.find(p => p.filename === plugin)?.mappings : null;
 
     if (!mappings) {
       return [];
     }
 
-    return mappings.find(m => m.filename === mapping)?.mapping_ids || [];
+    return []
+    // return mappings.find(m => m.filename === mapping)?.mapping_ids || [];
   }
 
   const MethodSelection = ({ file }: TargetSelection) => {
@@ -286,9 +292,10 @@ Progress: ${progress}%`, UploadBanner.name);
           <SelectValue defaultValue={fileSettings.method} placeholder="Choose method" />
         </SelectTrigger>
         <SelectContent>
-          {methods.map(m => (
+          {null}
+          {/* {methods.map(m => (
             <SelectItem key={m} value={m}>{m}</SelectItem>
-          ))}
+          ))} */}
         </SelectContent>
       </Select>
     )

@@ -1,4 +1,4 @@
-import { File, Link as LinkClass } from "@/class/Info";
+import { Link as LinkClass, Source } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { Link } from '@/ui/Link';
 import { Fragment } from 'react';
@@ -15,12 +15,12 @@ export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProp
   return (
     <Fragment>
       {app.target.links.map(link => {
-        const left = getPixelPosition(LinkClass.timestamp(link) + (File.uuid(app, link._uuid)?.offset || 0));
+        const left = getPixelPosition(LinkClass.timestamp(link) + (Source.id(app, link.source_id)?.settings.offset || 0));
         let top = 0;
 
-        if (link.events.some(e => !File.uuid(app, e._uuid)?.selected)) return null;
+        if (link.events.some(e => !Source.id(app, e.source_id)?.selected)) return null;
 
-        link.events.forEach(event => top += File.getHeight(app, event._uuid, scrollY));
+        link.events.forEach(event => top += Source.getHeight(app, event.source_id, scrollY));
 
         if (top <= 0) return null;
 

@@ -11,9 +11,9 @@ interface LinkCombinationProps extends HTMLAttributes<HTMLDivElement> {
 export function LinkCombination({ link, children, className, ...props }: LinkCombinationProps) {
   return (
     <div className={cn(s.unit, className)} {...props}>
-      <SymmetricSvg text={link.events.map(e => e._id).join('')} />
+      <SymmetricSvg text={link.events.map(e => e.id).join('')} />
       <div className={s.text}>
-        <p className={s.top}>{link.name || link.file}</p>
+        <p className={s.top}>{link.name || link.source_id}</p>
         <p className={s.bottom}>{link.description || link.context}</p>
       </div>
       {children}

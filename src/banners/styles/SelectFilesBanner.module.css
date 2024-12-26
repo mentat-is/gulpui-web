@@ -45,7 +45,12 @@
   align-items: center;
 }
 .pluginHeading label {
-  font-size: 18px;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  max-width: 256px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .file {
   display: flex;

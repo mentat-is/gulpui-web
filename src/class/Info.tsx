@@ -1,12 +1,9 @@
-import { type λApp } from '@/dto';
+import { Login, type λApp } from '@/dto';
 import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
-import { RawOperation, λOperation } from '@/dto/Operation.dto';
-import { λContext } from '@/dto/Context.dto';
+import { λOperation, λContext, λSource, OperationTree } from '@/dto/Operation.dto';
 import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
-import { PluginEntity, PluginEntityResponse, λPlugin } from '@/dto/Plugin.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
-import { λFile } from '@/dto/File.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
@@ -21,9 +18,10 @@ import { differenceInMonths } from 'date-fns';
 import { Logger, LoggerHandler } from '@/dto/Logger.class';
 import { Engine, Hardcode } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
+import { Color } from '@impactium/types';
 
 interface RefetchOptions {
-  uuids?: Arrayed<λFile['uuid']>;
+  ids?: Arrayed<λSource['id']>;
   hidden?: boolean;
   range?: MinMax;
 }
@@ -36,7 +34,7 @@ interface InfoProps {
 
 interface QueryExternalProps {
   operation_id: number;
-  plugin: λPlugin['name'];
+  source: λSource['name'];
   server: string;
   username: string;
   password: string;
@@ -57,41 +55,39 @@ export class Info implements InfoProps {
     this.timeline = timeline;
   }
 
-  setTimelineFilteringoptions = (file: λFile | λFile['uuid'], options: FilterOptions) => this.setInfoByKey({
+  setTimelineFilteringoptions = (source: λSource | λSource['id'], options: FilterOptions) => this.setInfoByKey({
     ...this.app.timeline.filtering_options,
-    [Parser.useUUID(file)]:
+    [Parser.useUUID(source)]:
     options
   }, 'timeline', 'filtering_options');
 
-  refetch = async ({ uuids = [], hidden, range }: RefetchOptions = {}) => {
-    uuids = Parser.array(uuids);
+  refetch = async ({ ids = [], hidden, range }: RefetchOptions = {}) => {
+    ids = Parser.array(ids);
 
     const operation = Operation.selected(this.app);
     const contexts = Context.selected(this.app);
 
     if (!operation || !contexts.length) return;
 
-    uuids.length
-      ? uuids.forEach(uuid => this.events_reset_in_file(File.uuid(this.app, uuid)))
+    ids.length
+      ? ids.forEach(id => this.events_reset_in_file(Source.id(this.app, id)))
       : this.events_reset();
-    
-    await this.mapping();
 
-    const files: λFile[] = (uuids.length
-      ? uuids.reduce<λFile[]>((files, uuid) => {
-        const file = File.uuid(this.app, uuid);
+    const sources: λSource[] = (ids.length
+      ? ids.reduce<λSource[]>((sources, id) => {
+        const source = Source.id(this.app, id);
 
-        if (file) files.push(file);
+        if (source) sources.push(source);
         else {
-          Logger.error(`File with uuid ${uuid} not found in application data`, `${Info.name}.${this.refetch.name}`);
-          toast('File not found in application data', {
-            description: `See console for further details. UUID: ${uuid}`
+          Logger.error(`Source with id ${id} not found in application data`, `${Info.name}.${this.refetch.name}`);
+          toast('Source not found in application data', {
+            description: `See console for further details. UUID: ${id}`
           });
         }
 
-        return files;
+        return sources;
       }, [])
-      : File.selected(this.app))
+      : Source.selected(this.app))
 
     await this.notes_reload();
 
@@ -100,23 +96,23 @@ export class Info implements InfoProps {
     await this.glyphs_reload();
 
     if (!hidden) {
-      this.deload(files.map(f => f.uuid));
+      this.deload(sources.map(s => s.id));
     }
     
-    await Promise.all(files.map(async file => {
-      if (!this.app.target.bucket.selected && !range) return Logger.error(`${Info.name}.${this.refetch.name} for file ${file?.uuid}-${file?.uuid} has been executed, but was cancelled bacause range is ${typeof range} and ${typeof this.app.target.bucket.selected}`, Info.name);
+    await Promise.all(sources.map(async source => {
+      if (!this.app.target.bucket.selected && !range) return Logger.error(`${Info.name}.${this.refetch.name} for source ${source?.id}-${source?.id} has been executed, but was cancelled bacause range is ${typeof range} and ${typeof this.app.target.bucket.selected}`, Info.name);
 
       return await api('/query_raw', {
         method: 'POST',
         query: {
           ws_id: this.app.general.ws_id,
-          req_id: file.uuid
+          req_id: source.id
         },
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          ...Filter.body(this.app, file, range),
+          ...Filter.body(this.app, source, range),
           options: {
             search_after_loop: false,
             sort: {
@@ -131,8 +127,8 @@ export class Info implements InfoProps {
     }));
   }
 
-  cancel = async (r: μ.File) => {
-    Logger.log(`Request canselation has been requested for file ${File.uuid(this.app, r).name}`, Info.name);
+  cancel = async (r: μ.Source) => {
+    Logger.log(`Request canselation has been requested for source ${Source.id(this.app, r).name}`, Info.name);
 
     return await api('/stats_cancel_request', {
       method: 'PUT',
@@ -140,42 +136,42 @@ export class Info implements InfoProps {
     });
   }
 
-  filters_cache = (file: λFile | μ.File) => {
-    Logger.log(`Caching has been requested for file ${File.uuid(this.app, file).name}`, Info.name);
+  filters_cache = (source: λSource | μ.Source) => {
+    Logger.log(`Caching has been requested for source ${Source.id(this.app, source).name}`, Info.name);
 
-    const uuid = Parser.useUUID(file) as μ.File;
+    const id = Parser.useUUID(source) as μ.Source;
     this.setInfoByKey({
-      data: this.app.timeline.cache.data.set(uuid, this.app.target.events.get(uuid) || []),
-      filters: { ...this.app.timeline.cache.filters, [uuid]: this.app.target.filters[uuid] }
+      data: this.app.timeline.cache.data.set(id, this.app.target.events.get(id) || []),
+      filters: { ...this.app.timeline.cache.filters, [id]: this.app.target.filters[id] }
     }, 'timeline', 'cache');
 
     this.render();
   }
 
-  filters_undo = (file: λFile | μ.File) => {
-    const uuid = Parser.useUUID(file) as μ.File;
+  filters_undo = (source: λSource | μ.Source) => {
+    const id = Parser.useUUID(source) as μ.Source;
 
     this.setInfoByKey({
       ...this.app.target.filters,
-      [uuid]: this.app.timeline.cache.filters[uuid]
+      [id]: this.app.timeline.cache.filters[id]
     }, 'target', 'filters');
 
-    this.app.target.events.delete(uuid);
-    this.app.target.events.set(uuid, this.app.timeline.cache.data.get(uuid) || []);
+    this.app.target.events.delete(id);
+    this.app.target.events.set(id, this.app.timeline.cache.data.get(id) || []);
 
     this.setInfoByKey(this.app.target.events, 'target', 'events');
-    this.filters_delete_cache(file);
+    this.filters_delete_cache(source);
     this.render();
   }
 
-  filters_delete_cache = (file: λFile | μ.File) => {
-    const uuid = Parser.useUUID(file) as μ.File;
+  filters_delete_cache = (source: λSource | μ.Source) => {
+    const id = Parser.useUUID(source) as μ.Source;
 
-    this.app.timeline.cache.data.delete(uuid);
+    this.app.timeline.cache.data.delete(id);
 
     this.setInfoByKey({
       data: this.app.timeline.cache.data,
-      filters: { ...this.app.timeline.cache.filters, [uuid]: undefined }
+      filters: { ...this.app.timeline.cache.filters, [id]: undefined }
     }, 'timeline', 'cache');
   }
   
@@ -183,16 +179,16 @@ export class Info implements InfoProps {
   setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
   setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
-  setLoaded = (files: μ.File[]) => {
-    this.setInfoByKey(files, 'timeline', 'loaded');
+  setLoaded = (sources: μ.Source[]) => {
+    this.setInfoByKey(sources, 'timeline', 'loaded');
 
-    if (this.app.timeline.loaded.length === this.app.target.files.length) {
+    if (this.app.timeline.loaded.length === this.app.target.sources.length) {
       this.notes_reload();
       this.links_reload();
     }
   };
 
-  deload = (uuids: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !uuids.includes(_uuid))]);
+  deload = (uuids: Arrayed<μ.Source>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !uuids.includes(_uuid))]);
 
   render = () => {
     Logger.log(`Render requested`, Info.name);
@@ -200,7 +196,7 @@ export class Info implements InfoProps {
   };
 
   // 🔥 INDEXES
-  index_reload = () => api<λIndex[]>('/opensearch_list_index').then(data => {
+  index_reload = () => api<λIndex[]>('/opensearch_list_index', (data) => {
     this.app.target.indexes = data || [];
     this.setInfoByKey(data
       ? data.length === 1 ? Index.select(this.app, data[0]) : data
@@ -208,15 +204,7 @@ export class Info implements InfoProps {
     'target', 'indexes');
   });
   
-index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
-
-  // 🔥 OPERATIONS
-  operations_reload = () => api<λOperation[]>('/operation_list', {
-    method: 'POST'
-  }).then(data => {
-    Logger.log(`API /operation_list has been fetched successfully. Total amount: ${data.length}`, Info.name);
-    this.setInfoByKey(Operation.reload(data, this.app), 'target', 'operations');
-  });
+  index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
   operations_select = (operation: λOperation) => this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations');
   
@@ -230,28 +218,26 @@ index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, inde
   contexts_set = (contexts: λContext[]) => this.setInfoByKey(contexts, 'target', 'contexts');
 
   // 🔥 PLUGINS
-  plugins_set = (plugins: λPlugin[]) => this.setInfoByKey(plugins, 'target', 'plugins');
-
-plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
+  plugins_set = (sources: λSource[]) => this.setInfoByKey(sources, 'target', 'sources');
 
   // 🔥 FILES
-  files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
-  files_unselect = (files: Arrayed<λFile>) => {
-    if (this.app.timeline.target && Parser.array(files).map(file => file.uuid).includes(this.app.timeline.target._uuid)) {
+  files_select = (sources: λSource[]) => this.setInfoByKey(Source.select(this.app, sources), 'target', 'sources');
+  files_unselect = (sources: Arrayed<λSource>) => {
+    if (this.app.timeline.target && Parser.array(sources).map(source => source.id).includes(this.app.timeline.target.source_id)) {
       this.setTimelineTarget(null);
     }
-    this.setInfoByKey(File.unselect(this.app, files), 'target', 'files')
+    this.setInfoByKey(Source.unselect(this.app, sources), 'target', 'sources')
   };
-  files_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
-  files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
-  files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(File.replace(files, this.app), 'target', 'files');
-  file_find_by_filename_and_context = (filename: λFile['name'], context: λContext['name']) => File.findByNameAndContextName(this.app, filename, context);
+  files_set = (sources: λSource[]) => this.setInfoByKey(sources, 'target', 'sources');
+  // @ts-ignore
+  files_set_color = (source: λSource, color: Gradients) => this.setInfoByKey(Source.replace({ ...source, color }, this.app), 'target', 'sources');
+  files_replace = (sources: Arrayed<λSource>) => this.setInfoByKey(Source.replace(sources, this.app), 'target', 'sources');
 
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
   events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
-  events_reset_in_file = (files: Arrayed<λFile>) => {
-    this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
+  events_reset_in_file = (sources: Arrayed<λSource>) => {
+    this.setInfoByKey(Event.delete(this.app, sources), 'target', 'events')
   };
   events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
 
@@ -262,22 +248,22 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
   notes_reload = async () => {
-    const src_file: λFile['name'][] = []
+    const src_file: λSource['name'][] = []
     const context: λContext['name'][] = []
-    const operation_id: λOperation['id'][] = []
+    const operation_ids: λOperation['id'][] = []
     
-    File.selected(this.app).forEach(file => {
-      src_file.push(file.name);
+    Source.selected(this.app).forEach(source => {
+      src_file.push(source.name);
 
-      const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
+      const { name, operation_id } = Context.findBySource(this.app, source) || {};
 
-      if (!name || !operation) return;
+      if (!name || !operation_id) return;
 
       if (!context.includes(name))
         context.push(name);
 
-      if (!operation_id.includes(operation.id))
-        operation_id.push(operation.id);
+      if (!operation_id.includes(operation_id))
+        operation_ids.push(operation_id);
     });
 
     api<RawNote[]>('/note_list', {
@@ -289,7 +275,7 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
         index: [Index.selected(this.app)?.name],
         src_file, 
         context,
-        operation_id
+        operation_id: operation_ids
       })
     }, (data) => this.notes_set(Note.parse(this.app, data)));
   }
@@ -301,25 +287,25 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
     }
   })
 
-  fileKey = (file: λFile, key: keyof λEvent) => this.setInfoByKey(File.replace({ ...file, key }, this.app), 'target', 'files');
+  // fileKey = (source: λSource, key: keyof λEvent) => this.setInfoByKey(Source.replace({ ...source, key }, this.app), 'target', 'sources');
 
   links_reload = async () => {
-    const src_file: λFile['name'][] = []
+    const src_file: λSource['name'][] = []
     const context: λContext['name'][] = []
-    const operation_id: λOperation['id'][] = []
+    const operation_ids: λOperation['id'][] = []
     
-    File.selected(this.app).forEach(file => {
-      src_file.push(file.name);
+    Source.selected(this.app).forEach(source => {
+      src_file.push(source.name);
 
-      const { name, operation } = Context.findByPugin(this.app, file._uuid) || {};
+      const { name, operation_id } = Context.findBySource(this.app, source) || {};
 
-      if (!name || !operation) return;
+      if (!name || !operation_id) return;
 
       if (!context.includes(name))
         context.push(name);
 
-      if (!operation_id.includes(operation.id))
-        operation_id.push(operation.id);
+      if (!operation_id.includes(operation_id))
+        operation_ids.push(operation_id);
     });
     
     api<RawLink[]>('/link_list', {
@@ -331,7 +317,7 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
         index: [Index.selected(this.app)?.name],
         src_file,
         context,
-        operation_id
+        operation_id: operation_ids
       })
     }, this.links_set);
   }
@@ -349,11 +335,12 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
   glyphs_reload = async () => {
     const parse = (glyphs: λGlyph[]) => {
       // Все иконки внутри приложения
-      const values = Object.values(GlyphMap);
+      const values = Object.entries(GlyphMap);
 
-      values.forEach(async (value, id) => {
+      values.forEach(async ([id, value]) => {
         // Проверяем, есть ли такая иконка на бекенде
-        const exist = glyphs.find(g => g.name === value || g.id === id);
+        // @ts-ignore
+        const exist = glyphs.find(g => g.id === id);
 
         if (exist) return;
 
@@ -364,7 +351,7 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
         await api<unknown>('/glyph_create', {
           method: 'POST',
           query: {
-            name: value,
+            name: value.toString(),
           },
           body: formData
         });
@@ -389,116 +376,71 @@ plugins_fetch = () => api<PluginEntityResponse>('/plugin_list');
     }, parse);
   }
 
-  query_operations = async () => {
+  operation_list = async () => {
+    const index = Index.selected(this.app)?.name;
+
+    if (!index) {
+      return;
+    }
+
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
-    const plugins: λPlugin[] = [];
-    const files: λFile[] = [];
+    const sources: λSource[] = [];
 
-    const rawOperations =  await api<RawOperation[]>('/query_operations').then(data => data || []);
+    const rawOperations =  await api<OperationTree[]>('/operation_list', {
+      method: 'POST',
+      query: { index }
+    });
 
-    rawOperations.forEach(({ id, name, contexts: rawContexts }: RawOperation) => {
-      const exist = Operation.findByNameAndId(this.app, { id, name });
-      if (!exist) return;
+    if (!rawOperations) {
+      return;
+    }
+
+    rawOperations.forEach((rawOperation: OperationTree) => {
+      const exist = Operation.findById(this.app, rawOperation.id);
       
       const operation: λOperation = {
-        id,
-        name,
-        description: exist.description,
-        glyph_id: exist.glyph_id,
-        workflow_id: exist.workflow_id,
-        selected: exist.selected,
-        contexts: rawContexts.map(rawContext => {
-          const c_uuid = generateUUID() as λContext['uuid'];
+        ...rawOperation,
+        selected: exist?.selected,
+        contexts: rawOperation.contexts.map(rawContext => {
           const context: λContext = {
-            operation: { name, id },
-            name: rawContext.name,
-            doc_count: rawContext.doc_count,
-            uuid: c_uuid,
-            plugins: rawContext.plugins.map(rawPlugin => {
-              const p_uuid = generateUUID() as λPlugin['uuid'];
-              const plugin: λPlugin = {
-                name: rawPlugin.name,
-                context: rawContext.name,
-                uuid: p_uuid,
-                _uuid: c_uuid,
-                files: rawPlugin.src_file.map(rawFile => {
-                  const f_uuid = generateUUID() as λFile['uuid'];
-                  const file: λFile = {
-                    name: rawFile.name,
-                    doc_count: rawFile.doc_count,
-                    event: {
-                      min: rawFile['min_event.code'],
-                      max: rawFile['max_event.code']
-                    },
-                    timestamp: {
-                      min: rawFile['min_@timestamp'],
-                      max: rawFile['max_@timestamp']
-                    },
-                    plugin: rawPlugin.name,
-                    key: null,
-                    _uuid: p_uuid,
-                    offset: 0,
-                    color: this.app.general.settings.color ?? 'thermal',
-                    engine: this.app.general.settings.engine ?? 'default',
-                    uuid: f_uuid
-                  }
-                  files.push(file)
-                  return file.uuid;
-                })
+            ...rawContext,
+            selected: Context.find(this.app, rawContext.id)?.selected,
+            sources: rawContext.sources.map(rawSource => {
+              const source: λSource = {
+                ...rawSource,
+                settings: {
+                  color: 'deep',
+                  engine: 'default',
+                  focusField: 'event.code',
+                  offset: 0
+                },
+                detailed: {}
               };
-              plugins.push(plugin)
-              return plugin.uuid;
+              sources.push(source)
+              return source.id;
             })
           };
           contexts.push(context);
-          return context.uuid;
+          return context.id;
         })
       };
       operations.push(operation);
     });
-
-    const bucket: Bucket = await this.query_max_min({ ignore: true }) || {
-      total: files.map(f => f.doc_count).reduce((acc, n) => acc + n, 0),
-      fetched: 0,
-      event_code: {
-        min: Math.min(...files.map(f => f.event.min)),
-        max: Math.min(...files.map(f => f.event.max)),
-      },
-      timestamp: {
-        min: Math.min(...files.map(f => f.timestamp.min)),
-        max: Math.min(...files.map(f => f.timestamp.max)),
-      },
-      selected: null
-    }
-
-    bucket.selected = this.app.target.bucket.selected
-    ? this.app.target.bucket.selected
-    : differenceInMonths(bucket.timestamp.max, bucket.timestamp.min) > 6
-      ? null
-      : bucket.timestamp;
 
     this.setInfo(app => ({
       ...app,
       ...{
         target: {
           ...app.target,
-          bucket,
           operations,
           contexts,
-          plugins,
-          files
+          sources
         }
       }
     }));
 
-    Logger.log(`/query_operations has been successfully fetched. Total data:
-Operations: ${operations.length}
-Contexts: ${contexts.length}
-Plugins: ${plugins.length}
-Files: ${files.length}`, Info.name);
-
-    return { operations, contexts, plugins, files };
+    return { operations, contexts, sources };
   }
 
   query_max_min = ({ ignore }: { ignore?: boolean}) => api<QueryMaxMin>('/query_max_min', {
@@ -560,20 +502,24 @@ Files: ${files.length}`, Info.name);
 
   private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
   
-  // Methods to set general information (server, username, password, token)
-  setServer = (server: string) => this.setInfoByKey(server, 'general', 'server');
-  setUsername = (username: string) => this.setInfoByKey(username, 'general', 'username');
-  setPassword = (password: string) => this.setInfoByKey(password, 'general', 'password');
-  setToken = (token: string) => this.setInfoByKey(token, 'general', 'token');
-  setExpire = (expires: number) => this.setInfoByKey(expires, 'general', 'expires');
-  setUserId = (id: number) => this.setInfoByKey(id, 'general', 'user_id');
+  login = (obj: Login) => {
+    localStorage.setItem('__token', obj.token);
+    
+    this.setInfo(info => ({
+      ...info,
+      general: {
+        ...info.general,
+        ...obj
+      }
+    }));
+  }
   
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
   setTimelineTarget = (event?: λEvent | null | 1 | -1) => {
     if (typeof event === 'number' && this.app.timeline.target) {
-      const events = File.events(this.app, this.app.timeline.target._uuid);
-      const index = events.findIndex(event => event._id === this.app.timeline.target!._id) + event;
+      const events = Source.events(this.app, this.app.timeline.target.source_id);
+      const index = events.findIndex(event => event.source_id === this.app.timeline.target!.source_id) + event;
       event = events[index];
     }
 
@@ -598,7 +544,7 @@ Files: ${files.length}`, Info.name);
     method: 'POST',
     query: {
       operation_id,
-      client_id: this.app.general.user_id,
+      client_id: this.app.general.id,
       ws_id: this.app.general.ws_id,
       plugin: ''
     },
@@ -614,17 +560,17 @@ Files: ${files.length}`, Info.name);
     })
   });
 
-  filters_add = (uuid: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [uuid]: filters}), 'target', 'filters');
+  filters_add = (id: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [id]: filters}), 'target', 'filters');
 
-  filters_remove = (file: λFile | λFile['uuid']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
+  filters_remove = (source: λSource | λSource['id']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(source)]: []}), 'target', 'filters');
 
-  filters_change = (file: λFile | μ.File, filter: λFilter | λFilter['uuid'], obj: Partial<λFilter>) => {
-    const file_uuid = Parser.useUUID(file) as μ.File;
+  filters_change = (source: λSource | μ.Source, filter: λFilter | λFilter['id'], obj: Partial<λFilter>) => {
+    const file_uuid = Parser.useUUID(source) as μ.Source;
     const filter_uuid = Parser.useUUID(filter) as μ.Filter;
 
     const file_filters = this.app.target.filters[file_uuid];
 
-    Object.assign(file_filters.find(filter => filter.uuid === filter_uuid) || {}, obj);
+    Object.assign(file_filters.find(filter => filter.id === filter_uuid) || {}, obj);
 
     this.setInfoByKey(this.app.target.filters, 'target', 'filters');
   }
@@ -634,64 +580,42 @@ Files: ${files.length}`, Info.name);
     this.setInfoByKey(bool, 'timeline', 'isScrollReversed')
   }
 
-  mapping = async () => {
-    const data = await api<MappingFileListRequest>('/mapping_file_list')
-    const plugins = await this.plugins_fetch();
-
-    if (!plugins) return;
-
-    plugins.forEach(plugin => { plugin.mappings = []; });
-
-
-    const mappings = data;
-
-    mappings.forEach(mapping => {
-      const plugin = plugins.find(p => mapping.metadata.plugin.some(_plugin => _plugin === p.filename));
-
-      delete (mapping as Partial<RawMapping>).metadata;
-
-      plugin?.mappings.push(mapping);
-    });
-
-    this.setInfoByKey(plugins, 'general', 'ingest');
-  };
-
-  files_reorder_upper = (uuid: λFile['uuid']) => {
-    const files = this.app.target.files
-    const index = files.findIndex(file => file.uuid === uuid);
+  files_reorder_upper = (id: λSource['id']) => {
+    const sources = this.app.target.sources
+    const index = sources.findIndex(source => source.id === id);
 
     if (index === 0) return;
 
-    const file = files[index];
-    files[index] = files[index - 1]
-    files[index -  1] = file;
+    const source = sources[index];
+    sources[index] = sources[index - 1]
+    sources[index -  1] = source;
 
-    this.setInfoByKey(files, 'target', 'files');
+    this.setInfoByKey(sources, 'target', 'sources');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
   }
 
-  files_reorder_lower = (uuid: λFile['uuid']) => {
-    const files = this.app.target.files
-    const index = files.findIndex(file => file.uuid === uuid);
+  files_reorder_lower = (id: λSource['id']) => {
+    const sources = this.app.target.sources
+    const index = sources.findIndex(source => source.id === id);
 
-    if (index === files.length - 1) return;
+    if (index === sources.length - 1) return;
 
-    const file = files[index];
-    files[index] = files[index + 1]
-    files[index + 1] = file;
+    const source = sources[index];
+    sources[index] = sources[index + 1]
+    sources[index + 1] = source;
 
-    this.setInfoByKey(files, 'target', 'files');
+    this.setInfoByKey(sources, 'target', 'sources');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
   }
 
   sigma = {
-    set: async (files: Arrayed<λFile>, sigma: { name: string, content: string }) => {
-      files = Parser.array(files);
+    set: async (sources: Arrayed<λSource>, sigma: { name: string, content: string }) => {
+      sources = Parser.array(sources);
 
       const newSigma: typeof this.app.target.sigma = {}
 
-      files.forEach(file => {
-        newSigma[file.uuid] = {
+      sources.forEach(source => {
+        newSigma[source.id] = {
           name: sigma.name,
           content: sigma.content
         }
@@ -702,14 +626,14 @@ Files: ${files.length}`, Info.name);
         ...newSigma
       }, 'target', 'sigma');
 
-      this.events_reset_in_file(files);
+      this.events_reset_in_file(sources);
 
-      files.forEach(file => {
+      sources.forEach(source => {
         api('/query_sigma', {
           method: 'POST',
           query: {
             ws_id: this.app.general.ws_id,
-            req_id: file.uuid
+            req_id: source.id
           },
           headers: {
             'Content-Type': 'application/json; charset=utf-8'
@@ -723,27 +647,27 @@ Files: ${files.length}`, Info.name);
         });
       })
 
-      this.deload(files.map(file => file.uuid));
+      this.deload(sources.map(source => source.id));
     },
   
-    remove: (file: λFile | λFile['uuid']) => {
+    remove: (source: λSource | λSource['id']) => {
       // eslint-disable-next-line
-      const uuid = Parser.useUUID(file) as λFile['uuid'];
+      const id = Parser.useUUID(source) as λSource['id'];
 
       // eslint-disable-next-line
-      delete this.app.target.sigma[uuid];
+      delete this.app.target.sigma[id];
       this.setInfoByKey(this.app.target.sigma, 'target', 'sigma');
-      this.deload(uuid);
+      this.deload(id);
     }
   }
 
-  files_repin = (uuid: λFile['uuid']) => {
-    const files = this.app.target.files
-    const index = files.findIndex(file => file.uuid === uuid);
+  files_repin = (id: λSource['id']) => {
+    const sources = this.app.target.sources
+    const index = sources.findIndex(source => source.id === id);
 
-    files[index].pinned = !files[index].pinned;
+    sources[index].pinned = !sources[index].pinned;
 
-    this.setInfoByKey(files, 'target', 'files');
+    this.setInfoByKey(sources, 'target', 'sources');
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
   }   
   
@@ -823,11 +747,9 @@ export class Operation {
 
   public static findByName = (app: λApp, name: λOperation['name']): λOperation | undefined => app.target.operations.find(o => o.name === name);
 
-  public static findByNameAndId = (app: λApp, { id, name }: Pick<λOperation, 'id' | 'name'>): λOperation | undefined => app.target.operations.find(o => o.name === name && o.id === id);
-
   public static select = (use: λApp | λOperation[], operation: λOperation | undefined): λOperation[] => Parser.use(use, 'operations').map(o => o.name === operation?.name ? Operation._select(o) : Operation._unselect(o));
   
-  public static contexts = (app: λApp): λContext[] => app.target.contexts.filter(c => c.operation.name === Operation.selected(app)?.name);
+  public static contexts = (app: λApp): λContext[] => app.target.contexts.filter(c => c.operation_id === Operation.selected(app)?.id);
 
   private static _select = (o: λOperation): λOperation => ({ ...o, selected: true });
 
@@ -838,87 +760,64 @@ export class Context {
   public static reload = (newContexts: λContext[], app: λApp): λContext[] => Context.select(newContexts, Context.selected(app));
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (use: λApp | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.name === c.operation.name : true));
+  public static selected = (use: λApp | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.name === c.id : true));
 
-  public static find = (use: λApp | λContext[], context: λContext | λContext['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.uuid === Parser.useUUID(context));
+  public static find = (use: λApp | λContext[], context: λContext | λContext['id']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.id === Parser.useUUID(context));
 
-  public static findByPugin = (use: λApp | λContext[], plugin: λPlugin | λPlugin['uuid']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.plugins.some(p => p === Parser.useUUID(plugin)));
+  public static findBySource = (use: λApp | λContext[], source: λSource | λSource['id']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.sources.some(p => p === Parser.useUUID(source)));
 
-  public static select = (use: λApp | λContext[], selected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? Context._select(c) : c);
+  public static select = (use: λApp | λContext[], selected: Arrayed<λContext | λContext['id']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.id === Parser.useUUID(s)) ? Context._select(c) : c);
   
-  public static unselect = (use: λApp | λContext[], unselected: Arrayed<λContext | λContext['uuid']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(unselected).find(s => c.uuid === Parser.useUUID(s)) ? Context._unselect(c) : c);
+  public static unselect = (use: λApp | λContext[], unselected: Arrayed<λContext | λContext['id']>): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(unselected).find(s => c.id === Parser.useUUID(s)) ? Context._unselect(c) : c);
 
-  public static check = (use: λApp | λContext[], selected: Arrayed<λContext | UUID>, check?: boolean): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.uuid === Parser.useUUID(s)) ? (check ? (Context._select(Context.uuid(use, c))) : Context._unselect(Context.uuid(use, c))) : c);
+  public static check = (use: λApp | λContext[], selected: Arrayed<λContext | UUID>, check?: boolean): λContext[] => Parser.use(use, 'contexts').map(c => Parser.array(selected).find(s => c.id === Parser.useUUID(s)) ? (check ? (Context._select(Context.id(use, c))) : Context._unselect(Context.id(use, c))) : c);
   
-  public static uuid = (use: λApp | λContext[], context: λContext | λContext['uuid']) => Parser.use(use, 'contexts').find(c => c.uuid === Parser.useUUID(context))!;
+  public static id = (use: λApp | λContext[], context: λContext | λContext['id']) => Parser.use(use, 'contexts').find(c => c.id === Parser.useUUID(context))!;
   
-  public static plugins = (app: λApp, context: λContext | string | UUID): λPlugin[] => app.target.plugins.filter(p => p._uuid === Parser.useUUID(context) || p.context === Parser.useName(context));
+  public static sources = (app: λApp, context: λContext | string | UUID): λSource[] => app.target.sources.filter(p => p.context_id === Parser.useUUID(context));
 
   private static _select = (c: λContext): λContext => ({ ...c, selected: true });
 
   private static _unselect = (c: λContext): λContext => ({ ...c, selected: false });
 }
 
-export class Plugin {
-  public static reload = (newPlugins: λPlugin[], app: λApp): λPlugin[] => Plugin.select(newPlugins, Plugin.selected(app));
+export class Source {
+  public static replace = (newFiles: Arrayed<λSource>, use: λApp | λSource[]): λSource[] => Parser.use(use, 'sources').map(source => Parser.array(newFiles).find(s => s.id === source.id) || source);
+
+  public static single = <K extends keyof λSource>(sources: λSource[], field: K): λSource[K] | undefined => Parser.array(sources)[0]?.[field];
+
+  public static reload = (sources: Arrayed<λSource>, app: λApp): λSource[] => Source.select(Parser.array(sources), Source.selected(app));
+
+  public static wellFormatedName = (source: λSource) => source.name.split('/').pop();
+
+  public static pluginName = (source: λSource) => source.name.split('/').reverse()[1];
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (use: λApp | λPlugin[]): λPlugin[] => Parser.use(use, 'plugins').filter(p => p.selected && ('target' in use ? Context.selected(use).some(c => c.name === p.context) : true));
-
-  public static select = (use: λApp | λPlugin[], selected: Arrayed<λPlugin | λPlugin['uuid']>): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(selected).find(s => p.name === Parser.useUUID(s)) ? Plugin._select(p) : p);
-
-  public static unselect = (use: λApp | λPlugin[], unselected: Arrayed<λPlugin | λPlugin['uuid']>): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(unselected).find(s => p.name === Parser.useUUID(s)) ? Plugin._unselect(p) : p);
-
-  public static uuid = (use: λApp | λPlugin[], uuid: μ.Plugin) => Parser.use(use, 'plugins').find(p => p.uuid === uuid)!;
-
-  public static context = (use: λApp, plugin: λPlugin) => Context.uuid(use, plugin._uuid);
-
-  public static check = (use: λApp | λPlugin[], selected: Arrayed<λPlugin | λPlugin['uuid']>, check: boolean): λPlugin[] => Parser.use(use, 'plugins').map(p => Parser.array(selected).find(s => p.uuid === Parser.useUUID(s) && check) ? Plugin._select(p) : Plugin._unselect(p));
-
-  public static files = (app: λApp, plugin: λPlugin): λFile[] => app.target.files.filter(f => f._uuid === plugin.uuid);
-
-  private static _select = (p: λPlugin): λPlugin => ({ ...p, selected: true });
-
-  private static _unselect = (p: λPlugin): λPlugin => ({ ...p, selected: false });
-}
-
-export class File {
-  public static replace = (newFiles: Arrayed<λFile>, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(file => Parser.array(newFiles).find(f => f.uuid === file.uuid) || file);
-
-  public static single = <K extends keyof λFile>(files: λFile[], field: K): λFile[K] | undefined => Parser.array(files)[0]?.[field];
-
-  public static reload = (files: Arrayed<λFile>, app: λApp): λFile[] => File.select(Parser.array(files), File.selected(app));
-
-  // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(f => f.selected && Plugin.selected(app).some(p => p.uuid === f._uuid))).filter(f => f.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Plugin.uuid(app, f._uuid)?.context.toLowerCase().includes(app.timeline.filter.toLowerCase()));
+  public static selected = (app: λApp): λSource[] => Source.pins(app.target.sources.filter(s => s.selected && Source.selected(app).some(p => p.id === s.id))).filter(s => s.name.toLowerCase().includes(app.timeline.filter) || Source.id(app, s.id)?.context_id.includes(app.timeline.filter));
   
-  public static select = (use: λApp | λFile[], selected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s)) ? File._select(f) : f);
+  public static select = (use: λApp | λSource[], selected: Arrayed<λSource | string>): λSource[] => Parser.use(use, 'sources').map(s => Parser.array(selected).find(f => s.id === Parser.useUUID(f)) ? Source._select(s) : s);
 
-  public static pins = (use: λApp | λFile[]) => Parser.use(use, 'files').sort((a, b) => a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1);
- 
-  public static plugin = (app: λApp, file: λFile) => Plugin.uuid(app, file._uuid);
+  public static pins = (use: λApp | λSource[]) => Parser.use(use, 'sources').sort((a, b) => a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1);
 
-  public static context = (app: λApp, file: λFile) => Context.uuid(app, Plugin.uuid(app, file._uuid)._uuid);
+  public static context = (app: λApp, source: λSource) => Context.id(app, source.context_id);
 
-  public static findByNameAndContextName = (app: λApp, filename: λFile['name'], context: λContext['name']) => app.target.files.find(f => f.name === filename && Context.plugins(app, context).some(p => p.uuid === f._uuid))!;
+  public static id = (use: λApp | λSource[], source: λSource | μ.Source) => typeof source === 'string' ? Parser.use(use, 'sources').find(s => s.id === Parser.useUUID(source))! : source;
 
-  public static uuid = (use: λApp | λFile[], file: λFile | μ.File) => typeof file === 'string' ? Parser.use(use, 'files').find(f => f.uuid === Parser.useUUID(file))! : file;
+  public static unselect = (use: λApp | λSource[], unselected: Arrayed<λSource | string>): λSource[] => Parser.use(use, 'sources').map(s => Parser.array(unselected).find(f => s.id === Parser.useUUID(f)) ? Source._unselect(s) : s);
 
-  public static unselect = (use: λApp | λFile[], unselected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(f => Parser.array(unselected).find(s => f.uuid === Parser.useUUID(s)) ? File._unselect(f) : f);
+  public static check = (use: λApp | λSource[], selected: Arrayed<λSource | string>, check: boolean): λSource[] => Parser.use(use, 'sources').map(s => Parser.array(selected).find(f => s.id === Parser.useUUID(f) && check) ? Source._select(s) : Source._unselect(s));
 
-  public static check = (use: λApp | λFile[], selected: Arrayed<λFile | string>, check: boolean): λFile[] => Parser.use(use, 'files').map(f => Parser.array(selected).find(s => f.uuid === Parser.useUUID(s) && check) ? File._select(f) : File._unselect(f));
-
-  public static events = (app: λApp, file: λFile | μ.File): λEvent[] => Event.get(app, Parser.useUUID(file) as μ.File);
+  public static events = (app: λApp, source: λSource | μ.Source): λEvent[] => Event.get(app, Parser.useUUID(source) as μ.Source);
   
-  public static notes = (app: λApp, files: Arrayed<λFile>): λNote[] => Parser.array(files).map(f => Note.findByFile(app, f)).flat();
+  public static notes = (app: λApp, sources: Arrayed<λSource>): λNote[] => Parser.array(sources).map(s => Note.findByFile(app, s)).flat();
 
-  public static index = (app: λApp, file: λFile | μ.File) => File.selected(app).findIndex(f => f.uuid === Parser.useUUID(file));
+  public static index = (app: λApp, source: λSource | μ.Source) => Source.selected(app).findIndex(s => s.id === Parser.useUUID(source));
 
-  public static getHeight = (app: λApp, file: λFile | μ.File, scrollY: number) => 48 * this.index(app, file) - scrollY + 24;
+  public static getHeight = (app: λApp, source: λSource | μ.Source, scrollY: number) => 48 * this.index(app, source) - scrollY + 24;
 
-  private static _select = (p: λFile): λFile => ({ ...p, selected: true });
+  private static _select = (p: λSource): λSource => ({ ...p, selected: true });
 
-  private static _unselect = (p: λFile): λFile => ({ ...p, selected: false });
+  private static _unselect = (p: λSource): λSource => ({ ...p, selected: false });
 }
 
 export enum FilterType {
@@ -933,7 +832,7 @@ export enum FilterType {
 export type FilterOptions = Record<string, Acceptable>;
 
 export type λFilter = {
-  uuid: μ.Filter;
+  id: μ.Filter;
   key: string;
   type: FilterType;
   value: any;
@@ -941,13 +840,13 @@ export type λFilter = {
 }
 
 export class Filter {
-  public static find = (app: λApp, file: λFile) => app.target.filters[file.uuid] || [];
+  public static find = (app: λApp, source: λSource) => app.target.filters[source.id] || [];
 
-  public static findMany = (app: λApp, files: λFile[]) => {
+  public static findMany = (app: λApp, sources: λSource[]) => {
     const filters: λFilter[][] = [];
 
-    files.forEach(file => {
-      const filter = Filter.find(app, file);
+    sources.forEach(source => {
+      const filter = Filter.find(app, source);
       if (filter) {
         filters.push(filter)
       }
@@ -956,21 +855,22 @@ export class Filter {
     return filters;
   }
 
-  public static base = (app: λApp, file: λFile, range?: MinMax) => {
-    const context = Context.findByPugin(app, file._uuid);
+  public static base = (app: λApp, source: λSource, range?: MinMax) => {
+    const context = Context.findBySource(app, source);
 
     if (!context) {
-      throw new ApplicationError(`GulpQueryFilter.base() cannot allocate context for file ${file.name} with uuid_${file.uuid}`)
+      throw new ApplicationError(`GulpQueryFilter.base() cannot allocate context for source ${source.name} with uuid_${source.id}`)
     }
 
     //eslint-disable-next-line
-    return `(operation_id:${context.operation.id} AND (gulp.context: \"${context.name}\") AND gulp.source.file:"${file.name}" AND @timestamp:>=${Math.max(file.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(file.timestamp.max, (range?.max || Infinity))})`
+    // @ts-ignore
+    return `(operation_id:${context.operation_id} AND (gulp.context: \"${context.name}\") AND gulp.source.source:"${source.name}" AND @timestamp:>=${Math.max(source.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(source.timestamp.max, (range?.max || Infinity))})`
   }
 
-  public static parse(app: λApp, file: λFile, range?: MinMax) {
-    const base = Filter.base(app, file, range);
+  public static parse(app: λApp, source: λSource, range?: MinMax) {
+    const base = Filter.base(app, source, range);
     
-    const query = Filter.query(app, file);
+    const query = Filter.query(app, source);
 
     return query ? `${base} AND ${query}` : base;
   }
@@ -978,8 +878,8 @@ export class Filter {
   /** 
    * @returns Стринговое поле фильтра
    */
-  static query = (app: λApp, file: λFile) => {
-    const filters = Filter.find(app, file);
+  static query = (app: λApp, source: λSource) => {
+    const filters = Filter.find(app, source);
     
     return filters.map((filter, index) => {
       const isLast = filters.length - 1 === index;
@@ -1008,13 +908,13 @@ export class Filter {
 
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
-  static body = (app: λApp, file: λFile, range?: MinMax) => ({
+  static body = (app: λApp, source: λSource, range?: MinMax) => ({
     query_raw: {
       bool: {
         must: [
           {
             query_string: {
-              query: Filter.parse(app, file, range),
+              query: Filter.parse(app, source, range),
               analyze_wildcard: true
             }
           }
@@ -1029,29 +929,25 @@ export class Filter {
   });
 }
 
-export class Mapping {
-  public static find = (app: λApp, plugin: PluginEntity['filename']) => app.general.ingest.find(p => p.filename === plugin)?.mappings || [];
-}
-
 export class Event {
-  public static delete = (app: λApp, files: Arrayed<λFile>) => {
-    files = Parser.array(files);
+  public static delete = (app: λApp, sources: Arrayed<λSource>) => {
+    sources = Parser.array(sources);
 
-    files.forEach(file => {
-      app.target.events.delete(file.uuid);
-      app.target.events.set(file.uuid, []);
+    sources.forEach(source => {
+      app.target.events.delete(source.id);
+      app.target.events.set(source.id, []);
     })
     
     return app.target.events;
   }
 
-  public static get = (app: λApp, uuid: μ.File): λEvent[] => app.target.events.get(uuid) || app.target.events.set(uuid, []).get(uuid)!;
+  public static get = (app: λApp, id: μ.Source): λEvent[] => app.target.events.get(id) || app.target.events.set(id, []).get(id)!;
 
-  public static selected = (app: λApp): λEvent[] => File.selected(app).map(f => Event.get(app, f.uuid)).flat();
+  public static selected = (app: λApp): λEvent[] => Source.selected(app).map(s => Event.get(app, s.id)).flat();
 
   public static add = (app: λApp, _events: λEvent | λEvent[]) => {
     const events = Parser.array(_events);
-    events.map(e => Event.get(app, e._uuid).push(e));
+    events.map(e => Event.get(app, e.source_id).push(e));
     events.sort((a, b) => a.timestamp - b.timestamp);
     return app.target.events;
   }
@@ -1061,57 +957,46 @@ export class Event {
     e.src_file = e.src_file || original.src_file;
     e.operation_id = e.operation_id || original.operation_id;
 
-    const file = File.findByNameAndContextName(app, e.src_file, e.context);
+    const source = Source.id(app, e.src_file);
 
-    if (file) {
+    if (source) {
       result.push({
-        _id: e.id,
+        id: e.id,
         operation_id: e.operation_id,
         timestamp: e['@timestamp'] as Hardcode.Timestamp,
-        file: e.src_file,
-        context: e.context,
+        source_id: source.id,
+        context: source.context_id,
         event: {
           duration: 1,
           code: '0'
         },
-        _uuid: file.uuid,
       })
     };
     
     return result
   }, []);
 
-  public static findByIdAndUUID = (app: λApp, eventId: string | string[], uuid: μ.File) => Event.get(app, uuid).filter(e => Parser.array(eventId).includes(e._id));
+  public static findByIdAndUUID = (app: λApp, eventId: string | string[], id: μ.Source) => Event.get(app, id).filter(e => Parser.array(eventId).includes(e.id));
 
-  public static findById = (app: λApp, eventId: string | string[]) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e._id));
-
-  public static formatToCreateRequest = (events: Arrayed<λEvent>): λEventFormForCreateRequest[] => Parser.array(events).map(e => ({
-    id: e._id,
-    timestamp: e.timestamp,
-    operation_id: e.operation_id,
-    context: e.context,
-    src_file: e.file
-  }))
+  public static findById = (app: λApp, eventId: string | string[]) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e.id));
 }
 
 export class Note {
   public static parse = (app: λApp, notes: RawNote[]): λNote[] => notes.map(n => {
     const note: λNote = {
       ...n,
-      file: n.src_file,
       events: Event.parse(app, n),
       data: {
         ...n.data,
-        color: λColor['name -> hex'](n.data.color)
-      },
-      _uuid: File.findByNameAndContextName(app, n.src_file, n.context).uuid
+        color: λColor['name -> hex'](n.data.color) as Color
+      }
     }
     return note;
   });
 
-  public static findByFile = (use: λApp | λNote[], file: λFile | string) => Parser.use(use, 'notes').filter(n => n.file === Parser.useName(file));
+  public static findByFile = (use: λApp | λNote[], source: λSource | string) => Parser.use(use, 'notes').filter(n => n.source_id === Parser.useName(source));
   
-  public static findByEvent = (use: λApp | λNote[], event: λEvent | string) => Parser.use(use, 'notes').filter(n => n.events.some(e => e._id === Parser.useId(event)));
+  public static findByEvent = (use: λApp | λNote[], event: λEvent | string) => Parser.use(use, 'notes').filter(n => n.events.some(e => e.id === Parser.useId(event)));
 
   public static timestamp = (note: λNote): number => {
     let sum = 0
@@ -1129,17 +1014,17 @@ export class Link {
 
     return {
       ...l,
-      file: l.src_file,
+      source_id: l.src_file,
       data: {
         ...l.data,
         color: λColor['name -> hex'](l.data.color)
       },
       events: Event.parse(app, l),
-      _uuid: File.findByNameAndContextName(app, l.src_file, l.context).uuid,
+      _uuid: Source.id(app, l.src_file).id,
     }
   });
 
-  public static findByFile = (use: λApp | λLink[], file: λFile | μ.File): λLink[] => Parser.use(use, 'links').filter(l => l._uuid === Parser.useUUID(file));
+  public static findByFile = (use: λApp | λLink[], source: λSource | μ.Source): λLink[] => Parser.use(use, 'links').filter(l => l.source_id === Parser.useUUID(source));
   
   // public static findByEvent = (use: Information | λLink[], event: λEvent | string): λLink[] => Parser.use(use, 'links').filter(l => l.events.some(e => e._id === Parser.useId(event)));
 
@@ -1153,15 +1038,15 @@ export class Link {
 export class Parser {
   public static use = <K extends keyof λApp['target']>(x: λApp | λApp['target'][K], expects: K): λApp['target'][K] => Array.isArray(x) ? x as λApp['target'][K] : (x as λApp)['target'][expects];
 
-  public static useName = (unknown: λOperation | λContext | λPlugin | λFile | string): string => typeof unknown === 'string' ? unknown : unknown.name;
+  public static useName = (unknown: λOperation | λContext | λSource | λSource | string): string => typeof unknown === 'string' ? unknown : unknown.name;
 
-  public static useId = (unknown: λEvent | string): string => typeof unknown === 'string' ? unknown : unknown._id;
+  public static useId = (unknown: λEvent | string): string => typeof unknown === 'string' ? unknown : unknown.id;
 
-  public static useUUID = <T extends λContext | λPlugin | λFile | λFilter>(unknown: T | string): T['uuid'] => {
+  public static useUUID = <T extends λContext | λSource | λSource | λSource | λFilter>(unknown: T | string): μ.Context | μ.Source | μ.Filter | μ.Operation | μ.Source | μ.Source | μ.Window => {
     if (typeof unknown === 'string') {
-      return unknown as T['uuid'];
+      return unknown as T['id'];
     } else {
-      return (unknown as T).uuid;
+      return (unknown as T).id;
     }
   };
   
@@ -1173,27 +1058,47 @@ export class Parser {
 
 export type Arrayed<K> = K | K[];
 
-export type UUIDED<K extends λContext | λPlugin | λFile | λFilter> = K | K['uuid'];
+export type UUIDED<K extends λContext | λSource | λSource | λFilter> = K | K['id'];
 
 export namespace μ {
-  const File = Symbol('File');
-  export type File = UUID & {
-    readonly [File]: unique symbol;
-  };
-
   const Filter = Symbol('Filter');
   export type Filter = UUID & {
     readonly [Filter]: unique symbol;
   };
-  
-  const Plugin = Symbol('Plugin');
-  export type Plugin = UUID & {
-    readonly [Plugin]: unique symbol;
+
+  const Operation = Symbol('Operation');
+  export type Operation = UUID & {
+    readonly [Operation]: unique symbol;
   };
 
   const Context = Symbol('Context');
   export type Context = UUID & {
     readonly [Context]: unique symbol;
+  };
+
+  const Source = Symbol('Source');
+  export type Source = UUID & {
+    readonly [Source]: unique symbol;
+  };
+
+  const Event = Symbol('Event');
+  export type Event = UUID & {
+    readonly [Event]: unique symbol;
+  };
+
+  const Note = Symbol('Note');
+  export type Note = UUID & {
+    readonly [Note]: unique symbol;
+  };
+
+  const Link = Symbol('Link');
+  export type Link = UUID & {
+    readonly [Link]: unique symbol;
+  };
+
+  const Glyph = Symbol('Glyph');
+  export type Glyph = UUID & {
+    readonly [Glyph]: unique symbol;
   };
 
   const Window = Symbol('Window');

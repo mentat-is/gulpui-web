@@ -32,7 +32,7 @@ export function CreateOperationBanner() {
       setLoading,
       query: body,
       body: description,
-    }, Info.operations_reload).then(destroyBanner);
+    }, Info.operation_list).then(destroyBanner);
   };
 
   return (

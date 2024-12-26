@@ -5,6 +5,7 @@ import { Chunk, isChunkDefault, UnknownChunk, λChunk } from '@/dto/Chunk.dto';
 import { λEvent, RawChunkEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
 import { Hardcode } from './Engine.dto';
+import { λSource } from '@/dto/Operation.dto';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -39,6 +40,7 @@ export class AppSocket extends WebSocket {
       if (isChunkDefault(_chunk)) {
         const events: Chunk['events'] = _chunk.events.map((event: RawChunkEvent): λEvent => ({
           _id: event._id,
+          // @ts-ignore
           operation_id: event.operation_id,
           timestamp: event['@timestamp'] as Hardcode.Timestamp,
           event: {
@@ -46,13 +48,13 @@ export class AppSocket extends WebSocket {
             duration: event['event.duration']
           },
           file: event['gulp.source.file'],
+          // @ts-ignore
           context: event['gulp.context'],
-          _uuid: this.info.file_find_by_filename_and_context(event['gulp.source.file'], event['gulp.context'])?.uuid
         }));
 
         this.info.events_add(events);
       } else if ((_chunk as UnknownChunk).type === λChunk.QUERY_RESULT && _chunk.matches_total > 0) {
-        this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as μ.File]);
+        this.info.setLoaded([...this.info.app.timeline.loaded, _chunk.req_id as λSource['id']]);
       } else if ('collabs' in _chunk) {
         this.info.notes_reload();
         this.info.links_reload();

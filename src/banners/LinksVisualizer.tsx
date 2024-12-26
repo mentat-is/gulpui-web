@@ -1,17 +1,17 @@
 import { Link } from "@/class/Info";
 import { useApplication } from "@/context/Application.context"
-import { λFile } from "@/dto/File.dto"
 import { Banner } from "@/ui/Banner"
 import { LinkCombination } from "@/components/LinkCombination";
+import { λSource } from "@/dto/Operation.dto";
 
 interface LinkVisualizerProps {
-  file: λFile
+  source: λSource
 };
 
-export function LinkVisualizer({ file }: LinkVisualizerProps) {
+export function LinkVisualizer({ source }: LinkVisualizerProps) {
   const { app } = useApplication();
 
-  const links = Link.findByFile(app, file)
+  const links = Link.findByFile(app, source)
 
   return (
     <Banner title='File links'>

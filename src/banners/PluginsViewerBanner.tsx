@@ -3,31 +3,31 @@ import { Banner } from '@/ui/Banner';
 import s from './styles/PluginsViewerBanner.module.css';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger } from '@/ui/Select';
 import { useState } from 'react';
-import { PluginEntity } from '@/dto/Plugin.dto';
+import { λPlugin } from '@/dto/Plugin.dto';
 import { Icon } from '@impactium/icons';
 
 export function PluginsViewerBanner() {
   const { app } = useApplication();
-  const [plugin, setPlugin] = useState<PluginEntity | undefined>(app.general.ingest[0]);
+  const [plugin, setPlugin] = useState<λPlugin | undefined>(app.general.plugins[0]);
 
   return (  
     <Banner title='Review plugins'>
-      <Select onValueChange={name => setPlugin(app.general.ingest.find(i => i.display_name === name))}>
+      <Select onValueChange={name => setPlugin(app.general.plugins.find(i => i.display_name === name))}>
         <SelectTrigger>
           {plugin?.display_name || 'There is no plugins'}
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
             <SelectLabel>Ingestion</SelectLabel>
-            {app.general.ingest.filter(i => i.type === 'ingestion').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
+            {app.general.plugins.filter(i => i.type === 'ingestion').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
           <SelectGroup>
             <SelectLabel>Sigma</SelectLabel>
-            {app.general.ingest.filter(i => i.type === 'sigma').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
+            {app.general.plugins.filter(i => i.type === 'sigma').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
           <SelectGroup>
             <SelectLabel>Extension</SelectLabel>
-            {app.general.ingest.filter(i => i.type === 'extension').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
+            {app.general.plugins.filter(i => i.type === 'extension').map(p => <SelectItem key={p.display_name} value={p.display_name}>{p.display_name}</SelectItem>)}
           </SelectGroup>
         </SelectContent>
       </Select>

@@ -9,32 +9,27 @@ import { Login, λOperation } from "@/dto";
 import React from "react";
 import { Input } from "@/ui/Input";
 import { Separator } from "@/ui/Separator";
-import { Button } from "@/ui/Button";
 import { λIndex } from "@/dto/Index.dto";
 import { CreateOperationBanner } from "@/banners/CreateOperation.banner";
 import { UploadBanner } from "@/banners/Upload.banner";
 import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
 import { Logger } from "@/dto/Logger.class";
-import { Stack } from "@impactium/components";
+import { Stack, Button } from "@impactium/components";
 import { GlyphMap } from "@/dto/Glyph.dto";
 import { GeneralSettings } from "@/components/GeneralSettings";
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
-import { SelectSession } from "@/banners/SelectSession";
 
 export function LoginPage() {
   const { Info, app, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const loginButton = useRef<HTMLButtonElement>(null);
-  const cookie = new Cookies();
-
-  useEffect(() => {
-
-  }, [loginButton])
 
   // AUTH
+  const [serverValue, setServerValue] = useState<string>(app.general.server);
 
-  const [serverValue, setServerValue] = useState<string>(cookie.get('last_used_server') || app.general.server);
+  const [id, setId] = useState<string>('admin');
+  const [password, setPassword] = useState<string>('admin');
   
   const login = async () => {
     const removeOverload = (str: string): string => str.endsWith('/')
@@ -49,29 +44,20 @@ export function LoginPage() {
 
     if (!server) return;
 
-    Info.setServer(server);
+    localStorage.setItem('__server', server);
 
     await api<Login>('/login', {
       method: 'PUT',
       setLoading,
       query: {
-        user_id: app.general.username,
-        password: app.general.password,
+        user_id: id,
+        password,
         ws_id: app.general.ws_id
       }
     }, (data) => {
       Logger.log(`User has been authentificated with next credentials:`, LoginPage.name)
-      Logger.log({
-        username: app.general.username,
-        password: app.general.password,
-        token: data.token,
-        user_id: data.user_id,
-        expires: data.time_expire
-      }, LoginPage.name)
-      Info.setToken(data.token);
-      Info.setUserId(data.user_id);
-      Info.setExpire(data.time_expire);
-      cookie.set('last_used_server', app.general.server);
+      Logger.log(data, LoginPage.name);
+      Info.login(data);
     });
   }
 
@@ -80,14 +66,14 @@ export function LoginPage() {
   */
   useEffect(() => {
     if (app.general.token) {
-      Info.getSessions().then(sessions => {
-        if (Object.keys(sessions).length) {
-          spawnBanner(<SelectSession sessions={sessions} />)
-        }
-      });
+      // Info.getSessions().then(sessions => {
+      //   if (Object.keys(sessions).length) {
+      //     spawnBanner(<SelectSession sessions={sessions} />)
+      //   }
+      // });
 
       const processStage = async () => {
-        await Info.mapping()
+        // await Info.mapping()
         await Info.index_reload()
         setLoading(false);
         setStage(1);
@@ -111,7 +97,7 @@ export function LoginPage() {
   useEffect(() => {
     if (!Index.selected(app)) return;
     
-    Info.operations_reload().then(() => {
+    Info.operation_list().then(() => {
       setStage(2) 
       setLoading(false);
     });
@@ -121,7 +107,7 @@ export function LoginPage() {
   // OPERATIONS
 
 
-  const deleteOperation = (operation_id: number) => {
+  const deleteOperation = (operation_id: λOperation['id']) => {
     const index = Index.selected(app)
 
     if (!index) {
@@ -135,7 +121,7 @@ export function LoginPage() {
         index: index.name
       },
       setLoading
-    }, Info.operations_reload)
+    }, Info.operation_list)
   };
 
   const handleOperationSelect = (operation: λOperation) => {
@@ -149,8 +135,6 @@ export function LoginPage() {
     if (stage < 3) return;
 
     spawnBanner(<SelectFilesBanner />);
-
-    Info.query_operations();
   }, [stage]);
 
   return (
@@ -174,18 +158,18 @@ export function LoginPage() {
               <Input
                 img='User'
                 placeholder="Username"
-                value={app.general.username}
+                value={id}
                 tabIndex={2}
-                onChange={e => Info.setUsername(e.currentTarget.value)} />
+                onChange={e => setId(e.currentTarget.value)} />
               <Stack gap={12}>
                 <Input
                   img='KeyRound'
                   placeholder="Password"
                   type='password'
-                  value={app.general.password}
+                  value={password}
                   tabIndex={3}
-                  onChange={e => Info.setPassword(e.currentTarget.value)} />
-                <Button img='LogIn' revert ref={loginButton} loading={loading} tabIndex={4} onClick={login}>Log in</Button>
+                  onChange={e => setPassword(e.currentTarget.value)} />
+                <Button img='LogIn' disabled={!id || !password} revert ref={loginButton} loading={loading} tabIndex={4} onClick={login}>Log in</Button>
               </Stack>
           </React.Fragment>
           )
@@ -209,7 +193,7 @@ export function LoginPage() {
                     <div className={s.unit_group} key={operation.id}>
                       <ContextMenu>
                         <ContextMenuTrigger style={{ width: '100%' }}>
-                          <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={GlyphMap[operation.glyph_id] || 'ScanSearch'}>{operation.name}</Button>
+                          <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={'ScanSearch'}>{operation.name}</Button>
                         </ContextMenuTrigger>
                         <ContextMenuContent>
                           <ContextMenuSub>

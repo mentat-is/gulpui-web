@@ -1,11 +1,13 @@
 import { UUID } from "crypto";
 import { λEvent, λRawEventMinimized } from "./ChunkEvent.dto";
 import { μ } from "@/class/Info";
+import { λContext, λOperation, λSource } from "./Operation.dto";
+import { λGlyph } from "./λGlyph.dto";
 
 export type λLink = {
-  id: number;
+  id: μ.Link;
   events: Array<Omit<λEvent, 'event'>>;
-  context: string
+  context: λContext['id']
   data: {
     src: string,
     color: string
@@ -13,14 +15,12 @@ export type λLink = {
   }
   description: string
   edits: number[]
-  file: string
-  glyph_id: null | number
+  glyph_id: λGlyph['id']
   level: number
   name: null | string
-  operation_id: number
+  operation_id: λOperation['id']
   owner_user_id: number
   private: boolean
-  src_file: string
   tags: null | string[]
   text: null | string
   time_created: number
@@ -28,9 +28,7 @@ export type λLink = {
   time_start: number
   time_updated: number
   type: number
-  _uuid: μ.File
+  source_id: λSource['id']
 }
 
-export type RawLink = Omit<λLink, 'events'> & {
-  events: λRawEventMinimized[]
-}
+export type RawLink = any;

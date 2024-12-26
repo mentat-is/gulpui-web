@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { copy } from '@/ui/utils';
 import { Button } from '@/ui/Button';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { File, Note, Plugin } from '@/class/Info';
+import { Note, Source } from '@/class/Info';
 import { Notes } from './components/Notes';
 import { λNote } from '@/dto/Note.dto';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
@@ -50,7 +50,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   
     api<RawDetailedChunkEvent>('/query_single_event', {
       query: {
-        gulp_id: event._id
+        gulp_id: event.id
       }
     }).then(data => {
       const elapsedTime = Date.now() - startTime;
@@ -74,11 +74,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           },
           level: data['log.level'],
           _id: data._id,
+          // @ts-ignore
           operation_id: data.operation_id,
           timestamp: data['@timestamp'] as Hardcode.Timestamp,
-          file: data['gulp.source.file'],
+          // @ts-ignore
+          source: data['gulp.source.source'],
           context: data['gulp.context'],
-          _uuid: event._uuid
+          _uuid: event.source_id
         });
       }, delay);
     });
@@ -87,26 +89,26 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
   const spawnNoteBanner = () => {
     spawnBanner(<CreateNoteBanner
-      context={Plugin.uuid(app, File.uuid(app, event._uuid)!._uuid)!.context}
-      filename={event.file}
+      context={Source.id(app, event.source_id)!.context_id}
+      filename={event.source_id}
       events={event} />);
     destroyDialog();
   }
 
   const spawnLinkBanner = () => {
-    const file = File.uuid(app, event._uuid);
+    const source = Source.id(app, event.source_id);
 
-    if (!file) return;
+    if (!source) return;
 
     spawnBanner(<CreateLinkBanner
-      context={Plugin.uuid(app, file._uuid)!.context}
-      file={file}
+      context={source.context_id}
+      source={source}
       events={event} />);
     destroyDialog();
   }
 
   return (
-    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event._id} />} title={`Event: ${event._id}`} description={`From ${event.context} with code ${event.event.code}`}>
+    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context} with code ${event.event.code}`}>
       <Separator />
       <Navigation event={event} />
       <Separator />

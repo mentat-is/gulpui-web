@@ -1,31 +1,13 @@
-import { RawFile } from './File.dto';
 import { λMapping } from './MappingFileList.dto';
-import { μ } from '@/class/Info';
 
 export interface λPlugin {
-  name: string,
-  context: string
-  files: string[],
-  selected?: boolean;
-  _uuid: μ.Context,
-  uuid: μ.Plugin
-}
-
-export interface RawPlugin {
-  name: string,
-  src_file: RawFile[]
-}
-
-export type PluginEntityResponse = PluginEntity[];
-
-export interface PluginEntity {
   display_name: string;
-  type: PluginEntityType;
+  type: λPluginType;
   paid: boolean;
   desc: string;
   filename: string;
   internal: boolean;
-  options: PluginEntityOption[];
+  options: λPluginOption[];
   depends_on: [];
   tags: string[];
   event_type_field: string;
@@ -33,9 +15,9 @@ export interface PluginEntity {
   mappings: λMapping[];
 };
 
-export type PluginEntityType = 'ingestion' | 'sigma' | 'extension'
+export type λPluginType = 'ingestion' | 'sigma' | 'extension'
 
-export interface PluginEntityOption {
+export interface λPluginOption {
   name: string,
   type: string,
   default: boolean,

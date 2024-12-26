@@ -3,7 +3,7 @@ import { λEvent } from "@/dto/ChunkEvent.dto";
 import { Button, Stack } from "@impactium/components";
 import s from './navigation.module.css';
 import { useEffect, useState } from "react";
-import { Event, File } from "@/class/Info";
+import { Event, Source } from "@/class/Info";
 import { SymmetricSvg } from "@/ui/SymmetricSvg";
 import { DisplayEventDialog } from "../Event.dialog";
 import { cn } from "@/ui/utils";
@@ -19,11 +19,11 @@ export function Navigation({ event }: Navigation.Props) {
   const [events, setEvents] = useState<λEvent[]>([]);
 
   useEffect(() => {
-    const file = File.findByNameAndContextName(Info.app, event.file, event.context);
+    const source = Source.id(Info.app, event.source_id);
     
-    const events = Event.get(Info.app, file.uuid);
+    const events = Event.get(Info.app, source.id);
 
-    const index = events.findIndex(ev => ev._id === event._id);
+    const index = events.findIndex(ev => ev.id === event.id);
 
     const nears = events.filter((e, i) => i > index - 16 && i < index + 16);
 
@@ -38,7 +38,7 @@ export function Navigation({ event }: Navigation.Props) {
     <Stack className={s.navigation} jc='space-between'>
       <Button onClick={() => Info.setTimelineTarget(1)} img='ArrowLeft' variant='outline'>Previous</Button>
       <Stack className={s.content} jc='center'>
-        {events.map(e => <SymmetricSvg className={cn(e._id === event._id && s.focus)} onClick={navigatorEventClickHandlerConstructor(e)} text={e._id} />)}
+        {events.map(e => <SymmetricSvg className={cn(e.id === event.id && s.focus)} onClick={navigatorEventClickHandlerConstructor(e)} text={e.id} />)}
       </Stack>
       <Button onClick={() => Info.setTimelineTarget(-1)} img='ArrowRight' variant='outline' revert>Next</Button>
     </Stack>

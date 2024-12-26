@@ -1,4 +1,4 @@
-import { File, Note as NoteClass } from "@/class/Info";
+import { Note as NoteClass, Source } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { Note } from "@/ui/Note";
 import { Fragment } from 'react';
@@ -15,10 +15,10 @@ export function NotesDisplayer({ getPixelPosition, scrollY }: NotesDisplayerProp
   return (
     <Fragment>
       {app.target.notes.map(note => {
-        if (!File.uuid(app, note._uuid)?.selected) return null;
+        if (!Source.id(app, note.source_id)?.selected) return null;
 
-        const left = getPixelPosition(NoteClass.timestamp(note) + File.uuid(app, note._uuid)!.offset);
-        const top = File.getHeight(app, note._uuid, scrollY);
+        const left = getPixelPosition(NoteClass.timestamp(note) + Source.id(app, note.source_id)!.settings.offset);
+        const top = Source.getHeight(app, note.source_id, scrollY);
 
         if (top <= 0) return null;
 

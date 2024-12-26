@@ -37,7 +37,7 @@ export function SaveSession() {
       },
       query: {
         name: sessionName,
-        user_id: app.general.user_id,
+        user_id: app.general.id,
         operation_id: operation.id,
       },
       body: JSON.stringify(Info.getCurrentSessionOptions()),

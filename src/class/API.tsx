@@ -1,9 +1,10 @@
 import { UUID } from "crypto";
 import { between } from "@impactium/utils";
 import { type Callback } from '@impactium/types'
+import { toast } from "sonner";
 
 interface ResponseBase<T = any> {
-  status: number;
+  status: 'success' | 'error';
   timestamp: Date;
   req_id: UUID;
   data: T;
@@ -18,13 +19,13 @@ interface ResponseError extends ResponseBase<{
 
 
 export class λ<T extends ResponseBase<any>> {
-  status: number;
+  status: 'success' | 'error';
   req_id: UUID;
   timestamp: Date;
   data: T['data'];
 
   constructor(data?: T) {
-    this.status = data?.status || 500;
+    this.status = data?.status || 'error';
     this.req_id = data?.req_id || '' as UUID;
     this.timestamp = data?.timestamp || new Date();
     this.data = data ? data.data : {
@@ -33,13 +34,9 @@ export class λ<T extends ResponseBase<any>> {
     } as ResponseError['data'];
   }
   
-  isError(): this is ResponseError {
-    return between(this.status, 300, 500);
-  }
+  isError = (): this is ResponseError => this.status === 'error';
 
-  isSuccess(): this is λ<ResponseSuccess<T['data']>> {
-    return between(this.status, 200, 299);
-  }
+  isSuccess = (): this is λ<ResponseSuccess<T['data']>> => this.status === 'success';
 }
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -82,35 +79,40 @@ export type Api = {
 type unresolwedArgument<T> = RequestInit & RequestOptions & { raw?: boolean} | Callback<T> | undefined;
 
 export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgument<T>, _path: string) {
-  let options: RequestInit & RequestOptions & { raw?: boolean } = {};
+  let options: RequestInit & RequestOptions & { raw?: boolean } = {
+    headers: {
+      'Content-Type': 'application/json',
+      'token': localStorage.getItem('__token') || ''
+    }
+  };
   let callback: Callback<T> | undefined;
 
   if (typeof a === 'function') {
     callback = a;
     if (b && typeof b === 'object') {
-      options = b;
+      Object.assign(options, b);
     }
   } else if (typeof a === 'object') {
-    options = a;
+    Object.assign(options, a);
     if (b && typeof b === 'function') {
       callback = b;
     }
   }
 
   if (typeof options.body === 'object' && !(options.body instanceof FormData)) {
-    options.headers = {
-      ...options.headers,
-      'Content-Type': 'application/json'
-    },
     options.body = JSON.stringify(options.body);
   }
 
   const path = _path.startsWith('/') ? _path : `/${_path}`;
 
+  const toStringObject = (obj: typeof options.query) => obj ? Object.fromEntries(Object.entries(options.query || {}).map(([key, value]) => [key, String(value)])) : '';
+
+  const query = new URLSearchParams(toStringObject(options.query));
+
   return {
     options,
     callback,
-    query: options.query ? `?${new URLSearchParams(options.query.toString())}` : '',
+    query,
     path,
     endpoint: localStorage.getItem('__server')
   };
@@ -126,30 +128,46 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
 
   soft(true, options.setLoading);
 
-  const response = await fetch(`${endpoint}/api${path}${query}`, {
-    credentials: 'include',
-    method: 'GET',
-    ...options,
-    headers: options.headers,
+  const response = await fetch(`${endpoint}${path}${query ? `?${query}` : ''}`, {
+    ...options
   }).catch(() => undefined);
 
   const res = new λ(await response?.json());
 
   const isSuccess = res.isSuccess()
 
-  const result = options.raw
+  const result = (options.raw
     ? res
     : isSuccess
       ? res.data
-      : null
+      : null);
 
-  if (isSuccess && callback) {
-    await callback(result);
+  if (isSuccess) {
+    if (callback) {
+      await callback(result);
+    }
+  } else {
+    toast(toSeparatedCase(res?.data?.__error?.name), {
+      description: 'Check console for further information'
+    })
   }
 
   soft(false, options.setLoading);
 
   return result;
 }
+
+const toSeparatedCase = (str: string): string => {
+  if (!str) return 'Unknown Error';
+  
+  const withSpaces = str.replace(/([a-z])([A-Z])/g, '$1 $2');
+  
+  const words = withSpaces.split(/[\s_]+/);
+  
+  return words
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+};
+
 
 globalThis.api = api

@@ -22,7 +22,7 @@ export function Link({ link, left, top }: LinkProps) {
   const { app, spawnDialog } = useApplication();
 
   const openEvent = () => {
-    const events = link.events.map(event => Event.findByIdAndUUID(app, event._id, event._uuid)).flat()
+    const events = link.events.map(event => Event.findByIdAndUUID(app, event.id, event.source_id)).flat()
 
     const dialog = events.length === 1
       ? <DisplayEventDialog event={events[0]} />
@@ -34,7 +34,7 @@ export function Link({ link, left, top }: LinkProps) {
   return (
     <>
       <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
-        <Glyph glyph={link.glyph_id} color={link.data.color} />
+        {/* <Glyph glyph={link.glyph_id} color={link.data.color} /> */}
         <hr style={{ background: link.data.color }} />
         <div className={s.backplate} style={{ background: link.data.color + '32' }} />
       </Button>

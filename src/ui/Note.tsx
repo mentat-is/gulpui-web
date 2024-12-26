@@ -38,7 +38,7 @@ export function Note({ note, left, top }: NoteProps) {
   return (
     <>
       <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
-        <Glyph glyph={note.glyph_id} color={note.data.color} />
+        {/* <Glyph glyph={note.glyph_id} color={note.data.color} /> */}
         <hr style={{ background: note.data.color }} />
         <div className={s.backplate} style={{ background: note.data.color + '32' }} />
       </Button>

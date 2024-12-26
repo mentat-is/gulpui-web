@@ -21,19 +21,19 @@ export function GlyphsPopover({ icon, setIcon }: GlyphPopoverProps) {
     <Popover>
       <PopoverTrigger asChild>
         <div className={s.trigger}>
-          <Button variant='ghost'>{icon !== -1 ? GlyphMap[icon] || 'ScanSearch' : 'Choose glyph'}</Button>
-          <Button variant='glass' img={icon !== -1 ? GlyphMap[icon] : 'ScanSearch'} />
+          {/* <Button variant='ghost'>{icon !== -1 ? GlyphMap[icon] || 'ScanSearch' : 'Choose glyph'}</Button> */}
+          {/* <Button variant='glass' img={icon !== -1 ? GlyphMap[icon] : 'ScanSearch'} /> */}
         </div>
       </PopoverTrigger>
       <PopoverContent align='end' className={s.map}>
-        {GlyphMap.map((glyph, index) => (
-          <Button
-            key={glyph}
-            variant={icon === index ? 'default' : 'outline'}
-            img={glyph as Icon.Name}
-            onClick={() => setIcon(index)}
-          />
-        ))}
+        {/* {GlyphMap.map((glyph, index) => ( */}
+          {/* <Button */}
+            {/* // key={glyph} */}
+            {/* // variant={icon === index ? 'default' : 'outline'} */}
+            {/* // img={glyph as Icon.Name} */}
+            {/* // onClick={() => setIcon(index)} */}
+          {/* /> */}
+        {/* ))} */}
         <Button className={s.upload} variant='hardline' img='Plus' onClick={uploadGlyph}>Upload</Button>
       </PopoverContent>
     </Popover>

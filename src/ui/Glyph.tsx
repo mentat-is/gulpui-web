@@ -7,9 +7,10 @@ interface GlyphProps extends Omit<Icon.Props, 'name'> {
 }
 
 export function Glyph({ glyph, ...props }: GlyphProps) {
-  return glyph && GlyphMap[glyph]
-    ? <Icon name={GlyphMap[glyph]} {...props} />
-    : glyph && CustomGlyphs[glyph]
-      ? <img src={`data:image/jpeg;base64,${CustomGlyphs[glyph]}`} alt='' />
-      : <Icon name='Bookmark' {...props} />
+  return null
+  //  glyph && GlyphMap[glyph]
+  //   ? <Icon name={GlyphMap[glyph]} {...props} />
+  //   : glyph && CustomGlyphs[glyph]
+  //     ? <img src={`data:image/jpeg;base64,${CustomGlyphs[glyph]}`} alt='' />
+  //     : <Icon name='Bookmark' {...props} />
 }

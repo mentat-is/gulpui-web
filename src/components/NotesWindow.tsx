@@ -19,7 +19,7 @@ export function NotesWindow({ onClose, focus }: FloatingWindowProps) {
         return (
           <div className={s.unit} data-accent={note.data.color} style={{ background: `linear-gradient(to top, ${note.data.color}, ${note.data.color + 48})` }}>
             <span className={s.background} />
-            <SymmetricSvg text={note.events[0]?._id || note.name} />
+            <SymmetricSvg text={note.events[0]?.id || note.name} />
             <div className={s.group}>
               <p className={s.top}>{note.name}</p>
               <p className={s.bottom}>{note.text || note.description}</p>

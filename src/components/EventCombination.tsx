@@ -11,10 +11,10 @@ interface EventCombinationProps extends HTMLAttributes<HTMLDivElement> {
 export function EventCombination({ event, children, className, ...props }: EventCombinationProps) {
   return (
     <div className={cn(s.unit, className)} {...props}>
-      <SymmetricSvg text={event._id} />
+      <SymmetricSvg text={event.id} />
       <div className={s.text}>
-        <p className={s.top}>{event._id}</p>
-        <p className={s.bottom}>{event.file}</p>
+        <p className={s.top}>{event.id}</p>
+        <p className={s.bottom}>{event.source_id}</p>
       </div>
       {children}
     </div>

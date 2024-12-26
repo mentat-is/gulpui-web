@@ -12,7 +12,7 @@ interface QueryResult {
   error: null | string; // Adjust based on actual data
   sigma_rule_file: null | string; // Adjust based on actual data
   sigma_rule_id: null | string; // Adjust based on actual data
-  stored_query_id: null | string; // Adjust based on actual data
+  stored_query_id: null | string; // Adjust based on actual datads
   query_dsl: null | string; // Adjust based on actual data
   query_name: string;
 }

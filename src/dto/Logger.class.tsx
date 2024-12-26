@@ -1,10 +1,10 @@
 import { Console } from '@impactium/console';
 import { MinMax } from './QueryMaxMin.dto';
 import { λEvent } from './ChunkEvent.dto';
-import { λFile } from './File.dto';
 import { Arrayed, Parser } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
+import { λSource } from './Operation.dto';
 
 export class Logger {
   protected static messages: Console.History[] = [];
@@ -81,20 +81,20 @@ Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`, LoggerHandler.name
     Logger.log(`Has been selected date from ${new Date(selected.min).toDateString()} to ${new Date(selected.max).toDateString()}`, LoggerHandler.name);
   }
 
-  public static canvasClick = (file: λFile, events: λEvent[], position: number) => {
+  public static canvasClick = (source: λSource, events: λEvent[], position: number) => {
     const loggerContext = [LoggerHandler.name, this.name];
 
-    Logger.log(`Canvas has been clicked and file ${file.name}-${file.uuid} was trigerred. Position: ${position}`, loggerContext);
+    Logger.log(`Canvas has been clicked and source ${source.name}-${source.id} was trigerred. Position: ${position}`, loggerContext);
 
     if (!events.length) {
       return Logger.log(`No events on click position. Skipping...`, loggerContext);
     }
 
     if (events.length === 1) {
-      return Logger.log(`One event on click position. Opening ${DisplayEventDialog.name} with ${events[0]._id}`, loggerContext);
+      return Logger.log(`One event on click position. Opening ${DisplayEventDialog.name} with ${events[0].id}`, loggerContext);
     }
 
-    Logger.log(`Events amount on click position: ${events.length}. Opening ${DisplayGroupDialog.name} with events ${JSON.stringify(events.map(e => e._id), null, 2)}`, loggerContext);
+    Logger.log(`Events amount on click position: ${events.length}. Opening ${DisplayGroupDialog.name} with events ${JSON.stringify(events.map(e => e.id), null, 2)}`, loggerContext);
   }
 }
 

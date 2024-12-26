@@ -18,19 +18,19 @@ import { λEvent } from "@/dto/ChunkEvent.dto";
 import { Switch } from "@/ui/Switch";
 import { LinkCreateRequest } from "@/dto/LinkCreateRequest.dto";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
-import { λFile } from "@/dto/File.dto";
 import { λLink } from "@/dto/Link.dto";
 import { LinkCombination } from "@/components/LinkCombination";
 import { EventCombination } from "@/components/EventCombination";
 import { GlyphsPopover } from "@/components/Glyphs.popover";
+import { λSource } from "@/dto/Operation.dto";
 
 interface CreateLinkBannerProps {
   context: string,
-  file: λFile,
+  source: λSource,
   events: λEvent[] | λEvent
 }
 
-export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProps) {
+export function CreateLinkBanner({ context, source, events }: CreateLinkBannerProps) {
   const { app, destroyBanner, Info } = useApplication();
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
@@ -46,9 +46,9 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
     const data: any = {
       operation_id: Operation.selected(app)?.id,
       context,
-      src_file: file.name,
+      src_file: source.name,
       ws_id: app.general.ws_id,
-      src: Parser.array(events)[0]._id,
+      src: Parser.array(events)[0].id,
       color,
       level,
       private: _private,
@@ -85,7 +85,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
         <Button variant='ghost'>Connect to existing one</Button>
       </PopoverTrigger>
       <PopoverContent className={s.popover}>
-        {app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).map(l => (
+        {app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e.id).includes(e.id))).map(l => (
             <LinkCombination link={l}>
               <Button onClick={() =>update(l)} variant='outline'>Connect</Button>
             </LinkCombination>
@@ -95,7 +95,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   );
 
   return (
-    <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e._id).includes(e._id))).length && <Subtitle />}>
+    <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e.id).includes(e.id))).length && <Subtitle />}>
       <Card className={s.overview}>
         <p>Name: <Input placeholder='*Required' revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/></p>
         <Separator />
@@ -103,7 +103,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
         <Separator />
         <p>Context: <span>{context}</span></p>
         <Separator />
-        <p>File: <span>{file.name}</span></p>
+        <p>File: <span>{source.name}</span></p>
         <Separator />
         <p>At: <span>{format((Parser.array(events)[0]?.timestamp || 0), 'yyyy.MM.dd HH:mm:ss')}</span></p>
       </Card>

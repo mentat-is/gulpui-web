@@ -6,7 +6,6 @@ import { DisplayEventDialog } from "./Event.dialog";
 import { useApplication } from "@/context/Application.context";
 import { λEvent } from "@/dto/ChunkEvent.dto";
 import { useEffect, useState } from "react";
-import { Skeleton } from "@/ui/Skeleton";
 import { Stack } from "@impactium/components";
 
 interface DisplayGroupDialogProps {
@@ -26,11 +25,11 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   return (
     <Dialog title={`Choose event${events[0]?.timestamp ? ` for ${new Date(events[0].timestamp).toLocaleTimeString()} ${new Date(events[0].timestamp).toLocaleDateString()}` : ''}`} description={`List includes ${events.length} events`}>
       {events.map((event: λEvent, i) => 
-        <div className={s.event} key={event._id}>
+        <div className={s.event} key={event.id}>
           <div className={s.combination}>
-            <SymmetricSvg text={event._id} className={s.icon} />
+            <SymmetricSvg text={event.id} className={s.icon} />
             <div className={s.group}>
-              <p className={s.title}>{event.file}</p>
+              <p className={s.title}>{event.source_id}</p>
               <p className={s.description}>{event.event.code}</p>
             </div>
           </div>

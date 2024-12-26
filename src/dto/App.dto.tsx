@@ -1,10 +1,8 @@
-import { λOperation } from ".";
+import { Login, λOperation } from ".";
 import { Bucket } from "./QueryMaxMin.dto";
 import { λEvent, DetailedChunkEvent } from "./ChunkEvent.dto";
 import { λIndex } from "./Index.dto";
-import { λContext } from "./Context.dto";
-import { PluginEntity, λPlugin } from "./Plugin.dto";
-import { λFile } from "./File.dto";
+import { λPlugin } from "./Plugin.dto";
 import { λNote } from "./Note.dto";
 import { λLink } from "./Link.dto";
 import { generateUUID, Gradients, GradientsMap } from "@/ui/utils";
@@ -13,6 +11,7 @@ import { λGlyph } from "./λGlyph.dto";
 import { Engine } from "@/class/Engine.dto";
 import { RenderEngine } from "@/class/RenderEngine";
 import { XY } from "./XY.dto";
+import { λContext, λSource } from "./Operation.dto";
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -29,40 +28,35 @@ export interface λApp {
     indexes: λIndex[]
     operations: λOperation[],
     contexts: λContext[],
-    plugins: λPlugin[],
-    files: λFile[],
-    events: Map<μ.File, λEvent[]>
-    filters: Record<μ.File, λFilter[]>;
+    sources: λSource[],
+    events: Map<λSource['id'], λEvent[]>
+    filters: Record<λSource['id'], λFilter[]>;
     notes: λNote[],
     links: λLink[],
     glyphs: λGlyph[],
-    sigma: Record<μ.File, {
+    sigma: Record<λSource['id'], {
       name: string;
       content: string;
     }>;
   }
-  general: {
+  general: Login & {
     server: string;
-    username: string;
-    user_id: number;
     password: string;
     ws_id: string;
-    token?: string;
-    expires?: number;
-    ingest: PluginEntity[];
-    settings: Pick<λFile, 'engine' | 'color'>;
+    plugins: λPlugin[];
+    settings: λSource['settings'];
     sessions: Record<string, Session>
   },
   timeline: {
     scale: number;
     target: λEvent | null;
-    loaded: μ.File[];
+    loaded: μ.Source[];
     filter: string;
     cache: {
-      data: Map<μ.File, λEvent[]>;
-      filters: Record<μ.File, λFilter[]>;
+      data: Map<μ.Source, λEvent[]>;
+      filters: Record<λSource['id'], λFilter[]>;
     },
-    filtering_options: Record<μ.File, FilterOptions>;
+    filtering_options: Record<μ.Source, FilterOptions>;
     isScrollReversed: boolean;
     dialogSize: number;
   }
@@ -74,14 +68,17 @@ export const BaseInfo: λApp = {
   },
   general: {
     server: 'http://localhost:8080',
-    username: 'admin',
     password: 'admin',
     ws_id: generateUUID(),
-    ingest: [],
-    user_id: -1,
+    plugins: [],
+    id: '',
+    time_expire: Infinity,
+    token: '',
     settings: {
       engine: (localStorage.getItem('settings.__engine') || 'default') as Engine.List,
-      color: (localStorage.getItem('settings.__color') || 'thermal') as Gradients
+      color: (localStorage.getItem('settings.__color') || 'thermal') as Gradients,
+      offset: 0,
+      focusField: ''
     },
     sessions: {}
   },
@@ -91,7 +88,7 @@ export const BaseInfo: λApp = {
     loaded: [],
     filter: '',
     cache: {
-      data: new Map<μ.File, λEvent[]>(),
+      data: new Map<μ.Source, λEvent[]>(),
       filters: {}
     },
     filtering_options: {},
@@ -102,9 +99,8 @@ export const BaseInfo: λApp = {
     indexes: [],
     operations: [],
     contexts: [],
-    plugins: [],
-    files: [],
-    events: new Map<μ.File, λEvent[]>(),
+    sources: [],
+    events: new Map<μ.Source, λEvent[]>(),
     filters: {},
     bucket: {
       total: 0,

@@ -3,41 +3,41 @@ import { Engine } from '@/class/Engine.dto';
 import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { enginesBase } from '@/dto/Engine.dto';
-import { λFile } from '@/dto/File.dto';
+import { λSource } from '@/dto/Operation.dto';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 
 interface TargetMenuProps {
-  files: λFile[];
+  sources: λSource[];
   inputRef: React.RefObject<HTMLInputElement>;
 }
 
-export function FilesMenu({ files, inputRef }: TargetMenuProps) {
+export function FilesMenu({ sources, inputRef }: TargetMenuProps) {
   const { Info, app } = useApplication();
 
-  if (!files.length) return null;
+  if (!sources.length) return null;
 
-  const removeFilters = (files: λFile[]) => {
-    files.forEach(Info.filters_remove);
+  const removeFilters = (sources: λSource[]) => {
+    sources.forEach(Info.filters_remove);
 
     setTimeout(() => {
       Info.refetch({
-        uuids: files.map(file => file.uuid)
+        ids: sources.map(source => source.id)
       });
     }, 300);
   }
 
-  const engineChangeHandler = (files: λFile[], engine: Engine.List) => Info.files_replace(files.map(file => ({ ...file, engine })));
+  const engineChangeHandler = (sources: λSource[], engine: Engine.List) => Info.files_replace(sources.map(source => ({ ...source, engine })));
 
   return (
     <ContextMenuContent data-state='open'>
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <ContextMenuLabel className={s.cm_title}>{files.length === 1 ? files[0].name : `Selected ${files.length} files`}</ContextMenuLabel>
+            <ContextMenuLabel className={s.cm_title}>{sources.length === 1 ? sources[0].name : `Selected ${sources.length} sources`}</ContextMenuLabel>
           </TooltipTrigger>
           <TooltipContent>
-            {files.length === 1 ? files[0].name : files.map(file => file.uuid).join('\n')}
+            {sources.length === 1 ? sources[0].name : sources.map(source => source.id).join('\n')}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -45,18 +45,18 @@ export function FilesMenu({ files, inputRef }: TargetMenuProps) {
       <ContextMenuSub>
         <ContextMenuSubTrigger img='Cpu'>Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
-        {enginesBase.map(i => <ContextMenuItem onClick={() => engineChangeHandler(files, i.plugin)} img={i.img}>{i.title}</ContextMenuItem>)}
+        {enginesBase.map(i => <ContextMenuItem onClick={() => engineChangeHandler(sources, i.plugin)} img={i.img}>{i.title}</ContextMenuItem>)}
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        {Filter.findMany(app, files) && <ContextMenuItem onClick={() => removeFilters(files)} img='FilterX'>Clear all filters for all selected files</ContextMenuItem>}
+        {Filter.findMany(app, sources) && <ContextMenuItem onClick={() => removeFilters(sources)} img='FilterX'>Clear all filters for all selected sources</ContextMenuItem>}
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Actions</ContextMenuLabel>
-        <ContextMenuItem onClick={() => Info.files_unselect(files)} img='EyeOff'>Hide</ContextMenuItem>
+        <ContextMenuItem onClick={() => Info.files_unselect(sources)} img='EyeOff'>Hide</ContextMenuItem>
         <ContextMenuSub>
         <ContextMenuSubTrigger img='Move'>Reorder</ContextMenuSubTrigger>
       </ContextMenuSub>

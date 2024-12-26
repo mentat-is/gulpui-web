@@ -286,7 +286,7 @@ img {
   -webkit-user-drag: none;
 }
 
-*:not(svg, path, g) {  
+*:not(svg, svg *) {  
   user-select: none;
   -webkit-user-select: none;
   color: var(--text-white);

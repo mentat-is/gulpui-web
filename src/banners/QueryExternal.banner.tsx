@@ -62,7 +62,7 @@ export function QueryExternalBanner() {
       username,
       password,
       operation_id: 0,
-      plugin: ''
+      source: ''
     });
     setLoading(false);
   }

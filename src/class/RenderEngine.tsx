@@ -1,6 +1,5 @@
-import { λFile } from "@/dto/File.dto";
 import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { Event, File, Info } from "./Info";
+import { Event, Info, Source } from "./Info";
 import { Color, stringToHexColor } from "@/ui/utils";
 import { format } from "date-fns";
 import { XY, XYBase } from "@/dto/XY.dto";
@@ -10,6 +9,7 @@ import { DefaultEngine } from "../engines/Default.engine";
 import { Scale, Engine } from "./Engine.dto";
 import { HeightEngine } from "../engines/Height.engine";
 import { GraphEngine } from "../engines/Graph.engine";
+import { λSource } from "@/dto/Operation.dto";
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
@@ -18,7 +18,7 @@ interface RenderEngineConstructor {
   scrollX: number;
   scrollY: number;
   getPixelPosition: (timestamp: number) => number,
-  shifted: λFile[]
+  shifted: λSource[]
 }
 
 export interface Status {
@@ -52,7 +52,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   default!: DefaultEngine;
   height!: HeightEngine;
   graph!: GraphEngine;
-  shifted: λFile[] = []
+  shifted: λSource[] = []
 
   constructor({ ctx, limits, info, getPixelPosition, scrollY, scrollX, shifted }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
@@ -101,30 +101,30 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   /**
    * Рисует линию разграничения снизу исходя из названия контекста
    */
-  public lines = (file: λFile) => {
-    const color = stringToHexColor(File.context(this.info.app, file).name);
-    const y = File.getHeight(this.info.app, file, this.scrollY);
+  public lines = (source: λSource) => {
+    const color = stringToHexColor(Source.context(this.info.app, source).name);
+    const y = Source.getHeight(this.info.app, source, this.scrollY);
 
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, y + 23, window.innerWidth, 1);
 
-    this.fill(color, y, !this.shifted.find(shiftedFile => shiftedFile.uuid === file.uuid));
+    this.fill(color, y, !this.shifted.find(shiftedFile => shiftedFile.id === source.id));
   }
 
   /**
    * Рисует линию как из метода `this.lines` но только вверху
    */
-  public primary = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY);
+  public primary = (source: λSource) => {
+    const y = Source.getHeight(this.info.app, source, this.scrollY);
 
-    this.ctx.fillStyle = stringToHexColor(File.context(this.info.app, file).name);
+    this.ctx.fillStyle = stringToHexColor(Source.context(this.info.app, source).name);
     this.ctx.fillRect(0, y - 25, window.innerWidth, 1);
   }
 
   /**
    * 
    * @param color `Color` - цвет заливки
-   * @param y `number` - позиция по середине `λFile`
+   * @param y `number` - позиция по середине `λSource`
    */
   public fill = (color: Color, y: number, isShifted: boolean) => {
     this.ctx.fillStyle = color + (isShifted ? 12 : 32 );
@@ -133,7 +133,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public links = () => {
     this.info.app.target.links.forEach(link => {
-      if (link.events.some(e => !File.uuid(this.info.app, e._uuid)?.selected)) return;
+      if (link.events.some(e => !Source.id(this.info.app, e.source_id)?.selected)) return;
 
       const { dots, center } = this.calcDots(link);
 
@@ -195,11 +195,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const dots: Dot[] = [];
 
     link.events.forEach(e => {
-      const index = File.selected(this.info.app).findIndex(f => f.uuid === e._uuid);
+      const index = Source.selected(this.info.app).findIndex(f => f.id === e.source_id);
 
-      const x = this.getPixelPosition(e.timestamp + (File.selected(this.info.app)[index]?.offset || 0));
+      const x = this.getPixelPosition(e.timestamp + (Source.selected(this.info.app)[index]?.settings.offset || 0));
       const y = (index * 48 + 20 - this.scrollY || 0);
-      const color = (link.data.color || stringToHexColor(link.events.map(e => e._id).toString()))
+      const color = (link.data.color || stringToHexColor(link.events.map(e => e.source_id).toString()))
 
       center.x += x;
       center.y += y;
@@ -218,41 +218,41 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return { dots, center }
   }
 
-  public locals = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY);
+  public locals = (source: λSource) => {
+    const y = Source.getHeight(this.info.app, source, this.scrollY);
 
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.offset) + 2, y - 24, 2, 48 - 1);
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.offset) - 2, y - 24, 2, 48 - 1);
+    this.ctx.fillRect(this.getPixelPosition(source.detailed.timestamp.max + source.settings.offset) + 2, y - 24, 2, 48 - 1);
+    this.ctx.fillRect(this.getPixelPosition(source.detailed.timestamp.min + source.settings.offset) - 2, y - 24, 2, 48 - 1);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.min) - 64, y + 4);
-    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.max) + 12, y + 4);
+    this.ctx.fillText(format(source.detailed.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(source.detailed.timestamp.min) - 64, y + 4);
+    this.ctx.fillText(format(source.detailed.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(source.detailed.timestamp.max) + 12, y + 4);
 
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#0372ef';
-    const events = Event.get(this.info.app, file.uuid).length.toString()
-    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
-    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
+    const events = Event.get(this.info.app, source.id).length.toString()
+    this.ctx.fillText(events, this.getPixelPosition(source.detailed.timestamp.max) + 12, y + 14);
+    this.ctx.fillText(events, this.getPixelPosition(source.detailed.timestamp.min) - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
-    this.ctx.fillText(file.doc_count.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
+    this.ctx.fillText(source.detailed.doc_count.toString(), this.getPixelPosition(source.detailed.timestamp.max) + 12, y - 6);
+    this.ctx.fillText(source.detailed.doc_count.toString(), this.getPixelPosition(source.detailed.timestamp.min) - 64, y - 6);
   }
 
-  public draw_info = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY) + 4;
+  public draw_info = (source: λSource) => {
+    const y = Source.getHeight(this.info.app, source, this.scrollY) + 4;
 
     this.ctx.font = `12px Arial`;
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.name, 10, y);
+    this.ctx.fillText(source.name, 10, y);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(`${file.doc_count.toString()} | ${File.context(this.info.app, file).name}`, 10, y - 14);
+    this.ctx.fillText(`${source.detailed.doc_count.toString()} | ${Source.context(this.info.app, source).name}`, 10, y - 14);
     
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(File.events(this.info.app, file).length.toString(), 10, y + 14);
+    this.ctx.fillText(Source.events(this.info.app, source).length.toString(), 10, y + 14);
   }
 
   public debug = (pos: XY, logs: string[]) => {
@@ -266,12 +266,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public target = () => {
     if (!this.info.app.timeline.target) return;
 
-    const file = File.uuid(this.info.app, this.info.app.timeline.target._uuid);
+    const source = Source.id(this.info.app, this.info.app.timeline.target.source_id);
 
-    if (!file) return;
+    if (!source) return;
 
     this.ctx.fillStyle = '#e8e8e8'
-    this.ctx.fillRect(0, File.selected(this.info.app).findIndex(f => f.uuid === file.uuid) * 48 + 23 - this.scrollY, window.innerWidth, 1)
-    this.ctx.fillRect(this.getPixelPosition(this.info.app.timeline.target.timestamp + file.offset), 0, 1, window.innerWidth)
+    this.ctx.fillRect(0, Source.selected(this.info.app).findIndex(f => f.id === source.id) * 48 + 23 - this.scrollY, window.innerWidth, 1)
+    this.ctx.fillRect(this.getPixelPosition(this.info.app.timeline.target.timestamp + source.settings.offset), 0, 1, window.innerWidth)
   }
 }

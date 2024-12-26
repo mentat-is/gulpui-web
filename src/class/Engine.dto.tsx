@@ -1,12 +1,12 @@
-import { λFile } from "@/dto/File.dto";
+import { λSource } from "@/dto/Operation.dto";
 import { RenderEngine } from "./RenderEngine";
 
 export namespace Engine {
   export interface Interface<T> {
-    render: (file: λFile, y: number, force?: boolean) => void;
-    map: Map<λFile['uuid'], T>;
-    get: (file: λFile) => T;
-    is: (file: λFile) => boolean;
+    render: (file: λSource, y: number, force?: boolean) => void;
+    map: Map<λSource['id'], T>;
+    get: (file: λSource) => T;
+    is: (file: λSource) => boolean;
   }
 
   export type Constructor = RenderEngine;

@@ -1,7 +1,7 @@
 import { μ } from "@/class/Info";
 
 export interface λGlyph {
-  id: number;
+  id: μ.Glyph;
   name: string;
   img: string;
 }

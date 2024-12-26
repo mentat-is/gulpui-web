@@ -21,13 +21,7 @@ interface NoteCreateRequestBodyEventProps {
 }
 
 export class NoteCreateRequestBodyEvent {
-  public static events = (events: Arrayed<λEvent>): NoteCreateRequestBodyEventProps[] => Parser.array(events).map(e => ({
-    id: e._id,
-    timestamp: e.timestamp,
-    operation_id: e.operation_id,
-    context: e.context,
-    src_file: e.file
-  }))
+  public static events = (events: Arrayed<λEvent>): NoteCreateRequestBodyEventProps[] => []
 }
 
 export class NoteCreateRequest {

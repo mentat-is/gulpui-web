@@ -1,33 +1,33 @@
-import { λFile } from "@/dto/File.dto";
 import { End, Engine, Hardcode, Length, MaxHeight, Scale, Start, StartEnd } from "../class/Engine.dto";
 import { Dot, RenderEngine } from "../class/RenderEngine";
-import { throwableByTimestamp, λColor } from "@/ui/utils";
+import { Gradients, throwableByTimestamp, λColor } from "@/ui/utils";
 import { Event } from "../class/Info";
 import { HeightEngine } from "./Height.engine";
+import { λSource } from "@/dto/Operation.dto";
 
 type Target = typeof HeightEngine.target & MaxHeight & Length & Scale & StartEnd;
 
 export class GraphEngine implements Engine.Interface<Target> {
   private renderer: RenderEngine;
-  map = new Map<λFile['uuid'], Target>();
+  map = new Map<λSource['id'], Target>();
 
   constructor(renderer: Engine.Constructor) {
     this.renderer = renderer;
   }
 
-  public render(file: λFile, _y: number) {
-    // const map = this.is(file)
-    //   ? this.renderer.height.map.get(file.uuid)
-    //   : this.get(file);
+  public render(source: λSource, _y: number) {
+    // const map = this.is(source)
+    //   ? this.renderer.height.map.get(source.id)
+    //   : this.get(source);
 
-    const map = this.map.get(file.uuid);
+    const map = this.map.get(source.id);
   
     const graphs = (
       map &&
       map[Scale] === this.renderer.info.app.timeline.scale && 
       map[Start] > this.renderer.limits.max && 
       map[End] > this.renderer.limits.min
-    ) ? this.map.get(file.uuid)! : this.get(file);
+    ) ? this.map.get(source.id)! : this.get(source);
 
     const max = graphs[MaxHeight];
   
@@ -36,7 +36,7 @@ export class GraphEngine implements Engine.Interface<Target> {
     for (const [timestamp, height] of graphs) {
       const x = this.renderer.getPixelPosition(timestamp);
       const y = _y + 47 - Math.floor((height / max) * 47);
-      const color = λColor.gradient(file.color, height, { min: 0, max });
+      const color = λColor.gradient(source.color as Gradients, height, { min: 0, max });
 
       this.renderer.ctx.font = `8px Arial`;
       this.renderer.ctx.fillStyle = color;
@@ -53,10 +53,10 @@ export class GraphEngine implements Engine.Interface<Target> {
     };
   }
   
-  get(file: λFile): Target {
+  get(source: λSource): Target {
     const result = new Map() as Target;
 
-    for (const [timestamp, height] of Array.from(this.renderer.height.get(file).entries())) {
+    for (const [timestamp, height] of Array.from(this.renderer.height.get(source).entries())) {
       if (throwableByTimestamp(timestamp, {
         min: this.renderer.limits.min - 3000,
         max: this.renderer.limits.max + 3000,
@@ -92,14 +92,14 @@ export class GraphEngine implements Engine.Interface<Target> {
     result[Start] = (Array.from(result)[0]?.[0] || 0) as Hardcode.Timestamp;
     result[End] = (Array.from(result).pop()?.[0] || 0) as Hardcode.Timestamp;
 
-    this.map.set(file.uuid, result);
+    this.map.set(source.id, result);
 
     return result;
   };
   
-  is(file: λFile) {
-    const length = this.map.get(file.uuid)?.[Length]
+  is(source: λSource) {
+    const length = this.map.get(source.id)?.[Length]
     
-    return Boolean(length && length >= Event.get(this.renderer.info.app, file.uuid).length);
+    return Boolean(length && length >= Event.get(this.renderer.info.app, source.id).length);
   }
 }
