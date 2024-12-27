@@ -93,9 +93,17 @@ export function SelectFilesBanner() {
   }
 
   function FileComponent(file: λFile) {
+    const handleFileCheck = (value: boolean) => {
+      const newFiles = value
+        ? File.select(app, file)
+        : File.unselect(app, file)
+
+      Info.files_select(newFiles)
+    }
+
     return (
       <div className={s.pluginHeading} key={file.id}>
-        <Checkbox id={file.name} checked={file.selected} />
+        <Checkbox id={file.name} checked={file.selected} onCheckedChange={handleFileCheck} />
         <Label htmlFor={file.name}>{File.wellFormatedName(file)}</Label>
         <hr style={{ flex: 1 }} />
         <Badge value={File.pluginName(file)} />
