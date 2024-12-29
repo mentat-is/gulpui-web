@@ -1,12 +1,12 @@
-import { useApplication } from "@/context/Application.context";
-import { λEvent } from "@/dto/ChunkEvent.dto";
-import { Button, Stack } from "@impactium/components";
+import { useApplication } from '@/context/Application.context';
+import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Button, Stack } from '@impactium/components';
 import s from './navigation.module.css';
-import { useEffect, useState } from "react";
-import { Event, File } from "@/class/Info";
-import { SymmetricSvg } from "@/ui/SymmetricSvg";
-import { DisplayEventDialog } from "../Event.dialog";
-import { cn } from "@/ui/utils";
+import { useEffect, useState } from 'react';
+import { Event, File } from '@/class/Info';
+import { SymmetricSvg } from '@/ui/SymmetricSvg';
+import { DisplayEventDialog } from '../Event.dialog';
+import { cn } from '@/ui/utils';
 
 export namespace Navigation {
   export interface Props {

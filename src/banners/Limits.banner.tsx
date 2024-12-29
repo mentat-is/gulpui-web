@@ -1,7 +1,7 @@
 import s from './styles/LimitsBanner.module.css'
-import { useCallback, useState } from "react";
-import { Banner } from "../ui/Banner";
-import { Button } from '../ui/Button';
+import { useState } from 'react';
+import { Banner } from '../ui/Banner';
+import { Button } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
 import { eachDayOfInterval, eachMonthOfInterval, eachYearOfInterval, format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
@@ -73,7 +73,7 @@ export function DateSelection({ initialDate, onDateChange, manual }: { initialDa
       type='text'
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}
-      onKeyDown={(e) => {
+    onKeyDown={(e) => {
         if (e.key === 'Enter') {
           e.currentTarget.blur();
         }
@@ -143,11 +143,11 @@ export function DateSelection({ initialDate, onDateChange, manual }: { initialDa
 
       {/* Month select */}
       <Select onValueChange={(value) => handleMonthChange(parseInt(value))} defaultValue={selectedDate.getMonth().toString()}>
-        <SelectTrigger>{format(selectedDate, "MMMM") || "Select Month"}</SelectTrigger>
+        <SelectTrigger>{format(selectedDate, 'MMMM') || 'Select Month'}</SelectTrigger>
         <SelectContent>
           {months.map((month) => (
             <SelectItem key={month.getMonth()} value={month.getMonth().toString()}>
-              {format(month, "MMMM")}
+              {format(month, 'MMMM')}
             </SelectItem>
           ))}
         </SelectContent>
@@ -155,7 +155,7 @@ export function DateSelection({ initialDate, onDateChange, manual }: { initialDa
 
       {/* Day select */}
       <Select onValueChange={(value) => handleDayChange(parseInt(value))} defaultValue={selectedDate.getDate().toString()}>
-        <SelectTrigger>{selectedDate.getDate() || "Select Day"}</SelectTrigger>
+        <SelectTrigger>{selectedDate.getDate() || 'Select Day'}</SelectTrigger>
         <SelectContent>
           {days.map((day) => (
             <SelectItem key={day.getDate()} value={day.getDate().toString()}>

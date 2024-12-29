@@ -1,5 +1,5 @@
-import { Link as LinkClass, File } from "@/class/Info";
-import { useApplication } from "@/context/Application.context";
+import { Link as LinkClass, File } from '@/class/Info';
+import { useApplication } from '@/context/Application.context';
 import { Link } from '@/ui/Link';
 import { Fragment } from 'react';
 

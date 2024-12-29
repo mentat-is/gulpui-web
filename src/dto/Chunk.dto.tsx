@@ -1,5 +1,5 @@
-import { ChunkType_6 } from "./chunk/6.dto";
-import { λEvent, RawChunkEvent } from "./ChunkEvent.dto";
+import { ChunkType_6 } from './chunk/6.dto';
+import { λEvent, RawChunkEvent } from './ChunkEvent.dto';
 
 export enum λChunk {
   INGESTION_STATS_CREATE = 1,

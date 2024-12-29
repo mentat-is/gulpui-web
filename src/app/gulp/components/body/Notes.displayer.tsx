@@ -1,6 +1,6 @@
-import { Note as NoteClass, File } from "@/class/Info";
-import { useApplication } from "@/context/Application.context";
-import { Note } from "@/ui/Note";
+import { Note as NoteClass, File } from '@/class/Info';
+import { useApplication } from '@/context/Application.context';
+import { Note } from '@/ui/Note';
 import { Fragment } from 'react';
 
 

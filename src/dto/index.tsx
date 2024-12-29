@@ -1,6 +1,5 @@
 export type { User } from './User.dto'
 export type { Login } from './Login.dto';
-export type { Children } from './Children.dto';
 export type { λApp } from './App.dto';
 export { BaseInfo } from './App.dto'
 export type { ElasticGetMappingUnit } from './ElasticGetMapping.dto'

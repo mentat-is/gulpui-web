@@ -1,5 +1,5 @@
-import { JsonString } from "@/ui/utils";
-import { UnknownRawChunk } from "./Chunk.dto";
+import { JsonString } from '@/ui/utils';
+import { UnknownRawChunk } from './Chunk.dto';
 
 
 export interface AppSocketResponse extends MessageEvent {

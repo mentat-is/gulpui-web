@@ -1,24 +1,22 @@
 import { ReactNode, useEffect } from 'react';
 import { useApplication } from '../context/Application.context';
-import { Children } from '../dto';
 import s from './styles/Banner.module.css';
-import { Button } from './Button';
 import { cn } from './utils';
-import { Skeleton } from './Skeleton';
-import { Cell, Stack } from '@impactium/components';
+import { Cell, Stack, Skeleton, Button } from '@impactium/components';
 
-type BannerProps = Children & {
-  className?: string | string[];
-  title?: string;
-  subtitle?: ReactNode | null;
-  done?: ReactNode | null;
-  fixed?: boolean;
-  loading?: boolean;
-  onClose?: () => void
-  option?: ReactNode | null;
+export namespace Banner {
+  export interface Props extends Stack.Props {
+    title?: string;
+    subtitle?: ReactNode | null;
+    done?: ReactNode | null;
+    fixed?: boolean;
+    loading?: boolean;
+    onClose?: () => void
+    option?: ReactNode | null;
+  }
 }
 
-export function Banner({ children, className, title, fixed, option, loading, done, subtitle = null, onClose }: BannerProps) {
+export function Banner({ children, className, title, fixed, option, loading, done, subtitle = null, onClose }: Banner.Props) {
   const { destroyBanner } = useApplication();
 
   const close = () => {

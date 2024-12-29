@@ -1,8 +1,8 @@
-import { SymmetricSvg } from "@/ui/SymmetricSvg";
+import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import s from './styles/Combination.module.css';
-import { HTMLAttributes } from "react";
-import { cn } from "@/ui/utils";
-import { λEvent } from "@/dto/ChunkEvent.dto";
+import { HTMLAttributes } from 'react';
+import { cn } from '@/ui/utils';
+import { λEvent } from '@/dto/ChunkEvent.dto';
 
 interface EventCombinationProps extends HTMLAttributes<HTMLDivElement> {
   event: λEvent;

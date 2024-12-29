@@ -1,5 +1,5 @@
 import { GlyphMap } from '@/dto/Glyph.dto';
-import { Button } from '@/ui/Button';
+import { Button } from '@impactium/components';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import s from './styles/Glyphs.popover.module.css';
 import { toast } from 'sonner';

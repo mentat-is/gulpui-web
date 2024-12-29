@@ -1,5 +1,5 @@
-import { format } from "date-fns";
-import { HTMLAttributes, useMemo } from "react";
+import { format } from 'date-fns';
+import { HTMLAttributes, useMemo } from 'react';
 import { cn } from '@/ui/utils';
 import s from './styles/timestamp.module.css';
 

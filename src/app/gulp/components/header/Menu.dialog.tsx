@@ -1,4 +1,4 @@
-import { Button } from '@/ui/Button';
+import { Button } from '@impactium/components';
 import s from '../../Gulp.module.css';
 import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';

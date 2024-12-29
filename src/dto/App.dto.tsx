@@ -1,17 +1,17 @@
-import { Login, λOperation } from ".";
-import { Bucket } from "./QueryMaxMin.dto";
-import { λEvent, DetailedChunkEvent } from "./ChunkEvent.dto";
-import { λIndex } from "./Index.dto";
-import { λPlugin } from "./Plugin.dto";
-import { λNote } from "./Note.dto";
-import { λLink } from "./Link.dto";
-import { generateUUID, Gradients, GradientsMap } from "@/ui/utils";
-import { FilterOptions, λFilter, μ } from "@/class/Info";
-import { λGlyph } from "./λGlyph.dto";
-import { Engine } from "@/class/Engine.dto";
-import { RenderEngine } from "@/class/RenderEngine";
-import { XY } from "./XY.dto";
-import { λContext, λFile } from "./Operation.dto";
+import { Login, λOperation } from '.';
+import { Bucket } from './QueryMaxMin.dto';
+import { λEvent, DetailedChunkEvent } from './ChunkEvent.dto';
+import { λIndex } from './Index.dto';
+import { λPlugin } from './Plugin.dto';
+import { λNote } from './Note.dto';
+import { λLink } from './Link.dto';
+import { generateUUID, Gradients, GradientsMap } from '@/ui/utils';
+import { FilterOptions, λFilter, μ } from '@/class/Info';
+import { λGlyph } from './λGlyph.dto';
+import { Engine } from '@/class/Engine.dto';
+import { RenderEngine } from '@/class/RenderEngine';
+import { XY } from './XY.dto';
+import { λContext, λFile } from './Operation.dto';
 
 export interface TimelineTarget {
   event: λEvent, 

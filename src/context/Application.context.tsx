@@ -1,10 +1,10 @@
-import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from "react";
+import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
 import { λApp, BaseInfo } from '@/dto';
-import { AppSocket } from "@/class/AppSocket";
-import { Info } from "@/class/Info";
+import { AppSocket } from '@/class/AppSocket';
+import { Info } from '@/class/Info';
 import { Console } from '@impactium/console';
-import { Logger } from "@/dto/Logger.class";
-import { DisplayEventDialog } from "@/dialogs/Event.dialog";
+import { Logger } from '@/dto/Logger.class';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import '@/class/API';
 
 export class ApplicationError extends Error {

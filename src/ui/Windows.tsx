@@ -1,15 +1,15 @@
-import { μ } from "@/class/Info";
-import { Button, Stack } from "@impactium/components";
-import React, { useState, createContext, useContext, useEffect, useCallback, memo } from "react";
-import { cn, generateUUID } from "./utils";
-import { Timeline } from "@/app/gulp/components/body/Timeline";
+import { μ } from '@/class/Info';
+import { Button, Stack } from '@impactium/components';
+import React, { useState, createContext, useContext, useEffect, useCallback, memo } from 'react';
+import { cn, generateUUID } from './utils';
+import { Timeline } from '@/app/gulp/components/body/Timeline';
 import s from './styles/Windows.module.css';
-import { Icon } from "@impactium/icons";
-import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
-import { UploadBanner } from "@/banners/Upload.banner";
-import { useApplication } from "@/context/Application.context";
-import { Loading } from "@impactium/components";
-import { MenuDialog } from "@/app/gulp/components/header/Menu.dialog";
+import { Icon } from '@impactium/icons';
+import { Popover, PopoverContent, PopoverTrigger } from './Popover';
+import { UploadBanner } from '@/banners/Upload.banner';
+import { useApplication } from '@/context/Application.context';
+import { Loading } from '@impactium/components';
+import { MenuDialog } from '@/app/gulp/components/header/Menu.dialog';
 
 export namespace Windows {
   export interface Props {

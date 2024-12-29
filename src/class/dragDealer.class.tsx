@@ -1,5 +1,5 @@
-import React from "react";
-import { Info } from "./Info";
+import React from 'react';
+import { Info } from './Info';
 
 interface DragDealerProps {
   info: DragDealer['info'],

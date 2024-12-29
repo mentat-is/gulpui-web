@@ -1,7 +1,7 @@
 import { HTMLAttributes, useEffect } from 'react';
 import s from './styles/Dialog.module.css';
 import { cn } from './utils';
-import { Button } from './Button';
+import { Button } from '@impactium/components';
 import { useApplication } from '@/context/Application.context';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizable';
 import { Loading } from './Loading';
@@ -32,7 +32,7 @@ export function Dialog({ className, callback, icon, description, title, loading,
   }, [])
 
   return (
-    <ResizablePanelGroup className={s.resize} direction="horizontal">
+    <ResizablePanelGroup className={s.resize} direction='horizontal'>
       <ResizablePanel className={s.not} />
       <ResizableHandle />
       <ResizablePanel className={s.main} maxSize={50} minSize={20} defaultSize={app.timeline.dialogSize} onResize={Info.setDialogSize}>

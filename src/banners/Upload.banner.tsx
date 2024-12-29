@@ -1,23 +1,23 @@
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Input } from "@/ui/Input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Separator } from "@/ui/Separator";
-import { ChangeEvent, useEffect, useState } from "react";
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Input } from '@/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
+import { Separator } from '@/ui/Separator';
+import { ChangeEvent, useEffect, useState } from 'react';
 import s from './styles/UploadBanner.module.css';
-import { Switch } from "@/ui/Switch";
-import { Operation } from "@/class/Info";
-import { Card } from "@/ui/Card";
-import { cn, formatBytes } from "@/ui/utils";
-import { Progress } from "@/ui/Progress";
-import { SelectFilesBanner } from "./SelectFiles.banner";
-import { λPlugin } from "@/dto/Plugin.dto";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
-import { Logger } from "@/dto/Logger.class";
-import { QueryExternalBanner } from "./QueryExternal.banner";
-import { MaybeArray } from "@impactium/types";
-import { Stack, Button } from "@impactium/components";
-import { Icon } from "@impactium/icons";
+import { Switch } from '@/ui/Switch';
+import { Operation } from '@/class/Info';
+import { Card } from '@/ui/Card';
+import { cn, formatBytes } from '@/ui/utils';
+import { Progress } from '@/ui/Progress';
+import { SelectFilesBanner } from './SelectFiles.banner';
+import { λPlugin } from '@/dto/Plugin.dto';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
+import { Logger } from '@/dto/Logger.class';
+import { QueryExternalBanner } from './QueryExternal.banner';
+import { MaybeArray } from '@impactium/types';
+import { Stack, Button } from '@impactium/components';
+import { Icon } from '@impactium/icons';
 
 interface λIngestFileSettings {
   // plugin name
@@ -218,7 +218,7 @@ Progress: ${progress}%`, UploadBanner.name);
     return (  
       <Select onValueChange={plugin => setPlugin(plugin, file.name)} value={settings[file.name].plugin}>
         <SelectTrigger>
-          <SelectValue defaultValue={settings[file.name].plugin} placeholder="Choose filename">{settings[file.name].plugin}</SelectValue>
+          <SelectValue defaultValue={settings[file.name].plugin} placeholder='Choose filename'>{settings[file.name].plugin}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {app.general.plugins.map(i => (
@@ -236,7 +236,7 @@ Progress: ${progress}%`, UploadBanner.name);
     // if (!mappings.length) return (
     //   <Select disabled>
     //     <SelectTrigger>
-    //       <SelectValue defaultValue={'no_mappings'} placeholder="No mappings available for this plugin" />
+    //       <SelectValue defaultValue={'no_mappings'} placeholder='No mappings available for this plugin' />
     //     </SelectTrigger>
     //   </Select>
     // );
@@ -246,7 +246,7 @@ Progress: ${progress}%`, UploadBanner.name);
     // return (
     //   <Select disabled={!settings[file.name].plugin} onValueChange={mapping => setMapping(mapping, file.name)} value={settings[file.name].mapping}>
     //     <SelectTrigger>
-    //       <SelectValue defaultValue={mappings[0].filename} placeholder="Choose mapping" />
+    //       <SelectValue defaultValue={mappings[0].filename} placeholder='Choose mapping' />
     //     </SelectTrigger>
     //     <SelectContent>
     //       {mappings.map(m => (
@@ -289,7 +289,7 @@ Progress: ${progress}%`, UploadBanner.name);
     return (
       <Select disabled={!fileSettings.mapping} onValueChange={mapping => setMethod(mapping, file.name)} value={fileSettings.method}>
         <SelectTrigger>
-          <SelectValue defaultValue={fileSettings.method} placeholder="Choose method" />
+          <SelectValue defaultValue={fileSettings.method} placeholder='Choose method' />
         </SelectTrigger>
         <SelectContent>
           {null}

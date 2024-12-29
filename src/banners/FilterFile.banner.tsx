@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/ui/Input';
 import { useEffect, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
-import { Button } from '@/ui/Button';
+import { Button } from '@impactium/components';
 import { Badge } from '@/ui/Badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { format } from 'date-fns';
@@ -119,7 +119,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       <div className={s.top}>
         <Select onValueChange={setKey} value={filter?.key}>
           <SelectTrigger>
-            <SelectValue placeholder="Choose filter" />
+            <SelectValue placeholder='Choose filter' />
           </SelectTrigger>
           <SelectContent>
             {Object.keys(app.timeline.filtering_options[file.id] || {}).map((key, i) => (
@@ -145,7 +145,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           <Popover>
             <PopoverTrigger asChild>
               <Button variant='outline' className={s.button} img='CalendarPlus2'>
-                {format(typeof filter?.value === 'number' ? filter?.value : Date.now(), "LLL dd, y")}
+                {format(typeof filter?.value === 'number' ? filter?.value : Date.now(), 'LLL dd, y')}
               </Button>
             </PopoverTrigger>
             <PopoverContent>
@@ -170,7 +170,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
               <div className={s.filter}>
                 <code>{filter.key}</code>
                 <Badge value={filter.type} />
-                <p>{typeof filter.value !== 'string' ? format(filter.value, "LLL dd, y") : filter.value}</p>
+                <p>{typeof filter.value !== 'string' ? format(filter.value, 'LLL dd, y') : filter.value}</p>
                 <Button variant='destructive' img='Trash2' onClick={() => removeFilter(filter)} />
               </div>
               {i !== filters.length - 1 && (

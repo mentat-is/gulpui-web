@@ -1,8 +1,8 @@
-import { λLink } from "@/dto/Link.dto";
-import { SymmetricSvg } from "@/ui/SymmetricSvg";
+import { λLink } from '@/dto/Link.dto';
+import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import s from './styles/Combination.module.css';
-import { HTMLAttributes } from "react";
-import { cn } from "@/ui/utils";
+import { HTMLAttributes } from 'react';
+import { cn } from '@/ui/utils';
 
 interface LinkCombinationProps extends HTMLAttributes<HTMLDivElement> {
   link: λLink;

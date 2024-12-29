@@ -1,9 +1,9 @@
-import { End, Engine, Hardcode, Length, MaxHeight, Scale, Start, StartEnd } from "../class/Engine.dto";
-import { Dot, RenderEngine } from "../class/RenderEngine";
-import { Gradients, throwableByTimestamp, λColor } from "@/ui/utils";
-import { Event } from "../class/Info";
-import { HeightEngine } from "./Height.engine";
-import { λFile } from "@/dto/Operation.dto";
+import { End, Engine, Hardcode, Length, MaxHeight, Scale, Start, StartEnd } from '../class/Engine.dto';
+import { Dot, RenderEngine } from '../class/RenderEngine';
+import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils';
+import { Event } from '../class/Info';
+import { HeightEngine } from './Height.engine';
+import { λFile } from '@/dto/Operation.dto';
 
 type Target = typeof HeightEngine.target & MaxHeight & Length & Scale & StartEnd;
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import * as SwitchPrimitives from "@radix-ui/react-switch"
+import * as SwitchPrimitives from '@radix-ui/react-switch'
 import s from './styles/Switch.module.css';
 import { cn } from './utils';
 

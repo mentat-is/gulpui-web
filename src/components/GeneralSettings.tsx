@@ -1,15 +1,15 @@
-import { Engine } from "@/class/Engine.dto";
-import { useApplication } from "@/context/Application.context";
-import { enginesBase } from "@/dto/Engine.dto";
-import { Button } from "@/ui/Button";
-import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Stack } from "@impactium/components";
-import { Switch } from "@/ui/Switch";
-import { Gradients, GradientsMap } from "@/ui/utils";
-import { Icon } from "@impactium/icons";
-import { CSSProperties, useEffect } from "react";
+import { Engine } from '@/class/Engine.dto';
+import { useApplication } from '@/context/Application.context';
+import { enginesBase } from '@/dto/Engine.dto';
+import { Button } from '@impactium/components';
+import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
+import { Stack } from '@impactium/components';
+import { Switch } from '@/ui/Switch';
+import { Gradients, GradientsMap } from '@/ui/utils';
+import { Icon } from '@impactium/icons';
+import { CSSProperties, useEffect } from 'react';
 import s from './styles/GeneralSettings.module.css'
 
 export function GeneralSettings() {
@@ -37,7 +37,7 @@ export function GeneralSettings() {
             <span style={fontStyle}>Renderer by default:</span>
             <Select onValueChange={(v: Engine.List) => Info.setDefaultEngine(v)} value={app.general.settings.engine}>
               <SelectTrigger>
-                <SelectValue placeholder="Choose renderer" />
+                <SelectValue placeholder='Choose renderer' />
               </SelectTrigger>
               <SelectContent>
                 {enginesBase.map(i => <SelectItem key={i.title} value={i.plugin}><Icon name={i.img} />{i.title}</SelectItem>)}

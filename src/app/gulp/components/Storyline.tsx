@@ -1,14 +1,14 @@
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
-import { cn } from "@/ui/utils";
-import { Stack } from "@impactium/components";
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@impactium/components';
+import { cn } from '@/ui/utils';
+import { Stack } from '@impactium/components';
 import s from './storyline.module.css';
-import { useCallback, useEffect, useRef } from "react";
-import { Timestamp } from "@/ui/timestamp";
-import { Operation, Note as NoteEntity } from "@/class/Info";
-import { Note } from "@/ui/Note";
-import { λNote } from "@/dto/Note.dto";
+import { useCallback, useEffect, useRef } from 'react';
+import { Timestamp } from '@/ui/timestamp';
+import { Operation, Note as NoteEntity } from '@/class/Info';
+import { Note } from '@/ui/Note';
+import { λNote } from '@/dto/Note.dto';
 
 export function StorylineBanner() {
   const { app, Info } = useApplication();

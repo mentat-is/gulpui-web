@@ -10,8 +10,8 @@ export const useMagnifier = (canvas_ref: React.RefObject<HTMLCanvasElement>, dep
     const magnifier = magnifier_ref.current;
     if (!magnifier || !canvas) return;
  
-    const ctx = canvas.getContext("2d");
-    const magnifierCtx = magnifier.getContext("2d");
+    const ctx = canvas.getContext('2d');
+    const magnifierCtx = magnifier.getContext('2d');
 
     if (ctx && magnifierCtx) {
       magnifierCtx.clearRect(0, 0, magnifier.width, magnifier.height);

@@ -1,6 +1,6 @@
-import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { getDateFormat } from "@/ui/utils";
-import { addMilliseconds, differenceInMilliseconds, formatDate } from "date-fns";
+import { MinMax } from '@/dto/QueryMaxMin.dto';
+import { getDateFormat } from '@/ui/utils';
+import { addMilliseconds, differenceInMilliseconds, formatDate } from 'date-fns';
 
 interface RulerDrawerConstructor {
   ctx: CanvasRenderingContext2D;
@@ -132,7 +132,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath();
     this.ctx.moveTo(0, 25);
     this.ctx.lineTo(this.ctx.canvas.width, 25);
-    this.ctx.strokeStyle = "#ffffff25";
+    this.ctx.strokeStyle = '#ffffff25';
     this.ctx.stroke();
   }
 
@@ -142,7 +142,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath();
     this.ctx.moveTo(props.position, 0);
     this.ctx.lineTo(props.position, this.ctx.canvas.height);
-    this.ctx.strokeStyle = "#ffffff12";
+    this.ctx.strokeStyle = '#ffffff12';
     this.ctx.stroke();
   }
 
@@ -158,11 +158,11 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.textRendering = 'optimizeLegibility';
     const timeUnit = props.format || 'MMM yyyy';
     const label = formatDate(props.timestamp, timeUnit);
-    this.ctx.font = "10px Arial";
-    this.ctx.fillStyle = "#ffffff";
+    this.ctx.font = '10px Arial';
+    this.ctx.fillStyle = '#ffffff';
     this.ctx.textAlign = 'center';
     this.ctx.fillText(label, props.position, 14);
-    this.ctx.fillStyle = "#e8e8e880";
+    this.ctx.fillStyle = '#e8e8e880';
     this.ctx.fillText(`${props.value} ${props.unit}`, this.getPixelPosition(props.timestamp + props.step / 2), 14);
   }
 }

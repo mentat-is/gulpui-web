@@ -1,25 +1,25 @@
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
-import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
-import { ChangeEvent, useState } from "react";
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@impactium/components';
+import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color';
+import { ChangeEvent, useState } from 'react';
 import s from './styles/SettingsFileBanner.module.css'
-import { FilterFileBanner } from "./FilterFile.banner";
-import { Card } from "@/ui/Card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Gradients, GradientsMap } from "@/ui/utils";
-import { Input } from "@/ui/Input";
-import { Separator } from "@/ui/Separator";
+import { FilterFileBanner } from './FilterFile.banner';
+import { Card } from '@/ui/Card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
+import { Gradients, GradientsMap } from '@/ui/utils';
+import { Input } from '@/ui/Input';
+import { Separator } from '@/ui/Separator';
 import { enginesBase } from '@/dto/Engine.dto';
-import { formatDuration, intervalToDuration } from "date-fns";
-import { Icon } from "@impactium/icons";
-import { Context, Event } from "@/class/Info";
-import { Logger } from "@/dto/Logger.class";
-import { Engine } from "@/class/Engine.dto";
-import { Stack } from "@impactium/components";
-import { λEvent } from "@/dto/ChunkEvent.dto";
-import { Toggle } from "@/ui/Toggle";
-import { λFile } from "@/dto/Operation.dto";
+import { formatDuration, intervalToDuration } from 'date-fns';
+import { Icon } from '@impactium/icons';
+import { Context, Event } from '@/class/Info';
+import { Logger } from '@/dto/Logger.class';
+import { Engine } from '@/class/Engine.dto';
+import { Stack } from '@impactium/components';
+import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Toggle } from '@/ui/Toggle';
+import { λFile } from '@/dto/Operation.dto';
 
 interface SettingsFileBannerProps {
   file: λFile;
@@ -84,7 +84,7 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
         <p className={s.text}>Renderer:</p>
         <Select onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
           <SelectTrigger className={s.trigger}>
-            <SelectValue placeholder="Choose renderer" />
+            <SelectValue placeholder='Choose renderer' />
           </SelectTrigger>
           <SelectContent>
             {enginesBase.map(i => <SelectItem value={i.plugin}><Icon name={i.img} />{i.title}</SelectItem>)}
@@ -107,7 +107,7 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
             ? <Input placeholder='Render engine target key' />
             : <Select onValueChange={(field: keyof λEvent) => setKey(field)}>
                 <SelectTrigger className={s.trigger} value={engine}>
-                  <SelectValue placeholder="event.code" />
+                  <SelectValue placeholder='event.code' />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.keys(Event.get(app, file.id)[0] || {}).map(key => <SelectItem value={key}>{key}</SelectItem>)}

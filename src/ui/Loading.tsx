@@ -1,4 +1,4 @@
-import { Icon } from "@impactium/icons";
+import { Icon } from '@impactium/icons';
 import s from './styles/Button.module.css';
 
 interface LoadingProps {

@@ -1,8 +1,8 @@
-import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
+import React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from "./utils";
-import styles from "./styles/Badge.module.css";
+import { cn } from './utils';
+import styles from './styles/Badge.module.css';
 
 const badgeVariants = cva(styles.badge, {
   variants: {
@@ -14,7 +14,7 @@ const badgeVariants = cva(styles.badge, {
     },
   },
   defaultVariants: {
-    variant: "default",
+    variant: 'default',
   },
 });
 

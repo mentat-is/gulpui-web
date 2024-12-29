@@ -1,9 +1,9 @@
-import React from "react"
+import React from 'react'
 import s from './styles/Input.module.css' 
-import { cn } from "./utils"
-import { cva, type VariantProps } from "class-variance-authority"; 
-import { Skeleton } from "./Skeleton";
-import { Icon } from "@impactium/icons";
+import { cn } from './utils'
+import { cva, type VariantProps } from 'class-variance-authority'; 
+import { Icon } from '@impactium/icons';
+import { Skeleton } from '@impactium/components';
 
 const inputVariants = cva(s.button, {
   variants: {
@@ -17,8 +17,8 @@ const inputVariants = cva(s.button, {
     },
   },
   defaultVariants: {
-    variant: "default",
-    size: "default",
+    variant: 'default',
+    size: 'default',
   },
 });
 
@@ -40,14 +40,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     );
 
     return img || (type === 'file' && img !== null) ? (
-      <Skeleton enable={skeleton}>
+      <Skeleton show={skeleton}>
         <div className={classes}>
           <Icon variant='dimmed' name={img ?? 'Upload'} />
           <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
         </div>
       </Skeleton>
     ) : (
-      <Skeleton enable={skeleton}>
+      <Skeleton show={skeleton}>
         <input
           className={classes}
           type={variant === 'color' ? 'color' : type}
@@ -58,6 +58,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     )
   }
 )
-Input.displayName = "Input"
+Input.displayName = 'Input'
 
 export { Input }

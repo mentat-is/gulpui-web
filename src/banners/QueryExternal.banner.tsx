@@ -1,14 +1,14 @@
-import { Pattern } from "@/class/Info";
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
-import { Card } from "@/ui/Card";
-import { Input } from "@/ui/Input";
-import { Label } from "@/ui/Label";
-import { Separator } from "@/ui/Separator";
-import { Stack } from "@impactium/components";
-import { Toggle } from "@/ui/Toggle";
-import { useEffect, useReducer, useState } from "react";
+import { Pattern } from '@/class/Info';
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@impactium/components';
+import { Card } from '@/ui/Card';
+import { Input } from '@/ui/Input';
+import { Label } from '@/ui/Label';
+import { Separator } from '@/ui/Separator';
+import { Stack } from '@impactium/components';
+import { Toggle } from '@/ui/Toggle';
+import { useEffect, useReducer, useState } from 'react';
 
 export function QueryExternalBanner() {
   const { Info } = useApplication();

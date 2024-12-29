@@ -1,21 +1,17 @@
-import { useApplication } from "@/context/Application.context";
-import { useLanguage } from "@/context/Language.context";
-import { Banner } from "@/ui/Banner";
-import { Checkbox } from "@/ui/Checkbox";
+import { useApplication } from '@/context/Application.context';
+import { useLanguage } from '@/context/Language.context';
+import { Banner } from '@/ui/Banner';
+import { Checkbox } from '@/ui/Checkbox';
 import s from './styles/SelectFilesBanner.module.css';
-import { Badge } from "@/ui/Badge";
-import { Label } from "@/ui/Label";
-import { CheckedState } from "@radix-ui/react-checkbox";
-import { Button } from "@/ui/Button";
-import { Context, Operation, Event, File } from "@/class/Info";
-import { Fragment, useCallback, useMemo, useState } from "react";
-import { Input } from "@/ui/Input";
-import { LimitsBanner } from "./Limits.banner";
-import { UploadBanner } from "./Upload.banner";
-import { Logger } from "@/dto/Logger.class";
-import { Skeleton } from "@/ui/Skeleton";
-import { UUID } from "crypto";
-import { λContext, λFile } from "@/dto/Operation.dto";
+import { Badge } from '@/ui/Badge';
+import { Label } from '@/ui/Label';
+import { Button, Skeleton } from '@impactium/components';
+import { Context, Operation, Event, File } from '@/class/Info';
+import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Input } from '@/ui/Input';
+import { LimitsBanner } from './Limits.banner';
+import { UploadBanner } from './Upload.banner';
+import { λContext, λFile } from '@/dto/Operation.dto';
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -131,15 +127,21 @@ export function SelectFilesBanner() {
   return (
     <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done}>
       <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
-      <Skeleton style={{ flex: 1 }} enable={fulfilled}>
+      <Skeleton style={{ flex: 1 }} show={fulfilled}>
       <div className={s.wrapper}>
         <Contexts />  
       </div>
       </Skeleton>
       <div className={s.group}>
-        <Button img='Upload' variant='ghost' skeleton={fulfilled} onClick={() => spawnBanner(<UploadBanner />)}>Upload and analize</Button>
+        <Skeleton show={fulfilled}>
+          <Button img='Upload' variant='ghost' onClick={() => spawnBanner(<UploadBanner />)}>Upload and analize</Button>
+        </Skeleton>
+        
         <div className={s.splitter} />
-        <Button variant='secondary' skeleton={fulfilled}>Select all</Button>
+        <Skeleton show={fulfilled}>
+          <Button variant='secondary'>Select all</Button>
+        </Skeleton>
+        
       </div>
     </Banner>
   );

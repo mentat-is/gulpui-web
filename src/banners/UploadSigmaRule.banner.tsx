@@ -1,7 +1,7 @@
-import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
-import { Input } from "@/ui/Input";
-import { useState } from "react";
+import { Banner } from '@/ui/Banner';
+import { Button } from '@impactium/components';
+import { Input } from '@/ui/Input';
+import { useState } from 'react';
 
 export function UploadSigmaRuleBanner() {
   const [file, setFile] = useState<File | null>(null);

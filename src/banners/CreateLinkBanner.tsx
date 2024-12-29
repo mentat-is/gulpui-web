@@ -1,28 +1,28 @@
-import { Operation, Parser } from "@/class/Info";
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Button } from "@/ui/Button";
+import { Operation, Parser } from '@/class/Info';
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@impactium/components';
 import {
   ColorPicker,
   ColorPickerTrigger,
   ColorPickerPopover,
-} from "@/ui/Color";
-import { SetStateAction, useState } from "react";
+} from '@/ui/Color';
+import { SetStateAction, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css'
-import { Input } from "@/ui/Input";
-import { format } from "date-fns";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Card } from "@/ui/Card";
-import { Separator } from "@/ui/Separator";
-import { λEvent } from "@/dto/ChunkEvent.dto";
-import { Switch } from "@/ui/Switch";
-import { LinkCreateRequest } from "@/dto/LinkCreateRequest.dto";
-import { Popover, PopoverContent, PopoverTrigger } from "@/ui/Popover";
-import { λLink } from "@/dto/Link.dto";
-import { LinkCombination } from "@/components/LinkCombination";
-import { EventCombination } from "@/components/EventCombination";
-import { GlyphsPopover } from "@/components/Glyphs.popover";
-import { λFile } from "@/dto/Operation.dto";
+import { Input } from '@/ui/Input';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
+import { Card } from '@/ui/Card';
+import { Separator } from '@/ui/Separator';
+import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Switch } from '@/ui/Switch';
+import { LinkCreateRequest } from '@/dto/LinkCreateRequest.dto';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
+import { λLink } from '@/dto/Link.dto';
+import { LinkCombination } from '@/components/LinkCombination';
+import { EventCombination } from '@/components/EventCombination';
+import { GlyphsPopover } from '@/components/Glyphs.popover';
+import { λFile } from '@/dto/Operation.dto';
 
 interface CreateLinkBannerProps {
   context: string,
@@ -120,7 +120,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
           <p>Log level:</p>
           <Select onValueChange={(v) => setLevel(levelMap.findIndex(l => l === v) as 0 | 1 | 2)} value={levelMap[level]}>
               <SelectTrigger className={s.trigger}>
-                <SelectValue defaultValue={0} placeholder="Choose log level" />
+                <SelectValue defaultValue={0} placeholder='Choose log level' />
             </SelectTrigger>
             <SelectContent>
               {levelMap.map(l => <SelectItem value={l}>{l}</SelectItem>)}

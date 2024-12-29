@@ -1,10 +1,10 @@
-"use client"
+'use client'
 import s from './styles/Sheet.module.css'
-import React, { ComponentPropsWithoutRef, ElementRef } from "react"
-import * as SheetPrimitive from "@radix-ui/react-dialog"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "./utils";
-import { Button } from './Button'
+import React, { ComponentPropsWithoutRef, ElementRef } from 'react'
+import * as SheetPrimitive from '@radix-ui/react-dialog'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from './utils';
+import { Button } from '@impactium/components'
 import { Icon } from '@impactium/icons'
  
 const Sheet = SheetPrimitive.Root
@@ -42,7 +42,7 @@ const sheetVariants = cva(
       },
     },
     defaultVariants: {
-      side: "right",
+      side: 'right',
     },
   }
 )
@@ -56,7 +56,7 @@ interface SheetContentProps
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
->(({ side = "right", className, children, action, ...props }, ref) => (
+>(({ side = 'right', className, children, action, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
@@ -88,7 +88,7 @@ const SheetHeader = ({
     {...props}
   />
 )
-SheetHeader.displayName = "SheetHeader"
+SheetHeader.displayName = 'SheetHeader'
  
 const SheetFooter = ({
   className,
@@ -102,7 +102,7 @@ const SheetFooter = ({
     {...props}
   />
 )
-SheetFooter.displayName = "SheetFooter"
+SheetFooter.displayName = 'SheetFooter'
  
 const SheetTitle = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Title>,

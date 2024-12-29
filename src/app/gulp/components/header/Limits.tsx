@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context';
 import { getReadableDate } from '@/decorator/getReadableDate';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import s from '../../Gulp.module.css';
-import { Button } from '@/ui/Button';
+import { Button } from '@impactium/components';
 
 export function Limits() {
   const { app, spawnBanner } = useApplication();

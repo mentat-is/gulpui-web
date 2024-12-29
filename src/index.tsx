@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import './global.css';
-import "react-day-picker/dist/style.css";
+import 'react-day-picker/dist/style.css';
 import { LanguageProvider } from './context/Language.context';
 import { ApplicationProvider, useApplication } from './context/Application.context';
 import { GulpPage } from './app/gulp/Gulp';

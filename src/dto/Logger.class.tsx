@@ -66,15 +66,15 @@ export class Logger {
 export class LoggerHandler {
   public static bucketSelection = (selected: MinMax, timestamp: MinMax) => {
     if (selected.min >= selected.max) {
-      Logger.error(`Dates: "selected.min" value > then "selected.max" value.
+      Logger.error(`Dates: 'selected.min' value > then 'selected.max' value.
 Values: ${JSON.stringify({ selected }, null, 2)}`, LoggerHandler.name);
     }
 
     if (selected.min < timestamp.min) {
-      Logger.warn(`Dates: "selected.min" value is < then "timestamp.min"
+      Logger.warn(`Dates: 'selected.min' value is < then 'timestamp.min'
 Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`, LoggerHandler.name);
     } else if (selected.max > timestamp.max) {
-      Logger.warn(`Dates: "selected.max" value is > then "timestamp.max"
+      Logger.warn(`Dates: 'selected.max' value is > then 'timestamp.max'
 Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`, LoggerHandler.name);
     }
 

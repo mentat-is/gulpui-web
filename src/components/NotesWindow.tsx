@@ -1,7 +1,7 @@
 import { useApplication } from '@/context/Application.context';
 import s from './styles/NotesWindow.module.css';
 import { Banner } from '@/ui/Banner';
-import { Button } from '@/ui/Button';
+import { Button } from '@impactium/components';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { λNote } from '@/dto/Note.dto';
 

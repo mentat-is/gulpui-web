@@ -1,10 +1,10 @@
-import { UUID } from "crypto";
-import { λIndex } from "./Index.dto";
-import { Color } from "@impactium/types";
-import { μ } from "@/class/Info";
-import { Gradients } from "@/ui/utils";
-import { Engine } from "@/class/Engine.dto";
-import { intersection } from "lodash";
+import { UUID } from 'crypto';
+import { λIndex } from './Index.dto';
+import { Color } from '@impactium/types';
+import { μ } from '@/class/Info';
+import { Gradients } from '@/ui/utils';
+import { Engine } from '@/class/Engine.dto';
+import { intersection } from 'lodash';
 
 export type GulpDataType = 'operation' | 'context' | 'file';
 

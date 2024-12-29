@@ -345,7 +345,7 @@ export class Info implements InfoProps {
         if (exist) return;
 
         const formData = new FormData();
-        formData.append('glyph', new Blob([""], { type: 'image/png' }));
+        formData.append('glyph', new Blob([''], { type: 'image/png' }));
 
         // Если нет, то создаём
         await api<unknown>('/glyph_create', {
@@ -864,7 +864,7 @@ export class Filter {
 
     //eslint-disable-next-line
     // @ts-ignore
-    return `(operation_id:${context.operation_id} AND (gulp.context: \"${context.name}\") AND gulp.file.file:"${file.name}" AND @timestamp:>=${Math.max(file.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(file.timestamp.max, (range?.max || Infinity))})`
+    return `(operation_id:${context.operation_id} AND (gulp.context: \'${context.name}\') AND gulp.file.file:'${file.name}' AND @timestamp:>=${Math.max(file.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(file.timestamp.max, (range?.max || Infinity))})`
   }
 
   public static parse(app: λApp, file: λFile, range?: MinMax) {
@@ -888,7 +888,7 @@ export class Filter {
 
       const isParsable = Number.isNaN(Number(filter.value));
 
-      const value = isParsable ? filter.value : `"${filter.value}"`
+      const value = isParsable ? filter.value : `'${filter.value}'`
 
       switch (filter.type) {
         case FilterType.EQUAL:
@@ -923,7 +923,7 @@ export class Filter {
     },
     options: {
       sort: {
-        '@timestamp': "desc"
+        '@timestamp': 'desc'
       }
     }
   });

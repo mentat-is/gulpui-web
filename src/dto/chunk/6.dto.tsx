@@ -1,4 +1,4 @@
-import { λChunk } from "../Chunk.dto"
+import { λChunk } from '../Chunk.dto'
 
 export interface ChunkType_6 {
   client_id: null

@@ -1,6 +1,6 @@
 import { createContext, HTMLAttributes, useContext, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
-import { Button } from './Button';
+import { Button } from '@impactium/components';
 import { arrayToLinearGradientCSS, cn, Gradients, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 import { Input } from './Input';
@@ -91,13 +91,13 @@ export function ColorPickerPopover({ gradients = {}, solids = baseSolids}: Color
     <PopoverContent className={s.popover}>
       <Tabs onValueChange={v => setTab(v as Tab)} defaultValue={tab} value={tab} className={s.tabs}>
         {!!solids.length && !!Object.keys(gradients).length && <TabsList className={s.list}>
-          <TabsTrigger className={s.trigger} value="solid">
+          <TabsTrigger className={s.trigger} value='solid'>
             Solid
           </TabsTrigger>
-          <TabsTrigger className={s.trigger} value="gradient">Gradient</TabsTrigger>
+          <TabsTrigger className={s.trigger} value='gradient'>Gradient</TabsTrigger>
         </TabsList>}
 
-        {!!solids.length && <TabsContent value="solid" className={s.content}>
+        {!!solids.length && <TabsContent value='solid' className={s.content}>
           {solids.map((solid) => (
             <div
               key={solid}
@@ -108,7 +108,7 @@ export function ColorPickerPopover({ gradients = {}, solids = baseSolids}: Color
           ))}
         </TabsContent>}
 
-        {!!Object.keys(gradients).length && <TabsContent value="gradient" className={s.content}>
+        {!!Object.keys(gradients).length && <TabsContent value='gradient' className={s.content}>
           {Object.keys(gradients).map((key) => 
             <div
               key={key}
@@ -127,7 +127,7 @@ export function ColorPickerPopover({ gradients = {}, solids = baseSolids}: Color
           onChange={(e) => setColor(e.currentTarget.value)}
         />
         <Input
-          id="custom"
+          id='custom'
           value={color}
           onChange={(e) => setColor(e.currentTarget.value)}
         />

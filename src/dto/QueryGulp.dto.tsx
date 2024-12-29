@@ -1,6 +1,6 @@
 interface Event {
-  "@timestamp": number;
-  "_id": string;
+  '@timestamp': number;
+  '_id': string;
 }
 
 interface QueryResult {

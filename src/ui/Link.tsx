@@ -2,7 +2,7 @@ import s from './styles/Link.module.css';
 import { copy } from './utils';
 import { Badge } from './Badge';
 import { Separator } from './Separator';
-import { Button } from './Button';
+import { Button } from '@impactium/components';
 import { useApplication } from '@/context/Application.context';
 import { Fragment } from 'react';
 import { Event } from '@/class/Info';

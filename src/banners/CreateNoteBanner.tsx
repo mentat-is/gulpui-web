@@ -1,25 +1,25 @@
-import { Operation, Parser } from "@/class/Info";
-import { useApplication } from "@/context/Application.context";
-import { Banner } from "@/ui/Banner";
-import { Button } from "@impactium/components";
+import { Operation, Parser } from '@/class/Info';
+import { useApplication } from '@/context/Application.context';
+import { Banner } from '@/ui/Banner';
+import { Button } from '@impactium/components';
 import {
   ColorPicker,
   ColorPickerTrigger,
   ColorPickerPopover,
-} from "@/ui/Color";
-import { useRef, useState } from "react";
+} from '@/ui/Color';
+import { useRef, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css';
-import { Input } from "@/ui/Input";
-import { Badge } from "@/ui/Badge";
-import { format } from "date-fns";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/Select";
-import { Card } from "@/ui/Card";
-import { cn } from "@/ui/utils";
-import { Separator } from "@/ui/Separator";
-import { NoteCreateRequest } from "@/dto/NoteCreateRequest.dto";
-import { λEvent } from "@/dto/ChunkEvent.dto";
-import { Switch } from "@/ui/Switch";
-import { GlyphsPopover } from "@/components/Glyphs.popover";
+import { Input } from '@/ui/Input';
+import { Badge } from '@/ui/Badge';
+import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
+import { Card } from '@/ui/Card';
+import { cn } from '@/ui/utils';
+import { Separator } from '@/ui/Separator';
+import { NoteCreateRequest } from '@/dto/NoteCreateRequest.dto';
+import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Switch } from '@/ui/Switch';
+import { GlyphsPopover } from '@/components/Glyphs.popover';
 
 interface CreateNoteBannerProps {
   context: string,
@@ -101,7 +101,7 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
           <p>Log level:</p>
           <Select onValueChange={(v) => setLevel(levelMap.findIndex(l => l === v) as 0 | 1 | 2)} value={levelMap[level]}>
               <SelectTrigger className={s.trigger}>
-                <SelectValue defaultValue={0} placeholder="Choose log level" />
+                <SelectValue defaultValue={0} placeholder='Choose log level' />
             </SelectTrigger>
             <SelectContent>
               {levelMap.map(l => <SelectItem value={l}>{l}</SelectItem>)}

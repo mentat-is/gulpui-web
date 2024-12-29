@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback } from 'react';
-import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
+import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu';
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
 import { DragDealer } from '@/class/dragDealer.class';
@@ -192,7 +192,7 @@ export function Timeline() {
 
   return (
     <div
-      id="timeline"
+      id='timeline'
       className={s.timeline}
       onMouseLeave={handleMouseUpOrLeave}
       onMouseUp={handleMouseUpOrLeave}

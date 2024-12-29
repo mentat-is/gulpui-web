@@ -1,8 +1,8 @@
-import React from "react"
-import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
-import { cn } from "./utils"
+import React from 'react'
+import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
+import { cn } from './utils'
 import s from './styles/ContextMenu.module.css';
-import { Icon } from "@impactium/icons";
+import { Icon } from '@impactium/icons';
 const ContextMenu = ContextMenuPrimitive.Root
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
@@ -179,7 +179,7 @@ const contextMenuShortcut = ({
     />
   )
 }
-contextMenuShortcut.displayName = "ContextMenuShortcut"
+contextMenuShortcut.displayName = 'ContextMenuShortcut'
 
 export {
   ContextMenu,

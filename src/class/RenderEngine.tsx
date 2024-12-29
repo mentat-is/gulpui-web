@@ -1,15 +1,15 @@
-import { MinMax } from "@/dto/QueryMaxMin.dto";
-import { Event, Info, File } from "./Info";
-import { Color, stringToHexColor } from "@/ui/utils";
-import { format } from "date-fns";
-import { XY, XYBase } from "@/dto/XY.dto";
-import { λLink } from "@/dto/Link.dto";
-import { RulerDrawer } from "./Ruler.drawer";
-import { DefaultEngine } from "../engines/Default.engine";
-import { Scale, Engine } from "./Engine.dto";
-import { HeightEngine } from "../engines/Height.engine";
-import { GraphEngine } from "../engines/Graph.engine";
-import { λFile } from "@/dto/Operation.dto";
+import { MinMax } from '@/dto/QueryMaxMin.dto';
+import { Event, Info, File } from './Info';
+import { Color, stringToHexColor } from '@/ui/utils';
+import { format } from 'date-fns';
+import { XY, XYBase } from '@/dto/XY.dto';
+import { λLink } from '@/dto/Link.dto';
+import { RulerDrawer } from './Ruler.drawer';
+import { DefaultEngine } from '../engines/Default.engine';
+import { Scale, Engine } from './Engine.dto';
+import { HeightEngine } from '../engines/Height.engine';
+import { GraphEngine } from '../engines/Graph.engine';
+import { λFile } from '@/dto/Operation.dto';
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,

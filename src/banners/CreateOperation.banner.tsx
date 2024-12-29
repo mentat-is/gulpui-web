@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { Banner } from "../ui/Banner";
-import { Input } from "../ui/Input";
-import { Button } from "../ui/Button";
-import { useApplication } from "../context/Application.context";
-import { OperationCreate } from "../dto/OperationCreate.dto";
-import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from "@/ui/Color";
-import { GlyphsPopover } from "@/components/Glyphs.popover";
-import { Stack } from "@impactium/components";
+import { useState } from 'react';
+import { Banner } from '../ui/Banner';
+import { Input } from '../ui/Input';
+import { Button } from '@impactium/components';
+import { useApplication } from '../context/Application.context';
+import { OperationCreate } from '../dto/OperationCreate.dto';
+import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color';
+import { GlyphsPopover } from '@/components/Glyphs.popover';
+import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'
-import { Card } from "@/ui/Card";
-import { Separator } from "@/ui/Separator";
+import { Card } from '@/ui/Card';
+import { Separator } from '@/ui/Separator';
 
 export function CreateOperationBanner() {
   const { Info, destroyBanner } = useApplication();

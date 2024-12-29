@@ -1,5 +1,5 @@
-import { Engine } from "@/class/Engine.dto";
-import { Icon } from "@impactium/icons";
+import { Engine } from '@/class/Engine.dto';
+import { Icon } from '@impactium/icons';
 
 export interface EngineMap {
   img: Icon.Name;

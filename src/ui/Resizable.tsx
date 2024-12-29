@@ -1,7 +1,7 @@
-import * as ResizablePrimitive from "react-resizable-panels"
+import * as ResizablePrimitive from 'react-resizable-panels'
 import s from './styles/Resizable.module.css'
 import { cn } from './utils'
-import { Icon } from "@impactium/icons"
+import { Icon } from '@impactium/icons'
 
 const ResizablePanelGroup = ({
   className,

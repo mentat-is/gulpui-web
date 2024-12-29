@@ -1,23 +1,22 @@
-import { useEffect, useRef, useState } from "react";
-import Cookies from "universal-cookie";
+import { useEffect, useRef, useState } from 'react';
+import Cookies from 'universal-cookie';
 import s from './Login.module.css';
-import { useApplication } from "@/context/Application.context";
-import { Card } from "@/ui/Card";
-import { Index, Pattern } from "@/class/Info";
-import { toast } from "sonner";
-import { Login, λOperation } from "@/dto";
-import React from "react";
-import { Input } from "@/ui/Input";
-import { Separator } from "@/ui/Separator";
-import { λIndex } from "@/dto/Index.dto";
-import { CreateOperationBanner } from "@/banners/CreateOperation.banner";
-import { UploadBanner } from "@/banners/Upload.banner";
-import { SelectFilesBanner } from "@/banners/SelectFiles.banner";
-import { Logger } from "@/dto/Logger.class";
-import { Stack, Button } from "@impactium/components";
-import { GlyphMap } from "@/dto/Glyph.dto";
-import { GeneralSettings } from "@/components/GeneralSettings";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from "@/ui/ContextMenu";
+import { useApplication } from '@/context/Application.context';
+import { Card } from '@/ui/Card';
+import { Index, Pattern } from '@/class/Info';
+import { toast } from 'sonner';
+import { Login, λOperation } from '@/dto';
+import React from 'react';
+import { Input } from '@/ui/Input';
+import { Separator } from '@/ui/Separator';
+import { λIndex } from '@/dto/Index.dto';
+import { CreateOperationBanner } from '@/banners/CreateOperation.banner';
+import { UploadBanner } from '@/banners/Upload.banner';
+import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
+import { Logger } from '@/dto/Logger.class';
+import { Stack, Button } from '@impactium/components';
+import { GeneralSettings } from '@/components/GeneralSettings';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from '@/ui/ContextMenu';
 
 export function LoginPage() {
   const { Info, app, spawnBanner } = useApplication();
@@ -151,20 +150,20 @@ export function LoginPage() {
             <React.Fragment>
               <Input
                 img='Server'
-                placeholder="Server adress (ip:port)"
+                placeholder='Server adress (ip:port)'
                 value={serverValue}
                 tabIndex={1}
                 onChange={(e) => setServerValue(e.currentTarget.value)} />
               <Input
                 img='User'
-                placeholder="Username"
+                placeholder='Username'
                 value={id}
                 tabIndex={2}
                 onChange={e => setId(e.currentTarget.value)} />
               <Stack gap={12}>
                 <Input
                   img='KeyRound'
-                  placeholder="Password"
+                  placeholder='Password'
                   type='password'
                   value={password}
                   tabIndex={3}

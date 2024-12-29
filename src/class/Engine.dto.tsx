@@ -1,5 +1,5 @@
-import { λFile } from "@/dto/Operation.dto";
-import { RenderEngine } from "./RenderEngine";
+import { λFile } from '@/dto/Operation.dto';
+import { RenderEngine } from './RenderEngine';
 
 export namespace Engine {
   export interface Interface<T> {

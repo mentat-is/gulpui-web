@@ -1,6 +1,6 @@
-import { HTMLAttributes, useCallback, useEffect, useRef } from "react";
-import s from "./styles/SymmetricSvg.module.css";
-import { cn } from "./utils";
+import { HTMLAttributes, useCallback, useEffect, useRef } from 'react';
+import s from './styles/SymmetricSvg.module.css';
+import { cn } from './utils';
 
 interface SymmetricSvgProps extends HTMLAttributes<HTMLCanvasElement> {
   text: string;
@@ -22,8 +22,8 @@ export const SymmetricSvg = ({ text, loading, className, size = 36, ...props }: 
   const generateColor = useCallback((str: string) => {
     const hash = Array.from(str).reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
     return `#${[16, 8, 0]
-      .map(shift => ((hash >> shift) & 0xff).toString(16).padStart(2, "0"))
-      .join("")}`;
+      .map(shift => ((hash >> shift) & 0xff).toString(16).padStart(2, '0'))
+      .join('')}`;
   }, []);
 
   const generateDistinctColor = useCallback((str: string, baseColor: string) => {
@@ -37,7 +37,7 @@ export const SymmetricSvg = ({ text, loading, className, size = 36, ...props }: 
     let newColor = generateColor(str);
     while (colorDistance(newColor, baseColor) < 100) {
       const [r, g, b] = parseColor(newColor).map(val => (val + 128) % 256);
-      newColor = `#${[r, g, b].map(val => val.toString(16).padStart(2, "0")).join("")}`;
+      newColor = `#${[r, g, b].map(val => val.toString(16).padStart(2, '0')).join('')}`;
     }
 
     return newColor;
@@ -47,7 +47,7 @@ export const SymmetricSvg = ({ text, loading, className, size = 36, ...props }: 
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext('2d');
     if (!context) return;
 
     const rectSize = 6;

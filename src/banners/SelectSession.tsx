@@ -1,9 +1,9 @@
-import { useApplication } from "@/context/Application.context";
-import { Session, λApp } from "@/dto/App.dto";
-import { Banner } from "@/ui/Banner";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
-import { Button } from "@impactium/components";
-import { useEffect, useRef, useState } from "react";
+import { useApplication } from '@/context/Application.context';
+import { Session, λApp } from '@/dto/App.dto';
+import { Banner } from '@/ui/Banner';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
+import { Button } from '@impactium/components';
+import { useEffect, useRef, useState } from 'react';
 
 export namespace SelectSession {
   export interface Props {

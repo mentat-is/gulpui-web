@@ -1,8 +1,8 @@
-import { λFile } from "@/dto/Operation.dto";
-import { Engine, Hardcode, MaxHeight, MinHeight, Scale } from "../class/Engine.dto";
-import { RenderEngine } from "../class/RenderEngine";
-import { Gradients, numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from "@/ui/utils";
-import { File } from "@/class/Info";
+import { λFile } from '@/dto/Operation.dto';
+import { Engine, Hardcode, MaxHeight, MinHeight, Scale } from '../class/Engine.dto';
+import { RenderEngine } from '../class/RenderEngine';
+import { Gradients, numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from '@/ui/utils';
+import { File } from '@/class/Info';
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null;

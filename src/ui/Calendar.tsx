@@ -1,10 +1,10 @@
-import * as React from "react"
-import { DayPicker } from "react-day-picker"
+import * as React from 'react'
+import { DayPicker } from 'react-day-picker'
 import styles from './styles/Calendar.module.css'
 
-import { cn } from "./utils"
-import { buttonVariants } from "./Button"
-import { Icon } from "@impactium/icons"
+import { cn } from './utils'
+import { buttonVariants } from '@impactium/components'
+import { Icon } from '@impactium/icons'
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
@@ -25,7 +25,7 @@ function Calendar({
         caption_label: styles.captionLabel,
         nav: styles.nav,
         nav_button: cn(
-          buttonVariants({ variant: "outline" }),
+          buttonVariants({ variant: 'outline' }),
           styles.navButton
         ),
         nav_button_previous: styles.navButtonPrevious,
@@ -40,7 +40,7 @@ function Calendar({
           [styles.hasSelected]: true,
         }),
         day: cn(
-          buttonVariants({ variant: "ghost" }),
+          buttonVariants({ variant: 'ghost' }),
           styles.day
         ),
         day_range_end: styles.dayRangeEnd,
@@ -60,6 +60,6 @@ function Calendar({
      />
   )
 }
-Calendar.displayName = "Calendar"
+Calendar.displayName = 'Calendar'
 
 export { Calendar }
