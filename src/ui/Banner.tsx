@@ -48,7 +48,7 @@ export function Banner({ children, className, title, fixed, option, loading, don
       <div className={cn(s.banner, s.loading, className)} style={{['--gray-400']: 'var(--accent-3)' }}>
         <Cell className={s.cell} top left />
         <Cell className={s.cell} top right>
-          <Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' />
+          {fixed ? null : <Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' />}
         </Cell>
         <Cell className={s.cell} bottom left>
           {option}

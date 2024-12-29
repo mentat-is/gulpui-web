@@ -91,14 +91,6 @@ export namespace Windows {
       });
     };
 
-    useEffect(() => {
-      newWindow({
-        children: <Timeline />,
-        name: 'Timeline',
-        icon: 'Edge',
-      });
-    }, []);
-
     const props: Windows.Props = {
       windows,
       setWindows,

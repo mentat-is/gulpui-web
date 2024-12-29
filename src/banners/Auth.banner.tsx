@@ -2,11 +2,11 @@ import { Banner } from '@/ui/Banner';
 import { Button } from '@impactium/components';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SessionBanner } from './Session.banner';
-import { useApplication } from '@/context/Application.context.js';
+import { useApplication } from '@/context/Application.context';
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner';
-import { Pattern } from '@/class/Info.js';
-import { useKeyHandler } from '@/app/use.js';
+import { Pattern } from '@/class/Info';
+import { useKeyHandler } from '@/app/use';
 import { Login } from '@/dto';
 
 export namespace AuthBanner {
@@ -33,8 +33,8 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     }
 
     return (
-      <Button variant='secondary' onClick={handleSubtitleButtonClick}>
-
+      <Button variant='ghost' onClick={handleSubtitleButtonClick}>
+        Continue with session
       </Button>
     )
   }, [])
@@ -47,39 +47,40 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
   const DoneButton = useCallback(() => {
     const login = async () => {
-        const removeOverload = (str: string): string => str.endsWith('/')
-        ? removeOverload(str.slice(0, -1))
-        : str;
+      const removeOverload = (str: string): string => str.endsWith('/')
+      ? removeOverload(str.slice(0, -1))
+      : str;
     
-        const validate = (str: string): string | void => !Pattern.Server.test(str)
-          ? (() => { toast('Server URL didn`t match pattern') })()
-          : removeOverload(str);
-    
-        const validatedServer = validate(server);
-    
-        if (!validatedServer) return;
-    
-        localStorage.setItem('__server', server);
-    
-        await api<Login>('/login', {
-          method: 'PUT',
-          setLoading,
-          query: {
-            user_id: id,
-            password,
-            ws_id: Info.app.general.ws_id
-          }
-        }, (data) => {
-          Info.login(data);
-        });
-      }
+      const validate = (str: string): string | void => !Pattern.Server.test(str)
+        ? (() => { toast('Server URL didn`t match pattern') })()
+        : removeOverload(str);
+
+      const validatedServer = validate(server);
+
+      if (!validatedServer) return;
+      
+      localStorage.setItem('__server', server);
+      
+      await api<Login>('/login', {
+        method: 'PUT',
+        setLoading,
+        query: {
+          user_id: id,
+          password,
+          ws_id: Info.app.general.ws_id
+        }
+      }, (data) => {
+        Info.login(data);
+      });
+    }
+
     return (
-      <Button img='LogIn' disabled={!id || !password} revert ref={loginButton} loading={loading} tabIndex={4} onClick={login} size='icon' />
+      <Button img='LogIn' disabled={!id || !password} variant='glass' revert ref={loginButton} loading={loading} tabIndex={4} onClick={login} size='icon' />
     );
   }, [id, password, loading]);
 
   return (
-    <Banner title='Authentication' subtitle={<ContinueFromSession />} done={<DoneButton />} {...props}>
+    <Banner title='Authentication' subtitle={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>
       <Input
         img='Server'
         placeholder='http://localhost:8080'

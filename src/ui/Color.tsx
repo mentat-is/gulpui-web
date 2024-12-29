@@ -5,7 +5,6 @@ import { arrayToLinearGradientCSS, cn, Gradients, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 import { Input } from './Input';
 import s from './styles/Color.module.css';
-import { Children } from '@/dto';
 import { capitalize } from 'lodash';
 import { Icon } from '@impactium/icons';
 
@@ -35,13 +34,14 @@ const ColorContext = createContext<ColorPickerContext | undefined>(undefined) ||
 
 export const useColor = (): ColorPickerContext => useContext(ColorContext)!;
 
-type ColorPickerProps = Children | (Children & ColorPickerContext) & {
+type ColorPickerProps = Button.Props | (Button.Props & ColorPickerContext) & {
   default?: string;
 };
 
 export function ColorPicker(props: ColorPickerProps) {
   const [ _color, _setColor ] = useState<string>('#ffa647');
   const context: ColorPickerContext = {
+    // @ts-ignore
     color: 'color' in props ? props.color : _color,
     setColor: 'setColor' in props ? props.setColor : _setColor
   };

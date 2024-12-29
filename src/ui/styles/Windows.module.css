@@ -48,10 +48,10 @@
 .noWindows > h3 {
   font-family: var(--font-mono);
   font-size: 32px;
-  margin-bottom: 12px;
+  margin-bottom: 36px;
 }
 .noWindows > p {
-  margin-bottom: 48px;
+  margin-bottom: 64px;
   color: var(--text-dimmed);
   font-size: 22px;
 }

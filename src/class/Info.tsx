@@ -40,10 +40,34 @@ interface QueryExternalProps {
   password: string;
 }
 
+class User {
+  instanse!: User;
+  storage!: λApp['general'];
+  constructor(general: λApp['general']) {
+    if (this.instanse) {
+      this.instanse.storage = general;
+      return this.instanse;
+    }
+
+    this.storage = general;
+    this.instanse = this;
+    return;
+  }
+
+  isAuthorized = () => {
+    return (
+      this.storage.id.length > 0 && 
+      this.storage.password.length && 
+      this.storage.time_expire > Date.now() 
+    );
+  }
+}
+
 export class Info implements InfoProps {
   app: λApp;
   setInfo: React.Dispatch<React.SetStateAction<λApp>>;
   timeline: React.RefObject<HTMLDivElement>;
+  User: User
 
   constructor({
     app,
@@ -51,6 +75,7 @@ export class Info implements InfoProps {
     timeline
   }: InfoProps) {
     this.app = app;
+    this.User = new User(app.general);
     this.setInfo = setInfo;
     this.timeline = timeline;
   }

@@ -1,4 +1,3 @@
-export type { User } from './User.dto'
 export type { Login } from './Login.dto';
 export type { λApp } from './App.dto';
 export { BaseInfo } from './App.dto'

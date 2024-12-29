@@ -30,35 +30,7 @@ export function LoginPage() {
   const [id, setId] = useState<string>('admin');
   const [password, setPassword] = useState<string>('admin');
   
-  const login = async () => {
-    const removeOverload = (str: string): string => str.endsWith('/')
-    ? removeOverload(str.slice(0, -1))
-    : str;
-
-    const validate = (str: string): string | void => !Pattern.Server.test(str)
-      ? (() => { toast('Server URL didn`t match pattern') })()
-      : removeOverload(str);
-
-    const server = validate(serverValue);
-
-    if (!server) return;
-
-    localStorage.setItem('__server', server);
-
-    await api<Login>('/login', {
-      method: 'PUT',
-      setLoading,
-      query: {
-        user_id: id,
-        password,
-        ws_id: app.general.ws_id
-      }
-    }, (data) => {
-      Logger.log(`User has been authentificated with next credentials:`, LoginPage.name)
-      Logger.log(data, LoginPage.name);
-      Info.login(data);
-    });
-  }
+  
 
   /** 
    * При авторизации фетчим индексы и перехоим на второй этап
@@ -146,32 +118,7 @@ export function LoginPage() {
         </div>
         <div className={s.content}>
         {stage === 0
-          ? (
-            <React.Fragment>
-              <Input
-                img='Server'
-                placeholder='Server adress (ip:port)'
-                value={serverValue}
-                tabIndex={1}
-                onChange={(e) => setServerValue(e.currentTarget.value)} />
-              <Input
-                img='User'
-                placeholder='Username'
-                value={id}
-                tabIndex={2}
-                onChange={e => setId(e.currentTarget.value)} />
-              <Stack gap={12}>
-                <Input
-                  img='KeyRound'
-                  placeholder='Password'
-                  type='password'
-                  value={password}
-                  tabIndex={3}
-                  onChange={e => setPassword(e.currentTarget.value)} />
-                <Button img='LogIn' disabled={!id || !password} revert ref={loginButton} loading={loading} tabIndex={4} onClick={login}>Log in</Button>
-              </Stack>
-          </React.Fragment>
-          )
+          ? null
           : stage === 1
             ? (
               <div className={s.chooser}>
