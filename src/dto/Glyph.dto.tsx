@@ -2,59 +2,62 @@ import { μ } from '@/class/Info';
 import { generateUUID } from '@/ui/utils';
 import { Icon } from '@impactium/icons';
 
-// @ts-ignore
-export const GlyphMap: Record<μ.Glyph, Array<Icon.Name>> = {
-  [generateUUID()]:'TriangleAlert',
-  [generateUUID()]:'CircleHelp',
-  [generateUUID()]:'CircleAlert',
-  [generateUUID()]:'ShieldAlert',
-  [generateUUID()]:'CircleCheck',
-  [generateUUID()]:'CircleX',
-  [generateUUID()]:'ShieldQuestion',
-  [generateUUID()]:'X',
-  [generateUUID()]:'Check',
-  [generateUUID()]:'Info',
-  [generateUUID()]:'Battery',
-  [generateUUID()]:'BatteryLow',
-  [generateUUID()]:'BatteryMedium',
-  [generateUUID()]:'BatteryFull',
-  [generateUUID()]:'BatteryCharging',
-  [generateUUID()]:'StickyNote',
-  [generateUUID()]:'Mail',
-  [generateUUID()]:'MailOpen',
-  [generateUUID()]:'Paperclip',
-  [generateUUID()]:'Flame',
-  [generateUUID()]:'HardDrive',
-  [generateUUID()]:'HardDriveDownload',
-  [generateUUID()]:'HardDriveUpload',
-  [generateUUID()]:'Key',
-  [generateUUID()]:'QrCode',
-  [generateUUID()]:'Barcode',
-  [generateUUID()]:'Ticket',
-  [generateUUID()]:'Usb',
-  [generateUUID()]:'ThumbsUp',
-  [generateUUID()]:'ThumbsDown',
-  [generateUUID()]:'Heart',
-  [generateUUID()]:'Biohazard',
-  [generateUUID()]:'Bitcoin',
-  [generateUUID()]:'Bluetooth',
-  [generateUUID()]:'BluetoothOff',
-  [generateUUID()]:'Bug',
-  [generateUUID()]:'Map',
-  [generateUUID()]:'MapPin',
-  [generateUUID()]:'MapPinOff',
-  [generateUUID()]:'MapPinned',
-  [generateUUID()]:'Fingerprint',
-  [generateUUID()]:'Sigma',
-  [generateUUID()]:'SquareSigma',
-  [generateUUID()]:'Radio',
-  [generateUUID()]:'Package',
-  [generateUUID()]:'Settings',
-  [generateUUID()]:'Gift',
-  [generateUUID()]:'Link',
-  [generateUUID()]:'Wrench',
-  [generateUUID()]:'Chrome',
-  [generateUUID()]:'Zap'
+export const GlyphMap: Map<μ.Glyph, Icon.Name> = new Map();
+
+const newGlyphId = () => {
+  return generateUUID() as μ.Glyph;
 }
+
+GlyphMap.set(newGlyphId(), 'TriangleAlert');
+GlyphMap.set(newGlyphId(), 'CircleHelp');
+GlyphMap.set(newGlyphId(), 'CircleAlert');
+GlyphMap.set(newGlyphId(), 'ShieldAlert');
+GlyphMap.set(newGlyphId(), 'CircleCheck');
+GlyphMap.set(newGlyphId(), 'CircleX');
+GlyphMap.set(newGlyphId(), 'ShieldQuestion');
+GlyphMap.set(newGlyphId(), 'X');
+GlyphMap.set(newGlyphId(), 'Check');
+GlyphMap.set(newGlyphId(), 'Info');
+GlyphMap.set(newGlyphId(), 'Battery');
+GlyphMap.set(newGlyphId(), 'BatteryLow');
+GlyphMap.set(newGlyphId(), 'BatteryMedium');
+GlyphMap.set(newGlyphId(), 'BatteryFull');
+GlyphMap.set(newGlyphId(), 'BatteryCharging');
+GlyphMap.set(newGlyphId(), 'StickyNote');
+GlyphMap.set(newGlyphId(), 'Mail');
+GlyphMap.set(newGlyphId(), 'MailOpen');
+GlyphMap.set(newGlyphId(), 'Paperclip');
+GlyphMap.set(newGlyphId(), 'Flame');
+GlyphMap.set(newGlyphId(), 'HardDrive');
+GlyphMap.set(newGlyphId(), 'HardDriveDownload');
+GlyphMap.set(newGlyphId(), 'HardDriveUpload');
+GlyphMap.set(newGlyphId(), 'Key');
+GlyphMap.set(newGlyphId(), 'QrCode');
+GlyphMap.set(newGlyphId(), 'Barcode');
+GlyphMap.set(newGlyphId(), 'Ticket');
+GlyphMap.set(newGlyphId(), 'Usb');
+GlyphMap.set(newGlyphId(), 'ThumbsUp');
+GlyphMap.set(newGlyphId(), 'ThumbsDown');
+GlyphMap.set(newGlyphId(), 'Heart');
+GlyphMap.set(newGlyphId(), 'Biohazard');
+GlyphMap.set(newGlyphId(), 'Bitcoin');
+GlyphMap.set(newGlyphId(), 'Bluetooth');
+GlyphMap.set(newGlyphId(), 'BluetoothOff');
+GlyphMap.set(newGlyphId(), 'Bug');
+GlyphMap.set(newGlyphId(), 'Map');
+GlyphMap.set(newGlyphId(), 'MapPin');
+GlyphMap.set(newGlyphId(), 'MapPinOff');
+GlyphMap.set(newGlyphId(), 'MapPinned');
+GlyphMap.set(newGlyphId(), 'Fingerprint');
+GlyphMap.set(newGlyphId(), 'Sigma');
+GlyphMap.set(newGlyphId(), 'SquareSigma');
+GlyphMap.set(newGlyphId(), 'Radio');
+GlyphMap.set(newGlyphId(), 'Package');
+GlyphMap.set(newGlyphId(), 'Settings');
+GlyphMap.set(newGlyphId(), 'Gift');
+GlyphMap.set(newGlyphId(), 'Link');
+GlyphMap.set(newGlyphId(), 'Wrench');
+GlyphMap.set(newGlyphId(), 'Chrome');
+GlyphMap.set(newGlyphId(), 'Zap');
 
 export const CustomGlyphs: Record<μ.Glyph, string> = {}

@@ -6,11 +6,12 @@ import { ApplicationProvider, useApplication } from './context/Application.conte
 import { GulpPage } from './app/gulp/Gulp';
 import { LoginPage } from './app/login/Login';
 import { Toaster } from './ui/Toaster';
-import { File } from './class/Info';
+import { File, Operation } from './class/Info';
 import { Api } from './class/API';
 import { useEffect } from 'react';
 import { spawn } from 'child_process';
 import { AuthBanner } from './banners/Auth.banner';
+import { OperationBanner } from './banners/Operation.banner';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(Root());
 
@@ -31,20 +32,15 @@ function Root() {
 };
 
 function Main() {
-  const { app, spawnBanner } = useApplication();
+  const { Info, app, spawnBanner } = useApplication();
 
   useEffect(() => {
-    setTimeout(() => {
-      spawnBanner(<AuthBanner />);
-    }, 500)
-    
-    // const isAuthorized = Info.User.isAuthorized();
-
-    // console.log(isAuthorized);
-
-    // if (!isAuthorized) {
-      
-    // }
+    console.log(Info.User.isAuthorized());
+    if (Info.User.isAuthorized() === false) {
+      setTimeout(() => {
+        spawnBanner(<AuthBanner />);
+      }, 30);
+    }
   }, [app.general]);
 
   return <GulpPage />

@@ -133,7 +133,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
           <Switch checked={_private} onCheckedChange={_setPrivate}></Switch>
         </div>
         <Separator />
-        <GlyphsPopover icon={glyph_id} setIcon={setGlyphId} />
+        {/* <GlyphsPopover icon={glyph_id} setIcon={setGlyphId} /> */}
       </Card>
       <Card>
         {Parser.array(events).map(event => <EventCombination event={event} />)}

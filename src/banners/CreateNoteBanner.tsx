@@ -111,7 +111,7 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
         <Separator />
         <div className={s.unit}>
           <p>Glyph:</p>
-          <GlyphsPopover icon={icon} setIcon={setIcon} />
+          {/* <GlyphsPopover icon={icon} setIcon={setIcon} /> */}
         </div>
         <Separator />
         <div className={s.unit}>

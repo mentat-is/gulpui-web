@@ -19,6 +19,7 @@ import { Logger, LoggerHandler } from '@/dto/Logger.class';
 import { Engine, Hardcode } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
 import { Color } from '@impactium/types';
+import { SetState } from './API';
 
 interface RefetchOptions {
   ids?: Arrayed<λFile['id']>;
@@ -234,6 +235,24 @@ export class Info implements InfoProps {
   operations_select = (operation: λOperation) => this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations');
   
   operations_set = (operations: λOperation[]) => this.setInfoByKey(Operation.reload(operations, this.app), 'target', 'operations');
+
+  deleteOperation = (operation: λOperation, setLoading: SetState<boolean>) => {
+    const index = Index.selected(this.app);
+
+    if (!index) {
+      return;
+    }
+
+    api('/operation_delete', {
+      method: 'DELETE',
+      query: {
+        operation_id: operation.id,
+        index: index.name
+      },
+      setLoading
+    }, this.operation_list);
+  };
+
   /* ПОСТАВИТЬ НОВЫЕ ОПЕРАЦИИ С ОХ ПОЛНЫМ ОБНУЛЕНИЕМ, И ПОВТОРНЫМ СЕЛЕКТОМ ПРЕДЫДУЩЕ-ВЫБРАННОГО */
   
   // 🔥 CONTEXTS

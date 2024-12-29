@@ -4,17 +4,18 @@ import { Input } from '../ui/Input';
 import { Button } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
 import { OperationCreate } from '../dto/OperationCreate.dto';
-import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color';
 import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'
 import { Card } from '@/ui/Card';
 import { Separator } from '@/ui/Separator';
+import { GlyphMap } from '@/dto/Glyph.dto';
+import { λGlyph } from '@/dto/λGlyph.dto';
 
 export function CreateOperationBanner() {
   const { Info, destroyBanner } = useApplication();
   const [name, setName] = useState<string>('');
-  const [icon, setIcon] = useState<number>(-1);
+  const [icon, setIcon] = useState<λGlyph['id'] | null>(GlyphMap.keys().next().value || null);
   const [description, setDescription] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -23,7 +24,7 @@ export function CreateOperationBanner() {
       name
     }
 
-    if (icon >= 0) {
+    if (icon) {
       body.glyph_id = icon;
     }
 

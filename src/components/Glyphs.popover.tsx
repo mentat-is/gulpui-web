@@ -4,10 +4,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import s from './styles/Glyphs.popover.module.css';
 import { toast } from 'sonner';
 import { Icon } from '@impactium/icons';
+import { λGlyph } from '@/dto/λGlyph.dto';
 
 interface GlyphPopoverProps {
-  icon: number,
-  setIcon: React.Dispatch<React.SetStateAction<number>>
+  icon: λGlyph['id'] | null,
+  setIcon: React.Dispatch<React.SetStateAction<λGlyph['id'] | null>>
 }
 
 export function GlyphsPopover({ icon, setIcon }: GlyphPopoverProps) {
@@ -17,23 +18,26 @@ export function GlyphsPopover({ icon, setIcon }: GlyphPopoverProps) {
     });
   }
 
+  const map = GlyphMap.entries();
+
   return (
     <Popover>
       <PopoverTrigger asChild>
         <div className={s.trigger}>
-          {/* <Button variant='ghost'>{icon !== -1 ? GlyphMap[icon] || 'ScanSearch' : 'Choose glyph'}</Button> */}
-          {/* <Button variant='glass' img={icon !== -1 ? GlyphMap[icon] : 'ScanSearch'} /> */}
+          <Button variant='ghost'>{icon ? GlyphMap.get(icon) : 'Choose icon'}</Button>
+          <Button variant='glass' img={icon ? GlyphMap.get(icon) : 'SquareDashed'} />
         </div>
       </PopoverTrigger>
       <PopoverContent align='end' className={s.map}>
-        {/* {GlyphMap.map((glyph, index) => ( */}
-          {/* <Button */}
-            {/* // key={glyph} */}
-            {/* // variant={icon === index ? 'default' : 'outline'} */}
-            {/* // img={glyph as Icon.Name} */}
-            {/* // onClick={() => setIcon(index)} */}
-          {/* /> */}
-        {/* ))} */}
+        {/* @ts-ignore */}
+        {map.map(([k, n]) => {
+          return <Button
+            key={n}
+            variant={k === icon ? 'default' : 'outline'}
+            img={n}
+            onClick={() => setIcon(k)}
+          />
+        })}
         <Button className={s.upload} variant='hardline' img='Plus' onClick={uploadGlyph}>Upload</Button>
       </PopoverContent>
     </Popover>

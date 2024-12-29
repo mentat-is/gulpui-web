@@ -5,9 +5,10 @@ import { SessionBanner } from './Session.banner';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner';
-import { Pattern } from '@/class/Info';
+import { Operation, Pattern } from '@/class/Info';
 import { useKeyHandler } from '@/app/use';
 import { Login } from '@/dto';
+import { OperationBanner } from './Operation.banner';
 
 export namespace AuthBanner {
   export interface Props extends Banner.Props {
@@ -69,8 +70,12 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
           password,
           ws_id: Info.app.general.ws_id
         }
-      }, (data) => {
+      }, async (data) => {
         Info.login(data);
+        await Info.index_reload();
+        if (!Operation.selected(Info.app)) {
+          spawnBanner(<OperationBanner />)
+        }
       });
     }
 

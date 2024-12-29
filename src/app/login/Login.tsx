@@ -22,41 +22,6 @@ export function LoginPage() {
   const { Info, app, spawnBanner } = useApplication();
   const [stage, setStage] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
-  const loginButton = useRef<HTMLButtonElement>(null);
-
-  // AUTH
-  const [serverValue, setServerValue] = useState<string>(app.general.server);
-
-  const [id, setId] = useState<string>('admin');
-  const [password, setPassword] = useState<string>('admin');
-  
-  
-
-  /** 
-   * При авторизации фетчим индексы и перехоим на второй этап
-  */
-  useEffect(() => {
-    if (app.general.token) {
-      // Info.getSessions().then(sessions => {
-      //   if (Object.keys(sessions).length) {
-      //     spawnBanner(<SelectSession sessions={sessions} />)
-      //   }
-      // });
-
-      const processStage = async () => {
-        // await Info.mapping()
-        await Info.index_reload()
-        setLoading(false);
-        setStage(1);
-      }
-
-      processStage();
-    }
-  }, [app.general.token]);
-
-
-  // INDEXES
-
   
   const handleIndexSelection = async (index: λIndex) => {
     setLoading(true);
@@ -73,40 +38,6 @@ export function LoginPage() {
       setLoading(false);
     });
   }, [app.target.indexes]);
-
-
-  // OPERATIONS
-
-
-  const deleteOperation = (operation_id: λOperation['id']) => {
-    const index = Index.selected(app)
-
-    if (!index) {
-      return;
-    }
-
-    api('/operation_delete', {
-      method: 'DELETE',
-      query: {
-        operation_id,
-        index: index.name
-      },
-      setLoading
-    }, Info.operation_list)
-  };
-
-  const handleOperationSelect = (operation: λOperation) => {
-    setLoading(true);
-    Info.operations_select(operation)
-
-    setStage(3);
-  }
-
-  useEffect(() => {
-    if (stage < 3) return;
-
-    spawnBanner(<SelectFilesBanner />);
-  }, [stage]);
 
   return (
     <div className={s.page}>
@@ -133,33 +64,7 @@ export function LoginPage() {
               </div>
               )
             :  stage === 2 
-              ? (
-                <div className={s.chooser}>
-                  {app.target.operations.map((operation, i) => (
-                    <div className={s.unit_group} key={operation.id}>
-                      <ContextMenu>
-                        <ContextMenuTrigger style={{ width: '100%' }}>
-                          <Button tabIndex={i * 1} onClick={() => handleOperationSelect(operation)} img={'ScanSearch'}>{operation.name}</Button>
-                        </ContextMenuTrigger>
-                        <ContextMenuContent>
-                          <ContextMenuSub>
-                            <ContextMenuSubTrigger img='Trash2'>Delete!</ContextMenuSubTrigger>
-                            <ContextMenuSubContent>
-                              <ContextMenuItem onClick={() => deleteOperation(operation.id)} img='Trash2'>Yes, delete operation {operation.name}!</ContextMenuItem>
-                            </ContextMenuSubContent>
-                          </ContextMenuSub>
-                        </ContextMenuContent>
-                      </ContextMenu>
-                    </div>
-                  ))}
-                  <Separator />
-                  <Button
-                    variant='glass'
-                    img='Plus'
-                    style={{ width: '100%' }}
-                    onClick={() => spawnBanner(<CreateOperationBanner />)}>Create new operation</Button>
-                </div>
-              )
+              ? null
               : (
                 <>
                   <p>🦆 Quack! You found me! Let's keep it our little secret 😉</p>
