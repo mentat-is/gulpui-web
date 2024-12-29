@@ -8,7 +8,6 @@ import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button } from '@impactium/components';
 import { Badge } from '@/ui/Badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
-import { format } from 'date-fns';
 import { Calendar } from '@/ui/Calendar';
 import { Context, Filter, FilterOptions, FilterType, File, λFilter, μ } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
@@ -18,6 +17,7 @@ import { Card } from '@/ui/Card';
 import { cn, generateUUID } from '@/ui/utils';
 import { toast } from 'sonner';
 import { λFile } from '@/dto/Operation.dto';
+import { format } from 'date-fns';
 
 const _baseFilter = (): λFilter => ({
   id: generateUUID() as μ.Filter,

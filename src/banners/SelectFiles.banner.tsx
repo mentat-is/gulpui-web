@@ -13,6 +13,7 @@ import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
 import { λContext, λFile } from '@/dto/Operation.dto';
 import { Separator } from '@/ui/Separator';
+import { ContextMenuSeparator } from '@radix-ui/react-context-menu';
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -22,12 +23,15 @@ export function SelectFilesBanner() {
  
   const save = async () => {
     setLoading(true);
+
+    await Info.query_operations();
+
     const unfetched = File.selected(app).filter(file => Event.get(app, file.id).length === 0).map(file => file.id || Event.get(app, file.id).length < file.total);
 
-    if (unfetched.length && app.target.bucket.selected) {
-      return await Info.refetch({
-        ids: unfetched
-      }).then(destroyBanner);
+    console.log(unfetched);
+
+    if (unfetched.length) {
+      await Info.refetch({ ids: unfetched });
     }
 
     spawnBanner(<LimitsBanner />);

@@ -1,7 +1,6 @@
 import { Login, type λApp } from '@/dto';
-import { Bucket, MinMax, QueryMaxMin } from '@/dto/QueryMaxMin.dto';
 import { λOperation, λContext, λFile, OperationTree } from '@/dto/Operation.dto';
-import { λEvent, λEventFormForCreateRequest, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
+import { λEvent, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
@@ -124,10 +123,18 @@ export class Info implements InfoProps {
   refetch = async ({ ids = [], hidden, range }: RefetchOptions = {}) => {
     ids = Parser.array(ids);
 
+    const index = Index.selected(this.app);
     const operation = Operation.selected(this.app);
     const contexts = Context.selected(this.app);
 
-    if (!operation || !contexts.length) return;
+    if (!index || !operation || !contexts.length) {
+      return;
+    }
+
+    if (!operation || !contexts.length) {
+      console.log(operation),
+      console.log(contexts);
+    };
 
     ids.length
       ? ids.forEach(id => this.events_reset_in_file(File.id(this.app, id)))
@@ -141,7 +148,7 @@ export class Info implements InfoProps {
         else {
           Logger.error(`File with id ${id} not found in application data`, `${Info.name}.${this.refetch.name}`);
           toast('File not found in application data', {
-            description: `See console for further details. UUID: ${id}`
+            description: `ERR_FILE_NOT_FOUND_AT_APPLICATION_DATA`
           });
         }
 
@@ -160,16 +167,12 @@ export class Info implements InfoProps {
     }
     
     await Promise.all(files.map(async file => {
-      if (!this.app.target.bucket.selected && !range) return Logger.error(`${Info.name}.${this.refetch.name} for file ${file?.id}-${file?.id} has been executed, but was cancelled bacause range is ${typeof range} and ${typeof this.app.target.bucket.selected}`, Info.name);
-
       return await api('/query_raw', {
         method: 'POST',
         query: {
           ws_id: this.app.general.ws_id,
-          req_id: file.id
-        },
-        headers: {
-          'Content-Type': 'application/json'
+          req_id: file.id,
+          index: index.name
         },
         body: JSON.stringify({
           ...Filter.body(this.app, file, range),
@@ -300,6 +303,7 @@ export class Info implements InfoProps {
 
   // 🔥 FILES
   selectAll = (filter: string) => {
+    console.log(Context.select(this.app, this.app.target.contexts));
     this.setInfo(i => ({
       ...i,
       target: {
@@ -511,6 +515,10 @@ export class Info implements InfoProps {
                   min: 0,
                   max: 0
                 },
+                nanotimestamp: {
+                  min: 0,
+                  max: 0
+                },
                 total: 0
               };
               files.push(file)
@@ -523,6 +531,10 @@ export class Info implements InfoProps {
       };
       operations.push(operation);
     });
+
+    if (operations.length === 1) {
+      operations[0].selected = true;
+    }
 
     this.setInfo(app => ({
       ...app,
@@ -539,9 +551,17 @@ export class Info implements InfoProps {
     return { operations, contexts, files };
   }
 
-  query_operations = async (setLoading: SetState<boolean>) => {
+  query_operations = async () => {
+    const index = Index.selected(this.app);
+
+    if (!index) {
+      return;
+    }
+
     const response = await api<GulpDataset.QueryOperations.Summary>('/query_operations', {
-      setLoading
+      query: {
+        index: index.name
+      }
     });
 
     const flatten = response.map(o => o.contexts.map(c => c.plugins.map(p => p.sources))).flat(3);
@@ -560,6 +580,10 @@ export class Info implements InfoProps {
           max: match['max_event.code'],
         },
         timestamp: {
+          min: Number(match['min_gulp.timestamp'].toString().substring(0, 13)),
+          max: Number(match['max_gulp.timestamp'].toString().substring(0, 13)),
+        },
+        nanotimestamp: {
           min: match['min_gulp.timestamp'],
           max: match['max_gulp.timestamp']
         },
@@ -570,64 +594,7 @@ export class Info implements InfoProps {
     this.files_replace(newFiles);
   }
 
-  query_max_min = ({ ignore }: { ignore?: boolean}) => api<QueryMaxMin>('/query_max_min', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8'
-    },
-    body: JSON.stringify({
-      operation_id: [Operation.selected(this.app)?.id]
-    })
-  }).then(data => {
-    const fulfilled = Boolean(data.buckets.length);
-    const base = data.buckets[0]?.['*'];
-
-    if (!base) {
-      return
-    }
-
-    const timestamp: MinMax = {
-      max: base['max_@timestamp'],
-      min: base['min_@timestamp'],
-    }
-    const selected = this.app.target.bucket.selected
-      ? this.app.target.bucket.selected
-      : differenceInMonths(timestamp.max, timestamp.min) > 6
-        ? null
-        : timestamp;
-
-    const bucket: Bucket = {
-      total: data.total,
-      fetched: this.app.target.bucket.fetched || 0,
-      event_code: {
-        max: fulfilled ? base['max_event.code'] : 1,
-        min: fulfilled ? base['min_event.code'] : 0
-      },
-      timestamp,
-      selected
-    };
-
-    if (!ignore) {
-      this.setBucket(bucket);
-    }
-
-    return bucket;
-  });
-
-  setBucketSelected = (range: MinMax) => {
-    LoggerHandler.bucketSelection(range, this.app.target.bucket.timestamp);
-
-    this.setBucket({
-      ...this.app.target.bucket,
-      selected: {
-        min: Math.max(range.min, 1),
-        max: range.max
-      }
-    });
-    return range;
-  };
-
-  private setBucket = (bucket: Bucket) => this.setInfoByKey(bucket, 'target', 'bucket');
+  setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
   login = (obj: Login) => {
     localStorage.setItem('__token', obj.token);
@@ -886,8 +853,14 @@ export class Operation {
 export class Context {
   public static reload = (newContexts: λContext[], app: λApp): λContext[] => Context.select(newContexts, Context.selected(app));
 
-  // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (use: λApp | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.name === c.id : true));
+  public static frame = (app: λApp): MinMax => app.target.files.map(f => f.timestamp).reduce((acc, cur) => {
+    acc.min = Math.min(cur.min, acc.min || cur.min);
+    acc.max = Math.max(cur.max, acc.max);
+
+    return acc;
+  }, { min: 0, max: 0 });
+
+  public static selected = (use: λApp | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.id === c.operation_id : true));
 
   public static find = (use: λApp | λContext[], context: λContext | λContext['id']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.id === Parser.useUUID(context));
 
@@ -1036,19 +1009,14 @@ export class Filter {
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
   static body = (app: λApp, file: λFile, range?: MinMax) => ({
-    query_raw: {
-      bool: {
-        must: [
-          {
-            query_string: {
-              query: Filter.parse(app, file, range),
-              analyze_wildcard: true
-            }
-          }
-        ]
-      }
+    q: {
+      query: {
+        query_string: {
+          query: Filter.parse(app, file, range),
+        }
+      },
     },
-    options: {
+    q_options: {
       sort: {
         '@timestamp': 'desc'
       }
@@ -1238,4 +1206,14 @@ export const Pattern = {
   Server: new RegExp(/https?:\/\/(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})?(:\d+)?(\/[^\s]*)?/),
   Username: /^[\s\S]{3,48}$/,
   Password: /^[\s\S]{3,48}$/
+}
+
+export interface MinMax {
+  min: number;
+  max: number
+}
+
+export const MinMaxBase = {
+  min: 0,
+  max: 0
 }

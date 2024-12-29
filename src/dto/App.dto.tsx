@@ -1,12 +1,11 @@
 import { Login, λOperation } from '.';
-import { Bucket } from './QueryMaxMin.dto';
 import { λEvent, DetailedChunkEvent } from './ChunkEvent.dto';
 import { λIndex } from './Index.dto';
 import { λPlugin } from './Plugin.dto';
 import { λNote } from './Note.dto';
 import { λLink } from './Link.dto';
 import { generateUUID, Gradients, GradientsMap } from '@/ui/utils';
-import { FilterOptions, λFilter, μ } from '@/class/Info';
+import { FilterOptions, MinMax, λFilter, μ } from '@/class/Info';
 import { λGlyph } from './λGlyph.dto';
 import { Engine } from '@/class/Engine.dto';
 import { RenderEngine } from '@/class/RenderEngine';
@@ -24,7 +23,6 @@ export interface λApp {
     up: number
   }; // bytes
   target: {
-    bucket: Bucket,
     indexes: λIndex[]
     operations: λOperation[],
     contexts: λContext[],
@@ -49,6 +47,7 @@ export interface λApp {
   },
   timeline: {
     scale: number;
+    frame: MinMax;
     target: λEvent | null;
     loaded: μ.File[];
     filter: string;
@@ -91,6 +90,10 @@ export const BaseInfo: λApp = {
       data: new Map<μ.File, λEvent[]>(),
       filters: {}
     },
+    frame: {
+      min: 0,
+      max: 0
+    },
     filtering_options: {},
     isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: 50
@@ -102,19 +105,6 @@ export const BaseInfo: λApp = {
     files: [],
     events: new Map<μ.File, λEvent[]>(),
     filters: {},
-    bucket: {
-      total: 0,
-      fetched: 0,
-      event_code: {
-        min: 0,
-        max: 0
-      },
-      timestamp: {
-        min: Date.now(),
-        max: Date.now()
-      },
-      selected: null,
-    },
     notes: [],
     links: [],
     sigma: {},

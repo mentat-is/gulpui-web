@@ -10,19 +10,23 @@ import { Input } from '@/ui/Input';
 import { toast } from 'sonner';
 import { Card } from '@/ui/Card';
 import { Toggle } from '@/ui/Toggle';
+import { Context } from '@/class/Info';
 
 export function LimitsBanner() {
   const { Info, destroyBanner, app } = useApplication();
+
+  const minMax = Context.frame(app);
+
   const [manual, setManual] = useState<boolean>(false);
-  const [min, setMin] = useState<number>(app.target.bucket.selected?.min || app.target.bucket.timestamp.min);
-  const [max, setMax] = useState<number>(app.target.bucket.selected?.max || app.target.bucket.timestamp.max);
+  const [min, setMin] = useState<number>(minMax.min);
+  const [max, setMax] = useState<number>(minMax.max);
   const [loading, setLoading] = useState<boolean>(false);
 
   const map = [
-    { text: 'Day', do: () => save(app.target.bucket.timestamp.max - 24 * 60 * 60 * 1000) },
-    { text: 'Week', do: () => save(app.target.bucket.timestamp.max - 7 * 24 * 60 * 60 * 1000) },
-    { text: 'Month', do: () => save(app.target.bucket.timestamp.max - 30 * 24 * 60 * 60 * 1000) },
-    { text: 'Full range', do: () => save(app.target.bucket.timestamp.min) },
+    { text: 'Day', do: () => save(app.timeline.frame.max - 24 * 60 * 60 * 1000) },
+    { text: 'Week', do: () => save(app.timeline.frame.max - 7 * 24 * 60 * 60 * 1000) },
+    { text: 'Month', do: () => save(app.timeline.frame.max - 30 * 24 * 60 * 60 * 1000) },
+    { text: 'Full range', do: () => save(app.timeline.frame.min) },
   ]
 
   const save = async (_min?: number) => {
@@ -33,9 +37,12 @@ export function LimitsBanner() {
 
     if (range) {
       setLoading(true);
-      Info.setBucketSelected(range)
 
-      await Info.refetch({ range }).then(destroyBanner);
+      Info.setTimelineFrame(range);
+
+      await Info.refetch({ range });
+
+      destroyBanner();
     }
   }
 
@@ -113,8 +120,8 @@ export function DateSelection({ initialDate, onDateChange, manual }: { initialDa
   };
 
   const years = eachYearOfInterval({
-    start: new Date(app.target.bucket.timestamp.min),
-    end: new Date(app.target.bucket.timestamp.max),
+    start: new Date(app.timeline.frame.min),
+    end: new Date(app.timeline.frame.max),
   }).reverse();
 
   const months = eachMonthOfInterval({

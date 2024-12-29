@@ -79,12 +79,7 @@ export type Api = {
 type unresolwedArgument<T> = RequestInit & RequestOptions & { raw?: boolean} | Callback<T> | undefined;
 
 export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgument<T>, _path: string) {
-  let options: RequestInit & RequestOptions & { raw?: boolean } = {
-    headers: {
-      'Content-Type': 'application/json',
-      'token': localStorage.getItem('__token') || ''
-    }
-  };
+  let options: RequestInit & RequestOptions & { raw?: boolean } = {};
   let callback: Callback<T> | undefined;
 
   if (typeof a === 'function') {
@@ -98,6 +93,11 @@ export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgume
       callback = b;
     }
   }
+
+  options.headers = Object.assign(options.headers || {}, {
+    'Content-Type': 'application/json',
+    'token': localStorage.getItem('__token') || ''
+  })
 
   if (typeof options.body === 'object' && !(options.body instanceof FormData)) {
     options.body = JSON.stringify(options.body);

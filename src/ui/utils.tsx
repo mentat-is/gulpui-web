@@ -1,14 +1,14 @@
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { toast } from 'sonner';
-import { MinMax } from '@/dto/QueryMaxMin.dto';
 import { UUID } from 'crypto';
 import { λApp } from '@/dto';
-import { Info } from '@/class/Info';
+import { Info, MinMax } from '@/class/Info';
 import { RefObject } from 'react';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Hardcode } from '@/class/Engine.dto';
 import { λFile } from '@/dto/Operation.dto';
+import { format as _format, FormatOptions } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -106,16 +106,14 @@ export const getColorByCode = (code: number, min: number, max: number): string =
 };
 
 export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, app: λApp, offset: number = 0): boolean => {
-  if (!app.target.bucket.selected) return true;
-
   const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {
     min: timestamp.min + offset,
     max: timestamp.max + offset
   };
 
-  return typeof time === 'number' 
-    ? time < limits.min || time > limits.max || time < (app.target.bucket.selected.min || 0) || time > (app.target.bucket.selected.max || Infinity)
-    : time.max < limits.min || time.min > limits.max || time.max < (app.target.bucket.selected.min || 0) || time.min > (app.target.bucket.selected.max || Infinity);
+  return typeof time === 'number'
+    ? time < limits.min || time > limits.max || time < (app.timeline.frame.min || 0) || time > (app.timeline.frame.max || Infinity)
+    : time.max < limits.min || time.min > limits.max || time.max < (app.timeline.frame.min || 0) || time.min > (app.timeline.frame.max || Infinity);
 }
 
 export function generateUUID(): UUID {
@@ -126,16 +124,16 @@ export function generateUUID(): UUID {
   }) as UUID;
 }
 export const getLimits = (app: λApp, Info: Info, timeline: RefObject<HTMLDivElement>, scrollX: number): MinMax => {
-  if (!app.target.bucket.selected) {
-    return app.target.bucket.timestamp
+  if (!app.timeline.frame) {
+    return app.timeline.frame
   }
 
-  const min = app.target.bucket.selected.min + 
-    (scrollX / Info.width) * (app.target.bucket.selected.max - app.target.bucket.selected.min);
+  const min = app.timeline.frame.min + 
+    (scrollX / Info.width) * (app.timeline.frame.max - app.timeline.frame.min);
 
-  const max = app.target.bucket.selected.min + 
+  const max = app.timeline.frame.min + 
     ((scrollX + timeline.current!.clientWidth) / Info.width) * 
-    (app.target.bucket.selected.max - app.target.bucket.selected.min);
+    (app.timeline.frame.max - app.timeline.frame.min);
 
   return { min, max };
 };
@@ -194,13 +192,9 @@ export const getDateFormat = (diffInMilliseconds: number) => {
 }
 
 export const getTimestamp = (x: number, info: Info) => {
-  if (!info.app.target.bucket.selected) return 0;
+  const { min, max } = info.app.timeline.frame;
 
-  const { min, max } = info.app.target.bucket.selected;
-
-  const width = info.width;
-
-  return min + (x / width) * (max - min);
+  return min + (x / info.width) * (max - min);
 };
 
 export const formatBytes = (bytes: number): string => {

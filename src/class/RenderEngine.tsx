@@ -1,4 +1,4 @@
-import { MinMax } from '@/dto/QueryMaxMin.dto';
+import { MinMax } from '@/class/Info';
 import { Event, Info, File } from './Info';
 import { Color, stringToHexColor } from '@/ui/utils';
 import { format } from 'date-fns';
@@ -61,7 +61,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         getPixelPosition,
         scrollX,
         scale: info.app.timeline.scale,
-        selected: info.app.target.bucket.selected,
+        selected: info.app.timeline.frame,
         width: info.width,
       });
       RenderEngine.instance.ctx = ctx;
@@ -82,7 +82,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       getPixelPosition,
       scrollX,
       scale: info.app.timeline.scale,
-      selected: info.app.target.bucket.selected,
+      selected: info.app.timeline.frame,
       width: info.width
     });
     this.ctx = ctx;

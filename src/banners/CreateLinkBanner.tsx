@@ -10,7 +10,6 @@ import {
 import { SetStateAction, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css'
 import { Input } from '@/ui/Input';
-import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Card } from '@/ui/Card';
 import { Separator } from '@/ui/Separator';
@@ -23,6 +22,7 @@ import { LinkCombination } from '@/components/LinkCombination';
 import { EventCombination } from '@/components/EventCombination';
 import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { λFile } from '@/dto/Operation.dto';
+import { format } from 'date-fns';
 
 interface CreateLinkBannerProps {
   context: string,

@@ -68,9 +68,9 @@ export type λRawEventMinimized = Pick<λEvent, 'context' | 'id' | 'operation_id
 }
 
 export interface λEventFormForCreateRequest {
-  id: string;
-  timestamp: number;
-  operation_id: number;
-  context: string;
-  src_file: string;
+id: string;
+timestamp: number;
+operation_id: number;
+context: string;
+src_file: string;
 }

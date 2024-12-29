@@ -10,9 +10,9 @@ export function Limits() {
   return (
     <Button variant='secondary' onClick={() => spawnBanner(<LimitsBanner />)} className={s.datelimit}>
       From
-      <span>{getReadableDate(app.target.bucket.selected ? app.target.bucket.selected.min : app.target.bucket.timestamp.min)}</span>
+      <span>{getReadableDate(app.timeline.frame.min)}</span>
       to
-      <span>{getReadableDate(app.target.bucket.selected ? app.target.bucket.selected.max : app.target.bucket.timestamp.max)}</span>
+      <span>{getReadableDate(app.timeline.frame.max)}</span>
     </Button>
   )
 }

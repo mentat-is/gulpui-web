@@ -29,7 +29,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
   const wrapper_ref = useRef<HTMLDivElement>(null);
   
   const { app, spawnDialog, Info, dialog } = useApplication();
-  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.target.bucket, app.target.bucket.fetched, app.target.bucket.fetched, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted];
+  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted];
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
 
   const renderCanvas = (force?: boolean) => {
@@ -66,8 +66,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
     render.links();
 
     ctx.fillStyle = '#ff000080'
-    ctx.fillRect(getPixelPosition(app.target.bucket.selected?.min || app.target.bucket.timestamp?.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
-    ctx.fillRect(getPixelPosition(app.target.bucket.selected?.max || app.target.bucket.timestamp?.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
+    ctx.fillRect(getPixelPosition(app.timeline.frame.min || app.timeline.frame?.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
+    ctx.fillRect(getPixelPosition(app.timeline.frame.max || app.timeline.frame?.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
 
     if (timeline.current) {
       render.debug({
@@ -149,10 +149,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
     overlayCtx.fillRect(end - 1, 0, 3, overlay_ref.current.height);
   }
 
-  const getPixelPosition = (timestamp: number) => {
-    if (!app.target.bucket.selected) return 0;
-    return Math.round(((timestamp - app.target.bucket.selected.min) / (app.target.bucket!.selected.max - app.target.bucket!.selected.min)) * Info.width) - scrollX;
-  }
+  const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 
   return (
     <div

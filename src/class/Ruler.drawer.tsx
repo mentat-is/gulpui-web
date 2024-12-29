@@ -1,4 +1,4 @@
-import { MinMax } from '@/dto/QueryMaxMin.dto';
+import { MinMax } from '@/class/Info';
 import { getDateFormat } from '@/ui/utils';
 import { addMilliseconds, differenceInMilliseconds, formatDate } from 'date-fns';
 

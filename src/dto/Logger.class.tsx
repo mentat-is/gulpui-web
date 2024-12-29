@@ -1,5 +1,5 @@
 import { Console } from '@impactium/console';
-import { MinMax } from './QueryMaxMin.dto';
+import { MinMax } from '@/class/Info';
 import { λEvent } from './ChunkEvent.dto';
 import { Arrayed, Parser } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';

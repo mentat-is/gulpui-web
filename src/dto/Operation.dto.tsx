@@ -1,12 +1,10 @@
-import { UUID } from 'crypto';
 import { λIndex } from './Index.dto';
 import { Color } from '@impactium/types';
 import { μ } from '@/class/Info';
 import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
-import { intersection } from 'lodash';
 import { λGlyph } from './λGlyph.dto';
-import { MinMax } from './QueryMaxMin.dto';
+import { MinMax } from '@/class/Info';
 
 export type GulpDataType = 'operation' | 'context' | 'file';
 
@@ -64,6 +62,7 @@ export type λFile = ΞFile & {
   settings: ΞSettings;
   code: MinMax;
   timestamp: MinMax;
+  nanotimestamp: MinMax;
   total: number;
 };
 

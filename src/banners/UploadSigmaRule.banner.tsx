@@ -6,10 +6,15 @@ import { useState } from 'react';
 export function UploadSigmaRuleBanner() {
   const [file, setFile] = useState<File | null>(null);
 
+  const DoneButton = () => {
+    return (
+      <Button img='Check' variant='ghost' disabled={!file}></Button>
+    )
+  }
+
   return (
-    <Banner title='Upload sigma rule'>
+    <Banner title='Upload sigma rule' done={<DoneButton />}>
       <Input type='file' onChange={(e) => setFile(e.target.files?.[0] || null)} />
-      <Button img='CheckCheck' variant={file ? 'default' : 'disabled'}>Apply</Button>
     </Banner>
   )
 }
