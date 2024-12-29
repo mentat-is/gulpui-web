@@ -1,5 +1,5 @@
 import { Banner } from "@/ui/Banner";
-import { Button } from "@impactium/components";
+import { Button, Stack } from "@impactium/components";
 import React, { useCallback, useEffect, useState } from "react";
 import { CreateOperationBanner } from "./CreateOperation.banner";
 import { useApplication } from "@/context/Application.context";
@@ -14,6 +14,10 @@ import {
 } from "@/ui/ContextMenu";
 import { Operation } from "@/class/Info";
 import { SelectFilesBanner } from "./SelectFiles.banner";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
+import { λOperation } from "@/dto";
+import { GlyphMap } from "@/dto/Glyph.dto";
+import { Icon } from "@impactium/icons";
 
 export namespace OperationBanner {
   export interface Props extends Banner.Props {
@@ -46,14 +50,6 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
     }
   }, []);
 
-  useEffect(() => {
-    const selectedOperation = Operation.selected(Info.app);
-
-    if (selectedOperation) {
-      spawnBanner(<SelectFilesBanner />);
-    }
-  }, [Info.app.target.operations]);
-
   const DoneButton = useCallback(() => {
     const handleDoneButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
       ev.preventDefault();
@@ -66,26 +62,41 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
   }, [loading, Info.app.target.operations]);
 
   const NoOperations = useCallback(() => {
-    return <p style={{ fontSize: 12, color: 'var(--text-dimmed)', width: '100%', textAlign: 'center' }}>No operations on database. <code style={{ fontFamily: 'var(--font-mono)'}}>Click upper to create!</code></p>
+    return <SelectItem value='X'>There is no operations</SelectItem>
   }, []);
+
+  const Trigger = useCallback(() => {
+    const selected = Operation.selected(Info.app);
+
+    if (!selected) {
+      return (
+        <SelectTrigger>Select operation or create new one</SelectTrigger>
+      )
+    }
+
+    return (
+      <SelectTrigger>
+        <Stack>
+          <Icon name={GlyphMap.get(selected.glyph_id!) || 'BookDashed'} />
+          {selected.name}
+        </Stack>
+      </SelectTrigger>
+    )
+  }, [Info.app.target.operations])
 
   return (
     <Banner title='Choose operation' subtitle={<InitializeNewOperaion />} done={<DoneButton />} {...props}>
-      {Info.app.target.operations.length ? Info.app.target.operations.map((operation, i) => (
-        <ContextMenu>
-          <ContextMenuTrigger style={{ width: '100%' }}>
-            <Button tabIndex={i * 1} onClick={() => Info.operations_select(operation)} img={'ScanSearch'}>{operation.name}</Button>
-          </ContextMenuTrigger>
-          <ContextMenuContent>
-            <ContextMenuSub>
-              <ContextMenuSubTrigger img='Trash2'>Delete!</ContextMenuSubTrigger>
-              <ContextMenuSubContent>
-                <ContextMenuItem onClick={() => Info.deleteOperation(operation, setLoading)} img='Trash2'>Yes, delete operation {operation.name}!</ContextMenuItem>
-              </ContextMenuSubContent>
-            </ContextMenuSub>
-          </ContextMenuContent>
-        </ContextMenu>
-      )) : <NoOperations />}
+      <Select defaultValue={Operation.selected(Info.app)?.name} onValueChange={(name) => Info.operations_select(Info.app.target.operations.find(o => o.name === name)!)}>
+        <Trigger />
+        <SelectContent>
+          {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
+            <SelectItem value={operation.name}>
+              <Icon name={GlyphMap.get(operation.glyph_id!) || 'BookDashed'} />
+              {operation.name}
+            </SelectItem>
+          )) : <NoOperations />}
+        </SelectContent>
+      </Select>
     </Banner>
   );
 }

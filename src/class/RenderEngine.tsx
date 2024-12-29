@@ -222,22 +222,22 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const y = File.getHeight(this.info.app, file, this.scrollY);
 
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillRect(this.getPixelPosition(file.detailed.timestamp.max + file.settings.offset) + 2, y - 24, 2, 48 - 1);
-    this.ctx.fillRect(this.getPixelPosition(file.detailed.timestamp.min + file.settings.offset) - 2, y - 24, 2, 48 - 1);
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.settings.offset) + 2, y - 24, 2, 48 - 1);
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.settings.offset) - 2, y - 24, 2, 48 - 1);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(format(file.detailed.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(file.detailed.timestamp.min) - 64, y + 4);
-    this.ctx.fillText(format(file.detailed.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(file.detailed.timestamp.max) + 12, y + 4);
+    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.min) - 64, y + 4);
+    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.max) + 12, y + 4);
 
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#0372ef';
     const events = Event.get(this.info.app, file.id).length.toString()
-    this.ctx.fillText(events, this.getPixelPosition(file.detailed.timestamp.max) + 12, y + 14);
-    this.ctx.fillText(events, this.getPixelPosition(file.detailed.timestamp.min) - 64, y + 14);
+    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
+    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.detailed.doc_count.toString(), this.getPixelPosition(file.detailed.timestamp.max) + 12, y - 6);
-    this.ctx.fillText(file.detailed.doc_count.toString(), this.getPixelPosition(file.detailed.timestamp.min) - 64, y - 6);
+    this.ctx.fillText(file.total.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
+    this.ctx.fillText(file.total.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
   }
 
   public draw_info = (file: λFile) => {
@@ -249,7 +249,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(`${file.detailed.doc_count.toString()} | ${File.context(this.info.app, file).name}`, 10, y - 14);
+    this.ctx.fillText(`${file.total.toString()} | ${File.context(this.info.app, file).name}`, 10, y - 14);
     
     this.ctx.fillStyle = '#e8e8e8';
     this.ctx.fillText(File.events(this.info.app, file).length.toString(), 10, y + 14);

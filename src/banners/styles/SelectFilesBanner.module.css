@@ -11,6 +11,8 @@
   padding-right: 10px;
   position: relative;
   border-radius: var(--border-s);
+  border: 1px solid var(--gray-400);
+  background: var(--meta-black);
 }
 .noData {
   height: 100%;
@@ -26,9 +28,6 @@
   flex-direction: column;
   gap: 8px;
   padding: 8px 16px 20px 16px;
-  background: var(--geist-background);
-  border: var(--geist-border);
-  border-radius: var(--border-s);
 }
 .contextHeading {
   display: flex;
@@ -36,18 +35,20 @@
   align-items: center;
 }
 .contextHeading label {
-  font-size: 24px;
+  font-size: 18px;
+  font-family: var(--font-mono);
+  padding: 4px;
 }
 .pluginHeading {
   display: flex;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-left: 12px;
   align-items: center;
 }
 .pluginHeading label {
-  font-size: 14px;
+  font-size: 12px;
   font-family: var(--font-mono);
-  max-width: 256px;
+  max-width: 333px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

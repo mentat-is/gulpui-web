@@ -49,7 +49,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
 
       if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
-      if (!throwableByTimestamp(file.detailed.timestamp, limits, app, file.settings.offset)) {
+      if (!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)) {
         render[file.settings.engine].render(file, y - 24, force);
       };
 

@@ -21,6 +21,40 @@ import { Session } from '@/dto/App.dto';
 import { Color } from '@impactium/types';
 import { SetState } from './API';
 
+export namespace GulpDataset {
+  export namespace QueryOperations {
+    interface Operation {
+      name: string;
+      id: string;
+      contexts: Context[];
+    }
+
+    interface Context {
+      name: string;
+      id: string;
+      doc_count: number;
+      plugins: Plugin[]
+    }
+
+    interface Plugin {
+      name: string;
+      sources: Source[];
+    }
+
+    interface Source {
+      name: string;
+      id: string;
+      doc_count: number;
+      'max_event.code': number;
+      'min_event.code': number;
+      'min_gulp.timestamp': number; // nsec
+      'max_gulp.timestamp': number; // nsec
+    }
+
+    export type Summary = Operation[];
+  }
+}
+
 interface RefetchOptions {
   ids?: Arrayed<λFile['id']>;
   hidden?: boolean;
@@ -265,6 +299,16 @@ export class Info implements InfoProps {
   plugins_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
 
   // 🔥 FILES
+  selectAll = (filter: string) => {
+    this.setInfo(i => ({
+      ...i,
+      target: {
+        ...i.target,
+        contexts: Context.select(i, i.target.contexts),
+        files: File.select(i, i.target.files.filter(file => file.name.toLowerCase().includes(filter))),
+      }
+    }))
+  }
   files_select = (files: λFile[]) => this.setInfoByKey(File.select(this.app, files), 'target', 'files');
   files_unselect = (files: Arrayed<λFile>) => {
     if (this.app.timeline.target && Parser.array(files).map(file => file.id).includes(this.app.timeline.target.file_id)) {
@@ -459,7 +503,15 @@ export class Info implements InfoProps {
                   focusField: 'event.code',
                   offset: 0
                 },
-                detailed: {}
+                code: {
+                  min: 0,
+                  max: 0
+                },
+                timestamp: {
+                  min: 0,
+                  max: 0
+                },
+                total: 0
               };
               files.push(file)
               return file.id;
@@ -485,6 +537,37 @@ export class Info implements InfoProps {
     }));
 
     return { operations, contexts, files };
+  }
+
+  query_operations = async (setLoading: SetState<boolean>) => {
+    const response = await api<GulpDataset.QueryOperations.Summary>('/query_operations', {
+      setLoading
+    });
+
+    const flatten = response.map(o => o.contexts.map(c => c.plugins.map(p => p.sources))).flat(3);
+
+    const newFiles = this.app.target.files.map(f => {
+      const match = flatten.find(m => m.id === f.id);
+
+      if (!match) {
+        return f;
+      }
+
+      return ({
+        ...f,
+        code: {
+          min: match['min_event.code'],
+          max: match['max_event.code'],
+        },
+        timestamp: {
+          min: match['min_gulp.timestamp'],
+          max: match['max_gulp.timestamp']
+        },
+        total: match.doc_count
+      }) satisfies λFile;
+    })
+
+    this.files_replace(newFiles);
   }
 
   query_max_min = ({ ignore }: { ignore?: boolean}) => api<QueryMaxMin>('/query_max_min', {
@@ -837,7 +920,7 @@ export class File {
   public static pluginName = (file: λFile) => file.name.split('/').reverse()[1];
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(s => s.selected && File.selected(app).some(p => p.id === s.id))).filter(s => s.name.toLowerCase().includes(app.timeline.filter) || File.id(app, s.id)?.context_id.includes(app.timeline.filter));
+  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(s => s.selected)).filter(s => s.name.toLowerCase().includes(app.timeline.filter) || File.id(app, s.id)?.context_id.includes(app.timeline.filter));
   
   public static select = (use: λApp | λFile[], selected: Arrayed<λFile | string>): λFile[] => Parser.use(use, 'files').map(s => Parser.array(selected).find(f => s.id === Parser.useUUID(f)) ? File._select(s) : s);
 

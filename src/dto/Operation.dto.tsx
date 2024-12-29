@@ -5,6 +5,8 @@ import { μ } from '@/class/Info';
 import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
 import { intersection } from 'lodash';
+import { λGlyph } from './λGlyph.dto';
+import { MinMax } from './QueryMaxMin.dto';
 
 export type GulpDataType = 'operation' | 'context' | 'file';
 
@@ -20,7 +22,7 @@ export type GulpObject<T extends typeof μ, E extends Extendable = {}> = ΞSelec
   type: GulpDataType;
   time_created: number;
   time_updated: number;
-  glyph_id: UUID | null;
+  glyph_id: λGlyph['id'] | null;
   name: string;
   // TODO
   granted_user_ids: Array<unknown>,
@@ -60,7 +62,9 @@ type ΞFile<T extends Extendable = {}> = GulpObject<μ.File, T> & {
 export type λFile = ΞFile & {
   pinned?: boolean;
   settings: ΞSettings;
-  detailed: ΞDetailed;
+  code: MinMax;
+  timestamp: MinMax;
+  total: number;
 };
 
 interface ΞSettings {
@@ -69,5 +73,3 @@ interface ΞSettings {
   offset: number;
   focusField: string | string[];
 }
-
-type ΞDetailed = Record<string, any>;

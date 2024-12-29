@@ -29,8 +29,8 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       const position = this.renderer.getPixelPosition(timestamp);
 
       this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color as Gradients, code, {
-        min: Math.min(map[MinHeight], file.detailed.event.min),
-        max: Math.max(map[MaxHeight], file.detailed.event.min),
+        min: Math.min(map[MinHeight], file.code.min),
+        max: Math.max(map[MaxHeight], file.code.max),
       });
       this.renderer.ctx.fillRect(position, y, 1, 47);
     });

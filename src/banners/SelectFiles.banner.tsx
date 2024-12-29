@@ -12,6 +12,7 @@ import { Input } from '@/ui/Input';
 import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
 import { λContext, λFile } from '@/dto/Operation.dto';
+import { Separator } from '@/ui/Separator';
 
 export function SelectFilesBanner() {
   const { app, destroyBanner, Info, spawnBanner } = useApplication();
@@ -21,7 +22,7 @@ export function SelectFilesBanner() {
  
   const save = async () => {
     setLoading(true);
-    const unfetched = File.selected(app).filter(file => Event.get(app, file.id).length === 0).map(file => file.id || Event.get(app, file.id).length < file.detailed.doc_count);
+    const unfetched = File.selected(app).filter(file => Event.get(app, file.id).length === 0).map(file => file.id || Event.get(app, file.id).length < file.total);
 
     if (unfetched.length && app.target.bucket.selected) {
       return await Info.refetch({
@@ -46,17 +47,13 @@ export function SelectFilesBanner() {
     }
 
     return (
-      <Fragment>
+      <div className={s.wrapper}>
         {contexts.map(context => <ContextComponent {...context} />)}
-      </Fragment>
+      </div>
     )
   }
 
   function ContextComponent(context: λContext) {
-    if (filter.length) {
-      return <FilteredView />
-    }
-
     const files = Context.files(app, context);
 
     const Files = useCallback(() => {
@@ -83,6 +80,7 @@ export function SelectFilesBanner() {
           <hr style={{ flex: 1 }} />
           <Badge value='Context' />
         </div>
+        <Separator />
         <Files />
       </div>
     )
@@ -97,51 +95,32 @@ export function SelectFilesBanner() {
       Info.files_select(newFiles)
     }
 
+    if (!file.name.toLowerCase().includes(filter.toLowerCase())) {
+      return null;
+    }
+
     return (
       <div className={s.pluginHeading} key={file.id}>
         <Checkbox id={file.name} checked={file.selected} onCheckedChange={handleFileCheck} />
         <Label htmlFor={file.name}>{File.wellFormatedName(file)}</Label>
         <hr style={{ flex: 1 }} />
-        <Badge value={File.pluginName(file)} />
+        <Badge variant='outline' value={File.pluginName(file) || 'No plugin'} />
       </div>
     )
   }
 
-  const FilteredView = () => {
-    const filteredFiles = app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
-
-    return (
-      <Fragment>
-        {filteredFiles.map(file => (
-          <div key={file.id} className={s.file}>
-            <Checkbox id={file.name} checked={file.selected} />
-            <Label htmlFor={file.name}>{file.name}</Label>
-            <Badge value='File' variant='outline' />
-          </div>
-          )
-        )}
-      </Fragment>
-    )
-  }
+  const UploadButton = useCallback(() => {
+    return <Button img='Upload' variant='ghost' onClick={() => spawnBanner(<UploadBanner />)} />
+  }, []);
 
   return (
-    <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done}>
+    <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done} option={<UploadButton />}>
       <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
-      <Skeleton style={{ flex: 1 }} show={fulfilled}>
-      <div className={s.wrapper}>
-        <Contexts />  
-      </div>
-      </Skeleton>
+      <Contexts />
       <div className={s.group}>
         <Skeleton show={fulfilled}>
-          <Button img='Upload' variant='ghost' onClick={() => spawnBanner(<UploadBanner />)}>Upload and analize</Button>
+          <Button onClick={() => Info.selectAll(filter)} variant='secondary' style={{ width: '100%' }}>Select all</Button>
         </Skeleton>
-        
-        <div className={s.splitter} />
-        <Skeleton show={fulfilled}>
-          <Button variant='secondary'>Select all</Button>
-        </Skeleton>
-        
       </div>
     </Banner>
   );
