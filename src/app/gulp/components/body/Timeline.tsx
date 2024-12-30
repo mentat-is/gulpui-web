@@ -190,6 +190,10 @@ export function Timeline() {
       : <FilesMenu files={shifted} inputRef={inputRef} />
   }, [shifted]);
 
+  useEffect(() => {
+    Info.refetch();
+  }, []);
+
   return (
     <div
       id='timeline'

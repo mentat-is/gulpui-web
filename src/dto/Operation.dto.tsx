@@ -5,6 +5,7 @@ import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
 import { λGlyph } from './λGlyph.dto';
 import { MinMax } from '@/class/Info';
+import { λEvent } from './ChunkEvent.dto';
 
 export type GulpDataType = 'operation' | 'context' | 'file';
 
@@ -66,9 +67,9 @@ export type λFile = ΞFile & {
   total: number;
 };
 
-interface ΞSettings {
+export interface ΞSettings {
   color: Color | Gradients;
   engine: Engine.List;
   offset: number;
-  focusField: string | string[];
+  field: keyof λEvent;
 }

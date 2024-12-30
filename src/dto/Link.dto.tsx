@@ -1,5 +1,4 @@
-import { UUID } from 'crypto';
-import { λEvent, λRawEventMinimized } from './ChunkEvent.dto';
+import { λEvent } from './ChunkEvent.dto';
 import { μ } from '@/class/Info';
 import { λContext, λOperation, λFile } from './Operation.dto';
 import { λGlyph } from './λGlyph.dto';
@@ -11,7 +10,7 @@ export type λLink = {
   data: {
     src: string,
     color: string
-    events?: λRawEventMinimized[]
+    events?: λEvent[]
   }
   description: string
   edits: number[]

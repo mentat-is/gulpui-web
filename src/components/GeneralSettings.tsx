@@ -11,14 +11,10 @@ import { Gradients, GradientsMap } from '@/ui/utils';
 import { Icon } from '@impactium/icons';
 import { CSSProperties, useEffect } from 'react';
 import s from './styles/GeneralSettings.module.css'
+import { Internal } from '@/class/Info';
 
 export function GeneralSettings() {
   const { app, Info } = useApplication();
-
-  useEffect(() => {
-    localStorage.setItem('settings.__engine', app.general.settings.engine);
-    localStorage.setItem('settings.__color', app.general.settings.color)
-  }, [app.general.settings]);
 
   const fontStyle: CSSProperties = {
     fontSize: 14,
@@ -35,7 +31,7 @@ export function GeneralSettings() {
         <Stack dir='column' gap={12} className={s.generalSettings}>
           <Stack ai='center' gap={12}>
             <span style={fontStyle}>Renderer by default:</span>
-            <Select onValueChange={(v: Engine.List) => Info.setDefaultEngine(v)} value={app.general.settings.engine}>
+            <Select onValueChange={(v: Engine.List) => Internal.Settings.engine = v} value={Internal.Settings.engine}>
               <SelectTrigger>
                 <SelectValue placeholder='Choose renderer' />
               </SelectTrigger>
@@ -46,7 +42,7 @@ export function GeneralSettings() {
           </Stack>
           <Stack ai='center'>
             <span style={fontStyle}>Color palette by default:</span>
-            <ColorPicker color={app.general.settings.color} setColor={c => Info.setDefaultColor(c as Gradients)}>
+            <ColorPicker color={Internal.Settings.color} setColor={c => Internal.Settings.color = c as Gradients}>
               <ColorPickerTrigger />
               <ColorPickerPopover gradients={GradientsMap} solids={[]} />
             </ColorPicker>

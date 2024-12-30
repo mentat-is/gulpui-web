@@ -1,4 +1,4 @@
-import { μ } from '@/class/Info';
+import { File, Operation, μ } from '@/class/Info';
 import { Button, Stack } from '@impactium/components';
 import React, { useState, createContext, useContext, useEffect, useCallback, memo } from 'react';
 import { cn, generateUUID } from './utils';
@@ -10,6 +10,10 @@ import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
 import { Loading } from '@impactium/components';
 import { MenuDialog } from '@/app/gulp/components/header/Menu.dialog';
+import { AuthBanner } from '@/banners/Auth.banner';
+import { LimitsBanner } from '@/banners/Limits.banner';
+import { OperationBanner } from '@/banners/Operation.banner';
+import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 
 export namespace Windows {
   export interface Props {
@@ -152,7 +156,7 @@ const Navigator = () => {
 
 const NoWindows = () => {
   const { newWindow } = useWindows();
-  const { spawnBanner } = useApplication();
+  const { spawnBanner, Info } = useApplication();
 
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -165,8 +169,27 @@ const NoWindows = () => {
         children: <Timeline />,
         name: 'Timeline'
       });
-    }, 500);
+    }, 1000);
   }
+
+  const OpenTimelineButton = useCallback(() => {
+    switch (true) {
+      case !Info.User.isAuthorized(): 
+        return <Button loading={loading} size='lg' img='LogIn' className={s.rounded} onClick={() => spawnBanner(<AuthBanner />)}>Log In</Button>;
+
+      case !Operation.selected(Info.app):
+        return <Button loading={loading} size='lg' img='Status' className={s.rounded} onClick={() => spawnBanner(<OperationBanner />)}>Select Operation</Button>;
+
+      case File.selected(Info.app).length === 0:
+        return <Button loading={loading} size='lg' img='FileBox' className={s.rounded} onClick={() => spawnBanner(<SelectFilesBanner />)}>Select documents</Button>;
+
+      case Info.app.timeline.frame.max === 0:
+        return <Button loading={loading} size='lg' img='AlignHorizontalSpaceAround' className={s.rounded} onClick={() => spawnBanner(<LimitsBanner />)}>Select frame</Button>;
+
+      default:
+        return <Button loading={loading} size='lg' img='Edge' className={s.rounded} onClick={openTimeline}>Open timeline</Button>;
+    }
+  }, [Info, loading]);
 
   return (
     <Stack className={cn(s.window, s.noWindows)} dir='column' jc='center'>
@@ -174,9 +197,7 @@ const NoWindows = () => {
       <p>Choose action below</p>
       <Stack>
         <Button size='lg' img='Upload' variant='secondary' className={s.rounded} onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
-        {loading
-        ? <Button size='lg' img='LoaderCircle' className={cn(s.rounded, s.loading)} asChild><Loading size='lg' variant='default' /></Button>
-        : <Button size='lg' img='Edge' className={s.rounded} onClick={openTimeline}>Open timeline</Button>}
+        <OpenTimelineButton />
       </Stack>
       <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button> 
     </Stack>

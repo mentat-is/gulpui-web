@@ -30,7 +30,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
             <SymmetricSvg text={event.id} className={s.icon} />
             <div className={s.group}>
               <p className={s.title}>{event.file_id}</p>
-              <p className={s.description}>{event.event.code}</p>
+              <p className={s.description}>{event.code}</p>
             </div>
           </div>
           <Button variant='outline' onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} img='ArrowRight' revert>Open</Button>

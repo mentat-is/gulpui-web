@@ -1,7 +1,7 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useApplication } from '@/context/Application.context';
-import { λEvent, DetailedChunkEvent, RawDetailedChunkEvent } from '@/dto/ChunkEvent.dto';
+import { λEvent, DetailedChunkEvent } from '@/dto/ChunkEvent.dto';
 import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useState } from 'react';
@@ -48,7 +48,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const reloadDetailedChunkEvent = () => {
     const startTime = Date.now();
   
-    api<RawDetailedChunkEvent>('/query_single_event', {
+    api<any>('/query_single_event', {
       query: {
         gulp_id: event.id
       }
@@ -108,7 +108,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   return (
-    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context} with code ${event.event.code}`}>
+    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
       <Separator />
       <Navigation event={event} />
       <Separator />

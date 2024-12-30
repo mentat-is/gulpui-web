@@ -31,7 +31,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [offset, setOffset] = useState<number>(file.settings.offset);
   const [engine, setEngine] = useState<Engine.List>(file.settings.engine);
   const [isCustomKeyField, setIsCustomKeyField] = useState<boolean>(false);
-  const [key, setKey] = useState<string | string[]>(file.settings.focusField);
+  const [key, setKey] = useState<string | string[]>(file.settings.field);
 
   const save = () => {
     const newFile = { color, offset, engine, key };

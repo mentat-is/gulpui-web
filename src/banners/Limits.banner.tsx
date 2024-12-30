@@ -40,8 +40,6 @@ export function LimitsBanner() {
 
       Info.setTimelineFrame(range);
 
-      await Info.refetch({ range });
-
       destroyBanner();
     }
   }

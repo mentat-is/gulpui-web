@@ -4,7 +4,7 @@ import { type Callback } from '@impactium/types'
 import { toast } from 'sonner';
 
 interface ResponseBase<T = any> {
-  status: 'success' | 'error';
+  status: 'success' | 'error' | 'pending';
   timestamp: Date;
   req_id: UUID;
   data: T;
@@ -19,7 +19,7 @@ interface ResponseError extends ResponseBase<{
 
 
 export class λ<T extends ResponseBase<any>> {
-  status: 'success' | 'error';
+  status: 'success' | 'error' | 'pending';
   req_id: UUID;
   timestamp: Date;
   data: T['data'];
@@ -36,7 +36,7 @@ export class λ<T extends ResponseBase<any>> {
   
   isError = (): this is ResponseError => this.status === 'error';
 
-  isSuccess = (): this is λ<ResponseSuccess<T['data']>> => this.status === 'success';
+  isSuccess = (): this is λ<ResponseSuccess<T['data']>> => this.status === 'success' || this.status === 'pending';
 }
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;

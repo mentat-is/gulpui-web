@@ -42,7 +42,6 @@ export interface λApp {
     password: string;
     ws_id: string;
     plugins: λPlugin[];
-    settings: λFile['settings'];
     sessions: Record<string, Session>
   },
   timeline: {
@@ -73,12 +72,6 @@ export const BaseInfo: λApp = {
     id: '',
     time_expire: Infinity,
     token: '',
-    settings: {
-      engine: (localStorage.getItem('settings.__engine') || 'default') as Engine.List,
-      color: (localStorage.getItem('settings.__color') || 'thermal') as Gradients,
-      offset: 0,
-      focusField: ''
-    },
     sessions: {}
   },
   timeline: {

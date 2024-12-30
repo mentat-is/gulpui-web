@@ -1,21 +1,18 @@
 import { Login, type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree } from '@/dto/Operation.dto';
-import { λEvent, λRawEventMinimized } from '@/dto/ChunkEvent.dto';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings } from '@/dto/Operation.dto';
+import { λEvent, ΞEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
 import { RawLink, λLink } from '@/dto/Link.dto';
-import { generateUUID, Gradients, λColor } from '@/ui/utils';
-import { MappingFileListRequest, RawMapping } from '@/dto/MappingFileList.dto';
-import { ApplicationError } from '@/context/Application.context';
+import { Gradients, λColor } from '@/ui/utils';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
 import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/λGlyph.dto';
-import { differenceInMonths } from 'date-fns';
-import { Logger, LoggerHandler } from '@/dto/Logger.class';
-import { Engine, Hardcode } from './Engine.dto';
+import { Logger } from '@/dto/Logger.class';
+import { Engine } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
 import { Color } from '@impactium/types';
 import { SetState } from './API';
@@ -66,12 +63,68 @@ interface InfoProps {
   timeline: React.RefObject<HTMLDivElement>;
 }
 
-interface QueryExternalProps {
-  operation_id: number;
-  file: λFile['name'];
-  server: string;
-  username: string;
-  password: string;
+export namespace Internal {
+  export enum LocalStorageItemsList {
+    TIMELINE_RENDER_ENGINE = 'settings.__engine',
+    TIMELINE_RENDER_COLOR = 'settings.__color',
+    TIMELINE_FOCUS_FIELD = 'settings.__field'
+  }
+
+  export class Settings {
+    static default: ΞSettings = {
+      engine: 'default',
+      color: 'thermal',
+      field: 'weight',
+      offset: 0
+    }
+
+    public static get engine(): Engine.List {
+      const engine = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE) as Engine.List;
+
+      if (!engine) {
+        localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE, Settings.default.engine);
+      }
+
+      return engine || Settings.default.engine;
+    }
+ 
+    public static set engine(engine: Engine.List) {
+      localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE, engine);
+    }
+
+    public static get color(): Gradients {
+      const color = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR) as Gradients;
+
+      if (!color) {
+        localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR, Settings.default.color);
+      }
+
+      return color || Settings.default.color;
+    }
+
+    public static set color(color: Gradients) {
+      localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR, color);
+    }
+
+    public static get field(): keyof λEvent {
+      const field = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD) as keyof λEvent;
+
+      if (!field) {
+        localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD, Settings.default.field);
+      }
+
+      return field || Settings.default.field;
+    }
+
+    public static all(): ΞSettings {
+      return {
+        engine: Settings.engine,
+        color: Settings.color,
+        field: Settings.field,
+        offset: 0
+      }
+    }
+  }
 }
 
 class User {
@@ -156,9 +209,9 @@ export class Info implements InfoProps {
       }, [])
       : File.selected(this.app))
 
-    await this.notes_reload();
+    // await this.notes_reload();
 
-    await this.links_reload();
+    // await this.links_reload();
 
     await this.glyphs_reload();
 
@@ -174,18 +227,7 @@ export class Info implements InfoProps {
           req_id: file.id,
           index: index.name
         },
-        body: JSON.stringify({
-          ...Filter.body(this.app, file, range),
-          options: {
-            search_after_loop: false,
-            sort: {
-              '@timestamp': 'desc'
-            },
-            notes_on_match: false,
-            max_notes: 0,
-            include_query_in_results: false
-          }
-        })
+        body: JSON.stringify(Filter.body(this.app, file, range))
       });
     }));
   }
@@ -327,7 +369,7 @@ export class Info implements InfoProps {
 
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
-  events_add = (events: λEvent | λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
+  events_add = (events: λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
   events_reset_in_file = (files: Arrayed<λFile>) => {
     this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
   };
@@ -501,12 +543,7 @@ export class Info implements InfoProps {
             files: rawContext.sources.map(rawFile => {
               const file: λFile = {
                 ...rawFile,
-                settings: {
-                  color: 'deep',
-                  engine: 'default',
-                  focusField: 'event.code',
-                  offset: 0
-                },
+                settings: Internal.Settings.all(),
                 code: {
                   min: 0,
                   max: 0
@@ -634,7 +671,7 @@ export class Info implements InfoProps {
     server,
     username,
     password
-  }: QueryExternalProps) => api('/query_external', {
+  }: any) => api('/query_external', {
     method: 'POST',
     query: {
       operation_id,
@@ -767,20 +804,6 @@ export class Info implements InfoProps {
   
   get width(): number {
     return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
-  }
-
-  setDefaultEngine = (engine: Engine.List) => {
-    this.setInfoByKey({
-      ...this.app.general.settings,
-      engine
-    }, 'general', 'settings');
-  }
-
-  setDefaultColor = (color: Gradients) => {
-    this.setInfoByKey({
-      ...this.app.general.settings,
-      color
-    }, 'general', 'settings');
   }
 
   getCurrentSessionOptions = (): Session => {
@@ -959,20 +982,24 @@ export class Filter {
     const context = Context.findByFile(app, file);
 
     if (!context) {
-      throw new ApplicationError(`GulpQueryFilter.base() cannot allocate context for file ${file.name} with uuid_${file.id}`)
+      return {};
     }
 
-    //eslint-disable-next-line
-    // @ts-ignore
-    return `(operation_id:${context.operation_id} AND (gulp.context: \'${context.name}\') AND gulp.file.file:'${file.name}' AND @timestamp:>=${Math.max(file.timestamp.min, (range?.min || -Infinity))} AND @timestamp:<=${Math.min(file.timestamp.max, (range?.max || Infinity))})`
-  }
-
-  public static parse(app: λApp, file: λFile, range?: MinMax) {
-    const base = Filter.base(app, file, range);
-    
-    const query = Filter.query(app, file);
-
-    return query ? `${base} AND ${query}` : base;
+    return {
+      context_ids: [
+        context.id
+      ],
+      date_range: [
+        new Date(Math.max(file.timestamp.min, (range?.min || -Infinity))).toISOString(),
+        new Date(Math.min(file.timestamp.max, (range?.max || Infinity))).toISOString()
+      ],
+      source_ids: [
+        file.id
+      ],
+      operation_ids: [
+        context.operation_id
+      ], 
+    }
   }
 
   /** 
@@ -1008,20 +1035,34 @@ export class Filter {
 
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
   
-  static body = (app: λApp, file: λFile, range?: MinMax) => ({
-    q: {
-      query: {
-        query_string: {
-          query: Filter.parse(app, file, range),
+  static body = (app: λApp, file: λFile, range?: MinMax) => {
+    const body: Record<string, any> = {
+      q: {
+        query: {
+          query_string: {
+            query: '*'
+          }
         }
       },
-    },
-    q_options: {
-      sort: {
-        '@timestamp': 'desc'
+      q_options: {
+        sort: {
+          '@timestamp': 'desc'
+        }
       }
+    };
+
+    body.flt = Filter.base(app, file, range);
+
+    const query = Filter.query(app, file);
+
+    if (query) {
+      body.q.query = {}
+      body.q.query.query_string = {}
+      body.q.query.query_string.query = query
     }
-  });
+
+    return body;
+  };
 }
 
 export class Event {
@@ -1040,36 +1081,31 @@ export class Event {
 
   public static selected = (app: λApp): λEvent[] => File.selected(app).map(s => Event.get(app, s.id)).flat();
 
-  public static add = (app: λApp, _events: λEvent | λEvent[]) => {
-    const events = Parser.array(_events);
+  public static add = (app: λApp, events: λEvent[]) => {
     events.map(e => Event.get(app, e.file_id).push(e));
     events.sort((a, b) => a.timestamp - b.timestamp);
     return app.target.events;
   }
 
-  public static parse = (app: λApp, original: RawNote | RawLink): λEvent[] => Parser.array(original.events).reduce<λEvent[]>((result, e) => {
-    e.context = e.context || original.context;
-    e.src_file = e.src_file || original.src_file;
-    e.operation_id = e.operation_id || original.operation_id;
+  public static parse = (rawEvents: ΞEvent[]): λEvent[] => {
+    const events: λEvent[] = rawEvents.map(rawEvent => {
+      const event: λEvent = {
+        id: rawEvent._id,
+        operation_id: rawEvent['gulp.operation_id'],
+        context_id: rawEvent['gulp.context_id'],
+        file_id: rawEvent['gulp.source_id'],
+        timestamp: new Date(rawEvent['@timestamp']).valueOf(),
+        nanotimestamp: rawEvent['@timestamp'],
+        code: rawEvent['event.code'],
+        weight: rawEvent['gulp.event_code'],
+        duration: rawEvent['event.duration']
+      }
 
-    const file = File.id(app, e.src_file);
+      return event;
+    });
 
-    if (file) {
-      result.push({
-        id: e.id,
-        operation_id: e.operation_id,
-        timestamp: e['@timestamp'] as Hardcode.Timestamp,
-        file_id: file.id,
-        context: file.context_id,
-        event: {
-          duration: 1,
-          code: '0'
-        },
-      })
-    };
-    
-    return result
-  }, []);
+    return events;
+  }
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], id: μ.File) => Event.get(app, id).filter(e => Parser.array(eventId).includes(e.id));
 
@@ -1080,7 +1116,7 @@ export class Note {
   public static parse = (app: λApp, notes: RawNote[]): λNote[] => notes.map(n => {
     const note: λNote = {
       ...n,
-      events: Event.parse(app, n),
+      events: Event.parse(n.events),
       data: {
         ...n.data,
         color: λColor['name -> hex'](n.data.color) as Color
@@ -1102,11 +1138,6 @@ export class Note {
 
 export class Link {
   public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
-    const seenIds = new Set<λRawEventMinimized['id']>();
-    l.events = [...(l.data.events || []), ...l.events].filter(e => Object.values(e).every(v => !!v) && !seenIds.has(e.id) && seenIds.add(e.id));
-
-    delete l.data.events;
-
     return {
       ...l,
       file_id: l.src_file,
@@ -1114,7 +1145,7 @@ export class Link {
         ...l.data,
         color: λColor['name -> hex'](l.data.color)
       },
-      events: Event.parse(app, l),
+      events: Event.parse(l.notes),
       _uuid: File.id(app, l.src_file).id,
     }
   });

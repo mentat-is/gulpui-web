@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Banner } from '../ui/Banner';
 import { Input } from '../ui/Input';
 import { Button } from '@impactium/components';
@@ -36,40 +36,41 @@ export function CreateOperationBanner() {
     }, Info.operation_list).then(destroyBanner);
   };
 
-  return (
-    <Banner title='Create operation'>
-      <Card>
-        <Stack ai='center'>
-          <p className={s.paramName}>Operation title:</p>
-          <Input
-            className={s.input}
-            img='Heading'
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
-            placeholder='Operation title' />
-        </Stack>
-        <Separator />
-        <Stack ai='center'>
-          <p className={s.paramName}>Operation description:</p>
-          <Input
-            className={s.input}
-            img='Text'
-            value={description}
-            onChange={(e) => setDescription(e.currentTarget.value)}
-            placeholder='Operation description' />
-        </Stack>
-        <Separator />
-        <Stack ai='center'>
-          <p className={s.paramName}>Operation icon:</p>
-          <GlyphsPopover icon={icon} setIcon={setIcon} />
-        </Stack>
-      </Card>
+  const DoneButton = useCallback(() => {
+    return (
       <Button
-        className={s.doneButton}
-        variant={name && description && icon ? 'default' : 'disabled'}
+        variant='glass'
+        disabled={!name || !description}
         loading={loading}
         img='Check'
-        onClick={createOperation}>Done</Button>
+        onClick={createOperation} />
+    )
+  }, [name, description, loading]);
+
+  return (
+    <Banner title='Create an Operation' done={<DoneButton />}>
+      <Stack ai='center'>
+        <p className={s.paramName}>Operation name:</p>
+        <Input
+          className={s.input}
+          img='Heading'
+          value={name}
+          onChange={(e) => setName(e.currentTarget.value)}
+          placeholder='Operation name' />
+      </Stack>
+      <Stack ai='center'>
+        <p className={s.paramName}>Operation description:</p>
+        <Input
+          className={s.input}
+          img='Text'
+          value={description}
+          onChange={(e) => setDescription(e.currentTarget.value)}
+          placeholder='Operation description' />
+      </Stack>
+      <Stack ai='center'>
+        <p className={s.paramName}>Operation icon:</p>
+        <GlyphsPopover icon={icon} setIcon={setIcon} />
+      </Stack>
     </Banner>
   )
 }

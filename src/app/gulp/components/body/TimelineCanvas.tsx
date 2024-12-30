@@ -13,7 +13,7 @@ import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
 import { Timestamp } from '@/ui/timestamp';
 import { λFile } from '@/dto/Operation.dto';
-import { File } from '@/class/Info';
+import { Event, File } from '@/class/Info';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -50,6 +50,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
       if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
 
       if (!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)) {
+        console.log('Rendered file: ', file.name, file.id, file.settings.engine, Event.get(app, file.id));
         render[file.settings.engine].render(file, y - 24, force);
       };
 

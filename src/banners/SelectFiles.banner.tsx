@@ -26,14 +26,6 @@ export function SelectFilesBanner() {
 
     await Info.query_operations();
 
-    const unfetched = File.selected(app).filter(file => Event.get(app, file.id).length === 0).map(file => file.id || Event.get(app, file.id).length < file.total);
-
-    console.log(unfetched);
-
-    if (unfetched.length) {
-      await Info.refetch({ ids: unfetched });
-    }
-
     spawnBanner(<LimitsBanner />);
   }
 

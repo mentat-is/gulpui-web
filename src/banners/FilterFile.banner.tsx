@@ -186,7 +186,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       </div>
       <Card className={s.preview}>
         <h4>Preview</h4>
-        <code><span>{Filter.base(app, file)}</span> AND {Filter.query(app, file)}</code>
+        <code>{Filter.query(app, file)}</code>
       </Card>
       <div className={s.bottom}>
         <Button img='Undo' variant='outline' onClick={undo}>Undo</Button>

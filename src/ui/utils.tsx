@@ -329,13 +329,13 @@ export function numericRepresentationOfAnyString(input: string): number {
 }
 
 export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file: λFile, event: λEvent): Hardcode.Height {
-  const isTargetValid = file.settings.focusField && file.settings.focusField[0] in event;
+  const isTargetValid = file.settings.field && file.settings.field[0] in event;
 
   // @ts-ignore
-  let key: unknown = isTargetValid ? event[file.settings.focusField[0]] : event.event.code;
+  let key: unknown = isTargetValid ? event[file.settings.field[0]] : event.code;
 
   if (key === undefined) {
-    key = event.event.code;
+    key = event.code;
   }
 
   if (typeof key === 'object' && key !== null) {
