@@ -1,5 +1,5 @@
 import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
-import { λGlyph } from '@/dto/λGlyph.dto';
+import { λGlyph } from '@/dto/Dataset';
 import { Icon } from '@impactium/icons';
 
 interface GlyphProps extends Omit<Icon.Props, 'name'> {

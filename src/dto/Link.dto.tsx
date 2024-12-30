@@ -1,7 +1,6 @@
 import { λEvent } from './ChunkEvent.dto';
 import { μ } from '@/class/Info';
-import { λContext, λOperation, λFile } from './Operation.dto';
-import { λGlyph } from './λGlyph.dto';
+import { λContext, λOperation, λFile, λGlyph } from './Dataset';
 
 export type λLink = {
   id: μ.Link;

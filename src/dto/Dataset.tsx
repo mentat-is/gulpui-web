@@ -3,7 +3,6 @@ import { Color } from '@impactium/types';
 import { μ } from '@/class/Info';
 import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
-import { λGlyph } from './λGlyph.dto';
 import { MinMax } from '@/class/Info';
 import { λEvent } from './ChunkEvent.dto';
 
@@ -68,8 +67,14 @@ export type λFile = ΞFile & {
 };
 
 export interface ΞSettings {
-  color: Color | Gradients;
+  color: Gradients;
   engine: Engine.List;
   offset: number;
   field: keyof λEvent;
+}
+
+export interface λGlyph {
+  id: μ.Glyph;
+  name: string;
+  img: string;
 }

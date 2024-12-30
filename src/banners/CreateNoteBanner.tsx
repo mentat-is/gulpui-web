@@ -15,10 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card } from '@/ui/Card';
 import { cn } from '@/ui/utils';
 import { Separator } from '@/ui/Separator';
-import { NoteCreateRequest } from '@/dto/NoteCreateRequest.dto';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Switch } from '@/ui/Switch';
-import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { format } from 'date-fns';
 
 interface CreateNoteBannerProps {
@@ -59,7 +57,7 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
       headers: {
         'Content-Type': 'application/json; charset=utf-8'
       },
-      body: NoteCreateRequest.body({ title, text, tags }, events)
+      body: JSON.stringify({ title, text, tags })
     }).then(() => {
       destroyBanner();
       Info.notes_reload()

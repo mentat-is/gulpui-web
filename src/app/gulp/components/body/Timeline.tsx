@@ -12,7 +12,7 @@ import { TargetMenu } from './Target.menu';
 import { Input } from '@/ui/Input';
 import { FilesMenu } from './Files.manu';
 import { useKeyHandler } from '@/app/use';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
 
 export function Timeline() {

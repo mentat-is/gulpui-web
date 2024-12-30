@@ -4,7 +4,7 @@ import { λEvent } from './ChunkEvent.dto';
 import { Arrayed, Parser } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
-import { λFile } from './Operation.dto';
+import { λFile } from './Dataset';
 
 export class Logger {
   protected static messages: Console.History[] = [];

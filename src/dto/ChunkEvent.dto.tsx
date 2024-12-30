@@ -1,7 +1,7 @@
 import { Hardcode } from '@/class/Engine.dto'
 import { μ } from '@/class/Info'
 import { UUID } from 'crypto'
-import { λContext, λOperation, λFile } from './Operation.dto'
+import { λContext, λOperation, λFile } from './Dataset'
 
 export interface ΞEvent {
   '@timestamp': number

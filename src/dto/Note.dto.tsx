@@ -1,7 +1,6 @@
 import { λEvent, ΞEvent } from './ChunkEvent.dto'
 import { μ } from '@/class/Info'
-import { λContext, λOperation, λFile } from './Operation.dto'
-import { λGlyph } from './λGlyph.dto'
+import { λGlyph, λContext, λOperation, λFile } from './Dataset'
 import { Color } from '@impactium/types'
 
 export interface λNote {

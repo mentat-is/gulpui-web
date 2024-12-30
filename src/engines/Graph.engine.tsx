@@ -3,7 +3,7 @@ import { Dot, RenderEngine } from '../class/RenderEngine';
 import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils';
 import { Event } from '../class/Info';
 import { HeightEngine } from './Height.engine';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 
 type Target = typeof HeightEngine.target & MaxHeight & Length & Scale & StartEnd;
 

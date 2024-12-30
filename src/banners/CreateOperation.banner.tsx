@@ -3,14 +3,11 @@ import { Banner } from '../ui/Banner';
 import { Input } from '../ui/Input';
 import { Button } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
-import { OperationCreate } from '../dto/OperationCreate.dto';
 import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'
-import { Card } from '@/ui/Card';
-import { Separator } from '@/ui/Separator';
 import { GlyphMap } from '@/dto/Glyph.dto';
-import { λGlyph } from '@/dto/λGlyph.dto';
+import { λGlyph } from '@/dto/Dataset';
 
 export function CreateOperationBanner() {
   const { Info, destroyBanner } = useApplication();
@@ -28,7 +25,7 @@ export function CreateOperationBanner() {
       body.glyph_id = icon;
     }
 
-    api<OperationCreate>('/operation_create', {
+    api<any>('/operation_create', {
       method: 'POST',
       setLoading,
       query: body,

@@ -5,9 +5,8 @@ import { SessionBanner } from './Session.banner';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner';
-import { Operation, Pattern } from '@/class/Info';
+import { GulpDataset, Operation, Pattern } from '@/class/Info';
 import { useKeyHandler } from '@/app/use';
-import { Login } from '@/dto';
 import { OperationBanner } from './Operation.banner';
 
 export namespace AuthBanner {
@@ -62,7 +61,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
       
       localStorage.setItem('__server', server);
       
-      await api<Login>('/login', {
+      await api<GulpDataset.Login>('/login', {
         method: 'PUT',
         setLoading,
         query: {

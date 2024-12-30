@@ -1,16 +1,14 @@
-import { Login, λOperation } from '.';
+import { λOperation } from '.';
 import { λEvent, DetailedChunkEvent } from './ChunkEvent.dto';
 import { λIndex } from './Index.dto';
 import { λPlugin } from './Plugin.dto';
 import { λNote } from './Note.dto';
 import { λLink } from './Link.dto';
 import { generateUUID, Gradients, GradientsMap } from '@/ui/utils';
-import { FilterOptions, MinMax, λFilter, μ } from '@/class/Info';
-import { λGlyph } from './λGlyph.dto';
+import { FilterOptions, GulpDataset, MinMax, λFilter, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
-import { RenderEngine } from '@/class/RenderEngine';
 import { XY } from './XY.dto';
-import { λContext, λFile } from './Operation.dto';
+import { λContext, λFile, λGlyph } from './Dataset';
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -37,7 +35,7 @@ export interface λApp {
       content: string;
     }>;
   }
-  general: Login & {
+  general: GulpDataset.Login & {
     server: string;
     password: string;
     ws_id: string;

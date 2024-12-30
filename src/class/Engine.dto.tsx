@@ -1,4 +1,4 @@
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { RenderEngine } from './RenderEngine';
 
 export namespace Engine {

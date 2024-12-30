@@ -7,7 +7,7 @@ import { Info, MinMax } from '@/class/Info';
 import { RefObject } from 'react';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Hardcode } from '@/class/Engine.dto';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { format as _format, FormatOptions } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {

@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import s from './styles/Glyphs.popover.module.css';
 import { toast } from 'sonner';
 import { Icon } from '@impactium/icons';
-import { λGlyph } from '@/dto/λGlyph.dto';
+import { λGlyph } from '@/dto/Dataset';
 
 interface GlyphPopoverProps {
   icon: λGlyph['id'] | null,

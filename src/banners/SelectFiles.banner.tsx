@@ -11,7 +11,7 @@ import { Fragment, useCallback, useMemo, useState } from 'react';
 import { Input } from '@/ui/Input';
 import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
-import { λContext, λFile } from '@/dto/Operation.dto';
+import { λContext, λFile } from '@/dto/Dataset';
 import { Separator } from '@/ui/Separator';
 import { ContextMenuSeparator } from '@radix-ui/react-context-menu';
 

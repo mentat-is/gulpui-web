@@ -12,7 +12,7 @@ import { NotesDisplayer } from './Notes.displayer';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
 import { Timestamp } from '@/ui/timestamp';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { Event, File } from '@/class/Info';
 
 interface TimelineCanvasProps {

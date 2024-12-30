@@ -19,7 +19,7 @@ import { Engine } from '@/class/Engine.dto';
 import { Stack } from '@impactium/components';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Toggle } from '@/ui/Toggle';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 
 interface SettingsFileBannerProps {
   file: λFile;

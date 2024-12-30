@@ -5,7 +5,7 @@ import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { enginesBase } from '@/dto/Engine.dto';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 

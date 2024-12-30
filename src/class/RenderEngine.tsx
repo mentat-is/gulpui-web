@@ -9,7 +9,7 @@ import { DefaultEngine } from '../engines/Default.engine';
 import { Scale, Engine } from './Engine.dto';
 import { HeightEngine } from '../engines/Height.engine';
 import { GraphEngine } from '../engines/Graph.engine';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,

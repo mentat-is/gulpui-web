@@ -1,4 +1,4 @@
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { Engine, Hardcode, MaxHeight, MinHeight, Scale } from '../class/Engine.dto';
 import { RenderEngine } from '../class/RenderEngine';
 import { Gradients, numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from '@/ui/utils';

@@ -21,7 +21,7 @@ import { λLink } from '@/dto/Link.dto';
 import { LinkCombination } from '@/components/LinkCombination';
 import { EventCombination } from '@/components/EventCombination';
 import { GlyphsPopover } from '@/components/Glyphs.popover';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { format } from 'date-fns';
 
 interface CreateLinkBannerProps {

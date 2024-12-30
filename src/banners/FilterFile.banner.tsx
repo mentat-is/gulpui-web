@@ -16,7 +16,7 @@ import { Switch } from '@/ui/Switch';
 import { Card } from '@/ui/Card';
 import { cn, generateUUID } from '@/ui/utils';
 import { toast } from 'sonner';
-import { λFile } from '@/dto/Operation.dto';
+import { λFile } from '@/dto/Dataset';
 import { format } from 'date-fns';
 
 const _baseFilter = (): λFilter => ({

@@ -1,5 +1,5 @@
-import { Login, type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings } from '@/dto/Operation.dto';
+import { type λApp } from '@/dto';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings } from '@/dto/Dataset';
 import { λEvent, ΞEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -10,7 +10,7 @@ import { Gradients, λColor } from '@/ui/utils';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
 import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
-import { λGlyph } from '@/dto/λGlyph.dto';
+import { λGlyph } from '@/dto/Dataset';
 import { Logger } from '@/dto/Logger.class';
 import { Engine } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
@@ -49,6 +49,12 @@ export namespace GulpDataset {
 
     export type Summary = Operation[];
   }
+
+  export interface Login {
+    token: string,
+    id: string,
+    time_expire: number
+  };
 }
 
 interface RefetchOptions {
@@ -67,7 +73,9 @@ export namespace Internal {
   export enum LocalStorageItemsList {
     TIMELINE_RENDER_ENGINE = 'settings.__engine',
     TIMELINE_RENDER_COLOR = 'settings.__color',
-    TIMELINE_FOCUS_FIELD = 'settings.__field'
+    TIMELINE_FOCUS_FIELD = 'settings.__field',
+    GENERAL_SERVER_VALUE = '__server',
+    GENERAL_TOKEN_VALUE = '__token',
   }
 
   export class Settings {
@@ -81,11 +89,13 @@ export namespace Internal {
     public static get engine(): Engine.List {
       const engine = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE) as Engine.List;
 
-      if (!engine) {
-        localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE, Settings.default.engine);
+      if (engine) {
+        return engine
       }
 
-      return engine || Settings.default.engine;
+      Internal.Settings.engine = Internal.Settings.default.engine;
+
+      return Internal.Settings.engine;
     }
  
     public static set engine(engine: Engine.List) {
@@ -95,11 +105,13 @@ export namespace Internal {
     public static get color(): Gradients {
       const color = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR) as Gradients;
 
-      if (!color) {
-        localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR, Settings.default.color);
+      if (color) {
+        return color;
       }
 
-      return color || Settings.default.color;
+      Internal.Settings.color = Internal.Settings.default.color;
+
+      return Internal.Settings.color;
     }
 
     public static set color(color: Gradients) {
@@ -109,11 +121,17 @@ export namespace Internal {
     public static get field(): keyof λEvent {
       const field = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD) as keyof λEvent;
 
-      if (!field) {
-        localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD, Settings.default.field);
+      if (field) {
+        return field
       }
 
-      return field || Settings.default.field;
+      Internal.Settings.field = Internal.Settings.default.field;
+
+      return Internal.Settings.field;
+    }
+    
+    public static set field(field: keyof λEvent) {
+      localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD, field);
     }
 
     public static all(): ΞSettings {
@@ -123,6 +141,22 @@ export namespace Internal {
         field: Settings.field,
         offset: 0
       }
+    }
+
+    public static get server(): string {
+      const engine = localStorage.getItem(Internal.LocalStorageItemsList.GENERAL_SERVER_VALUE);
+
+      if (engine) {
+        return engine;
+      }
+
+      Internal.Settings.server = 'http://localhost:8080';
+
+      return Internal.Settings.server;
+    }
+ 
+    public static set server(server: string) {
+      localStorage.setItem(Internal.LocalStorageItemsList.GENERAL_SERVER_VALUE, server);
     }
   }
 }
@@ -633,7 +667,7 @@ export class Info implements InfoProps {
 
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
-  login = (obj: Login) => {
+  login = (obj: GulpDataset.Login) => {
     localStorage.setItem('__token', obj.token);
     
     this.setInfo(info => ({
