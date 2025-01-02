@@ -1,11 +1,9 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote } from '@/dto/Dataset';
 import { λEvent, ΞEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
-import { RawNote, λNote } from '@/dto/Note.dto';
 import { toast } from 'sonner';
-import { RawLink, λLink } from '@/dto/Link.dto';
 import { Gradients, λColor } from '@/ui/utils';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
@@ -49,12 +47,6 @@ export namespace GulpDataset {
 
     export type Summary = Operation[];
   }
-
-  export interface Login {
-    token: string,
-    id: string,
-    time_expire: number
-  };
 }
 
 interface RefetchOptions {
@@ -161,10 +153,17 @@ export namespace Internal {
   }
 }
 
+export interface λUser {
+  token: string;
+  id: string;
+  time_expire: number;
+  password: string;
+};
+
 class User {
   instanse!: User;
-  storage!: λApp['general'];
-  constructor(general: λApp['general']) {
+  storage!: λUser;
+  constructor(general: λUser) {
     if (this.instanse) {
       this.instanse.storage = general;
       return this.instanse;
@@ -218,11 +217,6 @@ export class Info implements InfoProps {
       return;
     }
 
-    if (!operation || !contexts.length) {
-      console.log(operation),
-      console.log(contexts);
-    };
-
     ids.length
       ? ids.forEach(id => this.events_reset_in_file(File.id(this.app, id)))
       : this.events_reset();
@@ -231,8 +225,9 @@ export class Info implements InfoProps {
       ? ids.reduce<λFile[]>((files, id) => {
         const file = File.id(this.app, id);
 
-        if (file) files.push(file);
-        else {
+        if (file) {
+          files.push(file);
+        } else {
           Logger.error(`File with id ${id} not found in application data`, `${Info.name}.${this.refetch.name}`);
           toast('File not found in application data', {
             description: `ERR_FILE_NOT_FOUND_AT_APPLICATION_DATA`
@@ -243,9 +238,9 @@ export class Info implements InfoProps {
       }, [])
       : File.selected(this.app))
 
-    // await this.notes_reload();
+    await this.notes_reload();
 
-    // await this.links_reload();
+    await this.links_reload();
 
     await this.glyphs_reload();
 
@@ -415,37 +410,13 @@ export class Info implements InfoProps {
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
-  notes_reload = async () => {
-    const src_file: λFile['name'][] = []
-    const context: λContext['name'][] = []
-    const operation_ids: λOperation['id'][] = []
-    
-    File.selected(this.app).forEach(file => {
-      src_file.push(file.name);
-
-      const { name, operation_id } = Context.findByFile(this.app, file) || {};
-
-      if (!name || !operation_id) return;
-
-      if (!context.includes(name))
-        context.push(name);
-
-      if (!operation_id.includes(operation_id))
-        operation_ids.push(operation_id);
-    });
-
-    api<RawNote[]>('/note_list', {
+  notes_reload = () => {
+    api<λNote[]>('/note_list', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        index: [Index.selected(this.app)?.name],
-        src_file, 
-        context,
-        operation_id: operation_ids
+        source_ids: File.selected(this.app).map(f => f.id), 
       })
-    }, (data) => this.notes_set(Note.parse(this.app, data)));
+    }, this.notes_set);
   }
 
   notes_delete = (note: λNote) => api<boolean>('/note_delete', {
@@ -458,39 +429,15 @@ export class Info implements InfoProps {
   // fileKey = (file: λFile, key: keyof λEvent) => this.setInfoByKey(File.replace({ ...file, key }, this.app), 'target', 'files');
 
   links_reload = async () => {
-    const src_file: λFile['name'][] = []
-    const context: λContext['name'][] = []
-    const operation_ids: λOperation['id'][] = []
-    
-    File.selected(this.app).forEach(file => {
-      src_file.push(file.name);
-
-      const { name, operation_id } = Context.findByFile(this.app, file) || {};
-
-      if (!name || !operation_id) return;
-
-      if (!context.includes(name))
-        context.push(name);
-
-      if (!operation_id.includes(operation_id))
-        operation_ids.push(operation_id);
-    });
-    
-    api<RawLink[]>('/link_list', {
+    api<λLink[]>('/link_list', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
-        index: [Index.selected(this.app)?.name],
-        src_file,
-        context,
-        operation_id: operation_ids
+        source_ids: File.selected(this.app).map(f => f.id), 
       })
     }, this.links_set);
   }
 
-  links_set = (links: RawLink[]) => this.setInfoByKey(Link.parse(this.app, links), 'target', 'links');
+  links_set = (links: λLink[]) => this.setInfoByKey(links, 'target', 'links');
 
   links_delete = (link: λLink) => api('/link_delete', {
     method: 'DELETE',
@@ -667,7 +614,7 @@ export class Info implements InfoProps {
 
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
-  login = (obj: GulpDataset.Login) => {
+  login = (obj: λUser) => {
     localStorage.setItem('__token', obj.token);
     
     this.setInfo(info => ({
@@ -1147,7 +1094,7 @@ export class Event {
 }
 
 export class Note {
-  public static parse = (app: λApp, notes: RawNote[]): λNote[] => notes.map(n => {
+  public static parse = (app: λApp, notes: λNote[]): λNote[] => notes.map(n => {
     const note: λNote = {
       ...n,
       events: Event.parse(n.events),
@@ -1171,7 +1118,7 @@ export class Note {
 }
 
 export class Link {
-  public static parse = (app: λApp, links: RawLink[]): λLink[] => links.map(l => {
+  public static parse = (app: λApp, links: λLink[]): λLink[] => links.map(l => {
     return {
       ...l,
       file_id: l.src_file,

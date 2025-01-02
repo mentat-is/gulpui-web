@@ -1,12 +1,12 @@
 import { λIndex } from './Index.dto';
 import { Color } from '@impactium/types';
-import { μ } from '@/class/Info';
+import { Info, Internal, λUser, μ } from '@/class/Info';
 import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
 import { MinMax } from '@/class/Info';
 import { λEvent } from './ChunkEvent.dto';
 
-export type GulpDataType = 'operation' | 'context' | 'file';
+export type GulpDataType = 'operation' | 'context' | 'file' | 'link' | 'note';
 
 interface ΞSelectionField {
   selected?: boolean;
@@ -71,6 +71,29 @@ export interface ΞSettings {
   engine: Engine.List;
   offset: number;
   field: keyof λEvent;
+}
+
+export type λLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
+  owner_user_id: string,
+  description: string,
+  operation_id: λOperation['id'],
+  tags: string[];
+  doc_id_from: λFile['id'];
+  doc_ids: λEvent['id'][];
+}
+
+export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
+  type: 'note',
+  description: string,
+  operation_id: λOperation['id'],
+  tags: string[],
+  context_id: λContext['id'],
+  source_id: λFile['id'],
+  docs: unknown[],
+  time_pin: number,
+  last_editor_id: λUser,
+  text: string,
+  edits: Record<string, any>[];
 }
 
 export interface λGlyph {
