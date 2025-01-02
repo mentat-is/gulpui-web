@@ -12,7 +12,7 @@ import { λGlyph } from '@/dto/Dataset';
 import { Logger } from '@/dto/Logger.class';
 import { Engine } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
-import { Color } from '@impactium/types';
+import { Color, MaybeArray } from '@impactium/types';
 import { SetState } from './API';
 
 export namespace GulpDataset {
@@ -1090,55 +1090,35 @@ export class Event {
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], id: μ.File) => Event.get(app, id).filter(e => Parser.array(eventId).includes(e.id));
 
-  public static findById = (app: λApp, eventId: string | string[]) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e.id));
+  public static findById = (app: λApp, eventId: MaybeArray<λEvent['id']>) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e.id));
 }
 
 export class Note {
-  public static parse = (app: λApp, notes: λNote[]): λNote[] => notes.map(n => {
-    const note: λNote = {
-      ...n,
-      events: Event.parse(n.events),
-      data: {
-        ...n.data,
-        color: λColor['name -> hex'](n.data.color) as Color
-      }
-    }
-    return note;
-  });
+  // @ts-ignore
+  public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs);
 
-  public static findByFile = (use: λApp | λNote[], file: λFile | string) => Parser.use(use, 'notes').filter(n => n.file_id === Parser.useName(file));
+  public static findByFile = (use: λApp | λNote[], file: λFile | string) => Parser.use(use, 'notes').filter(n => n.source_id === Parser.useName(file));
   
-  public static findByEvent = (use: λApp | λNote[], event: λEvent | string) => Parser.use(use, 'notes').filter(n => n.events.some(e => e.id === Parser.useId(event)));
+  public static findByEvent = (use: λApp | λNote[], event: λEvent) => Parser.use(use, 'notes').filter(n => n.docs.some(eid => eid === event));
 
-  public static timestamp = (note: λNote): number => {
+  public static timestamp = (app: λApp, note: λNote): number => {
     let sum = 0
-    note.events.forEach(e => sum += e.timestamp);
-    return (sum / note.events.length) || (note.time_end ? (note.time_start + note.time_end) / 2 : note.time_start);
+    const events = Note.events(app, note);
+    events.forEach(e => sum += e.timestamp);
+    return (sum / events.length);
   }
 }
 
 export class Link {
-  public static parse = (app: λApp, links: λLink[]): λLink[] => links.map(l => {
-    return {
-      ...l,
-      file_id: l.src_file,
-      data: {
-        ...l.data,
-        color: λColor['name -> hex'](l.data.color)
-      },
-      events: Event.parse(l.notes),
-      _uuid: File.id(app, l.src_file).id,
-    }
-  });
+  public static events = (app: λApp, link: λLink) => Event.findById(app, [link.doc_id_from, ...link.doc_ids]);
 
-  public static findByFile = (use: λApp | λLink[], file: λFile | μ.File): λLink[] => Parser.use(use, 'links').filter(l => l.file_id === Parser.useUUID(file));
-  
-  // public static findByEvent = (use: Information | λLink[], event: λEvent | string): λLink[] => Parser.use(use, 'links').filter(l => l.events.some(e => e._id === Parser.useId(event)));
+  public static timestamp = (app: λApp, link: λLink): number => {
+    const events = Link.events(app, link);
 
-  public static timestamp = (link: λLink): number => {
     let sum = 0
-    link.events.forEach(e => sum += e.timestamp);
-    return (sum / link.events.length) || (link.time_end ? (link.time_start + link.time_end) / 2 : link.time_start);
+
+    events.forEach(e => sum += e.timestamp);
+    return (sum / events.length);
   }
 }
 

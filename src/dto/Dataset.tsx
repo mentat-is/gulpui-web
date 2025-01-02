@@ -78,7 +78,7 @@ export type λLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
   description: string,
   operation_id: λOperation['id'],
   tags: string[];
-  doc_id_from: λFile['id'];
+  doc_id_from: λEvent['id'];
   doc_ids: λEvent['id'][];
 }
 
