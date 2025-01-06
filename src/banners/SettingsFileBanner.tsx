@@ -14,11 +14,9 @@ import { enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from 'date-fns';
 import { Icon } from '@impactium/icons';
 import { Context, Event } from '@/class/Info';
-import { Logger } from '@/dto/Logger.class';
 import { Engine } from '@/class/Engine.dto';
 import { Stack } from '@impactium/components';
 import { λEvent } from '@/dto/ChunkEvent.dto';
-import { Toggle } from '@/ui/Toggle';
 import { λFile } from '@/dto/Dataset';
 
 interface SettingsFileBannerProps {
@@ -30,54 +28,48 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [color, setColor] = useState<any>(file.color);
   const [offset, setOffset] = useState<number>(file.settings.offset);
   const [engine, setEngine] = useState<Engine.List>(file.settings.engine);
-  const [isCustomKeyField, setIsCustomKeyField] = useState<boolean>(false);
-  const [key, setKey] = useState<string | string[]>(file.settings.field);
+  const [field, setField] = useState<keyof λEvent>(file.settings.field);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const save = () => {
-    const newFile = { color, offset, engine, key };
+    setLoading(true);
 
-    Logger.log(`Settings for file has been successfully updated.
-File: ${file.name}-${file.id}
-Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
-
-    Info.files_replace({
-      ...file,
-      ...newFile
-    });
-    destroyBanner();
+    setTimeout(() => {
+      Info.files_replace([{
+        ...file,
+        settings: {
+          color,
+          offset,
+          engine,
+          field
+        }
+      }]);
+  
+      destroyBanner();
+    }, 500);
   }
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
+  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
 
-    if (value >= 0) {
-      setOffset(value);
-    };
+    setOffset(parseInt(value) || 0);
   }
+
+  const done = <Button variant='glass' onClick={save} loading={loading} img='Check' />;
+
+  const option = (
+    <Button
+      onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
+      variant='secondary'
+      img='Filter' />
+  )
   
   return (
-    <Banner title='File settings' subtitle={
-      <Button
-        onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
-        variant='ghost'
-        img='Filter'>{(app.target.filters[file.id] || []).length ? 'Change filters' : 'Set filters'}</Button>
-      }>
+    <Banner title='File settings' done={done} option={option}>
       <h4>{file.name} in {Context.find(app, file.context_id)?.name}</h4>
       <Card>
-        <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
-        <Input img='AlarmClockPlus' accept='number' value={offset > 0 ? offset : undefined} placeholder='Offset time in ms' onChange={handleInputChange} />
-        <div className={s.offset}>
-          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000)}>1 second</Button>
-          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000 * 60)}>1 minute</Button>
-          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60)}>1 hour</Button>
-          <Button img='Plus' variant='outline' onClick={() => setOffset(o => o - 1000 * 60 * 60 * 24)}>1 day</Button>
-        </div>
-        <div className={s.offset}>
-          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000)}>1 second</Button>
-          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000 * 60)}>1 minute</Button>
-          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60)}>1 hour</Button>
-          <Button img='Minus' variant='outline' onClick={() => setOffset(o => o + 1000 * 60 * 60 * 24)}>1 day</Button>
-        </div>
+        <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['years', 'months', 'days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
+        <Input img='AlarmClockPlus' accept='number' value={offset} placeholder='Offset time in ms' onChange={handleInputChange} />
       </Card>
       <Separator />
       <Card className={s.engines}>
@@ -100,23 +92,18 @@ Settings: ${JSON.stringify(newFile, null, 2)}`, SettingsFileBanner.name);
             <ColorPickerPopover gradients={GradientsMap} solids={[]} />
           </ColorPicker>
         </Stack>
-        <Toggle option={['Use key from list', 'Custom key (unsave)']} checked={isCustomKeyField} onCheckedChange={setIsCustomKeyField}  />
         <Stack jc='space-between'>
-          <p className={s.text}>Target key:</p>
-          {isCustomKeyField
-            ? <Input placeholder='Render engine target key' />
-            : <Select onValueChange={(field: keyof λEvent) => setKey(field)}>
-                <SelectTrigger className={s.trigger} value={engine}>
-                  <SelectValue placeholder='event.code' />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.keys(Event.get(app, file.id)[0] || {}).map(key => <SelectItem value={key}>{key}</SelectItem>)}
-                </SelectContent>
-              </Select>
-          }
+          <p className={s.text}>Target field:</p>
+          <Select onValueChange={(field: keyof λEvent) => setField(field)}>
+            <SelectTrigger className={s.trigger} value={engine}>
+              <SelectValue placeholder={field} />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(Event.get(app, file.id)[0] || {}).map(field => <SelectItem value={field}>{field}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </Stack>
       </Card>
-      <Button style={{ alignSelf: 'flex-end' }} img='CheckCheck' onClick={save}>Apply new file settings</Button>
     </Banner>
   )
 }

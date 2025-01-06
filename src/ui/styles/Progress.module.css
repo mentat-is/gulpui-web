@@ -3,6 +3,7 @@
   background-color: var(--meta-black);
   border: 1px solid var(--accent-2);
   border-radius: var(--round);
+  min-height: 12px;
   height: 12px;
   flex: 1;
 }
@@ -10,7 +11,7 @@
 .bar {
   height: 100%;
   transition: width .125s var(--transition);
-  background-color: var(--white);
+  background: var(--geist-background);
   border-radius: var(--round);
   position: relative;
 }
@@ -20,8 +21,10 @@
   width: 100%;
   text-align: center;
   color: var(--meta-black);
+  background: var(--white);
+  border: var(--geist-border);
   font-family: var(--font-mono);
-  font-weight: 800;
+  font-weight: 700;
   text-rendering: optimizeLegibility;
   font-size: 10px;
   line-height: 10.75px;

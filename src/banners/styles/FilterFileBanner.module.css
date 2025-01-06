@@ -1,20 +1,3 @@
-.banner {
-  max-height: 50vh;
-  overflow-y: auto;
-}
-.banner::-webkit-scrollbar {
-  width: 8px;
-}
-
-.banner::-webkit-scrollbar-track {
-  background-color: #242424;
-  border-radius: 10px;
-}
-
-.banner::-webkit-scrollbar-thumb {
-  background-color: white;
-  border-radius: 10px;
-}
 .top {
   display: flex;
   gap: 12px;
@@ -24,20 +7,39 @@
   flex-direction: column;
   gap: 8px;
 }
-.filter {
-  padding: 8px;
-  padding-left: 24px;
-  background: var(--soft-black);
-  border: var(--geist-border);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: space-between;
+.filters {
+  overflow-y: auto;
+  max-height: 256px;
+  border: 1px solid var(--gray-400);
+  background-color: var(--meta-black);
   border-radius: 6px;
-  height: 48px;
 }
-.filter code {
+.filters .filter:not(:first-child) {
+  border-top: 1px solid var(--gray-400);
+}
+.filters .filter:not(:nth-last-child(2)) {
+  border-bottom: 1px solid var(--gray-400);
+}
+.filters .toggle:last-child {
+  display: none !important;
+}
+.filter {
+  width: 100%;
+  padding: 0 2px 0 8px;
+  height: 28px;
+}
+.filter * {
   font-family: var(--font-mono);
+  font-size: 13px;
+}
+.filter hr {
+  flex: 1;
+}
+.delete {
+  cursor: pointer;
+  height: 24px;
+  width: 24px;
+  padding: 2px;
 }
 .bottom {
   display: flex;
@@ -45,31 +47,17 @@
   gap: 12px;
   justify-content: flex-end;
 }
-.switch {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  gap: 8px;
-}
-.switch p {
-  font-size: 12px;
-  transition: all 0.125s var(--transition);
-  color: var(--text-dimmed);
-  font-weight: 300;
-  flex: 1;
-}
-.switch p:first-child {
-  text-align: right;
-}
-.switch p.active {
-  color: var(--text-white);
-  font-weight: 600;
+.toggle {
+  margin: 6px 0;
 }
 .preview {
   max-width: 600px;
   word-break: normal;
+  background-color: var(--meta-black);
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  padding: 12px;
+  min-height: 128px;
 }
 .select * {
   font-family: var(--font-mono);
@@ -77,7 +65,15 @@
 .preview code {
   font-family: var(--font-mono);
   line-height: 1.3;
+  font-size: 11px;
 }
 .preview code span {
+  font-family: var(--font-mono);
   color: var(--text-dimmed);
+}
+.preview h4 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }

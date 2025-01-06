@@ -223,23 +223,26 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public locals = (file: λFile) => {
     const y = File.getHeight(this.info.app, file, this.scrollY);
 
+    const x_max = this.getPixelPosition(file.timestamp.max);
+    const x_min = this.getPixelPosition(file.timestamp.min);
+
     this.ctx.fillStyle = '#e8e8e8';
     this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.settings.offset) + 2, y - 24, 2, 48 - 1);
     this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.settings.offset) - 2, y - 24, 2, 48 - 1);
     
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.min) - 64, y + 4);
-    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), this.getPixelPosition(file.timestamp.max) + 12, y + 4);
+    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), x_min - 64, y + 4);
+    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), x_max + 12, y + 4);
 
     this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#0372ef';
     const events = Event.get(this.info.app, file.id).length.toString()
-    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.max) + 12, y + 14);
-    this.ctx.fillText(events, this.getPixelPosition(file.timestamp.min) - 64, y + 14);
+    this.ctx.fillText(events, x_max + 12, y + 14);
+    this.ctx.fillText(events, x_min - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.total.toString(), this.getPixelPosition(file.timestamp.max) + 12, y - 6);
-    this.ctx.fillText(file.total.toString(), this.getPixelPosition(file.timestamp.min) - 64, y - 6);
+    this.ctx.fillText(file.total.toString(), x_max + 12, y - 6);
+    this.ctx.fillText(file.total.toString(), x_min - 64, y - 6);
   }
 
   public draw_info = (file: λFile) => {

@@ -9,7 +9,7 @@ type ComponentPropsWithoutRef = React.ComponentPropsWithoutRef<typeof SeparatorP
   color?: string;
 }
 
-const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(({ color = 'var(--accent-3)', className, orientation = 'horizontal', decorative = true, ...props }, ref) => (
+const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(({ color = 'var(--accent-3)', className, orientation = 'horizontal', style, decorative = true, ...props }, ref) => (
   <SeparatorPrimitive.Root
       ref={ref}
       decorative={decorative}
@@ -20,6 +20,7 @@ const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(
         className
       )}
       style={{
+        ...style,
         background: color
       }}
       {...props}

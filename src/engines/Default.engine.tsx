@@ -28,10 +28,11 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
 
       const position = this.renderer.getPixelPosition(timestamp);
 
-      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color as Gradients, code, {
-        min: Math.min(map[MinHeight], file.code.min),
-        max: Math.max(map[MaxHeight], file.code.max),
+      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, {
+        min: map[MinHeight],
+        max: map[MaxHeight],
       });
+
       this.renderer.ctx.fillRect(position, y, 1, 47);
     });
   }
@@ -48,7 +49,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       if (map.has(pos))
         return;
 
-      const value = numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file, event);
+      const value = parseInt(event[file.settings.field].toString()) as Hardcode.Height;
 
       map.set(pos, [value, timestamp]);
     });

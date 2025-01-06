@@ -47,6 +47,7 @@ export interface RequestOptions {
   setLoading?: SetState<boolean>;
   query?: Record<string, string | number> | string | URLSearchParams;
   body?: Record<string, any> | RequestInit['body'];
+  deassign?: boolean;
 };
 
 type RawTrueOptions<T> = Omit<RequestInit, 'body'> & { raw: true } & RequestOptions;
@@ -94,10 +95,15 @@ export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgume
     }
   }
 
-  options.headers = Object.assign(options.headers || {}, {
-    'Content-Type': 'application/json',
+  const headers: Record<string, string> = {
     'token': localStorage.getItem('__token') || ''
-  })
+  }
+
+  if (!options.deassign) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  options.headers = Object.assign(options.headers || {}, headers);
 
   if (typeof options.body === 'object' && !(options.body instanceof FormData)) {
     options.body = JSON.stringify(options.body);

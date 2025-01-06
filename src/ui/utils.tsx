@@ -206,7 +206,7 @@ export const formatBytes = (bytes: number): string => {
 };
 
 export class λColor {
-  public static ['name -> hex'] = (color: string): string => {
+  public static namedToHex = (color: string): string => {
     if (!color) {
       return '#ffffff'
     }
@@ -329,14 +329,7 @@ export function numericRepresentationOfAnyString(input: string): number {
 }
 
 export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(file: λFile, event: λEvent): Hardcode.Height {
-  const isTargetValid = file.settings.field && file.settings.field[0] in event;
-
-  // @ts-ignore
-  let key: unknown = isTargetValid ? event[file.settings.field[0]] : event.code;
-
-  if (key === undefined) {
-    key = event.code;
-  }
+  let key: unknown = event[file.settings.field];
 
   if (typeof key === 'object' && key !== null) {
     key = Object.values(key).reduce((sum, value) => {

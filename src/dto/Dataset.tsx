@@ -57,13 +57,14 @@ type ΞFile<T extends Extendable = {}> = GulpObject<μ.File, T> & {
   description: string | null;
 }
 
-export type λFile = ΞFile & {
+export type λFile = Omit<ΞFile, 'color'> & {
   pinned?: boolean;
   settings: ΞSettings;
   code: MinMax;
   timestamp: MinMax;
   nanotimestamp: MinMax;
   total: number;
+  color: Gradients
 };
 
 export interface ΞSettings {

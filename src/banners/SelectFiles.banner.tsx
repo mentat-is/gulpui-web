@@ -7,7 +7,7 @@ import { Badge } from '@/ui/Badge';
 import { Label } from '@/ui/Label';
 import { Button, Skeleton } from '@impactium/components';
 import { Context, Operation, Event, File } from '@/class/Info';
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Input } from '@/ui/Input';
 import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
@@ -28,6 +28,10 @@ export function SelectFilesBanner() {
 
     spawnBanner(<LimitsBanner />);
   }
+
+  useEffect(() => {
+    Info.query_operations();
+  }, []);
 
   const fulfilled = !Operation.selected(app)?.contexts;
 
@@ -60,18 +64,22 @@ export function SelectFilesBanner() {
       )
     }, [app.target.files]);
 
-    const handleContextCheck = (value: boolean) => {
-      const newContexts = value
-        ? Context.select(app, context)
-        : Context.unselect(app, context)
+    if (files.every(f => !f.name.toLowerCase().includes(filter.toLowerCase()))) {
+      return null;
+    }
 
-      Info.contexts_select(newContexts)
+    const handleContextCheck = (value: boolean) => {
+      if (value === true) {
+        Info.contexts_select([context])
+      } else {
+        Info.contexts_unselect([context])
+      }
     }
 
     return (
       <div className={s.branch} key={context.id}>
         <div className={s.contextHeading}>
-          <Checkbox checked={context.selected ? Context.files(app, context).every(f => f.selected) ? true : 'indeterminate' : false} onCheckedChange={handleContextCheck} />
+          <Checkbox checked={context.selected ? (Context.files(app, context).every(f => f.selected) ? true : 'indeterminate') : false} onCheckedChange={handleContextCheck} />
           <Label htmlFor={context.name}>{context.name}</Label>
           <hr style={{ flex: 1 }} />
           <Badge value='Context' />
@@ -84,14 +92,14 @@ export function SelectFilesBanner() {
 
   function FileComponent(file: λFile) {
     const handleFileCheck = (value: boolean) => {
-      const newFiles = value
-        ? File.select(app, file)
-        : File.unselect(app, file)
-
-      Info.files_select(newFiles)
+      if (value === true) {
+        Info.files_select([file])
+      } else {
+        Info.files_unselect([file])
+      }
     }
 
-    if (!file.name.toLowerCase().includes(filter.toLowerCase())) {
+    if (!file.name.toLowerCase().includes(filter.toLowerCase()) || file.total === 0) {
       return null;
     }
 
@@ -100,7 +108,7 @@ export function SelectFilesBanner() {
         <Checkbox id={file.name} checked={file.selected} onCheckedChange={handleFileCheck} />
         <Label htmlFor={file.name}>{File.wellFormatedName(file)}</Label>
         <hr style={{ flex: 1 }} />
-        <Badge variant='outline' value={File.pluginName(file) || 'No plugin'} />
+        <Badge variant='outline' value={file.total} />
       </div>
     )
   }

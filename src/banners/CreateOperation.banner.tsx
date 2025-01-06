@@ -8,6 +8,7 @@ import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'
 import { GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/Dataset';
+import { Index } from '@/class/Info';
 
 export function CreateOperationBanner() {
   const { Info, destroyBanner } = useApplication();
@@ -17,19 +18,21 @@ export function CreateOperationBanner() {
   const [loading, setLoading] = useState<boolean>(false);
 
   const createOperation = () => {
-    const body: Record<string, any> = {
-      name
-    }
+    const index = Index.selected(Info.app);
 
-    if (icon) {
-      body.glyph_id = icon;
+    if (!index) {
+      return;
     }
 
     api<any>('/operation_create', {
       method: 'POST',
       setLoading,
-      query: body,
-      body: description,
+      query: {
+        name,
+        index: index.name
+      },
+      deassign: true,
+      body: description.toString(),
     }, Info.operation_list).then(destroyBanner);
   };
 

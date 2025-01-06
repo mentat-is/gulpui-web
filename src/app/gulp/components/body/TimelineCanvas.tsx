@@ -47,7 +47,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
     File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY);
 
-      if (y + 48 < 0 || y > canvas_ref.current!.height - scrollY) return;
+      console.log(file);
 
       if (!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)) {
         render[file.settings.engine].render(file, y - 24, force);

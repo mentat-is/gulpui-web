@@ -1,12 +1,12 @@
 import { λOperation } from '.';
 import { λEvent, λExtendedEvent } from './ChunkEvent.dto';
 import { λIndex } from './Index.dto';
-import { λPlugin } from './Plugin.dto';
 import { generateUUID } from '@/ui/utils';
 import { FilterOptions, MinMax, λFilter, λUser, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
 import { XY } from './XY.dto';
 import { λContext, λFile, λGlyph, λLink, λNote } from './Dataset';
+import { λMapping } from './MappingFileList.dto';
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -32,11 +32,11 @@ export interface λApp {
       name: string;
       content: string;
     }>;
+    plugins: λMapping.Plugin[]
   }
   general: λUser & {
     server: string;
     ws_id: string;
-    plugins: λPlugin[];
     sessions: Record<string, Session>
   },
   timeline: {
@@ -63,7 +63,6 @@ export const BaseInfo: λApp = {
     server: 'http://localhost:8080',
     password: 'admin',
     ws_id: generateUUID(),
-    plugins: [],
     id: '',
     time_expire: Infinity,
     token: '',
@@ -96,7 +95,8 @@ export const BaseInfo: λApp = {
     notes: [],
     links: [],
     sigma: {},
-    glyphs: []
+    glyphs: [],
+    plugins: []
   }
 }
 

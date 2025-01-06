@@ -7,10 +7,8 @@ import { Dialog } from '@/ui/Dialog';
 import { useEffect, useRef, useState } from 'react';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
-
 import ReactDOM from 'react-dom';
 import { NotesWindow } from '@/components/NotesWindow';
-import { PluginsViewerBanner } from '@/banners/PluginsViewerBanner';
 import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
@@ -122,8 +120,6 @@ export function MenuDialog() {
       </div>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='Wrench' onClick={() => spawnBanner(<SelectFilesBanner />)}>Select Files</Button>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='Blocks' onClick={() => spawnBanner(<PluginsViewerBanner />)}>Plugins list</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
       <Separator color='var(--accent-5)' />

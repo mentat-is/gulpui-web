@@ -14,6 +14,7 @@ import { FilesMenu } from './Files.manu';
 import { useKeyHandler } from '@/app/use';
 import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
+import { Files } from 'lucide-react';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
@@ -130,7 +131,7 @@ export function Timeline() {
   }, [timeline, debouncedHandleWheel]);
 
   const handleContextMenu = (event: MouseEvent) => {
-    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top - 64) / 48)
+    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top) / 48)
 
     const file = File.selected(app)[index];
 

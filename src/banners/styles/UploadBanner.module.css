@@ -24,7 +24,7 @@
   font-weight: 500;
 }
 .trigger {
-  height: 32px;
+  background-color: var(--meta-black);
 }
 .done {
   align-self: flex-end;
@@ -54,19 +54,32 @@
 .files {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 3px 0;
   overflow-y: auto;
   max-height: 384px;
-  padding-right: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--gray-400);
+}
+.fill {
+  min-height: 64px;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.fill div {
+  color: var(--text-dimmed);
+}
+.fill p {
+  color: var(--text-dimmed);
+  font-family: var(--font-mono);
+  font-size: 12px;
 }
 .filePreview {
-  border-radius: 4px;
   width: 100%;
   height: 28px;
-  border: 1px solid var(--accent-3);
-  background: var(--soft-black);
+  background: var(--meta-black);
   padding: 0 6px;
+}
+.files .filePreview:not(:last-child) {
+  border-bottom: 1px solid var(--gray-400);
 }
 .filePreview * {
   font-size: 11px;
@@ -80,6 +93,16 @@
   overflow: hidden;
   min-height: unset;
   border: none;
+  width: unset !important;
+  background: unset;
+  border-radius: 2px;
+}
+.weight {
+  min-width: 64px;
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-dimmed);
 }
 .filename {
   width: 128px;

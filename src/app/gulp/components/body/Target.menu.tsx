@@ -43,7 +43,7 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
       <ContextMenuSub>
         <ContextMenuSubTrigger img='Cpu'>Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
-          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.files_replace({ ...file, settings: {...file.settings, engine: i.plugin}})} img={i.img}>{i.title}</ContextMenuItem>)}
+          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.files_replace([{ ...file, settings: {...file.settings, engine: i.plugin}}])} img={i.img}>{i.title}</ContextMenuItem>)}
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
@@ -57,7 +57,7 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Actions</ContextMenuLabel>
-        <ContextMenuItem onClick={() => Info.files_unselect(file)} img='EyeOff'>Hide</ContextMenuItem>
+        <ContextMenuItem onClick={() => Info.files_unselect([file])} img='EyeOff'>Hide</ContextMenuItem>
         <ContextMenuSub>
         <ContextMenuSubTrigger img='Move'>Reorder</ContextMenuSubTrigger>
         <ContextMenuSubContent>

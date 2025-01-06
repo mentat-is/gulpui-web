@@ -3,21 +3,22 @@ import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Input } from '@/ui/Input';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import { Badge } from '@/ui/Badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { Calendar } from '@/ui/Calendar';
-import { Context, Filter, FilterOptions, FilterType, File, λFilter, μ } from '@/class/Info';
+import { Context, Filter, FilterOptions, FilterType, File, λFilter, μ, Index, Operation } from '@/class/Info';
 import { SettingsFileBanner } from './SettingsFileBanner';
 import React from 'react';
 import { Switch } from '@/ui/Switch';
 import { Card } from '@/ui/Card';
-import { cn, generateUUID } from '@/ui/utils';
+import { cn, copy, generateUUID } from '@/ui/utils';
 import { toast } from 'sonner';
 import { λFile } from '@/dto/Dataset';
 import { format } from 'date-fns';
+import { Toggle } from '@/ui/Toggle';
 
 const _baseFilter = (): λFilter => ({
   id: generateUUID() as μ.Filter,
@@ -42,12 +43,18 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   useEffect(() => {
     if (app.timeline.filtering_options[file.id]) return;
 
-    const context = Context.id(app, file.context_id)!.name;
+    const index = Index.selected(app);
 
-    api<FilterOptions>('/elastic_get_mapping_by_file', {
+    if (!index) {
+      return;
+    }
+
+    api<FilterOptions>('/opensearch_get_mapping_by_src', {
       query: {
-        context,
-        src: file.name
+        index: index.name,
+        operation_id: file.operation_id,
+        context_id: file.context_id,
+        source_id: file.id
       }
     }).then(data => Info.setTimelineFilteringoptions(file, data));
   }, [app.timeline.filtering_options]);
@@ -106,25 +113,52 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   const undo = () => Info.filters_undo(file);
 
-  return (
-    <Banner
-      title={'Choose filtering options'}
-      className={s.banner} loading={!app.timeline.filtering_options[file.id]}
-      subtitle={
-        <Button
-          onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
-          variant='ghost'
-          img='Settings'>File settings</Button>
-        }>
-      <div className={s.top}>
+  const Done = useCallback(() => {
+    return (
+      <Button img='Check' variant='glass' loading={loading} onClick={submit} />
+    )
+  }, [loading, submit]);
+
+  const Undo = useCallback(() => {
+    return (
+      <Button img='Undo' variant='ghost' onClick={undo} />
+    )
+  }, [undo]);
+
+  function AvailableFilters() {
+    if (filters.length === 0) {
+      return null;
+    }
+
+    return (
+      <Stack dir='column' gap={0} className={s.filters}>
+        {filters.map((filter, i) => (
+          <React.Fragment key={i}>
+            <Stack ai='center' className={s.filter}>
+              <code>{filter.key}</code>
+              <span>{filter.type}</span>
+              <p>{typeof filter.value !== 'string' ? format(filter.value, 'LLL dd, y') : filter.value}</p>
+              <hr />
+              <Button size='sm' className={s.delete} variant='ghost' img='Trash2' onClick={() => removeFilter(filter)} />
+            </Stack>
+            <Toggle className={s.toggle} option={['AND', 'OR']} checked={filter.isOr} onCheckedChange={(checked) => handleCheckedChange(checked, filter)} />
+          </React.Fragment>
+        ))}
+      </Stack>
+    )
+  }
+
+  function FilterField() {
+    return (
+      <Stack className={s.top}>
         <Select onValueChange={setKey} value={filter?.key}>
           <SelectTrigger>
             <SelectValue placeholder='Choose filter' />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent style={{ maxHeight: '33vh' }}>
             {Object.keys(app.timeline.filtering_options[file.id] || {}).map((key, i) => (
               <SelectItem key={i} value={key}>
-                {key.startsWith('gulp.unmapped.') ? key.slice(14) : key}
+                {key}
               </SelectItem>
             ))}
           </SelectContent>
@@ -162,36 +196,32 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           <Input onChange={(event) => setValue(event.currentTarget.value)} placeholder={`Input a ${acceptable}`} value={filter?.value} />
         )}
         <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
-      </div>
-      <div className={s.avilable_filters}>
-        {filters.map((filter, i) => {
-          return (
-            <React.Fragment key={i}>
-              <div className={s.filter}>
-                <code>{filter.key}</code>
-                <Badge value={filter.type} />
-                <p>{typeof filter.value !== 'string' ? format(filter.value, 'LLL dd, y') : filter.value}</p>
-                <Button variant='destructive' img='Trash2' onClick={() => removeFilter(filter)} />
-              </div>
-              {i !== filters.length - 1 && (
-                <div className={s.switch}>
-                  <p className={cn(!filter.isOr && s.active)}>AND</p>
-                  <Switch onCheckedChange={(checked) => handleCheckedChange(checked, filter)} />
-                  <p className={cn(filter.isOr && s.active)}>OR</p>
-                </div>
-              )}
-            </React.Fragment>
-          )
-        })}
-      </div>
-      <Card className={s.preview}>
-        <h4>Preview</h4>
-        <code>{Filter.query(app, file)}</code>
-      </Card>
-      <div className={s.bottom}>
-        <Button img='Undo' variant='outline' onClick={undo}>Undo</Button>
-        <Button img='Check' loading={loading} onClick={submit}>Submit</Button>
-      </div>
+      </Stack>
+    )
+  }
+
+  const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
+
+
+  
+  return (
+    <Banner
+      title='Choose filtering options'
+      loading={!app.timeline.filtering_options[file.id]}
+      done={<Done />}
+      option={<Undo />}
+      subtitle={
+        <Button
+          onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
+          variant='ghost'
+          img='Settings'>Back to file settings</Button>
+        }>
+      <FilterField />
+      <AvailableFilters />
+      <Stack dir='column' className={s.preview} ai='flex-start'>
+        <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(base + Filter.query(app, file))}>Copy</Button></h4>
+        <code><span>{base}</span>{Filter.query(app, file)}</code>
+      </Stack>
     </Banner>
   );
 }
