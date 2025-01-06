@@ -1,15 +1,14 @@
-import { MinMax } from '@/class/Info';
+import { Link, MinMax } from '@/class/Info';
 import { Event, Info, File } from './Info';
 import { Color, stringToHexColor } from '@/ui/utils';
 import { format } from 'date-fns';
 import { XY, XYBase } from '@/dto/XY.dto';
-import { λLink } from '@/dto/Link.dto';
 import { RulerDrawer } from './Ruler.drawer';
 import { DefaultEngine } from '../engines/Default.engine';
 import { Scale, Engine } from './Engine.dto';
 import { HeightEngine } from '../engines/Height.engine';
 import { GraphEngine } from '../engines/Graph.engine';
-import { λFile } from '@/dto/Dataset';
+import { λFile, λLink } from '@/dto/Dataset';
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
@@ -133,7 +132,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public links = () => {
     this.info.app.target.links.forEach(link => {
-      if (link.events.some(e => !File.id(this.info.app, e.file_id)?.selected)) return;
+      const events = Link.events(this.info.app, link);
+
+      if (events.some(e => !File.id(this.info.app, e.file_id)?.selected)) return;
 
       const { dots, center } = this.calcDots(link);
 
@@ -193,13 +194,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   } => {
     const center = XYBase(0);
     const dots: Dot[] = [];
+    const events = Link.events(this.info.app, link);
 
-    link.events.forEach(e => {
+    events.forEach(e => {
       const index = File.selected(this.info.app).findIndex(f => f.id === e.file_id);
 
       const x = this.getPixelPosition(e.timestamp + (File.selected(this.info.app)[index]?.settings.offset || 0));
       const y = (index * 48 + 20 - this.scrollY || 0);
-      const color = (link.data.color || stringToHexColor(link.events.map(e => e.file_id).toString()))
+      const color = (link.color || stringToHexColor(events.map(e => e.file_id).toString()))
 
       center.x += x;
       center.y += y;

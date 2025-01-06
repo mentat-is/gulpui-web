@@ -1,4 +1,4 @@
-import { Operation, Parser } from '@/class/Info';
+import { Context, Event, File, Operation, Parser } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@impactium/components';
@@ -18,20 +18,21 @@ import { Separator } from '@/ui/Separator';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Switch } from '@/ui/Switch';
 import { format } from 'date-fns';
+import { λContext, λFile } from '@/dto/Dataset';
 
 interface CreateNoteBannerProps {
-  context: string,
-  filename: string,
-  events?: λEvent[] | λEvent
+  context_id: λContext['id'],
+  file_id: λFile['id'],
+  events: λEvent[]
 }
 
-export function CreateNoteBanner({ context, filename, events }: CreateNoteBannerProps) {
+export function CreateNoteBanner({ context_id, file_id, events }: CreateNoteBannerProps) {
   const { app, destroyBanner, Info } = useApplication();
   const [tag, setTag] = useState<string>('');
   const [tags, setTags] = useState<Array<string>>([]);
   const [color, setColor] = useState<string>('#ffffff');
   const [level, setLevel] = useState<0 | 1 | 2>(0);
-  const [title, setTitle] = useState<string>('');
+  const [name, setName] = useState<string>('');
   const [text, setText] = useState<string>('');
   const [icon, setIcon] = useState<number>(-1);
   const [_private, _setPrivate] = useState<boolean>(false);
@@ -41,23 +42,31 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
   const levelMap = ['DEFAULT', 'WARNING', 'ERROR'];
 
   const send = async () => {
-    setLoading(true);
+    const operation = Operation.selected(app);
+
+    if (!operation) {
+      return;
+    }
+    
     api('/note_create', {
       method: 'POST',
+      setLoading,
       query: {
-        operation_id: Operation.selected(app)?.id!,
-        context,
-        src_file: filename,
+        operation_id: operation.id,
+        context_id,
+        source_id: file_id,
         ws_id: app.general.ws_id,
+        name,
         color,
         level,
         private: String(_private),
         glyph_id: icon
       },
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8'
-      },
-      body: JSON.stringify({ title, text, tags })
+      body: {
+        text,
+        tags,
+        docs: events.map(Event.formatForServer)
+      }
     }).then(() => {
       destroyBanner();
       Info.notes_reload()
@@ -74,15 +83,15 @@ export function CreateNoteBanner({ context, filename, events }: CreateNoteBanner
   const deleteTag = (tag: string) => setTags(tags => tags.filter(t => t !== tag));
 
   return (
-    <Banner title='Create note' done={<Button loading={loading} className={s.save} onClick={send} variant={title && text ? 'glass' : 'disabled'} img='Check'/>}>
+    <Banner name='Create note' done={<Button loading={loading} className={s.save} onClick={send} variant={name && text ? 'glass' : 'disabled'} img='Check'/>}>
       <Card className={s.overview}>
-        <p>Title: {<Input revert img='Heading1' value={title} onChange={e => setTitle(e.currentTarget.value)}/>}</p>
+        <p>Title: {<Input revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
         <Separator />
         <p>Text: {<Input revert img='Heading2' value={text} onChange={e => setText(e.currentTarget.value)}/>}</p>
         <Separator />
-        <p>Context: <span>{context}</span></p>
+        <p>Context: <span>{Context.id(app, context_id).name}</span></p>
         <Separator />
-        <p>File: <span>{filename}</span></p>
+        <p>File: <span>{File.id(app, file_id).name}</span></p>
         <Separator />
         <p>At: <span>{format((Parser.array(events)[0]?.timestamp || 0), 'yyyy.MM.dd HH:mm:ss')}</span></p>
       </Card>

@@ -1,60 +1,66 @@
-import { λNote } from '@/dto/Note.dto';
 import s from './styles/Link.module.css';
 import { copy } from './utils';
 import { Badge } from './Badge';
 import { Separator } from './Separator';
 import { Button } from '@impactium/components';
 import { useApplication } from '@/context/Application.context';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
-import { Glyph } from './Glyph';
-import { ChadNumber } from '@impactium/components';
 import { useWindows } from './Windows';
+import { λNote } from '@/dto/Dataset';
+import { Note } from '@/class/Info';
+import { Point } from './Point';
+import { GlyphMap } from '@/dto/Glyph.dto';
+import { λEvent } from '@/dto/ChunkEvent.dto';
 
-interface NoteProps {
-  note: λNote;
-  left: number;
-  top: ChadNumber;
+export namespace NotePoint {
+  export interface Props extends Omit<Point.Props, 'icon' | 'accent' | 'name'> {
+    note: λNote;
+  }
 }
 
-export function Note({ note, left, top }: NoteProps) {
-  const { spawnDialog } = useApplication();
+export function NotePoint({ note, ...props }: NotePoint.Props) {
+  const { app } = useApplication();
   const { newWindow } = useWindows();
 
   const openEvent = () => {
-    const dialog = note.events.length === 1
-      ? <DisplayEventDialog event={note.events[0]} />
-      : <DisplayGroupDialog events={note.events} />;
+    const events = Note.events(app, note);
+
+    if (events.length === 0) {
+      return null;
+    }
+
+    const dialog = events.length === 1
+      ? <DisplayEventDialog event={events[0]} />
+      : <DisplayGroupDialog events={events} />;
 
       newWindow({
         icon: 'StickyNote',
-        name: note.events.length === 1 ? 'Note' : 'Notes',
+        name: events.length === 1 ? 'Note' : 'Notes',
         children: dialog
       })
   };
 
   return (
-    <>
-      <Button onClick={openEvent} size='icon' variant={'glass'} className={s.target} style={{ left, top }}>
-        {/* <Glyph glyph={note.glyph_id} color={note.data.color} /> */}
-        <hr style={{ background: note.data.color }} />
-        <div className={s.backplate} style={{ background: note.data.color + '32' }} />
-      </Button>
-      <p className={s.desc} style={{ left, top, transform: 'translateY(26px)' }}>{note.name}</p>
-    </>
+    <Point onClick={openEvent} icon={GlyphMap.get(note.glyph_id)!} accent={note.color} name={note.name} {...props} />
   )
 }
 
-interface NoteContentProps extends Pick<NoteProps, 'note'> {
+interface NoteContentProps extends Pick<NotePoint.Props, 'note'> {
   loading: boolean;
   deleteNote: () => void;
   openEvent?: () => void;
 }
 
 export function NoteContent({ note, loading, deleteNote, openEvent }: NoteContentProps) {
-  const { dialog } = useApplication();
+  const { dialog, app } = useApplication();
+  const [events, setEvents] = useState<λEvent[]>(Note.events(app, note));
+
+  useEffect(() => {
+    setEvents(Note.events(app, note));
+  }, [note.docs]);
 
   return (
     <Fragment>
@@ -73,10 +79,6 @@ export function NoteContent({ note, loading, deleteNote, openEvent }: NoteConten
           {note.text?.length > 128 && <Icon onClick={() => copy(note.text!)} className={s.__copy} name='Copy' />}
         </div>
         <Separator />
-        <div>
-          <Icon name={note.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
-          <span>{note.private ? 'Private' : 'Not private'}</span>
-        </div>
         {note.description && <Fragment>
           <Separator />
           <div>
@@ -86,7 +88,7 @@ export function NoteContent({ note, loading, deleteNote, openEvent }: NoteConten
           </div>
         </Fragment>}
       </div>
-      {!!note.tags?.filter(t => !!t).length && (
+      {note.tags.filter(t => !!t).length && (
         <Fragment>
           <Separator />
           <div className={s.tags}>
@@ -99,7 +101,7 @@ export function NoteContent({ note, loading, deleteNote, openEvent }: NoteConten
         <Button className={s.copy} onClick={() => copy(JSON.stringify(note))} img='Copy'>Copy note as JSON</Button>
         <Button loading={loading} img='Trash2' onClick={deleteNote} variant='destructive' />
       </div>
-      {!!note.events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{note.events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
+      {events.length && !dialog && <Button className={s.open_event} img='FileSearch' onClick={openEvent}>{events.length === 1 ? 'Open note`s event' : 'Open note`s events group'}</Button>}
     </Fragment>
   )
 }

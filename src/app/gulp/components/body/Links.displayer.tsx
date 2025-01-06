@@ -1,6 +1,6 @@
-import { Link as LinkClass, File } from '@/class/Info';
+import { Link as LinkClass, File, Link, Event } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
-import { Link } from '@/ui/Link';
+import { LinkPoint } from '@/ui/Link';
 import { Fragment } from 'react';
 
 
@@ -15,16 +15,19 @@ export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProp
   return (
     <Fragment>
       {app.target.links.map(link => {
-        const left = getPixelPosition(LinkClass.timestamp(link) + (File.id(app, link.file_id)?.settings.offset || 0));
+        const events = Link.events(app, link);
+
+        // const left = getPixelPosition(Link.timestamp(app, link) + (File.id(app, File.call.link.doc_id_from)?.settings.offset || 0));
+        const left = 0;
         let top = 0;
 
-        if (link.events.some(e => !File.id(app, e.file_id)?.selected)) return null;
+        if (events.some(e => !File.id(app, e.file_id)?.selected)) return null;
 
-        link.events.forEach(event => top += File.getHeight(app, event.file_id, scrollY));
+        events.forEach(event => top += File.getHeight(app, event.file_id, scrollY));
 
         if (top <= 0) return null;
 
-        return <Link link={link} left={left} top={top / Math.max(link.events.length, 1)} />;
+        return <LinkPoint link={link} x={left} y={top / Math.max(events.length, 1)} />;
       })}
     </Fragment>
   )

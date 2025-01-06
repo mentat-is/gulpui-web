@@ -6,16 +6,17 @@ import { Stack } from '@impactium/components';
 import s from './storyline.module.css';
 import { useCallback, useEffect, useRef } from 'react';
 import { Timestamp } from '@/ui/timestamp';
-import { Operation, Note as NoteEntity } from '@/class/Info';
-import { Note } from '@/ui/Note';
-import { λNote } from '@/dto/Note.dto';
+import { Operation, Note as NoteEntity, Note } from '@/class/Info';
+import { λNote } from '@/dto/Dataset';
+import { NotePoint } from '@/ui/Note';
+
 
 export function StorylineBanner() {
   const { app, Info } = useApplication();
 
   const notes = app.target.notes;
 
-  const timespamps = notes.map(n => n.events.map(e => e.timestamp)).flat();
+  const timespamps = notes.map(n => Note.timestamp(app, n));
 
   const min = Math.min(...timespamps);
   const max = Math.max(...timespamps);
@@ -56,6 +57,7 @@ namespace Graph {
 
 
 export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
+  const { app } = useApplication();
   const graph = useRef<HTMLCanvasElement>(null);
 
   props.dir = props.dir ?? 'column';
@@ -71,8 +73,8 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
       <div className={s.wrapper}>
         <canvas ref={graph} className={s.canvas} />
         {notes.map(note => {
-        const timestamp = NoteEntity.timestamp(note);
-        return <Note note={note} left={getNoteXPositionFromTimestamp(timestamp)} top='50%' />
+        const timestamp = Note.timestamp(app, note);
+        return <NotePoint note={note} x={getNoteXPositionFromTimestamp(timestamp)} y={'50%' as unknown as number} />
       })}
       </div>
       <Stack jc='space-between' className={s.minMax}>

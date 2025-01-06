@@ -1,7 +1,7 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useApplication } from '@/context/Application.context';
-import { λEvent, DetailedChunkEvent } from '@/dto/ChunkEvent.dto';
+import { λEvent, λExtendedEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useState } from 'react';
@@ -10,15 +10,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { copy } from '@/ui/utils';
 import { Button } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { Note, File } from '@/class/Info';
+import { Note, File, Index, Internal, Event } from '@/class/Info';
 import { Notes } from './components/Notes';
-import { λNote } from '@/dto/Note.dto';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
 import { Loading } from '@impactium/components';
 import { Hardcode } from '@/class/Engine.dto';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { Navigation } from './components/navigation';
 import { Separator } from '@/ui/Separator';
+import { λNote } from '@/dto/Dataset';
+
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -26,7 +27,7 @@ interface DisplayEventDialogProps {
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner, destroyDialog } = useApplication();
-  const [detailedChunkEvent, setDetailedChunkEvent] = useState<DetailedChunkEvent | null>(null);
+  const [detailedChunkEvent, setDetailedChunkEvent] = useState<λExtendedEvent | null>(null);
   const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
   const [rawJSON, setRawJSON] = useState<string>('');
 
@@ -46,52 +47,28 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event]);
 
   const reloadDetailedChunkEvent = () => {
-    const startTime = Date.now();
-  
-    api<any>('/query_single_event', {
-      query: {
-        gulp_id: event.id
-      }
-    }).then(data => {
-      const elapsedTime = Date.now() - startTime;
-      const delay = Math.max(1500 - elapsedTime, 0);
+    const index = Index.selected(app);
 
-      setTimeout(() => {
-        setRawJSON(JSON.stringify(data, null, 4));
-        setDetailedChunkEvent({
-          operation: data.operation,
-          agent: {
-            type: data['agent.type'],
-            id: data['agent.id']
-          },
-          event: {
-            code: data['event.code'],
-            duration: data['event.duration'],
-            id: data['event.id'],
-            hash: data['event.hash'],
-            category: data['event.category'],
-            original: data['event.original']
-          },
-          level: data['log.level'],
-          _id: data._id,
-          // @ts-ignore
-          operation_id: data.operation_id,
-          timestamp: data['@timestamp'] as Hardcode.Timestamp,
-          // @ts-ignore
-          file: data['gulp.file.file'],
-          context: data['gulp.context'],
-          _uuid: event.file_id
-        });
-      }, delay);
+    if (!index) {
+      return;
+    }
+  
+    api<ΞxtendedEvent>('/query_single_id', {
+      method: 'POST',
+      query: {
+        doc_id: event.id,
+        index: index.name
+      }
+    }, e => setDetailedChunkEvent(Event.normalizeFromDetailed(e))).then(data => {
+      setRawJSON(JSON.stringify(data, null, 4));
     });
   };  
 
-
   const spawnNoteBanner = () => {
     spawnBanner(<CreateNoteBanner
-      context={File.id(app, event.file_id)!.context_id}
-      filename={event.file_id}
-      events={event} />);
+      context_id={event.context_id}
+      file_id={event.file_id}
+      events={[event]} />);
     destroyDialog();
   }
 

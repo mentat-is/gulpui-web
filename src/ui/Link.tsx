@@ -4,25 +4,31 @@ import { Badge } from './Badge';
 import { Separator } from './Separator';
 import { Button } from '@impactium/components';
 import { useApplication } from '@/context/Application.context';
-import { Fragment } from 'react';
-import { Event } from '@/class/Info';
+import { Fragment, useEffect, useState } from 'react';
+import { Event, Link, Note } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
-import { λLink } from '@/dto/Link.dto';
-import { Glyph } from './Glyph';
+import { λLink } from '@/dto/Dataset';
+import { Point } from './Point';
+import { GlyphMap } from '@/dto/Glyph.dto';
+import { λEvent } from '@/dto/ChunkEvent.dto';
 
-interface LinkProps {
-  link: λLink;
-  left: number;
-  top: number;
+export namespace LinkPoint {
+  export interface Props extends Omit<Point.Props, 'icon' | 'name' | 'accent'> {
+    link: λLink
+  }
 }
 
-export function Link({ link, left, top }: LinkProps) {
+export function LinkPoint({ link, ...props }: LinkPoint.Props) {
   const { app, spawnDialog } = useApplication();
 
   const openEvent = () => {
-    const events = link.events.map(event => Event.findByIdAndUUID(app, event.id, event.file_id)).flat()
+    const events = Link.events(app, link);
+
+    if (events.length === 0) {
+      return null;
+    }
 
     const dialog = events.length === 1
       ? <DisplayEventDialog event={events[0]} />
@@ -32,24 +38,22 @@ export function Link({ link, left, top }: LinkProps) {
   };
 
   return (
-    <>
-      <Button size='icon' variant='glass' onClick={openEvent} className={s.target} style={{ left, top }}>
-        {/* <Glyph glyph={link.glyph_id} color={link.data.color} /> */}
-        <hr style={{ background: link.data.color }} />
-        <div className={s.backplate} style={{ background: link.data.color + '32' }} />
-      </Button>
-      <p className={s.desc} style={{ left, top: top+26 }}>{link.name}</p>
-    </>
+    <Point onClick={openEvent} icon={GlyphMap.get(link.glyph_id)!} name={link.name} accent={link.color} {...props} />
   )
 }
 
-interface LinkContentProps extends Pick<LinkProps, 'link'> {
+interface LinkContentProps extends Pick<LinkPoint.Props, 'link'> {
   loading: boolean;
   deleteLink: () => void;
 }
 
 export function LinkContent({ link, loading, deleteLink }: LinkContentProps) {
-  const { dialog } = useApplication();
+  const { dialog, app } = useApplication();
+  const [events, setEvents] = useState<λEvent[]>(Link.events(app, link));
+  
+    useEffect(() => {
+      setEvents(Link.events(app, link));
+    }, [link]);
 
   return (
     <Fragment>
@@ -64,8 +68,8 @@ export function LinkContent({ link, loading, deleteLink }: LinkContentProps) {
         <div>
           <Icon name='Heading2' />
           <span>Text: </span>
-          <p>{link.text}</p>
-          {(link.text || '').length > 128 && <Icon onClick={() => copy(link.text!)} className={s.__copy} name='Copy' />}
+          <p>{link.description}</p>
+          {(link.description || '').length > 128 && <Icon onClick={() => copy(link.description!)} className={s.__copy} name='Copy' />}
         </div>
         <Separator />
         {link.description &&
@@ -79,10 +83,6 @@ export function LinkContent({ link, loading, deleteLink }: LinkContentProps) {
             <Separator />
           </Fragment>
         }
-        <div>
-          <Icon name={link.private ? 'LockKeyhole' : 'LockKeyholeOpen'} />
-          <span>{link.private ? 'Private' : 'Not private'}</span>
-        </div>
       </div>
       {!!(link.tags || []).filter(t => !!t).length && (
         <Fragment>
@@ -97,7 +97,7 @@ export function LinkContent({ link, loading, deleteLink }: LinkContentProps) {
         <Button className={s.copy} onClick={() => copy(JSON.stringify(link))} img='Copy'>Copy note as JSON</Button>
         <Button loading={loading} img='Trash2' onClick={deleteLink} variant='destructive' />
       </div>
-      {!!link.events.length && !dialog && <Button className={s.open_event} img='FileSearch'>{link.events.length === 1 ? 'Open link`s event' : 'Open link`s events group'}</Button>}
+      {events.length && !dialog && <Button className={s.open_event} img='FileSearch'>{events.length === 1 ? 'Open link`s event' : 'Open link`s events group'}</Button>}
     </Fragment>
   )
 }

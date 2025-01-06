@@ -2,7 +2,7 @@ import { μ } from '@/class/Info';
 import { generateUUID } from '@/ui/utils';
 import { Icon } from '@impactium/icons';
 
-export const GlyphMap: Map<μ.Glyph, Icon.Name> = new Map();
+export const GlyphMap: Map<μ.Glyph | null | undefined, Icon.Name> = new Map();
 
 const newGlyphId = () => {
   return generateUUID() as μ.Glyph;
@@ -59,5 +59,7 @@ GlyphMap.set(newGlyphId(), 'Link');
 GlyphMap.set(newGlyphId(), 'Wrench');
 GlyphMap.set(newGlyphId(), 'Chrome');
 GlyphMap.set(newGlyphId(), 'Zap');
+GlyphMap.set(null, 'Box');
+GlyphMap.set(undefined, 'Box');
 
 export const CustomGlyphs: Record<μ.Glyph, string> = {}

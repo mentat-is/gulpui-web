@@ -1,6 +1,6 @@
 import { λEvent } from './ChunkEvent.dto';
 import { Arrayed } from '@/class/Info';
-import { λLink } from './Link.dto';
+import { λLink } from './Dataset';
 
 interface LinkCreateRequestProps {
   name: λLink['name'];

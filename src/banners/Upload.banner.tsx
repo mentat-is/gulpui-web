@@ -269,7 +269,6 @@ Progress: ${progress}%`, UploadBanner.name);
   }
 
   const MethodSelection = ({ file }: TargetSelection) => {
-    console.log('z');
     const fileSettings = settings[file.name];
 
     const methods = findMethodsByPluginAndMappingName(fileSettings.plugin, fileSettings.mapping);

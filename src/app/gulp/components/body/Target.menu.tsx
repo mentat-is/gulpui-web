@@ -1,6 +1,5 @@
 import s from './../../Gulp.module.css';
 import { FilterFileBanner } from '@/banners/FilterFile.banner';
-import { LinkVisualizer } from '@/banners/LinksVisualizer';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
 import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
@@ -48,7 +47,6 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
-      <ContextMenuItem onClick={() => spawnBanner(<LinkVisualizer file={file} />)} img='Link'>Links</ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>

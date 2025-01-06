@@ -1,4 +1,4 @@
-import { Operation, Parser } from '@/class/Info';
+import { Link, Operation, Parser } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
 import { Button } from '@impactium/components';
@@ -7,7 +7,7 @@ import {
   ColorPickerTrigger,
   ColorPickerPopover,
 } from '@/ui/Color';
-import { SetStateAction, useState } from 'react';
+import { useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css'
 import { Input } from '@/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
@@ -17,11 +17,10 @@ import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Switch } from '@/ui/Switch';
 import { LinkCreateRequest } from '@/dto/LinkCreateRequest.dto';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
-import { λLink } from '@/dto/Link.dto';
 import { LinkCombination } from '@/components/LinkCombination';
 import { EventCombination } from '@/components/EventCombination';
 import { GlyphsPopover } from '@/components/Glyphs.popover';
-import { λFile } from '@/dto/Dataset';
+import { λFile, λLink } from '@/dto/Dataset';
 import { format } from 'date-fns';
 
 interface CreateLinkBannerProps {
@@ -76,7 +75,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
       link_id: link.id,
       ws_id: app.general.ws_id,
     },
-    body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...link.events as λEvent[]] })
+    body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...Link.events(app, link) as λEvent[]] })
   }, Info.links_reload).then(destroyBanner);
 
   const Subtitle = () => (
@@ -85,7 +84,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
         <Button variant='ghost'>Connect to existing one</Button>
       </PopoverTrigger>
       <PopoverContent className={s.popover}>
-        {app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e.id).includes(e.id))).map(l => (
+        {app.target.links.filter(l => !Link.events(app, l).some(e => Parser.array(events).map(e => e.id).includes(e.id))).map(l => (
             <LinkCombination link={l}>
               <Button onClick={() =>update(l)} variant='outline'>Connect</Button>
             </LinkCombination>
@@ -95,7 +94,7 @@ export function CreateLinkBanner({ context, file, events }: CreateLinkBannerProp
   );
 
   return (
-    <Banner title='Create link' subtitle={!!app.target.links.filter(l => !l.events.some(e => Parser.array(events).map(e => e.id).includes(e.id))).length && <Subtitle />}>
+    <Banner title='Create link' subtitle={!!app.target.links.filter(l => !Link.events(app, l).some(e => Parser.array(events).map(e => e.id).includes(e.id))).length && <Subtitle />}>
       <Card className={s.overview}>
         <p>Name: <Input placeholder='*Required' revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/></p>
         <Separator />

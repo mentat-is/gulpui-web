@@ -7,7 +7,7 @@ import { Dialog } from '@/ui/Dialog';
 import { useEffect, useRef, useState } from 'react';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
-import { λNote } from '@/dto/Note.dto';
+
 import ReactDOM from 'react-dom';
 import { NotesWindow } from '@/components/NotesWindow';
 import { PluginsViewerBanner } from '@/banners/PluginsViewerBanner';
@@ -19,6 +19,8 @@ import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
 import { StorylineBanner } from '../storyline';
 import { Stack } from '@impactium/components';
 import { SaveSession } from '@/banners/SaveSession';
+import { λNote } from '@/dto/Dataset';
+import { Note } from '@/class/Info';
 
 export function MenuDialog() {
   const { spawnBanner, app, spawnDialog, Info, destroyDialog } = useApplication();
@@ -30,9 +32,11 @@ export function MenuDialog() {
   }
 
   const focus = (note: λNote) => {
-    spawnDialog(note.events.length > 1
-      ? <DisplayGroupDialog events={note.events} />
-      : <DisplayEventDialog event={note.events[0]} />
+    const events = Note.events(app, note);
+
+    spawnDialog(events.length > 1
+      ? <DisplayGroupDialog events={events} />
+      : <DisplayEventDialog event={events[0]} />
     );
   }
 

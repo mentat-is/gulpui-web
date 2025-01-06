@@ -1,6 +1,6 @@
 import { type λApp } from '@/dto';
 import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote } from '@/dto/Dataset';
-import { λEvent, ΞEvent } from '@/dto/ChunkEvent.dto';
+import { λEvent, λExtendedEvent, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { toast } from 'sonner';
@@ -12,7 +12,7 @@ import { λGlyph } from '@/dto/Dataset';
 import { Logger } from '@/dto/Logger.class';
 import { Engine } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
-import { Color, MaybeArray } from '@impactium/types';
+import { MaybeArray } from '@impactium/types';
 import { SetState } from './API';
 
 export namespace GulpDataset {
@@ -374,7 +374,6 @@ export class Info implements InfoProps {
 
   // 🔥 FILES
   selectAll = (filter: string) => {
-    console.log(Context.select(this.app, this.app.target.contexts));
     this.setInfo(i => ({
       ...i,
       target: {
@@ -1066,6 +1065,66 @@ export class Event {
     events.map(e => Event.get(app, e.file_id).push(e));
     events.sort((a, b) => a.timestamp - b.timestamp);
     return app.target.events;
+  }
+
+  public static normalizeFromDetailed = (raw: ΞxtendedEvent) => {
+    return {
+      id: raw._id,
+      operation_id: raw['gulp.operation_id'],
+      context_id: raw['gulp.context_id'],
+      file_id: raw['gulp.source_id'],
+      timestamp: new Date(raw['@timestamp']).valueOf(),
+      nanotimestamp: raw['gulp.timestamp'],
+      code: raw['event.code'],
+      weight: raw['gulp.event_code'],
+      duration: raw['event.duration'],
+      log: {
+        file: {
+          path: raw['log.file.path']
+        }
+      },
+      agent: {
+        type: raw['agent.type']
+      },
+      event: {
+        original: raw['event.original'],
+        sequence: raw['event.sequence']
+      },
+      gulp: {
+        unmapped: {
+          Provider_Guid: raw['gulp.unmapped.Provider_Guid'],
+          Version: raw['gulp.unmapped.Version'],
+          Level: raw['gulp.unmapped.Level'],
+          Task: raw['gulp.unmapped.Task'],
+          Opcode: raw['gulp.unmapped.Opcode'],
+          Keywords: raw['gulp.unmapped.Keywords'],
+          TimeCreated_SystemTime: raw['gulp.unmapped.TimeCreated_SystemTime'],
+          Execution_ProcessID: raw['gulp.unmapped.Execution_ProcessID'],
+          Execution_ThreadID: raw['gulp.unmapped.Execution_ThreadID'],
+          Security_UserID: raw['gulp.unmapped.Security_UserID'],
+          updateTitle: raw['gulp.unmapped.updateTitle'],
+          updateGuid: raw['gulp.unmapped.updateGuid'],
+          updateRevisionNumber: raw['gulp.unmapped.updateRevisionNumber'],
+          serviceGuid: raw['gulp.unmapped.serviceGuid'],
+        }
+      },
+      winlog: {
+        'record_id': raw['winlog.record_id'],
+        'channel': raw['winlog.channel'],
+        'computer_name': raw['winlog.computer_name'],
+      }
+    } satisfies λExtendedEvent;
+  }
+
+  public static formatForServer = (event: λEvent) => {
+    return {
+      "@timestamp": event.timestamp,
+      "_id": event.id,
+      "gulp.context_id": event.context_id,
+      "gulp.operation_id": event.operation_id,
+      "gulp.source_id": event.file_id,
+      "gulp.timestamp": event.nanotimestamp
+    } satisfies Pick<ΞEvent, '@timestamp' | '_id' | 'gulp.context_id' | 'gulp.operation_id' | 'gulp.source_id' | 'gulp.timestamp'>;
   }
 
   public static parse = (rawEvents: ΞEvent[]): λEvent[] => {

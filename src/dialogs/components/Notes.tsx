@@ -1,9 +1,9 @@
+import { λNote } from '@/dto/Dataset';
 import s from '../styles/DisplayEventDialog.module.css';
 import { useApplication } from '@/context/Application.context';
 import { Card } from '@/ui/Card';
 import { NoteContent } from '@/ui/Note';
 import { useState } from 'react';
-import { λNote } from '@/dto/Note.dto';
 
 interface NotesProps {
   notes: λNote[]
