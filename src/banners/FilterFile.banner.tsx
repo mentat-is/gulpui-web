@@ -149,6 +149,23 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   }
 
   function FilterField() {
+
+    const acceptableToType = (): string => {
+      switch (acceptable) {
+        case 'date_nanos':
+          return 'timestamp in nanosecond';
+          
+        case 'long':
+          return 'number';
+
+        case 'keyword':
+          return 'keyword';
+
+        case 'text':
+          return 'text';
+      }
+    }
+
     return (
       <Stack className={s.top}>
         <Select onValueChange={setKey} value={filter?.key}>
@@ -175,26 +192,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
             ))}
           </SelectContent>
         </Select>
-        {acceptable === 'date' ? (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant='outline' className={s.button} img='CalendarPlus2'>
-                {format(typeof filter?.value === 'number' ? filter?.value : Date.now(), 'LLL dd, y')}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent>
-              <Calendar 
-                initialFocus
-                mode='single'
-                defaultMonth={new Date()}
-                selected={filter?.value}
-                onSelect={setDate}
-                numberOfMonths={1} />
-            </PopoverContent>
-          </Popover>
-        ) : (
-          <Input onChange={(event) => setValue(event.currentTarget.value)} placeholder={`Input a ${acceptable}`} value={filter?.value} />
-        )}
+        <Input onChange={(event) => setValue(event.currentTarget.value)} placeholder={`Input a ${acceptableToType()}`} value={filter?.value} />
         <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
       </Stack>
     )
