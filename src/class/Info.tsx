@@ -959,7 +959,7 @@ export class Context {
   
   public static id = (use: λApp | λContext[], context: λContext | λContext['id']) => Parser.use(use, 'contexts').find(c => c.id === Parser.useUUID(context))!;
   
-  public static files = (app: λApp, context: λContext): λFile[] => app.target.files.filter(p => p.context_id === Parser.useUUID(context));
+  public static files = (app: λApp, context: λContext | λContext['id']): λFile[] => app.target.files.filter(p => p.context_id === Parser.useUUID(context));
 
   private static _select = (c: λContext): λContext => ({ ...c, selected: true });
 
@@ -1131,6 +1131,8 @@ export class Event {
     
     return app.target.events;
   }
+
+  public static id = (app: λApp, event: λEvent['id']): λEvent => Array.from(app.target.events.values()).flat().find(e => e.id === event)!;
 
   public static get = (app: λApp, id: μ.File): λEvent[] => app.target.events.get(id) || app.target.events.set(id, []).get(id)!;
 

@@ -38,8 +38,6 @@ export function LimitsBanner() {
     if (range) {
       setLoading(true);
 
-      console.log(range, _min);
-
       Info.setTimelineFrame(range);
 
       destroyBanner();

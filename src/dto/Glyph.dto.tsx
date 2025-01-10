@@ -59,7 +59,5 @@ GlyphMap.set(newGlyphId(), 'Link');
 GlyphMap.set(newGlyphId(), 'Wrench');
 GlyphMap.set(newGlyphId(), 'Chrome');
 GlyphMap.set(newGlyphId(), 'Zap');
-GlyphMap.set(null, 'Box');
-GlyphMap.set(undefined, 'Box');
 
 export const CustomGlyphs: Record<μ.Glyph, string> = {}

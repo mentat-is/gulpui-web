@@ -1,7 +1,7 @@
 import { Context, Event, File, Operation, Parser } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import {
   ColorPicker,
   ColorPickerTrigger,
@@ -9,37 +9,42 @@ import {
 } from '@/ui/Color';
 import { useRef, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css';
-import { Input } from '@/ui/Input';
+import { Input, InputProps } from '@/ui/Input';
 import { Badge } from '@/ui/Badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Card } from '@/ui/Card';
 import { cn } from '@/ui/utils';
 import { Separator } from '@/ui/Separator';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Switch } from '@/ui/Switch';
-import { format } from 'date-fns';
-import { λContext, λFile } from '@/dto/Dataset';
+import { λGlyph } from '@/dto/Dataset';
+import { GlyphsPopover } from '@/components/Glyphs.popover';
+import { GlyphMap } from '@/dto/Glyph.dto';
+import { Icon } from '@impactium/icons';
+import { Textarea } from '@/ui/Textarea';
 
 interface CreateNoteBannerProps {
-  context_id: λContext['id'],
-  file_id: λFile['id'],
-  events: λEvent[]
+  event: λEvent
 }
 
-export function CreateNoteBanner({ context_id, file_id, events }: CreateNoteBannerProps) {
+interface SelectionProps {
+  icon: Icon.Name;
+  name: string;
+  value: string;
+}
+
+type EditableProps = SelectionProps & InputProps;
+
+export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
   const { app, destroyBanner, Info } = useApplication();
   const [tag, setTag] = useState<string>('');
   const [tags, setTags] = useState<Array<string>>([]);
   const [color, setColor] = useState<string>('#ffffff');
-  const [level, setLevel] = useState<0 | 1 | 2>(0);
   const [name, setName] = useState<string>('');
   const [text, setText] = useState<string>('');
-  const [icon, setIcon] = useState<number>(-1);
+  const [icon, setIcon] = useState<λGlyph['id'] | null>(GlyphMap.keys().next().value || null);
   const [_private, _setPrivate] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const tag_ref = useRef<HTMLInputElement>(null);
-
-  const levelMap = ['DEFAULT', 'WARNING', 'ERROR'];
 
   const send = async () => {
     const operation = Operation.selected(app);
@@ -53,19 +58,18 @@ export function CreateNoteBanner({ context_id, file_id, events }: CreateNoteBann
       setLoading,
       query: {
         operation_id: operation.id,
-        context_id,
-        source_id: file_id,
+        context_id: event.context_id,
+        source_id: event.file_id,
         ws_id: app.general.ws_id,
         name,
         color,
-        level,
         private: String(_private),
-        glyph_id: icon
+        glyph_id: icon!
       },
       body: {
         text,
         tags,
-        docs: events.map(Event.formatForServer)
+        docs: Event.formatForServer(event)
       }
     }).then(() => {
       destroyBanner();
@@ -82,19 +86,37 @@ export function CreateNoteBanner({ context_id, file_id, events }: CreateNoteBann
 
   const deleteTag = (tag: string) => setTags(tags => tags.filter(t => t !== tag));
 
+  function Selection({ icon, name, value }: SelectionProps) {
+    return (
+      <Stack className={cn(s.inp, s.selection)}>
+        <p>{name}:</p>
+        <Input className={s.inp_input} img={icon} disabled value={value} />
+      </Stack>
+    )
+  }
+
+  function Editable({ icon, name, value }: EditableProps) {
+    return (
+      <Stack className={cn(s.inp, s.editable)}>
+        <p>{name}:</p>
+        <Input className={s.inp_input} img={icon} value={value} />
+      </Stack>
+    )
+  }
+
   return (
-    <Banner name='Create note' done={<Button loading={loading} className={s.save} onClick={send} variant={name && text ? 'glass' : 'disabled'} img='Check'/>}>
-      <Card className={s.overview}>
-        <p>Title: {<Input revert img='Heading1' value={name} onChange={e => setName(e.currentTarget.value)}/>}</p>
-        <Separator />
-        <p>Text: {<Input revert img='Heading2' value={text} onChange={e => setText(e.currentTarget.value)}/>}</p>
-        <Separator />
-        <p>Context: <span>{Context.id(app, context_id).name}</span></p>
-        <Separator />
-        <p>File: <span>{File.id(app, file_id).name}</span></p>
-        <Separator />
-        <p>At: <span>{format((Parser.array(events)[0]?.timestamp || 0), 'yyyy.MM.dd HH:mm:ss')}</span></p>
-      </Card>
+    <Banner title='Create note' done={<Button loading={loading} className={s.save} onClick={send} variant={name && text ? 'glass' : 'disabled'} img='Check'/>}>
+      <Stack className={s.general} ai='stretch' dir='column' gap={8}>
+        <Selection name='Context' value={Context.id(app, event.context_id).name} icon='Box' />
+        <Selection name='File' value={File.id(app, event.file_id).name} icon='File' />
+        <Selection name='Event' value={event.id} icon='Triangle' />
+      </Stack>
+      <Separator />
+      <Editable name='Title' value={name} icon='TextTitle' onChange={e => setName(e.currentTarget.value)} placeholder='Note title' />
+      <Editable name='Description' value={text} icon='TextQuote' onChange={e => setName(e.currentTarget.value)}>
+        <Textarea />
+      </Editable>
+      <Separator />
       <Card className={s.color}>
         <div className={s.unit}>
           <p>Color:</p>
@@ -105,20 +127,8 @@ export function CreateNoteBanner({ context_id, file_id, events }: CreateNoteBann
         </div>
         <Separator />
         <div className={s.unit}>
-          <p>Log level:</p>
-          <Select onValueChange={(v) => setLevel(levelMap.findIndex(l => l === v) as 0 | 1 | 2)} value={levelMap[level]}>
-              <SelectTrigger className={s.trigger}>
-                <SelectValue defaultValue={0} placeholder='Choose log level' />
-            </SelectTrigger>
-            <SelectContent>
-              {levelMap.map(l => <SelectItem value={l}>{l}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <Separator />
-        <div className={s.unit}>
           <p>Glyph:</p>
-          {/* <GlyphsPopover icon={icon} setIcon={setIcon} /> */}
+          <GlyphsPopover icon={icon} setIcon={setIcon} />
         </div>
         <Separator />
         <div className={s.unit}>

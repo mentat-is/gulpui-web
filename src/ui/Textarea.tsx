@@ -1,0 +1,30 @@
+import React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import s from '@/styles/textarea.module.css';
+import { Icon } from '@impactium/icons';
+import { cn } from '@impactium/utils';
+
+export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  asChild?: boolean;
+  img?: Icon.Name;
+  revert?: boolean;
+  loading?: boolean;
+  round?: boolean;
+}
+
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, disabled, asChild = false, ...props }, ref) => {
+    const Comp = asChild ? Slot : 'textarea';
+
+    return (
+      <Comp
+        className={cn(s.textarea, className)}
+        ref={ref}
+        {...props}>
+      </Comp>
+    )
+  }
+);
+Textarea.displayName = 'Textarea';
+
+export { Textarea };

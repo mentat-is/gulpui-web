@@ -35,7 +35,7 @@ export function GlyphsPopover({ icon, setIcon }: GlyphPopoverProps) {
             key={n}
             variant={k === icon ? 'default' : 'outline'}
             img={n}
-            onClick={() => setIcon(k)}
+            onClick={() => setIcon(k!)}
           />
         })}
         <Button className={s.upload} variant='hardline' img='Plus' onClick={uploadGlyph}>Upload</Button>

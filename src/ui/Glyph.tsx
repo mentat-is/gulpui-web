@@ -1,4 +1,3 @@
-import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/Dataset';
 import { Icon } from '@impactium/icons';
 

@@ -65,10 +65,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   };  
 
   const spawnNoteBanner = () => {
-    spawnBanner(<CreateNoteBanner
-      context_id={event.context_id}
-      file_id={event.file_id}
-      events={[event]} />);
+    spawnBanner(<CreateNoteBanner event={event} />);
     destroyDialog();
   }
 
