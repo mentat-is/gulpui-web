@@ -7,7 +7,7 @@ import {
   ColorPickerTrigger,
   ColorPickerPopover,
 } from '@/ui/Color';
-import { useRef, useState } from 'react';
+import { TextareaHTMLAttributes, useRef, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css';
 import { Input, InputProps } from '@/ui/Input';
 import { Badge } from '@/ui/Badge';
@@ -21,6 +21,7 @@ import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { GlyphMap } from '@/dto/Glyph.dto';
 import { Icon } from '@impactium/icons';
 import { Textarea } from '@/ui/Textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 
 interface CreateNoteBannerProps {
   event: λEvent
@@ -32,7 +33,7 @@ interface SelectionProps {
   value: string;
 }
 
-type EditableProps = SelectionProps & InputProps;
+type EditableProps = SelectionProps & TextareaHTMLAttributes<HTMLInputElement>;
 
 export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
   const { app, destroyBanner, Info } = useApplication();
@@ -95,11 +96,11 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
     )
   }
 
-  function Editable({ icon, name, value }: EditableProps) {
+  function Editable({ icon, name, children, ...props }: EditableProps) {
     return (
       <Stack className={cn(s.inp, s.editable)}>
         <p>{name}:</p>
-        <Input className={s.inp_input} img={icon} value={value} />
+        <Input className={s.inp_input} img={icon} {...props} />
       </Stack>
     )
   }
@@ -112,10 +113,22 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
         <Selection name='Event' value={event.id} icon='Triangle' />
       </Stack>
       <Separator />
-      <Editable name='Title' value={name} icon='TextTitle' onChange={e => setName(e.currentTarget.value)} placeholder='Note title' />
-      <Editable name='Description' value={text} icon='TextQuote' onChange={e => setName(e.currentTarget.value)}>
-        <Textarea />
-      </Editable>
+      <Editable name='Title' value={name} icon='TextTitle' onChange={e => setName(String(e.currentTarget.value))} placeholder='Note title' />
+      <Textarea className={s.textarea} value={text} onChange={e => setText(String(e.currentTarget.value))} placeholder='Description' />
+      <Popover>
+        <PopoverTrigger>
+          <Editable name='Color' icon='Paintbrush' value={color} />
+        </PopoverTrigger>
+        <PopoverContent>
+          <ColorPickerPopover />
+        </PopoverContent>
+        
+      </Popover>
+      
+      <ColorPicker color={color} setColor={setColor}>
+        <ColorPickerTrigger />
+        <ColorPickerPopover />
+      </ColorPicker>
       <Separator />
       <Card className={s.color}>
         <div className={s.unit}>

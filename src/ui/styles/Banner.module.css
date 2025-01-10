@@ -11,6 +11,18 @@
   overflow: hidden;
   background: #000000d8;
 }
+
+@keyframes InitialAnimation {
+  0% {
+    transform: translateY(256px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+
 .banner {
   min-width: 600px;
   max-width: 90vw;
@@ -22,7 +34,9 @@
   max-height: 64vh;
   gap: 16px;
   flex-direction: column;
+  animation: InitialAnimation 0.3s cubic-bezier(0.075, 0.82, 0.165, 1) forwards;
 }
+
 .banner > h6 {
   font-size: var(--text-large);
   display: flex;
@@ -40,14 +54,6 @@
 .close {
   box-shadow: none !important;
   background: none !important;
-}
-@keyframes Rotate {
-  0% {
-    transform: rotateZ(360deg);
-  }
-  100% {
-    transform: rotateZ(0deg);
-  }
 }
 .content {
   padding: 2px;

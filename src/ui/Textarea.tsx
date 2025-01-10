@@ -1,6 +1,6 @@
 import React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import s from '@/styles/textarea.module.css';
+import s from './styles/Textarea.module.css';
 import { Icon } from '@impactium/icons';
 import { cn } from '@impactium/utils';
 

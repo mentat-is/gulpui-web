@@ -1,5 +1,5 @@
 .textarea {
-  background: var(--black);
+  background: var(--meta-black);
   border: 1px solid var(--gray-400);
   border-radius: var(--border-s);
   padding: 12px;

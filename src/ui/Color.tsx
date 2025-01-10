@@ -11,7 +11,9 @@ import { Icon } from '@impactium/icons';
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[],
   gradients?: Record<string, string[]>,
-  solids?: string[]
+  solids?: string[],
+  color?: string,
+  setColor?: React.Dispatch<React.SetStateAction<string>>,
 }
 
 const baseSolids = [
@@ -83,8 +85,12 @@ export function ColorPickerTrigger({ className, ...props }: ColorPickerTriggerPr
 
 export type Tab = 'solid' | 'gradient'
 
-export function ColorPickerPopover({ gradients = {}, solids = baseSolids}: ColorProps) {
-  const { color, setColor } = useColor();
+export function ColorPickerPopover({ color: _color, setColor: _setColor, gradients = {}, solids = baseSolids}: ColorProps) {
+  const { color: λcolor, setColor: λsetColor } = useColor() || {};
+
+  const color = _color ?? λcolor;
+  const setColor = _setColor ?? λsetColor;
+
   const [tab, setTab] = useState<Tab>(Object.keys(gradients).length ? 'gradient' : 'solid');
 
   return (
