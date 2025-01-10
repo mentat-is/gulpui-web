@@ -210,11 +210,11 @@ export class Info implements InfoProps {
   refetch = async ({ ids = [], hidden, range }: RefetchOptions = {}) => {
     ids = Parser.array(ids);
 
-    const index = Index.selected(this.app);
+    
     const operation = Operation.selected(this.app);
     const contexts = Context.selected(this.app);
 
-    if (!index || !operation || !contexts.length) {
+    if (!operation || !contexts.length) {
       return;
     }
 
@@ -249,18 +249,30 @@ export class Info implements InfoProps {
       this.deload(files.map(s => s.id));
     }
     
-    await Promise.all(files.map(async file => {
-      return await api('/query_raw', {
-        method: 'POST',
-        query: {
-          ws_id: this.app.general.ws_id,
-          req_id: file.id,
-          index: index.name
-        },
-        body: JSON.stringify(Filter.body(this.app, file, range))
-      });
-    }));
+    files.forEach(file => {
+      this.query_file(file, range);
+    });
   }
+
+  query_file = async (file: λFile, range?: MinMax) => {
+    const index = Index.selected(this.app);
+
+    if (!index) {
+      return;
+    }
+
+    const path = Filter.exist(this.app, file) ? '/query_raw' : '/query_gulp';
+
+    return await api(path, {
+      method: 'POST',
+      query: {
+        ws_id: this.app.general.ws_id,
+        req_id: file.id,
+        index: index.name
+      },
+      body: JSON.stringify(Filter.body(this.app, file, range))
+    });
+  };
 
   cancel = async (r: μ.File) => {
     Logger.log(`Request canselation has been requested for file ${File.id(this.app, r).name}`, Info.name);
@@ -1084,16 +1096,11 @@ export class Filter {
   }
 
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
+
+  public static exist = (app: λApp, file: λFile) => Filter.find(app, file).length > 0;
   
   static body = (app: λApp, file: λFile, range?: MinMax) => {
     const body: Record<string, any> = {
-      q: {
-        query: {
-          query_string: {
-            query: '*'
-          }
-        }
-      },
       q_options: {
         sort: {
           '@timestamp': 'desc'
@@ -1103,12 +1110,10 @@ export class Filter {
 
     body.flt = Filter.base(app, file, range);
 
-    const query = Filter.query(app, file);
-
-    if (query) {
+    if (Filter.exist(app, file)) {
       body.q.query = {}
       body.q.query.query_string = {}
-      body.q.query.query_string.query = query
+      body.q.query.query_string.query = Filter.query(app, file);
     }
 
     return body;
@@ -1188,13 +1193,13 @@ export class Event {
 
   public static formatForServer = (event: λEvent) => {
     return {
-      "@timestamp": event.timestamp,
+      "@timestamp": event.nanotimestamp,
       "_id": event.id,
       "gulp.context_id": event.context_id,
       "gulp.operation_id": event.operation_id,
       "gulp.source_id": event.file_id,
-      "gulp.timestamp": event.nanotimestamp
-    } satisfies Pick<ΞEvent, '@timestamp' | '_id' | 'gulp.context_id' | 'gulp.operation_id' | 'gulp.source_id' | 'gulp.timestamp'>;
+      "gulp.timestamp": event.timestamp
+    };
   }
 
   public static parse = (rawEvents: ΞEvent[]): λEvent[] => {

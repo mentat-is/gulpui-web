@@ -26,7 +26,7 @@ export function LimitsBanner() {
     { text: 'Day', do: () => save(app.timeline.frame.max - 24 * 60 * 60 * 1000) },
     { text: 'Week', do: () => save(app.timeline.frame.max - 7 * 24 * 60 * 60 * 1000) },
     { text: 'Month', do: () => save(app.timeline.frame.max - 30 * 24 * 60 * 60 * 1000) },
-    { text: 'Full range', do: () => save(app.timeline.frame.min) },
+    { text: 'Full range', do: () => save() },
   ]
 
   const save = async (_min?: number) => {
@@ -37,6 +37,8 @@ export function LimitsBanner() {
 
     if (range) {
       setLoading(true);
+
+      console.log(range, _min);
 
       Info.setTimelineFrame(range);
 

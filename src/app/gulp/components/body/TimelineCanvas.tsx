@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context';
 import { cn, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
 import { Magnifier } from '@/ui/Magnifier';
@@ -13,7 +13,7 @@ import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
 import { Timestamp } from '@/ui/timestamp';
 import { λFile } from '@/dto/Dataset';
-import { Event, File } from '@/class/Info';
+import { File } from '@/class/Info';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -46,8 +46,6 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
     
     File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY);
-
-      console.log(file);
 
       if (!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)) {
         render[file.settings.engine].render(file, y - 24, force);

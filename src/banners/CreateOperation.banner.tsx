@@ -9,9 +9,10 @@ import s from './styles/CreateOperationBanner.module.css'
 import { GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/Dataset';
 import { Index } from '@/class/Info';
+import { OperationBanner } from './Operation.banner';
 
 export function CreateOperationBanner() {
-  const { Info, destroyBanner } = useApplication();
+  const { Info, spawnBanner } = useApplication();
   const [name, setName] = useState<string>('');
   const [icon, setIcon] = useState<λGlyph['id'] | null>(GlyphMap.keys().next().value || null);
   const [description, setDescription] = useState<string>('');
@@ -33,7 +34,9 @@ export function CreateOperationBanner() {
       },
       deassign: true,
       body: description.toString(),
-    }, Info.operation_list).then(destroyBanner);
+    }, Info.operation_list).then(() => {
+      spawnBanner(<OperationBanner />);
+    });
   };
 
   const DoneButton = useCallback(() => {

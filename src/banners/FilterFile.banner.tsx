@@ -200,8 +200,6 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
 
-
-  
   return (
     <Banner
       title='Choose filtering options'
