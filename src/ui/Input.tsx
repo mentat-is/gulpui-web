@@ -9,6 +9,7 @@ const inputVariants = cva(s.button, {
   variants: {
     variant: {
       default: s.default,
+      highlighted: s.highlighted,
       color: s.color
     },
     size: {
@@ -39,21 +40,20 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       !valid && s.invalid
     );
 
-    return img || (type === 'file' && img !== null) ? (
+    const InputIcon = () => {
+      if (!img && (type !== 'file' || img === null)) {
+        return null;
+      }
+
+      return <Icon variant='dimmed' name={img ?? 'Upload'} />;
+    }
+
+    return (
       <Skeleton show={skeleton}>
         <div className={classes}>
-          <Icon variant='dimmed' name={img ?? 'Upload'} />
+          <InputIcon />
           <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
         </div>
-      </Skeleton>
-    ) : (
-      <Skeleton show={skeleton}>
-        <input
-          className={classes}
-          type={variant === 'color' ? 'color' : type}
-          ref={ref}
-          {...props}
-        />
       </Skeleton>
     )
   }

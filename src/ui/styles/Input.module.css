@@ -94,8 +94,36 @@
   border: 1px solid #ff000064 !important;
   animation: shake .5s var(--transition);
 }
+.invalid:hover {
+  box-shadow: none;
+}
 .invalid svg {
   stroke: #ff0000aa;
+}
+.highlighted {
+  background: var(--meta-black);
+  position: relative;
+  overflow: hidden;
+  padding-left: 8px;
+  gap: 16px;
+}
+.highlighted input {
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.highlighted svg {
+  z-index: 2;
+}
+.highlighted::before {
+  position: absolute;
+  left: 0;
+  content: '';
+  height: 100%;
+  width: 32px;
+  z-index: 0;
+  border-right: 1px solid var(--gray-400);
+  background: var(--soft-black);
 }
 
 @keyframes shake {

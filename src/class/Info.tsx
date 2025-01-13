@@ -1,7 +1,7 @@
 import { type λApp } from '@/dto';
 import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote } from '@/dto/Dataset';
 import { λEvent, λExtendedEvent, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
-import React from 'react';
+import React, { DependencyList } from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { toast } from 'sonner';
 import { Gradients, λColor } from '@/ui/utils';
@@ -47,6 +47,55 @@ export namespace GulpDataset {
     }
 
     export type Summary = Operation[];
+  }
+
+  export namespace PluginList {
+    export type Summary = Object[]
+
+    export type Type = 'ingestion' | 'enrichment' | 'external';
+
+    export namespace SigmaSupport {
+      export type Type = 'backends' | 'pipelines' | 'output_formats'
+
+      export interface Object {
+        name: string;
+        description: string;
+      }
+
+      export type List = Object[];
+
+      export type Summary = Record<SigmaSupport.Type, SigmaSupport.List>[];
+    }
+
+    export namespace CustomParameters {
+      export type Type = 'int' | 'str' | 'bool' | 'dict' | 'list';
+
+      export interface Object {
+        name: string,
+        type: Type,
+        default_value: any,
+        desc: string,
+        required: boolean
+      }
+      
+      export type List = Object[];
+    }
+
+    export type DependsOn = 'eml';
+
+    export interface Object {
+      display_name: string;
+      type: Type[];
+      desc: string;
+      path: string;
+      data: {};
+      filename: string;
+      sigma_support: SigmaSupport.Summary;
+      custom_parameters: CustomParameters.List;
+      depends_on: DependsOn[];
+      tags: string[];
+      version: string;
+    }
   }
 }
 
@@ -693,6 +742,10 @@ export class Info implements InfoProps {
     this.files_replace(newFiles);
   }
 
+  plugin_list = (): Promise<GulpDataset.PluginList.Summary> => {
+    return api('/plugin_list', console.log);
+  }
+
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
   login = (obj: λUser) => {
@@ -728,30 +781,28 @@ export class Info implements InfoProps {
   
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 8;
 
-  query_external = ({
-    operation_id,
-    server,
-    username,
-    password
-  }: any) => api('/query_external', {
-    method: 'POST',
-    query: {
-      operation_id,
-      client_id: this.app.general.id,
-      ws_id: this.app.general.ws_id,
-      plugin: ''
-    },
-    body: JSON.stringify({
-      plugin_params: {
-        extra: {
-          index: 0,
-          url: server,
-          username,
-          password, 
+  query_external = (plugin: string, uri: string, params: Record<string, any>) => {
+    const index = Index.selected(this.app);
+
+    if (!index) {
+      return;
+    }
+
+    return api('/query_raw', {
+      method: 'POST',
+      query: {
+        index: index.name,
+        ws_id: this.app.general.ws_id,
+      },
+      body: {
+        q_options: {
+          plugin,
+          uri,
+          external_parameters: params
         }
       }
-    })
-  });
+    });
+  };
 
   filters_add = (id: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [id]: filters}), 'target', 'filters');
 

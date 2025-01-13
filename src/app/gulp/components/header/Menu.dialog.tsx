@@ -1,4 +1,4 @@
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import s from '../../Gulp.module.css';
 import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
@@ -13,9 +13,8 @@ import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
-import { QueryExternalBanner } from '@/banners/QueryExternal.banner';
+import { QueryExternal } from '@/banners/QueryExternal.banner';
 import { StorylineBanner } from '../storyline';
-import { Stack } from '@impactium/components';
 import { SaveSession } from '@/banners/SaveSession';
 import { λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
@@ -114,10 +113,11 @@ export function MenuDialog() {
 
   return (
     <Dialog title='Menu' className={s.menu}>
-      <div className={s.stats}>
+      <Stack className={s.stats}>
         <Button img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
+        <Button img='Kv' onClick={() => spawnBanner(<QueryExternal.Banner />)}>Query external source</Button>
         <Button img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>
-      </div>
+      </Stack>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='Wrench' onClick={() => spawnBanner(<SelectFilesBanner />)}>Select Files</Button>
       <Separator color='var(--accent-5)' />
@@ -127,9 +127,9 @@ export function MenuDialog() {
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
       <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='FunctionPython' onClick={() => spawnBanner(<QueryExternalBanner />)}>Query external resourse</Button>
+      <Button variant='outline' img='AcronymJpg' onClick={exportCanvasAsImage}>Export canvas as JPG</Button>
       <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='Image' onClick={exportCanvasAsImage}>Export canvas as image</Button>
+      <Button variant='outline' img='AcronymSvg' onClick={exportCanvasAsImage}>Export canvas as SVG</Button>
       <div className={s.separator} />
       <div className={s.stats}>
         <Unit type='downstream' num={app.transfered?.down || 0} />

@@ -122,9 +122,7 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
         <PopoverContent>
           <ColorPickerPopover />
         </PopoverContent>
-        
       </Popover>
-      
       <ColorPicker color={color} setColor={setColor}>
         <ColorPickerTrigger />
         <ColorPickerPopover />

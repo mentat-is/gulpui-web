@@ -1,0 +1,11 @@
+.wrapper {
+  width: 100%;
+}
+.custom {
+  width: 100%;
+}
+.custom > p {
+  font-size: 13px;
+  width: 100%;
+  min-width: 96px;
+}
