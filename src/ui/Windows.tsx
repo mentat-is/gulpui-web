@@ -280,7 +280,7 @@ const Step = ({ name, cond, icon }: Flow.Step) => {
     <Loading variant="dimmed" size="icon" />
   ) : (
     <Icon
-      name={icon || resolvedCond ? 'CheckCircleFill' : 'CheckCircle'}
+      name={icon || (resolvedCond ? 'CheckCircleFill' : 'CheckCircle')}
       size={12}
     />
   );
