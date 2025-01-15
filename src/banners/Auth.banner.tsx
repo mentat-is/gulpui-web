@@ -86,18 +86,21 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   return (
     <Banner title='Authentication' subtitle={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>
       <Input
+        variant='highlighted'
         img='Server'
         placeholder='http://localhost:8080'
         value={server}
         tabIndex={1}
         onChange={(e) => setServer(e.currentTarget.value)} />
       <Input
+        variant='highlighted'
         img='User'
         placeholder='admin'
         value={id}
         tabIndex={2}
         onChange={e => setId(e.currentTarget.value)} />
       <Input
+        variant='highlighted'
         img='KeyRound'
         placeholder='admin'
         type='password'

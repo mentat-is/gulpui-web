@@ -1,6 +1,6 @@
-import { File, Operation, μ } from '@/class/Info';
-import { Button, Stack } from '@impactium/components';
-import React, { useState, createContext, useContext, useEffect, useCallback, memo } from 'react';
+import { File, Index, Operation, μ } from '@/class/Info';
+import { Button, Stack, Loading } from '@impactium/components';
+import React, { useState, createContext, useContext, useCallback, memo, useEffect } from 'react';
 import { cn, generateUUID } from './utils';
 import { Timeline } from '@/app/gulp/components/body/Timeline';
 import s from './styles/Windows.module.css';
@@ -8,12 +8,12 @@ import { Icon } from '@impactium/icons';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
-import { Loading } from '@impactium/components';
 import { MenuDialog } from '@/app/gulp/components/header/Menu.dialog';
 import { AuthBanner } from '@/banners/Auth.banner';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { OperationBanner } from '@/banners/Operation.banner';
 import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
+import { Separator } from './Separator';
 
 export namespace Windows {
   export interface Props {
@@ -199,7 +199,96 @@ const NoWindows = () => {
         <Button size='lg' img='Upload' variant='secondary' className={s.rounded} onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
         <OpenTimelineButton />
       </Stack>
+      <Flow />
       <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button> 
     </Stack>
   )
 }
+
+namespace Flow {
+  export interface Step {
+    name: string,
+    cond: boolean,
+    icon?: Icon.Name,
+    loading?: boolean
+  }
+}
+
+const Flow = () => {
+  const { Info } = useApplication();
+
+  const obj: Flow.Step[] = [
+    {
+      name: 'Authorized',
+      cond: Info.User.isAuthorized()
+    },
+    {
+      name: 'Index selected',
+      cond: Boolean(Index.selected(Info.app))
+    },
+    {
+      name: 'At least one operation',
+      cond: Info.app.target.contexts.length > 0
+    },
+    {
+      name: 'Operation selected',
+      cond: Boolean(Operation.selected(Info.app))
+    },
+    {
+      name: 'At least one context',
+      cond: Info.app.target.contexts.length > 0
+    },
+    {
+      name: 'At least one file',
+      cond: Info.app.target.files.length > 0
+    },
+    {
+      name: 'Files selected',
+      cond: File.selected(Info.app).length > 0
+    },
+    {
+      name: 'Frame selected',
+      cond: Info.app.timeline.frame.max > 0
+    }
+  ]
+
+  return (
+    <Stack className={s.flow} dir='column' ai='flex-start'>
+      {obj.map(Step)}
+      <Separator />
+      <Step name='Gulp ready' icon='Lambda' cond={obj.every(o => o.cond)} />
+    </Stack>
+  )
+}
+
+const Step = ({ name, cond, icon }: Flow.Step) => {
+  const [loading, setLoading] = useState(false);
+  const [resolvedCond, setResolvedCond] = useState(cond);
+
+  useEffect(() => {
+    if (resolvedCond !== cond) {
+      setLoading(true);
+      const timer = setTimeout(() => {
+        setResolvedCond(cond);
+        setLoading(false);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [cond, resolvedCond]);
+
+  const Image = loading ? (
+    <Loading variant="dimmed" size="icon" />
+  ) : (
+    <Icon
+      name={icon || resolvedCond ? 'CheckCircleFill' : 'CheckCircle'}
+      size={12}
+    />
+  );
+
+  return (
+    <p key={name} className={cn(resolvedCond && s.check)}>
+      {Image}
+      {name}
+    </p>
+  );
+};

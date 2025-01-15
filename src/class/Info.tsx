@@ -75,7 +75,8 @@ export namespace GulpDataset {
         type: Type,
         default_value: any,
         desc: string,
-        required: boolean
+        required: boolean,
+        invalid?: boolean
       }
       
       export type List = Object[];
@@ -225,10 +226,10 @@ class User {
   }
 
   isAuthorized = () => {
-    return (
+    return Boolean(
       this.storage.id.length > 0 && 
       this.storage.password.length && 
-      this.storage.time_expire > Date.now() 
+      this.storage.time_expire > Date.now()
     );
   }
 }
@@ -795,6 +796,13 @@ export class Info implements InfoProps {
         ws_id: this.app.general.ws_id,
       },
       body: {
+        q: {
+          query: {
+            query_string: {
+              query: '*'
+            }
+          }
+        },
         q_options: {
           plugin,
           uri,

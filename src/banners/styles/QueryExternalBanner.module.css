@@ -9,3 +9,12 @@
   width: 100%;
   min-width: 96px;
 }
+.hint {
+  display: flex;
+  align-items: flex-end;
+  height: 24px;
+  font-size: 14px;
+  color: var(--text-dimmed);
+  font-family: var(--font-mono);
+  gap: 8px;
+}
