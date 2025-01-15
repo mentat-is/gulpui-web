@@ -4,7 +4,7 @@ COPY --chown=node:node . ./web
 
 WORKDIR /web
 
-RUN npm ci
+RUN npm install
 
 RUN npm run build
 
