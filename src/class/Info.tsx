@@ -1253,14 +1253,14 @@ export class Event {
   }
 
   public static formatForServer = (event: λEvent) => {
-    return {
+    return [{
       "@timestamp": event.nanotimestamp,
       "_id": event.id,
       "gulp.context_id": event.context_id,
       "gulp.operation_id": event.operation_id,
       "gulp.source_id": event.file_id,
       "gulp.timestamp": event.timestamp
-    };
+    }];
   }
 
   public static parse = (rawEvents: ΞEvent[]): λEvent[] => {

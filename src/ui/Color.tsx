@@ -1,7 +1,7 @@
 import { createContext, HTMLAttributes, useContext, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Button } from '@impactium/components';
-import { arrayToLinearGradientCSS, cn, Gradients, GradientsMap } from './utils';
+import { arrayToLinearGradientCSS, cn, COLORS, Gradients, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 import { Input } from './Input';
 import s from './styles/Color.module.css';
@@ -15,17 +15,6 @@ interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   color?: string,
   setColor?: React.Dispatch<React.SetStateAction<string>>,
 }
-
-const baseSolids = [
-  '#E2E2E2',
-  '#ff75c3',
-  '#ffa647',
-  '#ffe83f',
-  '#9fff5b',
-  '#70e2ff',
-  '#cd93ff',
-  '#09203f',
-];
 
 interface ColorPickerContext {
   color: string;
@@ -85,7 +74,7 @@ export function ColorPickerTrigger({ className, ...props }: ColorPickerTriggerPr
 
 export type Tab = 'solid' | 'gradient'
 
-export function ColorPickerPopover({ color: _color, setColor: _setColor, gradients = {}, solids = baseSolids}: ColorProps) {
+export function ColorPickerPopover({ color: _color, setColor: _setColor, gradients = {}, solids = Object.values(COLORS)}: ColorProps) {
   const { color: λcolor, setColor: λsetColor } = useColor() || {};
 
   const color = _color ?? λcolor;

@@ -119,24 +119,10 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
         <PopoverTrigger>
           <Editable name='Color' icon='Paintbrush' value={color} />
         </PopoverTrigger>
-        <PopoverContent>
-          <ColorPickerPopover />
-        </PopoverContent>
+        <ColorPickerPopover color={color} setColor={setColor} />
       </Popover>
-      <ColorPicker color={color} setColor={setColor}>
-        <ColorPickerTrigger />
-        <ColorPickerPopover />
-      </ColorPicker>
       <Separator />
       <Card className={s.color}>
-        <div className={s.unit}>
-          <p>Color:</p>
-          <ColorPicker color={color} setColor={setColor}>
-            <ColorPickerTrigger />
-            <ColorPickerPopover />
-          </ColorPicker>
-        </div>
-        <Separator />
         <div className={s.unit}>
           <p>Glyph:</p>
           <GlyphsPopover icon={icon} setIcon={setIcon} />
