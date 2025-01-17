@@ -3,8 +3,6 @@ import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
 import {
-  ColorPicker,
-  ColorPickerTrigger,
   ColorPickerPopover,
 } from '@/ui/Color';
 import { TextareaHTMLAttributes, useRef, useState } from 'react';
@@ -17,11 +15,10 @@ import { Separator } from '@/ui/Separator';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Switch } from '@/ui/Switch';
 import { λGlyph } from '@/dto/Dataset';
-import { GlyphsPopover } from '@/components/Glyphs.popover';
-import { GlyphMap } from '@/dto/Glyph.dto';
 import { Icon } from '@impactium/icons';
 import { Textarea } from '@/ui/Textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
+import { Popover, PopoverTrigger } from '@/ui/Popover';
+import { Glyph } from '@/ui/Glyph';
 
 interface CreateNoteBannerProps {
   event: λEvent
@@ -42,7 +39,7 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
   const [color, setColor] = useState<string>('#ffffff');
   const [name, setName] = useState<string>('');
   const [text, setText] = useState<string>('');
-  const [icon, setIcon] = useState<λGlyph['id'] | null>(GlyphMap.keys().next().value || null);
+  const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value || null);
   const [_private, _setPrivate] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const tag_ref = useRef<HTMLInputElement>(null);
@@ -125,7 +122,7 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
       <Card className={s.color}>
         <div className={s.unit}>
           <p>Glyph:</p>
-          <GlyphsPopover icon={icon} setIcon={setIcon} />
+          <Glyph.Chooser icon={icon} setIcon={setIcon} />
         </div>
         <Separator />
         <div className={s.unit}>

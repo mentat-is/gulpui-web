@@ -37,7 +37,8 @@ export interface λApp {
   general: λUser & {
     server: string;
     ws_id: string;
-    sessions: Record<string, Session>
+    sessions: Record<string, Session>;
+    glyphs_syncronized: boolean;
   },
   timeline: {
     scale: number;
@@ -66,7 +67,8 @@ export const BaseInfo: λApp = {
     id: '',
     time_expire: Infinity,
     token: '',
-    sessions: {}
+    sessions: {},
+    glyphs_syncronized: false
   },
   timeline: {
     scale: 1,

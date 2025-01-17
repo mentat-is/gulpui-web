@@ -1,20 +1,21 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default } from '@/dto/Dataset';
 import { λEvent, λExtendedEvent, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
-import React, { DependencyList } from 'react';
+import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { toast } from 'sonner';
-import { Gradients, λColor } from '@/ui/utils';
+import { Gradients } from '@/ui/utils';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
-import { CustomGlyphs, GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/Dataset';
 import { Logger } from '@/dto/Logger.class';
 import { Engine } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
-import { Color, MaybeArray } from '@impactium/types';
+import { MaybeArray } from '@impactium/types';
 import { SetState } from './API';
 import { λMapping } from '@/dto/MappingFileList.dto';
+import { Glyph } from '@/ui/Glyph';
+import { Icon } from '@impactium/icons';
 
 export namespace GulpDataset {
   export namespace QueryOperations {
@@ -257,9 +258,13 @@ export class Info implements InfoProps {
     options
   }, 'timeline', 'filtering_options');
 
-  refetch = async ({ ids = [], hidden, range }: RefetchOptions = {}) => {
-    ids = Parser.array(ids);
-
+  refetch = async ({
+    ids: _ids = File.selected(this.app).map(f => f.id),
+    hidden,
+    range
+  }: RefetchOptions = {}) => {
+    const files: λFile[] = Parser.array(_ids)
+      .map(id => File.id(this.app, id));
     
     const operation = Operation.selected(this.app);
     const contexts = Context.selected(this.app);
@@ -268,35 +273,15 @@ export class Info implements InfoProps {
       return;
     }
 
-    ids.length
-      ? ids.forEach(id => this.events_reset_in_file(File.id(this.app, id)))
-      : this.events_reset();
-
-    const files: λFile[] = (ids.length
-      ? ids.reduce<λFile[]>((files, id) => {
-        const file = File.id(this.app, id);
-
-        if (file) {
-          files.push(file);
-        } else {
-          Logger.error(`File with id ${id} not found in application data`, `${Info.name}.${this.refetch.name}`);
-          toast('File not found in application data', {
-            description: `ERR_FILE_NOT_FOUND_AT_APPLICATION_DATA`
-          });
-        }
-
-        return files;
-      }, [])
-      : File.selected(this.app))
+    // Reset events/docs for files
+    files.forEach(this.events_reset_in_file);
 
     await this.notes_reload();
 
     await this.links_reload();
 
-    await this.glyphs_reload();
-
     if (!hidden) {
-      this.deload(files.map(s => s.id));
+      this.deload(files.map(f => f.id));
     }
     
     files.forEach(file => {
@@ -539,14 +524,12 @@ export class Info implements InfoProps {
 
   notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
 
-  notes_reload = () => {
-    api<λNote[]>('/note_list', {
-      method: 'POST',
-      body: JSON.stringify({
-        source_ids: File.selected(this.app).map(f => f.id), 
-      })
-    }, this.notes_set);
-  }
+  notes_reload = () => api<λNote[]>('/note_list', {
+    method: 'POST',
+    body: JSON.stringify({
+      source_ids: File.selected(this.app).map(f => f.id),
+    })
+  }, this.notes_set);
 
   notes_delete = (note: λNote) => api<boolean>('/note_delete', {
     query: {
@@ -577,47 +560,40 @@ export class Info implements InfoProps {
   }, this.links_reload);
 
   glyphs_reload = async () => {
-    const parse = (glyphs: λGlyph[]) => {
-      // Все иконки внутри приложения
-      const values = Object.entries(GlyphMap);
-
-      values.forEach(async ([id, value]) => {
-        // Проверяем, есть ли такая иконка на бекенде
-        // @ts-ignore
-        const exist = glyphs.find(g => g.id === id);
-
-        if (exist) return;
-
-        const formData = new FormData();
-        formData.append('glyph', new Blob([''], { type: 'image/png' }));
-
-        // Если нет, то создаём
-        await api<unknown>('/glyph_create', {
-          method: 'POST',
-          query: {
-            name: value.toString(),
-          },
-          body: formData
-        });
-
-        Logger.log(`Glyph ${value} was copied to gulp-backend`, Info.name)
-      });
-
-      if (glyphs.length > values.length) {
-        glyphs.forEach(glyph => {
-          if (!values.map(v => v.toString()).includes(glyph.name)) {
-            CustomGlyphs[glyph.id] = glyph.img;
-          }
-        });
-      }
-
-      Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
-      this.setInfoByKey(glyphs, 'target', 'glyphs');
-    }
+    // Clear exist list of glyphs
+    Glyph.List.clear();
 
     await api<λGlyph[]>('/glyph_list', {
       method: 'POST',
-    }, parse);
+    }, (glyphs: λGlyph[]) => {
+      Glyph.Raw.forEach(name => {
+        const exist = glyphs.find(g => g.name === name);
+
+        if (exist) {
+          // Set glyph if its exist on backend
+          Glyph.List.set(exist.id, exist.name);
+        };
+
+        const formData = new FormData();
+
+        formData.append('img', new Blob([''], { type: 'image/png' }));
+
+        api<λGlyph>('/glyph_create', {
+          method: 'POST',
+          deassign: true,
+          query: {
+            name,
+          },
+          body: formData
+        }).then(glyph => {
+          // Set glyph when it has been sync with backend
+          Glyph.List.set(glyph.id, glyph.name);
+        });
+      });
+
+      Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
+      this.setInfoByKey(true, 'general', 'glyphs_syncronized');
+    });
   }
 
   operation_list = async () => {
@@ -1289,6 +1265,13 @@ export class Event {
 }
 
 export class Note {
+  public static icon = (note: λNote): Icon.Name => {
+    if (note.glyph_id) {
+      return Glyph.List.get(note.glyph_id) || Default.Icon.NOTE
+    }
+
+    return Default.Icon.NOTE
+  }
   // @ts-ignore
   public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs);
 
@@ -1305,6 +1288,14 @@ export class Note {
 }
 
 export class Link {
+  public static icon = (link: λLink): Icon.Name => {
+    if (link.glyph_id) {
+      return Glyph.List.get(link.glyph_id) || Default.Icon.LINK
+    }
+
+    return Default.Icon.LINK;
+  }
+
   public static events = (app: λApp, link: λLink) => Event.findById(app, [link.doc_id_from, ...link.doc_ids]);
 
   public static timestamp = (app: λApp, link: λLink): number => {

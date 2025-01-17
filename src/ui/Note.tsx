@@ -9,11 +9,11 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
 import { useWindows } from './Windows';
-import { λNote } from '@/dto/Dataset';
+import { Default, λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
 import { Point } from './Point';
-import { GlyphMap } from '@/dto/Glyph.dto';
 import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Glyph } from './Glyph';
 
 export namespace NotePoint {
   export interface Props extends Omit<Point.Props, 'icon' | 'accent' | 'name'> {
@@ -44,7 +44,7 @@ export function NotePoint({ note, ...props }: NotePoint.Props) {
   };
 
   return (
-    <Point onClick={openEvent} icon={GlyphMap.get(note.glyph_id)!} accent={note.color} name={note.name} {...props} />
+    <Point onClick={openEvent} icon={Note.icon(note)} accent={note.color} name={note.name} {...props} />
   )
 }
 

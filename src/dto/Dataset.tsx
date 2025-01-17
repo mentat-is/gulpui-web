@@ -5,6 +5,7 @@ import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
 import { MinMax } from '@/class/Info';
 import { λEvent } from './ChunkEvent.dto';
+import { Icon } from '@impactium/icons';
 
 export type GulpDataType = 'operation' | 'context' | 'file' | 'link' | 'note';
 
@@ -97,8 +98,21 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   edits: Record<string, any>[];
 }
 
+export namespace Default {
+  type Object = 'OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK';
+
+  export const Icon: Record<Object, Icon.Name> = {
+    OPERATION: 'BookDashed',
+    CONTEXT: 'Triangle',
+    FILE: 'File',
+    NOTE: 'StickyNote',
+    LINK: 'Link'
+  }
+}
+
 export interface λGlyph {
   id: μ.Glyph;
-  name: string;
-  img: string;
+  // base64 image representation
+  img: string,
+  name: Icon.Name
 }

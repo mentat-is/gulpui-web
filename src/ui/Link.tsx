@@ -11,8 +11,8 @@ import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
 import { λLink } from '@/dto/Dataset';
 import { Point } from './Point';
-import { GlyphMap } from '@/dto/Glyph.dto';
 import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Glyph } from './Glyph';
 
 export namespace LinkPoint {
   export interface Props extends Omit<Point.Props, 'icon' | 'name' | 'accent'> {
@@ -37,8 +37,10 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
     spawnDialog(dialog);
   };
 
+  
+
   return (
-    <Point onClick={openEvent} icon={GlyphMap.get(link.glyph_id)!} name={link.name} accent={link.color} {...props} />
+    <Point onClick={openEvent} icon={Link.icon(link)} name={link.name} accent={link.color} {...props} />
   )
 }
 

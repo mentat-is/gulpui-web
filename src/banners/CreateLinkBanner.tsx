@@ -19,7 +19,6 @@ import { LinkCreateRequest } from '@/dto/LinkCreateRequest.dto';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { LinkCombination } from '@/components/LinkCombination';
 import { EventCombination } from '@/components/EventCombination';
-import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { λFile, λLink } from '@/dto/Dataset';
 import { format } from 'date-fns';
 

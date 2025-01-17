@@ -3,18 +3,17 @@ import { Banner } from '../ui/Banner';
 import { Input } from '../ui/Input';
 import { Button } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
-import { GlyphsPopover } from '@/components/Glyphs.popover';
 import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'
-import { GlyphMap } from '@/dto/Glyph.dto';
 import { λGlyph } from '@/dto/Dataset';
 import { Index } from '@/class/Info';
 import { OperationBanner } from './Operation.banner';
+import { Glyph } from '@/ui/Glyph';
 
 export function CreateOperationBanner() {
   const { Info, spawnBanner } = useApplication();
   const [name, setName] = useState<string>('');
-  const [icon, setIcon] = useState<λGlyph['id'] | null>(GlyphMap.keys().next().value || null);
+  const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value || null);
   const [description, setDescription] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -72,7 +71,7 @@ export function CreateOperationBanner() {
       </Stack>
       <Stack ai='center'>
         <p className={s.paramName}>Operation icon:</p>
-        <GlyphsPopover icon={icon} setIcon={setIcon} />
+        <Glyph.Chooser icon={icon} setIcon={setIcon} />
       </Stack>
     </Banner>
   )

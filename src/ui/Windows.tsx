@@ -249,8 +249,21 @@ const Flow = () => {
     {
       name: 'Frame selected',
       cond: Info.app.timeline.frame.max > 0
+    },
+    {
+      name: 'Glyphs syncronized',
+      cond: Info.app.general.glyphs_syncronized
     }
   ]
+
+  useEffect(() => {
+    if (Info.app.general.glyphs_syncronized)
+      return;
+
+    if (Info.User.isAuthorized()) {
+      Info.glyphs_reload();
+    }
+  }, [Info.app.general]);
 
   return (
     <Stack className={s.flow} dir='column' ai='flex-start'>

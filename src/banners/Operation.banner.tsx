@@ -3,21 +3,11 @@ import { Button, Stack } from "@impactium/components";
 import React, { useCallback, useEffect, useState } from "react";
 import { CreateOperationBanner } from "./CreateOperation.banner";
 import { useApplication } from "@/context/Application.context";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSub,
-  ContextMenuSubContent,
-  ContextMenuSubTrigger,
-  ContextMenuTrigger
-} from "@/ui/ContextMenu";
 import { Operation } from "@/class/Info";
 import { SelectFilesBanner } from "./SelectFiles.banner";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
-import { λOperation } from "@/dto";
-import { GlyphMap } from "@/dto/Glyph.dto";
 import { Icon } from "@impactium/icons";
+import { Glyph } from "@/ui/Glyph";
 
 export namespace OperationBanner {
   export interface Props extends Banner.Props {
@@ -77,7 +67,7 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
     return (
       <SelectTrigger>
         <Stack>
-          <Icon name={GlyphMap.get(selected.glyph_id!) || 'BookDashed'} />
+          <Icon name={Glyph.List.get(selected.glyph_id!) || 'BookDashed'} />
           {selected.name}
         </Stack>
       </SelectTrigger>
@@ -91,7 +81,7 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
         <SelectContent>
           {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
             <SelectItem value={operation.name}>
-              <Icon name={GlyphMap.get(operation.glyph_id!) || 'BookDashed'} />
+              <Icon name={Glyph.List.get(operation.glyph_id!) || 'BookDashed'} />
               {operation.name}
             </SelectItem>
           )) : <NoOperations />}
