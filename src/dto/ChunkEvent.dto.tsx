@@ -16,6 +16,10 @@ export interface ΞEvent {
   _id: λEvent['id']
 }
 
+export type ΞDoc = Pick<ΞEvent, '_id' | '@timestamp' | 'gulp.timestamp' | 'gulp.source_id' | 'gulp.context_id' | 'gulp.operation_id'>
+
+export type λDoc = Pick<λEvent, 'id' | 'timestamp' | 'nanotimestamp' | 'context_id' | 'file_id' | 'operation_id'>;
+
 export interface ΞxtendedEvent extends ΞEvent {
   'log.file.path': string,
   'agent.type': string,

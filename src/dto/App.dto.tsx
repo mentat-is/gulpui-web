@@ -14,10 +14,6 @@ export interface TimelineTarget {
 };
 
 export interface λApp {
-  transfered: {
-    down: number,
-    up: number
-  }; // bytes
   target: {
     indexes: λIndex[]
     operations: λOperation[],
@@ -56,10 +52,6 @@ export interface λApp {
   }
 }
 export const BaseInfo: λApp = {
-  transfered: {
-    down: 0,
-    up: 0
-  },
   general: {
     server: 'http://localhost:8080',
     password: 'admin',

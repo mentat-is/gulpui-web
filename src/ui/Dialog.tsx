@@ -19,8 +19,16 @@ export function Dialog({ className, callback, icon, description, title, loading,
 
   const handleDialogClose = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
-      destroyDialog();
+      close();
     }
+  }
+
+  const close = () => {
+    if (callback) {
+      callback();
+    }
+    
+    destroyDialog();
   }
 
   useEffect(() => {
@@ -42,7 +50,7 @@ export function Dialog({ className, callback, icon, description, title, loading,
             <div className={s.header}>
               <h2>{title}</h2>
               {description && <p>{description}</p>}
-              <Button variant='ghost' className={s.close} onClick={callback || destroyDialog} img='X' size='icon' />
+              <Button variant='ghost' className={s.close} onClick={close} img='X' size='icon' />
             </div>
           </div>
           <div className={cn(s.content, loading && s.loading)}>

@@ -8,7 +8,7 @@ import { Label } from '@/ui/Label';
 import { Button, Skeleton } from '@impactium/components';
 import { Context, Operation, Event, File } from '@/class/Info';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
 import { λContext, λFile } from '@/dto/Dataset';

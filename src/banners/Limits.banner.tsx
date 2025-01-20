@@ -6,7 +6,7 @@ import { useApplication } from '../context/Application.context';
 import { eachDayOfInterval, eachMonthOfInterval, eachYearOfInterval, format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
 import { Separator } from '@/ui/Separator';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { toast } from 'sonner';
 import { Card } from '@/ui/Card';
 import { Toggle } from '@/ui/Toggle';

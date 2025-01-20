@@ -1,5 +1,5 @@
 import { Banner } from '@/ui/Banner';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { Label } from '@/ui/Label';
 import { Stack, Button } from '@impactium/components';
 import { ChangeEvent, useEffect, useRef, useState } from 'react';

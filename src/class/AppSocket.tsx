@@ -32,8 +32,6 @@ export class AppSocket extends WebSocket {
     this.onmessage = ({ data }) => {
       const { data: chunk } = JSON.parse(data);
 
-      this.info.setDownstream(new Blob([data]).size);
-
       switch (true) {
         case isQuery(chunk):
           const rawEvents: ΞEvent[] = chunk.docs;

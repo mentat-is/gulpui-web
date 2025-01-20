@@ -1,6 +1,6 @@
 import { Banner } from '@/ui/Banner';
 import { Button } from '@impactium/components';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { useState } from 'react';
 
 export function UploadSigmaRuleBanner() {

@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import debounce from 'lodash/debounce';
 import { Controls } from './Controls';
 import { TargetMenu } from './Target.menu';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { FilesMenu } from './Files.manu';
 import { useKeyHandler } from '@/app/use';
 import { λFile } from '@/dto/Dataset';

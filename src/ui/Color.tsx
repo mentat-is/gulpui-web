@@ -1,9 +1,8 @@
 import { createContext, HTMLAttributes, useContext, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
-import { Button } from '@impactium/components';
+import { Button, Input } from '@impactium/components';
 import { arrayToLinearGradientCSS, cn, COLORS, Gradients, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
-import { Input } from './Input';
 import s from './styles/Color.module.css';
 import { capitalize } from 'lodash';
 import { Icon } from '@impactium/icons';

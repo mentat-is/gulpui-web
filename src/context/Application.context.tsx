@@ -78,6 +78,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const destroyDialog = () => {
+    instance.setTimelineTarget(null);
     setDialog(() => null)
   };
 

@@ -1,16 +1,13 @@
 .target {
   position: absolute;
   height: 32px;
-  width: 32px;
   display: flex;
-  align-items: center;
   justify-content: center;
-  border: var(--geist-border);
-  background: var(--geist-background);
-  backdrop-filter: brightness(0.3) blur(3px);
+  width: 32px;
+  border: var(--gray-400);
+  background: var(--meta-black);
   border-radius: 4px;
   transform: translate(-50%, -50%);
-  overflow: hidden;
   z-index: 0;
   box-shadow: none;
   transition: box-shadow 0.125s var(--transition) !important;
@@ -44,21 +41,19 @@
 }
 .desc {
   position: absolute;
-  font-size: 8px;
-  transform: translate(-50%, -50%);
+  font-size: 11px;
+  transform: translateY(26px);
   font-family: var(--font-mono);
-  max-width: 32px;
-  width: 32px;
+  max-width: 128px;
+  min-width: 32px;
   overflow: hidden;
   text-overflow: ellipsis;
-  border: 4px;
-  height: 12px;
-  background: var(--geist-background);
-  backdrop-filter: brightness(0.6) blur(3px);
-  padding: 2px;
-  border: var(--geist-border);
+  height: 16px;
+  background: var(--meta-black);
+  padding: 3px;
+  border: 1px solid var(--white);
   border-radius: 4px;
-  line-height: 5px;
+  text-rendering: optimizeLegibility;
   text-align: center;
 }
 .tags {

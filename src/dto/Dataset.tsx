@@ -4,7 +4,7 @@ import { Info, Internal, λUser, μ } from '@/class/Info';
 import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
 import { MinMax } from '@/class/Info';
-import { λEvent } from './ChunkEvent.dto';
+import { λDoc, λEvent, ΞDoc } from './ChunkEvent.dto';
 import { Icon } from '@impactium/icons';
 
 export type GulpDataType = 'operation' | 'context' | 'file' | 'link' | 'note';
@@ -84,6 +84,20 @@ export type λLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
   doc_ids: λEvent['id'][];
 }
 
+export type ΞNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
+  type: 'note',
+  description: string,
+  operation_id: λOperation['id'],
+  tags: string[],
+  context_id: λContext['id'],
+  source_id: λFile['id'],
+  docs: ΞDoc[],
+  time_pin: number,
+  last_editor_id: λUser,
+  text: string,
+  edits: Record<string, any>[];
+} 
+
 export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   type: 'note',
   description: string,
@@ -91,7 +105,7 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   tags: string[],
   context_id: λContext['id'],
   source_id: λFile['id'],
-  docs: unknown[],
+  docs: λDoc[],
   time_pin: number,
   last_editor_id: λUser,
   text: string,

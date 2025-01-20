@@ -9,7 +9,7 @@ import {
 } from '@/ui/Color';
 import { useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css'
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Card } from '@/ui/Card';
 import { Separator } from '@/ui/Separator';

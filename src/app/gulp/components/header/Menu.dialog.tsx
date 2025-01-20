@@ -130,11 +130,6 @@ export function MenuDialog() {
       <Button variant='outline' img='AcronymJpg' onClick={exportCanvasAsImage}>Export canvas as JPG</Button>
       <Separator color='var(--accent-5)' />
       <Button variant='outline' img='AcronymSvg' onClick={exportCanvasAsImage}>Export canvas as SVG</Button>
-      <div className={s.separator} />
-      <div className={s.stats}>
-        <Unit type='downstream' num={app.transfered?.down || 0} />
-        <Unit type='upstream' num={app.transfered?.up || 0} />
-      </div>
       <Button className={s.logout} variant='outline' img='ChartBarStacked' onClick={backToOperations}>Back to Operations</Button>
       <Button variant='outline' img='FloppyDisk' onClick={saveSessionAndLogout}>Save session and logout</Button>
       <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>

@@ -14,6 +14,7 @@ import { LimitsBanner } from '@/banners/Limits.banner';
 import { OperationBanner } from '@/banners/Operation.banner';
 import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from './Separator';
+import { Glyph } from './Glyph';
 
 export namespace Windows {
   export interface Props {
@@ -252,7 +253,8 @@ const Flow = () => {
     },
     {
       name: 'Glyphs syncronized',
-      cond: Info.app.general.glyphs_syncronized
+      cond: Info.app.general.glyphs_syncronized,
+      loading: Glyph.List.size < Glyph.Raw.length
     }
   ]
 
@@ -274,8 +276,8 @@ const Flow = () => {
   )
 }
 
-const Step = ({ name, cond, icon }: Flow.Step) => {
-  const [loading, setLoading] = useState(false);
+const Step = ({ name, cond, icon, loading: _loading }: Flow.Step) => {
+  const [loading, setLoading] = useState(_loading);
   const [resolvedCond, setResolvedCond] = useState(cond);
 
   useEffect(() => {

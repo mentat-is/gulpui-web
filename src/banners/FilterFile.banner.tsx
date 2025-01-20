@@ -2,7 +2,7 @@ import s from './styles/FilterFileBanner.module.css';
 import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button, Stack } from '@impactium/components';

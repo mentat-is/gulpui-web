@@ -14,7 +14,6 @@ import { Note, File, Index, Internal, Event } from '@/class/Info';
 import { Notes } from './components/Notes';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
 import { Loading } from '@impactium/components';
-import { Hardcode } from '@/class/Engine.dto';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { Navigation } from './components/navigation';
 import { Separator } from '@/ui/Separator';
@@ -82,7 +81,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }
 
   return (
-    <Dialog callback={() => Info.setTimelineTarget(destroyDialog() as unknown as null)} icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
+    <Dialog icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
       <Separator />
       <Navigation event={event} />
       <Separator />

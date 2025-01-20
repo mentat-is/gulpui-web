@@ -1,6 +1,6 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default } from '@/dto/Dataset';
-import { λEvent, λExtendedEvent, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote } from '@/dto/Dataset';
+import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
 import { toast } from 'sonner';
@@ -356,10 +356,6 @@ export class Info implements InfoProps {
       filters: { ...this.app.timeline.cache.filters, [id]: undefined }
     }, 'timeline', 'cache');
   }
-  
-  // Methods to set different parts of the application state related to ElasticSearch mappings and data transfer
-  setUpstream = (num: number) => this.setInfoByKey(this.app.transfered.up + num, 'transfered', 'up');
-  setDownstream = (num: number) => this.setInfoByKey(this.app.transfered.down + num, 'transfered', 'down');
 
   setLoaded = (files: μ.File[]) => {
     this.setInfoByKey(files, 'timeline', 'loaded');
@@ -522,14 +518,12 @@ export class Info implements InfoProps {
     this.setInfoByKey(number, 'timeline', 'dialogSize');
   }
 
-  notes_set = (notes: λNote[]) => this.setInfoByKey(notes, 'target', 'notes');
-
-  notes_reload = () => api<λNote[]>('/note_list', {
+  notes_reload = () => api<ΞNote[]>('/note_list', {
     method: 'POST',
-    body: JSON.stringify({
+    body: {
       source_ids: File.selected(this.app).map(f => f.id),
-    })
-  }, this.notes_set);
+    }
+  }, notes => this.setInfoByKey(Note.normalize(notes), 'target', 'notes'));
 
   notes_delete = (note: λNote) => api<boolean>('/note_delete', {
     query: {
@@ -563,37 +557,53 @@ export class Info implements InfoProps {
     // Clear exist list of glyphs
     Glyph.List.clear();
 
-    await api<λGlyph[]>('/glyph_list', {
-      method: 'POST',
-    }, (glyphs: λGlyph[]) => {
-      Glyph.Raw.forEach(name => {
+    const glyphs = await api<λGlyph[]>('/glyph_list', {
+      method: 'POST'
+    });
+
+    if (!glyphs) {
+      return;
+    }
+
+    const queue: (() => Promise<void>)[] = [];
+
+    Glyph.Raw.forEach(name => {
+      queue.push(async () => {
         const exist = glyphs.find(g => g.name === name);
-
+  
         if (exist) {
-          // Set glyph if its exist on backend
+          // Добавить глиф, если он существует на бэкенде
           Glyph.List.set(exist.id, exist.name);
-        };
-
+          return;
+        }
+  
         const formData = new FormData();
-
         formData.append('img', new Blob([''], { type: 'image/png' }));
-
-        api<λGlyph>('/glyph_create', {
+  
+        await api<λGlyph>('/glyph_create', {
           method: 'POST',
           deassign: true,
-          query: {
-            name,
-          },
-          body: formData
-        }).then(glyph => {
-          // Set glyph when it has been sync with backend
+          query: { name },
+          body: formData,
+        }, glyph => {
           Glyph.List.set(glyph.id, glyph.name);
         });
       });
-
-      Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
-      this.setInfoByKey(true, 'general', 'glyphs_syncronized');
     });
+  
+    // Выполняем запросы с ограничением по параллельности
+    const runQueue = async () => {
+      const tasks = queue.splice(0, 10).map(task => task());
+      await Promise.all(tasks);
+      if (queue.length > 0) {
+        await runQueue();
+      }
+    };
+  
+    await runQueue();
+
+    Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
+    this.setInfoByKey(true, 'general', 'glyphs_syncronized');
   }
 
   operation_list = async () => {
@@ -739,15 +749,13 @@ export class Info implements InfoProps {
   
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
+
   setTimelineTarget = (event?: λEvent | null | 1 | -1) => {
     if (typeof event === 'number' && this.app.timeline.target) {
       const events = File.events(this.app, this.app.timeline.target.file_id);
       const index = events.findIndex(event => event.file_id === this.app.timeline.target!.file_id) + event;
       event = events[index];
     }
-
-    if (!event)
-      return Logger.warn(`Executed ${this.setTimelineTarget.name} with event: ${typeof event}`, Info.name);
 
     this.setInfoByKey(event, 'timeline', 'target');
   }
@@ -1179,6 +1187,15 @@ export class Event {
     return app.target.events;
   }
 
+  public static normalize = (raw: ΞDoc[]): λDoc[] => raw.map(r => ({
+    id: r._id,
+    timestamp: r['gulp.timestamp'],
+    nanotimestamp: r['@timestamp'],
+    file_id: r['gulp.source_id'],
+    context_id: r['gulp.context_id'],
+    operation_id: r['gulp.operation_id']
+  }));
+
   public static normalizeFromDetailed = (raw: ΞxtendedEvent) => {
     return {
       id: raw._id,
@@ -1261,7 +1278,11 @@ export class Event {
 
   public static findByIdAndUUID = (app: λApp, eventId: string | string[], id: μ.File) => Event.get(app, id).filter(e => Parser.array(eventId).includes(e.id));
 
-  public static findById = (app: λApp, eventId: MaybeArray<λEvent['id']>) => Array.from(app.target.events, ([k, v]) => v).flat().filter(e => Parser.array(eventId).includes(e.id));
+  public static findById = (app: λApp, ids: λEvent['id'][]) => {
+    const all = Array.from(app.target.events.values()).flat();
+
+    return all.filter(e => ids.includes(e.id));
+  };
 }
 
 export class Note {
@@ -1272,8 +1293,13 @@ export class Note {
 
     return Default.Icon.NOTE
   }
-  // @ts-ignore
-  public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs);
+  
+  public static normalize = (notes: ΞNote[]) => notes.map(n => ({
+    ...n,
+    docs: Event.normalize(n.docs)
+  }))
+
+  public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs.map(d => d.id));
 
   public static findByFile = (use: λApp | λNote[], file: λFile | string) => Parser.use(use, 'notes').filter(n => n.source_id === Parser.useName(file));
   

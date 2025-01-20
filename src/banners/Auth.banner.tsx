@@ -3,7 +3,7 @@ import { Button } from '@impactium/components';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SessionBanner } from './Session.banner';
 import { useApplication } from '@/context/Application.context';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { toast } from 'sonner';
 import { GulpDataset, Operation, Pattern, λUser } from '@/class/Info';
 import { useKeyHandler } from '@/app/use';

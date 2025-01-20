@@ -1,7 +1,7 @@
 import { GulpDataset } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner as BannerUI } from '@/ui/Banner';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Switch } from '@/ui/Switch';
 import { Button, Skeleton, Stack } from '@impactium/components';

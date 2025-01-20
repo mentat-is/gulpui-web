@@ -1,7 +1,7 @@
 import { Button } from '@impactium/components';
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { useEffect, useRef } from 'react';
 
 interface ControlsProps {

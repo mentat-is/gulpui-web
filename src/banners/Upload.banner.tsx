@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { ChangeEvent, useEffect, useState } from 'react';
 import s from './styles/UploadBanner.module.css';

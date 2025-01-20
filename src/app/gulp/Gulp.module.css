@@ -13,28 +13,11 @@
   height: 32px;
   gap: 8px;
 }
-.transfered {
-  display: flex;
-  flex-direction: row;
-  gap: var(--p4);
-}
 .logout {
   display: flex;
   flex-direction: row;
   gap: var(--p4);
   justify-content: flex-end;
-}
-.transfered .unit p {
-  font-weight: 800;
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-.downstream {
-  background: -webkit-linear-gradient(0deg, #04B7FE, #6EFFBF);
-}
-.upstream {
-  background: -webkit-linear-gradient(0deg, #7855D3, #FA71F3);
 }
 .timeline {
   position: relative;
@@ -56,9 +39,6 @@
   padding-left: 16px;
   display: flex;
   gap: 8px;
-}
-.notes {
-  position: absolute;
 }
 .cm_title {
   max-width: 256px;

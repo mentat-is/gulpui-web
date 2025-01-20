@@ -1,7 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Banner } from '../ui/Banner';
-import { Input } from '../ui/Input';
-import { Button } from '@impactium/components';
+import { Button, Input } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
 import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'

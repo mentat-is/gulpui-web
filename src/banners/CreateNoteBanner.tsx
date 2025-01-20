@@ -7,13 +7,12 @@ import {
 } from '@/ui/Color';
 import { TextareaHTMLAttributes, useRef, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css';
-import { Input, InputProps } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { Badge } from '@/ui/Badge';
 import { Card } from '@/ui/Card';
 import { cn } from '@/ui/utils';
 import { Separator } from '@/ui/Separator';
 import { λEvent } from '@/dto/ChunkEvent.dto';
-import { Switch } from '@/ui/Switch';
 import { λGlyph } from '@/dto/Dataset';
 import { Icon } from '@impactium/icons';
 import { Textarea } from '@/ui/Textarea';
@@ -84,24 +83,6 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
 
   const deleteTag = (tag: string) => setTags(tags => tags.filter(t => t !== tag));
 
-  function Selection({ icon, name, value }: SelectionProps) {
-    return (
-      <Stack className={cn(s.inp, s.selection)}>
-        <p>{name}:</p>
-        <Input className={s.inp_input} img={icon} disabled value={value} />
-      </Stack>
-    )
-  }
-
-  function Editable({ icon, name, children, ...props }: EditableProps) {
-    return (
-      <Stack className={cn(s.inp, s.editable)}>
-        <p>{name}:</p>
-        <Input className={s.inp_input} img={icon} {...props} />
-      </Stack>
-    )
-  }
-
   return (
     <Banner title='Create note' done={<Button loading={loading} className={s.save} onClick={send} variant={name && text ? 'glass' : 'disabled'} img='Check'/>}>
       <Stack className={s.general} ai='stretch' dir='column' gap={8}>
@@ -119,20 +100,13 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
         <ColorPickerPopover color={color} setColor={setColor} />
       </Popover>
       <Separator />
-      <Card className={s.color}>
-        <div className={s.unit}>
-          <p>Glyph:</p>
-          <Glyph.Chooser icon={icon} setIcon={setIcon} />
-        </div>
-        <Separator />
-        <div className={s.unit}>
-          <p>Private: {_private ? 'Yes' : 'No'}</p>
-          <Switch checked={_private} onCheckedChange={_setPrivate}></Switch>
-        </div>
-      </Card>
+      <Stack jc='space-between' dir='row'>
+        <p>Glyph:</p>
+        <Glyph.Chooser icon={icon} setIcon={setIcon} />
+      </Stack>
       <Card className={s.tags}>
         <div className={s.content}>
-        <p>Tags:</p>{tags.length ? tags.map(tag => <Badge onClick={() => deleteTag(tag)} value={tag} />) : <Badge variant='outline' value='No tags here...' />}
+          <p>Tags:</p>{tags.length ? tags.map(tag => <Badge onClick={() => deleteTag(tag)} value={tag} />) : <Badge variant='outline' value='No tags here...' />}
         </div>
         <div className={s.group}>
           <Input placeholder='Input tag name here...' ref={tag_ref} onChange={(e) => setTag(e.currentTarget.value)} value={tag}/>
@@ -140,5 +114,23 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
         </div>
       </Card>
     </Banner>
+  )
+}
+
+function Editable({ icon, name, children, ...props }: EditableProps) {
+  return (
+    <Stack className={cn(s.inp, s.editable)}>
+      <p>{name}:</p>
+      <Input className={s.inp_input} img={icon} {...props} />
+    </Stack>
+  )
+}
+
+function Selection({ icon, name, value }: SelectionProps) {
+  return (
+    <Stack className={cn(s.inp, s.selection)}>
+      <p>{name}:</p>
+      <Input className={s.inp_input} img={icon} disabled value={value} />
+    </Stack>
   )
 }

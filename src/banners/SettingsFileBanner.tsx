@@ -8,7 +8,7 @@ import { FilterFileBanner } from './FilterFile.banner';
 import { Card } from '@/ui/Card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Gradients, GradientsMap } from '@/ui/utils';
-import { Input } from '@/ui/Input';
+import { Input } from '@impactium/components';
 import { Separator } from '@/ui/Separator';
 import { enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from 'date-fns';
