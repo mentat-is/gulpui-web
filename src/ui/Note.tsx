@@ -8,7 +8,6 @@ import { Fragment, useEffect, useState } from 'react';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { Icon } from '@impactium/icons';
-import { useWindows } from './Windows';
 import { λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
 import { Point } from './Point';
@@ -21,8 +20,7 @@ export namespace NotePoint {
 }
 
 export function NotePoint({ note, ...props }: NotePoint.Props) {
-  const { app } = useApplication();
-  const { newWindow } = useWindows();
+  const { app, spawnDialog } = useApplication();
 
   const openEvent = () => {
     const events = Note.events(app, note);
@@ -35,11 +33,7 @@ export function NotePoint({ note, ...props }: NotePoint.Props) {
       ? <DisplayEventDialog event={events[0]} />
       : <DisplayGroupDialog events={events} />;
 
-      newWindow({
-        icon: 'StickyNote',
-        name: events.length === 1 ? 'Note' : 'Notes',
-        children: dialog
-      })
+    spawnDialog(dialog);
   };
 
   return (

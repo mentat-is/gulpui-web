@@ -15,3 +15,36 @@
   position: relative;
   width: 100%;
 }
+.list {
+
+}
+.detailed {
+  background: var(--soft-black);
+  border: 1px solid var(--gray-400);
+  padding: 6px 10px;
+  width: 100%;
+  height: 28px;
+}
+
+.list .detailed:first-child {
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+}
+.list .detailed:last-child {
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
+}
+.list .detailed:not(:last-child) { 
+  border-bottom: none;
+}
+.name {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  width: 128px;
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.separator {
+  height: 28px;
+}

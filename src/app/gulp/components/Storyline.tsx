@@ -9,10 +9,14 @@ import { Timestamp } from '@/ui/timestamp';
 import { Operation, Note as NoteEntity, Note } from '@/class/Info';
 import { λNote } from '@/dto/Dataset';
 import { NotePoint } from '@/ui/Note';
+import { Icon } from '@impactium/icons';
+import { Glyph } from '@/ui/Glyph';
+import { Separator } from '@/ui/Separator';
+import { format } from 'date-fns';
 
 
 export function StorylineBanner() {
-  const { app, Info } = useApplication();
+  const { app } = useApplication();
 
   const notes = app.target.notes;
 
@@ -43,6 +47,7 @@ export function StorylineBanner() {
   return (
     <Banner title='Storyline' done={done}>
       <Graph min={min} max={max} notes={notes} />
+      <List />
     </Banner>
   )
 }
@@ -64,10 +69,6 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
 
   const getNoteXPositionFromTimestamp = useCallback((timestamp: number) => Math.round(((timestamp - min) / (max - min)) * (graph.current?.width || 0)), [min, max]);
 
-  useEffect(() => {
-
-  }, []);
-
   return (
     <Stack className={cn(s.graph, className)} {...props}>
       <div className={s.wrapper}>
@@ -81,6 +82,44 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
         <Timestamp value={min} />
         <Timestamp value={max} />
       </Stack>
+    </Stack>
+  )
+}
+
+function List() {
+  const { app } = useApplication();
+
+  const notes = app.target.notes;
+
+  
+
+  return (
+    <Stack className={s.list} gap={0} dir='column'>
+      {notes.map(note => {
+        return <DetailedNote note={note} />
+      })}
+    </Stack>
+  )
+}
+
+namespace DetailedNote {
+  export interface Props {
+    note: λNote
+  }
+}
+
+function DetailedNote({ note }: DetailedNote.Props) {
+  const { app } = useApplication();
+
+  const timestamp = Note.timestamp(app, note);
+
+  return (
+    <Stack className={s.detailed}>
+      <Icon name={Note.icon(note)} />
+      <p className={s.name}>{note.name}</p>
+      <Separator className={s.separator} orientation='vertical' />
+      <Icon name='Clock' size={12} />
+      <p className={s.timestamp}>{format(timestamp, 'yyyy.MM.dd HH:mm:ss SSS')}</p>
     </Stack>
   )
 }
