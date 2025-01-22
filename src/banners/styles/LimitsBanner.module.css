@@ -9,10 +9,12 @@
   align-items: center;
   width: 100%;
   justify-content: space-between;
+  color: var(--text-dimmed);
 }
 .wrapper span {
   font-size: 14px;
   color: var(--text-dimmed);
+  width: 64px;
 }
 .input_group {
   display: flex;
@@ -30,4 +32,10 @@
 }
 .calendar {
   height: 380px;
+}
+.input svg {
+  cursor: pointer;
+}
+.input input::-webkit-calendar-picker-indicator {
+  display: none;
 }

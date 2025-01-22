@@ -1,174 +1,164 @@
-import s from './styles/LimitsBanner.module.css'
-import { useState } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Banner } from '../ui/Banner';
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
-import { eachDayOfInterval, eachMonthOfInterval, eachYearOfInterval, format } from 'date-fns';
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
-import { Separator } from '@/ui/Separator';
 import { Input } from '@impactium/components';
-import { toast } from 'sonner';
 import { Card } from '@/ui/Card';
 import { Toggle } from '@/ui/Toggle';
-import { Context } from '@/class/Info';
+import s from './styles/LimitsBanner.module.css';
+import { Context, MinMax } from '@/class/Info';
+import { format } from 'date-fns';
+import { Logger } from '@/dto/Logger.class';
+import { Icon } from '@impactium/icons';
 
 export function LimitsBanner() {
   const { Info, destroyBanner, app } = useApplication();
-
-  const minMax = Context.frame(app);
-
+  const [frame, setFrame] = useState<MinMax>(Context.frame(app));
+  const [isMinValid, setIsMinValid] = useState<boolean>(true);
+  const [isMaxValid, setIsMaxValid] = useState<boolean>(true);
   const [manual, setManual] = useState<boolean>(false);
-  const [min, setMin] = useState<number>(minMax.min);
-  const [max, setMax] = useState<number>(minMax.max);
-  const [loading, setLoading] = useState<boolean>(false);
+  const lastActiveInput = useRef<HTMLInputElement | null>(null);
 
   const map = [
-    { text: 'Day', do: () => save(app.timeline.frame.max - 24 * 60 * 60 * 1000) },
-    { text: 'Week', do: () => save(app.timeline.frame.max - 7 * 24 * 60 * 60 * 1000) },
-    { text: 'Month', do: () => save(app.timeline.frame.max - 30 * 24 * 60 * 60 * 1000) },
+    { text: 'Day', do: () => save(frame.max - 24 * 60 * 60 * 1000) },
+    { text: 'Week', do: () => save(frame.max - 7 * 24 * 60 * 60 * 1000) },
+    { text: 'Month', do: () => save(frame.max - 30 * 24 * 60 * 60 * 1000) },
     { text: 'Full range', do: () => save() },
-  ]
+  ];
 
   const save = async (_min?: number) => {
-    const range = { min: _min ?? min, max };
+    const { min, max } = { min: _min ?? frame.min, max: frame.max };
+    Info.setTimelineFrame({ min, max });
+    destroyBanner();
+  };
 
-    setMin(range.min);
-    setMax(range.max);
-
-    if (range) {
-      setLoading(true);
-
-      Info.setTimelineFrame(range);
-
-      destroyBanner();
+  const validate = (type: keyof MinMax, value: boolean) => {
+    if (type === 'min') {
+      setIsMinValid(frame.min < frame.max);
+    } else {
+      setIsMaxValid(frame.max > frame.min);
     }
+  };
+
+  const handleDateChange = (type: keyof MinMax, value: number | string) => {
+    try {
+      const timestamp = new Date(value).valueOf();
+      if (isNaN(timestamp) || timestamp === 0) {
+        Logger.error(`Invalid date: ${value}`);
+        validate(type, false);
+        return;
+      }
+      setFrame((prev) => ({ ...prev, [type]: timestamp }));
+      validate(type, true);
+    } catch {
+      validate(type, false);
+    }
+  };
+
+  const restoreFocus = () => {
+    if (lastActiveInput.current) {
+      lastActiveInput.current.focus();
+    }
+  };
+
+  function InputDateSelection({ type }: { type: keyof MinMax }) {
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
+    useEffect(() => {
+      const input = inputRef.current;
+      const icon = input?.parentElement?.querySelector('svg');
+
+      const clickHandler = () => {
+        if (input?.showPicker) {
+          input.showPicker();
+        }
+      };
+
+      icon?.addEventListener('click', clickHandler);
+
+      return () => {
+        icon?.removeEventListener('click', clickHandler);
+      };
+    }, []);
+
+    return (
+      <Input
+        ref={(el) => {
+          inputRef.current = el;
+          if (el && document.activeElement === el) {
+            lastActiveInput.current = el;
+          }
+        }}
+        type="datetime-local"
+        valid={type === 'min' ? isMinValid : isMaxValid}
+        variant="highlighted"
+        img="Calendar"
+        value={format(frame[type], "yyyy-MM-dd'T'HH:mm")}
+        onFocus={(e) => {
+          lastActiveInput.current = e.target as HTMLInputElement;
+        }}
+        onBlur={() => {
+          lastActiveInput.current = null;
+        }}
+        onChange={(e) => {
+          handleDateChange(type, e.target.value);
+          restoreFocus();
+        }}
+        className={s.input}
+      />
+    );
   }
 
-  const done = <Button variant='ghost' img='Check' loading={loading} onClick={() => save()} size='icon' />;
+  function TextDateSelection({ type }: { type: keyof MinMax }) {
+    return (
+      <Input
+        type="text"
+        valid={type === 'min' ? isMinValid : isMaxValid}
+        value={new Date(frame[type]).toISOString()}
+        img="CalendarCog"
+        variant="highlighted"
+        onChange={(e) => handleDateChange(type, e.target.value)}
+        placeholder="Enter date in ISO format"
+      />
+    );
+  }
+
+  function DateSelection({ type }: { type: keyof MinMax }) {
+    return manual ? (
+      <TextDateSelection type={type} />
+    ) : (
+      <InputDateSelection type={type} />
+    );
+  }
+
+  const done = useCallback(() => (
+    <Button variant="ghost" img="Check" onClick={() => save()} size="icon" />
+  ), [save]);
 
   return (
-    <Banner className={s.banner} title='Visibility range' done={done}>
-      <Toggle checked={manual} onCheckedChange={setManual} option={['Select from limits', 'ISO String']} />
-      <Card>
-        <div className={s.wrapper}>
-          <span>Start:</span>
-          <DateSelection initialDate={min} onDateChange={setMin} manual={manual} />
-        </div>
-        <Separator />
-        <div className={s.wrapper}>  
-          <span>End:</span>
-          <DateSelection initialDate={max} onDateChange={setMax} manual={manual} />
-        </div>
-      </Card>
+    <Banner className={s.banner} title="Visibility range" done={done()}>
+      <Toggle
+        checked={manual}
+        onCheckedChange={setManual}
+        option={['Select from limits', 'ISO String']}
+      />
+      <Stack className={s.wrapper}>
+        <Icon name="CalendarArrowUp" />
+        <span>From:</span>
+        <DateSelection type="min" />
+      </Stack>
+      <Stack className={s.wrapper}>
+        <Icon name="CalendarArrowDown" />
+        <span>To:</span>
+        <DateSelection type="max" />
+      </Stack>
       <div className={s.button_group}>
-        {map.map((_: any, index) => (
-          <Button variant='outline' onClick={_.do} key={index}>{_.text}</Button>
+        {map.map((option, index) => (
+          <Button variant="outline" onClick={option.do} key={index}>
+            {option.text}
+          </Button>
         ))}
       </div>
     </Banner>
-  ) 
-}
-
-export function DateSelection({ initialDate, onDateChange, manual }: { initialDate: number, onDateChange: (date: number) => void, manual: boolean }) {
-  const { app } = useApplication();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(initialDate));
-  const [inputValue, setInputValue] = useState<string>(format(selectedDate, 'yyyy-MM-dd'));
-  if (manual) {
-    return <Input
-      type='text'
-      value={inputValue}
-      onChange={(e) => setInputValue(e.target.value)}
-    onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          e.currentTarget.blur();
-        }
-      }}
-      placeholder='String in ISO format'
-      onBlur={() => {
-        const date = new Date(inputValue);
-        if (isNaN(date.getTime())) {
-          toast.error('Date is invalid', {
-            description: 'Please enter a valid date in ISO format',
-          });
-          setInputValue(format(selectedDate, 'yyyy-MM-dd'));
-        } else {
-          setSelectedDate(date);
-          onDateChange(date.valueOf());
-        }
-      }}
-    />
-  }
-
-  const handleYearChange = (year: number) => {
-    const newDate = new Date(selectedDate.setFullYear(year));
-    setSelectedDate(newDate);
-    onDateChange(newDate.valueOf());
-  };
-
-  const handleMonthChange = (month: number) => {
-    const newDate = new Date(selectedDate.setMonth(month));
-    setSelectedDate(newDate);
-    onDateChange(newDate.valueOf());
-  };
-
-  const handleDayChange = (day: number) => {
-    const newDate = new Date(selectedDate.setDate(day));
-    setSelectedDate(newDate);
-    onDateChange(newDate.valueOf());
-  };
-
-  const years = eachYearOfInterval({
-    start: new Date(app.timeline.frame.min),
-    end: new Date(app.timeline.frame.max),
-  }).reverse();
-
-  const months = eachMonthOfInterval({
-    start: new Date(`${selectedDate.getFullYear()}-01-01`),
-    end: new Date(`${selectedDate.getFullYear()}-12-31`),
-  });
-
-  const days = eachDayOfInterval({
-    start: new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
-    end: new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0),
-  });
-
-  return (
-    <div className={s.input_group}>
-      {/* Year select */}
-      <Select onValueChange={(value) => handleYearChange(parseInt(value))} defaultValue={selectedDate.getFullYear().toString()}>
-        <SelectTrigger>{selectedDate.getFullYear() || 'Select year'}</SelectTrigger>
-        <SelectContent>
-          {years.map((year) => (
-            <SelectItem key={year.getFullYear()} value={year.getFullYear().toString()}>
-              {year.getFullYear()}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Month select */}
-      <Select onValueChange={(value) => handleMonthChange(parseInt(value))} defaultValue={selectedDate.getMonth().toString()}>
-        <SelectTrigger>{format(selectedDate, 'MMMM') || 'Select Month'}</SelectTrigger>
-        <SelectContent>
-          {months.map((month) => (
-            <SelectItem key={month.getMonth()} value={month.getMonth().toString()}>
-              {format(month, 'MMMM')}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      {/* Day select */}
-      <Select onValueChange={(value) => handleDayChange(parseInt(value))} defaultValue={selectedDate.getDate().toString()}>
-        <SelectTrigger>{selectedDate.getDate() || 'Select Day'}</SelectTrigger>
-        <SelectContent>
-          {days.map((day) => (
-            <SelectItem key={day.getDate()} value={day.getDate().toString()}>
-              {day.getDate()}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
   );
 }
