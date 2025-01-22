@@ -286,7 +286,7 @@ const Step = ({ name, cond, icon, loading: _loading }: Flow.Step) => {
       const timer = setTimeout(() => {
         setResolvedCond(cond);
         setLoading(false);
-      }, 2500);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [cond, resolvedCond]);

@@ -6,17 +6,16 @@ import s from './styles/SelectFilesBanner.module.css';
 import { Badge } from '@/ui/Badge';
 import { Label } from '@/ui/Label';
 import { Button, Skeleton } from '@impactium/components';
-import { Context, Operation, Event, File } from '@/class/Info';
+import { Context, Operation, File } from '@/class/Info';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Input } from '@impactium/components';
 import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
 import { λContext, λFile } from '@/dto/Dataset';
 import { Separator } from '@/ui/Separator';
-import { ContextMenuSeparator } from '@radix-ui/react-context-menu';
 
 export function SelectFilesBanner() {
-  const { app, destroyBanner, Info, spawnBanner } = useApplication();
+  const { app, Info, spawnBanner } = useApplication();
   const { lang } = useLanguage();
   const [filter, setFilter] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(!app.target.operations.length && !app.target.contexts.length);
@@ -57,6 +56,14 @@ export function SelectFilesBanner() {
     const files = Context.files(app, context);
 
     const Files = useCallback(() => {
+      if (!files) {
+        return (
+          <Fragment>
+            {Array.from({ length: 8 }).map(() => <Skeleton height={20} width='100%' />)}
+          </Fragment>
+        )
+      }
+
       return (
         <Fragment>
           {files.map(file => <FileComponent {...file} />)}

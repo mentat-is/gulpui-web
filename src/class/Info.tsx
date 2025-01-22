@@ -1,5 +1,5 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject } from '@/dto/Dataset';
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -201,6 +201,18 @@ export namespace Internal {
  
     public static set server(server: string) {
       localStorage.setItem(Internal.LocalStorageItemsList.GENERAL_SERVER_VALUE, server);
+    }
+  }
+
+  export class IconExtractor {
+    public static activate = <T extends Pick<GulpObject<μ.Operation>, 'glyph_id'>>(defaultValue: Icon.Name): (obj: T) => Icon.Name => {
+      return (obj: T) => {
+        if (obj.glyph_id) {
+          return Glyph.List.get(obj.glyph_id) ?? defaultValue
+        }
+    
+        return defaultValue;
+      }
     }
   }
 }
@@ -617,7 +629,7 @@ export class Info implements InfoProps {
     const contexts: λContext[] = [];
     const files: λFile[] = [];
 
-    const rawOperations =  await api<OperationTree[]>('/operation_list', {
+    const rawOperations = await api<OperationTree[]>('/operation_list', {
       method: 'POST',
       query: { index }
     });
@@ -961,6 +973,8 @@ export class Index {
 
 
 export class Operation {
+  public static icon = Internal.IconExtractor.activate<λOperation>(Default.Icon.OPERATION);
+
   public static reload = (newOperations: λOperation[], app: λApp) => Operation.select(newOperations, Operation.selected(app));
 
   public static selected = (app: λApp): λOperation | undefined => app.target.operations.find(o => o.selected);
@@ -979,6 +993,8 @@ export class Operation {
 }
 
 export class Context {
+  public static icon = Internal.IconExtractor.activate<λContext>(Default.Icon.CONTEXT);
+
   public static reload = (newContexts: λContext[], app: λApp): λContext[] => Context.select(newContexts, Context.selected(app));
 
   public static frame = (app: λApp): MinMax => app.target.files.map(f => f.timestamp).reduce((acc, cur) => {
@@ -1010,6 +1026,8 @@ export class Context {
 }
 
 export class File {
+  public static icon = Internal.IconExtractor.activate<λFile>(Default.Icon.FILE);
+
   public static replace = (newFiles: Arrayed<λFile>, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(file => Parser.array(newFiles).find(s => s.id === file.id) || file);
 
   public static single = <K extends keyof λFile>(files: λFile[], field: K): λFile[K] | undefined => Parser.array(files)[0]?.[field];
@@ -1286,18 +1304,15 @@ export class Event {
 }
 
 export class Note {
-  public static icon = (note: λNote): Icon.Name => {
-    if (note.glyph_id) {
-      return Glyph.List.get(note.glyph_id) || Default.Icon.NOTE
-    }
-
-    return Default.Icon.NOTE
-  }
+  public static icon = Internal.IconExtractor.activate<λNote>(Default.Icon.NOTE);
   
   public static normalize = (notes: ΞNote[]) => notes.map(n => ({
     ...n,
+    description: n.text,
     docs: Event.normalize(n.docs)
-  }))
+  } satisfies λNote));
+
+  public static id = (app: λApp, id: λNote['id']) => app.target.notes.find(n => n.id === id)!;
 
   public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs.map(d => d.id));
 
@@ -1314,13 +1329,7 @@ export class Note {
 }
 
 export class Link {
-  public static icon = (link: λLink): Icon.Name => {
-    if (link.glyph_id) {
-      return Glyph.List.get(link.glyph_id) || Default.Icon.LINK
-    }
-
-    return Default.Icon.LINK;
-  }
+  public static icon = Internal.IconExtractor.activate<λLink>(Default.Icon.LINK);
 
   public static events = (app: λApp, link: λLink) => Event.findById(app, [link.doc_id_from, ...link.doc_ids]);
 

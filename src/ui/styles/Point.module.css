@@ -135,3 +135,21 @@
   top: 32px;
   cursor: pointer !important;
 }
+.target span {
+  background-color: var(--soft-black);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text-dimmed);
+  font-family: var(--font-mono);
+  top: calc(100% + 21px);
+  position: absolute;
+  display: flex;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.05;
+  letter-spacing: 0.36px;
+  text-wrap-style: balance;
+  max-width: 144px;
+  padding: 4px;
+  border: 1px solid var(--gray-400);
+}

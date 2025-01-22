@@ -86,7 +86,6 @@ export type λLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
 
 export type ΞNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   type: 'note',
-  description: string,
   operation_id: λOperation['id'],
   tags: string[],
   context_id: λContext['id'],
@@ -113,11 +112,12 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
 }
 
 export namespace Default {
-  type Object = 'OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK';
+  type Object = 'OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK' | 'EVENT';
 
   export const Icon: Record<Object, Icon.Name> = {
     OPERATION: 'BookDashed',
-    CONTEXT: 'Triangle',
+    CONTEXT: 'Box',
+    EVENT: 'Triangle',
     FILE: 'File',
     NOTE: 'StickyNote',
     LINK: 'Link'

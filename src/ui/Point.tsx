@@ -11,17 +11,17 @@ export namespace Point {
     icon: Icon.Name;
     accent: Color;
     name: string;
+    description?: string;
   }
 }
 
-export function Point({ x, y, icon, accent, className, name, ...props }: Point.Props) {
+export function Point({ x, y, icon, accent, className, name, description, ...props }: Point.Props) {
   return (
     <Button size='icon' variant='glass' className={cn(className, s.target)} style={{ ...props.style, left: x, top: y, borderColor: accent }} {...props}>
       <Icon name={icon} color={accent} />
       <hr style={{ background: accent }} />
-      <div className={s.backplate} />
       <p className={s.desc} style={{ y, x, borderColor: accent }}>{name}</p>
+      {description && <span>{description}</span>}
     </Button>
-    
   )
 }

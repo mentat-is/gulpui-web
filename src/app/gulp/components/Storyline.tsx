@@ -1,18 +1,20 @@
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import { cn } from '@/ui/utils';
-import { Stack } from '@impactium/components';
 import s from './storyline.module.css';
-import { useCallback, useEffect, useRef } from 'react';
+import { SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { Timestamp } from '@/ui/timestamp';
-import { Operation, Note as NoteEntity, Note } from '@/class/Info';
-import { λNote } from '@/dto/Dataset';
+import { Operation, Note as NoteEntity, Note, Context, File, Internal, Event } from '@/class/Info';
+import { Default, λFile, λNote } from '@/dto/Dataset';
 import { NotePoint } from '@/ui/Note';
 import { Icon } from '@impactium/icons';
 import { Glyph } from '@/ui/Glyph';
 import { Separator } from '@/ui/Separator';
 import { format } from 'date-fns';
+import { SetState } from '@/class/API';
+import { Logger } from '@/dto/Logger.class';
+import { XY, XYBase } from '@/dto/XY.dto';
 
 
 export function StorylineBanner() {
@@ -58,8 +60,9 @@ namespace Graph {
     max: number;
     notes: λNote[];
   }
-}
 
+  export type Matrix = Map<λNote['id'], XY>;
+}
 
 export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
   const { app } = useApplication();
@@ -67,20 +70,106 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
 
   props.dir = props.dir ?? 'column';
 
-  const getNoteXPositionFromTimestamp = useCallback((timestamp: number) => Math.round(((timestamp - min) / (max - min)) * (graph.current?.width || 0)), [min, max]);
+  const getNoteXPositionFromTimestamp = useCallback((timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * 512), [min, max]);
+
+  const drawCanvas = () => {
+    const canvas = graph.current;
+    if (canvas === null) {
+      return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      return;
+    }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const drown: number[] = [];
+
+    const draw = (note: λNote, x: number) => {
+      if (drown.find(dx => dx === x)) {
+        draw(note, x + 1);
+        return;
+      } else {
+        drown.push(x);
+      }
+
+      ctx.fillStyle = note.color;
+      ctx.fillRect(x, 0, 1, canvas.height);
+    }
+
+    notes.forEach(note => {
+      const events = Note.events(app, note);
+      
+      events.forEach(event => {
+        draw(note, getNoteXPositionFromTimestamp(event.timestamp));
+      })
+    })
+  }
+
+  const [matrix, setMatrix] = useState<Graph.Matrix>(new Map());
+
+  useEffect(() => {
+    drawCanvas();
+    
+    // Очищаем
+    matrix.clear();
+
+    // Дефиницируем
+    notes.forEach(note => {
+      // Ставим таймстамп
+      const timestamp = Note.timestamp(app, note);
+      // Инициализируем
+      matrix.set(note.id, {
+        x: getNoteXPositionFromTimestamp(timestamp),
+        y: 0
+      });
+    });
+
+    Array.from(matrix.entries()).map(([id, { x, y }]) => {
+      // const is = Ar  matrix.values().find(p => p.x >= x - 16 && p.x <= x + 16);
+
+      const note = Note.id(app, id);
+
+      if (!note) {
+        return 0;
+      }
+
+      const el = document.getElementById(note.id);
+
+      if (!el) {
+        return 0;
+      }
+
+      const span = el.querySelector('span');
+
+      if (!span) {
+        return 0
+      }
+
+      matrix.set(id, {
+        x,
+        y: span.clientHeight + 32 + 16 + 4
+      });
+    });
+
+    setMatrix(matrix);
+  }, [matrix, setMatrix, notes, graph]);
 
   return (
     <Stack className={cn(s.graph, className)} {...props}>
       <div className={s.wrapper}>
-        <canvas ref={graph} className={s.canvas} />
-        {notes.map(note => {
-        const timestamp = Note.timestamp(app, note);
-        return <NotePoint note={note} x={getNoteXPositionFromTimestamp(timestamp)} y={'50%' as unknown as number} />
-      })}
+        <canvas width={512} height={256} ref={graph} className={s.canvas} />
+        <Stack className={s.points}>
+          {Array.from(matrix.entries()).map(([id, { x, y }]) => {
+            return <NotePoint id={id} description={Note.id(app, id).description} className={s.point} note={Note.id(app, id)} x={x} y={y} />
+          })}
+        </Stack>
       </div>
       <Stack jc='space-between' className={s.minMax}>
-        <Timestamp value={min} />
-        <Timestamp value={max} />
+        <Timestamp value={app.timeline.frame.min} />
+        <Timestamp value={app.timeline.frame.max} />
       </Stack>
     </Stack>
   )
@@ -88,15 +177,18 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
 
 function List() {
   const { app } = useApplication();
+  const [active, setActive] = useState<λNote['id'] | null>(null);
 
   const notes = app.target.notes;
 
-  
+  const activate = useCallback((noteId: λNote['id']) => () => {
+    setActive(noteId === active ? null : noteId);
+  }, [active, setActive]);
 
   return (
     <Stack className={s.list} gap={0} dir='column'>
-      {notes.map(note => {
-        return <DetailedNote note={note} />
+      {notes.map((note, ) => {
+        return <DetailedNote note={note} active={active === note.id} activate={activate(note.id)} />
       })}
     </Stack>
   )
@@ -104,22 +196,65 @@ function List() {
 
 namespace DetailedNote {
   export interface Props {
-    note: λNote
+    note: λNote;
+    active: boolean;
+    activate: () => void;
+  }
+
+  export interface Detail {
+    name: string;
+    value: Pick<λNote, 'glyph_id' | 'name'>;
+    icon: (obj: any) => Icon.Name;
   }
 }
 
-function DetailedNote({ note }: DetailedNote.Props) {
+function DetailedNote({ note, active, activate }: DetailedNote.Props) {
   const { app } = useApplication();
 
   const timestamp = Note.timestamp(app, note);
 
+  const Detail = ({ name, value, icon }: DetailedNote.Detail) => {
+    return (
+      <Stack className={s.detail}>
+        <p>{name}:</p>
+        <Stack gap={4}>
+          <Icon name={icon(value)} />
+          <span>{value.name}</span>
+        </Stack>
+      </Stack>
+    )    
+  }
+
+  const button = active ? (
+    <Button onClick={activate} style={{ justifySelf: 'flex-end', borderRadius: 2, height: '24px !important' }} revert img='ListMinus' size='sm' variant='ghost'>
+      Show less
+    </Button>
+  ) : (
+    <Button onClick={activate} style={{ justifySelf: 'flex-end', borderRadius: 2, height: '24px !important' }} revert img='ListPlus' size='sm' variant='ghost'>
+      Show more
+    </Button>
+  )
+
   return (
-    <Stack className={s.detailed}>
-      <Icon name={Note.icon(note)} />
-      <p className={s.name}>{note.name}</p>
-      <Separator className={s.separator} orientation='vertical' />
-      <Icon name='Clock' size={12} />
-      <p className={s.timestamp}>{format(timestamp, 'yyyy.MM.dd HH:mm:ss SSS')}</p>
+    <Stack className={cn(s.detailed, active && s.active)} dir='column' gap={0}>
+      <Stack className={s.general}>
+        <Icon name={Note.icon(note)} />
+        <p className={s.name}>{note.name}</p>
+        <Separator className={s.separator} orientation='vertical' />
+        <Icon color='var(--text-dimmed)' name='Clock' size={12} />
+        <p className={s.timestamp}>{format(timestamp, 'yyyy.MM.dd HH:mm:ss SSS')}ms</p>
+        {button}
+      </Stack>
+      <Stack ai='flex-start' dir='column' className={cn(s.details, active && s.active)}>
+        <Detail name='Context' value={Context.id(app, note.context_id)} icon={Context.icon} />
+        <Detail name='File' value={File.id(app, note.source_id)} icon={File.icon} />
+        <Separator />
+        {Note.events(app, note).map((event, i) => {
+          return <Detail key={event.id} name={`Event ${++i}`} value={({...event as unknown as λFile, name: event.id })} icon={() => Default.Icon.EVENT} />
+        })}
+        <Separator />
+        {note.description}
+      </Stack>
     </Stack>
   )
 }

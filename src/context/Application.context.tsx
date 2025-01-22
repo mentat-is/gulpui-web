@@ -129,14 +129,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
         break;
     }
   }
-  
-  useEffect(() => {
-    if (app.timeline.target) {
-      spawnDialog(<DisplayEventDialog event={app.timeline.target} />)
-    } else {
-      destroyBanner();
-    }
-  }, [app.timeline.target]);
 
   return (
     <ApplicationContext.Provider value={props}>
