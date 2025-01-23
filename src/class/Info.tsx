@@ -1324,7 +1324,7 @@ export class Note {
     let sum = 0
     const events = Note.events(app, note);
     events.forEach(e => sum += e.timestamp);
-    return (sum / events.length);
+    return sum / events.length || 1;
   }
 }
 
