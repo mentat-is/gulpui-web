@@ -1110,9 +1110,9 @@ export class Filter {
       context_ids: [
         context.id
       ],
-      date_range: [
-        new Date(Math.max(Math.floor(file.nanotimestamp.min / 1_000_000) - 1, (range?.min || -Infinity))).toISOString(),
-        new Date(Math.min(Math.round(file.nanotimestamp.max / 1_000_000) + 1, (range?.max || Infinity))).toISOString()
+      int_filter: [
+        Math.max(file.nanotimestamp.min, ((range?.min ?? 0) * 1_000_000 || -Infinity)),
+        Math.min(file.nanotimestamp.max, ((range?.max ?? 0) * 1_000_000 || Infinity)),
       ],
       source_ids: [
         file.id
