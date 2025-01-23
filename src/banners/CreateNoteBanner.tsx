@@ -121,7 +121,7 @@ function Editable({ icon, name, children, ...props }: EditableProps) {
   return (
     <Stack className={cn(s.inp, s.editable)}>
       <p>{name}:</p>
-      <Input className={s.inp_input} img={icon} {...props} />
+      <Input variant='highlighted' className={s.inp_input} img={icon} {...props} />
     </Stack>
   )
 }
@@ -130,7 +130,7 @@ function Selection({ icon, name, value }: SelectionProps) {
   return (
     <Stack className={cn(s.inp, s.selection)}>
       <p>{name}:</p>
-      <Input className={s.inp_input} img={icon} disabled value={value} />
+      <Input variant='highlighted' className={s.inp_input} img={icon} disabled value={value} />
     </Stack>
   )
 }

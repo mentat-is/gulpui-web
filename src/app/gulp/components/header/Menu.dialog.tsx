@@ -14,7 +14,7 @@ import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternal } from '@/banners/QueryExternal.banner';
-import { StorylineBanner } from '../storyline';
+import { StorylineBanner } from '../Storyline';
 import { SaveSession } from '@/banners/SaveSession';
 import { λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
@@ -46,8 +46,7 @@ export function MenuDialog() {
     const container = document.createElement('div');
     newWindow.document.body.appendChild(container);
     containerRef.current = container;
-  
-    // Копируем стили
+
     Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
       if (styleSheet.href) {
         const link = document.createElement('link');

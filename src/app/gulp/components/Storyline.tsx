@@ -3,18 +3,15 @@ import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
 import { cn } from '@/ui/utils';
 import s from './storyline.module.css';
-import { SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Timestamp } from '@/ui/timestamp';
-import { Operation, Note as NoteEntity, Note, Context, File, Internal, Event } from '@/class/Info';
+import { Operation, Note, Context, File } from '@/class/Info';
 import { Default, λFile, λNote } from '@/dto/Dataset';
 import { NotePoint } from '@/ui/Note';
 import { Icon } from '@impactium/icons';
-import { Glyph } from '@/ui/Glyph';
 import { Separator } from '@/ui/Separator';
 import { format } from 'date-fns';
-import { SetState } from '@/class/API';
-import { Logger } from '@/dto/Logger.class';
-import { XY, XYBase } from '@/dto/XY.dto';
+import { XY } from '@/dto/XY.dto';
 
 
 export function StorylineBanner() {

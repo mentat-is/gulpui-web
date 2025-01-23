@@ -71,31 +71,6 @@
   font-size: 14px;
   min-width: 80px;
 }
-.inp_input {
-  background: var(--meta-black);
-  position: relative;
-  overflow: hidden;
-  padding-left: 8px;
-  gap: 16px;
-}
-.inp_input input {
-  font-family: var(--font-mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.inp_input svg {
-  z-index: 2;
-}
-.inp_input::before {
-  position: absolute;
-  left: 0;
-  content: '';
-  height: 100%;
-  width: 32px;
-  z-index: 0;
-  border-right: 1px solid var(--gray-400);
-  background: var(--soft-black);
-}
 .selection input {
   pointer-events: none;
   color: var(--text-dimmed);
