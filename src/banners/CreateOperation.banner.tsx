@@ -8,17 +8,18 @@ import { λGlyph } from '@/dto/Dataset';
 import { Index } from '@/class/Info';
 import { OperationBanner } from './Operation.banner';
 import { Glyph } from '@/ui/Glyph';
+import { λIndex } from '@/dto/Index.dto';
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
 
 export function CreateOperationBanner() {
-  const { Info, spawnBanner } = useApplication();
+  const { app, Info, spawnBanner } = useApplication();
   const [name, setName] = useState<string>('');
+  const [index, setIndex] = useState<λIndex['name'] | null>(null);
   const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value || null);
   const [description, setDescription] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
   const createOperation = () => {
-    const index = Index.selected(Info.app);
-
     if (!index) {
       return;
     }
@@ -28,7 +29,7 @@ export function CreateOperationBanner() {
       setLoading,
       query: {
         name,
-        index: index.name
+        index,
       },
       deassign: true,
       body: description.toString(),
@@ -41,12 +42,16 @@ export function CreateOperationBanner() {
     return (
       <Button
         variant='glass'
-        disabled={!name || !description}
+        disabled={!name || !description || !index}
         loading={loading}
         img='Check'
         onClick={createOperation} />
     )
-  }, [name, description, loading]);
+  }, [name, description, loading, index]);
+
+  const selectIndexHandler = (value: string) => {
+    setIndex(value as λIndex['name']);
+  } 
 
   return (
     <Banner title='Create an Operation' done={<DoneButton />}>
@@ -59,6 +64,16 @@ export function CreateOperationBanner() {
           onChange={(e) => setName(e.currentTarget.value)}
           placeholder='Operation name' />
       </Stack>
+      <Select onValueChange={selectIndexHandler}>
+        <SelectTrigger value={index || ''}>
+          {index}
+        </SelectTrigger>
+        <SelectContent>
+          {app.target.indexes.map(index => {
+            return <SelectItem value={index.name}>{index.name}</SelectItem>
+          })}
+        </SelectContent>
+      </Select>
       <Stack ai='center'>
         <p className={s.paramName}>Operation description:</p>
         <Input

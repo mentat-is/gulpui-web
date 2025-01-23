@@ -11,7 +11,6 @@ import { copy } from '@/ui/utils';
 import { Button } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 import { Note, File, Index, Internal, Event } from '@/class/Info';
-import { Notes } from './components/Notes';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
 import { Loading } from '@impactium/components';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
@@ -73,10 +72,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     if (!file) return;
 
-    spawnBanner(<CreateLinkBanner
-      context={file.context_id}
-      file={file}
-      events={event} />);
+    spawnBanner(<CreateLinkBanner event={event} />);
     destroyDialog();
   }
 
@@ -118,7 +114,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               </SyntaxHighlighter>
             </TabsContent>
           </Tabs>
-          <Notes notes={notes} />
         </Fragment>
       ) : (
         <Loading variant='default' size='icon' style={{ width: '100%', height: '100%' }} jc='center' className={s.loading} />

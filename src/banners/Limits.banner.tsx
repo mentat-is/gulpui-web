@@ -17,7 +17,6 @@ export function LimitsBanner() {
   const [isMinValid, setIsMinValid] = useState<boolean>(true);
   const [isMaxValid, setIsMaxValid] = useState<boolean>(true);
   const [manual, setManual] = useState<boolean>(false);
-  const lastActiveInput = useRef<HTMLInputElement | null>(null);
 
   const map = [
     { text: 'Day', do: () => save(frame.max - 24 * 60 * 60 * 1000) },
@@ -55,12 +54,6 @@ export function LimitsBanner() {
     }
   };
 
-  const restoreFocus = () => {
-    if (lastActiveInput.current) {
-      lastActiveInput.current.focus();
-    }
-  };
-
   function InputDateSelection({ type }: { type: keyof MinMax }) {
     const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -83,27 +76,13 @@ export function LimitsBanner() {
 
     return (
       <Input
-        ref={(el) => {
-          inputRef.current = el;
-          if (el && document.activeElement === el) {
-            lastActiveInput.current = el;
-          }
-        }}
+        ref={inputRef}
         type="datetime-local"
         valid={type === 'min' ? isMinValid : isMaxValid}
         variant="highlighted"
         img="Calendar"
         value={format(frame[type], "yyyy-MM-dd'T'HH:mm")}
-        onFocus={(e) => {
-          lastActiveInput.current = e.target as HTMLInputElement;
-        }}
-        onBlur={() => {
-          lastActiveInput.current = null;
-        }}
-        onChange={(e) => {
-          handleDateChange(type, e.target.value);
-          restoreFocus();
-        }}
+        onChange={(e) => handleDateChange(type, e.target.value)}
         className={s.input}
       />
     );
