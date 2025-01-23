@@ -1111,8 +1111,8 @@ export class Filter {
         context.id
       ],
       date_range: [
-        new Date(Math.max(file.timestamp.min, (range?.min || -Infinity))).toISOString(),
-        new Date(Math.min(file.timestamp.max, (range?.max || Infinity))).toISOString()
+        new Date(Math.max(file.nanotimestamp.min, (range?.min || -Infinity))).toISOString(),
+        new Date(Math.min(file.nanotimestamp.max, (range?.max || Infinity))).toISOString()
       ],
       source_ids: [
         file.id
