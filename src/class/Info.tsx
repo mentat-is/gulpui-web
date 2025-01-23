@@ -398,9 +398,7 @@ export class Info implements InfoProps {
   // 🔥 INDEXES
   index_reload = () => api<λIndex[]>('/opensearch_list_index', (data) => {
     this.app.target.indexes = data || [];
-    this.setInfoByKey(data
-      ? data.length === 1 ? Index.select(this.app, data[0]) : data
-      : [],
+    this.setInfoByKey(Index.select(this.app, data[0] || null),
     'target', 'indexes');
   });
   
