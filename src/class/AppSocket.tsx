@@ -37,6 +37,9 @@ export class AppSocket extends WebSocket {
           const rawEvents: ΞEvent[] = chunk.docs;
           const events = Event.parse(rawEvents);
           return this.info.events_add(events);
+
+        case chunk.type === 'stats_update':
+          info.query_operations();
       }
     }
 
