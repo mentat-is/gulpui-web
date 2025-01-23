@@ -1111,8 +1111,8 @@ export class Filter {
         context.id
       ],
       int_filter: [
-        Math.max(file.nanotimestamp.min, ((range?.min ?? 0) * 1_000_000 || -Infinity)),
-        Math.min(file.nanotimestamp.max, ((range?.max ?? 0) * 1_000_000 || Infinity)),
+        Math.max(file.nanotimestamp.min - 1, ((range?.min ?? 0) * 1_000_000 || -Infinity)),
+        Math.min(file.nanotimestamp.max + 1, ((range?.max ?? 0) * 1_000_000 || Infinity)),
       ],
       source_ids: [
         file.id
