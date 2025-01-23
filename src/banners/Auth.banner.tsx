@@ -45,7 +45,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     }
   }, [isKeyPressed]);
 
-  const DoneButton = useCallback(() => {
+  const DoneButton = () => {
     const login = async () => {
       const removeOverload = (str: string): string => str.endsWith('/')
       ? removeOverload(str.slice(0, -1))
@@ -70,10 +70,12 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
           ws_id: Info.app.general.ws_id
         }
       }, async (data) => {
-        Info.login(data);
-        await Info.index_reload();
-        if (!Operation.selected(Info.app)) {
-          spawnBanner(<OperationBanner />)
+        if (data.token) {
+          Info.login(data);
+          await Info.index_reload();
+          if (!Operation.selected(Info.app)) {
+            spawnBanner(<OperationBanner />)
+          }
         }
       });
     }
@@ -81,7 +83,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     return (
       <Button img='LogIn' disabled={!id || !password} variant='glass' revert ref={loginButton} loading={loading} tabIndex={4} onClick={login} size='icon' />
     );
-  }, [id, password, loading]);
+  };
 
   return (
     <Banner title='Authentication' subtitle={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>

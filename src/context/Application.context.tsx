@@ -59,7 +59,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (app.general.token) setWs(new AppSocket(instance, app));
-
   }, [app.general.token])
 
   const spawnBanner = (banner: JSX.Element) => {
