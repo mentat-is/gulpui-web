@@ -4,7 +4,7 @@ import { useApplication } from '@/context/Application.context';
 import { λEvent, λExtendedEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { copy } from '@/ui/utils';
@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { Navigation } from './components/navigation';
 import { Separator } from '@/ui/Separator';
 import { λNote } from '@/dto/Dataset';
+import { ConnectPopover } from '@/app/gulp/components/Connect.popover';
 
 
 interface DisplayEventDialogProps {
@@ -47,6 +48,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const reloadDetailedChunkEvent = async () => {
     const detailed = await Info.query_single_id(event.id);
 
+    setRawJSON(JSON.stringify(detailed, null, 2));
+
     setDetailedChunkEvent(detailed || null);
   };  
 
@@ -64,6 +67,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     destroyDialog();
   }
 
+  const links_connect = useMemo(() => {
+    return <ConnectPopover event={event} />
+  }, [event, open]);
+
   return (
     <Dialog icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
       <Separator />
@@ -79,7 +86,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 <Button variant='secondary' img='Link'>Connect link</Button>
               </PopoverTrigger>
               <PopoverContent>
-                
+                {links_connect}
               </PopoverContent>
             </Popover>
             

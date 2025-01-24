@@ -33,11 +33,15 @@ export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProp
 
         const left = getPixelPosition(timestamp);
 
-        const top = File.getHeight(app, file, scrollY);
+        let top: number = 0;
+
+        link.docs.forEach(doc => {
+          top += File.getHeight(app, doc.file_id, scrollY);
+        })
 
         if (top <= 0) return null;
 
-        return <LinkPoint key={link.id} link={link} x={left} y={top} />
+        return <LinkPoint key={link.id} link={link} x={left} y={top / link.docs.length || 1} />
       })}
     </Fragment>
   )

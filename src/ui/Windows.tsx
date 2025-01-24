@@ -173,11 +173,11 @@ const NoWindows = () => {
         children: <Timeline />,
         name: 'Timeline'
       });
-    }, 1000);
+    }, 330);
   }
 
   const ActionButtonConstructor = (text: string, img: Icon.Name, banner: JSX.Element, processing?: boolean) => {
-    return <Button loading={processing || loading} disabled={processing} size='lg' img={img} className={s.rounded} onClick={() => spawnBanner(banner)}>{text}</Button>
+    return <Button loading={processing || loading} disabled={processing} variant='glass' size='lg' img={img} rounded className={s.action} onClick={() => spawnBanner(banner)}>{text}</Button>
   }
 
   const ActionButton = () => {
@@ -229,12 +229,12 @@ const NoWindows = () => {
     {
       name: 'Files selected',
       cond: File.selected(Info.app).length > 0,
-      trigger: ActionButtonConstructor('Select workflow', 'Upload', <SelectFilesBanner />)
+      trigger: ActionButtonConstructor('Select workflow', Default.Icon.FILE, <SelectFilesBanner />)
     },
     {
       name: 'Frame selected',
       cond: Info.app.timeline.frame.max > 0,
-      trigger: ActionButtonConstructor('Choose workflow frame', 'Upload', <LimitsBanner />)
+      trigger: ActionButtonConstructor('Choose workflow frame', 'TableColumnsSplit', <LimitsBanner />)
     },
     {
       name: 'Glyphs syncronized',

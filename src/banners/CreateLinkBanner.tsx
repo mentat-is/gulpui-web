@@ -17,6 +17,7 @@ import { Default, λGlyph } from '@/dto/Dataset';
 import { Icon } from '@impactium/icons';
 import { Glyph } from '@/ui/Glyph';
 import { cn } from '@impactium/utils';
+import { ConnectPopover } from '@/app/gulp/components/Connect.popover';
 
 interface CreateLinkBannerProps {
   event: λEvent
@@ -65,21 +66,13 @@ export function CreateLinkBanner({ event }: CreateLinkBannerProps) {
     });
   }
 
-  // const update = async (link: λLink) =>api<any>('/link_update', {
-  //   method: 'PUT',
-  //   query: {
-  //     link_id: link.id,
-  //     ws_id: app.general.ws_id,
-  //   },
-  //   body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...Link.events(app, link) as λEvent[]] })
-  // }, Info.links_reload).then(destroyBanner);
-
   const option = useCallback(() => (
-    <Popover>
+    <Popover open={true}>
       <PopoverTrigger asChild>
         <Button variant='ghost' img='GitPullRequest' />
       </PopoverTrigger>
       <PopoverContent className={s.popover}>
+        <ConnectPopover event={event} />
       </PopoverContent>
     </Popover>
   ), []);

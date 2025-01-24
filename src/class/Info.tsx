@@ -582,6 +582,26 @@ export class Info implements InfoProps {
     }
   }, this.links_reload);
 
+  links_connect = async (link: λLink, event: λEvent) => {
+    const links = await api<λLink>('/link_update', {
+      method: 'PATCH',
+      query: {
+        object_id: link.id,
+        ws_id: this.app.general.ws_id
+      },
+      body: {
+        doc_ids: [
+          ...link.doc_ids,
+          event.id
+        ]
+      }
+    });
+
+    await this.links_reload();
+
+    return links;
+  }
+
   glyphs_reload = async () => {
     // Clear exist list of glyphs
     Glyph.List.clear();
@@ -1376,6 +1396,8 @@ export class Note {
 
 export class Link {
   public static icon = Internal.IconExtractor.activate<λLink>(Default.Icon.LINK);
+
+  public static selected = (app: λApp) => app.target.links.filter(link => link.doc_ids.every(id => File.id(app, Event.id(app, id).file_id).selected))
 
   public static normalize = (link: ΞLink, docs: λDoc[]): λLink => ({
     ...link,
