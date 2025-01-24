@@ -40,8 +40,8 @@ export function Timeline() {
 
     const width = Info.width;
     const newScale = app.timeline.isScrollReversed
-    ? event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale()
-    : event.deltaY < 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
+    ? event.deltaY < 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale()
+    : event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
 
     const rect = bounding || timeline.current.getBoundingClientRect();
     if (!bounding) {
