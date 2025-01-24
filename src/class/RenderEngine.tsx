@@ -132,9 +132,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public links = () => {
     this.info.app.target.links.forEach(link => {
-      const events = Link.events(this.info.app, link);
-
-      if (events.some(e => !File.id(this.info.app, e.file_id)?.selected)) return;
+      if (link.docs.some(e => !File.id(this.info.app, e.file_id)?.selected)) return;
 
       const { dots, center } = this.calcDots(link);
 
@@ -194,14 +192,13 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   } => {
     const center = XYBase(0);
     const dots: Dot[] = [];
-    const events = Link.events(this.info.app, link);
 
-    events.forEach(e => {
+    link.docs.forEach(e => {
       const index = File.selected(this.info.app).findIndex(f => f.id === e.file_id);
 
       const x = this.getPixelPosition(e.timestamp + (File.selected(this.info.app)[index]?.settings.offset || 0));
       const y = (index * 48 + 20 - this.scrollY || 0);
-      const color = (link.color || stringToHexColor(events.map(e => e.file_id).toString()))
+      const color = (link.color || stringToHexColor(link.docs.map(e => e.file_id).toString()))
 
       center.x += x;
       center.y += y;

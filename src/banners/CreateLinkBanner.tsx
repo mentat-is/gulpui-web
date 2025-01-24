@@ -1,26 +1,19 @@
-import { Context, File, Link, Operation, Parser } from '@/class/Info';
+import { Context, File } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
 import {
   ColorPicker,
-  ColorPickerTrigger,
   ColorPickerPopover,
+  ColorPickerTrigger
 } from '@/ui/Color';
 import { useCallback, useMemo, useState } from 'react';
-import s from './styles/CreateNoteBanner.module.css'
+import s from './styles/CreateLinkBanner.module.css'
 import { Input } from '@impactium/components';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
-import { Card } from '@/ui/Card';
 import { Separator } from '@/ui/Separator';
 import { λEvent } from '@/dto/ChunkEvent.dto';
-import { Switch } from '@/ui/Switch';
-import { LinkCreateRequest } from '@/dto/LinkCreateRequest.dto';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
-import { LinkCombination } from '@/components/LinkCombination';
-import { EventCombination } from '@/components/EventCombination';
-import { Default, λGlyph, λLink } from '@/dto/Dataset';
-import { format } from 'date-fns';
+import { Default, λGlyph } from '@/dto/Dataset';
 import { Icon } from '@impactium/icons';
 import { Glyph } from '@/ui/Glyph';
 import { cn } from '@impactium/utils';
@@ -60,6 +53,11 @@ export function CreateLinkBanner({ event }: CreateLinkBannerProps) {
         glyph_id: icon || Default.Icon.LINK,
         color
       },
+      body: {
+        doc_ids: [
+          event.id
+        ]
+      },
       setLoading
     }, () => {
       destroyBanner();
@@ -76,34 +74,37 @@ export function CreateLinkBanner({ event }: CreateLinkBannerProps) {
   //   body: LinkCreateRequest.body({ ...link, events: [...Parser.array(events), ...Link.events(app, link) as λEvent[]] })
   // }, Info.links_reload).then(destroyBanner);
 
-  const Subtitle = () => (
+  const option = useCallback(() => (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant='ghost'>Connect to existing one</Button>
+        <Button variant='ghost' img='GitPullRequest' />
       </PopoverTrigger>
       <PopoverContent className={s.popover}>
       </PopoverContent>
     </Popover>
-  );
+  ), []);
 
   const done = useCallback(() => {
     return (
       <Button loading={loading} onClick={send} variant='glass' disabled={!name} img='Check' />
     )
-  }, [loading])
+  }, [loading, name, send])
 
   return (
-    <Banner title='Create link' done={done()}>
+    <Banner title='Create link' done={done()} option={option()}>
       <Stack className={s.general} ai='stretch' dir='column' gap={8}>
         <DetailedLinkInfoUnit name='Context' value={context.name} icon='Box' />
         <DetailedLinkInfoUnit name='File' value={file.name} icon='File' />
         <DetailedLinkInfoUnit name='Event' value={event.id} icon='Triangle' />
         <Separator />
         <EditableLinkField name='Title'>
-          <Input img='TextTitle' value={name} onChange={e => setName(e.currentTarget.value)} />
+          <Input variant='highlighted' img='TextTitle' value={name} onChange={e => setName(e.currentTarget.value)} />
         </EditableLinkField>
         <EditableLinkField name='Color'>
-          <ColorPicker color={color} setColor={setColor} />
+          <ColorPicker color={color} setColor={setColor}>
+            <ColorPickerTrigger />
+            <ColorPickerPopover />
+          </ColorPicker>
         </EditableLinkField>
         <EditableLinkField name='Glyph'>
           <Glyph.Chooser icon={icon} setIcon={setIcon} />
@@ -121,7 +122,7 @@ namespace EditableLinkField {
 
 function EditableLinkField({ name, className, children, ...props }: EditableLinkField.Props) {
   return (
-    <Stack dir='row' className={cn(s.editable, className)} {...props}>
+    <Stack dir='row' className={cn(s.unit, s.editable, className)} {...props}>
       <p>{name}:</p>
       {children}
     </Stack>

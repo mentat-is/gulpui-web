@@ -44,22 +44,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     setDetailedChunkEvent(null);
   }, [event]);
 
-  const reloadDetailedChunkEvent = () => {
-    const index = Index.selected(app);
+  const reloadDetailedChunkEvent = async () => {
+    const detailed = await Info.query_single_id(event.id);
 
-    if (!index) {
-      return;
-    }
-  
-    api<ΞxtendedEvent>('/query_single_id', {
-      method: 'POST',
-      query: {
-        doc_id: event.id,
-        index: index.name
-      }
-    }, e => setDetailedChunkEvent(Event.normalizeFromDetailed(e))).then(data => {
-      setRawJSON(JSON.stringify(data, null, 4));
-    });
+    setDetailedChunkEvent(detailed || null);
   };  
 
   const spawnNoteBanner = () => {

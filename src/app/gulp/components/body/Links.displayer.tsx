@@ -15,19 +15,29 @@ export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProp
   return (
     <Fragment>
       {app.target.links.map(link => {
-        const events = Link.events(app, link);
+        const event = Event.id(app, link.doc_id_from);
+        if (!event) {
+          return null;
+        }
 
-        // const left = getPixelPosition(Link.timestamp(app, link) + (File.id(app, File.call.link.doc_id_from)?.settings.offset || 0));
-        const left = 0;
-        let top = 0;
+        const file = File.id(app, event.file_id);
+        if (!file || !file.selected) {
+          return null;
+        }
 
-        if (events.some(e => !File.id(app, e.file_id)?.selected)) return null;
+        const timestamp = Link.timestamp(app, link);
 
-        events.forEach(event => top += File.getHeight(app, event.file_id, scrollY));
+        if (!timestamp) {
+          return null;
+        }
+
+        const left = getPixelPosition(timestamp);
+
+        const top = File.getHeight(app, file, scrollY);
 
         if (top <= 0) return null;
 
-        return <LinkPoint link={link} x={left} y={top / Math.max(events.length, 1)} />;
+        return <LinkPoint key={link.id} link={link} x={left} y={top} />
       })}
     </Fragment>
   )

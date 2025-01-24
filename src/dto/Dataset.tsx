@@ -75,7 +75,7 @@ export interface ΞSettings {
   field: keyof λEvent;
 }
 
-export type λLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
+export type ΞLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
   owner_user_id: string,
   description: string,
   operation_id: λOperation['id'],
@@ -83,6 +83,10 @@ export type λLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
   doc_id_from: λEvent['id'];
   doc_ids: λEvent['id'][];
 }
+
+export type λLink<T extends Extendable = {}> = ΞLink<{
+  docs: λDoc[]
+} & T>
 
 export type ΞNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   type: 'note',
@@ -109,7 +113,7 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   last_editor_id: λUser,
   text: string,
   edits: Record<string, any>[];
-}
+};
 
 export namespace Default {
   type Object = 'OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK' | 'EVENT';

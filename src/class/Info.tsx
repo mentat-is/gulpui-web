@@ -1,5 +1,5 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink } from '@/dto/Dataset';
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -541,18 +541,32 @@ export class Info implements InfoProps {
     }
   })
 
-  // fileKey = (file: λFile, key: keyof λEvent) => this.setInfoByKey(File.replace({ ...file, key }, this.app), 'target', 'files');
-
   links_reload = async () => {
-    api<λLink[]>('/link_list', {
+    return api<ΞLink[]>('/link_list', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         source_ids: File.selected(this.app).map(f => f.id), 
-      })
-    }, this.links_set);
-  }
+      }
+    }, async raw => {
+      const links: λLink[] = [];
 
-  links_set = (links: λLink[]) => this.setInfoByKey(links, 'target', 'links');
+      await Promise.all(raw.map(async link => {
+        const events = await Promise.all(link.doc_ids.map(this.query_single_id));
+
+        const docs: λDoc[] = [];
+
+        events.forEach(event => {
+          if (event) {
+            Event.toDoc(event);
+          }
+        });
+
+        links.push(Link.normalize(link, docs));
+      }));
+
+      this.setInfoByKey(links, 'target', 'links');
+    });
+  }
 
   links_delete = (link: λLink) => api('/link_delete', {
     method: 'DELETE',
@@ -736,6 +750,22 @@ export class Info implements InfoProps {
     })
 
     this.files_replace(newFiles);
+  }
+
+  query_single_id = (id: λEvent['id']) => {
+    const index = Index.selected(this.app);
+
+    if (!index) {
+      return;
+    }
+  
+    return api<ΞxtendedEvent>('/query_single_id', {
+      method: 'POST',
+      query: {
+        doc_id: id,
+        index: index.name
+      }
+    }).then(Event.normalizeFromDetailed);
   }
 
   plugin_list = (): Promise<GulpDataset.PluginList.Summary> => {
@@ -1111,7 +1141,7 @@ export class Filter {
       ],
       int_filter: [
         file.nanotimestamp.min > (BigInt(range?.min ?? 0) * 1_000_000n) 
-          ? file.nanotimestamp.min.toString()
+        ? file.nanotimestamp.min.toString()
           : (BigInt(range?.min ?? 0) * 1_000_000n).toString(),
         file.nanotimestamp.max < (BigInt(range?.max ?? 0) * 1_000_000n) 
           ? file.nanotimestamp.max.toString()
@@ -1206,6 +1236,15 @@ export class Event {
     return app.target.events;
   }
 
+  public static toDoc = ({ id, file_id, context_id, nanotimestamp, operation_id, timestamp }: λEvent): λDoc => ({
+    id,
+    file_id,
+    context_id,
+    nanotimestamp,
+    operation_id,
+    timestamp
+  })
+
   public static normalize = (raw: ΞDoc[]): λDoc[] => raw.map(r => ({
     id: r._id,
     timestamp: r['gulp.timestamp'],
@@ -1215,7 +1254,7 @@ export class Event {
     operation_id: r['gulp.operation_id']
   }));
 
-  public static normalizeFromDetailed = (raw: ΞxtendedEvent) => {
+  public static normalizeFromDetailed = (raw: ΞxtendedEvent): λExtendedEvent => {
     return {
       id: raw._id,
       operation_id: raw['gulp.operation_id'],
@@ -1332,15 +1371,18 @@ export class Note {
 export class Link {
   public static icon = Internal.IconExtractor.activate<λLink>(Default.Icon.LINK);
 
-  public static events = (app: λApp, link: λLink) => Event.findById(app, [link.doc_id_from, ...link.doc_ids]);
+  public static normalize = (link: ΞLink, docs: λDoc[]): λLink => ({
+    ...link,
+    docs
+  } satisfies λLink);
 
   public static timestamp = (app: λApp, link: λLink): number => {
-    const events = Link.events(app, link);
+    const events = link.docs;
 
     let sum = 0
 
     events.forEach(e => sum += e.timestamp);
-    return (sum / events.length);
+    return (sum / events.length || 1);
   }
 }
 
