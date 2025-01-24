@@ -565,8 +565,6 @@ export class Info implements InfoProps {
           }
         });
 
-        console.log(docs);
-
         links.push(Link.normalize(link, docs));
       }));
 

@@ -75,6 +75,7 @@
   padding: 12px;
   border: 1px solid var(--gray-400);
   border-radius: 6px;
+  width: 285px;
 }
 .flow p {
   display: flex;
@@ -97,4 +98,7 @@
 .flow p.check svg {
   color: var(--green-700);
   background: none !important;
+}
+.action {
+  width: 312px;
 }

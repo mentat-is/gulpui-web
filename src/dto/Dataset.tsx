@@ -116,10 +116,12 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
 };
 
 export namespace Default {
-  type Object = 'OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK' | 'EVENT';
+  type Object = 'INDEX' | 'OPERATION' | 'CREATE_OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK' | 'EVENT';
 
   export const Icon: Record<Object, Icon.Name> = {
+    INDEX: 'Database',
     OPERATION: 'BookDashed',
+    CREATE_OPERATION: 'BookPlus',
     CONTEXT: 'Box',
     EVENT: 'Triangle',
     FILE: 'File',

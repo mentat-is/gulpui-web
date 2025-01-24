@@ -1,5 +1,5 @@
 import { File, Index, Operation, μ } from '@/class/Info';
-import { Button, Stack, Loading } from '@impactium/components';
+import { Button, Loading, Stack } from '@impactium/components';
 import React, { useState, createContext, useContext, useCallback, memo, useEffect } from 'react';
 import { cn, generateUUID } from './utils';
 import { Timeline } from '@/app/gulp/components/body/Timeline';
@@ -15,6 +15,9 @@ import { OperationBanner } from '@/banners/Operation.banner';
 import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
 import { Separator } from './Separator';
 import { Glyph } from './Glyph';
+import { Default } from '@/dto/Dataset';
+import { IndexBanner } from '@/banners/Index.banner';
+import { CreateOperationBanner } from '@/banners/CreateOperation.banner';
 
 export namespace Windows {
   export interface Props {
@@ -173,34 +176,84 @@ const NoWindows = () => {
     }, 1000);
   }
 
-  const OpenTimelineButton = useCallback(() => {
-    switch (true) {
-      case !Info.User.isAuthorized(): 
-        return <Button loading={loading} size='lg' img='LogIn' className={s.rounded} onClick={() => spawnBanner(<AuthBanner />)}>Log In</Button>;
+  const ActionButtonConstructor = (text: string, img: Icon.Name, banner: JSX.Element, processing?: boolean) => {
+    return <Button loading={processing || loading} disabled={processing} size='lg' img={img} className={s.rounded} onClick={() => spawnBanner(banner)}>{text}</Button>
+  }
 
-      case !Operation.selected(Info.app):
-        return <Button loading={loading} size='lg' img='Status' className={s.rounded} onClick={() => spawnBanner(<OperationBanner />)}>Select Operation</Button>;
-
-      case File.selected(Info.app).length === 0:
-        return <Button loading={loading} size='lg' img='FileBox' className={s.rounded} onClick={() => spawnBanner(<SelectFilesBanner />)}>Select documents</Button>;
-
-      case Info.app.timeline.frame.max === 0:
-        return <Button loading={loading} size='lg' img='AlignHorizontalSpaceAround' className={s.rounded} onClick={() => spawnBanner(<LimitsBanner />)}>Select frame</Button>;
-
-      default:
-        return <Button loading={loading} size='lg' img='Edge' className={s.rounded} onClick={openTimeline}>Open timeline</Button>;
+  const ActionButton = () => {
+    if (flow.every(e => e.cond)) {
+      return (
+        <Button className={s.action} loading={loading} size='lg' img='Lambda' variant='glass' rounded onClick={openTimeline}>Open gULP</Button>
+      )
     }
-  }, [Info, loading]);
+
+    const el = flow.find(e => e.cond === false);
+    if (!el) {
+      return null;
+    }
+
+    return el.trigger
+  }
+
+  const flow: Flow.Step[] = [
+    {
+      name: 'Authorized',
+      cond: Info.User.isAuthorized(),
+      trigger: ActionButtonConstructor('Log In', 'LogIn', <AuthBanner />)
+    },
+    {
+      name: 'Index selected',
+      cond: Boolean(Index.selected(Info.app)),
+      trigger: ActionButtonConstructor('Select Index', Default.Icon.INDEX, <IndexBanner />)
+    },
+    {
+      name: 'At least one operation',
+      cond: Info.app.target.contexts.length > 0,
+      trigger: ActionButtonConstructor('Create Operation', Default.Icon.CREATE_OPERATION, <CreateOperationBanner />)
+    },
+    {
+      name: 'Operation selected',
+      cond: Boolean(Operation.selected(Info.app)),
+      trigger: ActionButtonConstructor('Select Operation', Default.Icon.OPERATION, <OperationBanner />)
+    },
+    {
+      name: 'At least one context',
+      cond: Info.app.target.contexts.length > 0,
+      trigger: ActionButtonConstructor('Create context', Default.Icon.CONTEXT, <UploadBanner />)
+    },
+    {
+      name: 'At least one file',
+      cond: Info.app.target.files.length > 0,
+      trigger: ActionButtonConstructor('Upload files', 'Upload', <UploadBanner />)
+    },
+    {
+      name: 'Files selected',
+      cond: File.selected(Info.app).length > 0,
+      trigger: ActionButtonConstructor('Select workflow', 'Upload', <SelectFilesBanner />)
+    },
+    {
+      name: 'Frame selected',
+      cond: Info.app.timeline.frame.max > 0,
+      trigger: ActionButtonConstructor('Choose workflow frame', 'Upload', <LimitsBanner />)
+    },
+    {
+      name: 'Glyphs syncronized',
+      cond: Info.app.general.glyphs_syncronized,
+      loading: Glyph.List.size < Glyph.Raw.length,
+      trigger: ActionButtonConstructor('Glyphs syncing', 'Loader', <></>, true)
+    }
+  ]
 
   return (
     <Stack className={cn(s.window, s.noWindows)} dir='column' jc='center'>
       <h3>Welcome to gULP workspace</h3>
       <p>Choose action below</p>
+      <ActionButton />
+      <Flow flow={flow} />
       <Stack>
-        <Button size='lg' img='Upload' variant='secondary' className={s.rounded} onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
-        <OpenTimelineButton />
+        <Button img={Default.Icon.CREATE_OPERATION} variant='outline' onClick={() => spawnBanner(<CreateOperationBanner />)}>Create Operation</Button>
+        <Button img='Upload' variant='outline' onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
       </Stack>
-      <Flow />
       <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button> 
     </Stack>
   )
@@ -210,53 +263,18 @@ namespace Flow {
   export interface Step {
     name: string,
     cond: boolean,
+    trigger: JSX.Element;
     icon?: Icon.Name,
     loading?: boolean
   }
+
+  export interface Props {
+    flow: Step[]
+  }
 }
 
-const Flow = () => {
+const Flow = ({ flow }: Flow.Props) => {
   const { Info } = useApplication();
-
-  const obj: Flow.Step[] = [
-    {
-      name: 'Authorized',
-      cond: Info.User.isAuthorized()
-    },
-    {
-      name: 'Index selected',
-      cond: Boolean(Index.selected(Info.app))
-    },
-    {
-      name: 'At least one operation',
-      cond: Info.app.target.contexts.length > 0
-    },
-    {
-      name: 'Operation selected',
-      cond: Boolean(Operation.selected(Info.app))
-    },
-    {
-      name: 'At least one context',
-      cond: Info.app.target.contexts.length > 0
-    },
-    {
-      name: 'At least one file',
-      cond: Info.app.target.files.length > 0
-    },
-    {
-      name: 'Files selected',
-      cond: File.selected(Info.app).length > 0
-    },
-    {
-      name: 'Frame selected',
-      cond: Info.app.timeline.frame.max > 0
-    },
-    {
-      name: 'Glyphs syncronized',
-      cond: Info.app.general.glyphs_syncronized,
-      loading: Glyph.List.size < Glyph.Raw.length
-    }
-  ]
 
   useEffect(() => {
     if (Info.app.general.glyphs_syncronized)
@@ -269,14 +287,15 @@ const Flow = () => {
 
   return (
     <Stack className={s.flow} dir='column' ai='flex-start'>
-      {obj.map(Step)}
+      {flow.map(Step)}
       <Separator />
-      <Step name='Gulp ready' icon='Lambda' cond={obj.every(o => o.cond)} />
+      <Step name='Gulp ready' icon='Lambda' cond={flow.every(o => o.cond)} trigger={<></>} />
     </Stack>
   )
 }
 
-const Step = ({ name, cond, icon, loading: _loading }: Flow.Step) => {
+const Step = ({ name, cond, icon, loading: _loading, trigger }: Flow.Step) => {
+  const { spawnBanner } = useApplication();
   const [loading, setLoading] = useState(_loading);
   const [resolvedCond, setResolvedCond] = useState(cond);
 
@@ -295,6 +314,7 @@ const Step = ({ name, cond, icon, loading: _loading }: Flow.Step) => {
     <Loading variant="dimmed" size="icon" />
   ) : (
     <Icon
+      onClick={() => cond ? void 0 : spawnBanner(trigger)}
       name={icon || (resolvedCond ? 'CheckCircleFill' : 'CheckCircle')}
       size={12}
     />
