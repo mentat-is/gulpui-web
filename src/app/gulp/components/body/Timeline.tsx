@@ -56,7 +56,6 @@ export function Timeline() {
     setScrollX(scrollX => scrollX + left);
   }, [timeline, banner, Info, bounding, app.timeline.scale, scrollX]);
 
-
   /**
    * Используется как лимитер на кол-во срабатываний скролла колёсиком мыши,
    * так как в инном случае, реакт не успевает обовить дом древо,

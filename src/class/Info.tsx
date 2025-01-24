@@ -553,16 +553,24 @@ export class Info implements InfoProps {
       await Promise.all(raw.map(async link => {
         const events = await Promise.all(link.doc_ids.map(this.query_single_id));
 
+        console.log(events);
+
         const docs: λDoc[] = [];
 
         events.forEach(event => {
           if (event) {
-            Event.toDoc(event);
+            const doc = Event.toDoc(event);
+
+            docs.push(doc);
           }
         });
 
+        console.log(docs);
+
         links.push(Link.normalize(link, docs));
       }));
+
+      console.log(links);
 
       this.setInfoByKey(links, 'target', 'links');
     });
