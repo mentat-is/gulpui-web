@@ -63,7 +63,7 @@ export type λFile = Omit<ΞFile, 'color'> & {
   settings: ΞSettings;
   code: MinMax;
   timestamp: MinMax;
-  nanotimestamp: MinMax;
+  nanotimestamp: MinMax<bigint>;
   total: number;
   color: Gradients
 };

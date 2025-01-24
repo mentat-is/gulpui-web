@@ -11,7 +11,6 @@ import { λGlyph } from '@/dto/Dataset';
 import { Logger } from '@/dto/Logger.class';
 import { Engine } from './Engine.dto';
 import { Session } from '@/dto/App.dto';
-import { MaybeArray } from '@impactium/types';
 import { SetState } from './API';
 import { λMapping } from '@/dto/MappingFileList.dto';
 import { Glyph } from '@/ui/Glyph';
@@ -660,8 +659,8 @@ export class Info implements InfoProps {
                   max: 0
                 },
                 nanotimestamp: {
-                  min: 0,
-                  max: 0
+                  min: BigInt(0),
+                  max: BigInt(0)
                 },
                 total: 0
               };
@@ -729,8 +728,8 @@ export class Info implements InfoProps {
           max: match['max_gulp.timestamp'] / 1_000_000,
         },
         nanotimestamp: {
-          min: match['min_gulp.timestamp'],
-          max: match['max_gulp.timestamp']
+          min: BigInt(match['min_gulp.timestamp']),
+          max: BigInt(match['max_gulp.timestamp'])
         },
         total: match.doc_count
       }) satisfies λFile;
@@ -1111,8 +1110,12 @@ export class Filter {
         context.id
       ],
       int_filter: [
-        Math.max(file.nanotimestamp.min - 1, ((range?.min ?? 0) * 1_000_000 || -Infinity)),
-        Math.min(file.nanotimestamp.max + 1, ((range?.max ?? 0) * 1_000_000 || Infinity)),
+        file.nanotimestamp.min > (BigInt(range?.min ?? 0) * 1_000_000n) 
+          ? file.nanotimestamp.min.toString()
+          : (BigInt(range?.min ?? 0) * 1_000_000n).toString(),
+        file.nanotimestamp.max < (BigInt(range?.max ?? 0) * 1_000_000n) 
+          ? file.nanotimestamp.max.toString()
+          : (BigInt(range?.max ?? 0) * 1_000_000n).toString(),
       ],
       source_ids: [
         file.id
@@ -1451,9 +1454,9 @@ export const Pattern = {
   Password: /^[\s\S]{3,48}$/
 }
 
-export interface MinMax {
-  min: number;
-  max: number
+export interface MinMax<T extends number | bigint = number> {
+  min: T;
+  max: T
 }
 
 export const MinMaxBase = {
