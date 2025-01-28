@@ -1,7 +1,7 @@
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import s from './styles/Combination.module.css';
 import { HTMLAttributes } from 'react';
-import { cn } from '@/ui/utils';
+import { cn } from '@impactium/utils';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 
 interface EventCombinationProps extends HTMLAttributes<HTMLDivElement> {

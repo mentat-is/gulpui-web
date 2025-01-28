@@ -1,8 +1,8 @@
 import React from 'react'
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
-import { cn } from './utils'
 import s from './styles/ContextMenu.module.css';
 import { Icon } from '@impactium/icons';
+import { cn } from '@impactium/utils';
 const ContextMenu = ContextMenuPrimitive.Root
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger

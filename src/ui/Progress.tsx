@@ -1,7 +1,6 @@
 import React from 'react'
 import * as ProgressPrimitive from '@radix-ui/react-progress'
-import { cn } from './utils'
-import s from './styles/Progress.module.css';
+import { cn } from '@impactium/utils';import s from './styles/Progress.module.css';
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,

@@ -23,6 +23,7 @@
 }
 .window {
   position: relative !important;
+  padding: 12px;
 }
 .x {
   height: 20px;

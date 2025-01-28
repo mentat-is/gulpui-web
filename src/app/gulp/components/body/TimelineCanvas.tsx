@@ -1,5 +1,5 @@
 import { useApplication } from '@/context/Application.context';
-import { cn, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
+import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
 import { useEffect, useRef } from 'react';
 import s from './styles/TimelineCanvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
@@ -14,6 +14,7 @@ import { LoggerHandler } from '@/dto/Logger.class';
 import { Timestamp } from '@/ui/timestamp';
 import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
+import Crosshair from './Crosshair';
 
 interface TimelineCanvasProps {
   timeline: React.RefObject<HTMLDivElement>;
@@ -36,7 +37,8 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
     if (!canvas_ref.current) return;
     const ctx = canvas_ref.current.getContext('2d')!;
     ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
-    canvas_ref.current.width = window.innerWidth
+    console.log(wrapper_ref.current?.clientWidth, (window.innerWidth - 24))
+    canvas_ref.current.width = wrapper_ref.current?.clientWidth || (window.innerWidth - 24)
 
     const limits = getLimits(app, Info, timeline, scrollX);
 
@@ -134,17 +136,16 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
     const overlayCtx = overlay_ref.current.getContext('2d');
     if (!overlayCtx) return;
 
-    overlay_ref.current.height = canvas_ref.current.height || 1;
+    overlay_ref.current.height = canvas_ref.current.height;
+    overlay_ref.current.width = canvas_ref.current.width;
 
     overlayCtx.clearRect(0, 0, overlay_ref.current.width, overlay_ref.current.height);
     
     const { start, end } = resize;
 
-    overlayCtx.fillStyle = '#ffffff80';
-    overlayCtx.fillRect(start - 1, 0, 3, overlay_ref.current.height);
-
-    if (start === 0 && start === end) return;
-    overlayCtx.fillRect(end - 1, 0, 3, overlay_ref.current.height);
+    if (start !== 0 || start !== end) {
+      overlayCtx.fillStyle = '#ffffff80';
+    };
   }
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
@@ -152,7 +153,7 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
   return (
     <div
       ref={wrapper_ref}
-      className={cn(s.wrapper)}
+      className={s.wrapper}
       onMouseMove={move}
       onKeyDown={toggler}
       tabIndex={0}>
@@ -161,13 +162,12 @@ export function TimelineCanvas({ timeline, scrollX, scrollY, resize, shifted }: 
       <canvas
         ref={canvas_ref}
         id='canvas'
-        width={window.innerWidth}
         height={timeline.current?.clientHeight}
         />
+      <Crosshair containerRef={wrapper_ref} />
       <canvas
         className={s.resize}
         ref={overlay_ref} 
-        width={window.innerWidth}
         height={timeline.current?.clientHeight} />
       <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
       <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />

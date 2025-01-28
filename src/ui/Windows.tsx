@@ -1,7 +1,7 @@
 import { File, Index, Operation, μ } from '@/class/Info';
 import { Button, Loading, Stack } from '@impactium/components';
 import React, { useState, createContext, useContext, useCallback, memo, useEffect } from 'react';
-import { cn, generateUUID } from './utils';
+import { generateUUID } from './utils';
 import { Timeline } from '@/app/gulp/components/body/Timeline';
 import s from './styles/Windows.module.css';
 import { Icon } from '@impactium/icons';
@@ -18,6 +18,7 @@ import { Glyph } from './Glyph';
 import { Default } from '@/dto/Dataset';
 import { IndexBanner } from '@/banners/Index.banner';
 import { CreateOperationBanner } from '@/banners/CreateOperation.banner';
+import { cn } from '@impactium/utils';
 
 export namespace Windows {
   export interface Props {

@@ -30,7 +30,9 @@ export class AppSocket extends WebSocket {
     };
 
     this.onmessage = ({ data }) => {
-      const { data: chunk } = JSON.parse(data);
+      const message = JSON.parse(data);
+
+      const { data: chunk} = message;
 
       switch (true) {
         case isQuery(chunk):
@@ -38,7 +40,7 @@ export class AppSocket extends WebSocket {
           const events = Event.parse(rawEvents);
           return this.info.events_add(events);
 
-        case chunk.type === 'stats_update':
+        case chunk.type === 'stats_update' || message.type === 'ingest_source_done':
           info.query_operations();
       }
     }

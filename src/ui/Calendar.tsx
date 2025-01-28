@@ -2,8 +2,7 @@ import * as React from 'react'
 import { DayPicker } from 'react-day-picker'
 import styles from './styles/Calendar.module.css'
 
-import { cn } from './utils'
-import { buttonVariants } from '@impactium/components'
+import { cn } from '@impactium/utils';import { buttonVariants } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>

@@ -16,6 +16,7 @@ import { Toggle } from '@/ui/Toggle';
 import { toast } from 'sonner';
 import { Separator } from '@/ui/Separator';
 import { cn } from '@impactium/utils';
+import { Default } from '@/dto/Dataset';
 
 interface λIngestFileSettings {
   plugin?: string;
@@ -47,7 +48,7 @@ export function UploadBanner() {
   const [settings, setSettings] = useState<Record<File['name'], λIngestFileSettings>>({});
   const [context, setContext] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(50);
+  const [progress, setProgress] = useState<number>(0);
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -55,22 +56,20 @@ export function UploadBanner() {
   }, [isExistingContextChooserAvalable]);
 
   const send = async (file: File, start: number, i: number) => {
-    const end = Math.min(file.size, start + 1024 * 2 * 1024);
+    const size = 1024 * 2 * 1024
+    const end = Math.min(file.size, start + size);
 
     const index = Index.selected(app);
-
     if (!index) {
       return;
     }
 
     const operation = Operation.selected(app);
-
     if (!operation) {
       return;
     }
 
     const plugin = settings[file.name].plugin;
-
     if (!plugin) {
       return;
     }
@@ -85,10 +84,12 @@ export function UploadBanner() {
     }));
     formData.append('f', file.slice(start, end), file.name);
 
-    await api<any>('/ingest_file', {
+    const response = await api<any>('/ingest_file', {
       method: 'POST',
       body: formData,
       deassign: true,
+      raw: true,
+      toast: false,
       headers: {
         size: file.size.toString(),
         continue_offset: start.toString(),
@@ -101,6 +102,11 @@ export function UploadBanner() {
         ws_id: app.general.ws_id,
       },
     });
+
+    if (response.isError() && response.data.continue_offset) {
+      await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset));
+      return;
+    }
   
     setProgress(Math.floor(((i + (end / file.size)) / files!.length) * 100));
 
@@ -390,7 +396,7 @@ export function UploadBanner() {
       <Toggle option={['New context', 'Choose from existing one']} checked={isExistingContextChooserAvalable} onCheckedChange={setIsExistingContextChooserAvalable} />
       {isExistingContextChooserAvalable
         ? <ContextSelection />
-        : <Input value={context} onChange={e => setContext(e.target.value)} placeholder='Context name' />}
+        : <Input variant='highlighted' img={Default.Icon.CONTEXT} value={context} onChange={e => setContext(e.target.value)} placeholder='Context name' />}
       <Stack>
         <Input
           type='file'
@@ -405,7 +411,7 @@ export function UploadBanner() {
       <Stack dir='column' gap={0} className={cn(s.files, files.length === 0 && s.fill)}>
         {files.length === 0 ? <Placeholder /> : Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}
       </Stack>
-      <Progress value={progress} />
+      {progress > 0 && <Progress value={progress} />}
     </Banner>
   );
 }

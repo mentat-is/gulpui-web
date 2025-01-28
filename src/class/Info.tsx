@@ -511,9 +511,10 @@ export class Info implements InfoProps {
       this.contexts_checkout();
     }, 0);
   };
-  // @ts-ignore
+
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
-  files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(File.replace(files, this.app), 'target', 'files');
+
+  files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(files, 'target', 'files');
 
   // 🔥 EVENTS 
   events_selected = () => Event.selected(this.app);
@@ -721,13 +722,11 @@ export class Info implements InfoProps {
 
     this.setInfo(app => ({
       ...app,
-      ...{
-        target: {
-          ...app.target,
-          operations,
-          contexts,
-          files
-        }
+      target: {
+        ...app.target,
+        operations,
+        contexts,
+        files
       }
     }));
 
@@ -753,6 +752,7 @@ export class Info implements InfoProps {
       const match = flatten.find(m => m.id === f.id);
 
       if (!match) {
+        Logger.error('There is no match in application data');
         return f;
       }
 

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Event, File } from '@/class/Info';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { DisplayEventDialog } from '../Event.dialog';
-import { cn } from '@/ui/utils';
+import { cn } from '@impactium/utils';
 
 export namespace Navigation {
   export interface Props {

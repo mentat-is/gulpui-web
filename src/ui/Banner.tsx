@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useApplication } from '../context/Application.context';
 import s from './styles/Banner.module.css';
-import { cn } from './utils';
+import { cn } from '@impactium/utils';
 import { Cell, Stack, Skeleton, Button } from '@impactium/components';
 
 export namespace Banner {

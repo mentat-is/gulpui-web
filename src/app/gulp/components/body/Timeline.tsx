@@ -15,6 +15,7 @@ import { useKeyHandler } from '@/app/use';
 import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
 import { Files } from 'lucide-react';
+import { Navigator } from './Navigator';
 
 export function Timeline() {
   const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
@@ -209,6 +210,7 @@ export function Timeline() {
       <ContextMenu>
         <ContextMenuTrigger>
           <TimelineCanvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} />
+          <Navigator />
           <Controls setScrollX={setScrollX} scrollX={scrollX} />
           <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
         </ContextMenuTrigger>

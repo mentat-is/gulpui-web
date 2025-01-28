@@ -1,8 +1,7 @@
 import React from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import s from './styles/Popover.module.css'
-import { cn } from './utils'
-
+import { cn } from '@impactium/utils';
 const Popover = PopoverPrimitive.Root
 
 const PopoverTrigger = PopoverPrimitive.Trigger

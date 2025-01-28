@@ -7,6 +7,9 @@
 .shifted {
   cursor: pointer;
 }
+.wrapper {
+  width: 100%;
+}
 .wrapper:hover .position {
   position: absolute;
   font-size: 10px;

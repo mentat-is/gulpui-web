@@ -1,16 +1,13 @@
-import { Context, Event, File, Operation, Parser } from '@/class/Info';
+import { Context, Event, File, Operation } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
-import {
-  ColorPickerPopover,
-} from '@/ui/Color';
+import { ColorPickerPopover } from '@/ui/Color';
 import { TextareaHTMLAttributes, useRef, useState } from 'react';
 import s from './styles/CreateNoteBanner.module.css';
 import { Input } from '@impactium/components';
 import { Badge } from '@/ui/Badge';
 import { Card } from '@/ui/Card';
-import { cn } from '@/ui/utils';
 import { Separator } from '@/ui/Separator';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { λGlyph } from '@/dto/Dataset';
@@ -18,6 +15,7 @@ import { Icon } from '@impactium/icons';
 import { Textarea } from '@/ui/Textarea';
 import { Popover, PopoverTrigger } from '@/ui/Popover';
 import { Glyph } from '@/ui/Glyph';
+import { cn } from '@impactium/utils';
 
 interface CreateNoteBannerProps {
   event: λEvent

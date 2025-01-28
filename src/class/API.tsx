@@ -152,7 +152,7 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
     if (callback) {
       await callback(result);
     }
-  } else {
+  } else if (options.toast !== false) {
     toast(toSeparatedCase(res?.data?.__error?.name), {
       description: 'Check console for further information'
     })

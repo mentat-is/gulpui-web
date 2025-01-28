@@ -3,7 +3,7 @@ import s from './styles/Sheet.module.css'
 import React, { ComponentPropsWithoutRef, ElementRef } from 'react'
 import * as SheetPrimitive from '@radix-ui/react-dialog'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from './utils';
+import { cn } from '@impactium/utils';
 import { Button } from '@impactium/components'
 import { Icon } from '@impactium/icons'
  

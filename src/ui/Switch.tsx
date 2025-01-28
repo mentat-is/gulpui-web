@@ -1,7 +1,7 @@
 import React from 'react';
 import * as SwitchPrimitives from '@radix-ui/react-switch'
 import s from './styles/Switch.module.css';
-import { cn } from './utils';
+import { cn } from '@impactium/utils';
 
 export type { SwitchProps } from '@radix-ui/react-switch';
 

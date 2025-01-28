@@ -1,11 +1,12 @@
 import { createContext, HTMLAttributes, useContext, useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { Button, Input } from '@impactium/components';
-import { arrayToLinearGradientCSS, cn, COLORS, Gradients, GradientsMap } from './utils';
+import { arrayToLinearGradientCSS, COLORS, Gradients, GradientsMap } from './utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
 import s from './styles/Color.module.css';
 import { capitalize } from 'lodash';
 import { Icon } from '@impactium/icons';
+import { cn } from '@impactium/utils';
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[],

@@ -22,10 +22,16 @@
 .timeline {
   position: relative;
   width: 100%;
-  height: calc(100vh - 32px);
-  cursor: crosshair;
+  height: calc(100vh - 56px);
+  cursor: none;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--gray-400);
   display: flex;
   flex-direction: row;
+}
+.timeline > span {
+  width: 100%;
 }
 .content {
   display: flex;
@@ -34,7 +40,7 @@
 
 .controls {
   position: fixed;
-  bottom: 16px;
+  bottom: 28px;
   z-index: 3;
   padding-left: 16px;
   display: flex;

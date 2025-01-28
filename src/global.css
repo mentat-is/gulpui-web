@@ -279,7 +279,7 @@
 }
 
 html, body {
-  background: var(--gray16) !important;
+  background: var(--meta-black) !important;
 }
 
 img {

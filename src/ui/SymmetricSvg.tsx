@@ -1,6 +1,6 @@
 import { HTMLAttributes, useCallback, useEffect, useRef } from 'react';
 import s from './styles/SymmetricSvg.module.css';
-import { cn } from './utils';
+import { cn } from '@impactium/utils';
 
 interface SymmetricSvgProps extends HTMLAttributes<HTMLCanvasElement> {
   text: string;

@@ -2,8 +2,7 @@
 import s from './styles/Select.module.css';
 import React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { cn } from './utils'
-import { Icon } from '@impactium/icons';
+import { cn } from '@impactium/utils';import { Icon } from '@impactium/icons';
 
 const Select = SelectPrimitive.Root
 

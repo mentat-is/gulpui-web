@@ -1,12 +1,14 @@
 import s from './../../Gulp.module.css';
 import { FilterFileBanner } from '@/banners/FilterFile.banner';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { Filter } from '@/class/Info';
+import { Filter, GulpDataset } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { enginesBase } from '@/dto/Engine.dto';
 import { λFile } from '@/dto/Dataset';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
+import { Icon } from '@impactium/icons';
+import { useEffect, useState } from 'react';
 
 interface TargetMenuProps {
   file?: λFile;
@@ -26,6 +28,8 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
       });
     }, 300);
   }
+
+  
 
   return (
     <ContextMenuContent data-state='open'>
@@ -47,6 +51,7 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
+      <Enrichment />
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
@@ -59,13 +64,13 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
         <ContextMenuLabel>Actions</ContextMenuLabel>
         <ContextMenuItem onClick={() => Info.files_unselect([file])} img='EyeOff'>Hide</ContextMenuItem>
         <ContextMenuSub>
-        <ContextMenuSubTrigger img='Move'>Reorder</ContextMenuSubTrigger>
-        <ContextMenuSubContent>
-          <ContextMenuItem onClick={() => Info.files_repin(file.id)} img={file.pinned ? 'PinOff' : 'Pin'}>{file ? file.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
-          <ContextMenuItem onClick={() => Info.files_reorder_upper(file.id)} img='ArrowBigUp'>Move upper</ContextMenuItem>
-          <ContextMenuItem onClick={() => Info.files_reorder_lower(file.id)} img='ArrowBigDown'>Move lower</ContextMenuItem>
-        </ContextMenuSubContent>
-      </ContextMenuSub>
+          <ContextMenuSubTrigger img='Move'>Reorder</ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            <ContextMenuItem onClick={() => Info.files_repin(file.id)} img={file.pinned ? 'PinOff' : 'Pin'}>{file ? file.pinned ? 'Unpin' : 'Pin' : '...'}</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_reorder_upper(file.id)} img='ArrowBigUp'>Move upper</ContextMenuItem>
+            <ContextMenuItem onClick={() => Info.files_reorder_lower(file.id)} img='ArrowBigDown'>Move lower</ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>
@@ -74,5 +79,29 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
         {app.target.sigma[file.id] && <ContextMenuItem className={s.remove_sigma} onClick={() => Info.sigma.remove(file)} img='X'><span>Disable rule: {app.target.sigma[file.id].name}</span></ContextMenuItem>}
       </ContextMenuGroup>
     </ContextMenuContent>
+  )
+}
+
+function Enrichment() {
+  const { Info } = useApplication();
+  const [plugins, setPlugins] = useState<GulpDataset.PluginList.Summary>([]);
+
+  useEffect(() => {
+    Info.plugin_list().then(plugins => {
+      return plugins.filter(p => p.type.includes('enrichment'))
+    }).then(setPlugins);
+  }, [])
+
+  if (!plugins.length) {
+    return null;
+  }
+
+  return (
+    <ContextMenuSub>
+      <ContextMenuSubTrigger img='Sparkles'>Enrich</ContextMenuSubTrigger>
+      <ContextMenuSubContent>
+        {plugins.map(plugin => <ContextMenuItem img='CodeWrap'>{plugin.filename}</ContextMenuItem>)}
+      </ContextMenuSubContent>
+    </ContextMenuSub>
   )
 }

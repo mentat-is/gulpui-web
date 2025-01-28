@@ -62,12 +62,14 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
       localStorage.setItem('__server', server);
       
       await api<λUser>('/login', {
-        method: 'PUT',
+        method: 'POST',
         setLoading,
         query: {
-          user_id: id,
-          password,
           ws_id: Info.app.general.ws_id
+        },
+        body: {
+          user_id: id,
+          password
         }
       }, async (data) => {
         if (data.token) {

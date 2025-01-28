@@ -2,8 +2,7 @@ import s from './styles/Checkbox.module.css';
 import React from 'react'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import { Check } from 'lucide-react'
-import { cn } from './utils'
-
+import { cn } from '@impactium/utils';
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>

@@ -1,6 +1,6 @@
 import { HTMLAttributes, useEffect } from 'react';
 import s from './styles/Dialog.module.css';
-import { cn } from './utils';
+import { cn } from '@impactium/utils';
 import { Button } from '@impactium/components';
 import { useApplication } from '@/context/Application.context';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizable';

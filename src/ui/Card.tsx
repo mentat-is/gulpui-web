@@ -1,6 +1,6 @@
 import React from 'react';
 import s from './styles/Card.module.css'
-import { cn } from './utils';
+import { cn } from '@impactium/utils';
 
 interface DescriptionOptions {
   text: string;

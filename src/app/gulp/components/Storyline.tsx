@@ -1,7 +1,6 @@
 import { useApplication } from '@/context/Application.context';
 import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
-import { cn } from '@/ui/utils';
 import s from './storyline.module.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Timestamp } from '@/ui/timestamp';
@@ -12,6 +11,7 @@ import { Icon } from '@impactium/icons';
 import { Separator } from '@/ui/Separator';
 import { format } from 'date-fns';
 import { XY } from '@/dto/XY.dto';
+import { cn } from '@impactium/utils';
 
 
 export function StorylineBanner() {

@@ -23,8 +23,6 @@ export function SelectFilesBanner() {
   const save = async () => {
     setLoading(true);
 
-    await Info.query_operations();
-
     spawnBanner(<LimitsBanner />);
   }
 
