@@ -257,14 +257,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(File.events(this.info.app, file).length.toString(), 10, y + 14);
   }
 
-  public debug = (pos: XY, logs: string[]) => {
-    this.ctx.font = `12px Arial`;
-    this.ctx.fillStyle = '#e8e8e8';
-    logs.forEach((log, i) => {
-      this.ctx.fillText(log, pos.x, pos.y - 12 * i);
-    })
-  }
-
   public target = () => {
     if (!this.info.app.timeline.target) return;
 

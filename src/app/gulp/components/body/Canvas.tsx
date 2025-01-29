@@ -76,16 +76,6 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     ctx.fillRect(getPixelPosition(app.timeline.frame.min || app.timeline.frame?.min) - 2, 0, 3, timeline.current?.clientHeight || 0);
     ctx.fillRect(getPixelPosition(app.timeline.frame.max || app.timeline.frame?.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
 
-    if (timeline.current) {
-      render.debug({
-        x: timeline.current.clientWidth - 128,
-        y: timeline.current.clientHeight - 36
-      }, [
-        `X: ${scrollX} Y: ${scrollY}`,
-        `Scale: ${app.timeline.scale > 1 ? Math.round(app.timeline.scale) : app.timeline.scale.toPrecision(2)}`
-      ]);
-    }
-
     render.ruler.sections();
   };
 
@@ -182,27 +172,6 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
       clearInterval(debugInterval) 
     };
   }, dependencies);
-
-  useEffect(() => {
-    renderOverlay();
-  }, [resize, mousePosition.x]);
-
-  const renderOverlay = () => {
-    if (!overlay_ref.current || !canvas_ref.current) return;
-    const overlayCtx = overlay_ref.current.getContext('2d');
-    if (!overlayCtx) return;
-
-    overlay_ref.current.height = canvas_ref.current.height;
-    overlay_ref.current.width = canvas_ref.current.width;
-
-    overlayCtx.clearRect(0, 0, overlay_ref.current.width, overlay_ref.current.height);
-    
-    const { start, end } = resize;
-
-    if (start !== 0 || start !== end) {
-      overlayCtx.fillStyle = '#ffffff80';
-    };
-  }
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 
