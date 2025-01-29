@@ -61,7 +61,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
       
       localStorage.setItem('__server', server);
       
-      await api<λUser>('/login', {
+      await api<λUser>('/login', {  
         method: 'POST',
         setLoading,
         query: {

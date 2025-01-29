@@ -1,4 +1,4 @@
-import { Event, Info, μ } from '@/class/Info';
+import { Event, Info, Internal, μ } from '@/class/Info';
 import { λApp } from '@/dto';
 import { ΞEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
@@ -15,7 +15,7 @@ export class AppSocket extends WebSocket {
       return AppSocket.instance;
     }
 
-    super(app.general.server + '/ws');
+    super(Internal.Settings.server + '/ws');
 
     this.info = info;
     this.app = app;

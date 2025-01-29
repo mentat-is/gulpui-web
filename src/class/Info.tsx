@@ -811,7 +811,7 @@ export class Info implements InfoProps {
   }
   
   // Methods to manipulate a timeline
-  setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
+  setTimelineScale = (scale: number) => this.setInfoByKey(Math.max(0.01, Math.min(9999999, scale)), 'timeline', 'scale');
 
   setTimelineTarget = (event?: λEvent | null | 1 | -1): λEvent => {
     const { target } = this.app.timeline;

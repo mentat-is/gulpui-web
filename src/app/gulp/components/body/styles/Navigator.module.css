@@ -13,12 +13,15 @@
   padding: 8px;
   padding-right: 0px;
   height: 32px;
+  min-height: 32px;
+  flex-shrink: 0;
   width: 100%;
   overflow: hidden;
 }
 .combination p {
   color: currentColor;
   font-size: 13px;
+  white-space: nowrap;
   font-family: var(--font-mono);
   min-width: 128px;
   max-width: 256px;
@@ -29,6 +32,7 @@
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 13px;
   font-family: var(--font-mono);
   color: var(--text-dimmed);

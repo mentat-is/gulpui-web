@@ -44,8 +44,8 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     if (!canvas_ref.current) return;
     const ctx = canvas_ref.current.getContext('2d')!;
     ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
-    canvas_ref.current.width = wrapper_ref.current?.clientWidth || (window.innerWidth - 24)
-    canvas_ref.current.height = wrapper_ref.current?.clientHeight || (window.innerHeight - 24)
+    canvas_ref.current.width = wrapper_ref.current?.clientWidth || (window.innerWidth - 24);
+    canvas_ref.current.height = wrapper_ref.current?.clientHeight || (window.innerHeight - 24);
 
     const limits = getLimits(app, Info, timeline, scrollX);
 
@@ -114,29 +114,31 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
   
   const handleWheel = useCallback((event: WheelEvent) => {
     if (!wrapper_ref.current || banner) return;
-    
+  
     if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-      setScrollX(scrollX => scrollX + event.deltaX);
+      setScrollX(prev => prev + event.deltaX);
       return;
     }
-
-    const width = Info.width;
-    const newScale = app.timeline.isScrollReversed
-    ? event.deltaY < 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale()
-    : event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
-
+  
     const rect = bounding || wrapper_ref.current.getBoundingClientRect();
-    if (!bounding) {
-      setBounding(rect);
-    }
-
-    const diff = scrollX + event.clientX - rect.left;
-    const left = Math.round(diff * (newScale * wrapper_ref.current.clientWidth) / width - diff);
-
-    if ((newScale < app.timeline.scale && newScale < 0.01) || (newScale > app.timeline.scale && newScale > 9999999)) return;
+    if (!bounding) setBounding(rect);
+  
+    const oldScale = app.timeline.scale;
+    const cursorX = event.clientX - rect.left;
+    const contentX = scrollX + cursorX;
+  
+    let newScale = app.timeline.isScrollReversed
+      ? event.deltaY < 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale()
+      : event.deltaY > 0 ? Info.decreasedTimelineScale() : Info.increasedTimelineScale();
+  
+    newScale = Math.max(0.01, Math.min(9999999, newScale));
+  
+    if (newScale === oldScale) return;
+  
     Info.setTimelineScale(newScale);
-    setScrollX(scrollX => scrollX + left);
+    setScrollX(contentX * (newScale / oldScale) - cursorX);
   }, [wrapper_ref, banner, Info, bounding, app.timeline.scale, scrollX]);
+  
 
   /**
    * Используется как лимитер на кол-во срабатываний скролла колёсиком мыши,
@@ -163,15 +165,28 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     renderCanvas();
 
     canvas_ref.current?.addEventListener('mousedown', handleClick);
-    window.addEventListener('resize', () => renderCanvas());
     const debugInterval = setInterval(() => renderCanvas(true), 300);
 
     return () => {
       canvas_ref.current?.removeEventListener('mousedown', handleClick);
-      window.removeEventListener('resize', () => renderCanvas());
       clearInterval(debugInterval) 
     };
   }, dependencies);
+
+  const [lastWidth, setLastWidth] = useState<number>(wrapper_ref.current?.clientWidth ?? 1);
+
+  useEffect(() => {
+    const wrapper = wrapper_ref.current;
+
+    if (!wrapper) {
+      return;
+    }
+
+    if (lastWidth !== wrapper.clientWidth) {
+      setScrollX(n => Math.round(n * (wrapper.clientWidth / lastWidth)));
+      setLastWidth(wrapper.clientWidth);
+    }
+  }, [dialog]);
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 
