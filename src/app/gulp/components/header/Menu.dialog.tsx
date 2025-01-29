@@ -3,14 +3,12 @@ import s from '../../Gulp.module.css';
 import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
 import { formatBytes } from '@/ui/utils';
-import { Dialog } from '@/ui/Dialog';
 import { useEffect, useRef, useState } from 'react';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import ReactDOM from 'react-dom';
 import { NotesWindow } from '@/components/NotesWindow';
 import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
-import { Separator } from '@/ui/Separator';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternal } from '@/banners/QueryExternal.banner';
@@ -19,7 +17,7 @@ import { SaveSession } from '@/banners/SaveSession';
 import { λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
 
-export function MenuDialog() {
+export function Menu() {
   const { spawnBanner, app, spawnDialog, Info, destroyDialog } = useApplication();
   const [windowRef, setWindowRef] = useState<Window | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -111,29 +109,21 @@ export function MenuDialog() {
   }
 
   return (
-    <Dialog title='Menu' className={s.menu}>
-      <Stack className={s.stats}>
-        <Button img='Upload' onClick={() => spawnBanner(<UploadBanner />)}>Upload files</Button>
-        <Button img='Kv' onClick={() => spawnBanner(<QueryExternal.Banner />)}>Query external source</Button>
-        <Button img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)}>Upload sigma rule</Button>
-      </Stack>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='Wrench' onClick={() => spawnBanner(<SelectFilesBanner />)}>Select Files</Button>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='PictureInPicture2' onClick={openWindow}>Open notes window</Button>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='Image' onClick={() => spawnBanner(<StorylineBanner />)}>Open story line</Button>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)}>Change visible limits</Button>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='AcronymJpg' onClick={exportCanvasAsImage}>Export canvas as JPG</Button>
-      <Separator color='var(--accent-5)' />
-      <Button variant='outline' img='AcronymSvg' onClick={exportCanvasAsImage}>Export canvas as SVG</Button>
-      <Button className={s.logout} variant='outline' img='ChartBarStacked' onClick={backToOperations}>Back to Operations</Button>
-      <Button variant='outline' img='FloppyDisk' onClick={saveSessionAndLogout}>Save session and logout</Button>
-      <Button className={s.logout} variant='outline' img='LogOut' onClick={logout}>Logout</Button>
+    <Stack title='Menu' className={s.menu} dir='column' ai='flex-start' gap={12}>
+      <Button variant='secondary' title='Upload files' img='Upload' onClick={() => spawnBanner(<UploadBanner />)} />
+      <Button variant='secondary' title='Query external source' img='Kv' onClick={() => spawnBanner(<QueryExternal.Banner />)} />
+      <Button variant='secondary' title='Upload sigma rule' img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)} />
+      <Button variant='secondary' title='Select files and contexts' img='Wrench' onClick={() => spawnBanner(<SelectFilesBanner />)} />
+      <Button variant='secondary' title='Open notes in new window' img='PictureInPicture2' onClick={openWindow} />
+      <Button variant='secondary' title='Open storyline' img='Image' onClick={() => spawnBanner(<StorylineBanner />)} />
+      <Button variant='secondary' title='Change workflow frame' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)} />
+      <Button variant='secondary' title='Export canvas' img='AcronymJpg' onClick={exportCanvasAsImage} />
+      <Button variant='secondary' title='Export canvas' img='AcronymSvg' onClick={exportCanvasAsImage} />
+      <Button variant='secondary' title='Back to operations' img='ChartBarStacked' onClick={backToOperations} />
+      <Stack flex />
+      <Button variant='secondary' img='LogOut' onClick={logout} />
       {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
-    </Dialog>
+    </Stack>
   )
 }
 
@@ -144,7 +134,7 @@ interface UnitProps {
 
 function Unit({ type, num }: UnitProps) {
   return (
-    <Button variant='outline' img={type === 'upstream' ? 'CloudUpload' : 'CloudDownload'} className={s.unit}>
+    <Button variant='secondary' img={type === 'upstream' ? 'CloudUpload' : 'CloudDownload'} className={s.unit}>
       {formatBytes(num)}
     </Button>
   )

@@ -27,8 +27,6 @@ export function FilesMenu({ files, inputRef }: TargetMenuProps) {
     }, 300);
   }
 
-  const engineChangeHandler = (files: λFile[], engine: Engine.List) => Info.files_replace(files.map(file => ({ ...file, engine })));
-
   return (
     <ContextMenuContent data-state='open'>
       <TooltipProvider>
@@ -45,7 +43,7 @@ export function FilesMenu({ files, inputRef }: TargetMenuProps) {
       <ContextMenuSub>
         <ContextMenuSubTrigger img='Cpu'>Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
-        {enginesBase.map(i => <ContextMenuItem onClick={() => engineChangeHandler(files, i.plugin)} img={i.img}>{i.title}</ContextMenuItem>)}
+        {enginesBase.map(i => <ContextMenuItem onClick={() => Info.file_set_render_engine(files.map(file => file.id), i.plugin)} img={i.img}>{i.title}</ContextMenuItem>)}
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuSeparator />

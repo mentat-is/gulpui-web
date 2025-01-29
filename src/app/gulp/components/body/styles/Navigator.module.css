@@ -1,3 +1,35 @@
 .navigator {
-  
+  min-height: 128px;
+  padding: 8px;
+  overflow: auto;
+  border-radius: 4px;
+  border: 1px solid var(--gray-400);
+  background-color: var(--soft-black);
+}
+.combination {
+  background-color: var(--meta-black);
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  padding: 8px;
+  padding-right: 0px;
+  height: 32px;
+  width: 100%;
+  overflow: hidden;
+}
+.combination p {
+  color: currentColor;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  min-width: 128px;
+  max-width: 256px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.combination span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-dimmed);
 }

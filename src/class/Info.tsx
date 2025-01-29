@@ -512,6 +512,8 @@ export class Info implements InfoProps {
     }, 0);
   };
 
+  file_set_render_engine = (ids: λFile['id'][], engine: Engine.List) => this.setInfoByKey(this.app.target.files.map(file => ({ ...file, settings: { ...file.settings, engine: ids.includes(file.id) ? engine : file.settings.engine }})), 'target', 'files');
+
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
 
   files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(files, 'target', 'files');
@@ -554,8 +556,6 @@ export class Info implements InfoProps {
       await Promise.all(raw.map(async link => {
         const events = await Promise.all(link.doc_ids.map(this.query_single_id));
 
-        console.log(events);
-
         const docs: λDoc[] = [];
 
         events.forEach(event => {
@@ -568,8 +568,6 @@ export class Info implements InfoProps {
 
         links.push(Link.normalize(link, docs));
       }));
-
-      console.log(links);
 
       this.setInfoByKey(links, 'target', 'links');
     });
@@ -815,14 +813,17 @@ export class Info implements InfoProps {
   // Methods to manipulate a timeline
   setTimelineScale = (scale: number) => this.setInfoByKey(scale, 'timeline', 'scale');
 
-  setTimelineTarget = (event?: λEvent | null | 1 | -1) => {
-    if (typeof event === 'number' && this.app.timeline.target) {
-      const events = File.events(this.app, this.app.timeline.target.file_id);
-      const index = events.findIndex(event => event.file_id === this.app.timeline.target!.file_id) + event;
+  setTimelineTarget = (event?: λEvent | null | 1 | -1): λEvent => {
+    const { target } = this.app.timeline;
+
+    if (typeof event === 'number' && target) {
+      const events = File.events(this.app, target.file_id);
+      const index = events.findIndex(event => event.id === target.id) + event;
       event = events[index];
     }
 
     this.setInfoByKey(event, 'timeline', 'target');
+    return event as λEvent;
   }
 
   setTimelineFilter = (filter: string) => this.setInfoByKey(filter, 'timeline', 'filter');
@@ -1382,7 +1383,7 @@ export class Note {
 
   public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs.map(d => d.id));
 
-  public static findByFile = (use: λApp | λNote[], file: λFile | string) => Parser.use(use, 'notes').filter(n => n.source_id === Parser.useName(file));
+  public static findByFile = (app: λApp, file: λFile) => app.target.notes.filter(n => n.source_id === file.id);
   
   public static findByEvent = (use: λApp | λNote[], event: λEvent) => Parser.use(use, 'notes').filter(n => n.docs.some(eid => eid === event));
 

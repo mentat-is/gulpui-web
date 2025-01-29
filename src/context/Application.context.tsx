@@ -4,7 +4,6 @@ import { AppSocket } from '@/class/AppSocket';
 import { Info } from '@/class/Info';
 import { Console } from '@impactium/console';
 import { Logger } from '@/dto/Logger.class';
-import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import '@/class/API';
 
 export class ApplicationError extends Error {
@@ -17,10 +16,10 @@ export class ApplicationError extends Error {
 interface ApplicationContextProps {
   spawnBanner: (banner: JSX.Element) => void;
   destroyBanner: () => void;
-  banner: boolean;
+  banner: React.ReactNode;
   spawnDialog: (dialog: JSX.Element) => void;
   destroyDialog: () => void;
-  dialog: boolean;
+  dialog: React.ReactNode;
   app: λApp;
   ws: AppSocket | undefined;
   setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
@@ -85,10 +84,10 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const props: ApplicationContextProps = {
     spawnBanner,
     destroyBanner,
-    banner: !!banner,
+    banner,
     spawnDialog,
     destroyDialog,
-    dialog: !!dialog,
+    dialog,
     ws,
     app,
     setWs,
@@ -133,7 +132,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     <ApplicationContext.Provider value={props}>
       {children}
       {banner}
-      {dialog}
       <Console noise={true} onCommand={onCommand} history={Logger.history()} title='Gulp Web Client' trigger='\' icon={<img style={{filter: `var(--filter-to-white)`, width: 14 }} src='/gulp-no-text.svg' alt='' />} prefix={prefix} />
     </ApplicationContext.Provider>
   );

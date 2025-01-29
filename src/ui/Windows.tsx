@@ -8,7 +8,7 @@ import { Icon } from '@impactium/icons';
 import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
-import { MenuDialog } from '@/app/gulp/components/header/Menu.dialog';
+import { Menu } from '@/app/gulp/components/header/Menu.dialog';
 import { AuthBanner } from '@/banners/Auth.banner';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { OperationBanner } from '@/banners/Operation.banner';
@@ -58,31 +58,24 @@ export namespace Windows {
   export const Context = createContext<Windows.Props | undefined>(undefined);
 
   const ActiveWindow = memo(({ windows }: { windows: Windows.Window[] }) => {
+    const { dialog } = useApplication();
     const active = Windows.λWindow.active(windows);
 
     if (!active) {
       return <NoWindows />;
     }
 
-    const { uuid, className, ...props } = active;
+    const { children, uuid, className, ...props } = active;
 
-    return <Stack key={uuid} className={cn(s.window, className)} {...props} />;
+    return <Stack key={uuid} gap={12} className={cn(s.window, className)} {...props}>
+      <Menu />
+      {children}
+      {dialog}
+    </Stack>;
   });
 
   export const Provider = () => {
-    const { spawnDialog } = useApplication();
-
-    const DEFAULT_WINDOWS: Windows.Window[] = [
-      Windows.λWindow.normalize({
-        active: false,
-        icon: 'Menu',
-        name: 'Menu',
-        fixed: true,
-        onClick: () => spawnDialog(<MenuDialog />),
-      }),
-    ];
-
-    const [windows, setWindows] = useState<Windows.Window[]>(DEFAULT_WINDOWS);
+    const [windows, setWindows] = useState<Windows.Window[]>([]);
 
     const newWindow = (window: Omit<Windows.Window, 'uuid'>) => {
       setWindows((windows) => [...windows, Windows.λWindow.normalize(window)]);
@@ -109,7 +102,6 @@ export namespace Windows {
 
     return (
       <Windows.Context.Provider value={props}>
-        <Navigator />
         <ActiveWindow windows={windows} />
       </Windows.Context.Provider>
     );
@@ -119,45 +111,6 @@ export namespace Windows {
 export const λWindow = Windows.λWindow;
 
 export const useWindows = (): Windows.Props => useContext(Windows.Context)!;
-
-const Navigator = () => {
-  const { windows, setWindows, closeWindow } = useWindows();
-
-  const CloseButton = useCallback((w: Windows.Window) => {
-    if (w.fixed) {
-      return null;
-    }
-
-    return <Button className={s.x} img='X' size='icon' variant='ghost' onClick={() => closeWindow(w.uuid)} />
-  }, [windows]);
-
-  return (
-    <Stack pos='relative' ai='flex-end' className={s.navigation}>
-      {windows.map(w => {
-        if (!w.onClick) {
-          w.onClick = () => λWindow.activate(setWindows, w.uuid);
-        }
-        return <Stack ai='center' className={cn(w.active && s.active, s.tab)} {...w}>
-          <Icon name={w.icon} size={14} />
-          <p>{w.name}</p>
-          <CloseButton {...w} />
-        </Stack>
-      }
-      )}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button img='Plus' className={s.new} size='icon' variant='glass' />
-        </PopoverTrigger>
-        <PopoverContent>
-          <Button>Open timeline</Button>
-          <Button>Open notes</Button>
-          <Button>Open links</Button>
-          <Button>Open upload</Button>
-        </PopoverContent>
-      </Popover>
-    </Stack>
-  )
-}
 
 const NoWindows = () => {
   const { newWindow } = useWindows();

@@ -47,7 +47,7 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
       <ContextMenuSub>
         <ContextMenuSubTrigger img='Cpu'>Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
-          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.files_replace([{ ...file, settings: {...file.settings, engine: i.plugin}}])} img={i.img}>{i.title}</ContextMenuItem>)}
+          {enginesBase.map(i => <ContextMenuItem onClick={() => Info.file_set_render_engine([file.id], i.plugin)} img={i.img}>{i.title}</ContextMenuItem>)}
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuItem onClick={() => spawnBanner(<SettingsFileBanner file={file} />)} img='Settings'>Settings</ContextMenuItem>
