@@ -76,8 +76,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event, open]);
 
   return (
-    <Dialog icon={<SymmetricSvg loading={!detailedChunkEvent} text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
-      <Separator />
+    <Dialog icon={<SymmetricSvg text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
       <Navigation event={event} />
       <Separator />
       {detailedChunkEvent ? (

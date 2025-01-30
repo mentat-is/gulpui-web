@@ -2,7 +2,6 @@ import { Button, Stack } from '@impactium/components';
 import s from '../../Gulp.module.css';
 import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
-import { formatBytes } from '@/ui/utils';
 import { useEffect, useRef, useState } from 'react';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
@@ -16,15 +15,15 @@ import { StorylineBanner } from '../Storyline';
 import { SaveSession } from '@/banners/SaveSession';
 import { λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
+import { OperationBanner } from '@/banners/Operation.banner';
+import { useWindows } from '@/ui/Windows';
+import { Enrichment } from '@/banners/EnrichmentBanner';
 
 export function Menu() {
-  const { spawnBanner, app, spawnDialog, Info, destroyDialog } = useApplication();
+  const { spawnBanner, app, spawnDialog, destroyDialog } = useApplication();
+  const { setWindows } = useWindows();
   const [windowRef, setWindowRef] = useState<Window | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const logout = () => {
-    window.location.reload()
-  }
 
   const focus = (note: λNote) => {
     const events = Note.events(app, note);
@@ -64,8 +63,9 @@ export function Menu() {
   };
 
   const backToOperations = () => {
-    Info.files_unselect(app.target.files);
     destroyDialog();
+    setWindows([]);
+    spawnBanner(<OperationBanner />);
   }
   
   useEffect(() => {
@@ -104,8 +104,12 @@ export function Menu() {
     }
   }
 
-  const saveSessionAndLogout = () => {
+  const logout = () => {
     spawnBanner(<SaveSession />)
+  }
+
+  const enrichment = () => {
+    spawnBanner(<Enrichment.Banner />)
   }
 
   return (
@@ -119,23 +123,11 @@ export function Menu() {
       <Button variant='secondary' title='Change workflow frame' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)} />
       <Button variant='secondary' title='Export canvas' img='AcronymJpg' onClick={exportCanvasAsImage} />
       <Button variant='secondary' title='Export canvas' img='AcronymSvg' onClick={exportCanvasAsImage} />
-      <Button variant='secondary' title='Back to operations' img='ChartBarStacked' onClick={backToOperations} />
+      <Button variant='secondary' title='Data enrichment' img='PrismColor' onClick={enrichment} />
       <Stack flex />
+      <Button variant='secondary' title='Back to operations' img='Undo2' onClick={backToOperations} />
       <Button variant='secondary' img='LogOut' onClick={logout} />
       {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
     </Stack>
-  )
-}
-
-interface UnitProps {
-  type: 'upstream' | 'downstream',
-  num: number
-}
-
-function Unit({ type, num }: UnitProps) {
-  return (
-    <Button variant='secondary' img={type === 'upstream' ? 'CloudUpload' : 'CloudDownload'} className={s.unit}>
-      {formatBytes(num)}
-    </Button>
   )
 }

@@ -70,7 +70,9 @@ export namespace Windows {
     return <Stack key={uuid} gap={12} className={cn(s.window, className)} {...props}>
       <Menu />
       {children}
-      {dialog}
+      <Stack className={cn(s.dialog, dialog && s.open)}>
+        {dialog}
+      </Stack>
     </Stack>;
   });
 

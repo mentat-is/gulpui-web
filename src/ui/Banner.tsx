@@ -57,7 +57,7 @@ export function Banner({ children, className, title, fixed, option, loading, don
           {done}
         </Cell>
         <h6>
-          {loading ? <Skeleton variant='button' width='long' height={24} /> : title}
+          {loading ? <Skeleton width='long' height={24} /> : title}
           {subtitle ? (loading ? <Skeleton height={24} /> : subtitle) : null}
         </h6>
         <Stack dir='column' ai='unset' gap={16} className={s.content}>

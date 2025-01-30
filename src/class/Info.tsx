@@ -300,6 +300,10 @@ export class Info implements InfoProps {
     });
   }
 
+  enrichment = (events: λEvent['id'][]) => {
+    api<any>('/')
+  }
+
   query_file = async (file: λFile, range?: MinMax) => {
     const index = Index.selected(this.app);
 
@@ -403,7 +407,10 @@ export class Info implements InfoProps {
   
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
 
-  operations_select = (operation: λOperation) => this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations');
+  operations_select = (operation: λOperation) => {
+    this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations')
+    this.contexts_unselect(this.app.target.contexts);
+  };
   
   operations_set = (operations: λOperation[]) => this.setInfoByKey(Operation.reload(operations, this.app), 'target', 'operations');
 
@@ -1037,7 +1044,7 @@ export class Operation {
 
   public static findByName = (app: λApp, name: λOperation['name']): λOperation | undefined => app.target.operations.find(o => o.name === name);
 
-  public static select = (use: λApp | λOperation[], operation: λOperation | undefined): λOperation[] => Parser.use(use, 'operations').map(o => o.name === operation?.name ? Operation._select(o) : Operation._unselect(o));
+  public static select = (use: λApp | λOperation[], operation: λOperation | undefined): λOperation[] => Parser.use(use, 'operations').map(o => o.id === operation?.id ? Operation._select(o) : Operation._unselect(o));
   
   public static contexts = (app: λApp): λContext[] => app.target.contexts.filter(c => c.operation_id === Operation.selected(app)?.id);
 

@@ -104,3 +104,12 @@
 .action {
   width: 312px;
 }
+.dialog {
+  transition: all 0.125s var(--transition);
+  width: 0px;
+  overflow-x: hidden;
+  height: 100%;
+}
+.dialog.open {
+  width: 50vw;
+}

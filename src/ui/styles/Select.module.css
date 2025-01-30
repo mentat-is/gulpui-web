@@ -6,10 +6,11 @@
   align-items: center;
   justify-content: space-between;
   border-radius: 6px;
-  border: 1px solid var(--accent-3);
-  background-color: var(--soft-black);
-  gap: 10px;
-  padding: 8px 12px;
+  border: 1px solid var(--gray-400);
+  background-color: var(--meta-black);
+  gap: 12px;
+  overflow: hidden;
+  padding: 8px;
   color: var(--white);
   outline: none;
   text-align: left;
@@ -18,6 +19,19 @@
   cursor: pointer;
   text-overflow: ellipsis;
   text-wrap: nowrap;
+}
+.trigger * {
+  z-index: 1;
+}
+.trigger::before {
+  position: absolute;
+  left: 0;
+  content: '';
+  height: 100%;
+  width: 32px;
+  z-index: 0;
+  border-right: 1px solid var(--gray-400);
+  background: var(--soft-black);
 }
 
 .trigger:focus {
