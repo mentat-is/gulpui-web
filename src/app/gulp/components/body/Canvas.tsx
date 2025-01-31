@@ -173,21 +173,12 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     };
   }, dependencies);
 
-  const  [lastWidth, setLastWidth] = useState<number>(wrapper_ref.current?.clientWidth || 1);
-
   useEffect(() => {
-    const wrapper = wrapper_ref.current;
-    const target = app.timeline.target;
-
-    if (!wrapper || !target) {
+    if (dialog) {
       return;
     }
-  
-    if (lastWidth !== wrapper.clientWidth) {
-      setScrollX(n => Math.round(n * (wrapper.clientWidth / lastWidth)));
-      setLastWidth(wrapper.clientWidth);
-    }
-  }, [dialog]);
+    spawnDialog(<DisplayGroupDialog events={[]} />);
+  }, [app.target.events]);
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 

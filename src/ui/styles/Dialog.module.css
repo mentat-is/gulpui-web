@@ -1,5 +1,6 @@
 .dialog {
   max-width: 50vw;
+  width: 100%;
   padding: var(--card-padding);
   z-index: 5;
   overflow: hidden;

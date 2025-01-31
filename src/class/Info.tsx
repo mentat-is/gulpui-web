@@ -836,6 +836,7 @@ export class Info implements InfoProps {
     const { target } = this.app.timeline;
 
     if (typeof event === 'number' && target) {
+      console.log(target.file_id);
       const events = File.events(this.app, target.file_id);
       const index = events.findIndex(event => event.id === target.id) + event;
       event = events[index];

@@ -15,9 +15,10 @@ import { useKeyHandler } from '@/app/use';
 import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
 import { Navigator } from './Navigator';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 
 export function Timeline() {
-  const { app, Info, banner, dialog, timeline, spawnDialog } = useApplication();
+  const { app, Info, timeline, spawnDialog } = useApplication();
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(-26);
   const [resize, setResize] = useState<StartEnd>(StartEndBase);
@@ -90,27 +91,16 @@ export function Timeline() {
     setShifted(list => [...list, file]);
   }
 
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const key = event.key.toLowerCase();
 
     if (app.timeline.target && (key === 'd' || key === 'a')) {
       event.preventDefault();
       const delta = Number(key === 'a') ? 1 : -1;
-      Info.setTimelineTarget(delta);
+      const target = Info.setTimelineTarget(delta);
+      spawnDialog(<DisplayEventDialog event={target} />);
     }
-  }, [app.timeline.target, spawnDialog]);
-
-  useEffect(() => {
-    if (!timeline.current) {
-      return;
-    }
-
-    timeline.current.addEventListener('keypress', handleKeyDown);
-
-    return () => {
-      timeline.current?.removeEventListener('keypress', handleKeyDown);
-    }
-  }, [timeline]);
+  };
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -152,6 +142,7 @@ export function Timeline() {
       id='timeline'
       className={s.timeline}
       onMouseLeave={handleMouseUpOrLeave}
+      onKeyDown={handleKeyDown}
       onMouseUp={handleMouseUpOrLeave}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
