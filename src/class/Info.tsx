@@ -220,7 +220,6 @@ export interface λUser {
   token: string;
   id: string;
   time_expire: number;
-  password: string;
 };
 
 class User {
@@ -237,13 +236,10 @@ class User {
     return;
   }
 
-  isAuthorized = () => {
-    return Boolean(
-      this.storage.id.length > 0 && 
-      this.storage.password.length && 
-      this.storage.time_expire > Date.now()
-    );
-  }
+  isAuthorized = () => Boolean(
+    this.storage.id.length > 0 &&
+    this.storage.time_expire > Date.now()
+  )
 }
 
 export class Info implements InfoProps {
@@ -300,8 +296,19 @@ export class Info implements InfoProps {
     });
   }
 
-  enrichment = (events: λEvent['id'][]) => {
-    api<any>('/')
+  enrichment = (plugin: string, events: λEvent['id'][]) => {
+    const index = Index.selected(this.app);
+    if (!index) {
+      return;
+    }
+
+    api<any>('/enrich_documents', {
+      method: 'POST',
+      query: {
+        plugin,
+        ws_id: this.app.general.ws_id
+      }
+    })
   }
 
   query_file = async (file: λFile, range?: MinMax) => {
@@ -320,7 +327,7 @@ export class Info implements InfoProps {
         req_id: file.id,
         index: index.name
       },
-      body: JSON.stringify(Filter.body(this.app, file, range))
+      body: Filter.body(this.app, file, range)
     });
   };
 

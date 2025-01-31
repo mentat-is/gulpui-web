@@ -23,6 +23,9 @@
 .trigger * {
   z-index: 1;
 }
+.trigger > div {
+  gap: 16px !important;
+}
 .trigger::before {
   position: absolute;
   left: 0;

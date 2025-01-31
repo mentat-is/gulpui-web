@@ -177,16 +177,18 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
 
   useEffect(() => {
     const wrapper = wrapper_ref.current;
+    const target = app.timeline.target;
 
-    if (!wrapper) {
+    if (!wrapper || !target) {
       return;
     }
 
-    if (lastWidth !== wrapper.clientWidth) {
-      setScrollX(n => Math.round(n * (wrapper.clientWidth / lastWidth)));
-      setLastWidth(wrapper.clientWidth);
-    }
-  }, [dialog]);
+    const x = getPixelPosition(new Date(target.nanotimestamp).valueOf());
+
+    console.log(scrollX, x);
+
+    setScrollX(x - wrapper.clientWidth / 2);
+  }, [dialog, app.timeline.target]);
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 

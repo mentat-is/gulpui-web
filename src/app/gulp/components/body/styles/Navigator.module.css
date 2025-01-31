@@ -20,7 +20,7 @@
 }
 .combination p {
   color: currentColor;
-  font-size: 13px;
+font-size: 13px;
   white-space: nowrap;
   font-family: var(--font-mono);
   min-width: 128px;

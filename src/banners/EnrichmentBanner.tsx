@@ -26,7 +26,15 @@ export namespace Enrichment {
     }, []);
 
     const submit = () => {
-      Info.enrichment();
+      if (!file || !plugin) {
+        return;
+      }
+
+      const events = File.events(app, file)
+        .filter(e => Number(e.nanotimestamp / 1_000_000) > frame.min && Number(e.nanotimestamp / 1_000_000) < frame.max)
+        .map(e => e.id);
+
+      Info.enrichment(plugin.filename, events);
     }
 
     const done = (

@@ -90,7 +90,7 @@ export function Timeline() {
     setShifted(list => [...list, file]);
   }
 
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
 
     if (app.timeline.target && (key === 'd' || key === 'a')) {
@@ -99,6 +99,18 @@ export function Timeline() {
       Info.setTimelineTarget(delta);
     }
   }, [app.timeline.target, spawnDialog]);
+
+  useEffect(() => {
+    if (!timeline.current) {
+      return;
+    }
+
+    timeline.current.addEventListener('keypress', handleKeyDown);
+
+    return () => {
+      timeline.current?.removeEventListener('keypress', handleKeyDown);
+    }
+  }, [timeline]);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -143,7 +155,6 @@ export function Timeline() {
       onMouseUp={handleMouseUpOrLeave}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
-      onKeyDown={handleKeyDown}
       gap={12}
       onContextMenu={handleContextMenu}
       ref={timeline}>

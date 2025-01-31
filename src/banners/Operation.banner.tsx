@@ -8,6 +8,7 @@ import { SelectFilesBanner } from "./SelectFiles.banner";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
 import { Icon } from "@impactium/icons";
 import { Glyph } from "@/ui/Glyph";
+import { λOperation } from "@/dto";
 
 export namespace OperationBanner {
   export interface Props extends Banner.Props {
@@ -58,17 +59,11 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
   const Trigger = useCallback(() => {
     const selected = Operation.selected(Info.app);
 
-    if (!selected) {
-      return (
-        <SelectTrigger>Select operation or create new one</SelectTrigger>
-      )
-    }
-
     return (
       <SelectTrigger>
         <Stack>
-          <Icon name={Glyph.List.get(selected.glyph_id!) || 'BookDashed'} />
-          {selected.name}
+          <Icon name={Operation.icon((selected || {}) as λOperation)} />
+          <p>{selected ? selected.name : 'Select operation or create new one'}</p>
         </Stack>
       </SelectTrigger>
     )
@@ -76,12 +71,12 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
 
   return (
     <Banner title='Choose operation' subtitle={<InitializeNewOperaion />} done={<DoneButton />} {...props}>
-      <Select defaultValue={Operation.selected(Info.app)?.name} onValueChange={(name) => Info.operations_select(Info.app.target.operations.find(o => o.name === name)!)}>
+      <Select defaultValue={Operation.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
         <Trigger />
         <SelectContent>
           {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
-            <SelectItem value={operation.name}>
-              <Icon name={Glyph.List.get(operation.glyph_id!) || 'BookDashed'} />
+            <SelectItem value={operation.id}>
+              <Icon name={Operation.icon(operation)} />
               {operation.name}
             </SelectItem>
           )) : <NoOperations />}

@@ -42,11 +42,11 @@ export function Navigation({ event }: Navigation.Props) {
 
   return (
     <Stack className={s.navigation} jc='space-between'>
-      <Button onClick={changeEventTargerHandlerConstructor(false)} img='ArrowLeft' variant='outline'>Previous</Button>
+      <Button onClick={changeEventTargerHandlerConstructor(true)} img='ArrowLeft' variant='outline'>Previous</Button>
       <Stack className={s.content} jc='center'>
         {events.map(e => <SymmetricSvg className={cn(e.id === event.id && s.focus)} onClick={navigatorEventClickHandlerConstructor(e)} text={e.id} />)}
       </Stack>
-      <Button onClick={changeEventTargerHandlerConstructor(true)} img='ArrowRight' variant='outline' revert>Next</Button>
+      <Button onClick={changeEventTargerHandlerConstructor(false)} img='ArrowRight' variant='outline' revert>Next</Button>
     </Stack>
   )
 }

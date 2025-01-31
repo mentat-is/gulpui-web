@@ -1,16 +1,16 @@
 import SyntaxHighlighter from 'react-syntax-highlighter';
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { useApplication } from '@/context/Application.context';
-import { λEvent, λExtendedEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
+import { λEvent, λExtendedEvent } from '@/dto/ChunkEvent.dto';
 import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { copy } from '@/ui/utils';
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { Note, File, Index, Internal, Event } from '@/class/Info';
+import { Note, File } from '@/class/Info';
 import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
 import { Loading } from '@impactium/components';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
@@ -92,7 +92,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 {links_connect}
               </PopoverContent>
             </Popover>
-            
           </div>
           <Tabs defaultValue='json' className={s.tabs}>
             <TabsList className={s.tabs_list}>
@@ -100,9 +99,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <TabsTrigger value='raw'>XML</TabsTrigger>
             </TabsList>
             <TabsContent className={s.tabs_content} value='raw'>
-              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(detailedChunkEvent.event.original)} img='Copy'>Copy XML</Button>
+              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(detailedChunkEvent?.event.original || '')} img='Copy'>Copy XML</Button>
               <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='XML' style={highlight.androidstudio}>
-                {detailedChunkEvent.event.original}
+                {[]}
               </SyntaxHighlighter>
             </TabsContent>
             <TabsContent className={s.tabs_content} value='json'>
@@ -114,7 +113,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Tabs>
         </Fragment>
       ) : (
-        <Loading variant='default' size='icon' style={{ width: '100%', height: '100%' }} jc='center' className={s.loading} />
+        <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center'>
+          <Loading variant='default' size='lg' style={{ width: '100%', height: '100%' }} className={s.loading} label='' />
+        </Stack>
       )}
     </Dialog>
   )

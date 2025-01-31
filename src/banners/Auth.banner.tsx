@@ -22,7 +22,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
   const [server, setServer] = useState<string>(Info.app.general.server);
   const [id, setId] = useState<string>(Info.app.general.id || 'admin');
-  const [password, setPassword] = useState<string>(Info.app.general.password);
+  const [password, setPassword] = useState<string>('admin');
   const [loading, setLoading] = useState<boolean>(false);
 
   const ContinueFromSession = useCallback(() => {

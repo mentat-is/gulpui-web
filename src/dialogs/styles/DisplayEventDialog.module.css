@@ -139,7 +139,7 @@
   border-radius: 8px;
   justify-content: flex-end;
 }
-.loading svg {
-  height: 32px;
-  width: 32px;
+.loading {
+  height: 128px;
+  width: 128px;
 }

@@ -54,7 +54,6 @@ export interface λApp {
 export const BaseInfo: λApp = {
   general: {
     server: 'http://localhost:8080',
-    password: 'admin',
     ws_id: generateUUID(),
     id: '',
     time_expire: Infinity,

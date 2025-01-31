@@ -57,8 +57,8 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     const values = Array.from(map).map(v => v[1][0]);
 
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;
-    map[MinHeight] = Math.min(...values) as Hardcode.Height;
-    map[MaxHeight] = Math.max(...values) as Hardcode.Height;
+    map[MinHeight] = file.code.min as Hardcode.Height;
+    map[MaxHeight] = file.code.max as Hardcode.Height;
     this.map.set(file.id, map)
 
     return map as typeof DefaultEngine.target;
