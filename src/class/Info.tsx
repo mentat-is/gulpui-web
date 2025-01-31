@@ -1244,6 +1244,7 @@ export class Filter {
     body.flt = Filter.base(app, file, range);
 
     if (Filter.exist(app, file)) {
+      body.q = body.q || {};
       body.q.query = {}
       body.q.query.query_string = {}
       body.q.query.query_string.query = Filter.query(app, file);
