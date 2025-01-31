@@ -79,7 +79,7 @@ export function CreateLinkBanner({ event }: CreateLinkBannerProps) {
 
   const done = useCallback(() => {
     return (
-      <Button loading={loading} onClick={send} variant='glass' disabled={!name} img='Check' />
+      <Button loading={loading} onClick={send} variant='glass' disabled={!name || !icon} img='Check' />
     )
   }, [loading, name, send])
 

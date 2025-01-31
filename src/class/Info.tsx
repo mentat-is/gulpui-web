@@ -574,7 +574,7 @@ export class Info implements InfoProps {
 
         events.forEach(event => {
           if (event) {
-            const doc = Event.toDoc(event);
+            const doc = Event.toDoc(event.normalized);
 
             docs.push(doc);
           }
@@ -803,7 +803,12 @@ export class Info implements InfoProps {
         doc_id: id,
         index: index.name
       }
-    }).then(Event.normalizeFromDetailed);
+    }).then(raw => {
+      return {
+        normalized: Event.normalizeFromDetailed(raw),
+        raw
+      }
+    });
   }
 
   plugin_list = (): Promise<GulpDataset.PluginList.Summary> => {

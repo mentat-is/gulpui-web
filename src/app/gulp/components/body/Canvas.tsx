@@ -18,7 +18,7 @@ import Crosshair from './Crosshair';
 import { Controls } from './Controls';
 import { SetState } from '@/class/API';
 import { Stack } from '@impactium/components';
-import { debounce } from 'lodash';
+import { conforms, debounce } from 'lodash';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -173,7 +173,7 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     };
   }, dependencies);
 
-  const [lastWidth, setLastWidth] = useState<number>(wrapper_ref.current?.clientWidth ?? 1);
+  const  [lastWidth, setLastWidth] = useState<number>(wrapper_ref.current?.clientWidth || 1);
 
   useEffect(() => {
     const wrapper = wrapper_ref.current;
@@ -182,16 +182,12 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     if (!wrapper || !target) {
       return;
     }
-
-    console.log(new Date(target.nanotimestamp).valueOf());
-
-    const x = getPixelPosition(new Date(target.nanotimestamp).valueOf());
-
-    console.log(x);
-    console.log(wrapper.clientWidth);
-
-    setScrollX(x - wrapper.clientWidth);
-  }, [app.timeline.target]);
+  
+    if (lastWidth !== wrapper.clientWidth) {
+      setScrollX(n => Math.round(n * (wrapper.clientWidth / lastWidth)));
+      setLastWidth(wrapper.clientWidth);
+    }
+  }, [dialog]);
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 

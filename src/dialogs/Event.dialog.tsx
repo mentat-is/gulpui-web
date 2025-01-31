@@ -52,9 +52,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const reloadDetailedChunkEvent = async () => {
     const detailed = await Info.query_single_id(event.id);
 
-    setRawJSON(JSON.stringify(detailed, null, 2));
+    setRawJSON(JSON.stringify(detailed?.raw, null, 2));
 
-    setDetailedChunkEvent(detailed || null);
+    setDetailedChunkEvent(detailed?.normalized || null);
   };  
 
   const spawnNoteBanner = () => {
@@ -99,9 +99,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <TabsTrigger value='raw'>XML</TabsTrigger>
             </TabsList>
             <TabsContent className={s.tabs_content} value='raw'>
-              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(detailedChunkEvent?.event.original || '')} img='Copy'>Copy XML</Button>
+              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(detailedChunkEvent.event.original || '')} img='Copy'>Copy XML</Button>
               <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='XML' style={highlight.androidstudio}>
-                {[]}
+                {detailedChunkEvent.event.original}
               </SyntaxHighlighter>
             </TabsContent>
             <TabsContent className={s.tabs_content} value='json'>
