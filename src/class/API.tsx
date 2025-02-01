@@ -2,6 +2,8 @@ import { UUID } from 'crypto';
 import { between } from '@impactium/utils';
 import { type Callback } from '@impactium/types'
 import { toast } from 'sonner';
+import { Internal } from './Info';
+import { redirect } from 'react-router-dom';
 
 interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending';
@@ -120,7 +122,7 @@ export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgume
     callback,
     query,
     path,
-    endpoint: localStorage.getItem('__server')
+    endpoint: Internal.Settings.server
   };
 }
 

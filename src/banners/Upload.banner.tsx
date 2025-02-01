@@ -367,7 +367,7 @@ export function UploadBanner() {
     return (
       <Stack className={s.filePreview} gap={16}>
         <Stack>
-          <Icon name='File' fromGeist />
+          <Icon name='File' size={14} fromGeist />
           <p className={s.weight}>{formatBytes(file.size)}</p>
           <Popover>
             <PopoverTrigger asChild>

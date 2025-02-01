@@ -6,7 +6,7 @@
   "dependencies": {
     "@impactium/components": "^1.1.0",
     "@impactium/console": "^1.0.7",
-    "@impactium/icons": "^1.1.5",
+    "@impactium/icons": "^1.1.7",
     "@impactium/types": "^1.0.0",
     "@impactium/utils": "^1.0.2",
     "@radix-ui/react-checkbox": "^1.1.1",

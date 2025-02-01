@@ -18,6 +18,30 @@ import { Icon } from '@impactium/icons';
 import { sha1 } from 'js-sha1';
 
 export namespace GulpDataset {
+  export namespace GetAvailableLoginApi {
+    export type Response = Method[]
+
+    export interface Method {
+      name: string,
+      login: Struct,
+      logout: Struct
+    }
+
+    export interface Struct {
+      method: string,
+      url: string,
+      params: Param[]
+    }
+
+    export interface Param {
+      name: string,
+      type: 'str',
+      location: 'body',
+      description: string,
+      required?: boolean
+      default_value?: null
+    }
+  }
   export namespace QueryOperations {
     interface Operation {
       name: string;
@@ -751,10 +775,10 @@ export class Info implements InfoProps {
 
     rawOperations.forEach((rawOperation: OperationTree) => {
       const exist = Operation.id(this.app, rawOperation.id);
-      
+
       const operation: λOperation = {
         ...rawOperation,
-        selected: exist?.selected,
+        selected: exist?.selected ?? false,
         contexts: rawOperation.contexts.map(rawContext => {
           const context: λContext = {
             ...rawContext,

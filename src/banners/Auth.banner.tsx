@@ -1,13 +1,16 @@
 import { Banner } from '@/ui/Banner';
-import { Button } from '@impactium/components';
+import { Button, Stack } from '@impactium/components';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SessionBanner } from './Session.banner';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@impactium/components';
 import { toast } from 'sonner';
-import { GulpDataset, Operation, Pattern, λUser } from '@/class/Info';
+import { GulpDataset, Internal, Operation, Pattern, λUser } from '@/class/Info';
 import { useKeyHandler } from '@/app/use';
 import { OperationBanner } from './Operation.banner';
+import { Icon } from '@impactium/icons';
+import { capitalize } from '@impactium/utils';
+import { redirect } from 'react-router-dom';
 
 export namespace AuthBanner {
   export interface Props extends Banner.Props {
@@ -24,6 +27,8 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   const [id, setId] = useState<string>(Info.app.general.id || 'admin');
   const [password, setPassword] = useState<string>('admin');
   const [loading, setLoading] = useState<boolean>(false);
+  const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([]);
+  const [selectedMethod, setSelectedMethod] = useState<GulpDataset.GetAvailableLoginApi.Method | null>(null);
 
   const ContinueFromSession = useCallback(() => {
     const handleSubtitleButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
@@ -37,7 +42,14 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
         Continue with session
       </Button>
     )
-  }, [])
+  }, []);
+
+  useEffect(() => {
+    if (methods.length === 0) {
+      Internal.Settings.server = server;
+      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', setMethods);
+    }
+  }, [methods, server]);
 
   useEffect(() => {
     if (isKeyPressed && loginButton.current) {
@@ -87,6 +99,43 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     );
   };
 
+  const customLoginConstructor = (url: string) => () => {
+    // api(url + `?ws_id=${Info.app.general.ws_id}`, {
+    //   query: {
+    //     ws_id: Info.app.general.ws_id
+    //   },
+    //   mode: 'no-cors'
+    // }, console.log);
+
+    window.location.replace(Internal.Settings.server + url + `?ws_id=${Info.app.general.ws_id}`);
+  }
+
+  const LoginMethods = () => {
+    if (methods.length === 1 && methods[0].name === 'gulp') {
+      return null;
+    }
+
+    function LoginMethod({ name, icon }: LoginMethod.Props) {
+      const method = methods.find(method => method.name === name);
+      if (!method) {
+        return null;
+      }
+
+      return (
+        <Button onClick={customLoginConstructor(method.login.url)} style={{ flex: 1 }} img={icon}>
+          Login with {capitalize(name)}
+        </Button>
+      )
+    }
+
+    return (
+      <Stack>
+        <LoginMethod name='microsoft' icon='LogoMicrosoft' />
+        <LoginMethod name='google' icon='LogoGoogle' />
+      </Stack>
+    )
+  }
+
   return (
     <Banner title='Authentication' subtitle={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>
       <Input
@@ -111,6 +160,14 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
         value={password}
         tabIndex={3}
         onChange={e => setPassword(e.currentTarget.value)} />
+      <LoginMethods />
     </Banner>
   )
+}
+
+namespace LoginMethod {
+  export interface Props {
+    name: string,
+    icon: Icon.Name
+  }
 }

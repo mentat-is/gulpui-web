@@ -26,10 +26,6 @@ export function SelectFilesBanner() {
     spawnBanner(<LimitsBanner />);
   }
 
-  useEffect(() => {
-    Info.sync();
-  }, []);
-
   const fulfilled = !Operation.selected(app)?.contexts;
 
   const done = <Button img='Check' loading={loading} variant='glass' onClick={save} />;
@@ -121,11 +117,15 @@ export function SelectFilesBanner() {
   }, []);
 
   return (
-    <Banner title={lang.select_context.title} fixed={loading} className={s.banner} done={done} option={<UploadButton />}>
-      <Input img='Search' skeleton={fulfilled} placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
-      <Contexts />
+    <Banner title='Select workflow' fixed={loading} className={s.banner} done={done} option={<UploadButton />}>
+      <Skeleton show={fulfilled} width='full'>
+        <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
+      </Skeleton>
+      <Skeleton show={fulfilled} height='full' width='full'>
+        <Contexts />
+      </Skeleton>
       <div className={s.group}>
-        <Skeleton show={fulfilled}>
+        <Skeleton width='full' show={fulfilled}>
           <Button onClick={() => Info.selectAll(filter)} variant='secondary' style={{ width: '100%', background: 'var(--meta-black)' }}>Select all</Button>
         </Skeleton>
       </div>
