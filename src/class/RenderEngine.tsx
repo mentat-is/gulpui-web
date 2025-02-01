@@ -9,6 +9,7 @@ import { Scale, Engine } from './Engine.dto';
 import { HeightEngine } from '../engines/Height.engine';
 import { GraphEngine } from '../engines/Graph.engine';
 import { λFile, λLink } from '@/dto/Dataset';
+import { sha1 } from 'js-sha1';
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D,
@@ -243,6 +244,19 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = '#e8e8e8';
     this.ctx.fillText(file.total.toString(), x_max + 12, y - 6);
     this.ctx.fillText(file.total.toString(), x_min - 64, y - 6);
+
+    if (this.info.app.target.ingest.includes(sha1(file.name))) {
+      this.ingesting(file);
+    }
+  }
+
+  public ingesting = (file: λFile) => {
+    this.ctx.beginPath();
+    this.ctx.setLineDash([5, 5]);
+    const height = File.getHeight(this.info.app, file, this.scrollY);
+    this.ctx.moveTo(0, height);
+    this.ctx.lineTo(2000, height);
+    this.ctx.stroke();
   }
 
   public draw_info = (file: λFile) => {

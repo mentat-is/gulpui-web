@@ -540,19 +540,16 @@ export class Info implements InfoProps {
 
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
 
-  // 🔥 EVENTS 
   events_add = (newEvents: λEvent[]) => {
     const { events, frames } = Event.add(this.app, newEvents);
 
-    Object.keys(frames).map((id) => {
+    Object.entries(frames).map(([id, frame]) => {
       const file = this.app.target.files.find(file => file.id === id);
-      if (file) {
-        const frame = frames[id as λFile['id']];
+      if (file && file.nanotimestamp.min === 0n) {
         file.timestamp.min = Math.min(file.timestamp.min, frame.min);
         file.timestamp.max = Math.max(file.timestamp.max, frame.max);
       } else {
         Logger.error(`File ${id} has not been found in application data`);
-        Logger.error(this.app.target.files.map(f => f.id), 'events_add');
       }
     });
 
@@ -562,10 +559,7 @@ export class Info implements InfoProps {
 
     return;
   };
-  events_reset_in_file = (files: Arrayed<λFile>) => {
-    this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
-  };
-  events_reset = () => this.setInfoByKey(new Map(), 'target', 'events');
+  events_reset_in_file = (files: Arrayed<λFile>) => this.setInfoByKey(Event.delete(this.app, files), 'target', 'events');
 
   setDialogSize = (number: number) => {
     this.setInfoByKey(number, 'timeline', 'dialogSize');
@@ -643,7 +637,6 @@ export class Info implements InfoProps {
   }
 
   glyphs_reload = async () => {
-    // Clear exist list of glyphs
     Glyph.List.clear();
 
     const glyphs = await api<λGlyph[]>('/glyph_list', {
@@ -661,7 +654,6 @@ export class Info implements InfoProps {
         const exist = glyphs.find(g => g.name === name);
   
         if (exist) {
-          // Добавить глиф, если он существует на бэкенде
           Glyph.List.set(exist.id, exist.name);
           return;
         }
@@ -680,7 +672,6 @@ export class Info implements InfoProps {
       });
     });
   
-    // Выполняем запросы с ограничением по параллельности
     const runQueue = async () => {
       const tasks = queue.splice(0, 10).map(task => task());
       await Promise.all(tasks);
@@ -717,6 +708,7 @@ export class Info implements InfoProps {
   sync = async () => {
     const index = Index.selected(this.app)?.name;
     if (!index) {
+      Logger.error('Index not selected. Cannot process sync', 'sync');
       return;
     }
 
@@ -776,14 +768,8 @@ export class Info implements InfoProps {
                 settings: Internal.Settings.all(),
                 ...({
                   total: 0,
-                  code: {
-                    min: 0,
-                    max: 0
-                  },
-                  timestamp: {
-                    min: 0,
-                    max: 0,
-                  },
+                  code: MinMaxBase,
+                  timestamp: MinMaxBase,
                   nanotimestamp: {
                     min: BigInt(0),
                     max: BigInt(0),
@@ -815,17 +801,10 @@ export class Info implements InfoProps {
     Logger.log(`${files.length} files has been added to application data`, this.sync.name);
     Logger.log(files.map(f => f.id));
 
-    this.setInfo(app => ({
-      ...app,
-      target: {
-        ...app.target,
-        operations,
-        contexts,
-        files
-      }
-    }));
-
-    return { operations, contexts, files };
+    this.app.target.operations = operations;
+    this.app.target.contexts = contexts;
+    this.app.target.files = files;
+    this.setInfo(this.app);
   }
 
   query_single_id = (id: λEvent['id']) => {
@@ -1312,20 +1291,10 @@ export class Event {
   public static selected = (app: λApp): λEvent[] => File.selected(app).map(s => Event.get(app, s.id)).flat();
 
   public static add = (app: λApp, events: λEvent[]) => {
-    const hashes: Record<λFile['id'], string> = {};
-    let g = 0;
-    events.map(e => {
-      if (!hashes[e.file_id]) {
-        hashes[e.file_id] = sha1(File.id(app, e.file_id).name);
-      }
-      if (app.target.ingest.includes(hashes[e.file_id])) {
-        g++;
-      }
-      Event.get(app, e.file_id).push(e);
-    });
+    events.map(e => Event.get(app, e.file_id).push(e));
+
     Logger.log(`${events.length} events has been processed`);
-    Logger.log(`${events.filter(e => app.target.ingest.includes(hashes[e.file_id])).length} has been added to ingesting files`);
-    
+
     return {
       frames: Event.frames(events),
       events: app.target.events
@@ -1336,11 +1305,13 @@ export class Event {
     const frames: Record<λFile['id'], MinMax> = {};
 
     events.forEach(e => {
-      frames[e.file_id] = frames[e.file_id] || {};
+      frames[e.file_id] = frames[e.file_id] || MinMaxBase;
 
-      frames[e.file_id].min = frames[e.file_id].min === 0 ? e.timestamp : Math.min(frames[e.file_id].min, e.timestamp);
-      frames[e.file_id].max = Math.max(frames[e.file_id].max, e.timestamp);
-    })
+      const timestamp = new Date(e.timestamp).valueOf()
+
+      frames[e.file_id].min = frames[e.file_id].min === 0 ? timestamp : Math.min(frames[e.file_id].min, timestamp);
+      frames[e.file_id].max = Math.max(frames[e.file_id].max, timestamp);
+    });
 
     return frames;
   }

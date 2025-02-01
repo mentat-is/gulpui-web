@@ -59,6 +59,7 @@ export class AppSocket extends WebSocket {
 
         case message.type === 'ingest_source_done':
           this.info.end_ingesting(message.data.req_id);
+          info.sync();
           return;
       }
     }

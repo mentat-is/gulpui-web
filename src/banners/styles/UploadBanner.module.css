@@ -58,6 +58,10 @@
   max-height: 384px;
   border-radius: 6px;
   border: 1px solid var(--gray-400);
+  background: var(--meta-black);
+}
+.addFiles {
+  background-color: var(--meta-black);
 }
 .fill {
   min-height: 64px;
@@ -96,6 +100,9 @@
   width: unset !important;
   background: unset;
   border-radius: 2px;
+}
+.filePreview button[role = 'combobox']::before {
+  content: none !important;
 }
 .weight {
   min-width: 64px;

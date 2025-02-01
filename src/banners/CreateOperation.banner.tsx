@@ -4,12 +4,13 @@ import { Button, Input } from '@impactium/components';
 import { useApplication } from '../context/Application.context';
 import { Stack } from '@impactium/components';
 import s from './styles/CreateOperationBanner.module.css'
-import { λGlyph } from '@/dto/Dataset';
-import { Index } from '@/class/Info';
+import { Default, λGlyph } from '@/dto/Dataset';
+import { Index, Operation } from '@/class/Info';
 import { OperationBanner } from './Operation.banner';
 import { Glyph } from '@/ui/Glyph';
 import { λIndex } from '@/dto/Index.dto';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
+import { Icon } from '@impactium/icons';
 
 export function CreateOperationBanner() {
   const { app, Info, spawnBanner } = useApplication();
@@ -58,15 +59,19 @@ export function CreateOperationBanner() {
       <Stack ai='center'>
         <p className={s.paramName}>Operation name:</p>
         <Input
+          variant='highlighted'
           className={s.input}
-          img='Heading'
+          img={icon ? Glyph.List.get(icon) : Default.Icon.OPERATION}
           value={name}
           onChange={(e) => setName(e.currentTarget.value)}
           placeholder='Operation name' />
       </Stack>
       <Select onValueChange={selectIndexHandler}>
-        <SelectTrigger value={index || ''}>
-          {index}
+        <SelectTrigger defaultValue={app.target.indexes[0]?.name || ''} value={index || ''}>
+          <Stack>
+            <Icon name={Default.Icon.INDEX} />
+            <p>{index}</p>
+          </Stack>
         </SelectTrigger>
         <SelectContent>
           {app.target.indexes.map(index => {
@@ -78,6 +83,7 @@ export function CreateOperationBanner() {
         <p className={s.paramName}>Operation description:</p>
         <Input
           className={s.input}
+          variant='highlighted'
           img='Text'
           value={description}
           onChange={(e) => setDescription(e.currentTarget.value)}

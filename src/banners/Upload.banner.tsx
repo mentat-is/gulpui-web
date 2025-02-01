@@ -377,6 +377,7 @@ export function UploadBanner() {
           </Popover>
         </Stack>
         <Stack gap={0}>
+          <Separator style={{ height: 28 }} color='var(--gray-400)' orientation='vertical' />
           <PluginSelection file={file} />
           <Separator style={{ height: 28 }} color='var(--gray-400)' orientation='vertical' />
           <MethodSelection file={file} />
@@ -410,14 +411,13 @@ export function UploadBanner() {
         : <Input variant='highlighted' img={Default.Icon.CONTEXT} value={context} onChange={e => setContext(e.target.value)} placeholder='Context name' />}
       <Stack>
         <Input
+          variant='highlighted'
           type='file'
           id='ingest_input'
           multiple
           onChange={filesSelectHandler}
         />
-        <Button variant='secondary' img='Plus'>
-          Add files
-        </Button>
+        <Button variant='outline' className={s.addFiles} img='Plus'>Add files</Button>
       </Stack>      
       <Stack dir='column' gap={0} className={cn(s.files, files.length === 0 && s.fill)}>
         {files.length === 0 ? <Placeholder /> : Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}

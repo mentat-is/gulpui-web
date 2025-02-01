@@ -136,7 +136,7 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     if (newScale === oldScale) return;
   
     Info.setTimelineScale(newScale);
-    setScrollX(contentX * (newScale / oldScale) - cursorX);
+    setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX));
   }, [wrapper_ref, banner, Info, bounding, app.timeline.scale, scrollX]);
   
 
