@@ -4,7 +4,7 @@ import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { ChangeEvent, useEffect, useState } from 'react';
 import s from './styles/UploadBanner.module.css';
-import { Index, Mapping, Operation } from '@/class/Info';
+import { Context, Index, Mapping, Operation } from '@/class/Info';
 import { formatBytes } from '@/ui/utils';
 import { Progress } from '@/ui/Progress';
 import { SelectFilesBanner } from './SelectFiles.banner';
@@ -16,7 +16,8 @@ import { Toggle } from '@/ui/Toggle';
 import { toast } from 'sonner';
 import { Separator } from '@/ui/Separator';
 import { cn } from '@impactium/utils';
-import { Default } from '@/dto/Dataset';
+import { Default, λContext } from '@/dto/Dataset';
+import { sha1 } from 'js-sha1';
 
 interface λIngestFileSettings {
   plugin?: string;
@@ -80,9 +81,11 @@ export function UploadBanner() {
         mapping_file: settings[file.name].method,
         mapping_id: settings[file.name].mapping
       },
-      original_file_path: './' + file.name
+      original_file_path: file.name
     }));
     formData.append('f', file.slice(start, end), file.name);
+
+    const hash = sha1(file.name);
 
     const response = await api<any>('/ingest_file', {
       method: 'POST',
@@ -100,8 +103,11 @@ export function UploadBanner() {
         operation_id: operation.id,
         context_name: context,
         ws_id: app.general.ws_id,
+        req_id: hash
       },
     });
+
+    Info.start_ingesting(hash);
 
     if (response.isError() && response.data.continue_offset) {
       await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset));
@@ -124,7 +130,7 @@ export function UploadBanner() {
       await send(file, 0, i);
     }
 
-    await Info.query_operations();
+    await Info.sync();
 
     setLoading(false);
 
@@ -317,7 +323,12 @@ export function UploadBanner() {
     return (
       <Select disabled={!contexts.length} onValueChange={setContext} value={context}>
         <SelectTrigger className={s.trigger}>
-          <SelectValue defaultValue={contexts[0]?.name} placeholder={contexts.length ? `Choose one context from list below (exist: ${contexts.length})` : 'There is no contexts at this moment'} />
+          <Stack>
+              <Icon name={Context.icon(Context.findByName(app, context) ?? {} as λContext)} />
+              <p>{context ?? (contexts.length
+                  ? `Choose one context from list below (exist: ${contexts.length})`
+                  : 'There is no contexts at this moment')}</p>
+          </Stack>
         </SelectTrigger>
         <SelectContent>
           {contexts.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}

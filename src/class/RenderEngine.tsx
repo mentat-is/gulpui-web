@@ -218,6 +218,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public locals = (file: λFile) => {
+    if (!file.timestamp || !file.timestamp.min) {
+      return;
+    }
     const y = File.getHeight(this.info.app, file, this.scrollY);
 
     const x_max = this.getPixelPosition(file.timestamp.max);

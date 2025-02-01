@@ -28,7 +28,8 @@ export interface λApp {
       name: string;
       content: string;
     }>;
-    plugins: λMapping.Plugin[]
+    plugins: λMapping.Plugin[];
+    ingest: string[]
   }
   general: λUser & {
     server: string;
@@ -72,7 +73,7 @@ export const BaseInfo: λApp = {
     },
     frame: {
       min: 0,
-      max: 0
+      max: Date.now()
     },
     filtering_options: {},
     isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
@@ -89,7 +90,8 @@ export const BaseInfo: λApp = {
     links: [],
     sigma: {},
     glyphs: [],
-    plugins: []
+    plugins: [],
+    ingest: []
   }
 }
 

@@ -30,4 +30,6 @@
   align-items: center;
   justify-content: center;
   color: currentColor;
+  height: 12px;
+  width: 12px;
 }

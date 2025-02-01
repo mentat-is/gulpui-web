@@ -1,7 +1,8 @@
-import { Event, Info, Internal, μ } from '@/class/Info';
+import { Context, Event, File, Info, Internal, μ } from '@/class/Info';
 import { λApp } from '@/dto';
 import { ΞEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
+import { toast } from 'sonner';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -32,16 +33,33 @@ export class AppSocket extends WebSocket {
     this.onmessage = ({ data }) => {
       const message = JSON.parse(data);
 
-      const { data: chunk} = message;
+      const { data: chunk } = message;
 
       switch (true) {
         case isQuery(chunk):
           const rawEvents: ΞEvent[] = chunk.docs;
           const events = Event.parse(rawEvents);
-          return this.info.events_add(events);
+          this.info.events_add(events);
+          return
 
-        case chunk.type === 'stats_update' || message.type === 'ingest_source_done':
-          info.query_operations();
+        case message.type === 'stats_update':
+          const context_id = message.data.data['gulp.context_id'];
+          const source_id = message.data.data['gulp.source_id'];
+
+          if (context_id && !this.info.app.target.contexts.find(c => c.id === context_id)) {
+            Logger.log(`New context ${context_id}. Do sync: ${new Date(Date.now()).toISOString()}`, AppSocket.name);
+            Logger.error(this.info.app.target.contexts.map(c => c.id), AppSocket.name);
+            info.sync();
+            return;
+          } else if (source_id && !this.info.app.target.files.find(c => c.id === source_id)) {
+            Logger.log(`New file ${source_id}. Do sync: ${new Date(Date.now()).toISOString()}`, AppSocket.name);
+            info.sync();
+          }
+          return;
+
+        case message.type === 'ingest_source_done':
+          this.info.end_ingesting(message.data.req_id);
+          return;
       }
     }
 

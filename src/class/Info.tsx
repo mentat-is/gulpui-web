@@ -15,6 +15,7 @@ import { SetState } from './API';
 import { λMapping } from '@/dto/MappingFileList.dto';
 import { Glyph } from '@/ui/Glyph';
 import { Icon } from '@impactium/icons';
+import { sha1 } from 'js-sha1';
 
 export namespace GulpDataset {
   export namespace QueryOperations {
@@ -38,7 +39,7 @@ export namespace GulpDataset {
 
     interface Source {
       name: string;
-      id: string;
+      id: λFile['id'];
       doc_count: number;
       'max_event.code': number;
       'min_event.code': number;
@@ -119,6 +120,13 @@ export namespace Internal {
     TIMELINE_FOCUS_FIELD = 'settings.__field',
     GENERAL_SERVER_VALUE = '__server',
     GENERAL_TOKEN_VALUE = '__token',
+  }
+
+  export namespace Sync {
+    export interface Options {
+      contexts?: boolean;
+      files?: boolean;
+    }
   }
 
   export class Settings {
@@ -266,7 +274,7 @@ export class Info implements InfoProps {
   }, 'timeline', 'filtering_options');
 
   refetch = async ({
-    ids: _ids = File.selected(this.app).map(f => f.id),
+    ids: _ids = File.selected(this.app).filter(f => !this.app.target.ingest.includes(sha1(f.name))).map(f => f.id),
     hidden,
     range
   }: RefetchOptions = {}) => {
@@ -435,7 +443,7 @@ export class Info implements InfoProps {
         index: index.name
       },
       setLoading
-    }, this.operation_list);
+    }, this.sync);
   };
 
   /* ПОСТАВИТЬ НОВЫЕ ОПЕРАЦИИ С ОХ ПОЛНЫМ ОБНУЛЕНИЕМ, И ПОВТОРНЫМ СЕЛЕКТОМ ПРЕДЫДУЩЕ-ВЫБРАННОГО */
@@ -528,13 +536,32 @@ export class Info implements InfoProps {
 
   file_set_render_engine = (ids: λFile['id'][], engine: Engine.List) => this.setInfoByKey(this.app.target.files.map(file => ({ ...file, settings: { ...file.settings, engine: ids.includes(file.id) ? engine : file.settings.engine }})), 'target', 'files');
 
+  file_set_settings = (ids: λFile['id'][], settings: λFile['settings']) => this.setInfoByKey(this.app.target.files.map(file => ({ ...file, settings: { ...file.settings, ...settings }})), 'target', 'files');
+
   files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
 
-  files_replace = (files: Arrayed<λFile>) => this.setInfoByKey(files, 'target', 'files');
-
   // 🔥 EVENTS 
-  events_selected = () => Event.selected(this.app);
-  events_add = (events: λEvent[]) => this.setInfoByKey(Event.add(this.app, events), 'target', 'events');
+  events_add = (newEvents: λEvent[]) => {
+    const { events, frames } = Event.add(this.app, newEvents);
+
+    Object.keys(frames).map((id) => {
+      const file = this.app.target.files.find(file => file.id === id);
+      if (file) {
+        const frame = frames[id as λFile['id']];
+        file.timestamp.min = Math.min(file.timestamp.min, frame.min);
+        file.timestamp.max = Math.max(file.timestamp.max, frame.max);
+      } else {
+        Logger.error(`File ${id} has not been found in application data`);
+        Logger.error(this.app.target.files.map(f => f.id), 'events_add');
+      }
+    });
+
+    this.app.target.events = events;
+
+    this.setInfo(this.app);
+
+    return;
+  };
   events_reset_in_file = (files: Arrayed<λFile>) => {
     this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
   };
@@ -668,9 +695,27 @@ export class Info implements InfoProps {
     this.setInfoByKey(true, 'general', 'glyphs_syncronized');
   }
 
-  operation_list = async () => {
-    const index = Index.selected(this.app)?.name;
+  start_ingesting = (req_id: string) => {
+    if (!this.app.target.ingest.includes(req_id)) {
+      Logger.log(`Ingestion started for ${req_id} at ${new Date(Date.now()).toISOString()}`);
+      this.app.target.ingest.push(req_id);
+      this.setInfo(this.app);
+    }
+    
+  }
+  end_ingesting = (req_id: string) => {
+    Logger.log(`Ingestion done for ${req_id} at ${new Date(Date.now()).toISOString()}`);
+    this.app.target.ingest.filter(id => req_id !== id);
+    const file = File.selected(this.app).find(f => sha1(f.name) === req_id);
+    if (file) {
+      this.refetch({ ids: [file.id] });
+    }
+    
+    this.setInfo(this.app);
+  }
 
+  sync = async () => {
+    const index = Index.selected(this.app)?.name;
     if (!index) {
       return;
     }
@@ -679,17 +724,41 @@ export class Info implements InfoProps {
     const contexts: λContext[] = [];
     const files: λFile[] = [];
 
+    const details = await api<GulpDataset.QueryOperations.Summary>('/query_operations', {
+      query: { index }
+    })
+      .then(raw => raw
+        .map(o => o.contexts
+          .map(c => c.plugins
+            .map(p => p.sources)))
+        .flat(3))
+      .then(sources => sources.map(source => {
+        return {
+          id: source.id,
+          name: source.name,
+          total: source.doc_count,
+          code: {
+            min: source['min_event.code'],
+            max: source['max_event.code']
+          },
+          timestamp: {
+            min: source['min_gulp.timestamp'] / 1_000_000,
+            max: source['max_gulp.timestamp'] / 1_000_000,
+          },
+          nanotimestamp: {
+            min: BigInt(source['min_gulp.timestamp']),
+            max: BigInt(source['max_gulp.timestamp']),
+          }
+        }
+      }));
+
     const rawOperations = await api<OperationTree[]>('/operation_list', {
       method: 'POST',
       query: { index }
     });
 
-    if (!rawOperations) {
-      return;
-    }
-
     rawOperations.forEach((rawOperation: OperationTree) => {
-      const exist = Operation.findById(this.app, rawOperation.id);
+      const exist = Operation.id(this.app, rawOperation.id);
       
       const operation: λOperation = {
         ...rawOperation,
@@ -697,25 +766,32 @@ export class Info implements InfoProps {
         contexts: rawOperation.contexts.map(rawContext => {
           const context: λContext = {
             ...rawContext,
-            selected: Context.find(this.app, rawContext.id)?.selected,
+            selected: Context.id(this.app, rawContext.id)?.selected ?? true,
             files: rawContext.sources.map(rawFile => {
               const file: λFile = {
                 ...rawFile,
+                // @ts-ignore
                 color: Internal.Settings.color,
+                // @ts-ignore
                 settings: Internal.Settings.all(),
-                code: {
-                  min: 0,
-                  max: 0
-                },
-                timestamp: {
-                  min: 0,
-                  max: 0
-                },
-                nanotimestamp: {
-                  min: BigInt(0),
-                  max: BigInt(0)
-                },
-                total: 0
+                ...({
+                  total: 0,
+                  code: {
+                    min: 0,
+                    max: 0
+                  },
+                  timestamp: {
+                    min: 0,
+                    max: 0,
+                  },
+                  nanotimestamp: {
+                    min: BigInt(0),
+                    max: BigInt(0),
+                  }
+                }),
+                ...File.id(this.app, rawFile.id),
+                ...details.find(f => f.id === rawFile.id),
+                selected: File.id(this.app, rawFile.id)?.selected ?? true
               };
               files.push(file)
               return file.id;
@@ -732,6 +808,13 @@ export class Info implements InfoProps {
       operations[0].selected = true;
     }
 
+    Logger.log(`${operations.length} operations has been added to application data`, this.sync.name);
+    Logger.log(operations.map(c => c.id));
+    Logger.log(`${contexts.length} contexts has been added to application data`, this.sync.name);
+    Logger.log(contexts.map(c => c.id));
+    Logger.log(`${files.length} files has been added to application data`, this.sync.name);
+    Logger.log(files.map(f => f.id));
+
     this.setInfo(app => ({
       ...app,
       target: {
@@ -743,51 +826,6 @@ export class Info implements InfoProps {
     }));
 
     return { operations, contexts, files };
-  }
-
-  query_operations = async () => {
-    const index = Index.selected(this.app);
-
-    if (!index) {
-      return;
-    }
-
-    const response = await api<GulpDataset.QueryOperations.Summary>('/query_operations', {
-      query: {
-        index: index.name
-      }
-    });
-
-    const flatten = response.map(o => o.contexts.map(c => c.plugins.map(p => p.sources))).flat(3);
-
-    const newFiles = this.app.target.files.map(f => {
-      const match = flatten.find(m => m.id === f.id);
-
-      if (!match) {
-        Logger.error('There is no match in application data');
-        return f;
-      }
-
-      return ({
-        ...f,
-        color: Internal.Settings.color,
-        code: {
-          min: match['min_event.code'],
-          max: match['max_event.code'],
-        },
-        timestamp: {
-          min: match['min_gulp.timestamp'] / 1_000_000,
-          max: match['max_gulp.timestamp'] / 1_000_000,
-        },
-        nanotimestamp: {
-          min: BigInt(match['min_gulp.timestamp']),
-          max: BigInt(match['max_gulp.timestamp'])
-        },
-        total: match.doc_count
-      }) satisfies λFile;
-    })
-
-    this.files_replace(newFiles);
   }
 
   query_single_id = (id: λEvent['id']) => {
@@ -812,7 +850,7 @@ export class Info implements InfoProps {
   }
 
   plugin_list = (): Promise<GulpDataset.PluginList.Summary> => {
-    return api('/plugin_list', console.log);
+    return api('/plugin_list');
   }
 
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
@@ -836,7 +874,6 @@ export class Info implements InfoProps {
     const { target } = this.app.timeline;
 
     if (typeof event === 'number' && target) {
-      console.log(target.file_id);
       const events = File.events(this.app, target.file_id);
       const index = events.findIndex(event => event.id === target.id) + event;
       event = events[index];
@@ -973,10 +1010,8 @@ export class Info implements InfoProps {
     },
   
     remove: (file: λFile | λFile['id']) => {
-      // eslint-disable-next-line
       const id = Parser.useUUID(file) as λFile['id'];
 
-      // eslint-disable-next-line
       delete this.app.target.sigma[id];
       this.setInfoByKey(this.app.target.sigma, 'target', 'sigma');
       this.deload(id);
@@ -1016,19 +1051,17 @@ export class Info implements InfoProps {
   }
   
   // Private method to update a specific key in the application state
-  private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(value: any, section: K, key: S, self: boolean = true) => {
-    this.setInfo((_info: λApp) => {
-      const info = {
+  private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(value: any, section: K, key: S) => {
+    this.setInfo(_info => {
+      this.app = {
         ..._info,
         [section]: {
           ..._info[section],
           [key]: value,
         },
-      }
-      if (self) {
-        this.app = info;
-      }
-      return info
+      };
+
+      return this.app
     });
   };
 }
@@ -1053,7 +1086,7 @@ export class Operation {
 
   public static selected = (app: λApp): λOperation | undefined => app.target.operations.find(o => o.selected);
 
-  public static findById = (use: λApp | λOperation[], id: λOperation['id']): λOperation | undefined => Parser.use(use, 'operations').find(o => o.id === id);
+  public static id = (use: λApp, id: λOperation['id']): λOperation => Parser.use(use, 'operations').find(o => o.id === id)!;
 
   public static findByName = (app: λApp, name: λOperation['name']): λOperation | undefined => app.target.operations.find(o => o.name === name);
 
@@ -1080,7 +1113,7 @@ export class Context {
 
   public static selected = (use: λApp | λContext[]): λContext[] => Parser.use(use, 'contexts').filter(c => c.selected && ('target' in use ? Operation.selected(use)?.id === c.operation_id : true));
 
-  public static find = (use: λApp | λContext[], context: λContext | λContext['id']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.id === Parser.useUUID(context));
+  public static findByName = (app: λApp, name: λContext['name']) => Context.selected(app).find(c => c.name === name);
 
   public static findByFile = (use: λApp | λContext[], file: λFile | λFile['id']): λContext | undefined => Parser.use(use, 'contexts').find(c => c.files.some(p => p === Parser.useUUID(file)));
 
@@ -1279,9 +1312,37 @@ export class Event {
   public static selected = (app: λApp): λEvent[] => File.selected(app).map(s => Event.get(app, s.id)).flat();
 
   public static add = (app: λApp, events: λEvent[]) => {
-    events.map(e => Event.get(app, e.file_id).push(e));
-    events.sort((a, b) => a.timestamp - b.timestamp);
-    return app.target.events;
+    const hashes: Record<λFile['id'], string> = {};
+    let g = 0;
+    events.map(e => {
+      if (!hashes[e.file_id]) {
+        hashes[e.file_id] = sha1(File.id(app, e.file_id).name);
+      }
+      if (app.target.ingest.includes(hashes[e.file_id])) {
+        g++;
+      }
+      Event.get(app, e.file_id).push(e);
+    });
+    Logger.log(`${events.length} events has been processed`);
+    Logger.log(`${events.filter(e => app.target.ingest.includes(hashes[e.file_id])).length} has been added to ingesting files`);
+    
+    return {
+      frames: Event.frames(events),
+      events: app.target.events
+    };
+  }
+
+  public static frames = (events: λEvent[]) => {
+    const frames: Record<λFile['id'], MinMax> = {};
+
+    events.forEach(e => {
+      frames[e.file_id] = frames[e.file_id] || {};
+
+      frames[e.file_id].min = frames[e.file_id].min === 0 ? e.timestamp : Math.min(frames[e.file_id].min, e.timestamp);
+      frames[e.file_id].max = Math.max(frames[e.file_id].max, e.timestamp);
+    })
+
+    return frames;
   }
 
   public static toDoc = ({ id, file_id, context_id, nanotimestamp, operation_id, timestamp }: λEvent): λDoc => ({
@@ -1479,7 +1540,7 @@ export class Parser {
     if (typeof unknown === 'string') {
       return unknown as T['id'];
     } else {
-      return (unknown as T).id;
+      return (unknown as T)?.id;
     }
   };
   

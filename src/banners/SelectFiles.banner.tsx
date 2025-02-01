@@ -27,7 +27,7 @@ export function SelectFilesBanner() {
   }
 
   useEffect(() => {
-    Info.query_operations();
+    Info.sync();
   }, []);
 
   const fulfilled = !Operation.selected(app)?.contexts;
@@ -104,7 +104,7 @@ export function SelectFilesBanner() {
       }
     }
 
-    if (!file.name.toLowerCase().includes(filter.toLowerCase()) || file.total === 0) {
+    if (!file.name.toLowerCase().includes(filter.toLowerCase())) {
       return null;
     }
 
@@ -112,8 +112,6 @@ export function SelectFilesBanner() {
       <div className={s.pluginHeading} key={file.id}>
         <Checkbox id={file.name} checked={file.selected} onCheckedChange={handleFileCheck} />
         <Label htmlFor={file.name}>{File.wellFormatedName(file)}</Label>
-        <hr style={{ flex: 1 }} />
-        <Badge variant='outline' value={file.total} />
       </div>
     )
   }
@@ -128,7 +126,7 @@ export function SelectFilesBanner() {
       <Contexts />
       <div className={s.group}>
         <Skeleton show={fulfilled}>
-          <Button onClick={() => Info.selectAll(filter)} variant='secondary' style={{ width: '100%' }}>Select all</Button>
+          <Button onClick={() => Info.selectAll(filter)} variant='secondary' style={{ width: '100%', background: 'var(--meta-black)' }}>Select all</Button>
         </Skeleton>
       </div>
     </Banner>

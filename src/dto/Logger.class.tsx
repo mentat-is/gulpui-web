@@ -59,7 +59,7 @@ export class Logger {
     const contextInfo = context ? `[${Parser.array(context).join('.')}] ` : '';
     const traceInfo = trace ? ` ${trace}` : '';
 
-    return (λLogger[Logger.preformat[level]] as (text?: string | null) => string)(`[Gulp]${pid} - ${λLogger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${λLogger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, null, 2) : message}${traceInfo}`);
+    return (λLogger[Logger.preformat[level]] as (text?: string | null) => string)(`[Gulp]${pid} - ${λLogger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${λLogger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2) : message}${traceInfo}`);
   }
 }
 
@@ -67,7 +67,7 @@ export class LoggerHandler {
   public static bucketSelection = (selected: MinMax, timestamp: MinMax) => {
     if (selected.min >= selected.max) {
       Logger.error(`Dates: 'selected.min' value > then 'selected.max' value.
-Values: ${JSON.stringify({ selected }, null, 2)}`, LoggerHandler.name);
+Values: ${JSON.stringify({ selected }, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2)}`, LoggerHandler.name);
     }
 
     if (selected.min < timestamp.min) {

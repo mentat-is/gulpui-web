@@ -52,13 +52,13 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     })
   };
   
-  const instance = new Info({app, setInfo, timeline});
+  const instance = new Info({ app, setInfo, timeline });
 
   const [ws, setWs] = useState<AppSocket>();
 
   useEffect(() => {
     if (app.general.token) setWs(new AppSocket(instance, app));
-  }, [app.general.token])
+  }, [instance, app]);
 
   const spawnBanner = (banner: JSX.Element) => {
     setBanner(banner);
@@ -76,8 +76,8 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const destroyDialog = () => {
-    instance.setTimelineTarget(null);
-    setDialog(() => null)
+    // instance.setTimelineTarget(null);
+    // setDialog(() => null)
   };
 
   // Application context properties

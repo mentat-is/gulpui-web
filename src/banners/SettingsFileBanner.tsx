@@ -35,16 +35,13 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     setLoading(true);
 
     setTimeout(() => {
-      Info.files_replace([{
-        ...file,
-        settings: {
+      Info.file_set_settings([file.id], {
           color,
           offset,
           engine,
           field
-        }
-      }]);
-  
+      });
+
       destroyBanner();
     }, 500);
   }
@@ -66,7 +63,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   
   return (
     <Banner title='File settings' done={done} option={option}>
-      <h4>{file.name} in {Context.find(app, file.context_id)?.name}</h4>
+      <h4>{file.name} in {Context.id(app, file.context_id)?.name}</h4>
       <Card>
         <p className={s.text}>File offset: {formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['years', 'months', 'days', 'hours', 'minutes', 'seconds'], zero: false }) + ' ' + parseInt(offset.toString().slice(-3)) + ' milliseconds'}</p>
         <Input img='AlarmClockPlus' accept='number' value={offset} placeholder='Offset time in ms' onChange={handleInputChange} />

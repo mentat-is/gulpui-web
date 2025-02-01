@@ -33,7 +33,7 @@ export function CreateOperationBanner() {
       },
       deassign: true,
       body: description.toString(),
-    }, Info.operation_list).then(() => {
+    }, Info.sync).then(() => {
       spawnBanner(<OperationBanner />);
     });
   };

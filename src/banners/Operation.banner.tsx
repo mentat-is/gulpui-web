@@ -37,7 +37,7 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
   useEffect(() => {
     if (Info.app.target.operations.length === 0) {
       setLoading(true);
-      Info.operation_list().then(() => setLoading(false));
+      Info.sync().then(() => setLoading(false));
     }
   }, []);
 
