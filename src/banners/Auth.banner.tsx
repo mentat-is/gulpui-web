@@ -10,7 +10,7 @@ import { useKeyHandler } from '@/app/use';
 import { OperationBanner } from './Operation.banner';
 import { Icon } from '@impactium/icons';
 import { capitalize } from '@impactium/utils';
-import { redirect } from 'react-router-dom';
+import { addDays } from 'date-fns';
 
 export namespace AuthBanner {
   export interface Props extends Banner.Props {
@@ -22,13 +22,11 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   const { spawnBanner, Info } = useApplication();
   const loginButton = useRef<HTMLButtonElement>(null);
   const [isKeyPressed] = useKeyHandler('Enter');
-
   const [server, setServer] = useState<string>(Info.app.general.server);
   const [id, setId] = useState<string>(Info.app.general.id || 'admin');
   const [password, setPassword] = useState<string>('admin');
   const [loading, setLoading] = useState<boolean>(false);
   const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([]);
-  const [selectedMethod, setSelectedMethod] = useState<GulpDataset.GetAvailableLoginApi.Method | null>(null);
 
   const ContinueFromSession = useCallback(() => {
     const handleSubtitleButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
@@ -71,7 +69,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
       if (!validatedServer) return;
       
-      localStorage.setItem('__server', server);
+      Internal.Settings.server = validatedServer;
       
       await api<λUser>('/login', {  
         method: 'POST',
@@ -83,15 +81,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
           user_id: id,
           password
         }
-      }, async (data) => {
-        if (data.token) {
-          Info.login(data);
-          await Info.index_reload();
-          if (!Operation.selected(Info.app)) {
-            spawnBanner(<OperationBanner />)
-          }
-        }
-      });
+      }, next);
     }
 
     return (
@@ -99,15 +89,32 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     );
   };
 
-  const customLoginConstructor = (url: string) => () => {
-    // api(url + `?ws_id=${Info.app.general.ws_id}`, {
-    //   query: {
-    //     ws_id: Info.app.general.ws_id
-    //   },
-    //   mode: 'no-cors'
-    // }, console.log);
+  const next = async (user: λUser) => {
+    console.log(user);
+    Info.login(user);
+    Info.index_reload()
+    spawnBanner(<OperationBanner />);
+  }
 
-    window.location.replace(Internal.Settings.server + url + `?ws_id=${Info.app.general.ws_id}`);
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    const token = query.get('token');
+    const id = query.get('id') || 'Guest';
+    const time_expire = Number(query.get('time_expire')) || addDays(Date.now(), 7).valueOf();
+    if (!token)
+      return;
+
+    history.replaceState(null, '', window.location.origin);
+    
+    next({ token, id, time_expire });
+    setLoading(true);
+  }, []);
+
+  const customLoginConstructor = (url: string) => () => {
+    const x = new URLSearchParams();
+    x.append('client', window.location.origin);
+    x.append('ws_id', Info.app.general.ws_id);
+    window.location.replace(`${Internal.Settings.server}${url}?${x}`);
   }
 
   const LoginMethods = () => {

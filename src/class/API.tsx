@@ -4,6 +4,7 @@ import { type Callback } from '@impactium/types'
 import { toast } from 'sonner';
 import { Internal } from './Info';
 import { redirect } from 'react-router-dom';
+import { Logger } from '@/dto/Logger.class';
 
 interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending';
@@ -98,7 +99,7 @@ export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgume
   }
 
   const headers: Record<string, string> = {
-    'token': localStorage.getItem('__token') || ''
+    'token': Internal.Settings.token
   }
 
   if (!options.deassign) {
@@ -142,7 +143,7 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
 
   const res = new λ(await response?.json());
 
-  const isSuccess = res.isSuccess()
+  const isSuccess = res.isSuccess();
 
   const result = (options.raw
     ? res
@@ -158,6 +159,11 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
     toast(toSeparatedCase(res?.data?.__error?.name), {
       description: 'Check console for further information'
     })
+  }
+  if (res.isError() && res.data?.__error?.name === 'MissingPermission') {
+    Logger.warn('Session expired, reloading window');
+    Internal.Settings.token = '';
+    window.location.reload();
   }
 
   soft(false, options.setLoading);

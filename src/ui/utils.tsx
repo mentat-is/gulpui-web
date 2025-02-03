@@ -18,6 +18,14 @@ export const parseTokensFromCookies = (tokens: string) => {
   }
 };
 
+export function go<T extends any = any>(callback: (...props: any[]) => T): Promise<T> {
+  return new Promise(async resolve => {
+    setTimeout(async () => {
+      resolve(await callback());
+    }, 50);
+  })
+}
+
 export const stringToHexColor = (str: string): Color => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {

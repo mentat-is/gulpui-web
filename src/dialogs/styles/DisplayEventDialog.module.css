@@ -128,17 +128,6 @@
   color: var(--text-dimmed);
   font-family: var(--font-mono);
 }
-.createNote {
-  min-height: 32px;
-}
-.buttons_group {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 12px;
-  border-radius: 8px;
-  justify-content: flex-end;
-}
 .loading {
   height: 128px;
   width: 128px;

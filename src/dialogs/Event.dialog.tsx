@@ -18,6 +18,7 @@ import { Navigation } from './components/navigation';
 import { Separator } from '@/ui/Separator';
 import { λNote } from '@/dto/Dataset';
 import { ConnectPopover } from '@/app/gulp/components/Connect.popover';
+import { Enrichment } from '@/banners/EnrichmentBanner';
 
 
 interface DisplayEventDialogProps {
@@ -71,6 +72,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     destroyDialog();
   }
 
+  const spawnEnrichmentBanner = () => spawnBanner(<Enrichment.Banner event={event} />);
+
   const links_connect = useMemo(() => {
     return <ConnectPopover event={event} />
   }, [event, open]);
@@ -81,9 +84,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       <Separator />
       {detailedChunkEvent ? (
         <Fragment>
-          <div className={s.buttons_group}>
-            <Button className={s.createNote} onClick={spawnNoteBanner} img='StickyNote'>New note</Button>
-            <Button className={s.createNote} onClick={spawnLinkBanner} img='Link'>Create link</Button>
+          <Stack>
+            <Button onClick={spawnNoteBanner} img='StickyNote'>New note</Button>
+            <Button onClick={spawnLinkBanner} img='Link'>Create link</Button>
+            <Button onClick={spawnEnrichmentBanner} variant='glass' img='PrismColor'>Enrich</Button>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant='secondary' img='Link'>Connect link</Button>
@@ -92,7 +96,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 {links_connect}
               </PopoverContent>
             </Popover>
-          </div>
+          </Stack>
           <Tabs defaultValue='json' className={s.tabs}>
             <TabsList className={s.tabs_list}>
               <TabsTrigger value='json'>JSON</TabsTrigger>

@@ -1,8 +1,7 @@
-import { Context, Event, File, Info, Internal, μ } from '@/class/Info';
+import { Event, Info, Internal } from '@/class/Info';
 import { λApp } from '@/dto';
 import { ΞEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
-import { toast } from 'sonner';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;

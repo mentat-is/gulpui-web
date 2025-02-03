@@ -1,7 +1,7 @@
 import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
 import { λApp, BaseInfo } from '@/dto';
 import { AppSocket } from '@/class/AppSocket';
-import { Info } from '@/class/Info';
+import { Info, Internal } from '@/class/Info';
 import { Console } from '@impactium/console';
 import { Logger } from '@/dto/Logger.class';
 import '@/class/API';
@@ -44,7 +44,10 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     api('/logout', {
-      method: 'DELETE',
+      method: 'POST',
+      query: {
+        ws_id: app.general.ws_id
+      }
     }).then(() => {
       destroyBanner();
       destroyDialog();

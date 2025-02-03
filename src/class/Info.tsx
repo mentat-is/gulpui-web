@@ -16,6 +16,7 @@ import { λMapping } from '@/dto/MappingFileList.dto';
 import { Glyph } from '@/ui/Glyph';
 import { Icon } from '@impactium/icons';
 import { sha1 } from 'js-sha1';
+import { MaybeArray } from '@impactium/types';
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -233,6 +234,22 @@ export namespace Internal {
     public static set server(server: string) {
       localStorage.setItem(Internal.LocalStorageItemsList.GENERAL_SERVER_VALUE, server);
     }
+
+    public static get token(): string {
+      const token = localStorage.getItem(Internal.LocalStorageItemsList.GENERAL_TOKEN_VALUE);
+
+      if (token) {
+        return token;
+      }
+
+      Internal.Settings.token = '';
+
+      return Internal.Settings.token;
+    }
+ 
+    public static set token(token: string) {
+      localStorage.setItem(Internal.LocalStorageItemsList.GENERAL_TOKEN_VALUE, token);
+    }
   }
 
   export class IconExtractor {
@@ -328,19 +345,38 @@ export class Info implements InfoProps {
     });
   }
 
-  enrichment = (plugin: string, events: λEvent['id'][]) => {
+  enrichment = (plugin: string, file: λFile, events: λEvent['id'][]) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
     }
 
-    api<any>('/enrich_documents', {
+    api<void>('/enrich_documents', {
       method: 'POST',
       query: {
         plugin,
+        index: index.name,
         ws_id: this.app.general.ws_id
+      },
+      body: Filter.events(this.app, file, events)
+    });
+  }
+
+  enrich_single_id = (plugin: string, event: λEvent) => {
+    const index = Index.selected(this.app);
+    if (!index) {
+      return;
+    }
+
+    api('/enrich_single_id', {
+      method: 'POST',
+      query: {
+        plugin,
+        index: index.name,
+        ws_id: this.app.general.ws_id,
+        doc_id: event.id
       }
-    })
+    }, console.log);
   }
 
   query_file = async (file: λFile, range?: MinMax) => {
@@ -438,10 +474,13 @@ export class Info implements InfoProps {
   }
 
   // 🔥 INDEXES
-  index_reload = () => api<λIndex[]>('/opensearch_list_index', (data) => {
-    this.app.target.indexes = data || [];
-    this.setInfoByKey(Index.select(this.app, data[0] || null),
-    'target', 'indexes');
+  index_reload = () => api<λIndex[]>('/opensearch_list_index', (data = []) => {
+    this.app.target.indexes = data;
+    const indexes = Index.select(this.app, data[0]);
+    this.setInfoByKey(indexes, 'target', 'indexes');
+    if (indexes.length && Index.selected(this.app)) {
+      this.sync();
+    }
   });
   
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
@@ -859,7 +898,7 @@ export class Info implements InfoProps {
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
   login = (obj: λUser) => {
-    localStorage.setItem('__token', obj.token);
+    Internal.Settings.token = obj.token;
     
     this.setInfo(info => ({
       ...info,
@@ -1107,7 +1146,7 @@ export class Context {
 
   public static reload = (newContexts: λContext[], app: λApp): λContext[] => Context.select(newContexts, Context.selected(app));
 
-  public static frame = (app: λApp): MinMax => app.target.files.map(f => f.timestamp).reduce((acc, cur) => {
+  public static frame = (app: λApp): MinMax => File.selected(app).map(f => f.timestamp).reduce((acc, cur) => {
     acc.min = Math.min(cur.min, acc.min || cur.min);
     acc.max = Math.max(cur.max, acc.max);
 
@@ -1237,6 +1276,28 @@ export class Filter {
         context.operation_id
       ], 
     }
+  }
+
+  public static events = (app: λApp, file: λFile, events: λEvent['id'][]) => {
+    const body: Record<string, any> = {
+      q_options: {
+        sort: {
+          '@timestamp': 'desc'
+        }
+      }
+    };
+
+    body.flt = Filter.base(app, file);
+
+    body.q = {
+      query: {
+        query_string: {
+          query: events.map(id => `_id: ${id}`).join(' OR ')
+        }
+      }
+    }
+
+    return body;
   }
 
   /** 

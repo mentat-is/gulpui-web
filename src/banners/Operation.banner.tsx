@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
 import { Icon } from "@impactium/icons";
 import { Glyph } from "@/ui/Glyph";
 import { λOperation } from "@/dto";
+import { go } from "@/ui/utils";
 
 export namespace OperationBanner {
   export interface Props extends Banner.Props {
@@ -35,10 +36,10 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
   }, []);
 
   useEffect(() => {
-    if (Info.app.target.operations.length === 0) {
+    go(() => go(() => {
       setLoading(true);
       Info.sync().then(() => setLoading(false));
-    }
+    }));
   }, []);
 
   const DoneButton = useCallback(() => {
