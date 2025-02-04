@@ -106,7 +106,7 @@ export namespace Permissions {
           <Stack flex />
           <Popover>
             <PopoverTrigger>
-              <Button img='Gavel' variant='secondary'>Roles / {user.id === 'mherasymchuk@mentat.is' as λUser['id'] ? 'NIGGA' : user.permission.map(p => p[0]).join('').toUpperCase() || '0'}</Button>
+              <Button img='Gavel' variant='secondary'>Roles / {user.permission.map(p => p[0]).join('').toUpperCase() || '0'}</Button>
             </PopoverTrigger>
             <PopoverContent>
               <Stack dir='column' ai='flex-start' gap={4}>
