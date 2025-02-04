@@ -13,10 +13,11 @@ export namespace Banner {
     loading?: boolean;
     onClose?: () => void
     option?: ReactNode | null;
+    back?: () => void | null;
   }
 }
 
-export function Banner({ children, className, title, fixed, option, loading, done, subtitle = null, onClose }: Banner.Props) {
+export function Banner({ children, back, className, title, fixed, option, loading, done, subtitle = null, onClose }: Banner.Props) {
   const { destroyBanner } = useApplication();
 
   const close = () => {
@@ -46,14 +47,16 @@ export function Banner({ children, className, title, fixed, option, loading, don
   return (
     <div className={s.wrapper}>
       <div className={cn(s.banner, s.loading, className)} style={{['--gray-400']: 'var(--accent-3)' }}>
-        <Cell className={s.cell} top left />
-        <Cell className={s.cell} top right>
+        <Cell key='cell-1' className={s.cell} top left>
+          {back && <Button variant='ghost' img='CornerUpLeft' onClick={back} />}
+        </Cell>
+        <Cell key='cell-2' className={s.cell} top right>
           {fixed ? null : <Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' />}
         </Cell>
-        <Cell className={s.cell} bottom left>
+        <Cell key='cell-3' className={s.cell} bottom left>
           {option}
         </Cell>
-        <Cell className={s.cell} bottom right>
+        <Cell key='cell-4' className={s.cell} bottom right>
           {done}
         </Cell>
         <h6>

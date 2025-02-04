@@ -1,5 +1,5 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink, λGroup } from '@/dto/Dataset';
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -17,6 +17,7 @@ import { Glyph } from '@/ui/Glyph';
 import { Icon } from '@impactium/icons';
 import { sha1 } from 'js-sha1';
 import { MaybeArray } from '@impactium/types';
+import { Permissions } from '@/banners/Permissions.banner';
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -242,7 +243,7 @@ export namespace Internal {
         return token;
       }
 
-      Internal.Settings.token = '';
+      Internal.Settings.token = '-';
 
       return Internal.Settings.token;
     }
@@ -267,9 +268,19 @@ export namespace Internal {
 
 export interface λUser {
   token: string;
-  id: string;
+  id: μ.User;
   time_expire: number;
 };
+
+export type λDetailedUser = GulpObject<μ.User, {
+  pwd_hash: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918";
+  permission: Permissions.Role[];
+  time_last_login: number;
+  user_data: Record<string, any>;
+  type: 'user';
+  name: string;
+  groups: λGroup[]; 
+}>; 
 
 class User {
   instanse!: User;
@@ -1647,6 +1658,11 @@ export namespace μ {
   const Glyph = Symbol('Glyph');
   export type Glyph = UUID & {
     readonly [Glyph]: unique symbol;
+  };
+
+  const User = Symbol('User');
+  export type User = UUID & {
+    readonly [User]: unique symbol;
   };
 
   const Window = Symbol('Window');

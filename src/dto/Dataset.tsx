@@ -7,7 +7,7 @@ import { MinMax } from '@/class/Info';
 import { λDoc, λEvent, ΞDoc } from './ChunkEvent.dto';
 import { Icon } from '@impactium/icons';
 
-export type GulpDataType = 'operation' | 'context' | 'file' | 'link' | 'note';
+export type GulpDataType = 'operation' | 'context' | 'file' | 'link' | 'note' | 'user';
 
 interface ΞSelectionField {
   selected?: boolean;
@@ -135,4 +135,8 @@ export interface λGlyph {
   // base64 image representation
   img: string,
   name: Icon.Name
+}
+
+export interface λGroup {
+  [key: string]: any
 }

@@ -90,7 +90,6 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   };
 
   const next = async (user: λUser) => {
-    console.log(user);
     Info.login(user);
     Info.index_reload()
     spawnBanner(<OperationBanner />);
@@ -99,7 +98,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     const token = query.get('token');
-    const id = query.get('id') || 'Guest';
+    const id = (query.get('id') || 'guest') as λUser['id'];
     const time_expire = Number(query.get('time_expire')) || addDays(Date.now(), 7).valueOf();
     if (!token)
       return;
@@ -110,10 +109,13 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     setLoading(true);
   }, []);
 
+  const [customLoading, setCustomLoading] = useState<string | null>(null);
+
   const customLoginConstructor = (url: string) => () => {
     const x = new URLSearchParams();
     x.append('client', window.location.origin);
     x.append('ws_id', Info.app.general.ws_id);
+    setCustomLoading(url)
     window.location.replace(`${Internal.Settings.server}${url}?${x}`);
   }
 
@@ -129,7 +131,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
       }
 
       return (
-        <Button onClick={customLoginConstructor(method.login.url)} style={{ flex: 1 }} img={icon}>
+        <Button onClick={customLoginConstructor(method.login.url)} loading={customLoading === method.login.url} style={{ flex: 1 }} img={icon}>
           Login with {capitalize(name)}
         </Button>
       )

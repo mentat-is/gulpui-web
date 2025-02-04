@@ -2,7 +2,7 @@ import s from './styles/FilterFileBanner.module.css';
 import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
-import { Input } from '@impactium/components';
+import { Input, Skeleton } from '@impactium/components';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button, Stack } from '@impactium/components';
@@ -10,7 +10,6 @@ import { Filter, FilterOptions, FilterType, λFilter, μ, Index } from '@/class/
 import { SettingsFileBanner } from './SettingsFileBanner';
 import React from 'react';
 import { copy, generateUUID } from '@/ui/utils';
-import { toast } from 'sonner';
 import { λFile } from '@/dto/Dataset';
 import { format } from 'date-fns';
 import { Toggle } from '@/ui/Toggle';
@@ -137,6 +136,10 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     )
   }
 
+  const preloading = useMemo(() => {
+    return !app.timeline.filtering_options[file.id];
+  }, [app.timeline.filtering_options]);
+
   const FilterField = useMemo(() => {
 
     const acceptableToType = (): string => {
@@ -161,12 +164,14 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     return (
       <Stack className={s.top}>
         <Select onValueChange={setKey} value={filter?.key}>
-          <SelectTrigger>
-            <Stack>
-              <Icon name={Glyph.Fields(filter.key)} />
-              <p>{filter.key}</p>
-            </Stack>
-          </SelectTrigger>
+          <Skeleton className={s.skeleton} show={preloading} width='full'>
+            <SelectTrigger>
+              <Stack>
+                <Icon name={Glyph.Fields(filter.key)} />
+                <p>{filter.key}</p>
+              </Stack>
+            </SelectTrigger>
+          </Skeleton>
           <SelectContent style={{ maxHeight: '33vh' }}>
             {Object.keys(app.timeline.filtering_options[file.id] || {}).map((key, i) => (
               <SelectItem key={i} value={key}>
@@ -180,9 +185,11 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           </SelectContent>
         </Select>
         <Select onValueChange={setType} value={filter?.type}>
-          <SelectTrigger style={{ width: 128 }} className={s.select}>
-            <SelectValue defaultValue={FilterType.GREATER_OR_EQUAL} />
-          </SelectTrigger>
+          <Skeleton className={s.skeleton} show={preloading} width='short'>
+            <SelectTrigger style={{ flexShrink: 1.5 }} className={s.select}>
+              <SelectValue defaultValue={FilterType.GREATER_OR_EQUAL} />
+            </SelectTrigger>
+          </Skeleton>
           <SelectContent className={s.select}>
             {Object.values(FilterType).map((filterType, index) => (
               <SelectItem key={index} value={filterType}>
@@ -191,8 +198,12 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
             ))}
           </SelectContent>
         </Select>
-        <Input onChange={(event) => setValue(event.currentTarget.value)} placeholder={`Input a ${acceptableToType()}`} value={filter?.value} />
-        <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
+        <Skeleton show={preloading} width='full'>
+          <Input onChange={(event) => setValue(event.currentTarget.value)} placeholder={`Input a ${acceptableToType()}`} value={filter?.value} />
+        </Skeleton>
+        <Skeleton show={preloading} width='short'>
+          <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
+        </Skeleton>
       </Stack>
     )
   }, [filter, acceptable, app.timeline.filtering_options]);
@@ -202,7 +213,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   return (
     <Banner
       title='Choose filtering options'
-      loading={!app.timeline.filtering_options[file.id]}
+      loading={preloading}
       done={<Done />}
       option={<Undo />}
       subtitle={
@@ -213,10 +224,12 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         }>
       {FilterField}
       <AvailableFilters />
-      <Stack dir='column' className={s.preview} ai='flex-start'>
-        <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(base + Filter.query(app, file))}>Copy</Button></h4>
-        <code><span>{base}</span>{Filter.query(app, file)}</code>
-      </Stack>
+      <Skeleton height='full' show={preloading} width='full'>
+        <Stack dir='column' className={s.preview} ai='flex-start'>
+          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(base + Filter.query(app, file))}>Copy</Button></h4>
+          <code><span>{base}</span>{Filter.query(app, file)}</code>
+        </Stack>
+      </Skeleton>
     </Banner>
   );
 }

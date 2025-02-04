@@ -56,7 +56,7 @@ export const BaseInfo: λApp = {
   general: {
     server: 'http://localhost:8080',
     ws_id: generateUUID(),
-    id: '',
+    id: '' as λUser['id'],
     time_expire: Infinity,
     token: '',
     sessions: {},
