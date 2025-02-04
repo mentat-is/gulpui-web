@@ -27,8 +27,6 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
     spawnDialog(dialog);
   };
 
-  
-
   return (
     <Point onClick={openEvent} icon={Link.icon(link)} name={link.name} accent={link.color} {...props} />
   )

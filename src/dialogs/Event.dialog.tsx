@@ -6,19 +6,16 @@ import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs';
 import { copy } from '@/ui/utils';
 import { Button, Stack } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { Note, File } from '@/class/Info';
-import { CreateLinkBanner } from '@/banners/CreateLinkBanner';
+import { Event, Note } from '@/class/Info';
 import { Loading } from '@impactium/components';
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { Navigation } from './components/navigation';
-import { Separator } from '@/ui/Separator';
 import { λNote } from '@/dto/Dataset';
-import { ConnectPopover } from '@/app/gulp/components/Connect.popover';
-import { Enrichment } from '@/banners/EnrichmentBanner';
+import { Enrichment } from '@/banners/Enrichment.banner';
+import { LinkComponents } from '@/banners/CreateLinkBanner';
+import { Maps } from '@/banners/Maps.banner';
 
 
 interface DisplayEventDialogProps {
@@ -28,11 +25,11 @@ interface DisplayEventDialogProps {
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner, destroyDialog } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<λExtendedEvent | null>(null);
-  const [notes, setNotes] = useState<λNote[]>(Note.findByEvent(app, event));
+  const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
   const [rawJSON, setRawJSON] = useState<string>('');
 
   useEffect(() => {
-    setNotes(Note.findByEvent(app, event));
+    setNotes(Event.notes(app, event));
   }, [event, app.target.notes]);
 
   useEffect(() => {
@@ -56,65 +53,43 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     setRawJSON(JSON.stringify(detailed?.raw, null, 2));
 
     setDetailedChunkEvent(detailed?.normalized || null);
-  };  
+  };
 
-  const spawnNoteBanner = () => {
-    spawnBanner(<CreateNoteBanner event={event} />);
-    destroyDialog();
+  const defaultJSON = useMemo(() => {
+    return rawJSON ? JSON.parse(rawJSON) : {};
+  }, [rawJSON]);
+
+  const Locations = () => {
+    const source = defaultJSON?.['source.ip'];
+    const destination = defaultJSON?.['destination.ip'];
+    return (
+      <Stack style={{ flexWrap: 'wrap' }}>
+        {source && <Button style={{ flex: 1 }} variant='glass' onClick={() => spawnBanner(<Maps.Banner lat={41.7593026} lng={12.6005981} ip={source} />)} img='Location'>Visualize source ip address {source} on map</Button>}
+        {destination ? <Button style={{ flex: 1 }} variant='glass' onClick={() => spawnBanner(<Maps.Banner lat={81.7593026} lng={43.6005981} ip={destination} />)} img='Target'>See {source} location on map</Button> : (source ? <Button img='Robot' variant='disabled' style={{ flex: 1 }} >There is no destination address</Button> : null)}
+      </Stack>
+    )
   }
-
-  const spawnLinkBanner = () => {
-    const file = File.id(app, event.file_id);
-
-    if (!file) return;
-
-    spawnBanner(<CreateLinkBanner event={event} />);
-    destroyDialog();
-  }
-
-  const spawnEnrichmentBanner = () => spawnBanner(<Enrichment.Banner event={event} />);
-
-  const links_connect = useMemo(() => {
-    return <ConnectPopover event={event} />
-  }, [event, open]);
 
   return (
     <Dialog icon={<SymmetricSvg text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
       <Navigation event={event} />
-      <Separator />
       {detailedChunkEvent ? (
         <Fragment>
-          <Stack>
-            <Button onClick={spawnNoteBanner} img='StickyNote'>New note</Button>
-            <Button onClick={spawnLinkBanner} img='Link'>Create link</Button>
-            <Button onClick={spawnEnrichmentBanner} variant='glass' img='PrismColor'>Enrich</Button>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant='secondary' img='Link'>Connect link</Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                {links_connect}
-              </PopoverContent>
-            </Popover>
+          <Stack className={s.group}>
+            <Stack dir='column' flex>
+            <Button onClick={() => spawnBanner(<CreateNoteBanner event={event} />)} variant='secondary' img='StickyNote'>New note</Button>
+            <Button onClick={() => spawnBanner(<LinkComponents.Create.Banner event={event} />)} variant='secondary' img='Link'>Create link</Button>
+            </Stack>
+            <Stack dir='column' flex>
+              <Button onClick={() => spawnBanner(<Enrichment.Banner event={event} />)} variant='glass' img='PrismColor'>Enrich</Button>
+              <Button onClick={() => spawnBanner(<LinkComponents.Connect.Banner event={event} />)} variant='secondary' img='Link'>Connect link</Button>
+            </Stack>
           </Stack>
-          <Tabs defaultValue='json' className={s.tabs}>
-            <TabsList className={s.tabs_list}>
-              <TabsTrigger value='json'>JSON</TabsTrigger>
-              <TabsTrigger value='raw'>XML</TabsTrigger>
-            </TabsList>
-            <TabsContent className={s.tabs_content} value='raw'>
-              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(detailedChunkEvent.event.original || '')} img='Copy'>Copy XML</Button>
-              <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='XML' style={highlight.androidstudio}>
-                {detailedChunkEvent.event.original}
-              </SyntaxHighlighter>
-            </TabsContent>
-            <TabsContent className={s.tabs_content} value='json'>
-              <Button style={{ marginBottom: '12px', width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
-              <SyntaxHighlighter customStyle={{ borderRadius: 6 }} language='JSON' style={highlight.androidstudio}>
-                {rawJSON}
-              </SyntaxHighlighter>
-            </TabsContent>
-          </Tabs>
+          <SyntaxHighlighter className={s.highlighter} customStyle={{ maxWidth: '100%', borderRadius: 6 }} language='JSON' style={highlight.androidstudio}>
+            {rawJSON}
+          </SyntaxHighlighter>
+          <Button variant='ghost' style={{ width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
+          <Locations />
         </Fragment>
       ) : (
         <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center'>

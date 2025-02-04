@@ -27,7 +27,7 @@ export function Navigation({ event }: Navigation.Props) {
 
     const nears = events.filter((e, i) => i > index - 16 && i < index + 16);
 
-    setEvents(nears);
+    setEvents(nears.reverse());
   }, [event]);
 
   const navigatorEventClickHandlerConstructor = (e: λEvent) => {

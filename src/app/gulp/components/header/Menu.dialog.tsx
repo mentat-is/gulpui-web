@@ -17,7 +17,7 @@ import { λNote } from '@/dto/Dataset';
 import { Note } from '@/class/Info';
 import { OperationBanner } from '@/banners/Operation.banner';
 import { useWindows } from '@/ui/Windows';
-import { Enrichment } from '@/banners/EnrichmentBanner';
+import { Enrichment } from '@/banners/Enrichment.banner';
 
 export function Menu() {
   const { spawnBanner, app, spawnDialog, destroyDialog } = useApplication();

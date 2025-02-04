@@ -3,7 +3,7 @@ import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Input } from '@impactium/components';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button, Stack } from '@impactium/components';
 import { Filter, FilterOptions, FilterType, λFilter, μ, Index } from '@/class/Info';
@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { λFile } from '@/dto/Dataset';
 import { format } from 'date-fns';
 import { Toggle } from '@/ui/Toggle';
+import { Icon } from '@impactium/icons';
+import { Glyph } from '@/ui/Glyph';
 
 const _baseFilter = (): λFilter => ({
   id: generateUUID() as μ.Filter,
@@ -83,12 +85,6 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     Info.filters_add(file.id, _filters);
   }
 
-  useEffect(() => {
-    api('/stats_cancel_request', {
-      query: { req_id: file.id }
-    }).then(res => toast('Previous request for this file has been canceled succesfully'));
-  }, []);
-
   const resetFilter = () => setFilter(_baseFilter);
 
   const setKey = (key: string) => {
@@ -101,8 +97,6 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   const setType = (type: FilterType) => setFilter({...filter || {}, type });
 
   const setValue = (value: string) => setFilter({...filter || {}, value });
-
-  const setDate = (date: Date | undefined) => setFilter({...filter || {}, value: date?.valueOf() });
 
   const handleCheckedChange = (checked: boolean, filter: λFilter) => Info.filters_change(file, filter, { isOr: checked });
 
@@ -143,7 +137,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     )
   }
 
-  function FilterField() {
+  const FilterField = useMemo(() => {
 
     const acceptableToType = (): string => {
       switch (acceptable) {
@@ -156,6 +150,9 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         case 'keyword':
           return 'keyword';
 
+        case 'ip':
+          return 'ip adress';
+
         case 'text':
           return 'text';
       }
@@ -165,18 +162,25 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       <Stack className={s.top}>
         <Select onValueChange={setKey} value={filter?.key}>
           <SelectTrigger>
-            <SelectValue placeholder='Choose filter' />
+            <Stack>
+              <Icon name={Glyph.Fields(filter.key)} />
+              <p>{filter.key}</p>
+            </Stack>
           </SelectTrigger>
           <SelectContent style={{ maxHeight: '33vh' }}>
             {Object.keys(app.timeline.filtering_options[file.id] || {}).map((key, i) => (
               <SelectItem key={i} value={key}>
+                <Stack>
+                  <Icon name={Glyph.Fields(key)} />
+                  <p>{key}</p>
+                </Stack>
                 {key}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select onValueChange={setType} value={filter?.type}>
-          <SelectTrigger className={s.select}>
+          <SelectTrigger style={{ width: 128 }} className={s.select}>
             <SelectValue defaultValue={FilterType.GREATER_OR_EQUAL} />
           </SelectTrigger>
           <SelectContent className={s.select}>
@@ -191,7 +195,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         <Button className={s.submit} variant={filter?.key && filter?.type && filter?.value ? 'default' : 'disabled'} img='Plus' onClick={addFilter} />
       </Stack>
     )
-  }
+  }, [filter, acceptable, app.timeline.filtering_options]);
 
   const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
 
@@ -207,7 +211,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           variant='ghost'
           img='Settings'>Back to file settings</Button>
         }>
-      <FilterField />
+      {FilterField}
       <AvailableFilters />
       <Stack dir='column' className={s.preview} ai='flex-start'>
         <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(base + Filter.query(app, file))}>Copy</Button></h4>

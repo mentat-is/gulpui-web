@@ -1,6 +1,6 @@
 import { File, Index, Operation, μ } from '@/class/Info';
 import { Button, Loading, Stack } from '@impactium/components';
-import React, { useState, createContext, useContext, useCallback, memo, useEffect } from 'react';
+import React, { useState, createContext, useContext, useCallback, memo, useEffect, useMemo } from 'react';
 import { generateUUID } from './utils';
 import { Timeline } from '@/app/gulp/components/body/Timeline';
 import s from './styles/Windows.module.css';

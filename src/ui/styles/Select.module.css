@@ -214,16 +214,9 @@
   align-items: center;
   text-align: left;
 }
-.item svg {
-  stroke: var(--dimmed);
-}
 .item[data-state="checked"] span {
   color: var(--white) !important;
 }
-.item[data-state="checked"] svg {
-  stroke: var(--white);
-}
-
 .item:focus,
 .item:hover {
   background-color: var(--gray16);

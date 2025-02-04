@@ -345,7 +345,7 @@ export class Info implements InfoProps {
     });
   }
 
-  enrichment = (plugin: string, file: λFile, events: λEvent['id'][]) => {
+  enrichment = (plugin: string, file: λFile, events: λEvent['id'][], customParameters: Record<string, any>) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
@@ -358,11 +358,14 @@ export class Info implements InfoProps {
         index: index.name,
         ws_id: this.app.general.ws_id
       },
-      body: Filter.events(this.app, file, events)
+      body: {
+        ...Filter.events(this.app, file, events),
+        customParameters
+      }
     });
   }
 
-  enrich_single_id = (plugin: string, event: λEvent) => {
+  enrich_single_id = (plugin: string, event: λEvent, customParameters: Record<string, any>) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
@@ -375,7 +378,8 @@ export class Info implements InfoProps {
         index: index.name,
         ws_id: this.app.general.ws_id,
         doc_id: event.id
-      }
+      },
+      body: customParameters
     }, console.log);
   }
 
@@ -1499,13 +1503,9 @@ export class Event {
     return events;
   }
 
-  public static findByIdAndUUID = (app: λApp, eventId: string | string[], id: μ.File) => Event.get(app, id).filter(e => Parser.array(eventId).includes(e.id));
+  public static ids = (app: λApp, ids: λEvent['id'][]) => Array.from(app.target.events.values()).flat().filter(e => ids.includes(e.id));
 
-  public static findById = (app: λApp, ids: λEvent['id'][]) => {
-    const all = Array.from(app.target.events.values()).flat();
-
-    return all.filter(e => ids.includes(e.id));
-  };
+  public static notes = (app: λApp, event: λEvent) => app.target.notes.filter(n => n.docs.some(doc => doc.id === event.id));
 }
 
 export class Note {
@@ -1519,11 +1519,9 @@ export class Note {
 
   public static id = (app: λApp, id: λNote['id']) => app.target.notes.find(n => n.id === id)!;
 
-  public static events = (app: λApp, note: λNote): λEvent[] => Event.findById(app, note.docs.map(d => d.id));
+  public static events = (app: λApp, note: λNote): λEvent[] => Event.ids(app, note.docs.map(d => d.id));
 
   public static findByFile = (app: λApp, file: λFile) => app.target.notes.filter(n => n.source_id === file.id);
-  
-  public static findByEvent = (use: λApp | λNote[], event: λEvent) => Parser.use(use, 'notes').filter(n => n.docs.some(eid => eid === event));
 
   public static timestamp = (app: λApp, note: λNote): number => {
     let sum = 0

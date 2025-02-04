@@ -58,7 +58,7 @@
 .content {
   padding: 2px;
   padding-right: 8px;
-  overflow: scroll;
+  overflow: auto;
   min-height: calc(100% - 40px);
 }
 .cell {
