@@ -5,6 +5,7 @@
   height: 400px !important;
 }
 .banner > div:last-child > div {
+  top: 24px !important;
   height: calc(100% + 24px) !important;
 }
 .banner > div:last-child > div > div {

@@ -39,7 +39,7 @@ export namespace Enrichment {
 
     useEffect(() => {
       Info.plugin_list().then(plugins => {
-        // setPlugins(plugins.filter(plugin => plugin.type.includes('enrichment')));
+        setPlugins(plugins.filter(plugin => plugin.type.includes('enrichment')));
       });
     }, []);
 
