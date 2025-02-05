@@ -26,7 +26,7 @@ export namespace Permissions {
   }
 
   export const Banner = () => {
-    const { Info, app } = useApplication();
+    const { destroyBanner } = useApplication();
     const [users, setUsers] = useState<λDetailedUser[]>([]);
     const [groups, setGroups] = useState<λGroup[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -64,34 +64,27 @@ export namespace Permissions {
     }
 
     const UsersList = useCallback(() => (
-      <Stack dir='column' ai='unset'>
+      <Stack dir='column' ai='unset' style={{ height: '100%', overflow: 'auto' }}>
         {users.length
           ? users.map(user => <User.Combination user={user} update={update} users={users} />)
           : Array.from({ length: 5 }).map((_, i) => <Skeleton width='full' />)}
       </Stack>
     ), [users]);
 
-    const GroupsList = () => {
-      return (
-        <Stack dir='column'>
-          {groups.length
-            ? groups.map(group => <User.Group.Combination group={group} />)
-            : Array.from({ length: 3 }).map(() => <Skeleton width='full' />)}
-        </Stack>
-      )
-    }
+    const done = <Button img='Check' variant='glass' onClick={destroyBanner} />
 
     return (
-      <UIBanner title='Permissions' option={<User.Create.Trigger loading={loading} />} loading={!users.length}>
-        <p>Users:</p>
+      <UIBanner title='Permissions' option={<User.Create.Trigger loading={loading} />} loading={!users.length} done={done}>
         <UsersList />
-        <p>Groups:</p>
-        <GroupsList />
+        <Button style={{ width: '100%' }} variant='glass' img='Users'>Manage groups</Button>
       </UIBanner>
     )
   }
 
   export namespace User {
+    export const UsernameRule = /^[a-zA-Z0-9_.@-]{4,16}$/;
+    export const PasswordRule = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-])[A-Za-z0-9!@#$%^&*()_+\-]{8,64}$/;
+
     export namespace Combination {
       export interface Props {
         user: λDetailedUser;
@@ -100,7 +93,7 @@ export namespace Permissions {
       }
     }
     export const Combination = ({ user, update, users }: Combination.Props) => {
-      const { app } = useApplication();
+      const { app, spawnBanner } = useApplication();
 
       const changeRoles = (id: λUser['id'], role: Permissions.Role, add?: boolean) => {
         const user = users.find(u => u.id === id);
@@ -171,7 +164,7 @@ export namespace Permissions {
               </Stack>
             </PopoverContent>
           </Popover>
-          <Button img='PenLine' variant='secondary' />
+          <Button img='PenLine' onClick={() => spawnBanner(<Permissions.User.Edit.Banner user={user} />)} variant='secondary' />
         </Stack>
       )
     }
@@ -230,8 +223,8 @@ export namespace Permissions {
 
         return (
           <UIBanner back={() => spawnBanner(<Permissions.Banner />)} title='Create user' done={<Done />}>
-            <Input img='User' placeholder='User idendificator' variant='highlighted' value={id} valid={isIdValid} onChange={inputConstructor(setId, setIsIdValid, new RegExp(''))} />
-            <Input img='Key' placeholder='Password' variant='highlighted' value={password} valid={isPasswordValid} onChange={inputConstructor(setPassword, setIsPasswordValid, new RegExp(''))} />
+            <Input img='User' placeholder='User idendificator' variant='highlighted' value={id} valid={isIdValid} onChange={inputConstructor(setId, setIsIdValid, new RegExp(Permissions.User.UsernameRule))} />
+            <Input img='Key' placeholder='Password' variant='highlighted' value={password} valid={isPasswordValid} onChange={inputConstructor(setPassword, setIsPasswordValid, new RegExp(Permissions.User.PasswordRule))} />
             <Input img='Gavel' placeholder='read, ingest, edit, delete, admin' variant='highlighted' value={permissions} valid={isPermissionsValid} onChange={handlePermsChange} />
             <Glyph.Chooser icon={icon} setIcon={setIcon} />
           </UIBanner>
@@ -249,6 +242,66 @@ export namespace Permissions {
           <Stack>
 
           </Stack>
+        )
+      }
+    }
+    export namespace Edit {
+      export namespace Banner {
+        export interface Props extends UIBanner.Props {
+          user: λDetailedUser;
+        }
+      }
+      export function Banner({ user, ...props }: Banner.Props) {
+        const { spawnBanner } = useApplication();
+        const [loading, setLoading] = useState<boolean>(false);
+        const [icon, setIcon] = useState<λGlyph['id'] | null>(user.glyph_id);
+        const [id, setId] = useState<string>(user.id);
+        const [isIdValid, setIsIdValid] = useState<boolean>(true);
+        const [password, setPassword] = useState<string>('');
+        const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
+        const [permissions, setPermisisons] = useState<string>(user.permission.join(', '));
+        const [isPermissionsValid, setIsPermissionsValid] = useState<boolean>(true);
+
+        const inputConstructor = (set: SetState<string>, setValid: SetState<boolean>, regexp: RegExp) => (event: ChangeEvent<HTMLInputElement>) => {
+          const { value } = event.target;
+          setValid(value.length > 3 ? true : regexp.test(value));
+          set(value);
+        }
+
+        const submit = () => {
+          api('/user_update', {
+            method: 'PATCH',
+            query: {
+              user_id: id,
+              password,
+              glyph_id: icon || Array.from(Glyph.List.entries()).find(i => i[1] === 'User')?.[0]!
+            },
+            setLoading,
+            body: {
+              permission: JSON.stringify(permissions.split(',').map(v => v.trim()))
+            }
+          }, () => spawnBanner(<Permissions.Banner />));
+        }
+
+        const handlePermsChange = (event: ChangeEvent<HTMLInputElement>) => {
+          const { value } = event.target;
+          const valid = value.split(',').map(v => v.trim()).every(v => RolesList.includes(v as Role));
+
+          setIsPermissionsValid(valid);
+          setPermisisons(value);
+        }
+
+        const Done = () => (
+          <Button img='Check' loading={loading} onClick={submit} disabled={id.length < 3 || !isIdValid || password.length < 5 || !isPasswordValid || !isPermissionsValid || !icon} variant='glass' />
+        )
+
+        return (
+          <UIBanner back={() => spawnBanner(<Permissions.Banner />)} title={`Edit user ${user.name}`} done={<Done />} {...props}>
+            <Input img='User' placeholder='User idendificator' variant='highlighted' value={id} valid={isIdValid} onChange={inputConstructor(setId, setIsIdValid, new RegExp(Permissions.User.UsernameRule))} />
+            <Input img='Key' placeholder='Password' variant='highlighted' value={password} valid={isPasswordValid} onChange={inputConstructor(setPassword, setIsPasswordValid, new RegExp(Permissions.User.PasswordRule))} />
+            <Input img='Gavel' placeholder='read, ingest, edit, delete, admin' variant='highlighted' value={permissions} valid={isPermissionsValid} onChange={handlePermsChange} />
+            <Glyph.Chooser icon={icon} setIcon={setIcon} />
+          </UIBanner>
         )
       }
     }

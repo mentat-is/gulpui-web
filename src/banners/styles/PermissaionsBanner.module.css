@@ -1,3 +1,6 @@
+.combination {
+  padding-right: 8px;
+}
 .combination canvas {
   box-shadow: var(--shadow-border);
 }
