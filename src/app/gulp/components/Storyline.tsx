@@ -12,7 +12,9 @@ import { Separator } from '@/ui/Separator';
 import { format } from 'date-fns';
 import { XY } from '@/dto/XY.dto';
 import { cn } from '@impactium/utils';
-
+import { download } from '@/ui/utils';
+// @ts-ignore
+import C2V from 'canvas2svg';
 
 export function StorylineBanner() {
   const { app } = useApplication();
@@ -27,24 +29,29 @@ export function StorylineBanner() {
   const exportStorylineAsJSON = () => {
     const data = JSON.stringify(notes, null, 2);
   
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-  
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `storyline_${Operation.selected(app)}.json`;
-  
-    link.click();
-  
-    URL.revokeObjectURL(url);
-    link.remove();
+    download(data, 'application/json', `storyline_${Operation.selected(app)}.json`);
   };
   
+  const exportStorylineAsSvg = () => {
+    const graph = document.getElementById('graph');
+    if (!graph) {
+      return;
+    }
+
+    const ctx = new C2V(graph.clientWidth, graph.clientHeight);
+    
+    // @ts-ignore
+    graph.render(ctx)
+
+    download(ctx.getSerializedSvg(true), 'image/svg+xml', 'gulp_storyline.svg');
+  }
 
   const done = <Button onClick={exportStorylineAsJSON} variant='glass' img='Download' />
 
+  const option = <Button onClick={exportStorylineAsSvg} variant='ghost' img='AcronymSvg' />
+
   return (
-    <Banner title='Storyline' done={done}>
+    <Banner title='Storyline' done={done} option={option}>
       <Graph min={min} max={max} notes={notes} />
       <List />
     </Banner>
@@ -69,18 +76,15 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
 
   const getNoteXPositionFromTimestamp = useCallback((timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * 512), [min, max]);
 
-  const drawCanvas = () => {
-    const canvas = graph.current;
-    if (canvas === null) {
-      return;
-    }
-
-    const ctx = canvas.getContext('2d');
+  const drawCanvas = (ctx = graph.current?.getContext('2d')) => {
     if (!ctx) {
-      return;
+      return
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // @ts-ignore
+    ctx.canvas.render = drawCanvas;
+
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     const drown: number[] = [];
 
@@ -93,7 +97,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
       }
 
       ctx.fillStyle = note.color;
-      ctx.fillRect(x, 0, 1, canvas.height);
+      ctx.fillRect(x, 0, 1, ctx.canvas.height);
     }
 
     notes.forEach(note => {
@@ -157,7 +161,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
   return (
     <Stack className={cn(s.graph, className)} {...props}>
       <div className={s.wrapper}>
-        <canvas width={512} height={256} ref={graph} className={s.canvas} />
+        <canvas id='graph' width={512} height={256} ref={graph} className={s.canvas} />
         <Stack className={s.points}>
           {Array.from(matrix.entries()).map(([id, { x, y }]) => {
             return <NotePoint.Point  id={id} description={Note.id(app, id).description} className={s.point} note={Note.id(app, id)} x={x} y={y} />

@@ -156,8 +156,8 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
       await callback(result);
     }
   } else if (options.toast !== false) {
-    toast.error(toSeparatedCase(typeof options.toast === 'string' ? options.toast : res.data.__error.name), {
-      description: res.data.__error.msg ? capitalize(res.data.__error.msg) : 'Check console for further information',
+    toast.error(toSeparatedCase(typeof options.toast === 'string' ? options.toast : res.data?.__error?.name), {
+      description: res.data?.__error?.msg ? capitalize(res.data.__error.msg) : 'Check console for further information',
 
     })
   }

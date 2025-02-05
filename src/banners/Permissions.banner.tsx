@@ -2,17 +2,16 @@ import { λDetailedUser, λUser } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
-import { Button, Input, Stack } from '@impactium/components';
-import { ChangeEvent, Fragment, useCallback, useEffect, useState } from 'react';
+import { Button, Input, Skeleton, Stack } from '@impactium/components';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import s from './styles/PermissaionsBanner.module.css';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { capitalize } from 'lodash';
 import { Switch } from '@/ui/Switch';
-import { Separator } from '@/ui/Separator';
 import { Icon } from '@impactium/icons';
 import { toast } from 'sonner';
 import { Glyph } from '@/ui/Glyph';
-import { λGlyph } from '@/dto/Dataset';
+import { λGlyph, λGroup } from '@/dto/Dataset';
 import { SetState } from '@/class/API';
 
 export namespace Permissions {
@@ -29,13 +28,19 @@ export namespace Permissions {
   export const Banner = () => {
     const { Info, app } = useApplication();
     const [users, setUsers] = useState<λDetailedUser[]>([]);
+    const [groups, setGroups] = useState<λGroup[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
 
     const reload = useCallback(() => {
       api<λDetailedUser[]>('/user_list', {
         setLoading
       }, setUsers);
-    }, [setUsers]);
+
+      api<λGroup[]>('/user_group_list', {
+        method: 'POST',
+        setLoading
+      }, setGroups);
+    }, [setUsers, setGroups]);
 
     useEffect(() => {
       reload();
@@ -58,9 +63,30 @@ export namespace Permissions {
       }, reload);
     }
 
+    const UsersList = useCallback(() => (
+      <Stack dir='column' ai='unset'>
+        {users.length
+          ? users.map(user => <User.Combination user={user} update={update} users={users} />)
+          : Array.from({ length: 5 }).map((_, i) => <Skeleton width='full' />)}
+      </Stack>
+    ), [users]);
+
+    const GroupsList = () => {
+      return (
+        <Stack dir='column'>
+          {groups.length
+            ? groups.map(group => <User.Group.Combination group={group} />)
+            : Array.from({ length: 3 }).map(() => <Skeleton width='full' />)}
+        </Stack>
+      )
+    }
+
     return (
-      <UIBanner title='Permissions' option={<User.Create.Trigger loading={loading} />}>
-        {users.map(user => <User.Combination user={user} update={update} users={users} />)}
+      <UIBanner title='Permissions' option={<User.Create.Trigger loading={loading} />} loading={!users.length}>
+        <p>Users:</p>
+        <UsersList />
+        <p>Groups:</p>
+        <GroupsList />
       </UIBanner>
     )
   }
@@ -209,6 +235,20 @@ export namespace Permissions {
             <Input img='Gavel' placeholder='read, ingest, edit, delete, admin' variant='highlighted' value={permissions} valid={isPermissionsValid} onChange={handlePermsChange} />
             <Glyph.Chooser icon={icon} setIcon={setIcon} />
           </UIBanner>
+        )
+      }
+    }
+    export namespace Group {
+      export namespace Combination {
+        export interface Props {
+          group: λGroup
+        }
+      }
+      export function Combination({ group, ...props }: Combination.Props) {
+        return (
+          <Stack>
+
+          </Stack>
         )
       }
     }

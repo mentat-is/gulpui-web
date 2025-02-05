@@ -346,3 +346,15 @@ export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngin
     0
   ) as Hardcode.Height;
 }
+
+export function download(content: string, type: string, name: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}

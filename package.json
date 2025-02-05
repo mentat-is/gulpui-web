@@ -26,7 +26,6 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vis.gl/react-google-maps": "^1.5.1",
-    "canvas-to-svg": "^1.0.3",
     "canvas2svg": "^1.0.16",
     "class-variance-authority": "^0.7.0",
     "date-fns": "^3.6.0",

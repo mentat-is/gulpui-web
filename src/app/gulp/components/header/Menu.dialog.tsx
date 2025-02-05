@@ -15,6 +15,7 @@ import { Permissions } from '@/banners/Permissions.banner';
 import C2S from 'canvas2svg';
 import { toast } from 'sonner';
 import { Logger } from '@/dto/Logger.class';
+import { download } from '@/ui/utils';
 
 export function Menu() {
   const { spawnBanner, destroyDialog } = useApplication();
@@ -45,17 +46,7 @@ export function Menu() {
       // @ts-ignore
       window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark(true, ctx);
   
-      const svg = ctx.getSerializedSvg(true);
-  
-      const blob = new Blob([svg], { type: "image/svg+xml" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = 'gulp_canvas.svg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      download(ctx.getSerializedSvg(true), 'image/svg+xml', 'gulp_canvas.svg');
     } catch (e) {
       Logger.error(e);
       toast('Out of memory', {
