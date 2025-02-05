@@ -160,7 +160,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
         <canvas width={512} height={256} ref={graph} className={s.canvas} />
         <Stack className={s.points}>
           {Array.from(matrix.entries()).map(([id, { x, y }]) => {
-            return <NotePoint id={id} description={Note.id(app, id).description} className={s.point} note={Note.id(app, id)} x={x} y={y} />
+            return <NotePoint.Point  id={id} description={Note.id(app, id).description} className={s.point} note={Note.id(app, id)} x={x} y={y} />
           })}
         </Stack>
       </div>

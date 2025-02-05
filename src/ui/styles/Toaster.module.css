@@ -1,13 +1,12 @@
-/* .toaster {} */
-
 .toast {
   background: var(--meta-black);
   color: var(--white);
   border: 1px solid var(--geist-border);
   box-shadow: var(--shadow-border);
-  border-radius: var(--border-s);
+  border-radius: 6px;
   padding: 16px 24px;
   transition: all 0.25s var(--transition);
+  gap: 24px;
 }
 
 .description {

@@ -376,7 +376,7 @@ export class Info implements InfoProps {
     });
   }
 
-  enrich_single_id = (plugin: string, event: λEvent, customParameters: Record<string, any>) => {
+  enrich_single_id = (plugin: string, event: λEvent, custom_parameters: Record<string, any>) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
@@ -390,8 +390,9 @@ export class Info implements InfoProps {
         ws_id: this.app.general.ws_id,
         doc_id: event.id
       },
-      body: customParameters
-    }, console.log);
+      body: { custom_parameters },
+      toast: 'Enrichment Error'
+    });
   }
 
   query_file = async (file: λFile, range?: MinMax) => {
@@ -641,6 +642,10 @@ export class Info implements InfoProps {
 
   setDialogSize = (number: number) => {
     this.setInfoByKey(number, 'timeline', 'dialogSize');
+  }
+
+  setFooterSize = (number: number) => {
+    this.setInfoByKey(number, 'timeline', 'footerSize');
   }
 
   notes_reload = () => api<ΞNote[]>('/note_list', {
@@ -1203,7 +1208,7 @@ export class File {
   public static pluginName = (file: λFile) => file.name.split('/').reverse()[1];
 
   // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(s => s.selected)).filter(s => s.name.toLowerCase().includes(app.timeline.filter) || File.id(app, s.id)?.context_id.includes(app.timeline.filter));
+  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(s => s.selected)).filter(s => s.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || File.id(app, s.id)?.context_id.includes(app.timeline.filter.toLowerCase()));
   
   public static select = (app: λApp, selected: λFile[]): λFile[] => app.target.files.map(f => selected.find(s => s.id === f.id) ? File._select(f) : f);
 

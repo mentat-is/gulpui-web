@@ -1,5 +1,5 @@
 import { UUID } from 'crypto';
-import { between } from '@impactium/utils';
+import { between, capitalize } from '@impactium/utils';
 import { type Callback } from '@impactium/types'
 import { toast } from 'sonner';
 import { Internal } from './Info';
@@ -156,8 +156,9 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
       await callback(result);
     }
   } else if (options.toast !== false) {
-    toast(toSeparatedCase(res?.data?.__error?.name), {
-      description: 'Check console for further information'
+    toast.error(toSeparatedCase(typeof options.toast === 'string' ? options.toast : res.data.__error.name), {
+      description: res.data.__error.msg ? capitalize(res.data.__error.msg) : 'Check console for further information',
+
     })
   }
   if (res.isError() && res.data?.__error?.name === 'MissingPermission') {

@@ -230,15 +230,15 @@ export namespace Enrichment {
 
     const Hint = () => {
       return (
-        <Stack style={{ color: 'var(--text-dimmed)' }}>
+        <Stack style={{ color: 'var(--text-dimmed)', padding: '0 8px' }} gap={16}>
           <Icon name='Info' />
-          <p style={{ lineHeight: 1.1, fontSize: 11, color: 'var(--text-dimmed)', fontFamily: 'var(--font-mono)', maxWidth: 512, whiteSpace: 'break-spaces' }}>In lists, values can be separated by comma. Dict values should be represented in JSON format</p>
+          <p style={{ lineHeight: 1.1, fontSize: 11, color: 'var(--text-dimmed)', fontFamily: 'var(--font-mono)', maxWidth: 512, whiteSpace: 'break-spaces', textWrap: "balance" }}>In lists, values can be separated by comma. Dict values should be represented in JSON format</p>
         </Stack>
       )
     }
 
     return (
-      <UIBanner title='Data enrichment' done={done} loading={!plugins}>
+      <UIBanner title={event ? 'Event enrichment' : 'Data enrichment'} done={done} loading={!plugins}>
         <PluginSelection />
         <FileSelection />
         <FrameSelector />

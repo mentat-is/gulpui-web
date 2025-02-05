@@ -29,7 +29,7 @@ export function NotesDisplayer({ getPixelPosition, scrollY }: NotesDisplayerProp
 
         if (top <= 0) return null;
 
-        return <NotePoint key={note.id} note={note} x={left} y={top} />
+        return <NotePoint.Point key={note.id} note={note} x={left} y={top} />
       })}
     </Fragment>
   )

@@ -1,19 +1,15 @@
-import { useState, useEffect, useRef, MouseEvent, useMemo, useCallback, SetStateAction } from 'react';
+import { useState, useEffect, useRef, MouseEvent, useCallback } from 'react';
 import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu';
 import s from '../../Gulp.module.css';
 import { useApplication } from '@/context/Application.context';
-import { DragDealer } from '@/class/dragDealer.class';
 import { Canvas } from './Canvas';
-import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto';
 import { toast } from 'sonner';
-import debounce from 'lodash/debounce';
-import { Controls } from './Controls';
 import { TargetMenu } from './Target.menu';
 import { Input, Stack } from '@impactium/components';
 import { FilesMenu } from './Files.manu';
 import { useKeyHandler } from '@/app/use';
 import { λFile } from '@/dto/Dataset';
-import { File } from '@/class/Info';
+import { File, Info } from '@/class/Info';
 import { Navigator } from './Navigator';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 
@@ -21,55 +17,8 @@ export function Timeline() {
   const { app, Info, timeline, spawnDialog } = useApplication();
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(-26);
-  const [resize, setResize] = useState<StartEnd>(StartEndBase);
-  const [isResizing, setIsResizing] = useState<boolean>(false);
   const [shifted, setShifted] = useState<λFile[]>([]);
   const [ isShiftPressed ] = useKeyHandler('Shift');
-
-  const increaseScrollY = useCallback((λy: number) => {
-    setScrollY((y) => Math.round(y + λy));
-  }, [app, timeline]);
-
-  const handleMouseDown = useCallback((event: MouseEvent) => {
-    dragState.current.dragStart(event);
-    if (event.altKey) {
-      setResize({ start: event.clientX, end: event.clientX });
-      setIsResizing(true);
-    }
-  }, [setResize]);
-
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (isResizing) return setResize((prev) => ({ ...prev, end: event.clientX }))
-      
-    dragState.current.dragMove(event);
-    setResize({ start: event.clientX, end: event.clientX });
-  }, [isResizing]);
-
-  const handleMouseUpOrLeave = useCallback((event: MouseEvent) => {
-    event.preventDefault();
-    dragState.current.dragStop();
-  
-    if (isResizing) {
-      const min = Math.min(resize.end, resize.start);
-      const max = Math.max(resize.end, resize.start);
-
-      const scale = Info.width / (max - min);
-      
-      if (scale === Infinity) return toast('Selected frame too small');
-  
-      Info.setTimelineScale(scale);
-      setScrollX((scrollX + min) * (scale / app.timeline.scale));
-    }
-  
-    setResize(StartEndBase);
-    setIsResizing(false);
-  }, [isResizing, resize, Info, scrollX, app.timeline.scale]);
-
-  const dragState = useRef(new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY }));
-
-  useEffect(() => {
-    dragState.current = new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY });
-  }, [timeline]);
 
   const handleContextMenu = (event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top) / 48)
@@ -141,19 +90,16 @@ export function Timeline() {
     <Stack
       id='timeline'
       className={s.timeline}
-      onMouseLeave={handleMouseUpOrLeave}
       onKeyDown={handleKeyDown}
-      onMouseUp={handleMouseUpOrLeave}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
       gap={12}
+      flex
       onContextMenu={handleContextMenu}
       ref={timeline}>
       <ContextMenu>
         <ContextMenuTrigger>
-          <Canvas resize={resize} timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} setScrollX={setScrollX} />
+          <Canvas timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} setScrollX={setScrollX} setScrollY={setScrollY} />
           <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
-          <Navigator />
+          <Navigator setScrollX={setScrollX} timeline={timeline} />
         </ContextMenuTrigger>
         <Menu />
       </ContextMenu>

@@ -5,7 +5,6 @@ import s from './styles/Canvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';
 import { Magnifier } from '@/ui/Magnifier';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
-import { StartEnd } from '@/dto/StartEnd.dto';
 import { RenderEngine } from '@/class/RenderEngine';
 import { LinksDisplayer } from './Links.displayer';
 import { NotesDisplayer } from './Notes.displayer';
@@ -15,34 +14,42 @@ import { Timestamp } from '@/ui/timestamp';
 import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
 import Crosshair from './Crosshair';
-import { Controls } from './Controls';
 import { SetState } from '@/class/API';
 import { Stack } from '@impactium/components';
-import { conforms, debounce } from 'lodash';
+import { debounce } from 'lodash';
+import { useDrugs } from '@/app/use';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
     timeline: React.RefObject<HTMLDivElement>;
     shifted: λFile[];
-    setScrollX: SetState<number>;
     scrollX: number;
+    setScrollX: SetState<number>;
     scrollY: number;
-    resize: StartEnd;  
+    setScrollY: SetState<number>;
   }
 }
 
-export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted }: Canvas.Props) {
+export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shifted }: Canvas.Props) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   
   const { app, banner, spawnDialog, Info, dialog } = useApplication();
-  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted];
+  const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted, app.timeline.dialogSize, app.timeline.footerSize];
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
+  const { handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs({
+    Info,
+    timeline,
+    setScrollX,
+    setScrollY,
+  });
 
-  const renderCanvas = (force?: boolean) => {
-    if (!canvas_ref.current) return;
-    const ctx = canvas_ref.current.getContext('2d')!;
+  const renderCanvas = (force?: boolean, ctx = canvas_ref.current?.getContext('2d')) => {
+    if (!ctx || !canvas_ref.current) {
+      return;
+    }
+
     ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
     canvas_ref.current.width = wrapper_ref.current?.clientWidth || (window.innerWidth - 24);
     canvas_ref.current.height = wrapper_ref.current?.clientHeight || (window.innerHeight - 24);
@@ -77,6 +84,9 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     ctx.fillRect(getPixelPosition(app.timeline.frame.max || app.timeline.frame?.max) + 2, 0, 3, timeline.current?.clientHeight || 0);
 
     render.ruler.sections();
+
+    // @ts-ignore
+    window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark = renderCanvas;
   };
 
   const handleClick = (event: MouseEvent) => {
@@ -151,11 +161,13 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     const canvas = wrapper_ref.current;
     if (canvas) {
       canvas.addEventListener('wheel', debouncedHandleWheel as unknown as EventListener, { passive: true });
+      canvas.addEventListener('mousemove', move as any, { passive: true });
     }
 
     return () => {
       if (canvas) {
         canvas.removeEventListener('wheel', debouncedHandleWheel as unknown as EventListener);
+        canvas.removeEventListener('mousemove', move as any);
       }
       debouncedHandleWheel.cancel();
     };
@@ -186,12 +198,14 @@ export function Canvas({ timeline, setScrollX, scrollX, scrollY, resize, shifted
     <div
       ref={wrapper_ref}
       className={s.wrapper}
-      onMouseMove={move}
+      onMouseLeave={handleMouseUpOrLeave as any}
+      onMouseUp={handleMouseUpOrLeave as any}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
       onKeyDown={toggler}
       tabIndex={0}>
       <NotesDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
       <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
-      <Controls setScrollX={setScrollX} scrollX={scrollX} />
       <canvas
         ref={canvas_ref}
         id='canvas'

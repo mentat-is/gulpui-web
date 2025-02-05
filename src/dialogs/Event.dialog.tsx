@@ -9,7 +9,7 @@ import s from './styles/DisplayEventDialog.module.css';
 import { copy } from '@/ui/utils';
 import { Button, Stack } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { Event, Note } from '@/class/Info';
+import { Event, File, Note } from '@/class/Info';
 import { Loading } from '@impactium/components';
 import { Navigation } from './components/navigation';
 import { λNote } from '@/dto/Dataset';
@@ -70,8 +70,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     )
   }
 
+  const index = useMemo(() => {
+    const events = File.events(app, event.file_id);
+    const index = events.findIndex(e => e.id === event.id);
+    return events.length - index
+  }, [event]);
+
   return (
-    <Dialog icon={<SymmetricSvg text={event.id} />} title={`Event: ${event.id}`} description={`From ${event.context_id} with code ${event.code}`}>
+    <Dialog icon={<SymmetricSvg text={event.id} />} title={`Event №${index}`} description={File.id(app, event.file_id).name}>
       <Navigation event={event} />
       {detailedChunkEvent ? (
         <Fragment>

@@ -21,7 +21,7 @@ export namespace Glyph {
     glyph: λGlyph['id'];
   }
 
-  export const Raw = Object.keys(Icon.icons) as Icon.Name[];
+  export const Raw = Object.keys(Icon.icons).slice(0, 50) as Icon.Name[];
 
   export const List: Map<μ.Glyph, Icon.Name> = new Map();
 

@@ -4,10 +4,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CreateOperationBanner } from "./CreateOperation.banner";
 import { useApplication } from "@/context/Application.context";
 import { Operation } from "@/class/Info";
-import { SelectFilesBanner } from "./SelectFiles.banner";
+import { SelectFiles } from "./SelectFiles.banner";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
 import { Icon } from "@impactium/icons";
-import { Glyph } from "@/ui/Glyph";
 import { λOperation } from "@/dto";
 import { go } from "@/ui/utils";
 
@@ -46,7 +45,7 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
     const handleDoneButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
       ev.preventDefault();
 
-      spawnBanner(<SelectFilesBanner />);
+      spawnBanner(<SelectFiles.Banner back={() => spawnBanner(<OperationBanner />)} />);
     }
     return (
       <Button disabled={!Operation.selected(Info.app)} onClick={handleDoneButtonClick} size='icon' variant='glass' img='Check' />

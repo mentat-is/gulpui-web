@@ -5,6 +5,7 @@
   background: var(--soft-black);
   width: 100%;
   border: none;
+  max-height: unset;
 }
 .background {
   position: absolute;

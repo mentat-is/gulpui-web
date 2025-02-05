@@ -7,7 +7,7 @@ import s from './styles/UploadBanner.module.css';
 import { Context, Index, Mapping, Operation } from '@/class/Info';
 import { formatBytes } from '@/ui/utils';
 import { Progress } from '@/ui/Progress';
-import { SelectFilesBanner } from './SelectFiles.banner';
+import { SelectFiles } from './SelectFiles.banner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
 import { MaybeArray } from '@impactium/types';
 import { Button, Stack } from '@impactium/components';
@@ -134,7 +134,7 @@ export function UploadBanner() {
 
     setLoading(false);
 
-    spawnBanner(<SelectFilesBanner />);
+    spawnBanner(<SelectFiles.Banner />);
   };
   
   const setPlugin = (plugin: string, filename: File['name']) => {

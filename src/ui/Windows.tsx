@@ -1,6 +1,6 @@
 import { File, Index, Operation, μ } from '@/class/Info';
 import { Button, Loading, Stack } from '@impactium/components';
-import React, { useState, createContext, useContext, useCallback, memo, useEffect, useMemo } from 'react';
+import React, { useState, createContext, useContext, useCallback, memo, useEffect, useMemo, useRef } from 'react';
 import { generateUUID } from './utils';
 import { Timeline } from '@/app/gulp/components/body/Timeline';
 import s from './styles/Windows.module.css';
@@ -12,13 +12,14 @@ import { Menu } from '@/app/gulp/components/header/Menu.dialog';
 import { AuthBanner } from '@/banners/Auth.banner';
 import { LimitsBanner } from '@/banners/Limits.banner';
 import { OperationBanner } from '@/banners/Operation.banner';
-import { SelectFilesBanner } from '@/banners/SelectFiles.banner';
+import { SelectFiles } from '@/banners/SelectFiles.banner';
 import { Separator } from './Separator';
 import { Glyph } from './Glyph';
 import { Default } from '@/dto/Dataset';
 import { IndexBanner } from '@/banners/Index.banner';
 import { CreateOperationBanner } from '@/banners/CreateOperation.banner';
 import { cn } from '@impactium/utils';
+import { Resizer } from './Resizer';
 
 export namespace Windows {
   export interface Props {
@@ -58,7 +59,7 @@ export namespace Windows {
   export const Context = createContext<Windows.Props | undefined>(undefined);
 
   const ActiveWindow = memo(({ windows }: { windows: Windows.Window[] }) => {
-    const { dialog } = useApplication();
+    const { dialog, app, Info } = useApplication();
     const active = Windows.λWindow.active(windows);
 
     if (!active) {
@@ -70,11 +71,14 @@ export namespace Windows {
     return <Stack key={uuid} gap={12} className={cn(s.window, className)} {...props}>
       <Menu />
       {children}
-      <Stack className={cn(s.dialog, dialog && s.open)}>
+      <Stack className={cn(s.dialog, dialog && s.open)} style={{ width: app.timeline.dialogSize }} pos='relative'>
+        <Resizer init={app.timeline.dialogSize} set={Info.setDialogSize} />
         {dialog}
       </Stack>
     </Stack>;
   });
+
+
 
   export const Provider = () => {
     const [windows, setWindows] = useState<Windows.Window[]>([]);
@@ -185,7 +189,7 @@ const NoWindows = () => {
     {
       name: 'Files selected',
       cond: File.selected(Info.app).length > 0,
-      trigger: ActionButtonConstructor('Select workflow', Default.Icon.FILE, <SelectFilesBanner />)
+      trigger: ActionButtonConstructor('Select workflow', Default.Icon.FILE, <SelectFiles.Banner />)
     },
     {
       name: 'Frame selected',
