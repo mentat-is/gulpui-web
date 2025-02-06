@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Toggle } from '@/ui/Toggle';
 import { Icon } from '@impactium/icons';
 import { Glyph } from '@/ui/Glyph';
+import { SelectIcon } from '@radix-ui/react-select';
 
 const _baseFilter = (): λFilter => ({
   id: generateUUID() as μ.Filter,
@@ -166,19 +167,15 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         <Select onValueChange={setKey} value={filter?.key}>
           <Skeleton className={s.skeleton} show={preloading} width='full'>
             <SelectTrigger>
-              <Stack>
+              <SelectIcon asChild>
                 <Icon name={Glyph.Fields(filter.key)} />
-                <p>{filter.key}</p>
-              </Stack>
+              </SelectIcon>
+              <SelectValue defaultValue={filter.key} />
             </SelectTrigger>
           </Skeleton>
           <SelectContent style={{ maxHeight: '33vh' }}>
             {Object.keys(app.timeline.filtering_options[file.id] || {}).map((key, i) => (
-              <SelectItem key={i} value={key}>
-                <Stack>
-                  <Icon name={Glyph.Fields(key)} />
-                  <p>{key}</p>
-                </Stack>
+              <SelectItem value={key}>
                 {key}
               </SelectItem>
             ))}

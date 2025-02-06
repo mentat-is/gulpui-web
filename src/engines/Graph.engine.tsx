@@ -16,10 +16,6 @@ export class GraphEngine implements Engine.Interface<Target> {
   }
 
   public render(file: λFile, _y: number) {
-    // const map = this.is(file)
-    //   ? this.renderer.height.map.get(file.id)
-    //   : this.get(file);
-
     const map = this.map.get(file.id);
   
     const graphs = (

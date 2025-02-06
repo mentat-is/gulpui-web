@@ -237,6 +237,8 @@ export namespace Enrichment {
       )
     }
 
+    console.log(Icon.icons);
+
     return (
       <UIBanner title={event ? 'Event enrichment' : 'Data enrichment'} done={done} loading={!plugins}>
         <PluginSelection />

@@ -18,6 +18,7 @@ import { SetState } from '@/class/API';
 import { Stack } from '@impactium/components';
 import { debounce } from 'lodash';
 import { useDrugs } from '@/app/use';
+import { Icon } from '@impactium/icons';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -120,7 +121,11 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
     const events = File.events(app, file).filter(e => {
       const pos = getPixelPosition(e.timestamp + file.settings.offset);
 
-      return clickPosition === Math.round(pos);
+      if (file.settings.engine === 'graph') {
+        return clickPosition >= pos - 16 && clickPosition <= pos;
+      }
+
+      return clickPosition === pos;
     });
 
     LoggerHandler.canvasClick(file, events, clickPosition);

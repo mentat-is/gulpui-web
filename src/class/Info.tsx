@@ -484,6 +484,20 @@ export class Info implements InfoProps {
 
     const parsed_shit = Mapping.parse(shit);
 
+    const another_parsed_shit = await (await api<GulpDataset.PluginList.Summary>('/plugin_list').then(p => p.filter(p => p.type.includes('ingestion'))));
+
+    another_parsed_shit.forEach(shit => {
+      const found_shit = parsed_shit.find(ps => ps.name === shit.filename);
+      if (found_shit) {
+        return;
+      } else {
+        parsed_shit.push({
+          name: shit.filename,
+          methods: []
+        })
+      }
+    })
+
     this.setInfoByKey(parsed_shit, 'target', 'plugins');
 
     return parsed_shit;
@@ -951,7 +965,7 @@ export class Info implements InfoProps {
   
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 8;
 
-  query_external = (plugin: string, uri: string, params: Record<string, any>) => {
+  query_external = async (plugin: string, uri: string, params: Record<string, any>) => {
     const index = Index.selected(this.app);
 
     if (!index) {
@@ -975,7 +989,9 @@ export class Info implements InfoProps {
         q_options: {
           plugin,
           uri,
-          external_parameters: params
+          external_parameters: {
+            custom_parameters: params
+          }
         }
       }
     });
