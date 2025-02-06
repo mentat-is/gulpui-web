@@ -50,9 +50,21 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
       return;
     }
 
-    ctx.clearRect(0, 0, window.innerWidth, canvas_ref.current.height);
-    canvas_ref.current.width = wrapper_ref.current?.clientWidth || (window.innerWidth - 24);
-    canvas_ref.current.height = wrapper_ref.current?.clientHeight || (window.innerHeight - 24);
+    if (wrapper_ref.current && canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
+      const oldWidth = canvas_ref.current.width;
+      const newWidth = wrapper_ref.current.clientWidth
+
+      canvas_ref.current.width = newWidth;
+      canvas_ref.current.height = wrapper_ref.current.clientHeight;
+
+      const delta = oldWidth / newWidth;
+
+      Info.setTimelineScale(app.timeline.scale * delta);
+      setScrollX(s => s - newWidth + oldWidth);
+      return
+    } else {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    }
 
     const limits = getLimits(app, Info, timeline, scrollX);
 
@@ -148,13 +160,7 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
     Info.setTimelineScale(newScale);
     setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX));
   }, [wrapper_ref, banner, Info, bounding, app.timeline.scale, scrollX]);
-  
 
-  /**
-   * Используется как лимитер на кол-во срабатываний скролла колёсиком мыши,
-   * так как в инном случае, реакт не успевает обовить дом древо,
-   * что производит к неправильным расчётам.
-   */
   const debouncedHandleWheel = useMemo(() => debounce(handleWheel, 5), [handleWheel]);
 
   useEffect(() => {

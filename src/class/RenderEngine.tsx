@@ -224,26 +224,39 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
     const y = File.getHeight(this.info.app, file, this.scrollY);
 
-    const x_max = this.getPixelPosition(file.timestamp.max);
-    const x_min = this.getPixelPosition(file.timestamp.min);
+    const right = this.getPixelPosition(file.timestamp.max) + 12;
+    const left = this.getPixelPosition(file.timestamp.min) - 12;
+    const line = {
+      one: y - 6,
+      two: y + 4,
+      three: y + 14
+    }
 
-    this.ctx.fillStyle = '#e8e8e8';
+    // Limits
     this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.settings.offset) + 2, y - 24, 2, 48 - 1);
     this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.settings.offset) - 2, y - 24, 2, 48 - 1);
-    
-    this.ctx.font = `10px Arial`;
-    this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), x_min - 64, y + 4);
-    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), x_max + 12, y + 4);
+
+    const events = Event.get(this.info.app, file.id).length.toString()
 
     this.ctx.font = `10px Arial`;
-    this.ctx.fillStyle = '#0372ef';
-    const events = Event.get(this.info.app, file.id).length.toString()
-    this.ctx.fillText(events, x_max + 12, y + 14);
-    this.ctx.fillText(events, x_min - 64, y + 14);
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(file.total.toString(), x_max + 12, y - 6);
-    this.ctx.fillText(file.total.toString(), x_min - 64, y - 6);
+
+    this.ctx.textAlign='left'
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.fillText(file.total.toString(), right, line.one);
+    this.ctx.fillStyle = '#a1a1a1';
+    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), right, line.two);
+    this.ctx.fillStyle = '#0372ef';
+    this.ctx.fillText(events, right, line.three);
+
+
+    this.ctx.textAlign='right'
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), left, line.one);
+    this.ctx.fillStyle = '#a1a1a1';
+    this.ctx.fillText(file.total.toString(), left, line.two);
+    this.ctx.fillStyle = '#0372ef';
+    this.ctx.fillText(events, left, line.three);
 
     if (this.info.app.target.ingest.includes(sha1(file.name))) {
       this.ingesting(file);
@@ -262,16 +275,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public draw_info = (file: λFile) => {
     const y = File.getHeight(this.info.app, file, this.scrollY) + 4;
 
+    this.ctx.textAlign='left'
     this.ctx.font = `12px Arial`;
     this.ctx.fillStyle = '#e8e8e8';
     this.ctx.fillText(file.name, 10, y);
-    
-    this.ctx.font = `10px Arial`;
+    this.ctx.fillText(File.events(this.info.app, file).length.toString(), 10, y + 14);
+
+
     this.ctx.fillStyle = '#a1a1a1';
     this.ctx.fillText(`${file.total.toString()} | ${File.context(this.info.app, file).name}`, 10, y - 14);
-    
-    this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(File.events(this.info.app, file).length.toString(), 10, y + 14);
   }
 
   public target = () => {

@@ -17,12 +17,10 @@
   border: 1px solid var(--gray-400);
 }
 .wrapper:hover .position {
-  position: absolute;
-  font-size: 10px;
   font-weight: 600;
   text-shadow: 0px 0px 2px var(--meta-black);
-  transform: translate(16px, -16px);
+  transform: translate(10%, 32px);
   left: -256px;
-  z-index: 5;
+  z-index: 6;
   top: -256px;
 }

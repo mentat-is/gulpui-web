@@ -1,6 +1,8 @@
 .timestamp {
-  display: none;
-  font-size: 12px;
+  font-size: clamp(10px, 1vw, 64px);
+  line-height: 0;
   color: var(--text-white);
   font-family: var(--font-mono);
+  position: absolute;
+  white-space: nowrap;
 }
