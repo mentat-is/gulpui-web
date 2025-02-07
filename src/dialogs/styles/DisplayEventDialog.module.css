@@ -1,5 +1,6 @@
 .highlighter {
   padding: 6px;
+  height: 100%;
 }
 .highlighter code * {
   font-family: var(--font-mono);

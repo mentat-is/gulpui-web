@@ -7,7 +7,7 @@ import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
 import { copy, download } from '@/ui/utils';
-import { Button, Stack } from '@impactium/components';
+import { Button, Skeleton, Stack } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 import { Event, File, Note } from '@/class/Info';
 import { Loading } from '@impactium/components';
@@ -63,6 +63,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const Locations = () => {
     const source = defaultJSON?.['source.ip'];
     const destination = defaultJSON?.['destination.ip'];
+
+    if (!source && !destination) {
+      return null;
+    }
+    
     return (
       <Stack style={{ flexWrap: 'wrap' }}>
         {source && <Button style={{ flex: 1 }} variant='glass' onClick={() => spawnBanner(<Maps.Banner lat={41.7593026} lng={12.6005981} ip={source} />)} img='Location'>Visualize source ip address {source} on map</Button>}
@@ -102,8 +107,20 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Locations />
         </Fragment>
       ) : (
-        <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center'>
-          <Loading variant='default' size='lg' style={{ width: '100%', height: '100%' }} className={s.loading} label='' />
+        <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center' dir='column'>
+          <Stack style={{ width: '100%' }}>
+            <Skeleton width='full' />
+            <Skeleton width='full' />
+          </Stack>
+          <Stack style={{ width: '100%' }}>
+            <Skeleton width='full' />
+            <Skeleton width='full' />
+          </Stack>
+          <Skeleton width='full' height='full' />
+          <Stack style={{ width: '100%' }}>
+            <Skeleton width='full' />
+            <Skeleton width='full' />
+          </Stack>
         </Stack>
       )}
     </Dialog>
