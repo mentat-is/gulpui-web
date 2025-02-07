@@ -107,7 +107,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Locations />
         </Fragment>
       ) : (
-        <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center' dir='column'>
+        <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center' dir='column' gap={12}>
           <Stack style={{ width: '100%' }}>
             <Skeleton width='full' />
             <Skeleton width='full' />
