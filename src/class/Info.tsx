@@ -640,7 +640,7 @@ export class Info implements InfoProps {
       const file = this.app.target.files.find(file => file.id === id);
       if (file && file.nanotimestamp.min === 0n) {
         file.timestamp.min = Math.min(file.timestamp.min, frame.min);
-        file.timestamp.max = Math.max(file.timestamp.max, frame.max);
+        file.timestamp.max = Math.max(file.timestamp.max, frame.max, file.timestamp.min + 1);
       } else {
         Logger.error(`File ${id} has not been found in application data`);
       }
@@ -832,7 +832,7 @@ export class Info implements InfoProps {
           },
           timestamp: {
             min: source['min_gulp.timestamp'] / 1_000_000,
-            max: source['max_gulp.timestamp'] / 1_000_000,
+            max: Math.max((source['max_gulp.timestamp'] / 1_000_000), (source['min_gulp.timestamp'] / 1_000_000) + 1),
           },
           nanotimestamp: {
             min: BigInt(source['min_gulp.timestamp']),
