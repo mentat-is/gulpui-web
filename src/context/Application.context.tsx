@@ -1,10 +1,12 @@
 import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
 import { λApp, BaseInfo } from '@/dto';
 import { AppSocket } from '@/class/AppSocket';
-import { Info, Internal } from '@/class/Info';
+import { File, Info, Internal } from '@/class/Info';
 import { Console } from '@impactium/console';
 import { Logger } from '@/dto/Logger.class';
 import '@/class/API';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { toast } from 'sonner';
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -130,6 +132,43 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
         break;
     }
   }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const key = event.key.toLowerCase();
+
+    if (!app.timeline.target || !dialog) {
+      return;
+    }
+
+    const events = File.events(app, app.timeline.target.file_id);
+
+    if (key === 'd' || key === 'a') {
+      event.preventDefault();
+      const delta = Number(key === 'a') ? 1 : -1;
+      const target = instance.setTimelineTarget(delta);
+      if (target) {
+        spawnDialog(<DisplayEventDialog event={target} />);
+      } else {
+        toast(`Cannot open ${delta > 0 ? 'next' : 'previous'} event`);
+      }
+    } else if (key === 'home') {
+      event.preventDefault();
+      const target = instance.setTimelineTarget(events[0]);
+      spawnDialog(<DisplayEventDialog event={target} />);
+    } else if (key === 'end') {
+      event.preventDefault();
+      const target = instance.setTimelineTarget(events[events.length - 1]);
+      spawnDialog(<DisplayEventDialog event={target} />);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown as any);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown as any);
+    }
+  }, [dialog, app.timeline.target]);
 
   return (
     <ApplicationContext.Provider value={props}>

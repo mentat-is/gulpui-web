@@ -1,10 +1,13 @@
-import { HTMLAttributes, useEffect } from 'react';
+import { HTMLAttributes, useEffect, useRef } from 'react';
 import s from './styles/Dialog.module.css';
 import { cn } from '@impactium/utils';
 import { Button, Stack } from '@impactium/components';
 import { useApplication } from '@/context/Application.context';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './Resizable';
 import { Loading } from './Loading';
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { File } from '@/class/Info';
 
 export namespace Dialog {
   export interface Props extends Stack.Props {
@@ -17,7 +20,7 @@ export namespace Dialog {
 }
 
 export function Dialog({ className, callback, icon, description, title, loading, children, ...props }: Dialog.Props) {
-  const { app, destroyDialog, Info } = useApplication();
+  const { Info, app, spawnDialog } = useApplication();
 
   const handleDialogClose = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
@@ -30,7 +33,7 @@ export function Dialog({ className, callback, icon, description, title, loading,
       callback();
     }
     
-    destroyDialog();
+    spawnDialog(<DisplayGroupDialog events={[]} />);
   }
 
   useEffect(() => {
@@ -39,7 +42,7 @@ export function Dialog({ className, callback, icon, description, title, loading,
     return () => {
       document.removeEventListener('keydown', handleDialogClose)
     }
-  }, [])
+  }, []);
 
   return (
     <Stack className={cn(s.dialog, className)} dir='column' {...props}>

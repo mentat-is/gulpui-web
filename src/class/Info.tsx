@@ -918,6 +918,10 @@ export class Info implements InfoProps {
         index: index.name
       }
     }).then(raw => {
+      if (!raw) {
+        return;
+      }
+
       return {
         normalized: Event.normalizeFromDetailed(raw),
         raw
@@ -955,7 +959,10 @@ export class Info implements InfoProps {
       event = events[index];
     }
 
-    this.setInfoByKey(event, 'timeline', 'target');
+    if (event) {
+      this.setInfoByKey(event, 'timeline', 'target');
+    }
+
     return event as λEvent;
   }
 

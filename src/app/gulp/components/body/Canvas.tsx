@@ -39,9 +39,9 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
   const { app, banner, spawnDialog, Info, dialog } = useApplication();
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted, app.timeline.dialogSize, app.timeline.footerSize];
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
-  const { handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs({
+  const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs({
     Info,
-    timeline,
+    timeline: canvas_ref,
     setScrollX,
     setScrollY,
   });
@@ -101,6 +101,24 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
     // @ts-ignore
     window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark = renderCanvas;
   };
+
+  const renderOverlay = () => {
+    if (!overlay_ref.current || !canvas_ref.current) return;
+    const overlayCtx = overlay_ref.current.getContext('2d');
+    if (!overlayCtx) return;
+
+    overlay_ref.current.height = canvas_ref.current.height;
+    overlay_ref.current.width = canvas_ref.current.width;
+
+    overlayCtx.clearRect(0, 0, overlay_ref.current.width, overlay_ref.current.height);
+    
+    overlayCtx.fillStyle = '#ffffff';
+    overlayCtx.fillRect(Math.round(resize.start), 0, 1, overlay_ref.current.height);
+  }
+
+  useEffect(() => {
+    renderOverlay();
+  }, [overlay_ref, canvas_ref, resize]);
 
   const handleClick = (event: MouseEvent) => {
     if (event.button === 2)
@@ -225,8 +243,7 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
       <Crosshair containerRef={wrapper_ref} />
       <canvas
         className={s.resize}
-        ref={overlay_ref} 
-        height={timeline.current?.clientHeight} />
+        ref={overlay_ref} />
       <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
       <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
     </div>

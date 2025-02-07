@@ -40,17 +40,6 @@ export function Timeline() {
     setShifted(list => [...list, file]);
   }
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const key = event.key.toLowerCase();
-
-    if (app.timeline.target && (key === 'd' || key === 'a')) {
-      event.preventDefault();
-      const delta = Number(key === 'a') ? 1 : -1;
-      const target = Info.setTimelineTarget(delta);
-      spawnDialog(<DisplayEventDialog event={target} />);
-    }
-  };
-
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = () => {
@@ -90,7 +79,6 @@ export function Timeline() {
     <Stack
       id='timeline'
       className={s.timeline}
-      onKeyDown={handleKeyDown}
       gap={12}
       flex
       onContextMenu={handleContextMenu}

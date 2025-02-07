@@ -38,7 +38,7 @@ export function useKeyHandler(key: string) {
 export namespace UseDrugs {
   export interface Props {
     Info: Info,
-    timeline: RefObject<HTMLDivElement>;
+    timeline: RefObject<HTMLCanvasElement>;
     setScrollX: SetState<number>;
     setScrollY: SetState<number>;
   }
@@ -61,14 +61,27 @@ export const useDrugs = ({ Info, timeline, setScrollX, setScrollY }: UseDrugs.Pr
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     dragState.current.dragStart(event);
+    const rect = timeline.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+
     if (event.altKey) {
-      setResize({ start: event.clientX, end: event.clientX });
+      setResize({ start: event.clientX - rect.x, end: event.clientX - rect.x });
       setIsResizing(true);
     }
   }, []);
 
   const handleMouseMove = useCallback((event: React.MouseEvent) => {
-    if (isResizing) return setResize(prev => ({ ...prev, end: event.clientX }));
+    const rect = timeline.current?.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
+
+    if (isResizing) {
+      setResize(prev => ({ ...prev, end: event.clientX - rect.x }));
+      return;
+    }
 
     dragState.current.dragMove(event);
   }, [isResizing]);
@@ -91,6 +104,8 @@ export const useDrugs = ({ Info, timeline, setScrollX, setScrollY }: UseDrugs.Pr
     setResize(StartEndBase);
     setIsResizing(false);
   }, [isResizing, resize, Info, setScrollX, Info.app.timeline.scale]);
+
+  console.log(resize);
 
   return { resize, isResizing, handleMouseDown, handleMouseMove, handleMouseUpOrLeave };
 };

@@ -16,6 +16,7 @@ import { λNote } from '@/dto/Dataset';
 import { Enrichment } from '@/banners/Enrichment.banner';
 import { LinkComponents } from '@/banners/CreateLinkBanner';
 import { Maps } from '@/banners/Maps.banner';
+import { DisplayGroupDialog } from './Group.dialog';
 
 
 interface DisplayEventDialogProps {
@@ -23,9 +24,9 @@ interface DisplayEventDialogProps {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { Info, app, spawnBanner, destroyDialog } = useApplication();
+  const { Info, app, spawnBanner, spawnDialog } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<λExtendedEvent | null>(null);
-  const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
+  const [notes, setNotes] = useState<λNote[]>([]);
   const [rawJSON, setRawJSON] = useState<string>('');
 
   useEffect(() => {
@@ -33,9 +34,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event, app.target.notes]);
 
   useEffect(() => {
-    if (app.timeline.target?.id !== event.id) {
-      Info.setTimelineTarget(event); 
-    }
+    const notes = Event.notes(app, event);
+    setNotes(notes);
+    Info.setTimelineTarget(event); 
   }, [event]);
 
   useEffect(() => {

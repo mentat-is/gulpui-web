@@ -119,8 +119,8 @@ export const λWindow = Windows.λWindow;
 export const useWindows = (): Windows.Props => useContext(Windows.Context)!;
 
 const NoWindows = () => {
-  const { newWindow } = useWindows();
-  const { spawnBanner, Info } = useApplication();
+  const { newWindow, setWindows } = useWindows();
+  const { spawnBanner, destroyDialog, Info } = useApplication();
 
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -204,6 +204,12 @@ const NoWindows = () => {
     }
   ]
 
+  const backToOperations = () => {
+    destroyDialog();
+    setWindows([]);
+    spawnBanner(<OperationBanner />);
+  }
+
   return (
     <Stack className={cn(s.window, s.noWindows)} dir='column' jc='center'>
       <h3>Welcome to gULP workspace</h3>
@@ -214,6 +220,7 @@ const NoWindows = () => {
         <Button img={Default.Icon.CREATE_OPERATION} variant='outline' onClick={() => spawnBanner(<CreateOperationBanner />)}>Create Operation</Button>
         <Button img='Upload' variant='outline' onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
       </Stack>
+      <Button style={{ width: 285 }} img='Undo2' variant='outline' onClick={backToOperations}>Back to operations</Button>
       <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button> 
     </Stack>
   )

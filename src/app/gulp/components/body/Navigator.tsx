@@ -131,7 +131,7 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
   const size_minus = useRef<HTMLButtonElement>(null);
 
   const resetScaleAndScroll = () => {
-    Info.setTimelineScale(1 - app.timeline.dialogSize / 100)
+    Info.setTimelineScale(1)
     setScrollX(0);
   }
 

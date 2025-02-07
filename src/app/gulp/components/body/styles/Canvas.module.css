@@ -1,8 +1,11 @@
 .resize {
   position: absolute;
+  top: 0;
   left: 0px;
+  height: 100%;
   pointer-events: none;
   z-index: 4;
+  width: 100%;
 }
 .shifted {
   cursor: pointer;

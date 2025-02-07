@@ -13,7 +13,7 @@ export class DragDealer implements DragDealerProps {
   y: number;
   x: number;
   info: Info;
-  timeline: React.RefObject<HTMLDivElement>;
+  timeline: React.RefObject<HTMLCanvasElement>;
   setScrollX: React.Dispatch<React.SetStateAction<number>>;
   increaseScrollY: (λy: number) => void;
 
