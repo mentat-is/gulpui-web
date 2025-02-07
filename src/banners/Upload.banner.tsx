@@ -397,7 +397,7 @@ export function UploadBanner() {
     onClick={submit}
     img='Check'
     className={s.done}
-    disabled={!context || files.length === 0 || Object.values(settings).some(s => !s.plugin || !s.method || !s.mapping)}
+    disabled={!context || files.length === 0 || Object.values(settings).some(s => !s.plugin || (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) || (Mapping.mappings(app, s.plugin, s.method!).length > 0 ? !s.mapping : false))}
     loading={loading}
   />
 
