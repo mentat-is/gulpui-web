@@ -105,7 +105,5 @@ export const useDrugs = ({ Info, timeline, setScrollX, setScrollY }: UseDrugs.Pr
     setIsResizing(false);
   }, [isResizing, resize, Info, setScrollX, Info.app.timeline.scale]);
 
-  console.log(resize);
-
   return { resize, isResizing, handleMouseDown, handleMouseMove, handleMouseUpOrLeave };
 };

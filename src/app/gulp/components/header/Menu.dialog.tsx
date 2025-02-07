@@ -16,6 +16,7 @@ import C2S from 'canvas2svg';
 import { toast } from 'sonner';
 import { Logger } from '@/dto/Logger.class';
 import { download } from '@/ui/utils';
+import { Export } from '@/banners/Export.banner';
 
 export function Menu() {
   const { spawnBanner, destroyDialog } = useApplication();
@@ -31,30 +32,6 @@ export function Menu() {
     spawnBanner(<Enrichment.Banner />)
   }
 
-  const exportCanvasAsSvg = () => {
-    try {
-      const canvas = document.getElementById('canvas') as HTMLCanvasElement;
-      if (!canvas) {
-        console.log('dsa')
-        return;
-      }
-  
-      const { width, height } = canvas;
-  
-      const ctx = new C2S(width, height)
-  
-      // @ts-ignore
-      window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark(true, ctx);
-  
-      download(ctx.getSerializedSvg(true), 'image/svg+xml', 'gulp_canvas.svg');
-    } catch (e) {
-      Logger.error(e);
-      toast('Out of memory', {
-        description: 'This feature requires minimum 64GB of RAM'
-      });
-    }
-  }
-
   return (
     <Stack title='Menu' className={s.menu} dir='column' ai='flex-start' gap={12}>
       <Button variant='secondary' title='Upload files' img='Upload' onClick={() => spawnBanner(<UploadBanner />)} />
@@ -63,7 +40,7 @@ export function Menu() {
       <Button variant='secondary' title='Select files and contexts' img='FileStack' onClick={() => spawnBanner(<SelectFiles.Banner />)} />
       <Button variant='secondary' title='Open storyline' img='Scroll' onClick={() => spawnBanner(<StorylineBanner />)} />
       <Button variant='secondary' title='Change workflow frame' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)} />
-      <Button variant='secondary' title='Export canvas' img='ImageDown' onClick={exportCanvasAsSvg} />
+      <Button variant='secondary' title='Export canvas' img='ImageDown' onClick={() => spawnBanner(<Export.Banner />)} />
       <Button variant='secondary' title='Data enrichment' img='PrismColor' onClick={enrichment} />
       <Stack flex />
       {<Button variant='secondary' title='Manage Permissions' img='UserSettings' onClick={() => spawnBanner(<Permissions.Banner />)} />}

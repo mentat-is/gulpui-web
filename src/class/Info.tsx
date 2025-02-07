@@ -1114,7 +1114,7 @@ export class Info implements InfoProps {
   }   
   
   get width(): number {
-    return this.app.timeline.scale * (this.timeline.current?.clientWidth || 1);
+    return this.app.timeline.scale * (document.getElementById('canvas')?.clientWidth || 1);
   }
 
   getCurrentSessionOptions = (): Session => {

@@ -25,7 +25,6 @@
 .filter svg {
   height: 12px;
   width: 12px;
-  stroke: var(--white);
 }
 .filter input {
   font-size: 12px;

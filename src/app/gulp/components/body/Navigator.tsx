@@ -4,24 +4,25 @@ import s from './styles/Navigator.module.css'
 import { useApplication } from "@/context/Application.context";
 import { Event, File, Note } from "@/class/Info";
 import { RefObject, useEffect, useRef, useState } from "react";
-import { λNote } from "@/dto/Dataset";
+import { λFile, λNote } from "@/dto/Dataset";
 import { NotePoint } from "@/ui/Note";
-import { Icon } from "@impactium/icons";
 import { Resizer } from "@/ui/Resizer";
 import { DisplayGroupDialog } from "@/dialogs/Group.dialog";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import ReactDOM from "react-dom";
 import { NotesWindow } from "@/components/NotesWindow";
 import { SetState } from "@/class/API";
+import { toast } from "sonner";
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
     setScrollX: SetState<number>;
     timeline: RefObject<HTMLDivElement>;
+    focusTimestamp: (timestamp: number, id: λFile['id']) => void;
   }
 }
 
-export function Navigator({ setScrollX, timeline, className, ...props }: Navigator.Props) {
+export function Navigator({ setScrollX, timeline, className, focusTimestamp, ...props }: Navigator.Props) {
   const { Info, app, spawnDialog } = useApplication();
   const [notes, setNotes] = useState<λNote[]>([]);
 
@@ -108,8 +109,6 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
     }
   };
 
-  
-
   const Content = () => {
     if (notes.length === 0) {
       return (
@@ -119,9 +118,18 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
       )
     }
 
+    const focus = (note: λNote) => {
+      const events = Note.events(app, note);
+      if (events.length) {
+        focusTimestamp(events[0].timestamp, events[0].file_id);
+      } else {
+        toast('No events is associated with this note');
+      }
+    }
+
     return (
       <>
-        {notes.map(note => <NotePoint.Combination key={note.id} note={note} />)}
+        {notes.map(note => <NotePoint.Combination key={note.id} note={note} onClick={() => focus(note)} />)}
       </>
     )
   }
@@ -189,11 +197,9 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
         <Button variant='secondary' size='sm' ref={size_plus} onClick={() => zoom(true)} img='ZoomOut' />
         <Button variant='secondary' size='sm' ref={size_reset} onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween' />
         <Input className={s.filter} value={app.timeline.filter} placeholder='Filter by filenames and context' onChange={(e) => Info.setTimelineFilter(e.target.value)} img='Filter' />
-        <Stack flex />
         <Button size='sm' variant='secondary' title='Open notes banner in new window' img='PictureInPicture2' onClick={openWindow} />
         {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
       </Stack>
-      
       <Content />
     </Stack>
   )

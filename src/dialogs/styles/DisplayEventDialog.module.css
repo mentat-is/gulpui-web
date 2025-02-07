@@ -4,6 +4,8 @@
 .highlighter code * {
   font-family: var(--font-mono);
   line-height: 1.05;
+  user-select: all !important;
+  -webkit-user-select: all !important;
 }
 .group button {
   width: 100%;

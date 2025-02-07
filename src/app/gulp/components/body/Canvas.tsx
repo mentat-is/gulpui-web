@@ -1,5 +1,5 @@
 import { useApplication } from '@/context/Application.context';
-import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
+import { Algorhithm, getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import s from './styles/Canvas.module.css';
 import { useMagnifier } from '@/dto/useMagnifier';

@@ -6,7 +6,7 @@ import { Dialog } from '@/ui/Dialog';
 import { SymmetricSvg } from '@/ui/SymmetricSvg';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import s from './styles/DisplayEventDialog.module.css';
-import { copy } from '@/ui/utils';
+import { copy, download } from '@/ui/utils';
 import { Button, Stack } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 import { Event, File, Note } from '@/class/Info';
@@ -95,7 +95,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <SyntaxHighlighter className={s.highlighter} customStyle={{ maxWidth: '100%', borderRadius: 6 }} language='JSON' style={highlight.androidstudio}>
             {rawJSON}
           </SyntaxHighlighter>
-          <Button variant='ghost' style={{ width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
+          <Stack>
+            <Button variant='secondary' style={{ width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
+            <Button variant='secondary' style={{ width: '100%' }} onClick={() => download(rawJSON, 'application/json', `${event.id}_from_${event.file_id}.json`)} img='Download'>Download JSON</Button>
+          </Stack>
           <Locations />
         </Fragment>
       ) : (

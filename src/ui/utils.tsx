@@ -1,12 +1,13 @@
 import { toast } from 'sonner';
 import { UUID } from 'crypto';
 import { λApp } from '@/dto';
-import { Info, MinMax } from '@/class/Info';
+import { Info, MinMax, MinMaxBase } from '@/class/Info';
 import { RefObject } from 'react';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Hardcode } from '@/class/Engine.dto';
 import { λFile } from '@/dto/Dataset';
 import { format as _format } from 'date-fns';
+import { XY, XYBase } from '@/dto/XY.dto';
 
 export type Color = `#${string}`;
 
@@ -357,4 +358,34 @@ export function download(content: string, type: string, name: string) {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+export namespace Algorhithm {
+  export interface Constructor {
+    frame: MinMax;
+    scroll: XY;
+    width: number;
+    scale: number;
+  }
+}
+
+export class Algorhithm implements Algorhithm.Constructor {
+  frame: MinMax = MinMaxBase;
+  scroll: XY = XYBase(0);
+  width: number = 1;
+  scale: number = 1;
+  
+  constructor(constructor: Algorhithm.Constructor) {
+    Object.assign(this, constructor);
+  }
+
+
+  abs_x_from_timestamp = (timestamp: number) => Math.round(((timestamp - this.frame.min) / (this.frame.max - this.frame.min)) * this.width)
+
+  rel_x_from_timestamp = (timestamp: number, scroll: XY = this.scroll) => scroll ? this.abs_x_from_timestamp(timestamp) - scroll.x : -1
+
+  center_scroll_from_timestamp = (timestamp: number) => {
+    const absX = this.abs_x_from_timestamp(timestamp);
+    return absX - this.width / (2 * this.scale);
+  }
 }
