@@ -187,12 +187,12 @@ const NoWindows = () => {
       trigger: ActionButtonConstructor('Upload files', 'Upload', <UploadBanner />)
     },
     {
-      name: 'Files selected',
+      name: 'Sources selected',
       cond: File.selected(Info.app).length > 0,
-      trigger: ActionButtonConstructor('Select workflow', Default.Icon.FILE, <SelectFiles.Banner />)
+      trigger: ActionButtonConstructor('Select sources', Default.Icon.FILE, <SelectFiles.Banner />)
     },
     {
-      name: 'Frame selected',
+      name: 'Timeframe selected',
       cond: Info.app.timeline.frame.max > 0,
       trigger: ActionButtonConstructor('Choose workflow frame', 'TableColumnsSplit', <LimitsBanner />)
     },

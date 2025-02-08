@@ -19,9 +19,9 @@ export function LimitsBanner() {
   const [manual, setManual] = useState<boolean>(false);
 
   const map = [
-    { text: 'Day', do: () => save(frame.max - 24 * 60 * 60 * 1000) },
-    { text: 'Week', do: () => save(frame.max - 7 * 24 * 60 * 60 * 1000) },
-    { text: 'Month', do: () => save(frame.max - 30 * 24 * 60 * 60 * 1000) },
+    { text: 'Last day', do: () => save(frame.max - 24 * 60 * 60 * 1000) },
+    { text: 'Last week', do: () => save(frame.max - 7 * 24 * 60 * 60 * 1000) },
+    { text: 'Last month', do: () => save(frame.max - 30 * 24 * 60 * 60 * 1000) },
     { text: 'Full range', do: () => save() },
   ];
 
@@ -115,11 +115,11 @@ export function LimitsBanner() {
   ), [save]);
 
   return (
-    <Banner className={s.banner} title="Visibility range" done={done()}>
+    <Banner className={s.banner} title="Timeframe" done={done()}>
       <Toggle
         checked={manual}
         onCheckedChange={setManual}
-        option={['Select from limits', 'ISO String']}
+        option={['Select dates', 'ISO String']}
       />
       <Stack className={s.wrapper}>
         <Icon name="CalendarArrowUp" />
