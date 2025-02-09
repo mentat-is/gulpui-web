@@ -93,12 +93,14 @@ export const useDrugs = ({ Info, timeline, setScrollX, setScrollY }: UseDrugs.Pr
     if (isResizing) {
       const min = Math.min(resize.end, resize.start);
       const max = Math.max(resize.end, resize.start);
-      const scale = Info.width / (max - min);
+      const scale = (document.getElementById('canvas')!.clientWidth * Info.app.timeline.scale) / (max - min);
 
       if (!isFinite(scale)) return toast("Selected frame too small");
 
-      Info.setTimelineScale(scale);
-      setScrollX((scrollX + min) * (scale / Info.app.timeline.scale));
+      setScrollX(s => (s + min) * (scale / Info.app.timeline.scale));
+      setTimeout(() => {
+        Info.setTimelineScale(scale);
+      }, 10);
     }
 
     setResize(StartEndBase);

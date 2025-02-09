@@ -15,9 +15,10 @@ import { cn } from '@impactium/utils';
 import { download } from '@/ui/utils';
 // @ts-ignore
 import C2V from 'canvas2svg';
+import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
 
 export function StorylineBanner() {
-  const { app } = useApplication();
+  const { Info, app } = useApplication();
 
   const notes = app.target.notes;
 
@@ -69,7 +70,7 @@ namespace Graph {
 }
 
 export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
-  const { app } = useApplication();
+  const { Info, app, spawnBanner } = useApplication();
   const graph = useRef<HTMLCanvasElement>(null);
 
   props.dir = props.dir ?? 'column';
@@ -164,7 +165,9 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
         <canvas id='graph' width={512} height={256} ref={graph} className={s.canvas} />
         <Stack className={s.points}>
           {Array.from(matrix.entries()).map(([id, { x, y }]) => {
-            return <NotePoint.Point  id={id} description={Note.id(app, id).description} className={s.point} note={Note.id(app, id)} x={x} y={y} />
+            const note = Note.id(app, id);
+
+            return <NotePoint.Point id={id} description={note.description} className={s.point} note={note} x={x} y={y} deleteObject={() => Info.note_delete(note)} editObject={() => {}} />
           })}
         </Stack>
       </div>

@@ -45,7 +45,10 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   useEffect(() => {
     if (methods.length === 0) {
       Internal.Settings.server = server;
-      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', setMethods);
+      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+        toast: false
+      },
+      setMethods);
     }
   }, [methods, server]);
 

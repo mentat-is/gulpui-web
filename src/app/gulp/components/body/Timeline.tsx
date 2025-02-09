@@ -76,16 +76,7 @@ export function Timeline() {
     Info.refetch();
   }, []);
 
-  const focusTimestamp = (timestamp: number, file: λFile['id']) => {
-    setScrollX(getAlgothitmInstance().center_scroll_from_timestamp(timestamp))
-    setScrollY((File.selected(app).findIndex(f => f.id === file) * 48) - Math.round((document.getElementById('canvas')?.clientHeight || 0) / 2));
-  };
-
-  useEffect(() => {
-    if (app.timeline.target) {
-      focusTimestamp(app.timeline.target.timestamp, app.timeline.target.file_id);
-    }
-  }, [app.timeline.target]);
+  const focusTimestamp = (timestamp: number) => setScrollX(getAlgothitmInstance().center_scroll_from_timestamp(timestamp));
 
   const getAlgothitmInstance = () => {
     return new Algorhithm({
@@ -99,6 +90,9 @@ export function Timeline() {
     });
   }
 
+  // @ts-ignore
+  window.focusCanvasOnTimestamp = focusTimestamp;
+
   return (
     <Stack
       id='timeline'
@@ -111,7 +105,7 @@ export function Timeline() {
         <ContextMenuTrigger>
           <Canvas timeline={timeline} scrollX={scrollX} scrollY={scrollY} shifted={shifted} setScrollX={setScrollX} setScrollY={setScrollY} />
           <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
-          <Navigator focusTimestamp={focusTimestamp} setScrollX={setScrollX} timeline={timeline} />
+          <Navigator setScrollX={setScrollX} timeline={timeline} />
         </ContextMenuTrigger>
         <Menu />
       </ContextMenu>

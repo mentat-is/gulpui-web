@@ -15,7 +15,7 @@ export namespace NotePoint {
   }
 
   export namespace Combination {
-    export interface Props extends Stack.Props {
+    export interface Props extends Omit<Stack.Props, 'onClick'> {
       note: λNote;
     }
   }
@@ -28,7 +28,7 @@ export namespace NotePoint {
       if (events.length === 0) {
         return;
       }
-      
+
       spawnDialog(events.length > 1
         ? <DisplayGroupDialog events={events} />
         : <DisplayEventDialog event={events[0]} />
@@ -54,9 +54,16 @@ export namespace NotePoint {
       if (events.length === 0) {
         return null;
       }
+
+      const target = events[0];
+
+      if (target === app.timeline.target) {
+        // @ts-ignore
+        window.focusCanvasOnTimestamp();
+      }
   
       const dialog = events.length === 1
-        ? <DisplayEventDialog event={events[0]} />
+        ? <DisplayEventDialog event={target} />
         : <DisplayGroupDialog events={events} />;
   
       spawnDialog(dialog);

@@ -9,15 +9,12 @@ import s from './styles/DisplayEventDialog.module.css';
 import { copy, download } from '@/ui/utils';
 import { Button, Skeleton, Stack } from '@impactium/components';
 import { CreateNoteBanner } from '@/banners/CreateNoteBanner';
-import { Event, File, Note } from '@/class/Info';
-import { Loading } from '@impactium/components';
+import { Event, File } from '@/class/Info';
 import { Navigation } from './components/navigation';
 import { λNote } from '@/dto/Dataset';
 import { Enrichment } from '@/banners/Enrichment.banner';
 import { LinkComponents } from '@/banners/CreateLinkBanner';
 import { Maps } from '@/banners/Maps.banner';
-import { DisplayGroupDialog } from './Group.dialog';
-
 
 interface DisplayEventDialogProps {
   event: λEvent;
@@ -89,8 +86,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         <Fragment>
           <Stack className={s.group}>
             <Stack dir='column' flex>
-            <Button onClick={() => spawnBanner(<CreateNoteBanner event={event} />)} variant='secondary' img='StickyNote'>New note</Button>
-            <Button onClick={() => spawnBanner(<LinkComponents.Create.Banner event={event} />)} variant='secondary' img='Link'>Create link</Button>
+              <Button onClick={() => spawnBanner(<CreateNoteBanner event={event} />)} variant='secondary' img='StickyNote'>New note</Button>
+              <Button onClick={() => spawnBanner(<LinkComponents.Create.Banner event={event} />)} variant='secondary' img='Link'>Create link</Button>
             </Stack>
             <Stack dir='column' flex>
               <Button onClick={() => spawnBanner(<Enrichment.Banner event={event} />)} variant='glass' img='PrismColor'>Enrich</Button>
@@ -103,6 +100,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Stack>
             <Button variant='secondary' style={{ width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
             <Button variant='secondary' style={{ width: '100%' }} onClick={() => download(rawJSON, 'application/json', `${event.id}_from_${event.file_id}.json`)} img='Download'>Download JSON</Button>
+            {/* @ts-ignore */}
+            <Button onClick={() => window.focusCanvasOnTimestamp(event.timestamp)} variant='secondary' img='Crosshair' title='Focus timeline on this event' />
           </Stack>
           <Locations />
         </Fragment>
@@ -118,6 +117,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Stack>
           <Skeleton width='full' height='full' />
           <Stack style={{ width: '100%' }}>
+            <Skeleton width='full' />
             <Skeleton width='full' />
             <Skeleton width='full' />
           </Stack>

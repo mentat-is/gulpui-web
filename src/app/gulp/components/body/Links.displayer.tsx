@@ -1,8 +1,8 @@
 import { Link as LinkClass, File, Link, Event } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
+import { λLink } from '@/dto/Dataset';
 import { LinkPoint } from '@/ui/Link';
-import { Fragment } from 'react';
-
+import { useMemo, useCallback } from 'react';
 
 interface LinksDisplayerProps {
   getPixelPosition: (num: number) => number;
@@ -10,39 +10,36 @@ interface LinksDisplayerProps {
 }
 
 export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProps) {
-  const { app } = useApplication();
+  const { Info, app } = useApplication();
+
+  const selectedFiles = useMemo(() => new Set(app.target.files.filter(f => f.selected).map(f => f.id)), [app.target.files]);
+
+  const getLinkPosition = useCallback(
+    (link: λLink) => {
+      const event = Event.id(app, link.doc_id_from);
+      if (!event || !selectedFiles.has(event.file_id)) return null;
+
+      const timestamp = Link.timestamp(app, link);
+      if (!timestamp) return null;
+
+      const left = getPixelPosition(timestamp);
+      const top = link.docs.reduce((acc, doc) => acc + File.getHeight(app, doc.file_id, scrollY), 0);
+      
+      return top > 0 ? { left, top: top / (link.docs.length || 1) } : null;
+    },
+    [getPixelPosition, scrollY, app, selectedFiles]
+  );
 
   return (
-    <Fragment>
+    <>
       {app.target.links.map(link => {
-        const event = Event.id(app, link.doc_id_from);
-        if (!event) {
-          return null;
-        }
+        const position = getLinkPosition(link);
+        if (!position) return null;
 
-        const file = File.id(app, event.file_id);
-        if (!file || !file.selected) {
-          return null;
-        }
-
-        const timestamp = Link.timestamp(app, link);
-
-        if (!timestamp) {
-          return null;
-        }
-
-        const left = getPixelPosition(timestamp);
-
-        let top: number = 0;
-
-        link.docs.forEach(doc => {
-          top += File.getHeight(app, doc.file_id, scrollY);
-        })
-
-        if (top <= 0) return null;
-
-        return <LinkPoint key={link.id} link={link} x={left} y={top / link.docs.length || 1} />
+        return (
+          <LinkPoint key={link.id} link={link} x={position.left} y={position.top} deleteObject={() => Info.link_delete(link)} editObject={() => {}} />
+        );
       })}
-    </Fragment>
-  )
+    </>
+  );
 }

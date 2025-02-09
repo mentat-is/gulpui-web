@@ -18,7 +18,7 @@ export namespace Banner {
 }
 
 export function Banner({ children, back, className, title, fixed, option, loading, done, subtitle = null, onClose }: Banner.Props) {
-  const { destroyBanner } = useApplication();
+  const { Info, destroyBanner } = useApplication();
 
   const close = () => {
     if (onClose) onClose();

@@ -384,8 +384,5 @@ export class Algorhithm implements Algorhithm.Constructor {
 
   rel_x_from_timestamp = (timestamp: number, scroll: XY = this.scroll) => scroll ? this.abs_x_from_timestamp(timestamp) - scroll.x : -1
 
-  center_scroll_from_timestamp = (timestamp: number) => {
-    const absX = this.abs_x_from_timestamp(timestamp);
-    return absX - this.width / (2 * this.scale);
-  }
+  center_scroll_from_timestamp = (timestamp: number) => Math.round(this.abs_x_from_timestamp(timestamp) - this.width / (2 * this.scale))
 }

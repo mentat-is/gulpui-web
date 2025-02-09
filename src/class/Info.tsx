@@ -3,7 +3,6 @@ import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNo
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
-import { toast } from 'sonner';
 import { Gradients } from '@/ui/utils';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
@@ -484,7 +483,7 @@ export class Info implements InfoProps {
 
     const parsed_shit = Mapping.parse(shit);
 
-    const another_parsed_shit = await (await api<GulpDataset.PluginList.Summary>('/plugin_list').then(p => p.filter(p => p.type.includes('ingestion'))));
+    const another_parsed_shit = await this.plugin_list().then(p => p.filter(p => p.type.includes('ingestion')));
 
     another_parsed_shit.forEach(shit => {
       const found_shit = parsed_shit.find(ps => ps.name === shit.filename);
@@ -498,9 +497,11 @@ export class Info implements InfoProps {
       }
     })
 
-    this.setInfoByKey(parsed_shit, 'target', 'plugins');
+    const sorted_parsed_shit = parsed_shit.sort((a, b) => a.name.localeCompare(b.name));
 
-    return parsed_shit;
+    this.setInfoByKey(sorted_parsed_shit, 'target', 'plugins');
+
+    return sorted_parsed_shit;
   }
 
   // 🔥 INDEXES
@@ -669,12 +670,13 @@ export class Info implements InfoProps {
     }
   }, notes => this.setInfoByKey(Note.normalize(notes), 'target', 'notes'));
 
-  notes_delete = (note: λNote) => api<boolean>('/note_delete', {
+  note_delete = (note: λNote) => api('/note_delete', {
+    method: 'DELETE',
     query: {
-      note_id: note.id,
+      object_id: note.id,
       ws_id: this.app.general.ws_id
     }
-  })
+  }, this.notes_reload);
 
   links_reload = async () => {
     return api<ΞLink[]>('/link_list', {
@@ -705,10 +707,10 @@ export class Info implements InfoProps {
     });
   }
 
-  links_delete = (link: λLink) => api('/link_delete', {
+  link_delete = (link: λLink) => api('/link_delete', {
     method: 'DELETE',
     query: {
-      link_id: link.id,
+      object_id: link.id,
       ws_id: this.app.general.ws_id
     }
   }, this.links_reload);
@@ -929,9 +931,7 @@ export class Info implements InfoProps {
     });
   }
 
-  plugin_list = (): Promise<GulpDataset.PluginList.Summary> => {
-    return api('/plugin_list');
-  }
+  plugin_list = (): Promise<GulpDataset.PluginList.Summary> => api<GulpDataset.PluginList.Summary>('/plugin_list').then(list => list.sort((a, b) => a.filename.localeCompare(b.filename)))
 
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
@@ -959,7 +959,7 @@ export class Info implements InfoProps {
       event = events[index];
     }
 
-    if (event) {
+    if (typeof event !== 'undefined') {
       this.setInfoByKey(event, 'timeline', 'target');
     }
 

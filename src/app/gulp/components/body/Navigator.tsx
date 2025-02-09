@@ -18,11 +18,10 @@ export namespace Navigator {
   export interface Props extends Stack.Props {
     setScrollX: SetState<number>;
     timeline: RefObject<HTMLDivElement>;
-    focusTimestamp: (timestamp: number, id: λFile['id']) => void;
   }
 }
 
-export function Navigator({ setScrollX, timeline, className, focusTimestamp, ...props }: Navigator.Props) {
+export function Navigator({ setScrollX, timeline, className, ...props }: Navigator.Props) {
   const { Info, app, spawnDialog } = useApplication();
   const [notes, setNotes] = useState<λNote[]>([]);
 
@@ -33,18 +32,6 @@ export function Navigator({ setScrollX, timeline, className, focusTimestamp, ...
 
     setNotes(notes);
   }, [app.target.notes]);
-
-  const targetNoteButtonHandler = (note: λNote) => {
-    const events = Event.ids(app, note.docs.map(d => d.id));
-    if (events.length === 0) {
-      return;
-    }
-    
-    spawnDialog(events.length > 1
-      ? <DisplayGroupDialog events={events} />
-      : <DisplayEventDialog event={events[0]} />
-    )
-  }
 
   const [windowRef, setWindowRef] = useState<Window | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -118,18 +105,9 @@ export function Navigator({ setScrollX, timeline, className, focusTimestamp, ...
       )
     }
 
-    const focus = (note: λNote) => {
-      const events = Note.events(app, note);
-      if (events.length) {
-        focusTimestamp(events[0].timestamp, events[0].file_id);
-      } else {
-        toast('No events is associated with this note');
-      }
-    }
-
     return (
       <>
-        {notes.map(note => <NotePoint.Combination key={note.id} note={note} onClick={() => focus(note)} />)}
+        {notes.map(note => <NotePoint.Combination key={note.id} note={note} />)}
       </>
     )
   }
@@ -188,6 +166,10 @@ export function Navigator({ setScrollX, timeline, className, focusTimestamp, ...
       window.removeEventListener('keypress', handleControllers);
     }
   }, []);
+
+  useEffect(() => {
+    resetScaleAndScroll();
+  }, [app.timeline.frame])
 
   return (
     <Stack pos='relative' dir='column' ai='flex-start' className={cn(className, s.navigator)} style={{ height: app.timeline.footerSize }} {...props}>

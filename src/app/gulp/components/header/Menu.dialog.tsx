@@ -32,6 +32,10 @@ export function Menu() {
     spawnBanner(<Enrichment.Banner />)
   }
 
+  const logout = () => {
+    location.reload();
+  }
+
   return (
     <Stack title='Menu' className={s.menu} dir='column' ai='flex-start' gap={12}>
       <Button variant='secondary' title='Upload files' img='Upload' onClick={() => spawnBanner(<UploadBanner />)} />
@@ -45,7 +49,7 @@ export function Menu() {
       <Stack flex />
       {<Button variant='secondary' title='Manage Permissions' img='UserSettings' onClick={() => spawnBanner(<Permissions.Banner />)} />}
       <Button variant='secondary' title='Back to operations' img='Undo2' onClick={backToOperations} />
-      <Button variant='secondary' img='LogOut' title='Logout' onClick={window.location.reload} />
+      <Button variant='secondary' img='LogOut' title='Logout' onClick={logout} />
     </Stack>
   )
 }

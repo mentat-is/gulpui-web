@@ -2,7 +2,7 @@ import { λOperation } from '.';
 import { λEvent, λExtendedEvent } from './ChunkEvent.dto';
 import { λIndex } from './Index.dto';
 import { generateUUID } from '@/ui/utils';
-import { FilterOptions, MinMax, λFilter, λUser, μ } from '@/class/Info';
+import { FilterOptions, Internal, MinMax, λFilter, λUser, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
 import { XY } from './XY.dto';
 import { λContext, λFile, λGlyph, λLink, λNote } from './Dataset';
@@ -55,7 +55,7 @@ export interface λApp {
 }
 export const BaseInfo: λApp = {
   general: {
-    server: 'http://localhost:8080',
+    server: Internal.Settings.server,
     ws_id: generateUUID(),
     id: '' as λUser['id'],
     time_expire: Infinity,

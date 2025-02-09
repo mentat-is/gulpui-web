@@ -44,9 +44,6 @@
   align-self: center;
   padding: 2px;
 }
-.noWindows {
-  height: calc(100vh - 108px);
-}
 .noWindows > h3 {
   font-family: var(--font-mono);
   font-size: 32px;
@@ -110,4 +107,10 @@
 }
 .dialog.open {
   width: 50vw;
+}
+.logo {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  height: 24px;
 }

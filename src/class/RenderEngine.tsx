@@ -233,8 +233,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
 
     // Limits
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.settings.offset) + 2, y - 24, 2, 48 - 1);
-    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.settings.offset) - 2, y - 24, 2, 48 - 1);
+    this.ctx.fillStyle = '#e8e8e8';
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.max + file.settings.offset) + 1, y - 24, 1, 48 - 1);
+    this.ctx.fillRect(this.getPixelPosition(file.timestamp.min + file.settings.offset) - 1, y - 24, 1, 48 - 1);
 
     const events = Event.get(this.info.app, file.id).length.toString()
 

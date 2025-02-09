@@ -142,8 +142,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
     const events = File.events(app, app.timeline.target.file_id);
 
-    if (key === 'd' || key === 'a') {
-      event.preventDefault();
+    if (key === 'd' || key === 'a') { 
       const delta = Number(key === 'a') ? 1 : -1;
       const target = instance.setTimelineTarget(delta);
       if (target) {
@@ -151,11 +150,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       } else {
         toast(`Cannot open ${delta > 0 ? 'next' : 'previous'} event`);
       }
-    } else if (key === 'home') {
+    } else if (key === 'end') {
       event.preventDefault();
       const target = instance.setTimelineTarget(events[0]);
       spawnDialog(<DisplayEventDialog event={target} />);
-    } else if (key === 'end') {
+    } else if (key === 'home') {
       event.preventDefault();
       const target = instance.setTimelineTarget(events[events.length - 1]);
       spawnDialog(<DisplayEventDialog event={target} />);

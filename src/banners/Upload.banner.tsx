@@ -407,10 +407,6 @@ export function UploadBanner() {
     img='Kv'
   />
 
-  const addFiles = () => {
-    
-  }
-
   return (
     <Banner title='Upload files' done={done} option={option}>
       <Toggle option={['New context', 'Choose from existing one']} checked={isExistingContextChooserAvalable} onCheckedChange={setIsExistingContextChooserAvalable} />
@@ -425,7 +421,7 @@ export function UploadBanner() {
           multiple
           onChange={filesSelectHandler}
         />
-        <Button variant='outline' className={s.addFiles} onClick={addFiles} img='Plus'>Add files</Button>
+        <Button variant='outline' className={s.addFiles} img='Plus'>Add files</Button>
       </Stack>      
       <Stack dir='column' gap={0} className={cn(s.files, files.length === 0 && s.fill)}>
         {files.length === 0 ? <Placeholder /> : Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}

@@ -22,18 +22,19 @@ export namespace Dialog {
 export function Dialog({ className, callback, icon, description, title, loading, children, ...props }: Dialog.Props) {
   const { Info, app, spawnDialog } = useApplication();
 
-  const handleDialogClose = (event: KeyboardEvent) => {
-    if (event.key === 'Escape') {
-      close();
-    }
-  }
-
   const close = () => {
     if (callback) {
       callback();
     }
     
     spawnDialog(<DisplayGroupDialog events={[]} />);
+    Info.setTimelineTarget(null);
+  }
+
+  const handleDialogClose = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      close();
+    }
   }
 
   useEffect(() => {
@@ -51,7 +52,6 @@ export function Dialog({ className, callback, icon, description, title, loading,
         <div className={s.header}>
           <h2>{title}</h2>
           {description && <p>{description}</p>}
-          {/* <Button variant='ghost' className={s.close} onClick={close} img='X' size='icon' /> */}
         </div>
       </div>
       <div className={cn(s.content, loading && s.loading)}>

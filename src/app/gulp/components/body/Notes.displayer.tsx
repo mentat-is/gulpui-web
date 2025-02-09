@@ -1,8 +1,8 @@
 import { Note as NoteClass, File } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
+import { λNote } from '@/dto/Dataset';
 import { NotePoint } from '@/ui/Note';
-import { Fragment } from 'react';
-
+import { useMemo, useCallback } from 'react';
 
 interface NotesDisplayerProps {
   getPixelPosition: (num: number) => number;
@@ -10,27 +10,30 @@ interface NotesDisplayerProps {
 }
 
 export function NotesDisplayer({ getPixelPosition, scrollY }: NotesDisplayerProps) {
-  const { app } = useApplication();
+  const { Info, app } = useApplication();
+
+  const selectedFiles = useMemo(() => new Set(app.target.files.filter(f => f.selected).map(f => f.id)), [app.target.files]);
+
+  const getNotePosition = useCallback((note: λNote) => {
+    const timestamp = NoteClass.timestamp(app, note);
+    if (!timestamp) return null;
+
+    const left = getPixelPosition(timestamp);
+    const top = File.getHeight(app, note.source_id, scrollY);
+
+    return left > 0 && top > 0 ? { left, top } : null;
+  }, [getPixelPosition, scrollY, app]);
 
   return (
-    <Fragment>
-      {app.target.notes.map(note => {
-        if (!File.id(app, note.source_id)?.selected) return null;
+    <>
+      {app.target.notes.filter(note => selectedFiles.has(note.source_id)).map(note => {
+        const position = getNotePosition(note);
+        if (!position) return null;
 
-        const timestamp = NoteClass.timestamp(app, note);
-
-        if (!timestamp) {
-          return null;
-        }
-
-        const left = getPixelPosition(timestamp);
-
-        const top = File.getHeight(app, note.source_id, scrollY);
-
-        if (top <= 0) return null;
-
-        return <NotePoint.Point key={note.id} note={note} x={left} y={top} />
+        return (
+          <NotePoint.Point note={note} x={position.left} y={position.top} deleteObject={() => Info.note_delete(note)} editObject={() => {}} />
+        );
       })}
-    </Fragment>
-  )
+    </>
+  );
 }

@@ -1,5 +1,5 @@
 .timestamp {
-  font-size: clamp(10px, 1vw, 64px);
+  font-size: clamp(10px, 0.8vw, 64px);
   line-height: 0;
   color: var(--text-white);
   font-family: var(--font-mono);

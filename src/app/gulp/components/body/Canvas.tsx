@@ -112,8 +112,11 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
 
     overlayCtx.clearRect(0, 0, overlay_ref.current.width, overlay_ref.current.height);
     
-    overlayCtx.fillStyle = '#ffffff';
-    overlayCtx.fillRect(Math.round(resize.start), 0, 1, overlay_ref.current.height);
+    overlayCtx.fillStyle = '#ffffff24';
+    const start = Math.round(resize.start);
+    const end = Math.round(resize.end);
+
+    overlayCtx.fillRect(start, 0, end - start, overlay_ref.current.height);
   }
 
   useEffect(() => {
