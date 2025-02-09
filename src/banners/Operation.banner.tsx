@@ -29,7 +29,7 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
     
     return (
       <Button variant='ghost' onClick={handleSubtitleButtonClick}>
-        Initialize new operaion
+        Create new operation
       </Button>
     )
   }, []);

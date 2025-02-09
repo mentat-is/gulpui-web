@@ -123,7 +123,7 @@ export namespace SelectFiles {
     }, []);
   
     return (
-      <UIBanner title='Select workflow' fixed={loading} className={s.banner} done={done} option={<UploadButton />} {...props}>
+      <UIBanner title='Select sources' fixed={loading} className={s.banner} done={done} option={<UploadButton />} {...props}>
         <Skeleton show={fulfilled} width='full'>
           <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
         </Skeleton>

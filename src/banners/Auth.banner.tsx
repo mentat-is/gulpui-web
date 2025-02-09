@@ -37,7 +37,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
     return (
       <Button variant='ghost' onClick={handleSubtitleButtonClick}>
-        Continue with session
+        Load session
       </Button>
     )
   }, []);
