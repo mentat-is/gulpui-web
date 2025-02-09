@@ -174,7 +174,7 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
   return (
     <Stack pos='relative' dir='column' ai='flex-start' className={cn(className, s.navigator)} style={{ height: app.timeline.footerSize }} {...props}>
       <Resizer init={app.timeline.footerSize} set={Info.setFooterSize} horizontal />
-      <Stack className={s.heading}>
+      <Stack className={s.heading} flex={0}>
         <Button variant='secondary' size='sm' ref={size_minus} onClick={() => zoom(false)} img='ZoomIn' />  
         <Button variant='secondary' size='sm' ref={size_plus} onClick={() => zoom(true)} img='ZoomOut' />
         <Button variant='secondary' size='sm' ref={size_reset} onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween' />

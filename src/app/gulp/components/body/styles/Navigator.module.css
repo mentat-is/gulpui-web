@@ -1,5 +1,6 @@
 .navigator {
   min-height: 128px;
+  width: 100%;
   padding: 8px;
   border-radius: 4px;
   border: 1px solid var(--gray-400);

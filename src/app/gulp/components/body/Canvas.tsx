@@ -15,15 +15,18 @@ import { λFile } from '@/dto/Dataset';
 import { File } from '@/class/Info';
 import Crosshair from './Crosshair';
 import { SetState } from '@/class/API';
-import { Stack } from '@impactium/components';
+import { Input, Stack } from '@impactium/components';
 import { debounce } from 'lodash';
-import { useDrugs } from '@/app/use';
+import { useDrugs, useKeyHandler } from '@/app/use';
 import { Icon } from '@impactium/icons';
+import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu';
+import { FilesMenu } from './Files.manu';
+import { TargetMenu } from './Target.menu';
+import { toast } from 'sonner';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
     timeline: React.RefObject<HTMLDivElement>;
-    shifted: λFile[];
     scrollX: number;
     setScrollX: SetState<number>;
     scrollY: number;
@@ -31,12 +34,14 @@ export namespace Canvas {
   }
 }
 
-export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shifted }: Canvas.Props) {
+export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: Canvas.Props) {
   const canvas_ref = useRef<HTMLCanvasElement>(null);
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   
   const { app, banner, spawnDialog, Info, dialog } = useApplication();
+  const [shifted, setShifted] = useState<λFile[]>([]);
+  const [ isShiftPressed ] = useKeyHandler('Shift');
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted, app.timeline.dialogSize, app.timeline.footerSize];
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } = useMagnifier(canvas_ref, dependencies);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs({
@@ -194,12 +199,13 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
     if (canvas) {
       canvas.addEventListener('wheel', debouncedHandleWheel as unknown as EventListener, { passive: true });
       canvas.addEventListener('mousemove', move as any, { passive: true });
+      canvas.addEventListener('contextmenu', handleContextMenu, { passive: true });
     }
-
     return () => {
       if (canvas) {
         canvas.removeEventListener('wheel', debouncedHandleWheel as unknown as EventListener);
         canvas.removeEventListener('mousemove', move as any);
+        canvas.removeEventListener('contextmenu', handleContextMenu);
       }
       debouncedHandleWheel.cancel();
     };
@@ -226,29 +232,90 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY, shi
 
   const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
 
+  const handleContextMenu = (event: MouseEvent) => {
+    const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top) / 48)
+
+    const file = File.selected(app)[index];
+
+    if (!file) {
+      if (!isShiftPressed) {
+        setShifted([]);
+      }
+      return;
+    }
+
+    if (!isShiftPressed) {
+      return setShifted([file]);
+    }
+
+    if (shifted.find(f => f.id === file.id)) {
+      setShifted(shifted => shifted.filter(f => f.id !== file.id));
+      return
+    }
+    setShifted(list => [...list, file]);
+  }
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleInputChange = () => {
+    if (shifted.length === 0) return
+
+    const file = inputRef.current?.files?.[0];
+    if (!file) return toast('No sigma rule selected', {
+      description: 'Please select a file with a sigma rule in YML format'
+    });
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const content = e.target?.result;
+
+      await Info.sigma.set(shifted, { name: file.name, content: content as string });
+
+      inputRef.current!.value = '';
+    };
+    reader.readAsText(file);
+  }
+
+
+  const Menu = useCallback(() => {
+    if (shifted.length === 0 ) {
+      return null;
+    }
+
+    return shifted.length === 1
+      ? <TargetMenu file={shifted[0]} inputRef={inputRef} />
+      : <FilesMenu files={shifted} inputRef={inputRef} />
+  }, [shifted]);
+
+  
+
   return (
-    <div
-      ref={wrapper_ref}
-      className={s.wrapper}
-      onMouseLeave={handleMouseUpOrLeave as any}
-      onMouseUp={handleMouseUpOrLeave as any}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      onKeyDown={toggler}
-      tabIndex={0}>
-      <NotesDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
-      <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
-      <canvas
-        ref={canvas_ref}
-        id='canvas'
-        height={timeline.current?.clientHeight}
-        />
-      <Crosshair containerRef={wrapper_ref} />
-      <canvas
-        className={s.resize}
-        ref={overlay_ref} />
-      <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
-      <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
-    </div>
+    <ContextMenu>
+      <ContextMenuTrigger
+        ref={wrapper_ref}
+        className={s.wrapper}
+        onMouseLeave={handleMouseUpOrLeave as any}
+        onMouseUp={handleMouseUpOrLeave as any}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onKeyDown={toggler}
+        tabIndex={0}>
+        <NotesDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
+        <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
+        <canvas
+          ref={canvas_ref}
+          id='canvas'
+          height={timeline.current?.clientHeight}
+          />
+        <Crosshair containerRef={wrapper_ref} />
+        <canvas
+          className={s.resize}
+          ref={overlay_ref} />
+        <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
+        <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
+        <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
+      </ContextMenuTrigger>
+      <Menu />
+    </ContextMenu>
   );
 }
