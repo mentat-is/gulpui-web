@@ -10,6 +10,7 @@ import { Icon } from "@impactium/icons";
 import { format } from "date-fns";
 import { ChangeEvent, CSSProperties, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import s from './styles/EnrichmentBanner.module.css';
+import { toast } from "sonner";
 
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
@@ -60,13 +61,20 @@ export namespace Enrichment {
         }
         return;
       }
+
+      // console.log(frame.min, frame.max);
  
-      const events = File.events(app, file)
-        .filter(e => Number(e.nanotimestamp / 1_000_000) > frame.min && Number(e.nanotimestamp / 1_000_000) < frame.max)
-        .map(e => e.id);
+      // const events = File.events(app, file)
+      //   .filter(e => new Date(e.nanotimestamp).valueOf() > frame.min && new Date(e.nanotimestamp).valueOf() < frame.max)
+      //   .map(e => e.id);
+
+      // if (!events.length) {
+      //   toast('Selected frame doesn`t contain events');
+      //   return;
+      // }
 
       setLoading(true);
-      await Info.enrichment(plugin.filename, file, events, customParameters);
+      await Info.enrichment(plugin.filename, file, frame, customParameters);
       setLoading(false);
       destroyBanner();
     }

@@ -17,6 +17,7 @@ import { Icon } from '@impactium/icons';
 import { sha1 } from 'js-sha1';
 import { MaybeArray } from '@impactium/types';
 import { Permissions } from '@/banners/Permissions.banner';
+import { toast } from 'sonner';
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -360,11 +361,21 @@ export class Info implements InfoProps {
     });
   }
 
-  enrichment = (plugin: string, file: λFile, events: λEvent['id'][], custom_parameters: Record<string, any>) => {
+  enrichment = (plugin: string, file: λFile, range: MinMax, custom_parameters: Record<string, any>) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
     }
+
+    // if (!events.length) {
+    //   Logger.error('Expected at least one event', 'Info.enrichment');
+    //   return;
+    // }
+
+    const хуйня = Filter.base(file, range);
+
+    // @ts-ignore
+    delete хуйня.int_filter;
 
     return api<void>('/enrich_documents', {
       method: 'POST',
@@ -374,8 +385,19 @@ export class Info implements InfoProps {
         ws_id: this.app.general.ws_id
       },
       body: {
-        ...Filter.events(this.app, file, events),
-        custom_parameters
+        flt: хуйня,
+        q: {
+          query: {
+            query_string: {
+              query: `gulp.timestamp:>=${(BigInt(range.min) * 1_000_000n).toString()} AND gulp.timestamp:<=${(BigInt(range.max) * 1_000_000n).toString()}`
+            }
+          }
+        },
+        external_parameters: {
+          plugin_params: {
+            custom_parameters
+          }
+        }
       }
     });
   }
@@ -1295,35 +1317,24 @@ export class Filter {
     return filters;
   }
 
-  public static base = (app: λApp, file: λFile, range?: MinMax) => {
-    const context = Context.findByFile(app, file);
-
-    if (!context) {
-      return {};
-    }
-
-    return {
-      context_ids: [
-        context.id
-      ],
-      int_filter: [
-        file.nanotimestamp.min > (BigInt(range?.min ?? 0) * 1_000_000n) 
+  public static base = (file: λFile, range?: MinMax) => ({
+    context_ids: [
+      file.context_id
+    ],
+    int_filter: [
+      file.nanotimestamp.min > (BigInt(range?.min ?? 0) * 1000000n)
         ? file.nanotimestamp.min.toString()
-          : (BigInt(range?.min ?? 0) * 1_000_000n).toString(),
-        file.nanotimestamp.max < (BigInt(range?.max ?? 0) * 1_000_000n) 
-          ? file.nanotimestamp.max.toString()
-          : (BigInt(range?.max ?? 0) * 1_000_000n).toString(),
-      ],
-      source_ids: [
-        file.id
-      ],
-      operation_ids: [
-        context.operation_id
-      ], 
-    }
-  }
+        : (BigInt(range?.min ?? 0) * 1000000n).toString(),
+      file.nanotimestamp.max < (BigInt(range?.max ?? 0) * 1000000n)
+        ? file.nanotimestamp.max.toString()
+        : (BigInt(range?.max ?? 0) * 1000000n).toString(),
+    ],
+    source_ids: [
+      file.id
+    ]
+  })
 
-  public static events = (app: λApp, file: λFile, events: λEvent['id'][]) => {
+  public static events = (file: λFile, events: λEvent['id'][]) => {
     const body: Record<string, any> = {
       q_options: {
         sort: {
@@ -1332,7 +1343,7 @@ export class Filter {
       }
     };
 
-    body.flt = Filter.base(app, file);
+    body.flt = Filter.base(file);
 
     body.q = {
       query: {
@@ -1389,7 +1400,7 @@ export class Filter {
       }
     };
 
-    body.flt = Filter.base(app, file, range);
+    body.flt = Filter.base(file, range);
 
     if (Filter.exist(app, file)) {
       body.q = body.q || {};
