@@ -44,6 +44,13 @@ export class Logger {
 
   public static push = (message: string) => Logger.messages.push({ level: 'fatal', message });
 
+  public static assert = <T extends any>(condition: T, message: string, context?: string): T => {
+    if (!condition) {
+      Logger.error(message, context);
+    }
+    return condition;
+  };
+
   private static preformat: Record<Console.LogLevel, keyof typeof λLogger> = {
     log: 'green',
     warn: 'yellow',

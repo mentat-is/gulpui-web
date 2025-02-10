@@ -124,6 +124,11 @@ export namespace GulpDataset {
       version: string;
     }
   }
+
+  export interface SigmaFile {
+    name: string;
+    content: string;
+  }
 }
 
 interface RefetchOptions {
@@ -355,37 +360,37 @@ export class Info implements InfoProps {
     });
   }
 
-  enrichment = (plugin: string, file: λFile, events: λEvent['id'][], customParameters: Record<string, any>) => {
+  enrichment = (plugin: string, file: λFile, events: λEvent['id'][], custom_parameters: Record<string, any>) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
     }
 
-    api<void>('/enrich_documents', {
+    return api<void>('/enrich_documents', {
       method: 'POST',
       query: {
         plugin,
-        index: index.name,
+        index,
         ws_id: this.app.general.ws_id
       },
       body: {
         ...Filter.events(this.app, file, events),
-        customParameters
+        custom_parameters
       }
     });
   }
 
-  enrich_single_id = (plugin: string, event: λEvent, custom_parameters: Record<string, any>) => {
+  enrich_single_id = (plugin: string, event: λEvent, custom_parameters: Record<string, any>): Promise<Record<string, string>> | undefined => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
     }
 
-    api('/enrich_single_id', {
+    return api('/enrich_single_id', {
       method: 'POST',
       query: {
         plugin,
-        index: index.name,
+        index: index,
         ws_id: this.app.general.ws_id,
         doc_id: event.id
       },
@@ -396,7 +401,6 @@ export class Info implements InfoProps {
 
   query_file = async (file: λFile, range?: MinMax) => {
     const index = Index.selected(this.app);
-
     if (!index) {
       return;
     }
@@ -408,7 +412,7 @@ export class Info implements InfoProps {
       query: {
         ws_id: this.app.general.ws_id,
         req_id: file.id,
-        index: index.name
+        index
       },
       body: Filter.body(this.app, file, range)
     });
@@ -525,7 +529,6 @@ export class Info implements InfoProps {
 
   deleteOperation = (operation: λOperation, setLoading: SetState<boolean>) => {
     const index = Index.selected(this.app);
-
     if (!index) {
       return;
     }
@@ -534,7 +537,7 @@ export class Info implements InfoProps {
       method: 'DELETE',
       query: {
         operation_id: operation.id,
-        index: index.name
+        index
       },
       setLoading
     }, this.sync);
@@ -805,9 +808,8 @@ export class Info implements InfoProps {
   }
 
   sync = async () => {
-    const index = Index.selected(this.app)?.name;
+    const index = Index.selected(this.app);
     if (!index) {
-      Logger.error('Index not selected. Cannot process sync', 'sync');
       return;
     }
 
@@ -908,7 +910,6 @@ export class Info implements InfoProps {
 
   query_single_id = (id: λEvent['id']) => {
     const index = Index.selected(this.app);
-
     if (!index) {
       return;
     }
@@ -917,7 +918,7 @@ export class Info implements InfoProps {
       method: 'POST',
       query: {
         doc_id: id,
-        index: index.name
+        index
       }
     }).then(raw => {
       if (!raw) {
@@ -974,7 +975,6 @@ export class Info implements InfoProps {
 
   query_external = async (plugin: string, uri: string, params: Record<string, any>) => {
     const index = Index.selected(this.app);
-
     if (!index) {
       return;
     }
@@ -982,7 +982,7 @@ export class Info implements InfoProps {
     return api('/query_raw', {
       method: 'POST',
       query: {
-        index: index.name,
+        index: index,
         ws_id: this.app.general.ws_id,
       },
       body: {
@@ -1052,48 +1052,50 @@ export class Info implements InfoProps {
     this.setTimelineScale(this.app.timeline.scale + 0.0001);
   }
 
+  query_sigma = (body: Record<string, any>) => {
+    const index = Index.selected(this.app);
+    if (!index) {
+      return;
+    }
+
+    return api('/query_sigma', {
+      method: 'POST',
+      query: {
+        index,
+        ws_id: this.app.general.ws_id
+      },
+      body
+    })
+  }
+
   sigma = {
-    set: async (files: Arrayed<λFile>, sigma: { name: string, content: string }) => {
+    set: async (files: Arrayed<λFile>, plugin: string, sigma: GulpDataset.SigmaFile) => {
       files = Parser.array(files);
 
-      const newSigma: typeof this.app.target.sigma = {}
+      const newSigma: typeof this.app.target.sigma = this.app.target.sigma;
 
-      files.forEach(file => {
-        newSigma[file.id] = {
-          name: sigma.name,
-          content: sigma.content
-        }
-      })
+      files.forEach(file => newSigma[file.id] = sigma);
 
-      this.setInfoByKey({
-        ...this.app.target.sigma,
-        ...newSigma
-      }, 'target', 'sigma');
+      this.setInfoByKey(newSigma, 'target', 'sigma');
 
       this.events_reset_in_file(files);
 
       files.forEach(file => {
-        api('/query_sigma', {
-          method: 'POST',
-          query: {
-            ws_id: this.app.general.ws_id,
-            req_id: file.id
-          },
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8'
-          },
-          body: JSON.stringify({
-            sigma: sigma.content,
-            options: {
-              '@timestamp': 'desc'
+        this.query_sigma({
+          sigmas: [sigma.content],
+          q_options: {
+            sigma_parameters: {
+              plugin
             }
-          })
-        });
+          },
+          flt: {
+            source_ids: [
+              file.id
+            ]
+          }
+        })
       })
-
-      this.deload(files.map(file => file.id));
     },
-  
     remove: (file: λFile | λFile['id']) => {
       const id = Parser.useUUID(file) as λFile['id'];
 
@@ -1152,7 +1154,7 @@ export class Info implements InfoProps {
 }
 
 export class Index {
-  public static selected = (use: λApp | λIndex[]): λIndex | undefined => Parser.use(use, 'indexes').find(i => i.selected);
+  public static selected = (use: λApp | λIndex[]): λIndex['name'] | undefined => Logger.assert(Parser.use(use, 'indexes').find(i => i.selected)?.name, 'No index selected', 'Index.selected');
 
   public static find = (app: λApp, index: λIndex) => app.target.indexes.find(i => i.name === index.name);
 

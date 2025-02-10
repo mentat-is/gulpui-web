@@ -41,14 +41,13 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     if (app.timeline.filtering_options[file.id]) return;
 
     const index = Index.selected(app);
-
     if (!index) {
       return;
     }
 
     api<FilterOptions>('/opensearch_get_mapping_by_src', {
       query: {
-        index: index.name,
+        index,
         operation_id: file.operation_id,
         context_id: file.context_id,
         source_id: file.id

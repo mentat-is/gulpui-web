@@ -1,13 +1,12 @@
 import s from './../../Gulp.module.css';
 import { FilterFileBanner } from '@/banners/FilterFile.banner';
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner';
-import { Filter, GulpDataset } from '@/class/Info';
+import { Filter } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { enginesBase } from '@/dto/Engine.dto';
 import { λFile } from '@/dto/Dataset';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
-import { useEffect, useState } from 'react';
 import { Enrichment } from '@/banners/Enrichment.banner';
 
 interface TargetMenuProps {

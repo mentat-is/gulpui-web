@@ -8,20 +8,22 @@ import { Switch } from "@/ui/Switch";
 import { Button, Input, Skeleton, Stack } from "@impactium/components";
 import { Icon } from "@impactium/icons";
 import { format } from "date-fns";
-import { ChangeEvent, CSSProperties, Fragment, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, CSSProperties, Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import s from './styles/EnrichmentBanner.module.css';
 
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
     event?: λEvent;
+    onEnrichment?: (event: Record<string, string>) => void;
   }
 
-  export function Banner({ event, ...props }: Enrichment.Props) {
-    const { Info, app } = useApplication();
+  export function Banner({ event, onEnrichment, ...props }: Enrichment.Props) {
+    const { Info, app, destroyBanner } = useApplication();
     const [file, setFile] = useState<λFile | null>(event ? File.id(app, event.file_id) : null);
     const [plugins, setPlugins] = useState<GulpDataset.PluginList.Summary>();
     const [plugin, setPlugin] = useState<GulpDataset.PluginList.Object>();
     const [customParameters, setCustomParameters] = useState<Record<string, any>>({});
+    const [loading, setLoading] = useState<boolean>(false);
 
     useEffect(() => {
       if (!plugin) {
@@ -43,13 +45,19 @@ export namespace Enrichment {
       });
     }, []);
 
-    const submit = () => {
+    const submit = async () => {
       if (!file || !plugin) {
         return;
       }
 
       if (event) {
-        Info.enrich_single_id(plugin.filename, event, customParameters);
+        setLoading(true);
+        const enriched = await Info.enrich_single_id(plugin.filename, event, customParameters);
+        if (enriched && onEnrichment) {
+          onEnrichment(enriched);
+          setLoading(false);
+          destroyBanner();
+        }
         return;
       }
  
@@ -57,8 +65,10 @@ export namespace Enrichment {
         .filter(e => Number(e.nanotimestamp / 1_000_000) > frame.min && Number(e.nanotimestamp / 1_000_000) < frame.max)
         .map(e => e.id);
 
-      Info.enrichment(plugin.filename, file, events, customParameters);
-      
+      setLoading(true);
+      await Info.enrichment(plugin.filename, file, events, customParameters);
+      setLoading(false);
+      destroyBanner();
     }
 
     const disabledStyle: CSSProperties = {
@@ -151,12 +161,7 @@ export namespace Enrichment {
       });
     }, [file]);
 
-    const frameInputChangeHandlerConstructor = (type: keyof MinMax) => (event: ChangeEvent<HTMLInputElement>) => setFrame(frame => ({
-      ...frame,
-      [type]: event.currentTarget.valueAsNumber
-    }))
-
-    const FrameSelector = () => {
+    const FrameSelector = useCallback(() => {
       if (event) {
         return (
           <Skeleton width='full' className={s.skeleton} show={!plugins}>
@@ -164,13 +169,43 @@ export namespace Enrichment {
           </Skeleton>
         )
       }
+
+      const handleMinChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFrame(prev => ({...prev, min: new Date(value).getTime()}));
+      }, []);
+    
+      const handleMaxChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setFrame(prev => ({...prev, max: new Date(value).getTime()}));
+      }, []);
+    
+      const formatDate = (timestamp: number) => {
+        return isNaN(timestamp) ? '' : format(timestamp, "yyyy-MM-dd'T'HH:mm");
+      };
+    
       return (
-        <Fragment>
-          <Input onChange={frameInputChangeHandlerConstructor('min')} value={format(frame.min, "yyyy-MM-dd'T'HH:mm")} variant='highlighted' img='CalendarArrowUp' type='datetime-local' />
-          <Input onChange={frameInputChangeHandlerConstructor('max')} value={format(frame.max, "yyyy-MM-dd'T'HH:mm")} variant='highlighted' img='CalendarArrowDown' type='datetime-local' />
-        </Fragment>
+        <>
+          <Input 
+            key='min-date'
+            onChange={handleMinChange} 
+            value={formatDate(frame.min)} 
+            variant='highlighted' 
+            img='CalendarArrowUp' 
+            type='datetime-local' 
+          />
+          <Input 
+            key='max-date'
+            onChange={handleMaxChange} 
+            value={formatDate(frame.max)} 
+            variant='highlighted' 
+            img='CalendarArrowDown' 
+            type='datetime-local' 
+          />
+        </>
       );
-    }
+    }, [event, frame, plugins]);
+    
 
     const CustomParameters = useMemo(() => {
       if (!plugin) {

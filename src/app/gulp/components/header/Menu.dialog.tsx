@@ -4,7 +4,7 @@ import { UploadBanner } from '@/banners/Upload.banner';
 import { useApplication } from '@/context/Application.context';
 import { SelectFiles } from '@/banners/SelectFiles.banner';
 import { LimitsBanner } from '@/banners/Limits.banner';
-import { UploadSigmaRuleBanner } from '@/banners/UploadSigmaRule.banner';
+import { SigmaRules } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternal } from '@/banners/QueryExternal.banner';
 import { StorylineBanner } from '../Storyline';
 import { OperationBanner } from '@/banners/Operation.banner';
@@ -40,7 +40,7 @@ export function Menu() {
     <Stack title='Menu' className={s.menu} dir='column' ai='flex-start' gap={12}>
       <Button variant='secondary' title='Upload files' img='Upload' onClick={() => spawnBanner(<UploadBanner />)} />
       <Button variant='secondary' title='Query external source' img='ServerCrash' onClick={() => spawnBanner(<QueryExternal.Banner />)} />
-      <Button variant='secondary' title='Upload sigma rule' img='Sigma' onClick={() => spawnBanner(<UploadSigmaRuleBanner />)} />
+      <Button variant='secondary' title='Upload sigma rule' img='Sigma' onClick={() => spawnBanner(<SigmaRules.Banner />)} />
       <Button variant='secondary' title='Select files and contexts' img='FileStack' onClick={() => spawnBanner(<SelectFiles.Banner />)} />
       <Button variant='secondary' title='Open storyline' img='Scroll' onClick={() => spawnBanner(<StorylineBanner />)} />
       <Button variant='secondary' title='Change workflow frame' img='AlignHorizontalSpaceAround' onClick={() => spawnBanner(<LimitsBanner />)} />

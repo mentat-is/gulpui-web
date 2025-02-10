@@ -2,6 +2,7 @@ import { Event, Info, Internal } from '@/class/Info';
 import { λApp } from '@/dto';
 import { ΞEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
+import { toast } from 'sonner';
 
 export class AppSocket extends WebSocket {
   private static instance: AppSocket | null = null;
@@ -58,6 +59,12 @@ export class AppSocket extends WebSocket {
 
         case message.type === 'ingest_source_done':
           info.sync().then(() => this.info.end_ingesting(message.data.req_id));          
+          return;
+
+        case message.type === 'enrich_done':
+          toast(message.data.status === 'failed' ? 'Enrichment went wrong' : 'Enrichment done', {
+            description: `Total processed documents: ${message.data.total_hits ?? 0}`
+          });
           return;
       }
     }

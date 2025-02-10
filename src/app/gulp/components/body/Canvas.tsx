@@ -269,7 +269,7 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
     reader.onload = async (e) => {
       const content = e.target?.result;
 
-      await Info.sigma.set(shifted, { name: file.name, content: content as string });
+      // await Info.sigma.set(shifted, { name: file.name, content: content as string });
 
       inputRef.current!.value = '';
     };

@@ -103,7 +103,7 @@ export function UploadBanner() {
       },
       query: {
         plugin: plugin.split('.')[0],
-        index: index.name,
+        index,
         operation_id: operation.id,
         context_name: context,
         ws_id: app.general.ws_id,

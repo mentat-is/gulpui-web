@@ -21,7 +21,7 @@ interface DisplayEventDialogProps {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
-  const { Info, app, spawnBanner, spawnDialog } = useApplication();
+  const { Info, app, spawnBanner } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<λExtendedEvent | null>(null);
   const [notes, setNotes] = useState<λNote[]>([]);
   const [rawJSON, setRawJSON] = useState<string>('');
@@ -90,7 +90,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <Button onClick={() => spawnBanner(<LinkComponents.Create.Banner event={event} />)} variant='secondary' img='Link'>Create link</Button>
             </Stack>
             <Stack dir='column' flex>
-              <Button onClick={() => spawnBanner(<Enrichment.Banner event={event} />)} variant='glass' img='PrismColor'>Enrich</Button>
+              <Button onClick={() => spawnBanner(<Enrichment.Banner event={event} onEnrichment={(e: Record<string, string>) => setRawJSON(JSON.stringify(e, null, 2))} />)} variant='glass' img='PrismColor'>Enrich</Button>
               <Button onClick={() => spawnBanner(<LinkComponents.Connect.Banner event={event} />)} variant='secondary' img='Link'>Connect link</Button>
             </Stack>
           </Stack>
