@@ -74,7 +74,8 @@ export class AppSocket extends WebSocket {
             });
           } else {
             toast.error('Query failed', {
-              description: message.error ?? 'Unknown error'
+              description: message.data.error ?? 'Unknown error',
+              richColors: true
             });
           }
           return;
