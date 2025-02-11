@@ -68,9 +68,15 @@ export class AppSocket extends WebSocket {
           return;
 
         case message.type === 'query_done':
-          toast.error(message.data.status === 'done' ? 'Query finished' : 'Query failed', {
-            description: `Total processed documents: ${message.data.total_hits ?? 0}`
-          });
+          if (message.data.status === 'done') {
+            toast('Query finished', {
+              description: `Total processed documents: ${message.data.total_hits ?? 0}`
+            });
+          } else {
+            toast.error('Query failed', {
+              description: message.error ?? 'Unknown error'
+            });
+          }
           return;
       }
     }
