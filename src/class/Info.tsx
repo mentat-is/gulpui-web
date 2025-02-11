@@ -1435,9 +1435,9 @@ export class Filter {
 
       let queryStringPart: string;
 
-      const isParsable = Number.isNaN(Number(filter.value));
+      const isString = isNaN(parseInt(filter.value));
 
-      const value = isParsable ? filter.value : `'${filter.value}'`
+      const value = isString ? `"${filter.value}"` : parseInt(filter.value);
 
       switch (filter.type) {
         case FilterType.EQUAL:
