@@ -56,12 +56,6 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   }, [app.timeline.filtering_options]);
 
   const submit = async () => {
-    if (app.target.filters[file.id] && filters_length.current === app.target.filters[file.id].length) {
-      destroyBanner();
-      Info.render();
-      return;
-    }
-
     setLoading(true);
     Info.filters_cache(file);
     Info.refetch({
