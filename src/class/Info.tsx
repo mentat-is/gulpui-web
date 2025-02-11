@@ -1435,9 +1435,9 @@ export class Filter {
 
       let queryStringPart: string;
 
-      const isString = isNaN(parseInt(filter.value));
+      const isWrappedInQuotes = filter.value.startsWith('"') && filter.value.endsWith('"');
 
-      const value = isString ? `"${filter.value}"` : parseInt(filter.value);
+      const value = isWrappedInQuotes ? filter.value : isNaN(parseInt(filter.value)) ? `"${filter.value}"` : parseInt(filter.value);
 
       switch (filter.type) {
         case FilterType.EQUAL:
