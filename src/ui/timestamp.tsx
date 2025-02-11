@@ -10,7 +10,7 @@ namespace Timestamp {
 }
 
 export function Timestamp({ value, className, ...props }: Timestamp.Props) {
-  const Timestamp = useMemo(() => <p className={cn(s.timestamp, className)} {...props}>{format(value, 'yyyy.MM.dd HH:mm:ss SSS')}ms</p>, [value, className, props.style]);
+  const Timestamp = useMemo(() => <p className={cn(s.timestamp, className)} {...props}>{format(isNaN(Date.parse(value.toString())) ? value : 0, 'yyyy.MM.dd HH:mm:ss SSS')}ms</p>, [value, className, props.style]);
 
   return Timestamp;
 };

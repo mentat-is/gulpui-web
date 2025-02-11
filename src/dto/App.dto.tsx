@@ -2,7 +2,7 @@ import { λOperation } from '.';
 import { λEvent, λExtendedEvent } from './ChunkEvent.dto';
 import { λIndex } from './Index.dto';
 import { generateUUID } from '@/ui/utils';
-import { FilterOptions, Internal, MinMax, λFilter, λUser, μ } from '@/class/Info';
+import { FilterOptions, GulpDataset, Internal, MinMax, λFilter, λUser, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
 import { XY } from './XY.dto';
 import { λContext, λFile, λGlyph, λLink, λNote } from './Dataset';
@@ -28,7 +28,8 @@ export interface λApp {
       name: string;
       content: string;
     }>;
-    plugins: λMapping.Plugin[];
+    mappings: λMapping.Plugin[];
+    plugins: GulpDataset.PluginList.Summary;
     ingest: string[]
   }
   general: λUser & {
@@ -92,6 +93,7 @@ export const BaseInfo: λApp = {
     links: [],
     sigma: {},
     glyphs: [],
+    mappings: [],
     plugins: [],
     ingest: []
   }

@@ -3,6 +3,7 @@ import { useApplication } from '@/context/Application.context';
 import { Default, λFile } from '@/dto/Dataset';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select';
+import { Toggle } from '@/ui/Toggle';
 import { Button, Stack } from '@impactium/components';
 import { Input } from '@impactium/components';
 import { Icon } from '@impactium/icons';
@@ -18,11 +19,12 @@ export namespace SigmaRules {
   }
 
   export function Banner({ file: initFile, ...props }: SigmaRules.Banner.Props) {
-    const { Info, app } = useApplication();
+    const { Info, app, destroyBanner } = useApplication();
     const [rules, setRules] = useState<GulpDataset.SigmaFile | null>(null);
     const [file, setFile] = useState<λFile | null>(initFile ?? null);
     const [plugins, setPlugins] = useState<GulpDataset.PluginList.Summary>([]);
     const [plugin, setPlugin] = useState<string | null>(null);
+    const [createNotes, setCreateNotes] = useState<boolean>(true);
   
     useEffect(() => {
       Info.plugin_list().then(plugins => {
@@ -33,16 +35,18 @@ export namespace SigmaRules {
     const DoneButton = () => {
       const falsy_condition = !file || !plugin || !rules;
 
-      const submit = () => {
+      const submit = async () => {
         if (falsy_condition) {
           return;
         }
 
-        Info.sigma.set(file, plugin, rules);
+        await Info.sigma.set(file, plugin, rules, createNotes);
+
+        destroyBanner();
       }
 
       return (
-        <Button img='Check' onClick={submit} variant='ghost' disabled={falsy_condition} />
+        <Button img='Check' onClick={submit} variant='glass' disabled={falsy_condition} />
       )
     }
   
@@ -106,6 +110,7 @@ export namespace SigmaRules {
             })}
           </SelectContent>
         </Select>
+        <Toggle option={['Ignore notes', 'Create notes']} checked={createNotes} onCheckedChange={setCreateNotes} />
       </UIBanner>
     )
   }

@@ -1,5 +1,5 @@
 import { Banner } from "@/ui/Banner";
-import { Button, Stack } from "@impactium/components";
+import { Button, Skeleton, Stack } from "@impactium/components";
 import React, { useCallback, useEffect, useState } from "react";
 import { CreateOperationBanner } from "./CreateOperation.banner";
 import { useApplication } from "@/context/Application.context";
@@ -35,10 +35,8 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
   }, []);
 
   useEffect(() => {
-    go(() => go(() => {
-      setLoading(true);
-      Info.sync().then(() => setLoading(false));
-    }));
+    setLoading(true);
+    Info.sync().then(() => setLoading(false));
   }, []);
 
   const DoneButton = useCallback(() => {
@@ -70,18 +68,20 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
   }, [Info.app.target.operations])
 
   return (
-    <Banner title='Choose operation' subtitle={<InitializeNewOperaion />} done={<DoneButton />} {...props}>
-      <Select defaultValue={Operation.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
-        <Trigger />
-        <SelectContent>
-          {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
-            <SelectItem value={operation.id}>
-              <Icon name={Operation.icon(operation)} />
-              {operation.name}
-            </SelectItem>
-          )) : <NoOperations />}
-        </SelectContent>
-      </Select>
+    <Banner title='Choose operation' subtitle={<InitializeNewOperaion />} done={<DoneButton />} loading={loading} {...props}>
+      <Skeleton show={loading}>
+        <Select defaultValue={Operation.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
+          <Trigger />
+          <SelectContent>
+            {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
+              <SelectItem value={operation.id}>
+                <Icon name={Operation.icon(operation)} />
+                {operation.name}
+              </SelectItem>
+            )) : <NoOperations />}
+          </SelectContent>
+        </Select>
+      </Skeleton>
     </Banner>
   );
 }

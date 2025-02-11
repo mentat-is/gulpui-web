@@ -21,7 +21,7 @@ export function NotesDisplayer({ getPixelPosition, scrollY }: NotesDisplayerProp
     const left = getPixelPosition(timestamp);
     const top = File.getHeight(app, note.source_id, scrollY);
 
-    return left > 0 && top > 0 ? { left, top } : null;
+    return left > 0 && top > 0 ? { left, top: top } : null;
   }, [getPixelPosition, scrollY, app]);
 
   return (

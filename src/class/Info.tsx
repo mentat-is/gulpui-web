@@ -269,6 +269,43 @@ export namespace Internal {
       }
     }
   }
+
+  export class Transformator {
+    public static toTimestamp = (timestamp: string | number | Date): number => 
+      Number(this.toNanos(timestamp)) / 1_000_000;
+
+    public static toNanos = (timestamp: string | number | Date): bigint => {
+      if (timestamp instanceof Date) {
+        return BigInt(Math.floor(timestamp.getTime() * 1_000_000));
+      }
+      if (typeof timestamp === "number") {
+        return BigInt(Math.floor(timestamp * 1_000_000));
+      }
+      const parsed = Date.parse(timestamp);
+      if (isNaN(parsed)) {
+        Logger.error(`Invalid transformation to NANOS from ${timestamp}`, Transformator.name);
+        return 0n;
+      }
+      return BigInt(parsed) * 1_000_000n;
+    };
+
+    public static toISO = (timestamp: string | number | Date): string => {
+      if (timestamp instanceof Date)
+        return timestamp.toISOString();
+      if (typeof timestamp === "number")
+        return new Date(timestamp).toISOString();
+      const parsed = Date.parse(timestamp);
+      if (isNaN(parsed)) {
+        Logger.error(`Invalid transformation to ISO from ${timestamp}`, Transformator.name);
+        return new Date().toISOString();
+      }
+      return new Date(parsed).toISOString();
+    };
+
+    public static toAsync = <T extends any>(value: T): Promise<T> => {
+      return new Promise(resolve => resolve(value));
+    }
+  }
 }
 
 export interface λUser {
@@ -427,6 +464,11 @@ export class Info implements InfoProps {
       return;
     }
 
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     const path = Filter.exist(this.app, file) ? '/query_raw' : '/query_gulp';
 
     return await api(path, {
@@ -497,7 +539,7 @@ export class Info implements InfoProps {
     }
   };
 
-  deload = (uuids: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !uuids.includes(_uuid))]);
+  deload = (id: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !id.includes(_uuid))]);
 
   render = () => {
     Logger.log(`Render requested`, Info.name);
@@ -525,7 +567,7 @@ export class Info implements InfoProps {
 
     const sorted_parsed_shit = parsed_shit.sort((a, b) => a.name.localeCompare(b.name));
 
-    this.setInfoByKey(sorted_parsed_shit, 'target', 'plugins');
+    this.setInfoByKey(sorted_parsed_shit, 'target', 'mappings');
 
     return sorted_parsed_shit;
   }
@@ -954,7 +996,25 @@ export class Info implements InfoProps {
     });
   }
 
-  plugin_list = (): Promise<GulpDataset.PluginList.Summary> => api<GulpDataset.PluginList.Summary>('/plugin_list').then(list => list.sort((a, b) => a.filename.localeCompare(b.filename)))
+  // ⚠️ UNTOUCHABLE
+  plugin_list = async (): Promise<GulpDataset.PluginList.Summary> => {
+    const plugins = this.app.target.plugins;
+    if (plugins.length) {
+      return Internal.Transformator.toAsync(plugins);
+    }
+
+    Logger.warn('No plugins found in application data', 'plugin_list');
+    Logger.log('Fetching plugins...', 'plugin_list');
+
+    const list = await api<GulpDataset.PluginList.Summary>('/plugin_list').then(list => list.sort((a, b) => a.filename.localeCompare(b.filename)));
+
+  this.setInfoByKey(list, 'target', 'plugins');
+
+    Logger.log(`Fetched and sorted ${list.length} plugins. Names:`, 'plugin_list');
+    Logger.log(list.map(l => l.filename), 'plugin_list');
+
+    return list;
+  }
 
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame');
   
@@ -1086,12 +1146,13 @@ export class Info implements InfoProps {
         index,
         ws_id: this.app.general.ws_id
       },
-      body
-    })
+      body,
+      toast: 'Sigma rule has been successfully applied'
+    });
   }
 
   sigma = {
-    set: async (files: Arrayed<λFile>, plugin: string, sigma: GulpDataset.SigmaFile) => {
+    set: async (files: Arrayed<λFile>, plugin: string, sigma: GulpDataset.SigmaFile, notes: boolean) => {
       files = Parser.array(files);
 
       const newSigma: typeof this.app.target.sigma = this.app.target.sigma;
@@ -1102,12 +1163,15 @@ export class Info implements InfoProps {
 
       this.events_reset_in_file(files);
 
-      files.forEach(file => {
-        this.query_sigma({
+      return Promise.all(files.map(file => {
+        return this.query_sigma({
           sigmas: [sigma.content],
           q_options: {
             sigma_parameters: {
               plugin
+            },
+            note_parameters: {
+              create_notes: notes,
             }
           },
           flt: {
@@ -1115,14 +1179,15 @@ export class Info implements InfoProps {
               file.id
             ]
           }
-        })
-      })
+        });
+      }));
     },
     remove: (file: λFile | λFile['id']) => {
       const id = Parser.useUUID(file) as λFile['id'];
 
       delete this.app.target.sigma[id];
       this.setInfoByKey(this.app.target.sigma, 'target', 'sigma');
+      this.refetch({ ids: typeof file === 'string' ? file : file.id });
       this.deload(id);
     }
   }
@@ -1193,7 +1258,7 @@ export class Operation {
 
   public static reload = (newOperations: λOperation[], app: λApp) => Operation.select(newOperations, Operation.selected(app));
 
-  public static selected = (app: λApp): λOperation | undefined => app.target.operations.find(o => o.selected);
+  public static selected = (app: λApp): λOperation | undefined => Logger.assert(app.target.operations.find(o => o.selected), 'No operation selected', 'Operation.selected');
 
   public static id = (use: λApp, id: λOperation['id']): λOperation => Parser.use(use, 'operations').find(o => o.id === id)!;
 
@@ -1318,6 +1383,9 @@ export class Filter {
   }
 
   public static base = (file: λFile, range?: MinMax) => ({
+    operation_ids: [
+      file.operation_id
+    ],
     context_ids: [
       file.context_id
     ],
@@ -1448,7 +1516,7 @@ export class Event {
     events.forEach(e => {
       frames[e.file_id] = frames[e.file_id] || MinMaxBase;
 
-      const timestamp = new Date(e.timestamp).valueOf()
+      const timestamp = Internal.Transformator.toTimestamp(e.timestamp);
 
       frames[e.file_id].min = frames[e.file_id].min === 0 ? timestamp : Math.min(frames[e.file_id].min, timestamp);
       frames[e.file_id].max = Math.max(frames[e.file_id].max, timestamp);
@@ -1468,8 +1536,8 @@ export class Event {
 
   public static normalize = (raw: ΞDoc[]): λDoc[] => raw.map(r => ({
     id: r._id,
-    timestamp: r['gulp.timestamp'],
-    nanotimestamp: r['@timestamp'],
+    timestamp: Internal.Transformator.toTimestamp(r['@timestamp']),
+    nanotimestamp: Internal.Transformator.toNanos(r['@timestamp']),
     file_id: r['gulp.source_id'],
     context_id: r['gulp.context_id'],
     operation_id: r['gulp.operation_id']
@@ -1481,8 +1549,8 @@ export class Event {
       operation_id: raw['gulp.operation_id'],
       context_id: raw['gulp.context_id'],
       file_id: raw['gulp.source_id'],
-      timestamp: new Date(raw['@timestamp']).valueOf(),
-      nanotimestamp: raw['gulp.timestamp'],
+      timestamp: Internal.Transformator.toTimestamp(raw['@timestamp']),
+      nanotimestamp: Internal.Transformator.toNanos(raw['@timestamp']),
       code: raw['event.code'],
       weight: raw['gulp.event_code'],
       duration: raw['event.duration'],
@@ -1542,8 +1610,8 @@ export class Event {
         operation_id: rawEvent['gulp.operation_id'],
         context_id: rawEvent['gulp.context_id'],
         file_id: rawEvent['gulp.source_id'],
-        timestamp: new Date(rawEvent['@timestamp']).valueOf(),
-        nanotimestamp: rawEvent['@timestamp'],
+        timestamp: Internal.Transformator.toTimestamp(rawEvent['@timestamp']),
+        nanotimestamp: Internal.Transformator.toNanos(rawEvent['@timestamp']),
         code: rawEvent['event.code'],
         weight: rawEvent['gulp.event_code'],
         duration: rawEvent['event.duration']
@@ -1628,11 +1696,11 @@ export class Mapping {
     return plugins;
   }
 
-  public static plugins = (app: λApp): λMapping.Plugin['name'][] => app.target.plugins.map(p => p.name);
+  public static plugins = (app: λApp): λMapping.Plugin['name'][] => app.target.mappings.map(p => p.name);
 
-  public static methods = (app: λApp, plugin: λMapping.Plugin['name']): λMapping.Method['name'][] => app.target.plugins.find(p => p.name === plugin)?.methods.map(m => m.name) || [];
+  public static methods = (app: λApp, plugin: λMapping.Plugin['name']): λMapping.Method['name'][] => app.target.mappings.find(p => p.name === plugin)?.methods.map(m => m.name) || [];
 
-  public static mappings = (app: λApp, plugin: λMapping.Plugin['name'], method: λMapping.Method['name']): λMapping.Mapping[] => app.target.plugins.find(p => p.name === plugin)?.methods.find(m => m.name === method)?.mappings || [];
+  public static mappings = (app: λApp, plugin: λMapping.Plugin['name'], method: λMapping.Method['name']): λMapping.Mapping[] => app.target.mappings.find(p => p.name === plugin)?.methods.find(m => m.name === method)?.mappings || [];
 }
 
 export class Parser {

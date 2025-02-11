@@ -22,12 +22,12 @@ export namespace Point {
 export function Point({ x, y, icon, accent, className, name, description, editObject, deleteObject, ...props }: Point.Props) {
   return (
     <ContextMenu>
-      <ContextMenuTrigger>
+      <ContextMenuTrigger style={{ position: 'absolute' }}>
         <Button size='icon' variant='glass' className={cn(className, s.target)} style={{ ...props.style, left: x, top: y, borderColor: accent }} {...props}>
           <Icon name={icon} color={accent} />
           <hr style={{ background: accent }} />
           <p className={s.desc} style={{ y, x, borderColor: accent }}>{name}</p>
-          {description && <span>{description}</span>}
+          {description && <span style={{ pointerEvents: 'none' }}>{description}</span>}
         </Button>
       </ContextMenuTrigger>
       <ContextMenuContent>

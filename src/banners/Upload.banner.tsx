@@ -242,10 +242,10 @@ export function UploadBanner() {
   }, [files]);
 
   useEffect(() => {
-    if (app.target.plugins.length === 0) {
+    if (app.target.mappings.length === 0) {
       Info.mapping_file_list();
     }
-  }, [app.target.plugins])
+  }, [app.target.mappings])
 
 
   const PluginSelection = ({ file }: TargetSelection) => {

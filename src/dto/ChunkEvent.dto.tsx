@@ -1,6 +1,4 @@
-import { Hardcode } from '@/class/Engine.dto'
 import { μ } from '@/class/Info'
-import { UUID } from 'crypto'
 import { λContext, λOperation, λFile } from './Dataset'
 
 export interface ΞEvent {
@@ -50,7 +48,7 @@ export interface λEvent {
   context_id: λContext['id']
   file_id: λFile['id']
   timestamp: number;
-  nanotimestamp: number;
+  nanotimestamp: bigint;
   // event.event_code
   code: string,
   // event.gulp.event_code
