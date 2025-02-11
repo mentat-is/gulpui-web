@@ -1436,8 +1436,10 @@ export class Filter {
       let queryStringPart: string;
 
       const isWrappedInQuotes = filter.value.startsWith('"') && filter.value.endsWith('"');
+      const isHex = filter.value.startsWith('0x');
+      const isString = isNaN(parseInt(filter.value));
 
-      const value = isWrappedInQuotes ? filter.value : isNaN(parseInt(filter.value)) ? `"${filter.value}"` : parseInt(filter.value);
+      const value = isWrappedInQuotes || isHex ? filter.value : isString ? `"${filter.value}"` : parseInt(filter.value);
 
       switch (filter.type) {
         case FilterType.EQUAL:
