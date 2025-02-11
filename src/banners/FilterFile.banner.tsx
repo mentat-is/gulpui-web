@@ -204,7 +204,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     )
   }, [filter, acceptable, app.timeline.filtering_options]);
 
-  const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
+  // const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
 
   return (
     <Banner
@@ -222,8 +222,8 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       <AvailableFilters />
       <Skeleton height='full' show={preloading} width='full'>
         <Stack dir='column' className={s.preview} ai='flex-start'>
-          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(base + Filter.query(app, file))}>Copy</Button></h4>
-          <code><span>{base}</span>{Filter.query(app, file)}</code>
+          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(Filter.query(app, file))}>Copy</Button></h4>
+          <code>{Filter.query(app, file)}</code>
         </Stack>
       </Skeleton>
     </Banner>
