@@ -96,7 +96,8 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     Info.login(user);
     Info.index_reload();
     Info.plugin_list();
-    spawnBanner(<Operation.Select.Banner back={() => spawnBanner(<AuthBanner />)} />);
+    console.log('cxz')
+    spawnBanner(<Operation.Select.Banner />);
   }
 
   useEffect(() => {

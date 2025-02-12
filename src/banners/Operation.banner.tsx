@@ -31,16 +31,7 @@ export namespace Operation {
         Info.sync();
       }, []);
     
-      const DoneButton = () => {
-        const handleDoneButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
-          ev.preventDefault();
-    
-          spawnBanner(<SelectFiles.Banner back={() => spawnBanner(<Operation.Select.Banner />)} />);
-        }
-        return (
-          <Button disabled={!GulpOperationEntity.selected(Info.app)} onClick={handleDoneButtonClick} size='icon' variant='glass' img='Check' />
-        )
-      };
+      const DoneButton = () => <Button disabled={!GulpOperationEntity.selected(Info.app)} onClick={() => spawnBanner(<SelectFiles.Banner back={() => spawnBanner(<Operation.Select.Banner />)} />)} size='icon' variant='glass' img='Check' />;
     
       const NoOperations = () => <SelectItem value='X'>There is no operations</SelectItem>;
     
@@ -58,7 +49,7 @@ export namespace Operation {
       };
     
       return (
-        <Banner title='Choose operation' option={<InitializeNewOperaion />} done={<DoneButton />} loading={Info.app.target.operations.length === 0} {...props}>
+        <UIBanner title='Choose operation' option={<InitializeNewOperaion />} done={<DoneButton />} loading={Info.app.target.operations.length === 0} {...props}>
           {Info.app.target.operations.length === 0 ? <Skeleton width='full' height='default' /> : (
             <UISelect defaultValue={GulpOperationEntity.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
               <Trigger />
@@ -72,7 +63,7 @@ export namespace Operation {
               </SelectContent>
             </UISelect>
           )}
-        </Banner>
+        </UIBanner>
       );
     }
   }
