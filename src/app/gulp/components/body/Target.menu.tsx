@@ -8,13 +8,13 @@ import { λFile } from '@/dto/Dataset';
 import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger } from '@/ui/ContextMenu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { Enrichment } from '@/banners/Enrichment.banner';
+import { SigmaRules } from '@/banners/UploadSigmaRule.banner';
 
 interface TargetMenuProps {
   file?: λFile;
-  inputRef: React.RefObject<HTMLInputElement>;
 }
 
-export function TargetMenu({ file, inputRef }: TargetMenuProps) {
+export function TargetMenu({ file }: TargetMenuProps) {
   const { Info, spawnBanner, app } = useApplication();
 
   if (!file) return null;
@@ -72,8 +72,8 @@ export function TargetMenu({ file, inputRef }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => inputRef.current?.click()} img='Sigma'>Upload rule</ContextMenuItem>
-        {app.target.sigma[file.id] && <ContextMenuItem className={s.remove_sigma} onClick={() => Info.sigma.remove(file)} img='X'><span>Disable rule: {app.target.sigma[file.id].name}</span></ContextMenuItem>}
+        <ContextMenuItem onClick={() => spawnBanner(<SigmaRules.Banner file={file} />)} img='Sigma'>Upload rule</ContextMenuItem>
+        {app.target.sigma[file.id] && <ContextMenuItem className={s.remove_sigma} onClick={() => Info.sigma.remove(file)} img='X'>Disable rule: {app.target.sigma[file.id].name}</ContextMenuItem>}
       </ContextMenuGroup>
     </ContextMenuContent>
   )

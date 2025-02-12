@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
 import { Icon } from "@impactium/icons";
 import { λOperation } from "@/dto";
 import { go } from "@/ui/utils";
+import { Glyph } from "@/ui/Glyph";
 
 export namespace OperationBanner {
   export interface Props extends Banner.Props {
@@ -18,7 +19,7 @@ export namespace OperationBanner {
 
 export function OperationBanner({ ...props }: OperationBanner.Props) {
   const { Info, spawnBanner } = useApplication();
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const InitializeNewOperaion = useCallback(() => {
     const handleSubtitleButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
@@ -65,11 +66,11 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
         </Stack>
       </SelectTrigger>
     )
-  }, [Info.app.target.operations])
+  }, [Info.app.target.operations, Glyph.List]);
 
   return (
     <Banner title='Choose operation' subtitle={<InitializeNewOperaion />} done={<DoneButton />} loading={loading} {...props}>
-      <Skeleton show={loading}>
+      {loading ? <Skeleton show={loading} width='full' /> : (
         <Select defaultValue={Operation.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
           <Trigger />
           <SelectContent>
@@ -81,7 +82,7 @@ export function OperationBanner({ ...props }: OperationBanner.Props) {
             )) : <NoOperations />}
           </SelectContent>
         </Select>
-      </Skeleton>
+      )}
     </Banner>
   );
 }

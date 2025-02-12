@@ -255,36 +255,14 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
     setShifted(list => [...list, file]);
   }
 
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleInputChange = () => {
-    if (shifted.length === 0) return
-
-    const file = inputRef.current?.files?.[0];
-    if (!file) return toast('No sigma rule selected', {
-      description: 'Please select a file with a sigma rule in YML format'
-    });
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const content = e.target?.result;
-
-      // await Info.sigma.set(shifted, { name: file.name, content: content as string });
-
-      inputRef.current!.value = '';
-    };
-    reader.readAsText(file);
-  }
-
-
   const Menu = useCallback(() => {
     if (shifted.length === 0 ) {
       return null;
     }
 
     return shifted.length === 1
-      ? <TargetMenu file={shifted[0]} inputRef={inputRef} />
-      : <FilesMenu files={shifted} inputRef={inputRef} />
+      ? <TargetMenu file={shifted[0]} />
+      : <FilesMenu files={shifted} />
   }, [shifted]);
 
   
@@ -313,7 +291,6 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
           ref={overlay_ref} />
         <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
         <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
-        <Input img={null} type='file' accept='.yml' onChange={handleInputChange} ref={inputRef} className={s.upload_sigma_input} />
       </ContextMenuTrigger>
       <Menu />
     </ContextMenu>

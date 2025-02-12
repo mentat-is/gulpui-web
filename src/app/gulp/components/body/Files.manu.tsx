@@ -9,10 +9,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/T
 
 interface TargetMenuProps {
   files: λFile[];
-  inputRef: React.RefObject<HTMLInputElement>;
 }
 
-export function FilesMenu({ files, inputRef }: TargetMenuProps) {
+export function FilesMenu({ files }: TargetMenuProps) {
   const { Info, app } = useApplication();
 
   if (!files.length) return null;
@@ -58,11 +57,6 @@ export function FilesMenu({ files, inputRef }: TargetMenuProps) {
         <ContextMenuSub>
         <ContextMenuSubTrigger img='Move'>Reorder</ContextMenuSubTrigger>
       </ContextMenuSub>
-      </ContextMenuGroup>
-      <ContextMenuSeparator />
-      <ContextMenuGroup>
-        <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => inputRef.current?.click()} img='Sigma'>Upload rule</ContextMenuItem>
       </ContextMenuGroup>
     </ContextMenuContent>
   )
