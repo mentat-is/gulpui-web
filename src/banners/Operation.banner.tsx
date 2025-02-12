@@ -1,88 +1,170 @@
-import { Banner } from "@/ui/Banner";
-import { Button, Skeleton, Stack } from "@impactium/components";
+import { Banner as UIBanner } from "@/ui/Banner";
+import { Button, Input, Skeleton, Stack } from "@impactium/components";
 import React, { useCallback, useEffect, useState } from "react";
-import { CreateOperationBanner } from "./CreateOperation.banner";
 import { useApplication } from "@/context/Application.context";
-import { Operation } from "@/class/Info";
+import { Operation as GulpOperationEntity } from "@/class/Info";
 import { SelectFiles } from "./SelectFiles.banner";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
+import { Select as UISelect, SelectContent, SelectItem, SelectTrigger } from "@/ui/Select";
 import { Icon } from "@impactium/icons";
 import { λOperation } from "@/dto";
-import { go } from "@/ui/utils";
 import { Glyph } from "@/ui/Glyph";
+import { λGlyph, Default } from "@/dto/Dataset";
+import { λIndex } from "@/dto/Index.dto";
+import s from './styles/OperationBanner.module.css'
 
-export namespace OperationBanner {
-  export interface Props extends Banner.Props {
+export namespace Operation {
+  export namespace Select {
+    export namespace Banner {
+      export interface Props extends UIBanner.Props {
 
-  }
-}
-
-export function OperationBanner({ ...props }: OperationBanner.Props) {
-  const { Info, spawnBanner } = useApplication();
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const InitializeNewOperaion = useCallback(() => {
-    const handleSubtitleButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
-      ev.preventDefault();
-
-      spawnBanner(<CreateOperationBanner />);
+      }
     }
+
+    export function Banner({ ...props }: Operation.Select.Banner.Props) {
+      const { Info, spawnBanner } = useApplication();
     
-    return (
-      <Button variant='ghost' onClick={handleSubtitleButtonClick}>
-        Create new operation
-      </Button>
-    )
-  }, []);
-
-  useEffect(() => {
-    setLoading(true);
-    Info.sync().then(() => setLoading(false));
-  }, []);
-
-  const DoneButton = useCallback(() => {
-    const handleDoneButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
-      ev.preventDefault();
-
-      spawnBanner(<SelectFiles.Banner back={() => spawnBanner(<OperationBanner />)} />);
+      const InitializeNewOperaion = () => (
+        <Button variant='ghost' onClick={() => spawnBanner(<Operation.Create.Banner back={() => spawnBanner(<Operation.Select.Banner />)} />)} img='BookPlus' />
+      );
+    
+      useEffect(() => {
+        Info.sync();
+      }, []);
+    
+      const DoneButton = () => {
+        const handleDoneButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
+          ev.preventDefault();
+    
+          spawnBanner(<SelectFiles.Banner back={() => spawnBanner(<Operation.Select.Banner />)} />);
+        }
+        return (
+          <Button disabled={!GulpOperationEntity.selected(Info.app)} onClick={handleDoneButtonClick} size='icon' variant='glass' img='Check' />
+        )
+      };
+    
+      const NoOperations = () => <SelectItem value='X'>There is no operations</SelectItem>;
+    
+      const Trigger = () => {
+        const selected = GulpOperationEntity.selected(Info.app);
+    
+        return (
+          <SelectTrigger>
+            <Stack>
+              <Icon name={GulpOperationEntity.icon((selected || {}) as λOperation)} />
+              <p>{selected ? selected.name : 'Select operation or create new one'}</p>
+            </Stack>
+          </SelectTrigger>
+        )
+      };
+    
+      return (
+        <Banner title='Choose operation' option={<InitializeNewOperaion />} done={<DoneButton />} loading={Info.app.target.operations.length === 0} {...props}>
+          {Info.app.target.operations.length === 0 ? <Skeleton width='full' height='default' /> : (
+            <UISelect defaultValue={GulpOperationEntity.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
+              <Trigger />
+              <SelectContent>
+                {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
+                  <SelectItem value={operation.id}>
+                    <Icon name={GulpOperationEntity.icon(operation)} />
+                    {operation.name}
+                  </SelectItem>
+                )) : <NoOperations />}
+              </SelectContent>
+            </UISelect>
+          )}
+        </Banner>
+      );
     }
-    return (
-      <Button disabled={!Operation.selected(Info.app)} onClick={handleDoneButtonClick} size='icon' variant='glass' img='Check' />
-    )
-  }, [loading, Info.app.target.operations]);
+  }
 
-  const NoOperations = useCallback(() => {
-    return <SelectItem value='X'>There is no operations</SelectItem>
-  }, []);
+  export namespace Create {
+    export namespace Banner {
+      export interface Props extends UIBanner.Props {}
+    }
 
-  const Trigger = useCallback(() => {
-    const selected = Operation.selected(Info.app);
+    export function Banner({ ...props }: Operation.Create.Banner.Props) {
+      const { app, Info, spawnBanner } = useApplication();
+      const [name, setName] = useState<string>('');
+      const [index, setIndex] = useState<λIndex['name'] | null>(null);
+      const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value || null);
+      const [description, setDescription] = useState<string>('');
+      const [loading, setLoading] = useState<boolean>(false);
 
-    return (
-      <SelectTrigger>
-        <Stack>
-          <Icon name={Operation.icon((selected || {}) as λOperation)} />
-          <p>{selected ? selected.name : 'Select operation or create new one'}</p>
-        </Stack>
-      </SelectTrigger>
-    )
-  }, [Info.app.target.operations, Glyph.List]);
+      const createOperation = () => {
+        if (!index) {
+          return;
+        }
 
-  return (
-    <Banner title='Choose operation' subtitle={<InitializeNewOperaion />} done={<DoneButton />} loading={loading} {...props}>
-      {loading ? <Skeleton show={loading} width='full' /> : (
-        <Select defaultValue={Operation.selected(Info.app)?.id} onValueChange={(id) => Info.operations_select(Info.app.target.operations.find(o => o.id === id)!)}>
-          <Trigger />
-          <SelectContent>
-            {Info.app.target.operations.length ? Info.app.target.operations.map((operation) => (
-              <SelectItem value={operation.id}>
-                <Icon name={Operation.icon(operation)} />
-                {operation.name}
-              </SelectItem>
-            )) : <NoOperations />}
-          </SelectContent>
-        </Select>
-      )}
-    </Banner>
-  );
+        api<any>('/operation_create', {
+          method: 'POST',
+          setLoading,
+          query: {
+            name,
+            index,
+          },
+          deassign: true,
+          body: description.toString(),
+        }, Info.sync).then(() => {
+          spawnBanner(<Operation.Select.Banner />);
+        });
+      };
+
+      const DoneButton = useCallback(() => {
+        return (
+          <Button
+            variant='glass'
+            disabled={!name || !description || !index}
+            loading={loading}
+            img='Check'
+            onClick={createOperation} />
+        )
+      }, [name, description, loading, index]);
+
+      const selectIndexHandler = (value: string) => {
+        setIndex(value as λIndex['name']);
+      } 
+
+      return (
+        <UIBanner title='Create an Operation' done={<DoneButton />} {...props}>
+          <Stack ai='center'>
+            <p className={s.paramName}>Operation name:</p>
+            <Input
+              variant='highlighted'
+              className={s.input}
+              img={icon ? Glyph.List.get(icon) : Default.Icon.OPERATION}
+              value={name}
+              onChange={(e) => setName(e.currentTarget.value)}
+              placeholder='Operation name' />
+          </Stack>
+          <UISelect onValueChange={selectIndexHandler}>
+            <SelectTrigger defaultValue={app.target.indexes[0]?.name || ''} value={index || ''}>
+              <Stack>
+                <Icon name={Default.Icon.INDEX} />
+                <p>{index}</p>
+              </Stack>
+            </SelectTrigger>
+            <SelectContent>
+              {app.target.indexes.map(index => {
+                return <SelectItem value={index.name}>{index.name}</SelectItem>
+              })}
+            </SelectContent>
+          </UISelect>
+          <Stack ai='center'>
+            <p className={s.paramName}>Operation description:</p>
+            <Input
+              className={s.input}
+              variant='highlighted'
+              img='Text'
+              value={description}
+              onChange={(e) => setDescription(e.currentTarget.value)}
+              placeholder='Operation description' />
+          </Stack>
+          <Stack ai='center'>
+            <p className={s.paramName}>Operation icon:</p>
+            <Glyph.Chooser icon={icon} setIcon={setIcon} />
+          </Stack>
+        </UIBanner>
+      )
+    }
+  }
 }

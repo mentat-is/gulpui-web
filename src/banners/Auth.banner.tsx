@@ -5,9 +5,9 @@ import { SessionBanner } from './Session.banner';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@impactium/components';
 import { toast } from 'sonner';
-import { GulpDataset, Internal, Operation, Pattern, λUser } from '@/class/Info';
+import { GulpDataset, Internal, Pattern, λUser } from '@/class/Info';
 import { useKeyHandler } from '@/app/use';
-import { OperationBanner } from './Operation.banner';
+import { Operation } from './Operation.banner';
 import { Icon } from '@impactium/icons';
 import { capitalize } from '@impactium/utils';
 import { addDays } from 'date-fns';
@@ -96,7 +96,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     Info.login(user);
     Info.index_reload();
     Info.plugin_list();
-    spawnBanner(<OperationBanner back={() => spawnBanner(<AuthBanner />)} />);
+    spawnBanner(<Operation.Select.Banner back={() => spawnBanner(<AuthBanner />)} />);
   }
 
   useEffect(() => {

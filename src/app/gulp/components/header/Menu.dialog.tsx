@@ -7,12 +7,10 @@ import { LimitsBanner } from '@/banners/Limits.banner';
 import { SigmaRules } from '@/banners/UploadSigmaRule.banner';
 import { QueryExternal } from '@/banners/QueryExternal.banner';
 import { StorylineBanner } from '../Storyline';
-import { OperationBanner } from '@/banners/Operation.banner';
+import { Operation } from '@/banners/Operation.banner';
 import { useWindows } from '@/ui/Windows';
 import { Enrichment } from '@/banners/Enrichment.banner';
 import { Permissions } from '@/banners/Permissions.banner';
-// @ts-ignore
-import C2S from 'canvas2svg';
 import { toast } from 'sonner';
 import { Logger } from '@/dto/Logger.class';
 import { download } from '@/ui/utils';
@@ -25,7 +23,7 @@ export function Menu() {
   const backToOperations = () => {
     destroyDialog();
     setWindows([]);
-    spawnBanner(<OperationBanner />);
+    spawnBanner(<Operation.Select.Banner />);
   }
 
   const enrichment = () => {

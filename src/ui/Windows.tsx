@@ -1,4 +1,4 @@
-import { File, Index, Operation, μ } from '@/class/Info';
+import { File, Index, Operation as GulpOperationEntity, μ } from '@/class/Info';
 import { Button, Loading, Stack } from '@impactium/components';
 import React, { useState, createContext, useContext, useCallback, memo, useEffect, useMemo, useRef } from 'react';
 import { generateUUID } from './utils';
@@ -11,13 +11,12 @@ import { useApplication } from '@/context/Application.context';
 import { Menu } from '@/app/gulp/components/header/Menu.dialog';
 import { AuthBanner } from '@/banners/Auth.banner';
 import { LimitsBanner } from '@/banners/Limits.banner';
-import { OperationBanner } from '@/banners/Operation.banner';
+import { Operation } from '@/banners/Operation.banner';
 import { SelectFiles } from '@/banners/SelectFiles.banner';
 import { Separator } from './Separator';
 import { Glyph } from './Glyph';
 import { Default } from '@/dto/Dataset';
 import { IndexBanner } from '@/banners/Index.banner';
-import { CreateOperationBanner } from '@/banners/CreateOperation.banner';
 import { cn } from '@impactium/utils';
 import { Resizer } from './Resizer';
 
@@ -169,12 +168,12 @@ const NoWindows = () => {
     {
       name: 'At least one operation',
       cond: Info.app.target.contexts.length > 0,
-      trigger: ActionButtonConstructor('Create Operation', Default.Icon.CREATE_OPERATION, <CreateOperationBanner />)
+      trigger: ActionButtonConstructor('Create Operation', Default.Icon.CREATE_OPERATION, <Operation.Create.Banner />)
     },
     {
       name: 'Operation selected',
-      cond: Boolean(Operation.selected(Info.app)),
-      trigger: ActionButtonConstructor('Select Operation', Default.Icon.OPERATION, <OperationBanner />)
+      cond: Boolean(GulpOperationEntity.selected(Info.app)),
+      trigger: ActionButtonConstructor('Select Operation', Default.Icon.OPERATION, <Operation.Select.Banner />)
     },
     {
       name: 'At least one context',
@@ -207,7 +206,7 @@ const NoWindows = () => {
   const backToOperations = () => {
     destroyDialog();
     setWindows([]);
-    spawnBanner(<OperationBanner />);
+    spawnBanner(<Operation.Select.Banner />);
   }
 
   return (
@@ -217,7 +216,7 @@ const NoWindows = () => {
       <ActionButton />
       <Flow flow={flow} />
       <Stack>
-        <Button img={Default.Icon.CREATE_OPERATION} variant='outline' onClick={() => spawnBanner(<CreateOperationBanner />)}>Create Operation</Button>
+        <Button img={Default.Icon.CREATE_OPERATION} variant='outline' onClick={() => spawnBanner(<Operation.Create.Banner />)}>Create Operation</Button>
         <Button img='Upload' variant='outline' onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
       </Stack>
       <Button style={{ width: 285 }} img='Undo2' variant='outline' onClick={backToOperations}>Back to operations</Button>
