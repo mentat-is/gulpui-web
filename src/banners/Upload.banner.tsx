@@ -55,13 +55,28 @@ export function UploadBanner() {
   const [loading, setLoading] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
+  const [chunkSize, setChunkSize] = useState<number>(2);
+
+  const chunkSizeInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    const { valueAsNumber } = event.target;
+
+    if (isNaN(valueAsNumber)) {
+      return toast('Chunk size should be valid integer');
+    }
+
+    if (valueAsNumber < 1 || valueAsNumber > 1024) {
+      return toast('Chunk size should be bigger than 1 and less than 1024');
+    }
+
+    setChunkSize(valueAsNumber);
+  }
 
   useEffect(() => {
     setContext('');
   }, [isExistingContextChooserAvalable]);
 
   const send = async (file: File, start: number, i: number) => {
-    const size = 1024 * 2 * 1024
+    const size = 1024 * 2 * chunkSize;
     const end = Math.min(file.size, start + size);
 
     const index = Index.selected(app);
@@ -397,7 +412,7 @@ export function UploadBanner() {
     onClick={submit}
     img='Check'
     className={s.done}
-    disabled={!context || files.length === 0 || Object.values(settings).some(s => !s.plugin || (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) || (Mapping.mappings(app, s.plugin, s.method!).length > 0 ? !s.mapping : false))}
+    disabled={!context || files.length === 0 || Object.values(settings).some(s => !s.plugin || (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) || (Mapping.mappings(app, s.plugin, s.method!).length > 0 ? !s.mapping : false)) || chunkSize < 1 || chunkSize > 1024}
     loading={loading}
   />
 
@@ -422,7 +437,15 @@ export function UploadBanner() {
           onChange={filesSelectHandler}
         />
         <Button variant='outline' className={s.addFiles} img='Plus'>Add files</Button>
-      </Stack>      
+      </Stack>
+      <Input
+        variant='highlighted'
+        type='number'
+        onChange={chunkSizeInputChangeHandler}
+        value={chunkSize}
+        img='DataPoint'
+        valid={chunkSize >= 1 && chunkSize <= 1024}
+      />
       <Stack dir='column' gap={0} className={cn(s.files, files.length === 0 && s.fill)}>
         {files.length === 0 ? <Placeholder /> : Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}
       </Stack>
