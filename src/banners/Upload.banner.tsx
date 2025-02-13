@@ -104,7 +104,7 @@ export function UploadBanner() {
     }
     if (customFrame) {
       payload.flt = {
-        int_filter: frame
+        int_filter: [frame.min, frame.max]
       }
     }
 
