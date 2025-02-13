@@ -162,9 +162,15 @@ const api: Api = async function <T>(_path: string, arg2?: any, arg3?: any): Prom
     })
   }
   if (res.isError() && res.data?.__error?.name === 'MissingPermission') {
-    Logger.warn('Session expired, reloading window');
+    const message = 'Session expired, reloading window';
+    Logger.warn(message, 'API');
     Internal.Settings.token = '';
-    window.location.reload();
+    toast.error(message, {
+      richColors: true
+    });
+    setTimeout(() => {
+      // window.location.reload();
+    }, 3000);
   }
 
   soft(false, options.setLoading);
