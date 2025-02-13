@@ -95,11 +95,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
 
   const undo = () => Info.filters_undo(file);
 
-  const Done = useCallback(() => {
-    return (
-      <Button img='Check' variant='glass' loading={loading} onClick={submit} />
-    )
-  }, [loading, submit]);
+  const Done = () => <Button img='Check' variant='glass' disabled={filter.value} loading={loading} onClick={submit} />;
 
   const Undo = useCallback(() => {
     return (
