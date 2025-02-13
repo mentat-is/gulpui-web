@@ -146,7 +146,7 @@ export function UploadBanner() {
   
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      await send(file, 0, i);
+      send(file, 0, i);
     }
 
     await Info.sync();
