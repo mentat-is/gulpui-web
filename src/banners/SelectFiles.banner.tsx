@@ -127,7 +127,7 @@ export namespace SelectFiles {
     const reload = <Button onClick={Info.sync} variant='secondary' img='RefreshClockwise'>Reload</Button>;
   
     return (
-      <UIBanner title='Select sources' fixed={loading} subtitle={reload} className={s.banner} done={done} option={<UploadButton />} {...props}>
+      <UIBanner title='Select sources' subtitle={reload} className={s.banner} done={done} option={<UploadButton />} {...props}>
         <Skeleton show={fulfilled} width='full'>
           <Input img='Search' placeholder='Filter files by name' value={filter} onChange={(e) => setFilter(e.target.value)} />
         </Skeleton>
