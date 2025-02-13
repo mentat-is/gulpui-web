@@ -110,12 +110,10 @@ export function LimitsBanner() {
     );
   }
 
-  const done = useCallback(() => (
-    <Button variant="ghost" img="Check" onClick={() => save()} size="icon" />
-  ), [save]);
+  const Done = () => <Button variant='glass' img='Check' onClick={() => save()} />;
 
   return (
-    <Banner className={s.banner} title="Timeframe" done={done()}>
+    <Banner className={s.banner} title="Timeframe" done={<Done />}>
       <Toggle
         checked={manual}
         onCheckedChange={setManual}
