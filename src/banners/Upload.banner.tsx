@@ -4,7 +4,7 @@ import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { ChangeEvent, useEffect, useState } from 'react';
 import s from './styles/UploadBanner.module.css';
-import { Context, Index, Mapping, Operation } from '@/class/Info';
+import { Context, Index, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info';
 import { formatBytes } from '@/ui/utils';
 import { Progress } from '@/ui/Progress';
 import { SelectFiles } from './SelectFiles.banner';
@@ -95,13 +95,20 @@ export function UploadBanner() {
     }
 
     const formData = new FormData();
-    formData.append('payload', JSON.stringify({
+    const payload: Record<any, any> = {
       plugin_params: {
         mapping_file: settings[file.name].method,
         mapping_id: settings[file.name].mapping
       },
-      original_file_path: file.name
-    }));
+      original_file_path: file.name,
+    }
+    if (customFrame) {
+      payload.flt = {
+        int_filter: frame
+      }
+    }
+
+    formData.append('payload', JSON.stringify(payload));
     formData.append('f', file.slice(start, end), file.name);
 
     const hash = sha1(file.name);
@@ -422,6 +429,31 @@ export function UploadBanner() {
     img='Kv'
   />
 
+  const [customFrame, setCustomFrame] = useState<boolean>(false);
+  const [frame, setFrame] = useState<MinMax>(MinMaxBase);
+
+  const customFrameCheckChangeHandler = (v: boolean) => setCustomFrame(true);
+
+  const frameInputChangeHandler = (event: ChangeEvent<HTMLInputElement>, type: keyof MinMax) => {
+    const value = event.target.valueAsDate;
+    
+    if (!value) {
+      toast.error('Date is not valid', {
+        richColors: true
+      });
+      return;
+    }
+
+    setFrame(f => ({
+      ...f,
+      [type]: value.valueOf()
+    }))
+  }
+
+  const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => frameInputChangeHandler(event, 'min');
+
+  const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => frameInputChangeHandler(event, 'max');
+
   return (
     <Banner title='Upload files' done={done} option={option}>
       <Toggle option={['New context', 'Choose from existing one']} checked={isExistingContextChooserAvalable} onCheckedChange={setIsExistingContextChooserAvalable} />
@@ -438,6 +470,21 @@ export function UploadBanner() {
         />
         <Button variant='outline' className={s.addFiles} img='Plus'>Add files</Button>
       </Stack>
+      <Toggle option={['Ingest everything', 'Use limits']} checked={customFrame} onCheckedChange={customFrameCheckChangeHandler} />
+      {customFrame ? <Stack>
+        <Input
+          variant='highlighted'
+          type='date'
+          img='CalendarArrowUp'
+          onChange={frameMinInputChangeHandler}
+        />
+        <Input
+          variant='highlighted'
+          type='date'
+          img='CalendarArrowDown'
+          onChange={frameMaxInputChangeHandler}
+        />
+      </Stack> : null}
       <Input
         variant='highlighted'
         type='number'
