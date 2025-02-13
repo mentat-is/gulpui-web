@@ -110,7 +110,7 @@ export function LimitsBanner() {
     );
   }
 
-  const Done = () => <Button variant='glass' img='Check' onClick={() => save()} />;
+const Done = () => <Button variant='glass' img='Check' onClick={() => save()} />;
 
   return (
     <Banner className={s.banner} title="Timeframe" done={<Done />}>

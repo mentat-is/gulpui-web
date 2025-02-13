@@ -108,6 +108,11 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       return null;
     }
 
+    const editFilter = (filter: λFilter) => {
+      setFilter(filter);
+      removeFilter(filter);
+    }
+
     return (
       <Stack dir='column' gap={0} className={s.filters}>
         {filters.map((filter, i) => (
@@ -117,6 +122,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
               <span>{filter.type}</span>
               <p>{typeof filter.value !== 'string' ? format(filter.value, 'LLL dd, y') : filter.value}</p>
               <hr />
+              <Button size='sm' className={s.delete} variant='ghost' img='PenLine' onClick={() => editFilter(filter)} />
               <Button size='sm' className={s.delete} variant='ghost' img='Trash2' onClick={() => removeFilter(filter)} />
             </Stack>
             <Toggle className={s.toggle} option={['AND', 'OR']} checked={filter.isOr} onCheckedChange={(checked) => handleCheckedChange(checked, filter)} />
