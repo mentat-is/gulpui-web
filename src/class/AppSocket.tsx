@@ -5,7 +5,7 @@ import { Logger } from '@/dto/Logger.class';
 import { toast } from 'sonner';
 
 export class AppSocket extends WebSocket {
-  private static instance: AppSocket | null = null;
+  static instance: AppSocket | null = null;
   info!: Info;
   app!: λApp;
 

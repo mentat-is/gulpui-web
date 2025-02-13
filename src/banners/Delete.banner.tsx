@@ -4,6 +4,7 @@ import { Banner as UIBanner } from '@/ui/Banner';
 import { Toggle } from '@/ui/Toggle';
 import { Button } from '@impactium/components';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 export namespace Delete {
   export namespace Context {
@@ -13,7 +14,7 @@ export namespace Delete {
       }
     }
     export function Banner({ context, ...props }: Delete.Context.Banner.Props) {
-      const { Info } = useApplication();
+      const { Info, destroyBanner } = useApplication();
       const [isSubmited, setIsSubmited] = useState<boolean>(false);
       const [isWipe, setIsWipe] = useState<boolean>(true);
       const [loading, setLoading] = useState<boolean>(false);
@@ -24,6 +25,10 @@ export namespace Delete {
         setLoading(true);
         await Info.context_delete(context, isWipe);
         setLoading(false);
+        if (props.back) {
+          props.back();
+        }
+        toast(`Context ${context.name} deleted successfully`);
       }
 
       return (
@@ -43,7 +48,7 @@ export namespace Delete {
       }
     }
     export function Banner({ file, ...props }: Delete.File.Banner.Props) {
-      const { Info } = useApplication();
+      const { Info, destroyBanner } = useApplication();
       const [isSubmited, setIsSubmited] = useState<boolean>(false);
       const [isWipe, setIsWipe] = useState<boolean>(true);
       const [loading, setLoading] = useState<boolean>(false);
@@ -54,6 +59,10 @@ export namespace Delete {
         setLoading(true);
         await Info.file_delete(file, isWipe);
         setLoading(false);
+        if (props.back) {
+          props.back();  
+        }
+        toast(`File ${file.name} deleted successfully`);
       }
 
       return (

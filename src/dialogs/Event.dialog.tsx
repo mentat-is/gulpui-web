@@ -37,7 +37,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event]);
 
   useEffect(() => {
-    if (!detailedChunkEvent?.event?.original)
+    if (!detailedChunkEvent)
       reloadDetailedChunkEvent();
   }, [detailedChunkEvent]);
 
