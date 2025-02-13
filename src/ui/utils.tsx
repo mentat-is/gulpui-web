@@ -19,14 +19,6 @@ export const parseTokensFromCookies = (tokens: string) => {
   }
 };
 
-export function go<T extends any = any>(callback: (...props: any[]) => T): Promise<T> {
-  return new Promise(async resolve => {
-    setTimeout(async () => {
-      resolve(await callback());
-    }, 50);
-  })
-}
-
 export const stringToHexColor = (str: string): Color => {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -39,25 +31,6 @@ export const stringToHexColor = (str: string): Color => {
   }
   return color as Color;
 };
-
-export function throttle(func: (...args: any[]) => void, limit: number) {
-  let lastFunc: ReturnType<typeof setTimeout>;
-  let lastRan: number;
-  return function(...args: any[]) {
-      if (!lastRan) {
-          func(...args);
-          lastRan = Date.now();
-      } else {
-          clearTimeout(lastFunc);
-          lastFunc = setTimeout(function() {
-              if (Date.now() - lastRan >= limit) {
-                  func(...args);
-                  lastRan = Date.now();
-              }
-          }, limit - (Date.now() - lastRan));
-      }
-  };
-}
 
 export const parse = (str: string) => parseFloat(str.replace('px', ''));
 
@@ -75,36 +48,6 @@ export const copy = (value: string) => {
 }
 
 export const ui = (path: string): string => `https://cdn.impactium.fun/ui/${path}.svg`
-
-export const colorToRgb = (color: string): [number, number, number] => {
-  const match = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
-  return match ? [parseInt(match[1]), parseInt(match[2]), parseInt(match[3])] : [0, 0, 0];
-};
-
-export const getColorByCode = (code: number, min: number, max: number): string => {
-  const ranges = [
-    { min: 0, max: 99, color: 'rgb(128, 0, 128)' },
-    { min: 100, max: 199, color: 'rgb(255, 255, 255)' },
-    { min: 200, max: 299, color: 'rgb(0, 255, 0)' },
-    { min: 300, max: 399, color: 'rgb(0, 0, 255)' },
-    { min: 400, max: 499, color: 'rgb(255, 165, 0)' },
-    { min: 500, max: 599, color: 'rgb(255, 0, 0)' }
-  ];
-
-  for (let i = 0; i < ranges.length - 1; i++) {
-    const { min, max, color } = ranges[i];
-    const nextColor = ranges[i + 1].color;
-
-    if (code >= min && code <= max) {
-      const nextRange = ranges[i + 1];
-      const rangeSize = nextRange.min - min;
-      const positionInRange = (code - min) / rangeSize;
-      return interpolateColor(color, nextColor, positionInRange);
-    }
-  }
-
-  return ranges[ranges.length - 1].color;
-};
 
 export const throwableByTimestamp = (timestamp: MinMax | number, limits: MinMax, app: λApp, offset: number = 0): boolean => {
   const time: number | MinMax = typeof timestamp === 'number' ? timestamp + offset : {
@@ -157,26 +100,6 @@ export const GradientsMap = {
 }
 
 export type Gradients = keyof typeof GradientsMap;
-
-export const hexToRgb = (hex: string) => {
-  const bigint = parseInt(hex, 16);
-  return [
-    (bigint >> 16) & 255,  // Красный канал
-    (bigint >> 8) & 255,   // Зелёный канал
-    bigint & 255           // Синий канал
-  ];
-};
-
-export const rgbToHex = (rgb: number[]) => `#${rgb.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-
-export const interpolateColor = (color1: string, color2: string, factor: number): string => {
-  const c1 = hexToRgb(color1);
-  const c2 = hexToRgb(color2);
-
-  const result = c1.map((val, i) => Math.round(val + factor * (c2[i] - val)));
-
-  return rgbToHex(result);
-};
 
 export const arrayToLinearGradientCSS = (gradient: string[]): string => `linear-gradient(to right, ${gradient.map(g => '#' + g).join(', ')})`;
 
@@ -283,40 +206,85 @@ export enum COLORS {
   yellowgreen = '#9acd32'
 };
 
-export class λColor {
-  public static namedToHex = (color: string): string => {
-    if (!color) {
-      return '#ffffff'
-    }
-  
-    if (color in COLORS) {
-      return COLORS[color as keyof typeof COLORS];
-    }
-  
-    return color.startsWith('#') ? color = '#ff0000' : color;
-  }
+const ERROR_COLOR = 0xFF0000;
 
-  /**
-   * Функция для выбора цвета из градиента на основе delta и deltaMax
-   */
-  public static gradient = (target: Gradients, diff: number, delta: MinMax): string => {
-    const gradient = GradientsMap[target];
+const NumericGradientsMap: Record<Gradients, number[]> = (() => {
+  const cache: Record<string, number[]> = {};
+  for (const [key, gradient] of Object.entries(GradientsMap)) {
+    cache[key] = gradient.map(color => parseInt(color, 16) || ERROR_COLOR);
+  }
+  return cache as Record<Gradients, number[]>;
+})();
+
+const NumericColors = new Map<string, number>(
+  Object.entries(COLORS).map(([name, hex]) => [name, parseInt(hex.slice(1), 16)])
+);
+
+export class λColor {
+  private static gradientCache = new Map<Gradients, Map<number, Map<number, Map<number, string>>>>();
+
+  public static gradient = (
+    target: Gradients,
+    diff: number,
+    delta: MinMax
+  ): string => {
+    let targetCache = this.gradientCache.get(target);
+    if (!targetCache) {
+      targetCache = new Map();
+      this.gradientCache.set(target, targetCache);
+    }
+
+    let deltaCache = targetCache.get(delta.min);
+    if (!deltaCache) {
+      deltaCache = new Map();
+      targetCache.set(delta.min, deltaCache);
+    }
+
+    let maxCache = deltaCache.get(delta.max);
+    if (!maxCache) {
+      maxCache = new Map();
+      deltaCache.set(delta.max, maxCache);
+    }
+
+    const value = maxCache.get(diff);
+    if (value) {
+      return value;
+    }
+
+    const gradient = NumericGradientsMap[target];
     const numColors = gradient.length;
-  
-    const percentage = (diff - delta.min) / (delta.max - delta.min);
-  
-    if (Number.isNaN(percentage)) return `#${gradient[0]}`;
     
-    // Находим индекс двух цветов в градиенте для интерполяции
+    const deltaRange = delta.max - delta.min;
+    if (deltaRange <= 0) {
+      const color = `#${gradient[0].toString(16).padStart(6, '0')}`;
+      maxCache.set(diff, color);
+      return color;
+    }
+
+    const percentage = (diff - delta.min) / deltaRange;
     const scaledIndex = percentage * (numColors - 1);
-    const lowerIndex = Math.floor(scaledIndex);
-    const upperIndex = Math.min(Math.ceil(scaledIndex), numColors - 1);
-    
-    // Интерполяция между двумя ближайшими цветами
+
+    const lowerIndex = scaledIndex | 0;
+    const upperIndex = Math.min(lowerIndex + 1, numColors - 1);
     const factor = scaledIndex - lowerIndex;
-    return interpolateColor(gradient[lowerIndex], gradient[upperIndex], factor);
+
+    const color1 = gradient[lowerIndex];
+    const color2 = gradient[upperIndex];
+
+    const result =
+      (λColor.interpolateChannel((color1 >> 16) & 0xff, (color2 >> 16) & 0xff, factor) << 16) |
+      (λColor.interpolateChannel((color1 >> 8) & 0xff, (color2 >> 8) & 0xff, factor) << 8) |
+      λColor.interpolateChannel(color1 & 0xff, color2 & 0xff, factor);
+
+    const finalColor = `#${result.toString(16).padStart(6, '0')}`;
+    maxCache.set(diff, finalColor);
+    return finalColor;
   };
+
+  public static interpolateChannel = (c1: number, c2: number, factor: number): number =>
+    ((c1 + factor * (c2 - c1)) & 0xff) | 0;
 }
+
 
 export const between = (num: number, min: number, max: number) => num >= min && num <= max;
 
