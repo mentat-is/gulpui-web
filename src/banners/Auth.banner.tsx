@@ -84,8 +84,15 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
   const next = async (user: λUser) => {
     Info.login(user);
-    Info.index_reload();
-    Info.plugin_list();
+    await Info.index_reload();
+    await Info.plugin_list();
+    await Info.sync();
+    await Info.sync();
+    await Info.sync();
+    await Info.sync();
+    await Info.sync();
+    await Info.sync();
+    await Info.sync();
     spawnBanner(<Operation.Select.Banner />);
   }
 

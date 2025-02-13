@@ -13,6 +13,7 @@ import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
 import { λContext, λFile } from '@/dto/Dataset';
 import { Separator } from '@/ui/Separator';
+import { Delete } from './Delete.banner';
 
 export namespace SelectFiles {
   export namespace Banner {
@@ -90,6 +91,7 @@ export namespace SelectFiles {
             <Label htmlFor={context.name}>{context.name}</Label>
             <hr style={{ flex: 1 }} />
             <Badge value='Context' />
+            <Badge value='Delete' variant='destructive' onClick={() => spawnBanner(<Delete.Context.Banner context={context} back={() => spawnBanner(<SelectFiles.Banner {...props} />)} />)} />
           </div>
           <Separator />
           <Files />

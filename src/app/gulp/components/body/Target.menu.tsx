@@ -9,6 +9,7 @@ import { ContextMenuContent, ContextMenuGroup, ContextMenuItem, ContextMenuLabel
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { Enrichment } from '@/banners/Enrichment.banner';
 import { SigmaRules } from '@/banners/UploadSigmaRule.banner';
+import { Delete } from '@/banners/Delete.banner';
 
 interface TargetMenuProps {
   file?: λFile;
@@ -75,6 +76,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         <ContextMenuItem onClick={() => spawnBanner(<SigmaRules.Banner file={file} />)} img='Sigma'>Upload rule</ContextMenuItem>
         {app.target.sigma[file.id] && <ContextMenuItem className={s.remove_sigma} onClick={() => Info.sigma.remove(file)} img='X'>Disable rule: {app.target.sigma[file.id].name}</ContextMenuItem>}
       </ContextMenuGroup>
+      <ContextMenuItem className={s.delete} img='Trash2' onClick={() => spawnBanner(<Delete.File.Banner file={file} />)}>Delete!</ContextMenuItem>
     </ContextMenuContent>
   )
 }

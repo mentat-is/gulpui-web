@@ -636,6 +636,15 @@ export class Info implements InfoProps {
     }, 0);
   };
 
+  context_delete = (context: λContext, wipe: boolean) => api<any>('/context_delete', {
+    method: 'DELETE',
+    query: {
+      operation_id: context.operation_id,
+      context_id: context.id,
+      delete_data: wipe,
+    }
+  })
+
   contexts_set = (contexts: λContext[]) => this.setInfoByKey(contexts, 'target', 'contexts');
   contexts_checkout = () => {
     const contexts: λContext[] = this.app.target.contexts.map(c => {
@@ -698,6 +707,16 @@ export class Info implements InfoProps {
       this.contexts_checkout();
     }, 0);
   };
+
+  file_delete = (file: λFile, wipe: boolean) => api<any>('/source_delete', {
+    method: 'DELETE',
+    query: {
+      operation_id: file.operation_id,
+      context_id: file.context_id,
+      source_id: file.id,
+      delete_data: wipe
+    }
+  });
 
   file_set_render_engine = (ids: λFile['id'][], engine: Engine.List) => this.setInfoByKey(this.app.target.files.map(file => ({ ...file, settings: { ...file.settings, engine: ids.includes(file.id) ? engine : file.settings.engine }})), 'target', 'files');
 

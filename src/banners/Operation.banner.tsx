@@ -27,10 +27,6 @@ export namespace Operation {
         <Button variant='ghost' onClick={() => spawnBanner(<Operation.Create.Banner back={() => spawnBanner(<Operation.Select.Banner />)} />)} img='BookPlus' />
       );
     
-      useEffect(() => {
-        Info.sync();
-      }, []);
-    
       const DoneButton = () => <Button disabled={!GulpOperationEntity.selected(Info.app)} onClick={() => spawnBanner(<SelectFiles.Banner back={() => spawnBanner(<Operation.Select.Banner />)} />)} size='icon' variant='glass' img='Check' />;
     
       const NoOperations = () => <SelectItem value='X'>There is no operations</SelectItem>;

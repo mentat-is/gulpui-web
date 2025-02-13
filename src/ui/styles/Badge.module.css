@@ -37,12 +37,13 @@
 }
 
 .destructive {
-  background-color: var(--destructive);
-  color: var(--destructive-foreground);
+  background-color: var(--red-700);
+  color: var(--red-1000);
+  cursor: pointer;
 }
 
 .destructive:hover {
-  background-color: var(--destructive-hover);
+  background-color: var(--red-800);
 }
 
 .outline {
