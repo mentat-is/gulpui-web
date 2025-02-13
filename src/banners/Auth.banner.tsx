@@ -1,7 +1,7 @@
 import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { SessionBanner } from './Session.banner';
+import { Session } from './Session.banner';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@impactium/components';
 import { toast } from 'sonner';
@@ -28,19 +28,9 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   const [loading, setLoading] = useState<boolean>(false);
   const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([]);
 
-  const ContinueFromSession = useCallback(() => {
-    const handleSubtitleButtonClick = (ev: React.MouseEvent<HTMLButtonElement>) => {
-      ev.preventDefault();
-
-      spawnBanner(<SessionBanner />);
-    }
-
-    return (
-      <Button variant='ghost' onClick={handleSubtitleButtonClick}>
-        Load session
-      </Button>
-    )
-  }, []);
+  const ContinueFromSession = useCallback(() => (
+    <Button variant='ghost' onClick={() => spawnBanner(<Session.Load.Banner back={() => spawnBanner(<AuthBanner />)} />)} img='Archive' />
+  ), []);
 
   useEffect(() => {
     if (methods.length === 0) {
@@ -151,7 +141,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   }
 
   return (
-    <Banner title='Authentication' subtitle={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>
+    <Banner title='Authentication' option={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>
       <Input
         variant='highlighted'
         img='Server'
