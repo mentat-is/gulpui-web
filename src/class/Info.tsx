@@ -143,6 +143,7 @@ interface RefetchOptions {
   ids?: Arrayed<λFile['id']>;
   hidden?: boolean;
   range?: MinMax;
+  filter?: string
 }
 
 interface InfoProps {
@@ -377,7 +378,8 @@ export class Info implements InfoProps {
   refetch = async ({
     ids: _ids = File.selected(this.app).filter(f => !this.app.target.ingest.includes(sha1(f.name))).map(f => f.id),
     hidden,
-    range
+    range,
+    filter
   }: RefetchOptions = {}) => {
     const files: λFile[] = Parser.array(_ids)
       .map(id => File.id(this.app, id));
@@ -401,7 +403,7 @@ export class Info implements InfoProps {
     }
     
     files.forEach(file => {
-      this.query_file(file, range);
+      this.query_file(file, range, filter);
     });
   }
 
@@ -465,7 +467,7 @@ export class Info implements InfoProps {
     });
   }
 
-  query_file = async (file: λFile, range?: MinMax) => {
+  query_file = async (file: λFile, range?: MinMax, filter?: string) => {
     const index = Index.selected(this.app);
     if (!index) {
       return;
@@ -476,7 +478,9 @@ export class Info implements InfoProps {
       return;
     }
 
-    const path = Filter.exist(this.app, file) ? '/query_raw' : '/query_gulp';
+    const path = (Filter.exist(this.app, file) || filter) ? '/query_raw' : '/query_gulp';
+
+    const body = Filter.body(this.app, file, range, filter);
 
     return await api(path, {
       method: 'POST',
@@ -485,7 +489,7 @@ export class Info implements InfoProps {
         req_id: file.id,
         index
       },
-      body: Filter.body(this.app, file, range)
+      body
     });
   };
 
@@ -1500,7 +1504,7 @@ export class Filter {
 
   public static exist = (app: λApp, file: λFile) => Filter.find(app, file).length > 0;
   
-  static body = (app: λApp, file: λFile, range?: MinMax) => {
+  static body = (app: λApp, file: λFile, range?: MinMax, filter?: string) => {
     const body: Record<string, any> = {
       q_options: {
         sort: {
@@ -1511,11 +1515,11 @@ export class Filter {
 
     body.flt = Filter.base(file, range);
 
-    if (Filter.exist(app, file)) {
+    if (filter || Filter.exist(app, file)) {
       body.q = body.q || {};
       body.q.query = {}
       body.q.query.query_string = {}
-      body.q.query.query_string.query = Filter.query(app, file);
+      body.q.query.query_string.query = filter || Filter.query(app, file);
     }
 
     return body;

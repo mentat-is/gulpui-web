@@ -3,7 +3,7 @@ import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { Input, Skeleton } from '@impactium/components';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { Button, Stack } from '@impactium/components';
 import { Filter, FilterOptions, FilterType, λFilter, μ, Index } from '@/class/Info';
@@ -60,7 +60,8 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     Info.filters_cache(file);
     Info.refetch({
       ids: file.id,
-      hidden: true
+      hidden: true,
+      filter: raw
     }).then(() => {
       destroyBanner();
       Info.render();
@@ -133,10 +134,16 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   }
 
   const preloading = useMemo(() => {
-    return !app.timeline.filtering_options[file.id];
+    return false;
   }, [app.timeline.filtering_options]);
 
+  const [raw, setRaw] = useState<string>('');
+  const [manual, setManual] = useState<boolean>(false);
+
   const FilterField = useMemo(() => {
+    if (manual) {
+      return <Input img='CodeBlock' variant='highlighted' value={raw} onChange={e => setRaw(e.target.value)} /> 
+    }
 
     const acceptableToType = (): string => {
       switch (acceptable) {
@@ -198,7 +205,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         </Skeleton>
       </Stack>
     )
-  }, [filter, acceptable, app.timeline.filtering_options]);
+  }, [filter, acceptable, app.timeline.filtering_options, manual, raw, manual, setManual, setRaw]);
 
   // const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
 
@@ -214,12 +221,13 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           variant='ghost'
           img='Settings'>Back to file settings</Button>
         }>
+      <Toggle option={['Pretty UI', 'Manual input']} checked={manual} onCheckedChange={() => setManual(v => !v)} />
       {FilterField}
       <AvailableFilters />
       <Skeleton height='full' show={preloading} width='full'>
         <Stack dir='column' className={s.preview} ai='flex-start'>
-          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(Filter.query(app, file))}>Copy</Button></h4>
-          <code>{Filter.query(app, file)}</code>
+          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(manual ? raw : Filter.query(app, file))}>Copy</Button></h4>
+          <code>{manual ? raw : Filter.query(app, file)}</code>
         </Stack>
       </Skeleton>
     </Banner>
