@@ -4,7 +4,7 @@ import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { ChangeEvent, useEffect, useState } from 'react';
 import s from './styles/UploadBanner.module.css';
-import { Context, Index, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info';
+import { Context, GulpDataset, Index, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info';
 import { formatBytes } from '@/ui/utils';
 import { Progress } from '@/ui/Progress';
 import { SelectFiles } from './SelectFiles.banner';
@@ -113,7 +113,7 @@ export function UploadBanner() {
 
     const hash = sha1(file.name);
 
-    const response = await api<any>('/ingest_file', {
+    const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
       method: 'POST',
       body: formData,
       deassign: true,

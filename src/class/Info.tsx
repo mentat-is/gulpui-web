@@ -130,6 +130,13 @@ export namespace GulpDataset {
     name: string;
     content: string;
   }
+
+  export namespace IngestFile {
+    export interface Summary {
+      continue_offset: number;
+      done: boolean
+    }
+  }
 }
 
 interface RefetchOptions {
