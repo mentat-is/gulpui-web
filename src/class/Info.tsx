@@ -584,9 +584,6 @@ export class Info implements InfoProps {
     this.app.target.indexes = data;
     const indexes = Index.select(this.app, data[0]);
     this.setInfoByKey(indexes, 'target', 'indexes');
-    if (indexes.length && Index.selected(this.app)) {
-      this.sync();
-    }
   });
   
   index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');

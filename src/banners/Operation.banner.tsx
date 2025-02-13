@@ -1,6 +1,6 @@
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Button, Input, Skeleton, Stack } from "@impactium/components";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useApplication } from "@/context/Application.context";
 import { Operation as GulpOperationEntity } from "@/class/Info";
 import { SelectFiles } from "./SelectFiles.banner";
@@ -100,16 +100,14 @@ export namespace Operation {
         });
       };
 
-      const DoneButton = useCallback(() => {
-        return (
-          <Button
-            variant='glass'
-            disabled={!name || !description || !index}
-            loading={loading}
-            img='Check'
-            onClick={createOperation} />
-        )
-      }, [name, description, loading, index]);
+      const DoneButton = () => (
+        <Button
+          variant='glass'
+          disabled={!name || !description || !index}
+          loading={loading}
+          img='Check'
+          onClick={createOperation} />
+      );
 
       const selectIndexHandler = (value: string) => {
         setIndex(value as λIndex['name']);
