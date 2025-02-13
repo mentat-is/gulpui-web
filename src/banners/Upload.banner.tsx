@@ -76,7 +76,7 @@ export function UploadBanner() {
   }, [isExistingContextChooserAvalable]);
 
   const send = async (file: File, start: number, i: number) => {
-    const size = 1024 * 2 * chunkSize;
+    const size = 1024 * chunkSize * 1024;
     const end = Math.min(file.size, start + size);
 
     const index = Index.selected(app);
