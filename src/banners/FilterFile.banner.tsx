@@ -61,7 +61,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     Info.refetch({
       ids: file.id,
       hidden: true,
-      filter: raw
+      filter: base + raw
     }).then(() => {
       destroyBanner();
       Info.render();
@@ -207,7 +207,9 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     )
   }, [filter, acceptable, app.timeline.filtering_options, manual, raw, manual, setManual, setRaw]);
 
-  // const base = `(gulp.operation_id:${file.operation_id} AND gulp.context_id: \"${file.context_id}\" AND gulp.source_id:"${file.name}" AND @timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
+  const ensave = (str: string) => str.includes(' ') ? `"${str}"` : str
+
+  const base = `(gulp.operation_id: ${ensave(file.operation_id)} AND gulp.context_id: "${ensave(file.context_id)}" AND gulp.source_id: "${ensave(file.id)}" AND gulp.timestamp: [${file.nanotimestamp.min} TO ${file.nanotimestamp.max}]) AND `;
 
   return (
     <Banner
@@ -226,8 +228,8 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       <AvailableFilters />
       <Skeleton height='full' show={preloading} width='full'>
         <Stack dir='column' className={s.preview} ai='flex-start'>
-          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(manual ? raw : Filter.query(app, file))}>Copy</Button></h4>
-          <code>{manual ? raw : Filter.query(app, file)}</code>
+          <h4>Preview: <Button className={s.copy} size='sm' variant='glass' img='Copy' onClick={() => copy(manual ? base + raw : Filter.query(app, file))}>Copy</Button></h4>
+          <code>{manual ? base + raw : Filter.query(app, file)}</code>
         </Stack>
       </Skeleton>
     </Banner>
