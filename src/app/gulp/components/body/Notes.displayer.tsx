@@ -24,6 +24,10 @@ export function NotesDisplayer({ getPixelPosition, scrollY }: NotesDisplayerProp
     return left > 0 && top > 0 ? { left, top: top } : null;
   }, [getPixelPosition, scrollY, app]);
 
+  if (app.timeline.hidden_notes) {
+    return null;
+  }
+
   return (
     <>
       {app.target.notes.filter(note => selectedFiles.has(note.source_id)).map(note => {

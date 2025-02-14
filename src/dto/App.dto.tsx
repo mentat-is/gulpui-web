@@ -52,6 +52,7 @@ export interface λApp {
     isScrollReversed: boolean;
     dialogSize: number;
     footerSize: number;
+    hidden_notes: boolean;
   }
 }
 export const BaseInfo: λApp = {
@@ -80,7 +81,8 @@ export const BaseInfo: λApp = {
     filtering_options: {},
     isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
-    footerSize: window.innerHeight / 4
+    footerSize: window.innerHeight / 4,
+    hidden_notes: false
   },
   target: {
     indexes: [],

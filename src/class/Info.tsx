@@ -279,10 +279,13 @@ export namespace Internal {
   }
 
   export class Transformator {
-    public static toTimestamp = (timestamp: string | number | Date): number => 
+    public static toTimestamp = (timestamp: string | number | Date | bigint): number => 
       Number(this.toNanos(timestamp)) / 1_000_000;
 
-    public static toNanos = (timestamp: string | number | Date): bigint => {
+    public static toNanos = (timestamp: string | number | Date | bigint): bigint => {
+      if (typeof timestamp === 'bigint') {
+        return timestamp;
+      }
       if (timestamp instanceof Date) {
         return BigInt(Math.floor(timestamp.getTime() * 1_000_000));
       }
@@ -297,11 +300,11 @@ export namespace Internal {
       return BigInt(parsed) * 1_000_000n;
     };
 
-    public static toISO = (timestamp: string | number | Date): string => {
+    public static toISO = (timestamp: string | number | Date | bigint): string => {
       if (timestamp instanceof Date)
         return timestamp.toISOString();
-      if (typeof timestamp === "number")
-        return new Date(timestamp).toISOString();
+      if (typeof timestamp === "number" || typeof timestamp === 'bigint')
+        return new Date(this.toTimestamp(timestamp)).toISOString();
       const parsed = Date.parse(timestamp);
       if (isNaN(parsed)) {
         Logger.error(`Invalid transformation to ISO from ${timestamp}`, Transformator.name);
@@ -1235,6 +1238,8 @@ export class Info implements InfoProps {
     }
   }
 
+  toggle_notes_visibility = () => this.setInfoByKey(!this.app.timeline.hidden_notes, 'timeline', 'hidden_notes');
+
   files_repin = (id: λFile['id']) => {
     const files = this.app.target.files
     const index = files.findIndex(file => file.id === id);
@@ -1639,12 +1644,12 @@ export class Event {
 
   public static formatForServer = (event: λEvent) => {
     return [{
-      "@timestamp": event.nanotimestamp,
+      "@timestamp": Internal.Transformator.toISO(event.nanotimestamp),
       "_id": event.id,
       "gulp.context_id": event.context_id,
       "gulp.operation_id": event.operation_id,
       "gulp.source_id": event.file_id,
-      "gulp.timestamp": event.timestamp
+      "gulp.timestamp": Internal.Transformator.toTimestamp(event.nanotimestamp)
     }];
   }
 

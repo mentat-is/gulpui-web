@@ -180,6 +180,7 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
         <Button variant='secondary' size='sm' ref={size_reset} onClick={resetScaleAndScroll} img='AlignHorizontalSpaceBetween' />
         <Input className={s.filter} value={app.timeline.filter} placeholder='Filter by filenames and context' onChange={(e) => Info.setTimelineFilter(e.target.value)} img='Filter' />
         <Button size='sm' variant='secondary' title='Open notes banner in new window' img='PictureInPicture2' onClick={openWindow} />
+        <Button size='sm' variant='secondary' title={app.timeline.hidden_notes ? 'Show notes' : 'Hide notes'} img={app.timeline.hidden_notes ? 'EyeOff' : 'Eye'} onClick={Info.toggle_notes_visibility} />
         {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
       </Stack>
       <Content />
