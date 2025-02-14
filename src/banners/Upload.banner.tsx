@@ -232,21 +232,27 @@ export function UploadBanner() {
   }, [settings]);
 
   const getExtensionMapping = async (file: File): Promise<string | undefined> => {
+    const readChunk = (size: number): Promise<ArrayBuffer> =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file.slice(0, size));
+      });
+
     const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
-        const slice = new Uint8Array(buffer.slice(0, uint.byteLength));
-        return slice.every((value, index) => value === uint[index]);
+      const slice = new Uint8Array(buffer);
+      return slice.every((value, index) => value === uint[index]);
     };
 
-    const buffer = await file.arrayBuffer();
+    const buffer = await readChunk(256);
 
-    const matchedKey = Object.keys(FILE_SIGNATURES).find(key => {
-        const signature = FILE_SIGNATURES[key];
-        return Array.isArray(signature)
-            ? signature.some(uint => isEqual(buffer, uint))
-            : isEqual(buffer, signature);
+    return Object.keys(FILE_SIGNATURES).find(key => {
+      const signature = FILE_SIGNATURES[key];
+      return Array.isArray(signature)
+        ? signature.some(uint => isEqual(buffer, uint))
+        : isEqual(buffer, signature);
     });
-
-    return matchedKey;
   };
 
   useEffect(() => {
