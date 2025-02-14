@@ -109,7 +109,7 @@ export function parseApiOptions<T>(a: unresolwedArgument<T>, b: unresolwedArgume
   options.headers = Object.assign(options.headers || {}, headers);
 
   if (typeof options.body === 'object' && !(options.body instanceof FormData)) {
-    options.body = JSON.stringify(options.body);
+    options.body = JSON.stringify(options.body, (_, v) => typeof v === 'bigint' ? v.toString() : v);
   }
 
   const path = _path.startsWith('/') ? _path : `/${_path}`;
