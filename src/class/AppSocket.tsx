@@ -23,7 +23,9 @@ export class AppSocket extends WebSocket {
     AppSocket.instance = this;
 
     this.onopen = (ev) => {
-      Logger.log(`WebSocket has been initialized with id: ${this.info.app.general.ws_id}`, AppSocket.name);
+      Logger.log(`WebSocket has been initialized with id: ${this.info.app.general.ws_id}`, AppSocket.name, {
+        toast: true
+      });
       this.send(JSON.stringify({
         token: this.info.app.general.token,
         ws_id: this.info.app.general.ws_id,
@@ -83,12 +85,16 @@ export class AppSocket extends WebSocket {
     }
 
     this.onerror = (error) => {
-      Logger.error(`WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`, AppSocket.name);
+      Logger.error(`WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`, AppSocket.name, {
+        toast: true
+      });
       AppSocket.instance = null;
     };
 
     this.onclose = (event) => {
-      Logger.error(`WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`, AppSocket.name);
+      Logger.error(`WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`, AppSocket.name, {
+        toast: true
+      });
       AppSocket.instance = null;
     };
   }

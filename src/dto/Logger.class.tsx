@@ -5,16 +5,29 @@ import { Arrayed, Parser } from '@/class/Info';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { λFile } from './Dataset';
+import { toast } from 'sonner';
+
+interface Options {
+  toast?: boolean
+}
 
 export class Logger {
   protected static messages: Console.History[] = [];
 
-  static log(message: any, context?: Arrayed<string>) {
+  static log(message: any, context?: Arrayed<string>, options?: Options) {
     Logger.store('log', message, context);
+    if (options?.toast) {
+      toast(message);
+    }
   }
 
-  static error(message: any, context?: Arrayed<string>) {
+  static error(message: any, context?: Arrayed<string>, options?: Options) {
     Logger.store('error', message, context);
+    if (options?.toast) {
+      toast.error(message, {
+        richColors: true
+      })
+    }
   }
 
   static warn(message: any, context?: Arrayed<string>) {

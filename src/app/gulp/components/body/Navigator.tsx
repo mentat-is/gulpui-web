@@ -13,6 +13,7 @@ import ReactDOM from "react-dom";
 import { NotesWindow } from "@/components/NotesWindow";
 import { SetState } from "@/class/API";
 import { toast } from "sonner";
+import { Separator } from "@/ui/Separator";
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -22,7 +23,7 @@ export namespace Navigator {
 }
 
 export function Navigator({ setScrollX, timeline, className, ...props }: Navigator.Props) {
-  const { Info, app, spawnDialog } = useApplication();
+  const { Info, app, spawnDialog, ws } = useApplication();
   const [notes, setNotes] = useState<λNote[]>([]);
 
   useEffect(() => {
@@ -181,6 +182,8 @@ export function Navigator({ setScrollX, timeline, className, ...props }: Navigat
         <Input className={s.filter} value={app.timeline.filter} placeholder='Filter by filenames and context' onChange={(e) => Info.setTimelineFilter(e.target.value)} img='Filter' />
         <Button size='sm' variant='secondary' title='Open notes banner in new window' img='PictureInPicture2' onClick={openWindow} />
         <Button size='sm' variant='secondary' title={app.timeline.hidden_notes ? 'Show notes' : 'Hide notes'} img={app.timeline.hidden_notes ? 'EyeOff' : 'Eye'} onClick={Info.toggle_notes_visibility} />
+        <Button size='sm' variant='secondary' className={cn(s.ws, (ws && ws.OPEN) ? s.ws_opened : s.ws_closed)} img={(ws && ws.OPEN) ? 'Wifi' : 'WifiOff'}>{(ws && ws.OPEN) ? 'Connected' : 'Disconnected'}</Button>
+        {/* <Separator style={{ height: 16 }} color={`var(--${(ws && ws.OPEN) ? 'green' : 'red'}-600`} /><Button size='sm' img='PencilEdit' variant='ghost' className={s.ws_edit}>Edit</Button> */}
         {windowRef && containerRef.current && ReactDOM.createPortal(<NotesWindow focus={focus} onClose={closeWindow} />, containerRef.current)}
       </Stack>
       <Content />

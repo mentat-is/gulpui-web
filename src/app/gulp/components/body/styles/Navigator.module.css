@@ -10,7 +10,8 @@
   height: 24px;
   width: 100%;
 }
-.heading > button {
+.heading > button,
+.ws_edit {
   width: 24px;
   padding: 2px;
   border-radius: 3px;
@@ -30,4 +31,35 @@
 .filter input {
   font-size: 12px;
   color: var(--white);
+}
+.ws {
+  font-size: 11px;
+  font-weight: 400;
+  gap: 6px !important;
+  flex-shrink: 0;
+  width: unset !important;
+  padding: 6px !important;
+  border: 1px solid;
+}
+.ws:hover {
+  background-color: var(--green-700);
+}
+.ws_opened {
+  background-color: var(--green-700);
+  border-color: var(--green-400);
+  color: var(--green-1000);
+}
+.ws_closed {
+  background-color: var(--red-700);
+  border-color: var(--red-400);
+  color: var(--red-1000);
+}
+.ws_edit {
+  width: unset !important;
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--green-1000);
+  background: var(--green-700);
+  gap: 6px;
+  height: 20px;
 }
