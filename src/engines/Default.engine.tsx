@@ -23,17 +23,15 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
   render(file: λFile, y: number, force?: boolean) {
     const map = this.get(file, force);
 
-    Array.from(map.entries()).forEach(([_, [ code, timestamp ]]) => {
-      if (throwableByTimestamp(timestamp + file.settings.offset, this.renderer.limits, this.renderer.info.app)) return;
+    const events = Array.from(map.entries());
 
-      const position = this.renderer.getPixelPosition(timestamp);
-
+    events.forEach(([x, [ code, timestamp ]]) => {
       this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, {
         min: map[MinHeight],
         max: map[MaxHeight],
       });
 
-      this.renderer.ctx.fillRect(position, y, 1, 47);
+      this.renderer.ctx.fillRect(x, y, 1, 47);
     });
   }
   
@@ -47,31 +45,42 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       min: Math.max(this.renderer.getPixelPosition(file.timestamp.min), 0),
       max: Math.min(this.renderer.getPixelPosition(file.timestamp.max), width),
     }
-    console.log({ pixels });
 
-    const mustHave = pixels.max - pixels.min;
-
-    console.log({ mustHave });
-
-    for (let x = 0; x < mustHave; x++) {
-      let low = 0, high = events.length;
+    for (let x = pixels.min; x < pixels.max; x++) {
+      let index = 0;
+      let step = Math.max(1, Math.floor(events.length / 100));
+    
+      while (step >= 1) {
+        if (index + step < events.length) {
+          const eventTime = events[index + step].timestamp + file.settings.offset;
+          console.log(this.renderer.getPixelPosition(eventTime));
+          if (this.renderer.getPixelPosition(eventTime) < x) {
+            index += step;
+          }
+        }
+        step = Math.floor(step / 2);
+      }
+    
+      let low = index, high = Math.min(events.length - 1, index + step * 2);
+    
       while (low < high) {
         const mid = (low + high) >>> 1;
-        const eventTime = events[mid]?.timestamp + file.settings.offset;
-        
+        const eventTime = events[mid].timestamp + file.settings.offset;
+
         if (this.renderer.getPixelPosition(eventTime) < x) {
           low = mid + 1;
         } else {
           high = mid;
         }
       }
-
-      console.log(high, low);
-
+    
       if (low < events.length) {
         const event = events[low];
         const eventTime = event.timestamp + file.settings.offset;
         const value = parseInt(event[file.settings.field].toString());
+
+        console.log(low);
+    
         map.set(x as Hardcode.X, [
           value as Hardcode.Height,
           eventTime as Hardcode.Timestamp
@@ -79,9 +88,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       }
     }
 
-    if (file.name === 'testapache.log') {
-      console.log(map); // Размер 245 пикселей, больее 2 миллионов ивентов, после аглорисма size: 0;
-    }
+    console.log(map);
 
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;
     map[MinHeight] = file.code.min as Hardcode.Height;
