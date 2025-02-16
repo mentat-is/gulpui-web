@@ -3,6 +3,7 @@ import { Engine, Hardcode, MaxHeight, MinHeight, Scale } from '../class/Engine.d
 import { RenderEngine } from '../class/RenderEngine';
 import { getTimestamp, Gradients, numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, throwableByTimestamp, λColor } from '@/ui/utils';
 import { File, MinMax } from '@/class/Info';
+import { arrayBuffer } from 'stream/consumers';
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null;
@@ -18,6 +19,24 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
 
     this.renderer = renderer;
     DefaultEngine.instance = this;
+  }
+
+  binarySearch(haystack: Event[], needle: number): number {
+    let low = 0;
+    let high = haystack.length - 1;
+  
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      if (haystack[mid].timeStamp === needle) {
+        return mid;
+      } else if (haystack[mid].timeStamp < needle) {
+        low = mid + 1;
+      } else {
+        high = mid - 1;
+      }
+    }
+
+    return -1; // needle not found
   }
 
   render(file: λFile, y: number, force?: boolean) {
