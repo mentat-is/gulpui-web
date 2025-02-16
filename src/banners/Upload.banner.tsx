@@ -128,7 +128,7 @@ export function UploadBanner() {
         index,
         operation_id: operation.id,
         context_name: context,
-        ws_id: 'pashalko',
+        ws_id: sha1(file.name + file.size),
         req_id: hash
       },
     });
