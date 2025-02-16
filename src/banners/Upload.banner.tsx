@@ -75,7 +75,7 @@ export function UploadBanner() {
     setContext('');
   }, [isExistingContextChooserAvalable]);
 
-  const send = async (file: File, start: number, i: number) => {
+  const send = async (file: File, start: number, i: number, id: string) => {
     const size = 1024 * chunkSize * 1024;
     const end = Math.min(file.size, start + size);
 
@@ -128,22 +128,22 @@ export function UploadBanner() {
         index,
         operation_id: operation.id,
         context_name: context,
-        ws_id: sha1(file.name + file.size),
-        req_id: hash
+        ws_id: 'pashalko',
+        req_id: id
       },
     });
 
     Info.start_ingesting(hash);
 
     if (response.isError() && response.data.continue_offset) {
-      await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset));
+      await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset), id);
       return;
     }
   
     setProgress(Math.floor(((i + (end / file.size)) / files!.length) * 100));
 
     if (end < file.size) {
-      await send(file, end, i);
+      await send(file, end, i, id);
     }
   };
   
@@ -151,9 +151,21 @@ export function UploadBanner() {
     setLoading(true);
     setProgress(0);
   
+    let ids: string[] = []
+
+    const getID = () => {
+      const id = sha1(Math.random().toString());
+      if (ids.includes(id)) {
+        return getID();
+      }
+      ids.push(id);
+      return id;
+    }
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      send(file, 0, i);
+
+      send(file, 0, i, getID());
     }
 
     await Info.sync();
