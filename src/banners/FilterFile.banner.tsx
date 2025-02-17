@@ -16,6 +16,7 @@ import { Toggle } from '@/ui/Toggle';
 import { Icon } from '@impactium/icons';
 import { Glyph } from '@/ui/Glyph';
 import { SelectIcon } from '@radix-ui/react-select';
+import { toast } from 'sonner';
 
 const _baseFilter = (): λFilter => ({
   id: generateUUID() as μ.Filter,
@@ -87,6 +88,14 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     setAcceptable(accept);
     setFilter({ ...filter || {}, key })
   };
+  
+  useEffect(() => {
+    api('/request_cancel', {
+      query: {
+        req_id_to_cancel: file.id
+      }
+    }).then(res => toast('Previous request for this file has been canceled succesfully'));
+  }, []);
 
   const setType = (type: FilterType) => setFilter({...filter || {}, type });
 
