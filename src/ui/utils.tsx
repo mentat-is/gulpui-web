@@ -118,7 +118,7 @@ export const getDateFormat = (diffInMilliseconds: number) => {
 export const getTimestamp = (x: number, info: Info) => {
   const { min, max } = info.app.timeline.frame;
 
-  return min + (x / info.width) * (max - min);
+  return Math.round(min + (x / info.width) * (max - min));
 };
 
 export const formatBytes = (bytes: number): string => {
