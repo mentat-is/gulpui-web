@@ -53,16 +53,14 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       min: Math.max(
         this.renderer.getPixelPosition(file.timestamp.min),
         this.renderer.getPixelPosition(lastEvent.timestamp),
-        -100
+        -128
       ),
       max: Math.min(
         this.renderer.getPixelPosition(file.timestamp.max),
         this.renderer.getPixelPosition(firstEvent.timestamp),
-        this.renderer.ctx.canvas.width + 100
+        this.renderer.ctx.canvas.width + 128
       )
     };
-
-    console.log(visiblePixelRange);
   
     if (visiblePixelRange.min >= visiblePixelRange.max) {
       return map;

@@ -62,17 +62,6 @@ export namespace Enrichment {
         return;
       }
 
-      // console.log(frame.min, frame.max);
- 
-      // const events = File.events(app, file)
-      //   .filter(e => new Date(e.nanotimestamp).valueOf() > frame.min && new Date(e.nanotimestamp).valueOf() < frame.max)
-      //   .map(e => e.id);
-
-      // if (!events.length) {
-      //   toast('Selected frame doesn`t contain events');
-      //   return;
-      // }
-
       setLoading(true);
       await Info.enrichment(plugin.filename, file, frame, customParameters);
       setLoading(false);

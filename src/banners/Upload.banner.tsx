@@ -153,7 +153,7 @@ export function UploadBanner() {
   
     let ids: string[] = []
 
-    const getID = () => {
+    const getID = (): string => {
       const id = sha1(Math.random().toString());
       if (ids.includes(id)) {
         return getID();

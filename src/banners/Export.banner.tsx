@@ -34,7 +34,6 @@ export namespace Export  {
       try {
         const canvas = document.getElementById('canvas') as HTMLCanvasElement;
         if (!canvas) {
-          console.log('dsa')
           return;
         }
     
