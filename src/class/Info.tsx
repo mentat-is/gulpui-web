@@ -280,7 +280,7 @@ export namespace Internal {
 
   export class Transformator {
     public static toTimestamp = (timestamp: string | number | Date | bigint): number => 
-      Number(this.toNanos(timestamp)) / 1_000_000;
+      new Date(Number(this.toNanos(timestamp)) / 1_000_000).valueOf();
 
     public static toNanos = (timestamp: string | number | Date | bigint): bigint => {
       if (typeof timestamp === 'bigint') {
@@ -1678,7 +1678,7 @@ export class Event {
       "gulp.context_id": event.context_id,
       "gulp.operation_id": event.operation_id,
       "gulp.source_id": event.file_id,
-      "gulp.timestamp": Internal.Transformator.toTimestamp(event.nanotimestamp)
+      "gulp.timestamp": Math.round(Internal.Transformator.toTimestamp(event.nanotimestamp))
     }];
   }
 
