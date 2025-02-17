@@ -617,8 +617,6 @@ export class Info implements InfoProps {
       setLoading
     }, this.sync);
   };
-
-  /* ПОСТАВИТЬ НОВЫЕ ОПЕРАЦИИ С ОХ ПОЛНЫМ ОБНУЛЕНИЕМ, И ПОВТОРНЫМ СЕЛЕКТОМ ПРЕДЫДУЩЕ-ВЫБРАННОГО */
   
   // 🔥 CONTEXTS
   // Получить выбранные контексты
@@ -643,6 +641,7 @@ export class Info implements InfoProps {
     }, 0);
   };
 
+  // ⚠️ UNTOUCHABLE
   context_delete = (context: λContext, wipe: boolean) => {
     const index = Index.selected(this.app);
     if (!index) {
@@ -660,7 +659,6 @@ export class Info implements InfoProps {
     }, this.sync);
   }
 
-  contexts_set = (contexts: λContext[]) => this.setInfoByKey(contexts, 'target', 'contexts');
   contexts_checkout = () => {
     const contexts: λContext[] = this.app.target.contexts.map(c => {
       const files = Context.files(this.app, c);
@@ -677,10 +675,7 @@ export class Info implements InfoProps {
     this.setInfoByKey(contexts, 'target', 'contexts');
   }
 
-  // 🔥 PLUGINS
-  plugins_set = (files: λFile[]) => this.setInfoByKey(files, 'target', 'files');
-
-  // 🔥 FILES
+  // ⚠️ UNTOUCHABLE
   selectAll = (filter: string) => {
     const operation = Operation.selected(this.app);
 
@@ -716,13 +711,8 @@ export class Info implements InfoProps {
       this.contexts_checkout();
     }, 0);
   };
-  files_set = (files: λFile[]) => {
-    this.setInfoByKey(files, 'target', 'files');
-    setTimeout(() => {
-      this.contexts_checkout();
-    }, 0);
-  };
 
+  // ⚠️ UNTOUCHABLE
   file_delete = (file: λFile, wipe: boolean) => {
     const index = Index.selected(this.app);
     if (!index) {
@@ -741,31 +731,80 @@ export class Info implements InfoProps {
     }, this.sync);
   };
 
+  // ⚠️ UNTOUCHABLE
   file_set_render_engine = (ids: λFile['id'][], engine: Engine.List) => this.setInfoByKey(this.app.target.files.map(file => ({ ...file, settings: { ...file.settings, engine: ids.includes(file.id) ? engine : file.settings.engine }})), 'target', 'files');
 
-  file_set_settings = (ids: λFile['id'][], settings: λFile['settings']) => this.setInfoByKey(this.app.target.files.map(file => ({ ...file, settings: { ...file.settings, ...settings }})), 'target', 'files');
-
-  files_set_color = (file: λFile, color: Gradients) => this.setInfoByKey(File.replace({ ...file, color }, this.app), 'target', 'files');
+  // ⚠️ UNTOUCHABLE
+  file_set_settings = (ids: λFile['id'][], settings: λFile['settings']) => this.setInfoByKey(this.app.target.files.map(file => ids.includes(file.id) ? ({ ...file, settings: { ...file.settings, ...settings }}) : file), 'target', 'files');
 
   events_add = (newEvents: λEvent[]) => {
-    const { events, frames } = Event.add(this.app, newEvents);
+    const events = Event.add(this.app, newEvents);
 
-    Object.entries(frames).map(([id, frame]) => {
-      const file = this.app.target.files.find(file => file.id === id);
-      if (file && file.nanotimestamp.min === 0n) {
-        file.timestamp.min = Math.min(file.timestamp.min, frame.min);
-        file.timestamp.max = Math.max(file.timestamp.max, frame.max, file.timestamp.min + 1);
-      } else {
-        Logger.error(`File ${id} has not been found in application data`);
-      }
+    const ids = new Set<`${λEvent['id']}|${λFile['id']}`>();
+
+    newEvents.forEach(e => {
+      ids.add(`${e.id}|${e.file_id}`);
     });
+
+    let hasToSync = false;
+
+    Array.from(ids).forEach(unit => {
+      const [ eid, fid ] = unit.split('|');
+
+      const exist = this.app.target.files.find(file => file.id === fid);
+      if (!exist) {
+        const event = newEvents.find(e => e.id === eid);
+        if (!event) {
+          Logger.error('WTF?', 'AppSocket', {
+            toast: true
+          });
+
+          return;
+        }
+
+        hasToSync = true;
+
+        this.app.target.files.push({
+          id: event.file_id,
+          name: 'Unknown file',
+          color: 'thermal',
+          code: {
+            min: 0,
+            max: 1
+          },
+          context_id: event.context_id,
+          description: '?',
+          glyph_id: Default.Icon.FILE as λGlyph['id'],
+          granted_user_group_ids: [],
+          granted_user_ids: [],
+          type: 'file',
+          operation_id: event.operation_id,
+          time_created: 0,
+          time_updated: 0,
+          settings: Internal.Settings.all(),
+          timestamp: {
+            min: 0,
+            max: new Date(Date.now()).getTime()
+          },
+          nanotimestamp: {
+            min: 0n,
+            max: 0n
+          },
+          total: -1,
+          selected: true
+        });
+      }
+    })
 
     this.app.target.events = events;
 
-    this.setInfo(this.app);
+    if (hasToSync) {
+      this.sync();
+    }
 
-    return;
+    this.setInfo(this.app);
   };
+
   events_reset_in_file = (files: Arrayed<λFile>) => this.setInfoByKey(Event.delete(this.app, files), 'target', 'events');
 
   setDialogSize = (number: number) => {
@@ -776,6 +815,7 @@ export class Info implements InfoProps {
     this.setInfoByKey(number, 'timeline', 'footerSize');
   }
 
+  // ⚠️ UNTOUCHABLE
   notes_reload = () => api<ΞNote[]>('/note_list', {
     method: 'POST',
     body: {
@@ -783,6 +823,7 @@ export class Info implements InfoProps {
     }
   }, notes => this.setInfoByKey(Note.normalize(notes), 'target', 'notes'));
 
+  // ⚠️ UNTOUCHABLE
   note_delete = (note: λNote) => api('/note_delete', {
     method: 'DELETE',
     query: {
@@ -791,6 +832,7 @@ export class Info implements InfoProps {
     }
   }, this.notes_reload);
 
+  // ⚠️ UNTOUCHABLE
   links_reload = async () => {
     return api<ΞLink[]>('/link_list', {
       method: 'POST',
@@ -1357,18 +1399,8 @@ export class Context {
 export class File {
   public static icon = Internal.IconExtractor.activate<λFile>(Default.Icon.FILE);
 
-  public static replace = (newFiles: Arrayed<λFile>, use: λApp | λFile[]): λFile[] => Parser.use(use, 'files').map(file => Parser.array(newFiles).find(s => s.id === file.id) || file);
-
-  public static single = <K extends keyof λFile>(files: λFile[], field: K): λFile[K] | undefined => Parser.array(files)[0]?.[field];
-
-  public static reload = (app: λApp, files: λFile): λFile[] => File.select(app, File.selected(app));
-
-  public static wellFormatedName = (file: λFile) => file.name.split('/').pop();
-
-  public static pluginName = (file: λFile) => file.name.split('/').reverse()[1];
-
-  // Ищем выбранные контексты где выбранная операция совпадает по имени
-  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(s => s.selected)).filter(s => s.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || File.id(app, s.id)?.context_id.includes(app.timeline.filter.toLowerCase()));
+  // ⚠️ UNTOUCHABLE
+  public static selected = (app: λApp): λFile[] => File.pins(app.target.files.filter(s => s.selected)).filter(s => s.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Context.id(app, s.context_id).name.toLowerCase().includes(app.timeline.filter.toLowerCase()));
   
   public static select = (app: λApp, selected: λFile[]): λFile[] => app.target.files.map(f => selected.find(s => s.id === f.id) ? File._select(f) : f);
 
@@ -1550,30 +1582,27 @@ export class Event {
   public static selected = (app: λApp): λEvent[] => File.selected(app).map(s => Event.get(app, s.id)).flat();
 
   public static add = (app: λApp, events: λEvent[]) => {
-    events.map(e => Event.get(app, e.file_id).push(e));
+    events.forEach(e => Event.get(app, e.file_id).push(e));
 
     Logger.log(`${events.length} events has been processed`);
 
-    return {
-      frames: Event.frames(events),
-      events: app.target.events
-    };
+    return app.target.events;
   }
 
-  public static frames = (events: λEvent[]) => {
-    const frames: Record<λFile['id'], MinMax> = {};
+  // public static frames = (events: λEvent[]) => {
+  //   const frames: Record<λFile['id'], MinMax> = {};
 
-    events.forEach(e => {
-      frames[e.file_id] = frames[e.file_id] || MinMaxBase;
+  //   events.forEach(e => {
+  //     frames[e.file_id] = frames[e.file_id] || MinMaxBase;
 
-      const timestamp = Internal.Transformator.toTimestamp(e.timestamp);
+  //     const timestamp = Internal.Transformator.toTimestamp(e.timestamp);
 
-      frames[e.file_id].min = frames[e.file_id].min === 0 ? timestamp : Math.min(frames[e.file_id].min, timestamp);
-      frames[e.file_id].max = Math.max(frames[e.file_id].max, timestamp);
-    });
+  //     frames[e.file_id].min = frames[e.file_id].min === 0 ? timestamp : Math.min(frames[e.file_id].min, timestamp);
+  //     frames[e.file_id].max = Math.max(frames[e.file_id].max, timestamp);
+  //   });
 
-    return frames;
-  }
+  //   return frames;
+  // }
 
   public static toDoc = ({ id, file_id, context_id, nanotimestamp, operation_id, timestamp }: λEvent): λDoc => ({
     id,
@@ -1653,25 +1682,17 @@ export class Event {
     }];
   }
 
-  public static parse = (rawEvents: ΞEvent[]): λEvent[] => {
-    const events: λEvent[] = rawEvents.map(rawEvent => {
-      const event: λEvent = {
-        id: rawEvent._id,
-        operation_id: rawEvent['gulp.operation_id'],
-        context_id: rawEvent['gulp.context_id'],
-        file_id: rawEvent['gulp.source_id'],
-        timestamp: Internal.Transformator.toTimestamp(rawEvent['@timestamp']),
-        nanotimestamp: Internal.Transformator.toNanos(rawEvent['@timestamp']),
-        code: rawEvent['event.code'],
-        weight: rawEvent['gulp.event_code'],
-        duration: rawEvent['event.duration']
-      }
-
-      return event;
-    });
-
-    return events;
-  }
+  public static parse = (rawEvents: ΞEvent[]): λEvent[] => rawEvents.map(rawEvent => ({
+    id: rawEvent._id,
+    operation_id: rawEvent['gulp.operation_id'],
+    context_id: rawEvent['gulp.context_id'],
+    file_id: rawEvent['gulp.source_id'],
+    timestamp: Math.round(rawEvent['gulp.timestamp'] / 1_000_000),
+    nanotimestamp: BigInt(rawEvent['gulp.timestamp']),
+    code: rawEvent['event.code'],
+    weight: rawEvent['gulp.event_code'],
+    duration: rawEvent['event.duration']
+  } satisfies λEvent))
 
   public static ids = (app: λApp, ids: λEvent['id'][]) => Array.from(app.target.events.values()).flat().filter(e => ids.includes(e.id));
 

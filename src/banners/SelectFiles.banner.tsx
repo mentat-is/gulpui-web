@@ -115,7 +115,7 @@ export namespace SelectFiles {
       return (
         <div className={s.pluginHeading} key={file.id}>
           <Checkbox id={file.name} checked={file.selected} onCheckedChange={handleFileCheck} />
-          <Label htmlFor={file.name}>{File.wellFormatedName(file)}</Label>
+          <Label htmlFor={file.name}>{file.name}</Label>
         </div>
       )
     }

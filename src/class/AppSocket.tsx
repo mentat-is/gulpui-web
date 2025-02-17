@@ -38,25 +38,10 @@ export class AppSocket extends WebSocket {
       const { data: chunk } = message;
 
       switch (true) {
-        case isQuery(chunk):
+        case message.type === 'docs_chunk':
           const rawEvents: ΞEvent[] = chunk.docs;
           const events = Event.parse(rawEvents);
           this.info.events_add(events);
-          return
-
-        case message.type === 'stats_update':
-          const context_id = message.data.data['gulp.context_id'];
-          const source_id = message.data.data['gulp.source_id'];
-
-          if (context_id && !this.info.app.target.contexts.find(c => c.id === context_id)) {
-            Logger.log(`New context ${context_id}. Do sync: ${new Date(Date.now()).toISOString()}`, AppSocket.name);
-            Logger.error(this.info.app.target.contexts.map(c => c.id), AppSocket.name);
-            info.sync();
-            return;
-          } else if (source_id && !this.info.app.target.files.find(c => c.id === source_id)) {
-            Logger.log(`New file ${source_id}. Do sync: ${new Date(Date.now()).toISOString()}`, AppSocket.name);
-            info.sync();
-          }
           return;
 
         case message.type === 'ingest_source_done':
@@ -98,8 +83,4 @@ export class AppSocket extends WebSocket {
       AppSocket.instance = null;
     };
   }
-}
-
-function isQuery(chunk: any): boolean {
-  return typeof chunk.chunk_number === 'number' && Array.isArray(chunk.docs) && typeof chunk.name === 'string' && typeof chunk.total_hits === 'number';
 }
