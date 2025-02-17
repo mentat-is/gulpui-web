@@ -91,6 +91,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
   
   useEffect(() => {
     api('/request_cancel', {
+      method: 'POST',
       query: {
         req_id_to_cancel: file.id
       }
