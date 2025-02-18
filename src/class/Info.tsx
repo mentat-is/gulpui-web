@@ -1,5 +1,5 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink, λGroup } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink, λGroup, λRequest } from '@/dto/Dataset';
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -75,7 +75,6 @@ export namespace GulpDataset {
 
     export type Summary = Operation[];
   }
-
   export namespace PluginList {
     export type Summary = Object[]
 
@@ -125,17 +124,18 @@ export namespace GulpDataset {
       version: string;
     }
   }
-
   export interface SigmaFile {
     name: string;
     content: string;
   }
-
   export namespace IngestFile {
     export interface Summary {
       continue_offset: number;
       done: boolean
     }
+  }
+  export namespace RequestList {
+    export type Summary = λRequest[];
   }
 }
 
@@ -401,10 +401,6 @@ export class Info implements InfoProps {
 
     await this.links_reload();
 
-    if (!hidden) {
-      this.deload(files.map(f => f.id));
-    }
-    
     files.forEach(file => {
       this.query_file(file, range, filter);
     });
@@ -485,25 +481,50 @@ export class Info implements InfoProps {
 
     const body = Filter.body(this.app, file, range, filter);
 
-    return await api(path, {
+    return await api<undefined>(path, {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
-        req_id: file.id,
         index
       },
-      body
+      body,
+      raw: true
+    }, res => {
+      this.request_add({
+        id: res.req_id,
+        for: file.id,
+        status: res.status,
+        type: 'query'
+      })
     });
   };
+  
+  request_add = (req: λRequest) => this.request_replace(...this.app.general.requests, req);
 
-  cancel = async (r: μ.File) => {
-    Logger.log(`Request canselation has been requested for file ${File.id(this.app, r).name}`, Info.name);
+  request_replace = (...req: λRequest[]) => this.setInfoByKey(req, 'general', 'requests');
 
-    return await api('/stats_cancel_request', {
-      method: 'PUT',
-      query: { r }
+  request_cancel = (req_id_to_cancel: λRequest['id']) => {
+    const fileId = this.request_finish(req_id_to_cancel, 'canceled');    
+    toast(`Request ${req_id_to_cancel} for ${fileId ? File.id(this.app, fileId).name : 'some file'} has been canceled`);
+
+    api('/request_cancel', {
+      method: 'POST',
+      query: { req_id_to_cancel }
     });
   }
+
+  request_cancel_for_file = (file: λFile['id']) => Promise.all(this.app.general.requests.filter(r => r.for === file && r.status === 'pending').map(r => this.request_cancel(r.id)))
+
+  request_finish = (id: λRequest['id'], status: λRequest['status']): λFile['id'] | undefined => {
+    const exist = this.app.general.requests.find(r => r.id === id);
+    if (exist) {
+      exist.status = status;
+      this.request_replace(...this.app.general.requests);
+      return exist.for;
+    }
+  }
+
+  request_list = () => api<GulpDataset.RequestList.Summary>('/request_list', { method: 'POST' });
 
   filters_cache = (file: λFile | μ.File) => {
     Logger.log(`Caching has been requested for file ${File.id(this.app, file).name}`, Info.name);
@@ -543,17 +564,6 @@ export class Info implements InfoProps {
       filters: { ...this.app.timeline.cache.filters, [id]: undefined }
     }, 'timeline', 'cache');
   }
-
-  setLoaded = (files: μ.File[]) => {
-    this.setInfoByKey(files, 'timeline', 'loaded');
-
-    if (this.app.timeline.loaded.length === this.app.target.files.length) {
-      this.notes_reload();
-      this.links_reload();
-    }
-  };
-
-  deload = (id: Arrayed<μ.File>) => this.setLoaded([...this.app.timeline.loaded.filter(_uuid => !id.includes(_uuid))]);
 
   render = () => {
     Logger.log(`Render requested`, Info.name);
@@ -1276,7 +1286,6 @@ export class Info implements InfoProps {
       delete this.app.target.sigma[id];
       this.setInfoByKey(this.app.target.sigma, 'target', 'sigma');
       this.refetch({ ids: typeof file === 'string' ? file : file.id });
-      this.deload(id);
     }
   }
 
@@ -1692,7 +1701,9 @@ export class Event {
     code: rawEvent['event.code'],
     weight: rawEvent['gulp.event_code'],
     duration: rawEvent['event.duration']
-  } satisfies λEvent))
+  } satisfies λEvent));
+
+  public static fields = (): string[] => [ '_id', 'gulp.operation_id', 'gulp.context_id', 'gulp.source_id', 'gulp.timestamp', '@timestamp', 'event.code', 'gulp.event_code', 'event.duration' ];
 
   public static ids = (app: λApp, ids: λEvent['id'][]) => Array.from(app.target.events.values()).flat().filter(e => ids.includes(e.id));
 
@@ -1781,7 +1792,7 @@ export class Parser {
 
   public static useId = (unknown: λEvent | string): string => typeof unknown === 'string' ? unknown : unknown.id;
 
-  public static useUUID = <T extends λContext | λFile | λFile | λFile | λFilter>(unknown: T | string): μ.Context | μ.File | μ.Filter | μ.Operation | μ.File | μ.File | μ.Window => {
+  public static useUUID = <T extends λContext | λFile | λFile | λFile | λFilter>(unknown: T | string): μ.Context | μ.File | μ.Filter | μ.Operation | μ.File | μ.File => {
     if (typeof unknown === 'string') {
       return unknown as T['id'];
     } else {
@@ -1845,9 +1856,9 @@ export namespace μ {
     readonly [User]: unique symbol;
   };
 
-  const Window = Symbol('Window');
-  export type Window = UUID & {
-    readonly [Window]: unique symbol;
+  const Request = Symbol('Request');
+  export type Request = UUID & {
+    readonly [Request]: unique symbol;
   };
 }
 

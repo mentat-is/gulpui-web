@@ -5,7 +5,7 @@ import { generateUUID } from '@/ui/utils';
 import { FilterOptions, GulpDataset, Internal, MinMax, λFilter, λUser, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
 import { XY } from './XY.dto';
-import { λContext, λFile, λGlyph, λLink, λNote } from './Dataset';
+import { λContext, λFile, λGlyph, λLink, λNote, λRequest } from './Dataset';
 import { λMapping } from './MappingFileList.dto';
 
 export interface TimelineTarget {
@@ -37,6 +37,7 @@ export interface λApp {
     ws_id: string;
     sessions: Record<string, Session>;
     glyphs_syncronized: boolean;
+    requests: λRequest[]
   },
   timeline: {
     scale: number;
@@ -63,7 +64,8 @@ export const BaseInfo: λApp = {
     time_expire: Infinity,
     token: '',
     sessions: {},
-    glyphs_syncronized: false
+    glyphs_syncronized: false,
+    requests: []
   },
   timeline: {
     scale: 1,

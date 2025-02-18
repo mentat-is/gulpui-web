@@ -259,18 +259,20 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = '#0372ef';
     this.ctx.fillText(events, left, line.three);
 
-    if (this.info.app.target.ingest.includes(sha1(file.name))) {
-      this.ingesting(file);
+    if (this.info.app.general.requests.filter(r => r.for === file.id && r.status === 'pending').length) {
+      this.loading(file);
     }
   }
 
-  public ingesting = (file: λFile) => {
+  public loading = (file: λFile) => {
     this.ctx.beginPath();
+    this.ctx.fillStyle = '#e8e8e880';
     this.ctx.setLineDash([5, 5]);
     const height = File.getHeight(this.info.app, file, this.scrollY);
     this.ctx.moveTo(0, height);
     this.ctx.lineTo(2000, height);
     this.ctx.stroke();
+    this.ctx.setLineDash([]);
   }
 
   public draw_info = (file: λFile) => {

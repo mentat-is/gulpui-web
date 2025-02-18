@@ -13,7 +13,7 @@ import { Separator } from '@/ui/Separator';
 import { enginesBase } from '@/dto/Engine.dto';
 import { formatDuration, intervalToDuration } from 'date-fns';
 import { Icon } from '@impactium/icons';
-import { Context, Event } from '@/class/Info';
+import { Context, Event, File } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
 import { Stack } from '@impactium/components';
 import { λEvent } from '@/dto/ChunkEvent.dto';
@@ -69,38 +69,43 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         <Input img='AlarmClockPlus' accept='number' value={offset} placeholder='Offset time in ms' onChange={handleInputChange} />
       </Card>
       <Separator />
-      <Card className={s.engines}>
-        <p className={s.text}>Renderer:</p>
-        <Select onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
-          <SelectTrigger className={s.trigger}>
-            <SelectValue placeholder='Choose renderer' />
+      <Select onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
+        <SelectTrigger className={s.trigger}>
+          <Stack>
+            <Icon name={enginesBase.find(e => e.plugin === engine)?.img ?? 'CircleDashed'} />
+            <p>{enginesBase.find(e => e.plugin === engine)?.title ?? engine}</p>
+          </Stack>
+        </SelectTrigger>
+        <SelectContent>
+          {enginesBase.map(i => (
+            <SelectItem value={i.plugin}>
+              <Stack>
+                <Icon name={i.img} />
+                <p>{i.title}</p>
+              </Stack>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Separator />
+      <Stack jc='space-between'>
+        <p className={s.text}>Color palette:</p>
+        <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
+          <ColorPickerTrigger />
+          <ColorPickerPopover gradients={GradientsMap} solids={[]} />
+        </ColorPicker>
+      </Stack>
+      <Stack jc='space-between'>
+        <p className={s.text}>Target field:</p>
+        <Select onValueChange={(field: keyof λEvent) => setField(field)}>
+          <SelectTrigger className={s.trigger} value={engine}>
+            <SelectValue placeholder={field} />
           </SelectTrigger>
           <SelectContent>
-            {enginesBase.map(i => <SelectItem value={i.plugin}><Icon name={i.img} />{i.title}</SelectItem>)}
+            {Event.fields().map(field => <SelectItem value={field}>{field}</SelectItem>)}
           </SelectContent>
         </Select>
-      </Card>
-      <Separator />
-      <Card className={s.color}>
-        <Stack jc='space-between'>
-          <p className={s.text}>Color palette:</p>
-          <ColorPicker color={color} setColor={c => setColor(c as Gradients)}>
-            <ColorPickerTrigger />
-            <ColorPickerPopover gradients={GradientsMap} solids={[]} />
-          </ColorPicker>
-        </Stack>
-        <Stack jc='space-between'>
-          <p className={s.text}>Target field:</p>
-          <Select onValueChange={(field: keyof λEvent) => setField(field)}>
-            <SelectTrigger className={s.trigger} value={engine}>
-              <SelectValue placeholder={field} />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.keys(Event.get(app, file.id)[0] || {}).map(field => <SelectItem value={field}>{field}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Stack>
-      </Card>
+      </Stack>
     </Banner>
   )
 }

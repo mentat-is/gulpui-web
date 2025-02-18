@@ -115,6 +115,13 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
   edits: Record<string, any>[];
 };
 
+export type λRequest = {
+  id: μ.Request;
+  type: 'query',
+  for: λFile['id'];
+  status: 'done' | 'failed' | 'canceled' | 'pending' | 'error' | 'success';
+};
+
 export namespace Default {
   type Object = 'INDEX' | 'OPERATION' | 'CREATE_OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK' | 'EVENT';
 

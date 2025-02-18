@@ -2,12 +2,10 @@ import s from './styles/FilterFileBanner.module.css';
 import { Banner } from '@/ui/Banner';
 import { useApplication } from '@/context/Application.context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
-import { Input, Skeleton } from '@impactium/components';
-import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Stack, Input, Skeleton } from '@impactium/components';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
-import { Button, Stack } from '@impactium/components';
 import { Filter, FilterOptions, FilterType, λFilter, μ, Index } from '@/class/Info';
-import { SettingsFileBanner } from './SettingsFileBanner';
 import React from 'react';
 import { copy, generateUUID } from '@/ui/utils';
 import { λFile } from '@/dto/Dataset';
@@ -16,7 +14,6 @@ import { Toggle } from '@/ui/Toggle';
 import { Icon } from '@impactium/icons';
 import { Glyph } from '@/ui/Glyph';
 import { SelectIcon } from '@radix-ui/react-select';
-import { toast } from 'sonner';
 
 const _baseFilter = (): λFilter => ({
   id: generateUUID() as μ.Filter,
@@ -25,11 +22,11 @@ const _baseFilter = (): λFilter => ({
   value: ''
 })
 
-interface FilterFileBannerProps {
+interface FilterFileBannerProps extends Banner.Props {
   file: λFile;
 }
 
-export function FilterFileBanner({ file }: FilterFileBannerProps) {
+export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
   const { app, Info, destroyBanner, spawnBanner } = useApplication();
   const [acceptable, setAcceptable] = useState<Acceptable>('text');
   const [filter, setFilter] = useState<λFilter>(_baseFilter());
@@ -51,7 +48,8 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
         index,
         operation_id: file.operation_id,
         context_id: file.context_id,
-        source_id: file.id
+        source_id: file.id,
+        ws_id: app.general.ws_id
       }
     }).then(data => Info.setTimelineFilteringoptions(file, data));
   }, [app.timeline.filtering_options]);
@@ -62,7 +60,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     Info.refetch({
       ids: file.id,
       hidden: true,
-      filter: base + raw
+      filter: base + Filter.query(app, file)
     }).then(() => {
       destroyBanner();
       Info.render();
@@ -88,15 +86,6 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
     setAcceptable(accept);
     setFilter({ ...filter || {}, key })
   };
-  
-  useEffect(() => {
-    api('/request_cancel', {
-      method: 'POST',
-      query: {
-        req_id_to_cancel: file.id
-      }
-    }).then(res => toast('Previous request for this file has been canceled succesfully'));
-  }, []);
 
   const setType = (type: FilterType) => setFilter({...filter || {}, type });
 
@@ -226,13 +215,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
       title='Choose filtering options'
       loading={preloading}
       done={<Done />}
-      option={<Undo />}
-      subtitle={
-        <Button
-          onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
-          variant='ghost'
-          img='Settings'>Back to file settings</Button>
-        }>
+      option={<Undo />} {...props}>
       <Toggle option={['Pretty UI', 'Manual input']} checked={manual} onCheckedChange={() => setManual(v => !v)} />
       {FilterField}
       <AvailableFilters />
@@ -242,6 +225,7 @@ export function FilterFileBanner({ file }: FilterFileBannerProps) {
           <code>{manual ? base + raw : Filter.query(app, file)}</code>
         </Stack>
       </Skeleton>
+      <Button variant='secondary' style={{ width: '100%' }} onClick={() => Info.request_cancel_for_file(file.id)} img='FileX'>Cancel all requests for this file</Button>
     </Banner>
   );
 }

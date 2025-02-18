@@ -5,11 +5,12 @@ import { toast } from 'sonner';
 import { Internal } from './Info';
 import { redirect } from 'react-router-dom';
 import { Logger } from '@/dto/Logger.class';
+import { λRequest } from '@/dto/Dataset';
 
 interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending';
   timestamp: Date;
-  req_id: UUID;
+  req_id: λRequest['id'];
   data: T;
 }
 
@@ -23,13 +24,13 @@ interface ResponseError extends ResponseBase<{
 
 export class λ<T extends ResponseBase<any>> {
   status: 'success' | 'error' | 'pending';
-  req_id: UUID;
+  req_id: λRequest['id'];
   timestamp: Date;
   data: T['data'];
 
   constructor(data?: T) {
     this.status = data?.status || 'error';
-    this.req_id = data?.req_id || '' as UUID;
+    this.req_id = data?.req_id || '' as λRequest['id'];
     this.timestamp = data?.timestamp || new Date();
     this.data = data ? data.data : {
       message: 'internal_server_error',

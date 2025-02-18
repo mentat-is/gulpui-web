@@ -1,5 +1,4 @@
 import { useApplication } from '@/context/Application.context';
-import { useLanguage } from '@/context/Language.context';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Checkbox } from '@/ui/Checkbox';
 import s from './styles/SelectFilesBanner.module.css';
@@ -7,7 +6,7 @@ import { Badge } from '@/ui/Badge';
 import { Label } from '@/ui/Label';
 import { Button, Skeleton } from '@impactium/components';
 import { Context, Operation, File } from '@/class/Info';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Input } from '@impactium/components';
 import { LimitsBanner } from './Limits.banner';
 import { UploadBanner } from './Upload.banner';
@@ -37,13 +36,13 @@ export namespace SelectFiles {
   
     const done = <Button img='Check' loading={loading} variant='glass' onClick={save} />;
   
-    const NoDataInOperation = useMemo(() => <p className={s.noData}>There is no any data to analyze. Click below to upload...</p>, []);
+    const NoDataInOperation = () => <p className={s.noData}>There is no any data to analyze. Click below to upload...</p>;
   
     function Contexts() {
       const contexts = Operation.contexts(app);
   
       if (contexts.length === 0) {
-        return NoDataInOperation;
+        return <NoDataInOperation />;
       }
   
       return (
@@ -56,7 +55,7 @@ export namespace SelectFiles {
     function ContextComponent(context: λContext) {
       const files = Context.files(app, context);
   
-      const Files = useCallback(() => {
+      const Files = () => {
         if (!files) {
           return (
             <Fragment>
@@ -70,7 +69,7 @@ export namespace SelectFiles {
             {files.map(file => <FileComponent {...file} />)}
           </Fragment>
         )
-      }, [app.target.files]);
+      };
   
       if (files.every(f => !f.name.toLowerCase().includes(filter.toLowerCase()))) {
         return null;
@@ -120,9 +119,9 @@ export namespace SelectFiles {
       )
     }
   
-    const UploadButton = useCallback(() => {
+    const UploadButton = () => {
       return <Button img='Upload' variant='ghost' onClick={() => spawnBanner(<UploadBanner />)} />
-    }, []);
+    };
 
     const reload = <Button onClick={Info.sync} variant='secondary' img='RefreshClockwise'>Reload</Button>;
   

@@ -30,7 +30,7 @@ export namespace Windows {
 
   export interface Window extends Stack.Props {
     name: string;
-    uuid: μ.Window;
+    uuid: string;
     active?: boolean;
     fixed?: boolean;
     icon: Icon.Name;

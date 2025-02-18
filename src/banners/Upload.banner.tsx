@@ -450,8 +450,6 @@ export function UploadBanner() {
   const [customFrame, setCustomFrame] = useState<boolean>(false);
   const [frame, setFrame] = useState<MinMax>(MinMaxBase);
 
-  const customFrameCheckChangeHandler = (v: boolean) => setCustomFrame(true);
-
   const frameInputChangeHandler = (event: ChangeEvent<HTMLInputElement>, type: keyof MinMax) => {
     const value = event.target.valueAsDate;
     
@@ -488,7 +486,7 @@ export function UploadBanner() {
         />
         <Button variant='outline' className={s.addFiles} img='Plus'>Add files</Button>
       </Stack>
-      <Toggle option={['Ingest everything', 'Use limits']} checked={customFrame} onCheckedChange={customFrameCheckChangeHandler} />
+      <Toggle option={['Ingest everything', 'Use limits']} checked={customFrame} onCheckedChange={setCustomFrame} />
       {customFrame ? <Stack>
         <Input
           variant='highlighted'

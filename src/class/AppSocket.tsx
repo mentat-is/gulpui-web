@@ -59,11 +59,13 @@ export class AppSocket extends WebSocket {
             toast('Query finished', {
               description: `Total processed documents: ${message.data.total_hits ?? 0}`
             });
+            this.info.request_finish(message.req_id, message.data.status)
           } else {
             toast.error('Query failed', {
               description: message.data.error ?? 'Unknown error',
               richColors: true
             });
+            this.info.request_finish(message.req_id, message.data.status);
           }
           return;
       }
