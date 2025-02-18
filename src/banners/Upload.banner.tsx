@@ -134,10 +134,11 @@ export function UploadBanner() {
     });
 
     Info.request_add({
-      for: '' as λFile['id'],
+      for: null,
       id: response.req_id,
       status: response.status,
-      type: 'ingest'
+      type: 'ingest',
+      on: Date.now()
     });
 
     if (response.isError() && response.data.continue_offset) {

@@ -23,6 +23,7 @@ export namespace Requests {
     useEffect(() => {
       Info.request_list().then(reqs => {
         console.log(reqs);
+        Info.request_replace(...app.general.requests, ...reqs.filter(r => r.status === 'ongoing' && !app.general.requests.find(req => req.id === r.id)));
       });
     }, []);
 
@@ -47,7 +48,7 @@ export namespace Requests {
         <Icon name='FunctionPython' />
         <p>{request.id}</p>
         <span>for</span>
-        <p>{File.id(app, request.for).name}</p>
+        <p>{request.for ? File.id(app, request.for).name : 'unknown file'}</p>
         <Status status={request.status} />
         {!Requests.Status.FinishedStatuses.includes(request.status) && <Badge variant='destructive' onClick={() => Info.request_cancel(request.id)} value='Cancel' />}
       </Stack>
@@ -56,8 +57,8 @@ export namespace Requests {
 
   export function Status({ status, ...props }: Status.Props) {
     return (
-      <Stack className={s.status} style={{ background: Requests.Status.BackgroundsMap[status], color: Requests.Status.ColorsMap[status] }} {...props}>
-        <Icon size={14} name={Requests.Status.IconsMap[status]} />
+      <Stack className={s.status} gap={6} style={{ background: Requests.Status.BackgroundsMap[status], color: Requests.Status.ColorsMap[status] }} {...props}>
+        <Icon size={12} name={Requests.Status.IconsMap[status]} />
         {capitalize(status)}
       </Stack>
     )
@@ -73,7 +74,8 @@ export namespace Requests {
       canceled: 'X',
       error: 'X',
       failed: 'X',
-      pending: 'Status',
+      pending: 'StatusSmall',
+      ongoing: 'StatusSmall',
       success: 'Check'
     }
     
@@ -83,6 +85,7 @@ export namespace Requests {
       error: 'var(--red-900)',
       failed: 'var(--amber-900)',
       pending: 'var(--blue-900)',
+      ongoing: 'var(--blue-900)',
       success: 'var(--green-900)'
     }
 
@@ -92,6 +95,7 @@ export namespace Requests {
       error: 'var(--red-200)',
       failed: 'var(--amber-200)',
       pending: 'var(--blue-200)',
+      ongoing: 'var(--blue-200)',
       success: 'var(--green-200)'
     }
 

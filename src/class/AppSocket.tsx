@@ -1,5 +1,4 @@
 import { Event, Info, Internal } from '@/class/Info';
-import { λApp } from '@/dto';
 import { ΞEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
 import { toast } from 'sonner';
@@ -7,19 +6,21 @@ import { toast } from 'sonner';
 export class AppSocket extends WebSocket {
   static instance: AppSocket | null = null;
   info!: Info;
-  app!: λApp;
 
-  constructor(info: Info, app: λApp) {
+  constructor(info: Info) {
+    console.log(info);
     if (AppSocket.instance) {
       AppSocket.instance.info = info;
-      AppSocket.instance.app = app;
       return AppSocket.instance;
+    }
+
+    if (!Internal.Settings.token) {
+      return;
     }
 
     super(Internal.Settings.server + '/ws');
 
     this.info = info;
-    this.app = app;
     AppSocket.instance = this;
 
     this.onopen = (ev) => {
@@ -36,6 +37,13 @@ export class AppSocket extends WebSocket {
       const message = JSON.parse(data);
 
       const { data: chunk } = message;
+
+      console.log(this.info.app.general.requests);
+
+      if (this.info.app.general.requests.find(r => r.id === message.req_id && r.status !== 'ongoing' && r.status !== 'pending')) {
+        Logger.error(`Recieved package for finished request ${message.req_id}`, AppSocket.name);
+        return;
+      }
 
       switch (true) {
         case message.type === 'docs_chunk':

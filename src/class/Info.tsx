@@ -494,7 +494,8 @@ export class Info implements InfoProps {
         id: res.req_id,
         for: file.id,
         status: res.status,
-        type: 'query'
+        type: 'query',
+        on: Date.now()
       })
     });
   };
@@ -515,13 +516,14 @@ export class Info implements InfoProps {
 
   request_cancel_for_file = (file: λFile['id']) => Promise.all(this.app.general.requests.filter(r => r.for === file && r.status === 'pending').map(r => this.request_cancel(r.id)))
 
-  request_finish = (id: λRequest['id'], status: λRequest['status']): λFile['id'] | undefined => {
+  request_finish = (id: λRequest['id'], status: λRequest['status']): λFile['id'] | null => {
     const exist = this.app.general.requests.find(r => r.id === id);
     if (exist) {
       exist.status = status;
       this.request_replace(...this.app.general.requests);
       return exist.for;
     }
+    return null
   }
 
   request_list = () => api<GulpDataset.RequestList.Summary>('/request_list', { method: 'POST' });
