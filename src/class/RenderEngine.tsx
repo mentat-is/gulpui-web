@@ -266,7 +266,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public loading = (file: λFile) => {
     this.ctx.beginPath();
-    this.ctx.fillStyle = '#e8e8e880';
+    this.ctx.strokeStyle = '#e8e8e8';
     this.ctx.setLineDash([5, 5]);
     const height = File.getHeight(this.info.app, file, this.scrollY);
     this.ctx.moveTo(0, height);

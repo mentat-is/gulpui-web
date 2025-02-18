@@ -11,13 +11,11 @@ import { Operation } from '@/banners/Operation.banner';
 import { useWindows } from '@/ui/Windows';
 import { Enrichment } from '@/banners/Enrichment.banner';
 import { Permissions } from '@/banners/Permissions.banner';
-import { toast } from 'sonner';
-import { Logger } from '@/dto/Logger.class';
-import { download } from '@/ui/utils';
 import { Export } from '@/banners/Export.banner';
+import { Requests } from '@/banners/Requests.banner';
 
 export function Menu() {
-  const { spawnBanner, destroyDialog } = useApplication();
+  const { app, spawnBanner, destroyDialog } = useApplication();
   const { setWindows } = useWindows();
 
   const backToOperations = () => {
@@ -45,6 +43,7 @@ export function Menu() {
       <Button variant='secondary' title='Export canvas' img='ImageDown' onClick={() => spawnBanner(<Export.Banner />)} />
       <Button variant='secondary' title='Data enrichment' img='PrismColor' onClick={enrichment} />
       <Stack flex />
+      <Button className={s.requests} variant='secondary' title='Requests' size='icon' onClick={() => spawnBanner(<Requests.Banner />)}>{app.general.requests.filter(r => r.status === 'pending').length}</Button>
       {<Button variant='secondary' title='Manage Permissions' img='UserSettings' onClick={() => spawnBanner(<Permissions.Banner />)} />}
       <Button variant='secondary' title='Back to operations' img='Undo2' onClick={backToOperations} />
       <Button variant='secondary' img='LogOut' title='Logout' onClick={logout} />

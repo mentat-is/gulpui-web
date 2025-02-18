@@ -1,0 +1,8 @@
+.status {
+  height: 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--round);
+  line-height: 0;
+}
