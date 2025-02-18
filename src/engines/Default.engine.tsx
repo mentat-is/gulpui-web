@@ -45,7 +45,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     if (events.length === 0) {
       return map;
     }
-    
+
     const firstEvent = events[0];
     const lastEvent = events[events.length - 1];
     
@@ -62,18 +62,13 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       )
     };
   
-    if (visiblePixelRange.min >= visiblePixelRange.max) {
-      return map;
-    }
-  
     const getTimestampForPixel = (x: number): number => {
-      const { min, max } = file.timestamp;
       const scrollX = this.renderer.scrollX;
     
-      const visibleWidth = this.renderer.getPixelPosition(max) - this.renderer.getPixelPosition(min);
+      const visibleWidth = this.renderer.ctx.canvas.width * this.renderer.info.app.timeline.scale;
       const pixelOffset = x + scrollX;
     
-      return min + (pixelOffset / visibleWidth) * (max - min);
+      return this.renderer.info.app.timeline.frame.min + (pixelOffset / visibleWidth) * (this.renderer.info.app.timeline.frame.max - this.renderer.info.app.timeline.frame.min);
     };    
   
     const findClosestEventIndex = (targetTimestamp: number): number => {
@@ -124,7 +119,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
         parseInt(event[file.settings.field].toString()) as Hardcode.Height,
         event.timestamp as Hardcode.Timestamp
       ]);
-    }  
+    }
 
     map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale;
     map[MinHeight] = file.code.min as Hardcode.Height;
