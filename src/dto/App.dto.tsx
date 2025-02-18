@@ -30,7 +30,6 @@ export interface λApp {
     }>;
     mappings: λMapping.Plugin[];
     plugins: GulpDataset.PluginList.Summary;
-    ingest: string[]
   }
   general: λUser & {
     server: string;
@@ -99,7 +98,6 @@ export const BaseInfo: λApp = {
     glyphs: [],
     mappings: [],
     plugins: [],
-    ingest: []
   }
 }
 

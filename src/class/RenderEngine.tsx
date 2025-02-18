@@ -253,9 +253,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     this.ctx.textAlign='right'
     this.ctx.fillStyle = '#e8e8e8';
-    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), left, line.one);
+    this.ctx.fillText(file.total.toString(), left, line.one);
     this.ctx.fillStyle = '#a1a1a1';
-    this.ctx.fillText(file.total.toString(), left, line.two);
+    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), left, line.two);
     this.ctx.fillStyle = '#0372ef';
     this.ctx.fillText(events, left, line.three);
 

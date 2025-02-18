@@ -117,7 +117,7 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
 
 export type λRequest = {
   id: μ.Request;
-  type: 'query',
+  type: 'query' | 'ingest',
   for: λFile['id'];
   status: 'done' | 'failed' | 'canceled' | 'pending' | 'error' | 'success';
 };

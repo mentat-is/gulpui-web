@@ -379,7 +379,7 @@ export class Info implements InfoProps {
   }, 'timeline', 'filtering_options');
 
   refetch = async ({
-    ids: _ids = File.selected(this.app).filter(f => !this.app.target.ingest.includes(sha1(f.name))).map(f => f.id),
+    ids: _ids = File.selected(this.app).map(f => f.id),
     hidden,
     range,
     filter
@@ -948,25 +948,6 @@ export class Info implements InfoProps {
 
     Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
     this.setInfoByKey(true, 'general', 'glyphs_syncronized');
-  }
-
-  start_ingesting = (req_id: string) => {
-    if (!this.app.target.ingest.includes(req_id)) {
-      Logger.log(`Ingestion started for ${req_id} at ${new Date(Date.now()).toISOString()}`);
-      this.app.target.ingest.push(req_id);
-      this.setInfo(this.app);
-    }
-    
-  }
-  end_ingesting = (req_id: string) => {
-    Logger.log(`Ingestion done for ${req_id} at ${new Date(Date.now()).toISOString()}`);
-    this.app.target.ingest.filter(id => req_id !== id);
-    const file = File.selected(this.app).find(f => sha1(f.name) === req_id);
-    if (file) {
-      this.refetch({ ids: [file.id] });
-    }
-    
-    this.setInfo(this.app);
   }
 
   sync = async () => {

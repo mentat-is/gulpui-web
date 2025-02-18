@@ -22,7 +22,7 @@ export namespace SelectFiles {
   }
 
   export function Banner({ ...props }: Banner.Props) {
-    const { app, Info, spawnBanner } = useApplication();
+    const { app, Info, spawnBanner, destroyBanner } = useApplication();
     const [filter, setFilter] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(!app.target.operations.length && !app.target.contexts.length);
    
@@ -123,7 +123,13 @@ export namespace SelectFiles {
       return <Button img='Upload' variant='ghost' onClick={() => spawnBanner(<UploadBanner />)} />
     };
 
-    const reload = <Button onClick={Info.sync} variant='secondary' img='RefreshClockwise'>Reload</Button>;
+    const reloadClickHandler = async () => {
+      await Info.sync();      
+      destroyBanner();
+      spawnBanner(<Banner {...props} />)
+    }
+
+    const reload = <Button onClick={reloadClickHandler} variant='secondary' img='RefreshClockwise'>Reload</Button>;
   
     return (
       <UIBanner title='Select sources' subtitle={reload} className={s.banner} done={done} option={<UploadButton />} {...props}>

@@ -16,7 +16,7 @@ import { Toggle } from '@/ui/Toggle';
 import { toast } from 'sonner';
 import { Separator } from '@/ui/Separator';
 import { cn } from '@impactium/utils';
-import { Default, λContext } from '@/dto/Dataset';
+import { Default, λContext, λFile } from '@/dto/Dataset';
 import { sha1 } from 'js-sha1';
 
 interface λIngestFileSettings {
@@ -133,7 +133,12 @@ export function UploadBanner() {
       },
     });
 
-    Info.start_ingesting(hash);
+    Info.request_add({
+      for: '' as λFile['id'],
+      id: response.req_id,
+      status: response.status,
+      type: 'ingest'
+    });
 
     if (response.isError() && response.data.continue_offset) {
       await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset), id);
