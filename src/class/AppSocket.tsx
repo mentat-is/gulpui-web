@@ -8,14 +8,9 @@ export class AppSocket extends WebSocket {
   info!: Info;
 
   constructor(info: Info) {
-    console.log(info);
     if (AppSocket.instance) {
       AppSocket.instance.info = info;
       return AppSocket.instance;
-    }
-
-    if (!Internal.Settings.token) {
-      return;
     }
 
     super(Internal.Settings.server + '/ws');
@@ -23,7 +18,7 @@ export class AppSocket extends WebSocket {
     this.info = info;
     AppSocket.instance = this;
 
-    this.onopen = (ev) => {
+    this.onopen = () => {
       Logger.log(`WebSocket has been initialized with id: ${this.info.app.general.ws_id}`, AppSocket.name, {
         toast: true
       });
@@ -38,8 +33,7 @@ export class AppSocket extends WebSocket {
 
       const { data: chunk } = message;
 
-      console.log(this.info.app.general.requests);
-
+      // TODO: Remove if BE implemented
       if (this.info.app.general.requests.find(r => r.id === message.req_id && r.status !== 'ongoing' && r.status !== 'pending')) {
         Logger.error(`Recieved package for finished request ${message.req_id}`, AppSocket.name);
         return;

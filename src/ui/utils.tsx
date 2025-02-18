@@ -354,3 +354,11 @@ export class Algorhithm implements Algorhithm.Constructor {
 
   center_scroll_from_timestamp = (timestamp: number) => Math.round(this.abs_x_from_timestamp(timestamp) - this.width / (2 * this.scale))
 }
+
+export type Maybe<T> = T | null;
+
+export type Sometimes<T> = Maybe<T> | undefined;
+
+export type NotSure<T> = T[] | T;
+
+export type Usual<T> = Sometimes<T> & NotSure<T>;

@@ -380,7 +380,6 @@ export class Info implements InfoProps {
 
   refetch = async ({
     ids: _ids = File.selected(this.app).map(f => f.id),
-    hidden,
     range,
     filter
   }: RefetchOptions = {}) => {
@@ -467,25 +466,18 @@ export class Info implements InfoProps {
   }
 
   query_file = async (file: λFile, range?: MinMax, filter?: string) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     const operation = Operation.selected(this.app);
     if (!operation) {
       return;
     }
 
-    const path = (Filter.exist(this.app, file) || filter) ? '/query_raw' : '/query_gulp';
-
     const body = Filter.body(this.app, file, range, filter);
 
-    return await api<undefined>(path, {
+    return await api<void>('/query_raw', {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
-        index
+        operation_id: operation.id
       },
       body,
       raw: true
@@ -1454,48 +1446,6 @@ export class Filter {
     return filters;
   }
 
-  public static base = (file: λFile, range?: MinMax) => ({
-    operation_ids: [
-      file.operation_id
-    ],
-    context_ids: [
-      file.context_id
-    ],
-    int_filter: [
-      file.nanotimestamp.min > (BigInt(range?.min ?? 0) * 1000000n)
-        ? file.nanotimestamp.min.toString()
-        : (BigInt(range?.min ?? 0) * 1000000n).toString(),
-      file.nanotimestamp.max < (BigInt(range?.max ?? 0) * 1000000n)
-        ? file.nanotimestamp.max.toString()
-        : (BigInt(range?.max ?? 0) * 1000000n).toString(),
-    ],
-    source_ids: [
-      file.id
-    ]
-  })
-
-  public static events = (file: λFile, events: λEvent['id'][]) => {
-    const body: Record<string, any> = {
-      q_options: {
-        sort: {
-          '@timestamp': 'desc'
-        }
-      }
-    };
-
-    body.flt = Filter.base(file);
-
-    body.q = {
-      query: {
-        query_string: {
-          query: events.map(id => `_id: ${id}`).join(' OR ')
-        }
-      }
-    }
-
-    return body;
-  }
-
   /** 
    * @returns Стринговое поле фильтра
    */
@@ -1529,6 +1479,10 @@ export class Filter {
     }).join('');
   }
 
+  public static quotes = (str: string) => str.includes(' ') ? `"${str}"` : str
+
+  public static base = (file: λFile, range?: MinMax) => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
+
   public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
 
   public static exist = (app: λApp, file: λFile) => Filter.find(app, file).length > 0;
@@ -1542,14 +1496,15 @@ export class Filter {
       }
     };
 
-    body.flt = Filter.base(file, range);
+    body.q = body.q || [];
+    // TODO: Inplement type for this shi
+    const query: Record<any, any> = {
+      query_string: {
+        query: `${Filter.base(file, range)} AND ${filter || Filter.query(app, file)}`
+      }
+    };
 
-    if (filter || Filter.exist(app, file)) {
-      body.q = body.q || {};
-      body.q.query = {}
-      body.q.query.query_string = {}
-      body.q.query.query_string.query = filter || Filter.query(app, file);
-    }
+    body.q.push(query);
 
     return body;
   };
