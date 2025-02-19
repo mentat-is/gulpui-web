@@ -60,7 +60,7 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     Info.refetch({
       ids: file.id,
       hidden: true,
-      filter: base + Filter.query(app, file)
+      filter: base + (manual ? raw : Filter.query(app, file))
     }).then(() => {
       destroyBanner();
       Info.render();
