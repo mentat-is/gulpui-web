@@ -1487,7 +1487,7 @@ export class Filter {
 
   public static exist = (app: λApp, file: λFile) => Filter.find(app, file).length > 0;
   
-  static body = (app: λApp, file: λFile, range?: MinMax, filter?: string) => {
+  static body = (app: λApp, file: λFile, range?: MinMax, filter: string = Filter.query(app, file)) => {
     const body: Record<string, any> = {
       q_options: {
         sort: {
@@ -1500,11 +1500,11 @@ export class Filter {
     // TODO: Inplement type for this shi
     const query: Record<any, any> = {
       query_string: {
-        query: `${Filter.base(file, range)} AND ${filter || Filter.query(app, file)}`
+        query: `${Filter.base(file, range)} ${filter ? `AND ${filter}` : ''}`
       }
     };
 
-    body.q.push(query);
+    body.q.push({ query });
 
     return body;
   };
