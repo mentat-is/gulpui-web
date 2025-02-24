@@ -86,6 +86,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     Info.login(user);
     await Info.index_reload();
     await Info.plugin_list();
+    await Info.glyphs_reload();
     await Info.sync();
     await Info.sync();
     await Info.sync();
@@ -121,7 +122,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   }
 
   const LoginMethods = () => {
-    if (methods.length === 1 && methods[0].name === 'gulp') {
+    if (methods.length === 0 || (methods.length === 1 && methods[0].name === 'gulp')) {
       return null;
     }
 

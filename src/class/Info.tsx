@@ -1710,9 +1710,8 @@ export class Note {
 
   public static timestamp = (app: λApp, note: λNote): number => {
     let sum = 0
-    const events = Note.events(app, note);
-    events.forEach(e => sum += e.timestamp);
-    return sum / events.length || 1;
+    note.docs.forEach(d => sum += d.timestamp);
+    return sum / note.docs.length || 1;
   }
 }
 
@@ -1726,13 +1725,11 @@ export class Link {
     docs
   } satisfies λLink);
 
-  public static timestamp = (app: λApp, link: λLink): number => {
-    const events = link.docs;
-
+  public static timestamp = (link: λLink): number => {
     let sum = 0
 
-    events.forEach(e => sum += e.timestamp);
-    return (sum / events.length || 1);
+    link.docs.forEach(d => sum += d.timestamp);
+    return (sum / link.docs.length || 1);
   }
 }
 

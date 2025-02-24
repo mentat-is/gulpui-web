@@ -230,7 +230,7 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
     spawnDialog(<DisplayGroupDialog events={[]} />);
   }, [app.target.events]);
 
-  const getPixelPosition = (timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
+  const getPixelPosition = useCallback((timestamp: number) => Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX, [scrollX, Info.width, app.timeline.frame]);
 
   const handleContextMenu = (event: MouseEvent) => {
     const index = Math.floor((event.clientY + scrollY - timeline.current!.getBoundingClientRect().top) / 48)
