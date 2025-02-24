@@ -33,12 +33,6 @@ export class AppSocket extends WebSocket {
 
       const { data: chunk } = message;
 
-      // TODO: Remove if BE implemented
-      if (this.info.app.general.requests.find(r => r.id === message.req_id && r.status !== 'ongoing' && r.status !== 'pending')) {
-        Logger.error(`Recieved package for finished request ${message.req_id}`, AppSocket.name);
-        return;
-      }
-
       switch (true) {
         case message.type === 'docs_chunk':
           const rawEvents: ΞEvent[] = chunk.docs;

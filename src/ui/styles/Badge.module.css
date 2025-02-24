@@ -11,6 +11,7 @@
   font-weight: 400;
   transition: background-color 0.2s;
   outline: none;
+  gap: 6px;
 }
 
 .badge:focus {

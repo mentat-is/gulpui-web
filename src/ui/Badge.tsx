@@ -20,7 +20,7 @@ const badgeVariants = cva(styles.badge, {
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-      value: React.ReactNode;
+      value?: React.ReactNode;
     }
 
 function Badge({ className, variant, value, ...props }: BadgeProps) {
