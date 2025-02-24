@@ -5,9 +5,12 @@ import { Badge } from "@/ui/Badge";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Stack } from "@impactium/components";
 import { Icon } from "@impactium/icons";
-import { capitalize } from "@impactium/utils";
+import { capitalize, cn } from "@impactium/utils";
 import { useEffect, useState } from "react";
 import s from './styles/RequestsBanner.module.css';
+import { formatDistanceToNow } from "date-fns";
+import { enUS } from 'date-fns/locale';
+import { Toggle } from "@/ui/Toggle";
 
 export namespace Requests {
   export namespace Banner {
@@ -16,20 +19,22 @@ export namespace Requests {
     }
   }
 
-  export function Banner({ ...props }: Requests.Banner.Props) {
+  export function Banner({ className, ...props }: Requests.Banner.Props) {
     const { Info, app } = useApplication();
-    const [unknown, setUnknown] = useState<λRequest[]>([]);
+    const [isAll, setIsAll] = useState<boolean>(false);
 
     useEffect(() => {
       Info.request_list().then(reqs => {
-        console.log(reqs);
-        Info.request_replace(...app.general.requests, ...reqs.filter(r => r.status === 'ongoing' && !app.general.requests.find(req => req.id === r.id)));
+        Info.request_replace(...app.general.requests, ...reqs.filter(r => !app.general.requests.find(req => req.id === r.id)));
       });
     }, []);
 
     return (
-      <UIBanner title='Requests list' {...props}>
-        {app.general.requests.map(request => <Requests.Combination request={request} />)}
+      <UIBanner className={cn(className, s.banner)} title='Requests list' {...props}>
+        <Stack dir='column' gap={0} className={s.list}>
+          {app.general.requests.filter(r => isAll ? true : r.status !== 'done').map(request => <Requests.Combination request={request} />)}
+        </Stack>
+        <Toggle option={['Hide completed', 'Show all']} checked={isAll} onCheckedChange={setIsAll} />
       </UIBanner>
     )
   }
@@ -43,23 +48,32 @@ export namespace Requests {
   export function Combination({ request, className, ...props }: Requests.Combination.Props) {
     const { Info, app } = useApplication();
 
+    const timeAgo = (timestamp: number): string => {
+      return formatDistanceToNow(new Date(timestamp), { addSuffix: true, locale: enUS });
+    };
+
     return (
-      <Stack>
-        <Icon name='FunctionPython' />
-        <p>{request.id}</p>
-        <span>for</span>
-        <p>{request.for ? File.id(app, request.for).name : 'unknown file'}</p>
+      <Stack className={s.combination}>
         <Status status={request.status} />
-        {!Requests.Status.FinishedStatuses.includes(request.status) && <Badge variant='destructive' onClick={() => Info.request_cancel(request.id)} value='Cancel' />}
+        <p className={s.id}>{request.id}</p>
+        <span>for</span>
+        <p className={s.file}>{request.for ? File.id(app, request.for).name : 'unknown file'}</p>
+        <hr />
+        <p className={s.time_ago}>{timeAgo(request.on)}</p>
+        {!Requests.Status.FinishedStatuses.includes(request.status) && (
+          <Badge className={s.close} variant='destructive' onClick={() => Info.request_cancel(request.id)}>
+            <Icon name='X' />
+            Cancel
+          </Badge>
+        )}
       </Stack>
     )
   }
 
   export function Status({ status, ...props }: Status.Props) {
     return (
-      <Stack className={s.status} gap={6} style={{ background: Requests.Status.BackgroundsMap[status], color: Requests.Status.ColorsMap[status] }} {...props}>
+      <Stack className={s.status} style={{ background: Requests.Status.BackgroundsMap[status], color: Requests.Status.ColorsMap[status] }} {...props}>
         <Icon size={12} name={Requests.Status.IconsMap[status]} />
-        {capitalize(status)}
       </Stack>
     )
   }

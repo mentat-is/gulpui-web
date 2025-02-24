@@ -1,5 +1,5 @@
 import { type λApp } from '@/dto';
-import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink, λGroup, λRequest } from '@/dto/Dataset';
+import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink, λGroup, λRequest, ΞRequest } from '@/dto/Dataset';
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
 import { λIndex } from '@/dto/Index.dto';
@@ -14,8 +14,6 @@ import { SetState } from './API';
 import { λMapping } from '@/dto/MappingFileList.dto';
 import { Glyph } from '@/ui/Glyph';
 import { Icon } from '@impactium/icons';
-import { sha1 } from 'js-sha1';
-import { MaybeArray } from '@impactium/types';
 import { Permissions } from '@/banners/Permissions.banner';
 import { toast } from 'sonner';
 
@@ -135,7 +133,7 @@ export namespace GulpDataset {
     }
   }
   export namespace RequestList {
-    export type Summary = λRequest[];
+    export type Summary = ΞRequest[];
   }
 }
 
@@ -502,7 +500,7 @@ export class Info implements InfoProps {
   
   request_add = (req: λRequest) => this.request_replace(...this.app.general.requests, req);
 
-  request_replace = (...req: λRequest[]) => this.setInfoByKey(req, 'general', 'requests');
+  request_replace = (...req: λRequest[]) => this.setInfoByKey(req.sort((a, b) => b.on - a.on), 'general', 'requests');
 
   request_cancel = (req_id_to_cancel: λRequest['id']) => {
     const fileId = this.request_finish(req_id_to_cancel, 'canceled');    
@@ -526,7 +524,13 @@ export class Info implements InfoProps {
     return null
   }
 
-  request_list = () => api<GulpDataset.RequestList.Summary>('/request_list', { method: 'POST' });
+  request_list = (): Promise<λRequest[]> => api<GulpDataset.RequestList.Summary>('/request_list', { method: 'POST' }).then(reqs => reqs.map(r => ({
+    id: r.id,
+    for: null,
+    on: r.time_created,
+    status: r.status,
+    type: 'unknown'
+  })));
 
   filters_cache = (file: λFile | μ.File) => {
     Logger.log(`Caching has been requested for file ${File.id(this.app, file).name}`, Info.name);
@@ -1726,10 +1730,10 @@ export class Link {
   } satisfies λLink);
 
   public static timestamp = (link: λLink): number => {
-    let sum = 0
+    let sum = 0;
 
-    link.docs.forEach(d => sum += d.timestamp);
-    return (sum / link.docs.length || 1);
+    link.docs?.forEach(d => sum += d.timestamp);
+    return (sum / link.docs?.length || 1);
   }
 }
 

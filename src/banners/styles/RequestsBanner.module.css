@@ -1,8 +1,54 @@
-.status {
+.status,
+.close {
   height: 20px;
   font-family: var(--font-mono);
   font-size: 12px;
   padding: 2px 8px;
-  border-radius: var(--round);
+  border-radius: 2px;
   line-height: 0;
+  flex-shrink: 0 !important;
+}
+.status {
+  padding: 4px;
+}
+.list {
+  width: 100%;
+  border: 1px solid var(--gray-400);
+  max-height: 512px;
+  overflow: auto;
+  border-radius: 6px;
+  max-width: 60vw;
+}
+.combination {
+  height: 28px;
+  width: 100%;
+  padding: 8px 4px;
+}
+.list .combination:not(:last-child) {
+  border-bottom: var(--geist-border);
+}
+.combination * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.combination .id {
+  flex-shrink: 0;
+}
+.combination span {
+  color: var(--text-dimmed);
+  flex-shrink: 0;
+}
+.combination .file {
+  color: var(--text-dimmed);
+}
+.combination hr {
+  flex: 1;
+}
+.time_ago {
+  font-size: 10px;
+  color: var(--text-dimmed);
+  flex-shrink: 0;
 }

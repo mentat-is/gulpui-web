@@ -22,7 +22,7 @@ export function LinksDisplayer({ getPixelPosition, scrollY }: LinksDisplayerProp
       const event = Event.id(app, link.doc_id_from);
       if (!event || !selectedFiles.has(event.file_id)) return null;
 
-      const timestamp = Link.timestamp(app, link);
+      const timestamp = Link.timestamp(link);
       if (!timestamp) return null;
 
       const left = getPixelPosition(timestamp);

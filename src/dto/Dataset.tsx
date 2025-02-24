@@ -117,11 +117,33 @@ export type λNote<T extends Extendable = {}> = GulpObject<μ.Note, T> & {
 
 export type λRequest = {
   id: μ.Request;
-  type: 'query' | 'ingest',
+  type: 'query' | 'ingest' | 'unknown',
   for: λFile['id'] | null;
   status: 'done' | 'failed' | 'canceled' | 'ongoing' | 'pending' | 'error' | 'success';
   on: number;
 };
+
+export interface ΞRequest {
+  completed: string
+  granted_user_group_ids: λUser['id'][]
+  granted_user_ids: λUser['id'][]
+  id: λRequest['id']
+  name: string
+  owner_user_id: λUser['id']
+  records_failed: number
+  records_ingested: number
+  records_processed: number
+  records_skipped: number
+  source_failed: number
+  source_processed: number
+  source_total: number
+  status: λRequest['status']
+  time_created: number
+  time_expire: number
+  time_finished: number
+  time_updated: number
+  type: 'request_stats'
+}
 
 export namespace Default {
   type Object = 'INDEX' | 'OPERATION' | 'CREATE_OPERATION' | 'CONTEXT' | 'FILE' | 'NOTE' | 'LINK' | 'EVENT';

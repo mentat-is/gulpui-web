@@ -8,7 +8,6 @@ export class AppSocket extends WebSocket {
   info!: Info;
 
   constructor(info: Info) {
-    console.log(info);
     if (AppSocket.instance) {
       AppSocket.instance.info = info;
       return AppSocket.instance;
@@ -37,8 +36,6 @@ export class AppSocket extends WebSocket {
       const message = JSON.parse(data);
 
       const { data: chunk } = message;
-
-      console.log(this.info.app.general.requests);
 
       if (this.info.app.general.requests.find(r => r.id === message.req_id && r.status !== 'ongoing' && r.status !== 'pending')) {
         Logger.error(`Recieved package for finished request ${message.req_id}`, AppSocket.name);
