@@ -154,6 +154,7 @@ export namespace Internal {
   export enum LocalStorageItemsList {
     TIMELINE_RENDER_ENGINE = 'settings.__engine',
     TIMELINE_RENDER_COLOR = 'settings.__color',
+    TIMELINE_PRETTY_CROSSHAIR = 'settings.__crosshair',
     TIMELINE_FOCUS_FIELD = 'settings.__field',
     GENERAL_SERVER_VALUE = '__server',
     GENERAL_TOKEN_VALUE = '__token',
@@ -171,7 +172,8 @@ export namespace Internal {
       engine: 'default',
       color: 'thermal',
       field: 'weight',
-      offset: 0
+      offset: 0,
+      crosshair: true
     }
 
     public static get engine(): Engine.List {
@@ -227,7 +229,8 @@ export namespace Internal {
         engine: Settings.engine,
         color: Settings.color,
         field: Settings.field,
-        offset: 0
+        offset: 0,
+        crosshair: Settings.crosshair
       }
     }
 
@@ -261,6 +264,22 @@ export namespace Internal {
  
     public static set token(token: string) {
       localStorage.setItem(Internal.LocalStorageItemsList.GENERAL_TOKEN_VALUE, token);
+    }
+
+    public static get crosshair(): boolean {
+      const value = localStorage.getItem(Internal.LocalStorageItemsList.TIMELINE_PRETTY_CROSSHAIR);
+
+      if (value) {
+        return value === 'true';
+      }
+
+      Internal.Settings.crosshair = Internal.Settings.default.crosshair;
+
+      return Internal.Settings.crosshair;
+    }
+
+    public static set crosshair(crosshair: boolean) {
+      localStorage.setItem(Internal.LocalStorageItemsList.TIMELINE_PRETTY_CROSSHAIR, String(crosshair));
     }
   }
 
@@ -1504,7 +1523,7 @@ export class Filter {
     // TODO: Inplement type for this shi
     const query: Record<any, any> = {
       query_string: {
-        query: `${Filter.base(file, range)} ${filter ? `AND ${filter}` : ''}`
+        query: Filter.base(file, range) + `${filter ? ` AND ${filter}` : ''}`
       }
     };
 

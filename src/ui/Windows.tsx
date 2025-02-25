@@ -19,6 +19,7 @@ import { Default } from '@/dto/Dataset';
 import { IndexBanner } from '@/banners/Index.banner';
 import { cn } from '@impactium/utils';
 import { Resizer } from './Resizer';
+import { Settings } from '@/banners/Settings.banner';
 
 export namespace Windows {
   export interface Props {
@@ -220,6 +221,7 @@ const NoWindows = () => {
         <Button img='Upload' variant='outline' onClick={() => spawnBanner(<UploadBanner />)}>Upload file</Button>
       </Stack>
       <Button style={{ width: 285 }} img='Undo2' variant='outline' onClick={backToOperations}>Back to operations</Button>
+      <Button style={{ width: 285 }} img='Settings' variant='outline' onClick={() => spawnBanner(<Settings.Banner />)}>Settings</Button>
       <Button className={s.hint} variant='link' asChild><a href='https://github.com/mentat-is/gulpui-web/blob/master/README.md'>See documentation for more information</a></Button>
       <img src='/mentat.png' className={s.logo} />
     </Stack>

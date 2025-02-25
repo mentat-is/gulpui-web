@@ -25,23 +25,23 @@ interface λIngestFileSettings {
   mapping?: string;
 }
 
-const FILE_SIGNATURES = (() => {
-  const list: Record<string, MaybeArray<Uint8Array>> = {};
-  list['win_evtx.py'] = new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65]);
-  list['systemd_journal.py'] = new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])
-  list['sqlite.py'] = new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])
-  list['pcap.py'] = new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A ]);
-  list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4 ]);
-  list['pcap.py'] = new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1 ]);
-  list['pcap.py'] = new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d ]);
-  list['pcap.py'] = new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1 ]);
-  list['win_reg.py'] = new Uint8Array([0x72, 0x65, 0x67, 0x66]);
-  list['win_pe.py'] = new Uint8Array([0x4D, 0x5A]);
-  list['zip.py'] = new Uint8Array([0x50, 0x4B, 0x05, 0x06]);
-  list['zip.py'] = new Uint8Array([0x50, 0x4B, 0x07, 0x08]);
-  list['zip.py'] = new Uint8Array([0x50, 0x4B, 0x03, 0x04]);
-  return list;
-})();
+const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
+  'win_evtx.py': [new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65])],
+  'systemd_journal.py': [new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])],
+  'sqlite.py': [new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])],
+  'pcap.py': [new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A]), new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4]), new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1]), new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d]), new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1])],
+  'win_reg.py': [new Uint8Array([0x72, 0x65, 0x67, 0x66])],
+  'win_pe.py': [new Uint8Array([0x4D, 0x5A])],
+  'zip.py': [new Uint8Array([0x50, 0x4B, 0x05, 0x06]), new Uint8Array([0x50, 0x4B, 0x07, 0x08]), new Uint8Array([0x50, 0x4B, 0x03, 0x04])]
+};
+
+let MAX_BYTE_LENGTH = 0;
+
+Object.values(FILE_SIGNATURES).forEach(array => {
+  array.forEach(entity => {
+    MAX_BYTE_LENGTH = Math.max(entity.length, MAX_BYTE_LENGTH);
+  })
+})
 
 interface TargetSelection {
   file: File
@@ -250,41 +250,28 @@ export function UploadBanner() {
   }, [settings]);
 
   const getExtensionMapping = async (file: File): Promise<string | undefined> => {
-    const readChunk = (size: number): Promise<ArrayBuffer> =>
+    const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
+      const slice = new Uint8Array(buffer);
+      return uint.every((value, index) => value === slice[index]);
+    };
+
+    const readChunk = (): Promise<ArrayBuffer> =>
       new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as ArrayBuffer);
         reader.onerror = reject;
-        reader.readAsArrayBuffer(file.slice(0, size));
+        reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH));
       });
 
-    const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
-      const slice = new Uint8Array(buffer);
-      return slice.every((value, index) => value === uint[index]);
-    };
+    const buffer = await readChunk();
 
-    const buffer = await readChunk(256);
-
-    return Object.keys(FILE_SIGNATURES).find(key => {
-      const signature = FILE_SIGNATURES[key];
-      return Array.isArray(signature)
-        ? signature.some(uint => isEqual(buffer, uint))
-        : isEqual(buffer, signature);
-    });
+    return Object.keys(FILE_SIGNATURES).find(key => FILE_SIGNATURES[key].some(uint => isEqual(buffer, uint)));
   };
 
   useEffect(() => {
-    if (!files) {
-      return; 
-    }
-
-    [...files].forEach(async file => {
-      const plugin = await getExtensionMapping(file);
-
-      if (plugin) {
-        setPlugin(plugin, file.name);
-      }
-    })
+    [...(files || [])].forEach(file => getExtensionMapping(file).then(plugin => {
+      if (plugin) setPlugin(plugin, file.name)
+    }))
   }, [files]);
 
   useEffect(() => {
@@ -409,7 +396,7 @@ export function UploadBanner() {
 
   function addFromExternalQueryButtonHandler() {
     toast('Not paid', {
-      description: 'Its paid feature. Maybe. Idk'
+      description: 'Its paid feature'
     })
   }
 

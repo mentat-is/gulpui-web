@@ -72,23 +72,15 @@ export namespace Operation {
     export function Banner({ ...props }: Operation.Create.Banner.Props) {
       const { app, Info, spawnBanner } = useApplication();
       const [name, setName] = useState<string>('');
-      const [index, setIndex] = useState<λIndex['name'] | null>(null);
       const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value || null);
       const [description, setDescription] = useState<string>('');
       const [loading, setLoading] = useState<boolean>(false);
 
       const createOperation = () => {
-        if (!index) {
-          return;
-        }
-
         api<any>('/operation_create', {
           method: 'POST',
           setLoading,
-          query: {
-            name,
-            index,
-          },
+          query: { name },
           deassign: true,
           body: description.toString(),
         }, Info.sync).then(() => {
@@ -99,15 +91,11 @@ export namespace Operation {
       const DoneButton = () => (
         <Button
           variant='glass'
-          disabled={!name || !description || !index}
+          disabled={!name || !description}
           loading={loading}
           img='Check'
           onClick={createOperation} />
       );
-
-      const selectIndexHandler = (value: string) => {
-        setIndex(value as λIndex['name']);
-      } 
 
       return (
         <UIBanner title='Create an Operation' done={<DoneButton />} {...props}>
@@ -121,19 +109,6 @@ export namespace Operation {
               onChange={(e) => setName(e.currentTarget.value)}
               placeholder='Operation name' />
           </Stack>
-          <UISelect onValueChange={selectIndexHandler}>
-            <SelectTrigger defaultValue={app.target.indexes[0]?.name || ''} value={index || ''}>
-              <Stack>
-                <Icon name={Default.Icon.INDEX} />
-                <p>{index}</p>
-              </Stack>
-            </SelectTrigger>
-            <SelectContent>
-              {app.target.indexes.map(index => {
-                return <SelectItem value={index.name}>{index.name}</SelectItem>
-              })}
-            </SelectContent>
-          </UISelect>
           <Stack ai='center'>
             <p className={s.paramName}>Operation description:</p>
             <Input

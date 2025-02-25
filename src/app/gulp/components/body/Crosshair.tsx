@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { Internal } from '@/class/Info';
 
 const lerp = (a: number, b: number, n: number): number => (1 - n) * a + n * b;
 
@@ -21,6 +22,10 @@ namespace Crosshair {
 }
 
 const Crosshair = ({ containerRef }: Crosshair.Props) => {
+  if (!Internal.Settings.crosshair) {
+    return null;
+  }
+
   const cursorRef = useRef<HTMLDivElement | null>(null);
   const lineHorizontalRef = useRef<HTMLDivElement | null>(null);
   const lineVerticalRef = useRef<HTMLDivElement | null>(null);
@@ -29,7 +34,6 @@ const Crosshair = ({ containerRef }: Crosshair.Props) => {
 
   let mouse = { x: 0, y: 0 };
 
-  // TODO: Исправить типизацию
   useEffect(() => {
     const handleMouseMove = (ev: any) => {
       mouse = getMousePos(ev, containerRef.current!);

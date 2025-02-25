@@ -12,7 +12,7 @@ import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
 import { Timestamp } from '@/ui/timestamp';
 import { λFile } from '@/dto/Dataset';
-import { File } from '@/class/Info';
+import { File, Internal } from '@/class/Info';
 import Crosshair from './Crosshair';
 import { SetState } from '@/class/API';
 import { Input, Stack } from '@impactium/components';
@@ -23,6 +23,7 @@ import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu';
 import { FilesMenu } from './Files.manu';
 import { TargetMenu } from './Target.menu';
 import { toast } from 'sonner';
+import { cn } from '@impactium/utils';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -271,7 +272,7 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
     <ContextMenu>
       <ContextMenuTrigger
         ref={wrapper_ref}
-        className={s.wrapper}
+        className={cn(s.wrapper, Internal.Settings.crosshair && s.disable_cursor)}
         onMouseLeave={handleMouseUpOrLeave as any}
         onMouseUp={handleMouseUpOrLeave as any}
         onMouseDown={handleMouseDown}

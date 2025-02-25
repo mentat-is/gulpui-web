@@ -60,7 +60,7 @@ type ΞFile<T extends Extendable = {}> = GulpObject<μ.File, T> & {
 
 export type λFile = Omit<ΞFile, 'color'> & {
   pinned?: boolean;
-  settings: ΞSettings;
+  settings: Pick<ΞSettings, 'color' | 'engine' | 'field' | 'offset'>;
   code: MinMax;
   timestamp: MinMax;
   nanotimestamp: MinMax<bigint>;
@@ -73,6 +73,7 @@ export interface ΞSettings {
   engine: Engine.List;
   offset: number;
   field: keyof λEvent;
+  crosshair: boolean;
 }
 
 export type ΞLink<T extends Extendable = {}> = GulpObject<μ.Link, T> & {
