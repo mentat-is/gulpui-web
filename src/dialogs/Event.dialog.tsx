@@ -46,7 +46,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event]);
 
   const reloadDetailedChunkEvent = async () => {
-    const detailed = await Info.query_single_id(event.id);
+    const detailed = await Info.query_single_id(event.id, event.operation_id);
 
     setRawJSON(JSON.stringify(detailed?.raw, null, 2));
 
@@ -57,7 +57,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     return rawJSON ? JSON.parse(rawJSON) : {};
   }, [rawJSON]);
 
-  const Locations = () => {
+  const Locations = useMemo(() => {
     const source = defaultJSON?.['source.ip'];
     const destination = defaultJSON?.['destination.ip'];
 
@@ -71,13 +71,21 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         {destination ? <Button style={{ flex: 1 }} variant='glass' onClick={() => spawnBanner(<Maps.Banner lat={81.7593026} lng={43.6005981} ip={destination} />)} img='Target'>See {source} location on map</Button> : (source ? <Button img='Robot' variant='disabled' style={{ flex: 1 }} >There is no destination address</Button> : null)}
       </Stack>
     )
-  }
+  }, [defaultJSON]);
 
   const index = useMemo(() => {
     const events = File.events(app, event.file_id);
     const index = events.findIndex(e => e.id === event.id);
     return events.length - index
   }, [event]);
+
+  const highlights = useMemo(() => {
+    return (
+      <SyntaxHighlighter className={s.highlighter} customStyle={{ maxWidth: '100%', borderRadius: 6 }} language='JSON' style={highlight.vs2015}>
+        {rawJSON}
+      </SyntaxHighlighter>
+    )
+  }, [rawJSON]);
 
   return (
     <Dialog icon={<SymmetricSvg text={event.id} />} title={`Event №${index}`} description={File.id(app, event.file_id).name}>
@@ -94,16 +102,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <Button onClick={() => spawnBanner(<LinkComponents.Connect.Banner event={event} />)} variant='secondary' img='Link'>Connect link</Button>
             </Stack>
           </Stack>
-          <SyntaxHighlighter className={s.highlighter} customStyle={{ maxWidth: '100%', borderRadius: 6 }} language='JSON' style={highlight.androidstudio}>
-            {rawJSON}
-          </SyntaxHighlighter>
+          {highlights}
           <Stack>
             <Button variant='secondary' style={{ width: '100%' }} onClick={() => copy(rawJSON)} img='Copy'>Copy JSON</Button>
             <Button variant='secondary' style={{ width: '100%' }} onClick={() => download(rawJSON, 'application/json', `${event.id}_from_${event.file_id}.json`)} img='Download'>Download JSON</Button>
             {/* @ts-ignore */}
             <Button onClick={() => window.focusCanvasOnTimestamp(event.timestamp)} variant='secondary' img='Crosshair' title='Focus timeline on this event' />
           </Stack>
-          <Locations />
+          {Locations}
         </Fragment>
       ) : (
         <Stack style={{ width: '100%', height: '100%' }} flex ai='center' jc='center' dir='column' gap={12}>

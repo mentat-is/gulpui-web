@@ -1,4 +1,4 @@
-import { File, Index, Operation as GulpOperationEntity, μ } from '@/class/Info';
+import { File, Operation as GulpOperationEntity, μ } from '@/class/Info';
 import { Button, Loading, Stack } from '@impactium/components';
 import React, { useState, createContext, useContext, useCallback, memo, useEffect, useMemo, useRef } from 'react';
 import { generateUUID } from './utils';
@@ -162,13 +162,8 @@ const NoWindows = () => {
       trigger: ActionButtonConstructor('Log In', 'LogIn', <AuthBanner />)
     },
     {
-      name: 'Index selected',
-      cond: Boolean(Index.selected(Info.app)),
-      trigger: ActionButtonConstructor('Select Index', Default.Icon.INDEX, <IndexBanner />)
-    },
-    {
       name: 'At least one operation',
-      cond: Info.app.target.contexts.length > 0,
+      cond: Info.app.target.operations.length > 0,
       trigger: ActionButtonConstructor('Create Operation', Default.Icon.CREATE_OPERATION, <Operation.Create.Banner />)
     },
     {

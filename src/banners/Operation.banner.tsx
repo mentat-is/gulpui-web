@@ -9,7 +9,6 @@ import { Icon } from "@impactium/icons";
 import { λOperation } from "@/dto";
 import { Glyph } from "@/ui/Glyph";
 import { λGlyph, Default } from "@/dto/Dataset";
-import { λIndex } from "@/dto/Index.dto";
 import s from './styles/OperationBanner.module.css'
 
 export namespace Operation {

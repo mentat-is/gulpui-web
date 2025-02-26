@@ -1,6 +1,5 @@
-import { λIndex } from './Index.dto';
 import { Color } from '@impactium/types';
-import { Info, Internal, λUser, μ } from '@/class/Info';
+import { λUser, μ } from '@/class/Info';
 import { Gradients } from '@/ui/utils';
 import { Engine } from '@/class/Engine.dto';
 import { MinMax } from '@/class/Info';
@@ -29,9 +28,7 @@ export type GulpObject<T extends typeof μ, E extends Extendable = {}> = ΞSelec
   granted_user_group_ids: Array<unknown>,
 } & E
 
-type ΞOperation<T extends Extendable = {}> = GulpObject<μ.Operation, T> & {
-  index: λIndex['name']
-};
+type ΞOperation<T extends Extendable = {}> = GulpObject<μ.Operation, T> & {};
 
 export type λOperation = ΞOperation<{
   contexts: ΞContext['id'][];

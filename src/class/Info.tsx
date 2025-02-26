@@ -2,7 +2,6 @@ import { type λApp } from '@/dto';
 import { λOperation, λContext, λFile, OperationTree, ΞSettings, λLink, λNote, Default, ΞNote, GulpObject, ΞLink, λGroup, λRequest, ΞRequest } from '@/dto/Dataset';
 import { λDoc, λEvent, λExtendedEvent, ΞDoc, ΞEvent, ΞxtendedEvent } from '@/dto/ChunkEvent.dto';
 import React from 'react';
-import { λIndex } from '@/dto/Index.dto';
 import { Gradients } from '@/ui/utils';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
 import { UUID } from 'crypto';
@@ -423,16 +422,6 @@ export class Info implements InfoProps {
   }
 
   enrichment = (plugin: string, file: λFile, range: MinMax, custom_parameters: Record<string, any>) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
-    // if (!events.length) {
-    //   Logger.error('Expected at least one event', 'Info.enrichment');
-    //   return;
-    // }
-
     const хуйня = Filter.base(file, range);
 
     // @ts-ignore
@@ -441,8 +430,8 @@ export class Info implements InfoProps {
     return api<void>('/enrich_documents', {
       method: 'POST',
       query: {
+        operation_id: file.operation_id,
         plugin,
-        index,
         ws_id: this.app.general.ws_id
       },
       body: {
@@ -464,16 +453,11 @@ export class Info implements InfoProps {
   }
 
   enrich_single_id = (plugin: string, event: λEvent, custom_parameters: Record<string, any>): Promise<Record<string, string>> | undefined => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     return api('/enrich_single_id', {
       method: 'POST',
       query: {
         plugin,
-        index: index,
+        operation_id: event.operation_id,
         ws_id: this.app.general.ws_id,
         doc_id: event.id
       },
@@ -518,7 +502,7 @@ export class Info implements InfoProps {
     toast(`Request ${req_id_to_cancel} for ${fileId ? File.id(this.app, fileId).name : 'some file'} has been canceled`);
 
     api('/request_cancel', {
-      method: 'POST',
+      method: 'PATCH',
       query: { req_id_to_cancel }
     });
   }
@@ -535,7 +519,7 @@ export class Info implements InfoProps {
     return null
   }
 
-  request_list = (): Promise<λRequest[]> => api<GulpDataset.RequestList.Summary>('/request_list', { method: 'POST' }).then(reqs => reqs.map(r => ({
+  request_list = (): Promise<λRequest[]> => api<GulpDataset.RequestList.Summary>('/request_list').then(reqs => reqs.map(r => ({
     id: r.id,
     for: null,
     on: r.time_created,
@@ -613,15 +597,6 @@ export class Info implements InfoProps {
     return sorted_parsed_shit;
   }
 
-  // 🔥 INDEXES
-  index_reload = () => api<λIndex[]>('/opensearch_list_index', (data = []) => {
-    this.app.target.indexes = data;
-    const indexes = Index.select(this.app, data[0]);
-    this.setInfoByKey(indexes, 'target', 'indexes');
-  });
-  
-  index_select = (index: λIndex) => this.setInfoByKey(Index.select(this.app, index), 'target', 'indexes');
-
   operations_select = (operation: λOperation) => {
     this.setInfoByKey(Operation.select(this.app, operation), 'target', 'operations')
     this.contexts_unselect(this.app.target.contexts);
@@ -630,16 +605,10 @@ export class Info implements InfoProps {
   operations_set = (operations: λOperation[]) => this.setInfoByKey(Operation.reload(operations, this.app), 'target', 'operations');
 
   deleteOperation = (operation: λOperation, setLoading: SetState<boolean>) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     api('/operation_delete', {
       method: 'DELETE',
       query: {
-        operation_id: operation.id,
-        index
+        operation_id: operation.id
       },
       setLoading
     }, this.sync);
@@ -670,18 +639,12 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   context_delete = (context: λContext, wipe: boolean) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     return api<any>('/context_delete', {
       method: 'DELETE',
       query: {
         operation_id: context.operation_id,
         context_id: context.id,
-        delete_data: wipe,
-        index
+        delete_data: wipe
       }
     }, this.sync);
   }
@@ -741,19 +704,13 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   file_delete = (file: λFile, wipe: boolean) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     return api('/source_delete', {
       method: 'DELETE',
       query: {
         operation_id: file.operation_id,
         context_id: file.context_id,
         source_id: file.id,
-        delete_data: wipe,
-        index
+        delete_data: wipe
       }
     }, this.sync);
   };
@@ -870,7 +827,7 @@ export class Info implements InfoProps {
       const links: λLink[] = [];
 
       await Promise.all(raw.map(async link => {
-        const events = await Promise.all(link.doc_ids.map(this.query_single_id));
+        const events = await Promise.all(link.doc_ids.map(id => this.query_single_id(id, link.operation_id)));
 
         const docs: λDoc[] = [];
 
@@ -968,17 +925,12 @@ export class Info implements InfoProps {
   }
 
   sync = async () => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const files: λFile[] = [];
 
     const details = await api<GulpDataset.QueryOperations.Summary>('/query_operations', {
-      query: { index }
+      query: {  }
     })
       .then(raw => raw
         .map(o => o.contexts
@@ -1007,7 +959,7 @@ export class Info implements InfoProps {
 
     const rawOperations = await api<OperationTree[]>('/operation_list', {
       method: 'POST',
-      query: { index }
+      query: { }
     });
 
     rawOperations.forEach((rawOperation: OperationTree) => {
@@ -1068,17 +1020,12 @@ export class Info implements InfoProps {
     this.setInfo(this.app);
   }
 
-  query_single_id = (id: λEvent['id']) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-  
+  query_single_id = (doc_id: λEvent['id'], operation_id: λOperation['id']) => {
     return api<ΞxtendedEvent>('/query_single_id', {
       method: 'POST',
       query: {
-        doc_id: id,
-        index
+        doc_id,
+        operation_id
       }
     }).then(raw => {
       if (!raw) {
@@ -1152,15 +1099,9 @@ export class Info implements InfoProps {
   decreasedTimelineScale = () => this.app.timeline.scale - this.app.timeline.scale / 8;
 
   query_external = async (plugin: string, uri: string, params: Record<string, any>) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     return api('/query_raw', {
       method: 'POST',
       query: {
-        index: index,
         ws_id: this.app.general.ws_id,
       },
       body: {
@@ -1231,15 +1172,10 @@ export class Info implements InfoProps {
   }
 
   query_sigma = (body: Record<string, any>) => {
-    const index = Index.selected(this.app);
-    if (!index) {
-      return;
-    }
-
     return api('/query_sigma', {
       method: 'POST',
       query: {
-        index,
+
         ws_id: this.app.general.ws_id
       },
       body,
@@ -1336,19 +1272,6 @@ export class Info implements InfoProps {
     });
   };
 }
-
-export class Index {
-  public static selected = (use: λApp | λIndex[]): λIndex['name'] | undefined => Logger.assert(Parser.use(use, 'indexes').find(i => i.selected)?.name, 'No index selected', 'Index.selected');
-
-  public static find = (app: λApp, index: λIndex) => app.target.indexes.find(i => i.name === index.name);
-
-  public static select = (app: λApp, index: λIndex): λIndex[] => app.target.indexes.map(i => i.name === index.name ? Index._select(i) : Index._unselect(i));
-
-  private static _select = (i: λIndex): λIndex => ({ ...i, selected: true });
-
-  private static _unselect = (i: λIndex): λIndex => ({ ...i, selected: false });
-}
-
 
 export class Operation {
   public static icon = Internal.IconExtractor.activate<λOperation>(Default.Icon.OPERATION);

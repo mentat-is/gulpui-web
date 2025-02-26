@@ -1,6 +1,5 @@
 import { λOperation } from '.';
 import { λEvent, λExtendedEvent } from './ChunkEvent.dto';
-import { λIndex } from './Index.dto';
 import { generateUUID } from '@/ui/utils';
 import { FilterOptions, GulpDataset, Internal, MinMax, λFilter, λUser, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
@@ -15,7 +14,6 @@ export interface TimelineTarget {
 
 export interface λApp {
   target: {
-    indexes: λIndex[]
     operations: λOperation[],
     contexts: λContext[],
     files: λFile[],
@@ -86,7 +84,6 @@ export const BaseInfo: λApp = {
     hidden_notes: false
   },
   target: {
-    indexes: [],
     operations: [],
     contexts: [],
     files: [],

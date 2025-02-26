@@ -4,7 +4,7 @@ import { Input } from '@impactium/components';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
 import { ChangeEvent, useEffect, useState } from 'react';
 import s from './styles/UploadBanner.module.css';
-import { Context, GulpDataset, Index, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info';
+import { Context, GulpDataset, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info';
 import { formatBytes } from '@/ui/utils';
 import { Progress } from '@/ui/Progress';
 import { SelectFiles } from './SelectFiles.banner';
@@ -75,14 +75,9 @@ export function UploadBanner() {
     setContext('');
   }, [isExistingContextChooserAvalable]);
 
-  const send = async (file: File, start: number, i: number, id: string) => {
+  const send = async (file: File, start: number, i: number, id?: string) => {
     const size = 1024 * chunkSize * 1024;
     const end = Math.min(file.size, start + size);
-
-    const index = Index.selected(app);
-    if (!index) {
-      return;
-    }
 
     const operation = Operation.selected(app);
     if (!operation) {
@@ -111,7 +106,17 @@ export function UploadBanner() {
     formData.append('payload', JSON.stringify(payload));
     formData.append('f', file.slice(start, end), file.name);
 
-    const hash = sha1(file.name);
+    const query: Record<string, string> = {
+      plugin: plugin.split('.')[0],
+      operation_id: operation.id,
+      context_name: context,
+      ws_id: 'pashalko'
+    };
+
+    if (id) {
+      query.req_id = id;
+    }
+    
 
     const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
       method: 'POST',
@@ -119,18 +124,11 @@ export function UploadBanner() {
       deassign: true,
       raw: true,
       toast: false,
+      query,
       headers: {
         size: file.size.toString(),
         continue_offset: start.toString(),
-      },
-      query: {
-        plugin: plugin.split('.')[0],
-        index,
-        operation_id: operation.id,
-        context_name: context,
-        ws_id: 'pashalko',
-        req_id: id
-      },
+      }
     });
 
     Info.request_add({
@@ -142,36 +140,25 @@ export function UploadBanner() {
     });
 
     if (response.isError() && response.data.continue_offset) {
-      await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset), id);
+      await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset), response.req_id);
       return;
     }
   
     setProgress(Math.floor(((i + (end / file.size)) / files!.length) * 100));
 
     if (end < file.size) {
-      await send(file, end, i, id);
+      await send(file, end, i, response.req_id);
     }
   };
   
   const submit = async () => {
     setLoading(true);
     setProgress(0);
-  
-    let ids: string[] = []
-
-    const getID = (): string => {
-      const id = sha1(Math.random().toString());
-      if (ids.includes(id)) {
-        return getID();
-      }
-      ids.push(id);
-      return id;
-    }
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
-      send(file, 0, i, getID());
+      send(file, 0, i);
     }
 
     await Info.sync();

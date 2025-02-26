@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button, Stack, Input, Skeleton } from '@impactium/components';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Acceptable } from '@/dto/ElasticGetMapping.dto';
-import { Filter, FilterOptions, FilterType, λFilter, μ, Index } from '@/class/Info';
+import { Filter, FilterOptions, FilterType, λFilter, μ } from '@/class/Info';
 import React from 'react';
 import { copy, generateUUID } from '@/ui/utils';
 import { λFile } from '@/dto/Dataset';
@@ -38,14 +38,8 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
   useEffect(() => {
     if (app.timeline.filtering_options[file.id]) return;
 
-    const index = Index.selected(app);
-    if (!index) {
-      return;
-    }
-
-    api<FilterOptions>('/opensearch_get_mapping_by_src', {
+    api<FilterOptions>('/query_fields_by_source', {
       query: {
-        index,
         operation_id: file.operation_id,
         context_id: file.context_id,
         source_id: file.id,

@@ -2,7 +2,7 @@ import { Internal } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Toggle } from "@/ui/Toggle";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export namespace Settings {
   export namespace Banner {
@@ -12,11 +12,15 @@ export namespace Settings {
   }
   export function Banner({ ...props }: Settings.Banner.Props) {
     const { Info, app } = useApplication();
-    const [shittyCrosshair, setShittyCrosshair] = useState<boolean>(Internal.Settings.crosshair)
+    const [crosshair, setCrosshair] = useState<boolean>(Internal.Settings.crosshair);
+
+    useEffect(() => {
+      Internal.Settings.crosshair = crosshair;
+    }, [crosshair]);
 
     return (
       <UIBanner title='Settings' {...props}>
-        <Toggle option={['Cool cursor', 'Not cool cursor']} checked={Internal.Settings.crosshair} onCheckedChange={v => Internal.Settings.crosshair = v} />
+        <Toggle option={['Use cursor', 'Use crosshair']} checked={crosshair} onCheckedChange={setCrosshair} />
       </UIBanner>
     )
   }

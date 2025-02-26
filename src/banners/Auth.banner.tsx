@@ -84,7 +84,6 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
   const next = async (user: λUser) => {
     Info.login(user);
-    await Info.index_reload();
     await Info.plugin_list();
     await Info.glyphs_reload();
     await Info.sync();

@@ -27,6 +27,6 @@
   z-index: 6;
   top: -256px;
 }
-.disabled_cursor {
+.disable_cursor {
   cursor: none;
 }

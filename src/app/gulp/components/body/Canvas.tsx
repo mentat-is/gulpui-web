@@ -24,6 +24,7 @@ import { FilesMenu } from './Files.manu';
 import { TargetMenu } from './Target.menu';
 import { toast } from 'sonner';
 import { cn } from '@impactium/utils';
+import { λEvent } from '@/dto/ChunkEvent.dto';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -145,15 +146,26 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
 
     const clickPosition = Math.round(clickX);
 
-    const events = File.events(app, file).filter(e => {
-      const pos = getPixelPosition(e.timestamp + file.settings.offset);
+    const events: λEvent[] = [];
+
+    for (const event of File.events(app, file)) {
+      const pos = getPixelPosition(event.timestamp + file.settings.offset);
 
       if (file.settings.engine === 'graph') {
-        return clickPosition >= pos - 16 && clickPosition <= pos;
+        if (clickPosition >= pos - 16 && clickPosition <= pos) {
+          events.push(event);
+        }
+        continue;
       }
 
-      return clickPosition === pos;
-    });
+      if (clickPosition === pos) {
+        events.push(event);
+      }
+
+      if (clickPosition > pos) {
+        break;
+      }
+    }
 
     LoggerHandler.canvasClick(file, events, clickPosition);
 
