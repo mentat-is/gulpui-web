@@ -15,6 +15,7 @@ import { Glyph } from '@/ui/Glyph';
 import { Icon } from '@impactium/icons';
 import { Permissions } from '@/banners/Permissions.banner';
 import { toast } from 'sonner';
+import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner';
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -138,9 +139,6 @@ export namespace GulpDataset {
 
 interface RefetchOptions {
   ids?: Arrayed<λFile['id']>;
-  hidden?: boolean;
-  range?: MinMax;
-  filter?: string
 }
 
 interface InfoProps {
@@ -395,9 +393,7 @@ export class Info implements InfoProps {
   }, 'timeline', 'filtering_options');
 
   refetch = async ({
-    ids: _ids = File.selected(this.app).map(f => f.id),
-    range,
-    filter
+    ids: _ids = File.selected(this.app).map(f => f.id)
   }: RefetchOptions = {}) => {
     const files: λFile[] = Parser.array(_ids)
       .map(id => File.id(this.app, id));
@@ -417,7 +413,7 @@ export class Info implements InfoProps {
     await this.links_reload();
 
     files.forEach(file => {
-      this.query_file(file, range, filter);
+      this.query_file(file);
     });
   }
 
@@ -466,13 +462,13 @@ export class Info implements InfoProps {
     });
   }
 
-  query_file = async (file: λFile, range?: MinMax, filter?: string) => {
+  query_file = async (file: λFile) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
       return;
     }
 
-    const body = Filter.body(this.app, file, range, filter);
+    const body = Filter.body(this.getQuery(file.id));
 
     return await api<void>('/query_raw', {
       method: 'POST',
@@ -897,7 +893,7 @@ export class Info implements InfoProps {
         }
   
         const formData = new FormData();
-        formData.append('img', new Blob([''], { type: 'image/png' }));
+        formData.append('img', new Blob());
   
         await api<λGlyph>('/glyph_create', {
           method: 'POST',
@@ -1123,20 +1119,35 @@ export class Info implements InfoProps {
     });
   };
 
-  filters_add = (id: UUID, filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [id]: filters}), 'target', 'filters');
+  
+
+  setQuery = (id: λFile['id'], query: λQuery): void => this.setInfoByKey(({ ...this.app.target.filters, [id]: query}), 'target', 'filters');
+  setFilters = (id: λFile['id'], filters: λFilter[]): void => this.setInfoByKey(({ ...this.app.target.filters, [id]: {
+    string: this.app.target.filters[id].string,
+    filters
+  }}), 'target', 'filters');
+  setQueryString = (id: λFile['id'], string: string): void => this.setInfoByKey(({ ...this.app.target.filters, [id]: {
+    filters: this.app.target.filters[id].filters,
+    string
+  }}), 'target', 'filters');
+  getQuery = (id: λFile['id']): λQuery => {
+    const query = this.app.target.filters[id];
+
+    if (!query) {
+      const base: λQuery = {
+        string: Filter.base(File.id(this.app, id)),
+        filters: []
+      };
+
+      this.setQuery(id, base);
+
+      return base;
+    }
+
+    return query;
+  }
 
   filters_remove = (file: λFile | λFile['id']) => this.setInfoByKey(({ ...this.app.target.filters, [Parser.useUUID(file)]: []}), 'target', 'filters');
-
-  filters_change = (file: λFile | μ.File, filter: λFilter | λFilter['id'], obj: Partial<λFilter>) => {
-    const file_uuid = Parser.useUUID(file) as μ.File;
-    const filter_uuid = Parser.useUUID(filter) as μ.Filter;
-
-    const file_filters = this.app.target.filters[file_uuid];
-
-    Object.assign(file_filters.find(filter => filter.id === filter_uuid) || {}, obj);
-
-    this.setInfoByKey(this.app.target.filters, 'target', 'filters');
-  }
 
   useReverseScroll = (bool: boolean) => {
     localStorage.setItem('settings.__isScrollReversed', String(bool));
@@ -1370,87 +1381,91 @@ export type FilterOptions = Record<string, Acceptable>;
 
 export type λFilter = {
   id: μ.Filter;
-  key: string;
-  type: FilterType;
+  type: OpenSearchQueryBuilder.Condition;
+  operator: OpenSearchQueryBuilder.Operator;
+  field: string;
   value: any;
-  isOr?: boolean
+}
+
+export interface λQuery {
+  string: string,
+  filters: λFilter[]
 }
 
 export class Filter {
-  public static find = (app: λApp, file: λFile) => app.target.filters[file.id] || [];
+  static query = ({ filters, string }: λQuery) => {
+    const query: Record<string, any> = structuredClone(OpenSearchQueryBuilder.INITIAL);
 
-  public static findMany = (app: λApp, files: λFile[]) => {
-    const filters: λFilter[][] = [];
+    if (string.trim()) {
+      query.bool.must.push({
+        query_string: {
+          query: string,
+        },
+      })
+    }
 
-    files.forEach(file => {
-      const filter = Filter.find(app, file);
-      if (filter) {
-        filters.push(filter)
-      }
-    });
+    filters.forEach(({ type, field, value, operator }) => {
+      if (!field || !value) return
 
-    return filters;
-  }
+      let conditionObj = {}
 
-  /** 
-   * @returns Стринговое поле фильтра
-   */
-  static query = (app: λApp, file: λFile) => {
-    const filters = Filter.find(app, file);
-    
-    return filters.map((filter, index) => {
-      const isLast = filters.length - 1 === index;
-
-      let queryStringPart: string;
-
-      const isWrappedInQuotes = filter.value.startsWith('"') && filter.value.endsWith('"');
-      const isHex = filter.value.startsWith('0x');
-      const isString = isNaN(parseInt(filter.value));
-
-      const value = isWrappedInQuotes || isHex ? filter.value : isString ? `"${filter.value}"` : parseInt(filter.value);
-
-      switch (filter.type) {
-        case FilterType.EQUAL:
-          queryStringPart = `${filter.key}:${value}`;
-          break;
-        case FilterType.NOT_EQUAL:
-          queryStringPart = `NOT ${filter.key}:${value}`;
-          break;
+      switch (type) {
+        case 'term':
+          conditionObj = { term: { [field]: value } }
+          break
+        case 'match':
+          conditionObj = { match: { [field]: value } }
+          break
+        case 'regexp':
+          conditionObj = { regexp: { [field]: { value, flags: "ALL" } } }
+          break
+        case 'prefix':
+          conditionObj = { prefix: { [field]: value } }
+          break
+        case 'wildcard':
+          conditionObj = { wildcard: { [field]: value } }
+          break
+        case 'range':
+          conditionObj = {
+            range: {
+              [field]: {
+                gte: value.split(',')[0]?.trim() || 0,
+                lte: value.split(',')[1]?.trim() || 0,
+              },
+            },
+          }
+          break
         default:
-          queryStringPart = `${filter.key}:${filter.type}${value}`;
-          break;
+          conditionObj = { term: { [field]: value } }
       }
 
-      return queryStringPart + this.operand(filter, isLast);
-    }).join('');
+      query.bool[operator].push(conditionObj)
+    })
+
+    Object.keys(query.bool).forEach((key) => {
+      if (query.bool[key].length === 0) {
+        delete query.bool[key]
+      }
+    })
+
+    return query;
   }
 
-  public static quotes = (str: string) => str.includes(' ') ? `"${str}"` : str
+  private static quotes = (str: string) => str.includes(' ') ? `"${str}"` : str
 
   public static base = (file: λFile, range?: MinMax) => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
-
-  public static operand = (filter: λFilter, ignore: boolean) => ignore ? '' : filter.isOr ? ' OR ' : ' AND ';
-
-  public static exist = (app: λApp, file: λFile) => Filter.find(app, file).length > 0;
   
-  static body = (app: λApp, file: λFile, range?: MinMax, filter: string = Filter.query(app, file)) => {
+  static body = (query: λQuery) => {
     const body: Record<string, any> = {
+      q: [
+        { query: Filter.query(query) }
+      ],
       q_options: {
         sort: {
           '@timestamp': 'desc'
         }
       }
     };
-
-    body.q = body.q || [];
-    // TODO: Inplement type for this shi
-    const query: Record<any, any> = {
-      query_string: {
-        query: Filter.base(file, range) + `${filter ? ` AND ${filter}` : ''}`
-      }
-    };
-
-    body.q.push({ query });
 
     return body;
   };

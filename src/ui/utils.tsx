@@ -2,12 +2,13 @@ import { toast } from 'sonner';
 import { UUID } from 'crypto';
 import { λApp } from '@/dto';
 import { Info, MinMax, MinMaxBase } from '@/class/Info';
-import { RefObject } from 'react';
+import { ChangeEvent, RefObject } from 'react';
 import { λEvent } from '@/dto/ChunkEvent.dto';
 import { Hardcode } from '@/class/Engine.dto';
 import { λFile } from '@/dto/Dataset';
 import { format as _format } from 'date-fns';
 import { XY, XYBase } from '@/dto/XY.dto';
+import { SetState } from '@/class/API';
 
 export type Color = `#${string}`;
 
@@ -362,3 +363,10 @@ export type Sometimes<T> = Maybe<T> | undefined;
 export type NotSure<T> = T[] | T;
 
 export type Usual<T> = Sometimes<T> & NotSure<T>;
+
+// build-input-change-handler, thats what it means dude...
+export const bich = (setState: SetState<string>) => (event: ChangeEvent<HTMLInputElement>) => {
+  return setState(event.target.value);
+}
+
+export const fws = { width: '100%' };

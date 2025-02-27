@@ -29,7 +29,7 @@
   padding: var(--p5) var(--p6);
   background: var(--soft-black);
   position: absolute;
-  border: 1px solid var(--accent-3);
+  border: 1px solid var(--gray-400);
   display: flex;
   max-height: 64vh;
   gap: 16px;
@@ -63,4 +63,29 @@
 }
 .cell {
   background-color: var(--soft-black);
+}
+.side {
+  --graph-width: calc(var(--cell-size, 88px)* 3);
+  border: 1px solid var(--gray-400);
+  width: 0px;
+  height: calc(100% + 0.5px);
+  top: -1px;
+  left: 100%;
+  z-index: 0;
+  box-sizing: content-box;
+  transition: all 0.15s var(--transition);
+  border-left: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.side_content {
+  width: var(--graph-width);
+  flex-shrink: 0;
+  left: 1px;
+  display: flex;
+  background: var(--soft-black);
+  height: 100%;
+}
+.side.open {
+  width: var(--graph-width);
 }

@@ -54,8 +54,8 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
         <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={file} />)} img='Filter'>Filters</ContextMenuItem>
-        {Filter.find(app, file) && <ContextMenuItem onClick={() => removeFilters(file)} img='FilterX'>Clear all filters</ContextMenuItem>}
-        {Filter.find(app, file) && app.timeline.cache.data.has(file.id) && <ContextMenuItem onClick={() => Info.filters_undo(file)} img='Undo'>Undo last filters change</ContextMenuItem>}
+        <ContextMenuItem onClick={() => removeFilters(file)} img='FilterX'>Clear all filters</ContextMenuItem>
+        {app.timeline.cache.data.has(file.id) && <ContextMenuItem onClick={() => Info.filters_undo(file)} img='Undo'>Undo last filters change</ContextMenuItem>}
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>

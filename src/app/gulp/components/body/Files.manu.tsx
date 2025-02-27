@@ -48,7 +48,7 @@ export function FilesMenu({ files }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        {Filter.findMany(app, files) && <ContextMenuItem onClick={() => removeFilters(files)} img='FilterX'>Clear all filters for all selected files</ContextMenuItem>}
+        <ContextMenuItem onClick={() => removeFilters(files)} img='FilterX'>Clear all filters for all selected files</ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>

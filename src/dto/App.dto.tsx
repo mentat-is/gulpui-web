@@ -1,7 +1,7 @@
 import { λOperation } from '.';
 import { λEvent, λExtendedEvent } from './ChunkEvent.dto';
 import { generateUUID } from '@/ui/utils';
-import { FilterOptions, GulpDataset, Internal, MinMax, λFilter, λUser, μ } from '@/class/Info';
+import { FilterOptions, GulpDataset, Internal, MinMax, λFilter, λQuery, λUser, μ } from '@/class/Info';
 import { Engine } from '@/class/Engine.dto';
 import { XY } from './XY.dto';
 import { λContext, λFile, λGlyph, λLink, λNote, λRequest } from './Dataset';
@@ -18,7 +18,7 @@ export interface λApp {
     contexts: λContext[],
     files: λFile[],
     events: Map<λFile['id'], λEvent[]>
-    filters: Record<λFile['id'], λFilter[]>;
+    filters: Record<λFile['id'], λQuery>;
     notes: λNote[],
     links: λLink[],
     glyphs: λGlyph[],

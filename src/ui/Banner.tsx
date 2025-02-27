@@ -1,14 +1,16 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useApplication } from '../context/Application.context';
 import s from './styles/Banner.module.css';
 import { cn } from '@impactium/utils';
 import { Cell, Stack, Skeleton, Button } from '@impactium/components';
+import { SetState } from '@/class/API';
 
 export namespace Banner {
   export interface Props extends Stack.Props {
     title?: string;
-    subtitle?: ReactNode | null;
-    done?: ReactNode | null;
+    subtitle?: ReactNode;
+    done?: ReactNode;
+    side?: ReactNode;
     fixed?: boolean;
     loading?: boolean;
     onClose?: () => void
@@ -17,8 +19,9 @@ export namespace Banner {
   }
 }
 
-export function Banner({ children, back, className, title, fixed, option, loading, done, subtitle = null, onClose }: Banner.Props) {
+export function Banner({ children, back, className, title, fixed, option, loading, done, subtitle = null, side = null, onClose }: Banner.Props) {
   const { Info, destroyBanner } = useApplication();
+  const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
   const close = () => {
     if (onClose) onClose();
@@ -44,6 +47,20 @@ export function Banner({ children, back, className, title, fixed, option, loadin
     };
   }, []);
 
+  const Side = useMemo(() => {
+    if (!side) {
+      return null;
+    }
+
+    return (
+      <Stack className={cn(s.side, isExpanded && s.open)} pos='absolute'>
+        <Stack className={s.side_content} pos='relative'>
+          {side}
+        </Stack>
+      </Stack>
+    )
+  }, [side, isExpanded, setIsExpanded]);
+
   return (
     <div className={s.wrapper}>
       <div className={cn(s.banner, s.loading, className)} style={{['--gray-400']: 'var(--accent-3)' }}>
@@ -54,11 +71,12 @@ export function Banner({ children, back, className, title, fixed, option, loadin
           {fixed ? null : <Button variant='ghost' onClick={close} img='X' loading={loading} size='icon' />}
         </Cell>
         <Cell key='cell-3' className={s.cell} bottom left>
-          {option}
+          {side ? <Button img={isExpanded ? 'Eye' : 'EyeOff'} onClick={() => setIsExpanded(isExpanded => !isExpanded)} variant={isExpanded ? 'secondary' : 'ghost'} /> : option}
         </Cell>
         <Cell key='cell-4' className={s.cell} bottom right>
           {done}
         </Cell>
+        {Side}
         <h6>
           {loading ? <Skeleton width='long' height={24} /> : title}
           {subtitle ? (loading ? <Skeleton height={24} /> : subtitle) : null}
