@@ -61,7 +61,7 @@
   width: 100%;
 }
 .card {
-  background: var(--gray-100);
+  background: var(--geist-background);
   border: 1px solid var(--gray-400);
   padding: 8px;
   border-radius: 6px;

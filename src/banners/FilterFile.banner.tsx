@@ -166,10 +166,9 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
-              <Stack flex />
+              </Select> 
               <Button
-                variant='ghost'
+                variant='outline'
                 onClick={() => removeCondition(condition.id)}
                 img='Trash2'
               />
