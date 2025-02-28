@@ -418,10 +418,10 @@ export class Info implements InfoProps {
   }
 
   enrichment = (plugin: string, file: λFile, range: MinMax, custom_parameters: Record<string, any>) => {
-    const хуйня = Filter.base(file, range);
-
-    // @ts-ignore
-    delete хуйня.int_filter;
+    const body = Filter.query({
+      string: Filter.base(file, range),
+      filters: []
+    });
 
     return api<void>('/enrich_documents', {
       method: 'POST',
@@ -431,14 +431,7 @@ export class Info implements InfoProps {
         ws_id: this.app.general.ws_id
       },
       body: {
-        flt: хуйня,
-        q: {
-          query: {
-            query_string: {
-              query: `gulp.timestamp:>=${(BigInt(range.min) * 1_000_000n).toString()} AND gulp.timestamp:<=${(BigInt(range.max) * 1_000_000n).toString()}`
-            }
-          }
-        },
+        ...body,
         external_parameters: {
           plugin_params: {
             custom_parameters
