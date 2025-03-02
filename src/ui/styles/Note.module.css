@@ -6,13 +6,13 @@
   padding-right: 0px;
   height: 32px;
   min-height: 32px;
-  flex-shrink: 0;
+  flex: 0 !important;
   width: 100%;
   overflow: hidden;
 }
 .combination p {
   color: currentColor;
-font-size: 13px;
+  font-size: 13px;
   white-space: nowrap;
   font-family: var(--font-mono);
   min-width: 128px;

@@ -23,16 +23,11 @@ interface DisplayEventDialogProps {
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication();
   const [detailedChunkEvent, setDetailedChunkEvent] = useState<λExtendedEvent | null>(null);
-  const [notes, setNotes] = useState<λNote[]>([]);
   const [rawJSON, setRawJSON] = useState<string>('');
 
   useEffect(() => {
-    setNotes(Event.notes(app, event));
-  }, [event, app.target.notes]);
-
-  useEffect(() => {
-    const notes = Event.notes(app, event);
-    setNotes(notes);
+    // const notes = Event.notes(app, event);
+    // setNotes(notes);
     Info.setTimelineTarget(event); 
   }, [event]);
 

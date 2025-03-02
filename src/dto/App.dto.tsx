@@ -6,6 +6,7 @@ import { Engine } from '@/class/Engine.dto';
 import { XY } from './XY.dto';
 import { λContext, λFile, λGlyph, λLink, λNote, λRequest } from './Dataset';
 import { λMapping } from './MappingFileList.dto';
+import { Pointers } from '@/components/Pointers';
 
 export interface TimelineTarget {
   event: λEvent, 
@@ -34,7 +35,7 @@ export interface λApp {
     ws_id: string;
     sessions: Record<string, Session>;
     glyphs_syncronized: boolean;
-    requests: λRequest[]
+    requests: λRequest[];
   },
   timeline: {
     scale: number;
@@ -51,6 +52,7 @@ export interface λApp {
     dialogSize: number;
     footerSize: number;
     hidden_notes: boolean;
+    pointers: Pointers.Pointer[]
   }
 }
 export const BaseInfo: λApp = {
@@ -81,7 +83,8 @@ export const BaseInfo: λApp = {
     isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
     footerSize: window.innerHeight / 4,
-    hidden_notes: false
+    hidden_notes: false,
+    pointers: []
   },
   target: {
     operations: [],

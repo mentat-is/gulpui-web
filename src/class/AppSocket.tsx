@@ -1,4 +1,5 @@
 import { Event, Info, Internal } from '@/class/Info';
+import { Pointers } from '@/components/Pointers';
 import { ΞEvent } from '@/dto/ChunkEvent.dto';
 import { Logger } from '@/dto/Logger.class';
 import { toast } from 'sonner';
@@ -82,5 +83,65 @@ export class AppSocket extends WebSocket {
       });
       AppSocket.instance = null;
     };
+  }
+}
+
+export class MultiSocket extends WebSocket {
+  static instance: MultiSocket | null = null;
+  info!: Info;
+
+  constructor(info: Info) {
+    if (MultiSocket.instance) {
+      MultiSocket.instance.info = info;
+      return MultiSocket.instance;
+    }
+
+    super(Internal.Settings.server + '/ws_client_data');
+
+    this.info = info;
+    MultiSocket.instance = this;
+
+    this.onopen = () => {
+      Logger.log(`MultiSocket has been initialized with id: ${this.info.app.general.ws_id}`, MultiSocket.name, {
+        toast: true
+      });
+      this.send(JSON.stringify({
+        token: this.info.app.general.token,
+        ws_id: this.info.app.general.ws_id,
+      }));
+    };
+
+    this.onmessage = ({ data }) => {
+      const message: {
+        data: Pointers.Pointer
+      } = JSON.parse(data);
+
+      if (message.data.id === this.info.app.general.id) {
+        return;
+      }
+
+      this.info.setPointers(message.data);
+    }
+
+    this.onerror = (error) => {
+      Logger.error(`WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`, MultiSocket.name, {
+        toast: true
+      });
+      MultiSocket.instance = null;
+    };
+
+    this.onclose = (event) => {
+      Logger.error(`WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`, MultiSocket.name, {
+        toast: true
+      });
+      MultiSocket.instance = null;
+    };
+  }
+
+  sendPointer = (data: Pointers.Pointer) => {
+    if (!this.OPEN) {
+      return;
+    }
+    this.send(JSON.stringify({ data }));
   }
 }

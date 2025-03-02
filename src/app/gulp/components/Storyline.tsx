@@ -3,7 +3,6 @@ import { Banner } from '@/ui/Banner';
 import { Button, Stack } from '@impactium/components';
 import s from './storyline.module.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Timestamp } from '@/ui/timestamp';
 import { Operation, Note, Context, File } from '@/class/Info';
 import { Default, λFile, λNote } from '@/dto/Dataset';
 import { NotePoint } from '@/ui/Note';
@@ -172,8 +171,6 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
         </Stack>
       </div>
       <Stack jc='space-between' className={s.minMax}>
-        <Timestamp value={app.timeline.frame.min} />
-        <Timestamp value={app.timeline.frame.max} />
       </Stack>
     </Stack>
   )

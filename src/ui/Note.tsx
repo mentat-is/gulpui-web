@@ -56,11 +56,6 @@ export namespace NotePoint {
       }
 
       const target = events[0];
-
-      if (target === app.timeline.target) {
-        // @ts-ignore
-        window.focusCanvasOnTimestamp();
-      }
   
       const dialog = events.length === 1
         ? <DisplayEventDialog event={target} />

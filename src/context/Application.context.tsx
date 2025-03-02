@@ -1,6 +1,6 @@
 import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
 import { λApp, BaseInfo } from '@/dto';
-import { AppSocket } from '@/class/AppSocket';
+import { AppSocket, MultiSocket } from '@/class/AppSocket';
 import { File, Info, Internal } from '@/class/Info';
 import { Console } from '@impactium/console';
 import { Logger } from '@/dto/Logger.class';
@@ -24,6 +24,7 @@ interface ApplicationContextProps {
   dialog: React.ReactNode;
   app: λApp;
   ws: AppSocket | undefined;
+  mws: MultiSocket | undefined;
   setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
   setInfo: (info: λApp) => void;
   Info: Info;
@@ -60,9 +61,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const instance = new Info({ app, setInfo, timeline });
 
   const [ws, setWs] = useState<AppSocket>();
+  const [mws, setMws] = useState<MultiSocket>();
 
   useEffect(() => {
     if (app.general.token) setWs(new AppSocket(instance));
+    if (app.general.token) setMws(new MultiSocket(instance));
   }, [instance, app]);
 
   const spawnBanner = (banner: JSX.Element) => {
@@ -94,6 +97,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     destroyDialog,
     dialog,
     ws,
+    mws,
     app,
     setWs,
     setInfo,

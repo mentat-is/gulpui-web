@@ -10,7 +10,6 @@ import { LinksDisplayer } from './Links.displayer';
 import { NotesDisplayer } from './Notes.displayer';
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog';
 import { LoggerHandler } from '@/dto/Logger.class';
-import { Timestamp } from '@/ui/timestamp';
 import { λFile } from '@/dto/Dataset';
 import { File, Internal } from '@/class/Info';
 import Crosshair from './Crosshair';
@@ -25,6 +24,7 @@ import { TargetMenu } from './Target.menu';
 import { toast } from 'sonner';
 import { cn } from '@impactium/utils';
 import { λEvent } from '@/dto/ChunkEvent.dto';
+import { Pointers } from '@/components/Pointers';
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -41,7 +41,7 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
   const overlay_ref = useRef<HTMLCanvasElement>(null);
   const wrapper_ref = useRef<HTMLDivElement>(null);
   
-  const { app, banner, spawnDialog, Info, dialog } = useApplication();
+  const { app, banner, spawnDialog, Info, dialog, mws } = useApplication();
   const [shifted, setShifted] = useState<λFile[]>([]);
   const [ isShiftPressed ] = useKeyHandler('Shift');
   const dependencies = [app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.loaded, app.timeline.filter, shifted, app.timeline.dialogSize, app.timeline.footerSize];
@@ -278,13 +278,11 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
       : <FilesMenu files={shifted} />
   }, [shifted]);
 
-  
-
   return (
     <ContextMenu>
       <ContextMenuTrigger
         ref={wrapper_ref}
-        className={cn(s.wrapper, Internal.Settings.crosshair && s.disable_cursor)}
+        className={cn(s.wrapper, isAltPressed && s.cursor)}
         onMouseLeave={handleMouseUpOrLeave as any}
         onMouseUp={handleMouseUpOrLeave as any}
         onMouseDown={handleMouseDown}
@@ -299,10 +297,10 @@ export function Canvas({ timeline, scrollX, setScrollX, scrollY, setScrollY }: C
           height={timeline.current?.clientHeight}
           />
         <Crosshair containerRef={wrapper_ref} />
+        <Pointers getPixelPosition={getPixelPosition} scrollY={scrollY} width={canvas_ref.current?.clientWidth || 1} self={mousePosition} timestamp={getTimestamp(scrollX + mousePosition.x, Info)} />
         <canvas
           className={s.resize}
           ref={overlay_ref} />
-        <Timestamp style={{ left: mousePosition.x, top: mousePosition.y }} className={s.position} value={getTimestamp(scrollX + mousePosition.x, Info)} />
         <Magnifier self={magnifier_ref} mousePosition={mousePosition} isVisible={isAltPressed} />
       </ContextMenuTrigger>
       <Menu />

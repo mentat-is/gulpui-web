@@ -217,10 +217,6 @@ const NumericGradientsMap: Record<Gradients, number[]> = (() => {
   return cache as Record<Gradients, number[]>;
 })();
 
-const NumericColors = new Map<string, number>(
-  Object.entries(COLORS).map(([name, hex]) => [name, parseInt(hex.slice(1), 16)])
-);
-
 export class λColor {
   private static gradientCache = new Map<Gradients, Map<number, Map<number, Map<number, string>>>>();
 

@@ -147,7 +147,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   }
 
   return (
-    <Banner title='Authentication' option={<ContinueFromSession />} done={<DoneButton />} fixed={true} {...props}>
+    <Banner title='Authentication' option={<ContinueFromSession />} done={<DoneButton />} {...props}>
       <Input
         variant='highlighted'
         img='Server'

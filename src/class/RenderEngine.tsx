@@ -86,6 +86,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       width: info.width
     });
     this.ctx = ctx;
+    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.font = "10px monospace";
     this.limits = limits;
     this.shifted = shifted;
     this.info = info;
@@ -239,7 +241,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     const events = Event.get(this.info.app, file.id).length.toString()
 
-    this.ctx.font = `10px Arial`;
     this.ctx.fillStyle = '#e8e8e8';
 
     this.ctx.textAlign='left'
@@ -279,7 +280,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const y = File.getHeight(this.info.app, file, this.scrollY) + 4;
 
     this.ctx.textAlign='left'
-    this.ctx.font = `12px Arial`;
     this.ctx.fillStyle = '#e8e8e8';
     this.ctx.fillText(file.name, 10, y);
     this.ctx.fillText(File.events(this.info.app, file).length.toString(), 10, y + 14);

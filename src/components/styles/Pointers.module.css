@@ -1,0 +1,36 @@
+.pointers {
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+}
+.pointer {
+  transform: translate(-12px, -4px);
+}
+.pointer p {
+  color: var(--meta-black);
+  border-radius: 4px;
+  padding: 0 4px;
+  transform: translate(calc(-100% - 24px), 100%);
+  height: 20px;
+  line-height: 20px;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.125s var(--transition);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.pointer svg {
+  rotate: 90deg;
+  transition: all 0.125s var(--transition);
+}
+.right {
+  transform: translate(0, -4px) !important;
+}
+.right p {
+  transform: translate(-4px, 100%);
+}
+.right svg {
+  rotate: 0deg;
+}

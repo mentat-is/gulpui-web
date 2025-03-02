@@ -16,6 +16,7 @@ import { Icon } from '@impactium/icons';
 import { Permissions } from '@/banners/Permissions.banner';
 import { toast } from 'sonner';
 import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner';
+import { Pointers } from '@/components/Pointers';
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -913,14 +914,26 @@ export class Info implements InfoProps {
     this.setInfoByKey(true, 'general', 'glyphs_syncronized');
   }
 
+  setPointers = (pointer: Pointers.Pointer) => {
+    const pointers = this.app.timeline.pointers;
+
+    const target = pointers.find(p => p.id === pointer.id);
+
+    if (target) {
+      Object.assign(target, pointer);
+    } else {
+      pointers.push(pointer);
+    }
+
+    this.setInfoByKey(pointers, 'timeline' ,'pointers');
+  }
+
   sync = async () => {
     const operations: λOperation[] = [];
     const contexts: λContext[] = [];
     const files: λFile[] = [];
 
-    const details = await api<GulpDataset.QueryOperations.Summary>('/query_operations', {
-      query: {  }
-    })
+    const details = await api<GulpDataset.QueryOperations.Summary>('/query_operations')
       .then(raw => raw
         .map(o => o.contexts
           .map(c => c.plugins
