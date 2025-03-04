@@ -1,7 +1,7 @@
 import React from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import s from './styles/Popover.module.css'
-import { cn } from '@impactium/utils';
+import { cn } from '@impactium/utils'
 const Popover = PopoverPrimitive.Root
 
 const PopoverTrigger = PopoverPrimitive.Trigger
@@ -15,10 +15,7 @@ const PopoverContent = React.forwardRef<
       ref={ref}
       align={align}
       sideOffset={sideOffset}
-      className={cn(
-        s.popover,
-        className
-      )}
+      className={cn(s.popover, className)}
       {...props}
     />
   </PopoverPrimitive.Portal>

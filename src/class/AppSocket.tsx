@@ -1,147 +1,180 @@
-import { Event, Info, Internal } from '@/class/Info';
-import { Pointers } from '@/components/Pointers';
-import { ΞEvent } from '@/dto/ChunkEvent.dto';
-import { Logger } from '@/dto/Logger.class';
-import { toast } from 'sonner';
+import { Event, Info, Internal } from '@/class/Info'
+import { Pointers } from '@/components/Pointers'
+import { ΞEvent } from '@/dto/ChunkEvent.dto'
+import { Logger } from '@/dto/Logger.class'
+import { toast } from 'sonner'
 
 export class AppSocket extends WebSocket {
-  static instance: AppSocket | null = null;
-  info!: Info;
+  static instance: AppSocket | null = null
+  info!: Info
 
   constructor(info: Info) {
     if (AppSocket.instance) {
-      AppSocket.instance.info = info;
-      return AppSocket.instance;
+      AppSocket.instance.info = info
+      return AppSocket.instance
     }
 
-    super(Internal.Settings.server + '/ws');
+    super(Internal.Settings.server + '/ws')
 
-    this.info = info;
-    AppSocket.instance = this;
+    this.info = info
+    AppSocket.instance = this
 
     this.onopen = () => {
-      Logger.log(`WebSocket has been initialized with id: ${this.info.app.general.ws_id}`, AppSocket.name, {
-        toast: true
-      });
-      this.send(JSON.stringify({
-        token: this.info.app.general.token,
-        ws_id: this.info.app.general.ws_id,
-      }));
-    };
+      Logger.log(
+        `WebSocket has been initialized with id: ${this.info.app.general.ws_id}`,
+        AppSocket.name,
+        {
+          toast: true,
+        },
+      )
+      this.send(
+        JSON.stringify({
+          token: this.info.app.general.token,
+          ws_id: this.info.app.general.ws_id,
+        }),
+      )
+    }
 
     this.onmessage = ({ data }) => {
-      const message = JSON.parse(data);
+      const message = JSON.parse(data)
 
-      const { data: chunk } = message;
+      const { data: chunk } = message
 
       switch (true) {
         case message.type === 'docs_chunk':
-          const rawEvents: ΞEvent[] = chunk.docs;
-          const events = Event.parse(rawEvents);
-          this.info.events_add(events);
-          return;
+          const rawEvents: ΞEvent[] = chunk.docs
+          const events = Event.parse(rawEvents)
+          this.info.events_add(events)
+          return
 
         case message.type === 'ingest_source_done':
           info.sync().then(() => {
-            info.request_finish(message.data.req_id, 'done');
-          });
-          return;
+            info.request_finish(message.data.req_id, 'done')
+          })
+          return
 
         case message.type === 'enrich_done':
-          toast(message.data.status === 'failed' ? 'Enrichment went wrong' : 'Enrichment done', {
-            description: `Total processed documents: ${message.data.total_hits ?? 0}`
-          });
-          return;
+          toast(
+            message.data.status === 'failed'
+              ? 'Enrichment went wrong'
+              : 'Enrichment done',
+            {
+              description: `Total processed documents: ${message.data.total_hits ?? 0}`,
+            },
+          )
+          return
 
         case message.type === 'query_done':
           if (message.data.status === 'done') {
             toast('Query finished', {
-              description: `Total processed documents: ${message.data.total_hits ?? 0}`
-            });
+              description: `Total processed documents: ${message.data.total_hits ?? 0}`,
+            })
             this.info.request_finish(message.req_id, message.data.status)
           } else {
             toast.error('Query failed', {
               description: message.data.error ?? 'Unknown error',
-              richColors: true
-            });
-            this.info.request_finish(message.req_id, message.data.status);
+              richColors: true,
+            })
+            this.info.request_finish(message.req_id, message.data.status)
           }
-          return;
+          return
       }
     }
 
     this.onerror = (error) => {
-      Logger.error(`WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`, AppSocket.name, {
-        toast: true
-      });
-      AppSocket.instance = null;
-    };
+      Logger.error(
+        `WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`,
+        AppSocket.name,
+        {
+          toast: true,
+        },
+      )
+      AppSocket.instance = null
+    }
 
     this.onclose = (event) => {
-      Logger.error(`WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`, AppSocket.name, {
-        toast: true
-      });
-      AppSocket.instance = null;
-    };
+      Logger.error(
+        `WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`,
+        AppSocket.name,
+        {
+          toast: true,
+        },
+      )
+      AppSocket.instance = null
+    }
   }
 }
 
 export class MultiSocket extends WebSocket {
-  static instance: MultiSocket | null = null;
-  info!: Info;
+  static instance: MultiSocket | null = null
+  info!: Info
 
   constructor(info: Info) {
     if (MultiSocket.instance) {
-      MultiSocket.instance.info = info;
-      return MultiSocket.instance;
+      MultiSocket.instance.info = info
+      return MultiSocket.instance
     }
 
-    super(Internal.Settings.server + '/ws_client_data');
+    super(Internal.Settings.server + '/ws_client_data')
 
-    this.info = info;
-    MultiSocket.instance = this;
+    this.info = info
+    MultiSocket.instance = this
 
     this.onopen = () => {
-      Logger.log(`MultiSocket has been initialized with id: ${this.info.app.general.ws_id}`, MultiSocket.name, {
-        toast: true
-      });
-      this.send(JSON.stringify({
-        token: this.info.app.general.token,
-        ws_id: this.info.app.general.ws_id,
-      }));
-    };
+      Logger.log(
+        `MultiSocket has been initialized with id: ${this.info.app.general.ws_id}`,
+        MultiSocket.name,
+        {
+          toast: true,
+        },
+      )
+      this.send(
+        JSON.stringify({
+          token: this.info.app.general.token,
+          ws_id: this.info.app.general.ws_id,
+        }),
+      )
+    }
 
     this.onmessage = ({ data }) => {
       const message: {
         data: Pointers.Pointer
-      } = JSON.parse(data);
+      } = JSON.parse(data)
 
       if (message.data.id === this.info.app.general.id) {
-        return;
+        return
       }
 
-      this.info.setPointers(message.data);
+      this.info.setPointers(message.data)
     }
 
     this.onerror = (error) => {
-      Logger.error(`WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`, MultiSocket.name, {
-        toast: true
-      });
-      MultiSocket.instance = null;
-    };
+      Logger.error(
+        `WebSocket error: ${typeof error === 'object' ? JSON.stringify(error, null, 2) : error}`,
+        MultiSocket.name,
+        {
+          toast: true,
+        },
+      )
+      MultiSocket.instance = null
+    }
 
     this.onclose = (event) => {
-      Logger.error(`WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`, MultiSocket.name, {
-        toast: true
-      });
-      MultiSocket.instance = null;
-    };
+      Logger.error(
+        `WebSocket has been closed. Reason: ${typeof event === 'object' ? JSON.stringify(event, null, 2) : event}`,
+        MultiSocket.name,
+        {
+          toast: true,
+        },
+      )
+      MultiSocket.instance = null
+    }
   }
 
   sendPointer = (data: Pointers.Pointer) => {
     if (!this.OPEN) {
-      return;
+      return
     }
-    this.send(JSON.stringify({ data }));
+    this.send(JSON.stringify({ data }))
   }
 }

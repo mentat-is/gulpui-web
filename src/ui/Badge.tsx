@@ -1,7 +1,7 @@
-import React from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@impactium/utils';
-import styles from './styles/Badge.module.css';
+import React from 'react'
+import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from '@impactium/utils'
+import styles from './styles/Badge.module.css'
 
 const badgeVariants = cva(styles.badge, {
   variants: {
@@ -15,20 +15,20 @@ const badgeVariants = cva(styles.badge, {
   defaultVariants: {
     variant: 'default',
   },
-});
+})
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-      value?: React.ReactNode;
-    }
+  value?: React.ReactNode
+}
 
 function Badge({ className, variant, value, ...props }: BadgeProps) {
-  props.children = value || props.children;
+  props.children = value || props.children
 
   return (
     <div className={cn(badgeVariants({ variant }), className)} {...props} />
-  );
+  )
 }
 
-export { Badge, badgeVariants };
+export { Badge, badgeVariants }

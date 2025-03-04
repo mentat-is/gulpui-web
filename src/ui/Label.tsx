@@ -1,9 +1,9 @@
-import React from 'react';
-import * as LabelPrimitive from '@radix-ui/react-label';
-import { cva, type VariantProps } from 'class-variance-authority';
-import s from './styles/Label.module.css';
-import { cn } from '@impactium/utils';
-const labelVariants = cva(s.label);
+import React from 'react'
+import * as LabelPrimitive from '@radix-ui/react-label'
+import { cva, type VariantProps } from 'class-variance-authority'
+import s from './styles/Label.module.css'
+import { cn } from '@impactium/utils'
+const labelVariants = cva(s.label)
 
 const Label = React.forwardRef<
   React.ElementRef<typeof LabelPrimitive.Root>,

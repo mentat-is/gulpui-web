@@ -1,8 +1,9 @@
 'use client'
-import s from './styles/Select.module.css';
+import s from './styles/Select.module.css'
 import React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { cn } from '@impactium/utils';import { Icon } from '@impactium/icons';
+import { cn } from '@impactium/utils'
+import { Icon } from '@impactium/icons'
 
 const Select = SelectPrimitive.Root
 
@@ -16,15 +17,12 @@ const SelectTrigger = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <SelectPrimitive.Trigger
     ref={ref}
-    className={cn(
-      s.trigger,
-      className
-    )}
+    className={cn(s.trigger, className)}
     {...props}
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <Icon name='ChevronDown' className={s.icon} />
+      <Icon name="ChevronDown" className={s.icon} />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -36,14 +34,10 @@ const SelectScrollUpButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollUpButton
     ref={ref}
-    className={cn(
-      s.scroll,
-      s.up,
-      className
-    )}
+    className={cn(s.scroll, s.up, className)}
     {...props}
   >
-    <Icon name='ChevronUp' className={s.icon} />
+    <Icon name="ChevronUp" className={s.icon} />
   </SelectPrimitive.ScrollUpButton>
 ))
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName
@@ -54,14 +48,10 @@ const SelectScrollDownButton = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.ScrollDownButton
     ref={ref}
-    className={cn(
-      s.scroll,
-      s.down,
-      className
-    )}
+    className={cn(s.scroll, s.down, className)}
     {...props}
   >
-    <Icon name='ChevronDown' className={s.icon} />
+    <Icon name="ChevronDown" className={s.icon} />
   </SelectPrimitive.ScrollDownButton>
 ))
 SelectScrollDownButton.displayName =
@@ -74,22 +64,13 @@ const SelectContent = React.forwardRef<
   <SelectPrimitive.Portal>
     <SelectPrimitive.Content
       ref={ref}
-      className={cn(
-        s.content,
-        position === 'popper' &&
-          s.popper,
-        className
-      )}
+      className={cn(s.content, position === 'popper' && s.popper, className)}
       position={position}
       {...props}
     >
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
-        className={cn(
-          s.primitive,
-          position === 'popper' &&
-            s.podder
-        )}
+        className={cn(s.primitive, position === 'popper' && s.podder)}
       >
         {children}
       </SelectPrimitive.Viewport>
@@ -115,17 +96,10 @@ const SelectItem = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
 >(({ className, children, ...props }, ref) => (
-  <SelectPrimitive.Item
-    ref={ref}
-    className={cn(
-      s.item,
-      className
-    )}
-    {...props}
-  >
+  <SelectPrimitive.Item ref={ref} className={cn(s.item, className)} {...props}>
     <span>
       <SelectPrimitive.ItemIndicator>
-        <Icon name='Check' className={s.icon} />
+        <Icon name="Check" className={s.icon} />
       </SelectPrimitive.ItemIndicator>
     </span>
 

@@ -1,11 +1,11 @@
-import { Toaster as Sonner } from 'sonner';
-import s from './styles/Toaster.module.css';
+import { Toaster as Sonner } from 'sonner'
+import s from './styles/Toaster.module.css'
 type ToasterProps = React.ComponentProps<typeof Sonner>
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
-      theme='dark'
+      theme="dark"
       className={s.toaster}
       toastOptions={{
         classNames: {

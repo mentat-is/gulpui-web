@@ -1,34 +1,32 @@
-import React from 'react';
+import React from 'react'
 import s from './styles/Card.module.css'
-import { cn } from '@impactium/utils';
+import { cn } from '@impactium/utils'
 
 interface DescriptionOptions {
-  text: string;
+  text: string
   button: JSX.Element
 }
 
 export interface CardProps {
-  description?: string | DescriptionOptions;
-  children: any;
-  className?: string | string[];
+  description?: string | DescriptionOptions
+  children: any
+  className?: string | string[]
 }
 
 export function Card({ description, children, className }: CardProps) {
   return (
     <div className={cn(className, s._)}>
-      <div className={s.content}>
-        {children}
-      </div>
+      <div className={s.content}>{children}</div>
       {description && (
         <div className={s.description}>
-          {typeof description === 'string'
-            ? <p>{description}</p>
-            : (
-              <React.Fragment>
-                <p>{description.text}</p>
-                {description.button}
-              </React.Fragment>
-            )}
+          {typeof description === 'string' ? (
+            <p>{description}</p>
+          ) : (
+            <React.Fragment>
+              <p>{description.text}</p>
+              {description.button}
+            </React.Fragment>
+          )}
         </div>
       )}
     </div>

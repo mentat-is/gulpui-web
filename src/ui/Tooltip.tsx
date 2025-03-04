@@ -1,7 +1,7 @@
 import React from 'react'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
-import s from './styles/Tooltip.module.css';
-import { cn } from '@impactium/utils';
+import s from './styles/Tooltip.module.css'
+import { cn } from '@impactium/utils'
 
 const TooltipProvider = TooltipPrimitive.Provider
 
@@ -16,10 +16,7 @@ const TooltipContent = React.forwardRef<
   <TooltipPrimitive.Content
     ref={ref}
     sideOffset={sideOffset}
-    className={cn(
-      s.tooltip,
-      className
-    )}
+    className={cn(s.tooltip, className)}
     {...props}
   />
 ))

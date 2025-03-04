@@ -1,9 +1,9 @@
 export interface XY {
-  x: number,
+  x: number
   y: number
 }
 
 export const XYBase = (value: number) => ({
   x: value,
-  y: value
-});
+  y: value,
+})

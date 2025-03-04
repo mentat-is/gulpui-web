@@ -1,14 +1,14 @@
 import { useEffect, useReducer, useRef } from 'react'
 
-type Position = number | `${number}px` | 'auto';
+type Position = number | `${number}px` | 'auto'
 
 interface FPSCounterProps {
-  top?: Position;
-  right?: Position;
-  left?: Position;
-  bottom?: Position;
-  height?: number;
-  width?: number;
+  top?: Position
+  right?: Position
+  left?: Position
+  bottom?: Position
+  height?: number
+  width?: number
 }
 
 export function FPSCounter({
@@ -17,27 +17,27 @@ export function FPSCounter({
   bottom = 'auto',
   left = 'auto',
   height = 29,
-  width = 70
+  width = 70,
 }: FPSCounterProps) {
   const [state, dispatch] = useReducer(
-    state => {
+    (state) => {
       const currentTime = Date.now()
       if (currentTime > state.prevTime + 1000) {
         const nextFPS = [
           ...new Array(
-            Math.floor((currentTime - state.prevTime - 1000) / 1000)
+            Math.floor((currentTime - state.prevTime - 1000) / 1000),
           ).fill(0),
           Math.max(
             1,
-            Math.round((state.frames * 1000) / (currentTime - state.prevTime))
-          )
+            Math.round((state.frames * 1000) / (currentTime - state.prevTime)),
+          ),
         ]
         return {
           max: Math.max(state.max, ...nextFPS),
           len: Math.min(state.len + nextFPS.length, width),
           fps: [...state.fps, ...nextFPS].slice(-width),
           frames: 1,
-          prevTime: currentTime
+          prevTime: currentTime,
         }
       } else {
         return { ...state, frames: state.frames + 1 }
@@ -48,11 +48,11 @@ export function FPSCounter({
       max: 0,
       frames: 0,
       prevTime: Date.now(),
-      fps: []
-    }
+      fps: [],
+    },
   )
 
-  const request = useRef<number>(0);
+  const request = useRef<number>(0)
   const tick = () => {
     dispatch()
     request.current = requestAnimationFrame(tick)
@@ -83,7 +83,7 @@ export function FPSCounter({
         top,
         right,
         bottom,
-        left
+        left,
       }}
     >
       <span>{fps[len - 1]} FPS</span>
@@ -95,7 +95,7 @@ export function FPSCounter({
           bottom: 3,
           height,
           background: '#282844',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
         }}
       >
         {fps.map((frame: number, i: number) => (
@@ -108,7 +108,7 @@ export function FPSCounter({
               height: `${(height * frame) / max}px`,
               width: 1,
               background: '#00ffff',
-              boxSizing: 'border-box'
+              boxSizing: 'border-box',
             }}
           />
         ))}

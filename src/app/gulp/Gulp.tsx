@@ -1,7 +1,5 @@
 import { Windows } from '@/ui/Windows'
 
 export function GulpPage() {
-  return (
-    <Windows.Provider />
-  )
-};
+  return <Windows.Provider />
+}

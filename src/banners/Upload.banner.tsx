@@ -1,45 +1,72 @@
-import { useApplication } from '@/context/Application.context';
-import { Banner } from '@/ui/Banner';
-import { Input } from '@impactium/components';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/ui/Select';
-import { ChangeEvent, useEffect, useState } from 'react';
-import s from './styles/UploadBanner.module.css';
-import { Context, GulpDataset, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info';
-import { formatBytes } from '@/ui/utils';
-import { Progress } from '@/ui/Progress';
-import { SelectFiles } from './SelectFiles.banner';
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover';
-import { MaybeArray } from '@impactium/types';
-import { Button, Stack } from '@impactium/components';
-import { Icon } from '@impactium/icons';
-import { Toggle } from '@/ui/Toggle';
-import { toast } from 'sonner';
-import { Separator } from '@/ui/Separator';
-import { cn } from '@impactium/utils';
-import { Default, λContext, λFile } from '@/dto/Dataset';
-import { sha1 } from 'js-sha1';
+import { useApplication } from '@/context/Application.context'
+import { Banner } from '@/ui/Banner'
+import { Input } from '@impactium/components'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/ui/Select'
+import { ChangeEvent, useEffect, useState } from 'react'
+import s from './styles/UploadBanner.module.css'
+import {
+  Context,
+  GulpDataset,
+  Mapping,
+  MinMax,
+  MinMaxBase,
+  Operation,
+} from '@/class/Info'
+import { formatBytes } from '@/ui/utils'
+import { Progress } from '@/ui/Progress'
+import { SelectFiles } from './SelectFiles.banner'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
+import { Button, Stack } from '@impactium/components'
+import { Icon } from '@impactium/icons'
+import { Toggle } from '@/ui/Toggle'
+import { toast } from 'sonner'
+import { Separator } from '@/ui/Separator'
+import { cn } from '@impactium/utils'
+import { Default, λContext } from '@/dto/Dataset'
 
 interface λIngestFileSettings {
-  plugin?: string;
-  method?: string;
-  mapping?: string;
+  plugin?: string
+  method?: string
+  mapping?: string
 }
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
-  'win_evtx.py': [new Uint8Array([0x45, 0x6C, 0x66, 0x46, 0x69, 0x6C, 0x65])],
-  'systemd_journal.py': [new Uint8Array([0x4C, 0x50, 0x4B, 0x53, 0x48, 0x48, 0x52, 0x48])],
-  'sqlite.py': [new Uint8Array([0x53, 0x51, 0x4C, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6F, 0x72])],
-  'pcap.py': [new Uint8Array([0x0A, 0x0D, 0x0D, 0x0A]), new Uint8Array([0xA1, 0xB2, 0xC3, 0xD4]), new Uint8Array([0xD4, 0xC3, 0xB2, 0xA1]), new Uint8Array([0xA1, 0xB2, 0x3C, 0x4d]), new Uint8Array([0x4D, 0x3C, 0xB2, 0xA1])],
+  'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],
+  'systemd_journal.py': [
+    new Uint8Array([0x4c, 0x50, 0x4b, 0x53, 0x48, 0x48, 0x52, 0x48]),
+  ],
+  'sqlite.py': [
+    new Uint8Array([
+      0x53, 0x51, 0x4c, 0x69, 0x74, 0x65, 0x20, 0x66, 0x6f, 0x72,
+    ]),
+  ],
+  'pcap.py': [
+    new Uint8Array([0x0a, 0x0d, 0x0d, 0x0a]),
+    new Uint8Array([0xa1, 0xb2, 0xc3, 0xd4]),
+    new Uint8Array([0xd4, 0xc3, 0xb2, 0xa1]),
+    new Uint8Array([0xa1, 0xb2, 0x3c, 0x4d]),
+    new Uint8Array([0x4d, 0x3c, 0xb2, 0xa1]),
+  ],
   'win_reg.py': [new Uint8Array([0x72, 0x65, 0x67, 0x66])],
-  'win_pe.py': [new Uint8Array([0x4D, 0x5A])],
-  'zip.py': [new Uint8Array([0x50, 0x4B, 0x05, 0x06]), new Uint8Array([0x50, 0x4B, 0x07, 0x08]), new Uint8Array([0x50, 0x4B, 0x03, 0x04])]
-};
+  'win_pe.py': [new Uint8Array([0x4d, 0x5a])],
+  'zip.py': [
+    new Uint8Array([0x50, 0x4b, 0x05, 0x06]),
+    new Uint8Array([0x50, 0x4b, 0x07, 0x08]),
+    new Uint8Array([0x50, 0x4b, 0x03, 0x04]),
+  ],
+}
 
-let MAX_BYTE_LENGTH = 0;
+let MAX_BYTE_LENGTH = 0
 
-Object.values(FILE_SIGNATURES).forEach(array => {
-  array.forEach(entity => {
-    MAX_BYTE_LENGTH = Math.max(entity.length, MAX_BYTE_LENGTH);
+Object.values(FILE_SIGNATURES).forEach((array) => {
+  array.forEach((entity) => {
+    MAX_BYTE_LENGTH = Math.max(entity.length, MAX_BYTE_LENGTH)
   })
 })
 
@@ -48,75 +75,81 @@ interface TargetSelection {
 }
 
 export function UploadBanner() {
-  const { Info, app, spawnBanner } = useApplication();
-  const [files, setFiles] = useState<FileList>([] as unknown as FileList);
-  const [settings, setSettings] = useState<Record<File['name'], λIngestFileSettings>>({});
-  const [context, setContext] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
-  const [isExistingContextChooserAvalable, setIsExistingContextChooserAvalable] = useState<boolean>(false);
-  const [chunkSize, setChunkSize] = useState<number>(2);
+  const { Info, app, spawnBanner } = useApplication()
+  const [files, setFiles] = useState<FileList>([] as unknown as FileList)
+  const [settings, setSettings] = useState<
+    Record<File['name'], λIngestFileSettings>
+  >({})
+  const [context, setContext] = useState<string>('')
+  const [loading, setLoading] = useState<boolean>(false)
+  const [progress, setProgress] = useState<number>(0)
+  const [
+    isExistingContextChooserAvalable,
+    setIsExistingContextChooserAvalable,
+  ] = useState<boolean>(false)
+  const [chunkSize, setChunkSize] = useState<number>(2)
 
-  const chunkSizeInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
-    const { valueAsNumber } = event.target;
+  const chunkSizeInputChangeHandler = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const { valueAsNumber } = event.target
 
     if (isNaN(valueAsNumber)) {
-      return toast('Chunk size should be valid integer');
+      return toast('Chunk size should be valid integer')
     }
 
     if (valueAsNumber < 1 || valueAsNumber > 1024) {
-      return toast('Chunk size should be bigger than 1 and less than 1024');
+      return toast('Chunk size should be bigger than 1 and less than 1024')
     }
 
-    setChunkSize(valueAsNumber);
+    setChunkSize(valueAsNumber)
   }
 
   useEffect(() => {
-    setContext('');
-  }, [isExistingContextChooserAvalable]);
+    setContext('')
+  }, [isExistingContextChooserAvalable])
 
   const send = async (file: File, start: number, i: number, id?: string) => {
-    const size = 1024 * chunkSize * 1024;
-    const end = Math.min(file.size, start + size);
+    const size = 1024 * chunkSize * 1024
+    const end = Math.min(file.size, start + size)
 
-    const operation = Operation.selected(app);
+    const operation = Operation.selected(app)
     if (!operation) {
-      return;
+      return
     }
 
-    const plugin = settings[file.name].plugin;
+    const plugin = settings[file.name].plugin
     if (!plugin) {
-      return;
+      return
     }
 
-    const formData = new FormData();
+    const formData = new FormData()
     const payload: Record<any, any> = {
       plugin_params: {
         mapping_file: settings[file.name].method,
-        mapping_id: settings[file.name].mapping
+        mapping_id: settings[file.name].mapping,
       },
       original_file_path: file.name,
     }
     if (customFrame) {
       payload.flt = {
-        int_filter: [frame.min, frame.max]
+        int_filter: [frame.min, frame.max],
       }
     }
 
-    formData.append('payload', JSON.stringify(payload));
-    formData.append('f', file.slice(start, end), file.name);
+    formData.append('payload', JSON.stringify(payload))
+    formData.append('f', file.slice(start, end), file.name)
 
     const query: Record<string, string> = {
       plugin: plugin.split('.')[0],
       operation_id: operation.id,
       context_name: context,
-      ws_id: 'pashalko'
-    };
+      ws_id: 'pashalko',
+    }
 
     if (id) {
-      query.req_id = id;
+      query.req_id = id
     }
-    
 
     const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
       method: 'POST',
@@ -128,211 +161,259 @@ export function UploadBanner() {
       headers: {
         size: file.size.toString(),
         continue_offset: start.toString(),
-      }
-    });
+      },
+    })
 
     Info.request_add({
       for: null,
       id: response.req_id,
       status: response.status,
       type: 'ingest',
-      on: Date.now()
-    });
+      on: Date.now(),
+    })
 
     if (response.isError() && response.data.continue_offset) {
-      await send(file, response.data.continue_offset, file.size / (file.size - response.data.continue_offset), response.req_id);
-      return;
+      await send(
+        file,
+        response.data.continue_offset,
+        file.size / (file.size - response.data.continue_offset),
+        response.req_id,
+      )
+      return
     }
-  
-    setProgress(Math.floor(((i + (end / file.size)) / files!.length) * 100));
+
+    setProgress(Math.floor(((i + end / file.size) / files!.length) * 100))
 
     if (end < file.size) {
-      await send(file, end, i, response.req_id);
+      await send(file, end, i, response.req_id)
     }
-  };
-  
+  }
+
   const submit = async () => {
-    setLoading(true);
-    setProgress(0);
+    setLoading(true)
+    setProgress(0)
 
     for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+      const file = files[i]
 
-      send(file, 0, i);
+      send(file, 0, i)
     }
 
-    await Info.sync();
+    await Info.sync()
 
-    setLoading(false);
+    setLoading(false)
 
-    spawnBanner(<SelectFiles.Banner />);
-  };
-  
+    spawnBanner(<SelectFiles.Banner />)
+  }
+
   const setPlugin = (plugin: string, filename: File['name']) => {
-    setSettings(s => ({
+    setSettings((s) => ({
       ...s,
       [filename]: {
         ...s[filename],
-        plugin
-      }
-    }));
+        plugin,
+      },
+    }))
 
     const fileDefinedMethod = settings[filename].method
 
     if (!fileDefinedMethod) {
-      return;
+      return
     }
 
-    const methods = Mapping.methods(app, plugin);
+    const methods = Mapping.methods(app, plugin)
 
-    const isNewPluginAllowsFileToHasAnExistanseMethod = methods.includes(fileDefinedMethod);
+    const isNewPluginAllowsFileToHasAnExistanseMethod =
+      methods.includes(fileDefinedMethod)
 
     if (!isNewPluginAllowsFileToHasAnExistanseMethod) {
-      setMethod(methods.length === 1 ? methods[0] : undefined, filename, plugin);
+      setMethod(methods.length === 1 ? methods[0] : undefined, filename, plugin)
     }
   }
 
-  const setMethod = (method: string | undefined, filename: File['name'], plugin?: string) => {
-    setSettings(s => ({
+  const setMethod = (
+    method: string | undefined,
+    filename: File['name'],
+    plugin?: string,
+  ) => {
+    setSettings((s) => ({
       ...s,
       [filename]: {
         ...s[filename],
-        method
-      }
+        method,
+      },
     }))
 
     if (!method) {
-      return setMapping(undefined, filename);
+      return setMapping(undefined, filename)
     }
 
-    const fileDefinedMapping = settings[filename].mapping;
+    const fileDefinedMapping = settings[filename].mapping
 
-    const mappings = Mapping.mappings(app, plugin || settings[filename].plugin!, method);
+    const mappings = Mapping.mappings(
+      app,
+      plugin || settings[filename].plugin!,
+      method,
+    )
 
-    const isNewMethodAllowsFileToHasAnExistanseMapping = fileDefinedMapping ? mappings.includes(fileDefinedMapping) : false
+    const isNewMethodAllowsFileToHasAnExistanseMapping = fileDefinedMapping
+      ? mappings.includes(fileDefinedMapping)
+      : false
 
     if (!isNewMethodAllowsFileToHasAnExistanseMapping) {
-      setMapping(mappings.length === 1 ? mappings[0] : undefined, filename);
+      setMapping(mappings.length === 1 ? mappings[0] : undefined, filename)
     }
-  };
+  }
 
   const setMapping = (mapping: string | undefined, filename: File['name']) => {
-    setSettings(s => ({
+    setSettings((s) => ({
       ...s,
       [filename]: {
         ...s[filename],
-        mapping
-      }
-    }));
-  };
+        mapping,
+      },
+    }))
+  }
 
   useEffect(() => {
-    const newSettings: typeof settings = {};
+    const newSettings: typeof settings = {}
 
-    Object.entries(settings).forEach(file => {
-      const [filename, settings] = file;
-      
-      newSettings[filename] = settings;
-    });
-  }, [settings]);
+    Object.entries(settings).forEach((file) => {
+      const [filename, settings] = file
 
-  const getExtensionMapping = async (file: File): Promise<string | undefined> => {
+      newSettings[filename] = settings
+    })
+  }, [settings])
+
+  const getExtensionMapping = async (
+    file: File,
+  ): Promise<string | undefined> => {
     const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
-      const slice = new Uint8Array(buffer);
-      return uint.every((value, index) => value === slice[index]);
-    };
+      const slice = new Uint8Array(buffer)
+      return uint.every((value, index) => value === slice[index])
+    }
 
     const readChunk = (): Promise<ArrayBuffer> =>
       new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as ArrayBuffer);
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH));
-      });
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as ArrayBuffer)
+        reader.onerror = reject
+        reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH))
+      })
 
-    const buffer = await readChunk();
+    const buffer = await readChunk()
 
-    return Object.keys(FILE_SIGNATURES).find(key => FILE_SIGNATURES[key].some(uint => isEqual(buffer, uint)));
-  };
+    return Object.keys(FILE_SIGNATURES).find((key) =>
+      FILE_SIGNATURES[key].some((uint) => isEqual(buffer, uint)),
+    )
+  }
 
   useEffect(() => {
-    [...(files || [])].forEach(file => getExtensionMapping(file).then(plugin => {
-      if (plugin) setPlugin(plugin, file.name)
-    }))
-  }, [files]);
+    ;[...(files || [])].forEach((file) =>
+      getExtensionMapping(file).then((plugin) => {
+        if (plugin) setPlugin(plugin, file.name)
+      }),
+    )
+  }, [files])
 
   useEffect(() => {
     if (app.target.mappings.length === 0) {
-      Info.mapping_file_list();
+      Info.mapping_file_list()
     }
   }, [app.target.mappings])
 
-
   const PluginSelection = ({ file }: TargetSelection) => {
-    return (  
-      <Select onValueChange={plugin => setPlugin(plugin, file.name)} value={settings[file.name].plugin}>
+    return (
+      <Select
+        onValueChange={(plugin) => setPlugin(plugin, file.name)}
+        value={settings[file.name].plugin}
+      >
         <SelectTrigger>
-          <SelectValue defaultValue={settings[file.name].plugin} placeholder='Choose filename'>{settings[file.name].plugin}</SelectValue>
+          <SelectValue
+            defaultValue={settings[file.name].plugin}
+            placeholder="Choose filename"
+          >
+            {settings[file.name].plugin}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {Mapping.plugins(app).map(p => (
-            <SelectItem key={p} value={p}>{p}</SelectItem>
+          {Mapping.plugins(app).map((p) => (
+            <SelectItem key={p} value={p}>
+              {p}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
-    );
-  };
+    )
+  }
 
   const MethodSelection = ({ file }: TargetSelection) => {
-    const plugin = settings[file.name].plugin;
+    const plugin = settings[file.name].plugin
 
     if (!plugin) {
-      return null;
+      return null
     }
 
-    const methods = Mapping.methods(app, plugin);
+    const methods = Mapping.methods(app, plugin)
 
     if (!methods.length) {
       return (
         <Select disabled>
           <SelectTrigger>
-            <SelectValue defaultValue={'x'} placeholder='No mappings available for this plugin' />
+            <SelectValue
+              defaultValue={'x'}
+              placeholder="No mappings available for this plugin"
+            />
           </SelectTrigger>
         </Select>
-      );
+      )
     }
 
-    const isFileMethodMissing = !settings[file.name].method;
+    const isFileMethodMissing = !settings[file.name].method
 
     if (isFileMethodMissing && methods.length === 1) {
-      setMethod(methods[0], file.name);
+      setMethod(methods[0], file.name)
     }
 
     return (
-      <Select disabled={methods.length < 2} onValueChange={method => setMethod(method, file.name)} value={settings[file.name].method}>
+      <Select
+        disabled={methods.length < 2}
+        onValueChange={(method) => setMethod(method, file.name)}
+        value={settings[file.name].method}
+      >
         <SelectTrigger>
-          <SelectValue defaultValue={'x'} placeholder='Not selected' />
+          <SelectValue defaultValue={'x'} placeholder="Not selected" />
         </SelectTrigger>
         <SelectContent>
-          {methods.map(m => (
-            <SelectItem key={m} value={m}>{m}</SelectItem>
+          {methods.map((m) => (
+            <SelectItem key={m} value={m}>
+              {m}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
-    );
-  };
+    )
+  }
 
   const MappingSelection = ({ file }: TargetSelection) => {
-    const { plugin, method, mapping } = settings[file.name];
+    const { plugin, method, mapping } = settings[file.name]
 
-    const mappings = Mapping.mappings(app, plugin!, method!);
+    const mappings = Mapping.mappings(app, plugin!, method!)
 
     return (
-      <Select disabled={mappings.length < 2} onValueChange={mapping => setMapping(mapping, file.name)} value={mapping}>
-        <SelectTrigger defaultValue={mapping} value={mapping}>{mapping || 'Not selected'}</SelectTrigger>
+      <Select
+        disabled={mappings.length < 2}
+        onValueChange={(mapping) => setMapping(mapping, file.name)}
+        value={mapping}
+      >
+        <SelectTrigger defaultValue={mapping} value={mapping}>
+          {mapping || 'Not selected'}
+        </SelectTrigger>
         <SelectContent>
-          {mappings.map(m => (
-            <SelectItem key={m} value={m}>{m}</SelectItem>
+          {mappings.map((m) => (
+            <SelectItem key={m} value={m}>
+              {m}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
@@ -340,50 +421,65 @@ export function UploadBanner() {
   }
 
   const ContextSelection = () => {
-    const contexts = Operation.contexts(app);
+    const contexts = Operation.contexts(app)
 
-    if (!context) setContext(contexts[0]?.name);
+    if (!context) setContext(contexts[0]?.name)
 
     return (
-      <Select disabled={!contexts.length} onValueChange={setContext} value={context}>
+      <Select
+        disabled={!contexts.length}
+        onValueChange={setContext}
+        value={context}
+      >
         <SelectTrigger className={s.trigger}>
           <Stack>
-              <Icon name={Context.icon(Context.findByName(app, context) ?? {} as λContext)} />
-              <p>{context ?? (contexts.length
+            <Icon
+              name={Context.icon(
+                Context.findByName(app, context) ?? ({} as λContext),
+              )}
+            />
+            <p>
+              {context ??
+                (contexts.length
                   ? `Choose one context from list below (exist: ${contexts.length})`
-                  : 'There is no contexts at this moment')}</p>
+                  : 'There is no contexts at this moment')}
+            </p>
           </Stack>
         </SelectTrigger>
         <SelectContent>
-          {contexts.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+          {contexts.map((c) => (
+            <SelectItem key={c.name} value={c.name}>
+              {c.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
-    );
+    )
   }
 
   const filesSelectHandler = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.currentTarget.files;
+    const files = event.currentTarget.files
 
-    if (!files) return;
+    if (!files) return
 
-    setFiles(files);
-    
-    const settings: Record<File['name'], λIngestFileSettings> = {};
+    setFiles(files)
+
+    const settings: Record<File['name'], λIngestFileSettings> = {}
 
     for (let index = 0; index < files.length; index++) {
       const file = files.item(index)
 
-      if (!file) continue;
+      if (!file) continue
 
-      settings[file.name] = {};
+      settings[file.name] = {}
     }
 
-    setSettings(settings);
+    setSettings(settings)
   }
 
   function addFromExternalQueryButtonHandler() {
     toast('Not paid', {
-      description: 'Its paid feature'
+      description: 'Its paid feature',
     })
   }
 
@@ -391,7 +487,7 @@ export function UploadBanner() {
     return (
       <Stack className={s.filePreview} gap={16}>
         <Stack>
-          <Icon name='File' size={14} fromGeist />
+          <Icon name="File" size={14} fromGeist />
           <p className={s.weight}>{formatBytes(file.size)}</p>
           <Popover>
             <PopoverTrigger asChild>
@@ -401,106 +497,170 @@ export function UploadBanner() {
           </Popover>
         </Stack>
         <Stack gap={0}>
-          <Separator style={{ height: 28 }} color='var(--gray-400)' orientation='vertical' />
+          <Separator
+            style={{ height: 28 }}
+            color="var(--gray-400)"
+            orientation="vertical"
+          />
           <PluginSelection file={file} />
-          <Separator style={{ height: 28 }} color='var(--gray-400)' orientation='vertical' />
+          <Separator
+            style={{ height: 28 }}
+            color="var(--gray-400)"
+            orientation="vertical"
+          />
           <MethodSelection file={file} />
-          <Separator style={{ height: 28 }} color='var(--gray-400)' orientation='vertical' />
+          <Separator
+            style={{ height: 28 }}
+            color="var(--gray-400)"
+            orientation="vertical"
+          />
           <MappingSelection file={file} />
         </Stack>
       </Stack>
     )
   }
 
-  const done = <Button
-    variant='glass'
-    onClick={submit}
-    img='Check'
-    className={s.done}
-    disabled={!context || files.length === 0 || Object.values(settings).some(s => !s.plugin || (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) || (Mapping.mappings(app, s.plugin, s.method!).length > 0 ? !s.mapping : false)) || chunkSize < 1 || chunkSize > 1024}
-    loading={loading}
-  />
+  const done = (
+    <Button
+      variant="glass"
+      onClick={submit}
+      img="Check"
+      className={s.done}
+      disabled={
+        !context ||
+        files.length === 0 ||
+        Object.values(settings).some(
+          (s) =>
+            !s.plugin ||
+            (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) ||
+            (Mapping.mappings(app, s.plugin, s.method!).length > 0
+              ? !s.mapping
+              : false),
+        ) ||
+        chunkSize < 1 ||
+        chunkSize > 1024
+      }
+      loading={loading}
+    />
+  )
 
-  const option = <Button
-    variant='ghost'
-    onClick={addFromExternalQueryButtonHandler}
-    img='Kv'
-  />
+  const option = (
+    <Button
+      variant="ghost"
+      onClick={addFromExternalQueryButtonHandler}
+      img="Kv"
+    />
+  )
 
-  const [customFrame, setCustomFrame] = useState<boolean>(false);
-  const [frame, setFrame] = useState<MinMax>(MinMaxBase);
+  const [customFrame, setCustomFrame] = useState<boolean>(false)
+  const [frame, setFrame] = useState<MinMax>(MinMaxBase)
 
-  const frameInputChangeHandler = (event: ChangeEvent<HTMLInputElement>, type: keyof MinMax) => {
-    const value = event.target.valueAsDate;
-    
+  const frameInputChangeHandler = (
+    event: ChangeEvent<HTMLInputElement>,
+    type: keyof MinMax,
+  ) => {
+    const value = event.target.valueAsDate
+
     if (!value) {
       toast.error('Date is not valid', {
-        richColors: true
-      });
-      return;
+        richColors: true,
+      })
+      return
     }
 
-    setFrame(f => ({
+    setFrame((f) => ({
       ...f,
-      [type]: value.valueOf()
+      [type]: value.valueOf(),
     }))
   }
 
-  const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => frameInputChangeHandler(event, 'min');
+  const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
+    frameInputChangeHandler(event, 'min')
 
-  const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => frameInputChangeHandler(event, 'max');
+  const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
+    frameInputChangeHandler(event, 'max')
 
   return (
-    <Banner title='Upload files' done={done} option={option}>
-      <Toggle option={['New context', 'Choose from existing one']} checked={isExistingContextChooserAvalable} onCheckedChange={setIsExistingContextChooserAvalable} />
-      {isExistingContextChooserAvalable
-        ? <ContextSelection />
-        : <Input variant='highlighted' img={Default.Icon.CONTEXT} value={context} onChange={e => setContext(e.target.value)} placeholder='Context name' />}
+    <Banner title="Upload files" done={done} option={option}>
+      <Toggle
+        option={['New context', 'Choose from existing one']}
+        checked={isExistingContextChooserAvalable}
+        onCheckedChange={setIsExistingContextChooserAvalable}
+      />
+      {isExistingContextChooserAvalable ? (
+        <ContextSelection />
+      ) : (
+        <Input
+          variant="highlighted"
+          img={Default.Icon.CONTEXT}
+          value={context}
+          onChange={(e) => setContext(e.target.value)}
+          placeholder="Context name"
+        />
+      )}
       <Stack>
         <Input
-          variant='highlighted'
-          type='file'
-          id='ingest_input'
+          variant="highlighted"
+          type="file"
+          id="ingest_input"
           multiple
           onChange={filesSelectHandler}
         />
-        <Button variant='outline' className={s.addFiles} img='Plus'>Add files</Button>
+        <Button variant="outline" className={s.addFiles} img="Plus">
+          Add files
+        </Button>
       </Stack>
-      <Toggle option={['Ingest everything', 'Use limits']} checked={customFrame} onCheckedChange={setCustomFrame} />
-      {customFrame ? <Stack>
-        <Input
-          variant='highlighted'
-          type='date'
-          img='CalendarArrowUp'
-          onChange={frameMinInputChangeHandler}
-        />
-        <Input
-          variant='highlighted'
-          type='date'
-          img='CalendarArrowDown'
-          onChange={frameMaxInputChangeHandler}
-        />
-      </Stack> : null}
+      <Toggle
+        option={['Ingest everything', 'Use limits']}
+        checked={customFrame}
+        onCheckedChange={setCustomFrame}
+      />
+      {customFrame ? (
+        <Stack>
+          <Input
+            variant="highlighted"
+            type="date"
+            img="CalendarArrowUp"
+            onChange={frameMinInputChangeHandler}
+          />
+          <Input
+            variant="highlighted"
+            type="date"
+            img="CalendarArrowDown"
+            onChange={frameMaxInputChangeHandler}
+          />
+        </Stack>
+      ) : null}
       <Input
-        variant='highlighted'
-        type='number'
+        variant="highlighted"
+        type="number"
         onChange={chunkSizeInputChangeHandler}
         value={chunkSize}
-        img='DataPoint'
+        img="DataPoint"
         valid={chunkSize >= 1 && chunkSize <= 1024}
       />
-      <Stack dir='column' gap={0} className={cn(s.files, files.length === 0 && s.fill)}>
-        {files.length === 0 ? <Placeholder /> : Object.keys(settings).map((_, i) => <FilePreview file={files.item(i)!} />)}
+      <Stack
+        dir="column"
+        gap={0}
+        className={cn(s.files, files.length === 0 && s.fill)}
+      >
+        {files.length === 0 ? (
+          <Placeholder />
+        ) : (
+          Object.keys(settings).map((_, i) => (
+            <FilePreview file={files.item(i)!} />
+          ))
+        )}
       </Stack>
       {progress > 0 && <Progress value={progress} />}
     </Banner>
-  );
+  )
 }
 
 function Placeholder() {
   return (
     <Stack>
-      <Icon name='FileScan' />
+      <Icon name="FileScan" />
       <p>Choose files which you want to upload</p>
     </Stack>
   )

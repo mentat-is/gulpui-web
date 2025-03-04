@@ -1,92 +1,102 @@
-import React, { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
-import { λApp, BaseInfo } from '@/dto';
-import { AppSocket, MultiSocket } from '@/class/AppSocket';
-import { File, Info, Internal } from '@/class/Info';
-import { Console } from '@impactium/console';
-import { Logger } from '@/dto/Logger.class';
-import '@/class/API';
-import { DisplayEventDialog } from '@/dialogs/Event.dialog';
-import { toast } from 'sonner';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  ReactNode,
+  useRef,
+  useEffect,
+  useMemo,
+} from 'react'
+import { λApp, BaseInfo } from '@/dto'
+import { AppSocket, MultiSocket } from '@/class/AppSocket'
+import { File, Info } from '@/class/Info'
+import { Console } from '@impactium/console'
+import { Logger } from '@/dto/Logger.class'
+import '@/class/API'
+import { DisplayEventDialog } from '@/dialogs/Event.dialog'
+import { toast } from 'sonner'
 
 export class ApplicationError extends Error {
   constructor(message: string) {
-    super(`Application Error: ${message}`);
+    super(`Application Error: ${message}`)
   }
 }
 
 // Define the shape of the application context properties
 interface ApplicationContextProps {
-  spawnBanner: (banner: JSX.Element) => void;
-  destroyBanner: () => void;
-  banner: React.ReactNode;
-  spawnDialog: (dialog: JSX.Element) => void;
-  destroyDialog: () => void;
-  dialog: React.ReactNode;
-  app: λApp;
-  ws: AppSocket | undefined;
-  mws: MultiSocket | undefined;
+  spawnBanner: (banner: JSX.Element) => void
+  destroyBanner: () => void
+  banner: React.ReactNode
+  spawnDialog: (dialog: JSX.Element) => void
+  destroyDialog: () => void
+  dialog: React.ReactNode
+  app: λApp
+  ws: AppSocket | undefined
+  mws: MultiSocket | undefined
   setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
-  setInfo: (info: λApp) => void;
-  Info: Info;
-  timeline: React.RefObject<HTMLDivElement>;
-  logout: () => void;
+  setInfo: (info: λApp) => void
+  Info: Info
+  timeline: React.RefObject<HTMLDivElement>
+  logout: () => void
 }
 
 // Create the application context
-export const ApplicationContext = createContext<ApplicationContextProps | undefined>(undefined);
+export const ApplicationContext = createContext<
+  ApplicationContextProps | undefined
+>(undefined)
 
 // Custom hook to use the application context
-export const useApplication = (): ApplicationContextProps => useContext(ApplicationContext)!;
+export const useApplication = (): ApplicationContextProps =>
+  useContext(ApplicationContext)!
 
 // Application provider component to wrap the application with context
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
-  const [app, setInfo] = useState<λApp>(BaseInfo);
-  const [banner, setBanner] = useState<ReactNode>();
-  const [dialog, setDialog] = useState<ReactNode>();
-  const timeline = useRef<HTMLDivElement>(null);
+  const [app, setInfo] = useState<λApp>(BaseInfo)
+  const [banner, setBanner] = useState<ReactNode>()
+  const [dialog, setDialog] = useState<ReactNode>()
+  const timeline = useRef<HTMLDivElement>(null)
 
   const logout = () => {
     api('/logout', {
       method: 'POST',
       query: {
-        ws_id: app.general.ws_id
-      }
+        ws_id: app.general.ws_id,
+      },
     }).then(() => {
-      destroyBanner();
-      destroyDialog();
-      setInfo(BaseInfo);
+      destroyBanner()
+      destroyDialog()
+      setInfo(BaseInfo)
     })
-  };
-  
-  const instance = new Info({ app, setInfo, timeline });
+  }
 
-  const [ws, setWs] = useState<AppSocket>();
-  const [mws, setMws] = useState<MultiSocket>();
+  const instance = new Info({ app, setInfo, timeline })
+
+  const [ws, setWs] = useState<AppSocket>()
+  const [mws, setMws] = useState<MultiSocket>()
 
   useEffect(() => {
-    if (app.general.token) setWs(new AppSocket(instance));
-    if (app.general.token) setMws(new MultiSocket(instance));
-  }, [instance, app]);
+    if (app.general.token) setWs(new AppSocket(instance))
+    if (app.general.token) setMws(new MultiSocket(instance))
+  }, [instance, app])
 
   const spawnBanner = (banner: JSX.Element) => {
-    setBanner(banner);
-    document.querySelector('body')?.classList.add('no-scroll');
-  }; // Function to place banner into DOM-tree
-  
-  const destroyBanner = () => {
-    setBanner(() => null); 
-    document.querySelector('body')?.classList.remove('no-scroll');
-  }; // Function to unmount a banner
+    setBanner(banner)
+    document.querySelector('body')?.classList.add('no-scroll')
+  } // Function to place banner into DOM-tree
 
-  
+  const destroyBanner = () => {
+    setBanner(() => null)
+    document.querySelector('body')?.classList.remove('no-scroll')
+  } // Function to unmount a banner
+
   const spawnDialog = (dialog: JSX.Element) => {
     setDialog(dialog)
-  };
-  
+  }
+
   const destroyDialog = () => {
     // instance.setTimelineTarget(null);
     // setDialog(() => null)
-  };
+  }
 
   // Application context properties
   const props: ApplicationContextProps = {
@@ -103,81 +113,95 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     setInfo,
     Info: instance,
     timeline,
-    logout
-  };
+    logout,
+  }
 
   const handleLoggerExportCommand = () => {
     const content = Logger.history()
-      .map(l => l.message.replace(/x1b\[[0-9;]*m/g, ''))
-      .join('\n');
-    const blob = new Blob([content], { type: 'text/plain' });
+      .map((l) => l.message.replace(/x1b\[[0-9;]*m/g, ''))
+      .join('\n')
+    const blob = new Blob([content], { type: 'text/plain' })
 
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `gulpui-web_log_${Date.now()}.log`;
-    link.click();
-    URL.revokeObjectURL(url);
-  };
-  
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `gulpui-web_log_${Date.now()}.log`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const prefix = useMemo(() => {
-    return 'root@Gulp:/web-ui#';
-  }, []);
+    return 'root@Gulp:/web-ui#'
+  }, [])
 
   const onCommand = (cmd: string) => {
-    Logger.push(prefix + cmd);
+    Logger.push(prefix + cmd)
     switch (true) {
       case cmd === 'export':
-        handleLoggerExportCommand();
-        break;
-    
+        handleLoggerExportCommand()
+        break
+
       default:
         Logger.error('Unknown command', Logger.name)
-        break;
+        break
     }
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const key = event.key.toLowerCase();
+    const key = event.key.toLowerCase()
 
     if (!app.timeline.target || !dialog) {
-      return;
+      return
     }
 
-    const events = File.events(app, app.timeline.target.file_id);
+    const events = File.events(app, app.timeline.target.file_id)
 
-    if (key === 'd' || key === 'a') { 
-      const delta = Number(key === 'a') ? 1 : -1;
-      const target = instance.setTimelineTarget(delta);
+    if (key === 'd' || key === 'a') {
+      const delta = Number(key === 'a') ? 1 : -1
+      const target = instance.setTimelineTarget(delta)
       if (target) {
-        spawnDialog(<DisplayEventDialog event={target} />);
+        spawnDialog(<DisplayEventDialog event={target} />)
       } else {
-        toast(`Cannot open ${delta > 0 ? 'next' : 'previous'} event`);
+        toast(`Cannot open ${delta > 0 ? 'next' : 'previous'} event`)
       }
     } else if (key === 'end') {
-      event.preventDefault();
-      const target = instance.setTimelineTarget(events[0]);
-      spawnDialog(<DisplayEventDialog event={target} />);
+      event.preventDefault()
+      const target = instance.setTimelineTarget(events[0])
+      spawnDialog(<DisplayEventDialog event={target} />)
     } else if (key === 'home') {
-      event.preventDefault();
-      const target = instance.setTimelineTarget(events[events.length - 1]);
-      spawnDialog(<DisplayEventDialog event={target} />);
+      event.preventDefault()
+      const target = instance.setTimelineTarget(events[events.length - 1])
+      spawnDialog(<DisplayEventDialog event={target} />)
     }
-  };
+  }
 
   useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown as any);
+    window.addEventListener('keydown', handleKeyDown as any)
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown as any);
+      window.removeEventListener('keydown', handleKeyDown as any)
     }
-  }, [dialog, app.timeline.target]);
+  }, [dialog, app.timeline.target])
 
   return (
     <ApplicationContext.Provider value={props}>
       {children}
       {banner}
-      <Console noise={true} onCommand={onCommand} history={Logger.history()} title='Gulp Web Client' trigger='\' icon={<img style={{filter: `var(--filter-to-white)`, width: 14 }} src='/gulp-no-text.svg' alt='' />} prefix={prefix} />
+      <Console
+        noise={true}
+        onCommand={onCommand}
+        history={Logger.history()}
+        title="Gulp Web Client"
+        trigger="\"
+        icon={
+          <img
+            style={{ filter: `var(--filter-to-white)`, width: 14 }}
+            src="/gulp-no-text.svg"
+            alt=""
+          />
+        }
+        prefix={prefix}
+      />
     </ApplicationContext.Provider>
-  );
-};
+  )
+}

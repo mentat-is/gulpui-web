@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
-import s from './styles/Tabs.module.css';
-import { cn } from '@impactium/utils';
+import s from './styles/Tabs.module.css'
+import { cn } from '@impactium/utils'
 
 const Tabs = TabsPrimitive.Root
 
@@ -9,14 +9,7 @@ const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
-  <TabsPrimitive.List
-    ref={ref}
-    className={cn(
-      s.list,
-      className
-    )}
-    {...props}
-  />
+  <TabsPrimitive.List ref={ref} className={cn(s.list, className)} {...props} />
 ))
 TabsList.displayName = TabsPrimitive.List.displayName
 
@@ -26,10 +19,7 @@ const TabsTrigger = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
     ref={ref}
-    className={cn(
-      s.trigger,
-      className
-    )}
+    className={cn(s.trigger, className)}
     {...props}
   />
 ))
@@ -41,10 +31,7 @@ const TabsContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
-    className={cn(
-      s.content,
-      className
-    )}
+    className={cn(s.content, className)}
     {...props}
   />
 ))

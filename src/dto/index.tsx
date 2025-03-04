@@ -1,7 +1,7 @@
-export type { λApp } from './App.dto';
+export type { λApp } from './App.dto'
 export { BaseInfo } from './App.dto'
 export type { ElasticGetMappingUnit } from './ElasticGetMapping.dto'
-export type { λOperation } from './Dataset';
+export type { λOperation } from './Dataset'
 export type { Message, MessageTypes } from './Message.dto'
 
 export const SECOND = 1000

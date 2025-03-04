@@ -1,8 +1,8 @@
 import React from 'react'
 import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
-import s from './styles/ContextMenu.module.css';
-import { Icon } from '@impactium/icons';
-import { cn } from '@impactium/utils';
+import s from './styles/ContextMenu.module.css'
+import { Icon } from '@impactium/icons'
+import { cn } from '@impactium/utils'
 const ContextMenu = ContextMenuPrimitive.Root
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
@@ -24,16 +24,17 @@ const contextMenuSubTrigger = React.forwardRef<
 >(({ className, inset, img, children, ...props }, ref) => (
   <ContextMenuPrimitive.SubTrigger
     ref={ref}
-    className={cn(
-      s.subTrigger,
-      inset && s.subTriggerInset,
-      className
-    )}
+    className={cn(s.subTrigger, inset && s.subTriggerInset, className)}
     {...props}
   >
     {img && <Icon name={img} className={s.icon} />}
     {children}
-    <Icon name='ChevronRight' variant='white' size={14} className={s.subTriggerIcon} />
+    <Icon
+      name="ChevronRight"
+      variant="white"
+      size={14}
+      className={s.subTriggerIcon}
+    />
   </ContextMenuPrimitive.SubTrigger>
 ))
 contextMenuSubTrigger.displayName = ContextMenuPrimitive.SubTrigger.displayName
@@ -44,10 +45,7 @@ const contextMenuSubContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ContextMenuPrimitive.SubContent
     ref={ref}
-    className={cn(
-      s.subContent,
-      className
-    )}
+    className={cn(s.subContent, className)}
     {...props}
   />
 ))
@@ -60,10 +58,7 @@ const contextMenuContent = React.forwardRef<
   <ContextMenuPrimitive.Portal>
     <ContextMenuPrimitive.Content
       ref={ref}
-      className={cn(
-        s.content,
-        className
-      )}
+      className={cn(s.content, className)}
       {...props}
     />
   </ContextMenuPrimitive.Portal>
@@ -79,13 +74,12 @@ const contextMenuItem = React.forwardRef<
 >(({ className, img, children, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Item
     ref={ref}
-    className={cn(
-      s.item,
-      inset && s.itemInset,
-      className
-    )}
+    className={cn(s.item, inset && s.itemInset, className)}
     {...props}
-  >{img && <Icon name={img} className={s.icon} />}{children}</ContextMenuPrimitive.Item>
+  >
+    {img && <Icon name={img} className={s.icon} />}
+    {children}
+  </ContextMenuPrimitive.Item>
 ))
 contextMenuItem.displayName = ContextMenuPrimitive.Item.displayName
 
@@ -95,16 +89,13 @@ const contextMenuCheckboxItem = React.forwardRef<
 >(({ className, children, checked, ...props }, ref) => (
   <ContextMenuPrimitive.CheckboxItem
     ref={ref}
-    className={cn(
-      s.checkboxItem,
-      className
-    )}
+    className={cn(s.checkboxItem, className)}
     checked={checked}
     {...props}
   >
     <span className={s.checkboxItemIndicator}>
       <ContextMenuPrimitive.ItemIndicator>
-        <Icon name='Check' className={s.checkboxItemIcon} />
+        <Icon name="Check" className={s.checkboxItemIcon} />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -119,15 +110,12 @@ const contextMenuRadioItem = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <ContextMenuPrimitive.RadioItem
     ref={ref}
-    className={cn(
-      s.radioItem,
-      className
-    )}
+    className={cn(s.radioItem, className)}
     {...props}
   >
     <span className={s.radioItemIndicator}>
       <ContextMenuPrimitive.ItemIndicator>
-        <Icon name='Circle' className={s.radioItemIcon} />
+        <Icon name="Circle" className={s.radioItemIcon} />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -143,11 +131,7 @@ const contextMenuLabel = React.forwardRef<
 >(({ className, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Label
     ref={ref}
-    className={cn(
-      s.label,
-      inset && s.labelInset,
-      className
-    )}
+    className={cn(s.label, inset && s.labelInset, className)}
     {...props}
   />
 ))
@@ -169,15 +153,7 @@ const contextMenuShortcut = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLSpanElement>) => {
-  return (
-    <span
-      className={cn(
-        s.shortcut,
-        className
-      )}
-      {...props}
-    />
-  )
+  return <span className={cn(s.shortcut, className)} {...props} />
 }
 contextMenuShortcut.displayName = 'ContextMenuShortcut'
 
