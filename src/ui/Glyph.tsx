@@ -1,6 +1,5 @@
 import { λGlyph } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
-import { μ } from '@/class/Info'
 import { toast } from 'sonner'
 import { Popover, PopoverContent, PopoverTrigger } from './Popover'
 import { Button } from '@impactium/components'
@@ -23,7 +22,7 @@ export namespace Glyph {
 
   export const Raw = Object.keys(Icon.icons).slice(0, 50) as Icon.Name[]
 
-  export const List: Map<μ.Glyph, Icon.Name> = new Map()
+  export const List: Map<λGlyph['id'], Icon.Name> = new Map()
 
   export namespace Chooser {
     export interface Props {

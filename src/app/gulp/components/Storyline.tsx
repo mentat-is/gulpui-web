@@ -195,8 +195,6 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
                 note={note}
                 x={x}
                 y={y}
-                deleteObject={() => Info.note_delete(note)}
-                editObject={() => {}}
               />
             )
           })}

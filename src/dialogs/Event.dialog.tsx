@@ -200,9 +200,12 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             >
               Download JSON
             </Button>
-            {/* @ts-ignore */}
+
             <Button
-              onClick={() => window.focusCanvasOnTimestamp(event.timestamp)}
+              onClick={() => {
+                // @ts-ignore
+                return window.focusCanvasOnTimestamp(event.timestamp)
+              }}
               variant="secondary"
               img="Crosshair"
               title="Focus timeline on this event"

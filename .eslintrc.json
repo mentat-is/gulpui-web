@@ -31,7 +31,10 @@
     "no-console": "warn",
     "@typescript-eslint/no-namespace": "off",
     "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/ban-types": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
     "unused-imports/no-unused-imports": "error",
+    "no-var": "off",
     "unused-imports/no-unused-vars": [
       "error",
       {

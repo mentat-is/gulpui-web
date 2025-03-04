@@ -10,15 +10,24 @@ import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect } from 'react'
 import { AuthBanner } from './banners/Auth.banner'
+import { λthrow } from '@impactium/utils'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(Root())
+class NoRootDefinitionInHTMLDocument extends Error {
+  constructor() {
+    super('There is to element with `root` id in index.html document')
+  }
+}
+
+const root = document.getElementById('root')
+
+if (!root) {
+  λthrow(NoRootDefinitionInHTMLDocument)
+}
+
+ReactDOM.createRoot(root).render(Root())
 
 declare global {
   var api: Api
-  var useOptionStyling: (
-    options: Record<string, any> | undefined,
-    base: Record<string, string>,
-  ) => string
 }
 
 function Root() {

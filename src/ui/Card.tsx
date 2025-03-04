@@ -1,19 +1,21 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 import s from './styles/Card.module.css'
 import { cn } from '@impactium/utils'
 
-interface DescriptionOptions {
-  text: string
-  button: JSX.Element
+export namespace Card {
+  export interface Props {
+    description?:
+      | string
+      | {
+          text: string
+          button: JSX.Element
+        }
+    children: ReactNode
+    className?: string | string[]
+  }
 }
 
-export interface CardProps {
-  description?: string | DescriptionOptions
-  children: any
-  className?: string | string[]
-}
-
-export function Card({ description, children, className }: CardProps) {
+export function Card({ description, children, className }: Card.Props) {
   return (
     <div className={cn(className, s._)}>
       <div className={s.content}>{children}</div>

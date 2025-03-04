@@ -334,9 +334,7 @@ export namespace Internal {
   }
 
   export class IconExtractor {
-    public static activate = <
-      T extends Pick<GulpObject<μ.Operation>, 'glyph_id'>,
-    >(
+    public static activate = <T extends Pick<GulpObject<μ.File>, 'glyph_id'>>(
       defaultValue: Icon.Name,
     ): ((obj: T) => Icon.Name) => {
       return (obj: T) => {
@@ -1719,6 +1717,7 @@ export class Context {
 }
 
 export class File {
+  // @ts-ignore
   public static icon = Internal.IconExtractor.activate<λFile>(Default.Icon.FILE)
 
   // ⚠️ UNTOUCHABLE
@@ -1924,21 +1923,6 @@ export class Event {
 
     return app.target.events
   }
-
-  // public static frames = (events: λEvent[]) => {
-  //   const frames: Record<λFile['id'], MinMax> = {};
-
-  //   events.forEach(e => {
-  //     frames[e.file_id] = frames[e.file_id] || MinMaxBase;
-
-  //     const timestamp = Internal.Transformator.toTimestamp(e.timestamp);
-
-  //     frames[e.file_id].min = frames[e.file_id].min === 0 ? timestamp : Math.min(frames[e.file_id].min, timestamp);
-  //     frames[e.file_id].max = Math.max(frames[e.file_id].max, timestamp);
-  //   });
-
-  //   return frames;
-  // }
 
   public static toDoc = ({
     id,

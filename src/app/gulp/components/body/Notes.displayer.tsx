@@ -65,8 +65,6 @@ export function NotesDisplayer({
               note={note}
               x={position.left}
               y={position.top}
-              deleteObject={() => Info.note_delete(note)}
-              editObject={() => {}}
             />
           ) : null
         })}

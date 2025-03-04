@@ -18,7 +18,7 @@ interface ΞSelectionField {
   selected?: boolean
 }
 
-const DEFAULT_OBJECT: Record<string, string> = {}
+const DEFAULT_OBJECT = {}
 
 type Extendable = Record<string, any>
 
@@ -31,7 +31,7 @@ export type GulpObject<
   type: GulpDataType
   time_created: number
   time_updated: number
-  glyph_id: λGlyph['id'] | null
+  glyph_id: λGlyph['id']
   name: string
   // TODO
   granted_user_ids: Array<unknown>

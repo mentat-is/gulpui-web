@@ -34,7 +34,8 @@ const ColorContext =
     )
   })()
 
-export const useColor = (): ColorPickerContext => useContext(ColorContext)!
+export const useColor = (): ColorPickerContext =>
+  useContext(ColorContext) as ColorPickerContext
 
 type ColorPickerProps =
   | Button.Props

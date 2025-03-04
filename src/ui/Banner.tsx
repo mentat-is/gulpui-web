@@ -31,7 +31,7 @@ export function Banner({
   side = null,
   onClose,
 }: Banner.Props) {
-  const { Info, destroyBanner } = useApplication()
+  const { destroyBanner } = useApplication()
   const [isExpanded, setIsExpanded] = useState<boolean>(false)
 
   const close = () => {

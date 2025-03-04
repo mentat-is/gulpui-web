@@ -36,7 +36,7 @@ export class DefaultEngine
 
     const events = Array.from(map.entries())
 
-    events.forEach(([x, [code, timestamp]]) => {
+    events.forEach(([_, [code, timestamp]]) => {
       this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, {
         min: map[MinHeight],
         max: map[MaxHeight],
@@ -53,7 +53,7 @@ export class DefaultEngine
 
   get(file: λFile, force?: boolean): typeof DefaultEngine.target {
     if (this.is(file) && !force)
-      return this.map.get(file.id)! as typeof DefaultEngine.target
+      return this.map.get(file.id) as typeof DefaultEngine.target
 
     const map = new Map() as typeof DefaultEngine.target
     const events = File.events(this.renderer.info.app, file)

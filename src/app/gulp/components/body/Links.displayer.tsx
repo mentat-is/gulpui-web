@@ -50,8 +50,6 @@ export function LinksDisplayer({
             link={link}
             x={position.left}
             y={position.top}
-            deleteObject={() => Info.link_delete(link)}
-            editObject={() => {}}
           />
         ) : null
       })}
