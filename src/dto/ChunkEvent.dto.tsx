@@ -65,9 +65,7 @@ export interface λEvent {
   file_id: λFile['id']
   timestamp: number
   nanotimestamp: bigint
-  // event.event_code
   code: string
-  // event.gulp.event_code
   weight: number
   duration: number
 }

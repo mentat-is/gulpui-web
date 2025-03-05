@@ -23,9 +23,4 @@ export const enginesBase: EngineMap[] = [
     title: 'Graph',
     plugin: 'graph',
   },
-  // {
-  //   img: 'CodeXml',
-  //   title: 'Status codes',
-  //   plugin: 'apache'
-  // }
 ]

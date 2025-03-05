@@ -90,8 +90,8 @@ export namespace GulpDataset {
       doc_count: number
       'max_event.code': number
       'min_event.code': number
-      'min_gulp.timestamp': number // nsec
-      'max_gulp.timestamp': number // nsec
+      'min_gulp.timestamp': number
+      'max_gulp.timestamp': number
     }
 
     export type Summary = Operation[]
@@ -473,7 +473,6 @@ export class Info implements InfoProps {
       return
     }
 
-    // Reset events/docs for files
     files.forEach(this.events_reset_in_file)
 
     await this.notes_reload()
@@ -741,8 +740,6 @@ export class Info implements InfoProps {
     )
   }
 
-  // 🔥 CONTEXTS
-  // Получить выбранные контексты
   contexts_select = (contexts: λContext[]) => {
     const files = contexts
       .map((context) => Context.files(this.app, context))
@@ -791,7 +788,6 @@ export class Info implements InfoProps {
       if (files.every((file) => !file.selected)) {
         c.selected = false
       } else {
-        // Хендлим пустые контексты
         c.selected = files.some((file) => file.selected)
       }
 
@@ -800,7 +796,6 @@ export class Info implements InfoProps {
     this.setInfoByKey(contexts, 'target', 'contexts')
   }
 
-  // ⚠️ UNTOUCHABLE
   selectAll = (filter: string) => {
     const operation = Operation.selected(this.app)
 
@@ -1307,7 +1302,6 @@ export class Info implements InfoProps {
     }))
   }
 
-  // Methods to manipulate a timeline
   setTimelineScale = (scale: number) =>
     this.setInfoByKey(
       Math.max(0.01, Math.min(9999999, scale)),
@@ -1550,7 +1544,6 @@ export class Info implements InfoProps {
     return {} as Promise<λApp['general']['sessions']>
   }
 
-  // Private method to update a specific key in the application state
   private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(
     value: λApp[K][S],
     section: K,
@@ -2233,6 +2226,11 @@ export namespace μ {
   const Glyph = Symbol('Glyph')
   export type Glyph = UUID & {
     readonly [Glyph]: unique symbol
+  }
+
+  const Group = Symbol('Group')
+  export type Group = UUID & {
+    readonly [Group]: unique symbol
   }
 
   const User = Symbol('User')

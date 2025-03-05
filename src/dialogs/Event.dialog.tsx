@@ -26,8 +26,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const [rawJSON, setRawJSON] = useState<string>('')
 
   useEffect(() => {
-    // const notes = Event.notes(app, event);
-    // setNotes(notes);
     Info.setTimelineTarget(event)
   }, [event])
 

@@ -15,11 +15,10 @@ import { Export } from '@/banners/Export.banner'
 import { Requests } from '@/banners/Requests.banner'
 
 export function Menu() {
-  const { app, spawnBanner, destroyDialog } = useApplication()
+  const { app, spawnBanner } = useApplication()
   const { setWindows } = useWindows()
 
   const backToOperations = () => {
-    destroyDialog()
     setWindows([])
     spawnBanner(<Operation.Select.Banner />)
   }

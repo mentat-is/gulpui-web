@@ -407,7 +407,6 @@ export type NotSure<T> = T[] | T
 
 export type Usual<T> = Sometimes<T> & NotSure<T>
 
-// build-input-change-handler, thats what it means dude...
 export const bich =
   (setState: SetState<string>) => (event: ChangeEvent<HTMLInputElement>) => {
     return setState(event.target.value)

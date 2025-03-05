@@ -42,31 +42,26 @@ export namespace Hardcode {
 }
 
 export const Scale = Symbol('Scale')
-// eslint-disable-next-line
 export interface Scale {
   [Scale]: Hardcode.Scale
 }
 
 export const Height = Symbol('Height')
-// eslint-disable-next-line
 export interface Height {
   [Height]: Hardcode.Height
 }
 
 export const MaxHeight = Symbol('MaxHeight')
-// eslint-disable-next-line
 export interface MaxHeight {
   [MaxHeight]: Hardcode.Height
 }
 
 export const MinHeight = Symbol('MinHeight')
-// eslint-disable-next-line
 export interface MinHeight {
   [MinHeight]: Hardcode.Height
 }
 
 export const Length = Symbol('Length')
-// eslint-disable-next-line
 export interface Length {
   [Length]: Hardcode.Length
 }

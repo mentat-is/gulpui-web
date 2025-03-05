@@ -76,7 +76,6 @@ export type Api = {
   <T>(path: string, options?: RawFalseOptions): Promise<T>
   <T>(path: string, options?: AnyOptions): Promise<λ<ResponseBase<T>> | T>
 
-  // Сигнатуры с callback
   <T>(
     path: string,
     options: RawTrueOptions,
@@ -93,7 +92,6 @@ export type Api = {
     callback?: Callback<λ<ResponseBase<T>> | T>,
   ): Promise<λ<ResponseBase<T>> | T>
 
-  // Сигнатуры с callback как вторым аргументом
   <T>(
     path: string,
     callback: Callback<λ<ResponseBase<T>>>,
@@ -230,9 +228,6 @@ const api: Api = async function <T>(
     toast.error(message, {
       richColors: true,
     })
-    setTimeout(() => {
-      // window.location.reload();
-    }, 3000)
   }
 
   soft(false, options.setLoading)

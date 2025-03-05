@@ -20,7 +20,7 @@ import { File, Operation as GulpOperationEntity } from '../class/Info'
 export namespace Welcome {
   export function Page({ ...props }: Stack.Props) {
     const { newWindow, setWindows } = useWindows()
-    const { spawnBanner, destroyDialog, Info } = useApplication()
+    const { spawnBanner, Info } = useApplication()
 
     const [loading, setLoading] = useState<boolean>(false)
 
@@ -157,7 +157,6 @@ export namespace Welcome {
     ]
 
     const backToOperations = () => {
-      destroyDialog()
       setWindows([])
       spawnBanner(<Operation.Select.Banner />)
     }

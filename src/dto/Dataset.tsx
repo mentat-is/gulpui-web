@@ -33,10 +33,8 @@ export type GulpObject<
   time_updated: number
   glyph_id: λGlyph['id']
   name: string
-  // TODO
-  granted_user_ids: Array<unknown>
-  // TODO
-  granted_user_group_ids: Array<unknown>
+  granted_user_ids: Array<λUser['id']>
+  granted_user_group_ids: Array<λGroup['']>
 } & E
 
 type ΞOperation<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
@@ -206,11 +204,11 @@ export namespace Default {
 
 export interface λGlyph {
   id: μ.Glyph
-  // base64 image representation
   img: string
   name: Icon.Name
 }
 
 export interface λGroup {
+  id: μ.Group
   [key: string]: any
 }

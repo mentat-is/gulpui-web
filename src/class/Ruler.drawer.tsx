@@ -177,8 +177,6 @@ export class RulerDrawer implements RulerDrawerConstructor {
   section(props: RulerSectionProps) {
     this.ctx.fillStyle = props.even ? '#121212' : '#161616'
     this.ctx.fillRect(props.position, 0, this.ctx.canvas.width, 25)
-    // @ts-ignore:next-line
-    this.ctx.textRendering = 'optimizeLegibility'
     const timeUnit = props.format || 'MMM yyyy'
     const label = formatDate(props.timestamp, timeUnit)
     this.ctx.font = '10px Arial'

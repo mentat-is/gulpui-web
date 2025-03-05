@@ -265,7 +265,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       three: y + 14,
     }
 
-    // Limits
     this.ctx.fillStyle = '#e8e8e8'
     this.ctx.fillRect(
       this.getPixelPosition(file.timestamp.max + file.settings.offset) + 1,

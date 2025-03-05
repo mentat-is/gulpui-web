@@ -129,14 +129,10 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
   useEffect(() => {
     drawCanvas()
 
-    // Очищаем
     matrix.clear()
 
-    // Дефиницируем
     notes.forEach((note) => {
-      // Ставим таймстамп
       const timestamp = Note.timestamp(app, note)
-      // Инициализируем
       matrix.set(note.id, {
         x: getNoteXPositionFromTimestamp(timestamp),
         y: 0,

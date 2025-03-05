@@ -54,7 +54,6 @@ export namespace Maps {
               lng,
             }}
             mapId="739af084373f96fe"
-            // mapTypeId='roadmap'
             defaultZoom={8}
             gestureHandling="greedy"
             disableDefaultUI

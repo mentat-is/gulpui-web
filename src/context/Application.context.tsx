@@ -22,13 +22,11 @@ export class ApplicationError extends Error {
   }
 }
 
-// Define the shape of the application context properties
 interface ApplicationContextProps {
   spawnBanner: (banner: JSX.Element) => void
   destroyBanner: () => void
   banner: React.ReactNode
   spawnDialog: (dialog: JSX.Element) => void
-  destroyDialog: () => void
   dialog: React.ReactNode
   app: λApp
   ws: AppSocket | undefined
@@ -40,16 +38,13 @@ interface ApplicationContextProps {
   logout: () => void
 }
 
-// Create the application context
 export const ApplicationContext = createContext<
   ApplicationContextProps | undefined
 >(undefined)
 
-// Custom hook to use the application context
 export const useApplication = (): ApplicationContextProps =>
   useContext(ApplicationContext)!
 
-// Application provider component to wrap the application with context
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [app, setInfo] = useState<λApp>(BaseInfo)
   const [banner, setBanner] = useState<ReactNode>()
@@ -64,7 +59,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       },
     }).then(() => {
       destroyBanner()
-      destroyDialog()
       setInfo(BaseInfo)
     })
   }
@@ -82,29 +76,22 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const spawnBanner = (banner: JSX.Element) => {
     setBanner(banner)
     document.querySelector('body')?.classList.add('no-scroll')
-  } // Function to place banner into DOM-tree
+  }
 
   const destroyBanner = () => {
     setBanner(() => null)
     document.querySelector('body')?.classList.remove('no-scroll')
-  } // Function to unmount a banner
+  }
 
   const spawnDialog = (dialog: JSX.Element) => {
     setDialog(dialog)
   }
 
-  const destroyDialog = () => {
-    // instance.setTimelineTarget(null);
-    // setDialog(() => null)
-  }
-
-  // Application context properties
   const props: ApplicationContextProps = {
     spawnBanner,
     destroyBanner,
     banner,
     spawnDialog,
-    destroyDialog,
     dialog,
     ws,
     mws,
