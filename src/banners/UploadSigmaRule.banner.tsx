@@ -79,7 +79,7 @@ export namespace SigmaRules {
     }
 
     return (
-      <UIBanner title="Apply sigma rule" done={<DoneButton />}>
+      <UIBanner title="Apply sigma rule" done={<DoneButton />} {...props}>
         <Select
           onValueChange={(id) =>
             setFile(GulpFileEntity.id(app, id as λFile['id']))
@@ -123,7 +123,7 @@ export namespace SigmaRules {
           <SelectContent>
             {plugins.map((plugin) => {
               return (
-                <SelectItem value={plugin.filename}>
+                <SelectItem value={plugin.filename} key={plugin.filename}>
                   <Stack>
                     <Icon name="Puzzle" />
                     {plugin.filename}

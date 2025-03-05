@@ -1325,7 +1325,7 @@ export class Info implements InfoProps {
     }
 
     if (typeof event !== 'undefined') {
-      this.setInfoByKey(event, 'timeline', 'target')
+      this.setInfoByKey(event as λEvent, 'timeline', 'target')
     }
 
     return event as λEvent
@@ -1343,7 +1343,7 @@ export class Info implements InfoProps {
   query_external = async (
     plugin: string,
     uri: string,
-    params: Record<string, any>,
+    params: Record<string, string | number | object | null | undefined>,
   ) => {
     return api('/query_raw', {
       method: 'POST',
@@ -1546,17 +1546,13 @@ export class Info implements InfoProps {
     }
   }
 
-  setCurrentSessionOptions = (session: Session) => {
-    this.setInfoByKey('', 'general', 'sessions')
-  }
-
   getSessions = (): Promise<λApp['general']['sessions']> => {
     return {} as Promise<λApp['general']['sessions']>
   }
 
   // Private method to update a specific key in the application state
   private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(
-    value: any,
+    value: λApp[K][S],
     section: K,
     key: S,
   ) => {
@@ -1590,7 +1586,7 @@ export class Operation {
     )
 
   public static id = (use: λApp, id: λOperation['id']): λOperation =>
-    Parser.use(use, 'operations').find((o) => o.id === id)!
+    Parser.use(use, 'operations').find((o) => o.id === id) as λOperation
 
   public static findByName = (
     app: λApp,
@@ -1700,7 +1696,9 @@ export class Context {
     use: λApp | λContext[],
     context: λContext | λContext['id'],
   ) =>
-    Parser.use(use, 'contexts').find((c) => c.id === Parser.useUUID(context))!
+    Parser.use(use, 'contexts').find(
+      (c) => c.id === Parser.useUUID(context),
+    ) as λContext
 
   public static files = (
     app: λApp,
@@ -1745,7 +1743,9 @@ export class File {
 
   public static id = (use: λApp | λFile[], file: λFile | μ.File) =>
     typeof file === 'string'
-      ? Parser.use(use, 'files').find((s) => s.id === Parser.useUUID(file))!
+      ? (Parser.use(use, 'files').find(
+          (s) => s.id === Parser.useUUID(file),
+        ) as λFile)
       : file
 
   public static unselect = (app: λApp, unselected: λFile[]): λFile[] =>
@@ -1906,10 +1906,11 @@ export class Event {
   public static id = (app: λApp, event: λEvent['id']): λEvent =>
     Array.from(app.target.events.values())
       .flat()
-      .find((e) => e.id === event)!
+      .find((e) => e.id === event) as λEvent
 
   public static get = (app: λApp, id: μ.File): λEvent[] =>
-    app.target.events.get(id) || app.target.events.set(id, []).get(id)!
+    app.target.events.get(id) ||
+    (app.target.events.set(id, []).get(id) as λEvent[])
 
   public static selected = (app: λApp): λEvent[] =>
     File.selected(app)
@@ -2067,7 +2068,7 @@ export class Note {
     )
 
   public static id = (app: λApp, id: λNote['id']) =>
-    app.target.notes.find((n) => n.id === id)!
+    app.target.notes.find((n) => n.id === id) as λNote
 
   public static events = (app: λApp, note: λNote): λEvent[] =>
     Event.ids(
@@ -2123,7 +2124,9 @@ export class Mapping {
         })
       }
 
-      const shit = plugins.find((p) => p.name === r.metadata.plugin[0])!
+      const shit = plugins.find(
+        (p) => p.name === r.metadata.plugin[0],
+      ) as λMapping.Plugin
 
       shit.methods.push({
         name: r.filename,

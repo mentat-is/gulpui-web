@@ -2,7 +2,7 @@
   "name": "gulp-web-client",
   "version": "0.1.0",
   "private": true,
-  "homepage": "./client",
+  "homepage": ".",
   "dependencies": {
     "@impactium/components": "^1.1.1",
     "@impactium/console": "^1.0.7",

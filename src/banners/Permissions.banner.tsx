@@ -28,7 +28,7 @@ export namespace Permissions {
   export const Banner = () => {
     const { destroyBanner } = useApplication()
     const [users, setUsers] = useState<λDetailedUser[]>([])
-    const [groups, setGroups] = useState<λGroup[]>([])
+    const [_groups, setGroups] = useState<λGroup[]>([])
     const [loading, setLoading] = useState<boolean>(false)
 
     const reload = useCallback(() => {
@@ -86,10 +86,15 @@ export namespace Permissions {
         >
           {users.length
             ? users.map((user) => (
-                <User.Combination user={user} update={update} users={users} />
+                <User.Combination
+                  key={user.id}
+                  user={user}
+                  update={update}
+                  users={users}
+                />
               ))
             : Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton width="full" />
+                <Skeleton key={i} width="full" />
               ))}
         </Stack>
       ),
@@ -189,7 +194,7 @@ export namespace Permissions {
                 {RolesList.map((r) => {
                   const has = user.permission.includes(r)
                   return (
-                    <Stack className={s.role} gap={6}>
+                    <Stack key={r} className={s.role} gap={6}>
                       <Icon name={RolesIcons[r]} size={12} />
                       <p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
                       <Switch
@@ -213,7 +218,7 @@ export namespace Permissions {
                 {RolesList.map((r) => {
                   const has = user.permission.includes(r)
                   return (
-                    <Stack className={s.role} gap={6}>
+                    <Stack key={r} className={s.role} gap={6}>
                       <Icon name={RolesIcons[r]} size={12} />
                       <p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
                       <Switch
@@ -286,9 +291,9 @@ export namespace Permissions {
                 password,
                 glyph_id:
                   icon ||
-                  Array.from(Glyph.List.entries()).find(
+                  (Array.from(Glyph.List.entries()).find(
                     (i) => i[1] === 'User',
-                  )?.[0]!,
+                  )?.[0] as string),
               },
               setLoading,
               body: JSON.stringify(permissions.split(',').map((v) => v.trim())),
@@ -374,8 +379,11 @@ export namespace Permissions {
           group: λGroup
         }
       }
-      export function Combination({ group, ...props }: Combination.Props) {
-        return <Stack></Stack>
+      export function Combination({
+        group: _group,
+        ...props
+      }: Combination.Props) {
+        return <Stack {...props}></Stack>
       }
     }
     export namespace Edit {
@@ -420,9 +428,9 @@ export namespace Permissions {
                 password,
                 glyph_id:
                   icon ||
-                  Array.from(Glyph.List.entries()).find(
+                  (Array.from(Glyph.List.entries()).find(
                     (i) => i[1] === 'User',
-                  )?.[0]!,
+                  )?.[0] as string),
               },
               setLoading,
               body: {

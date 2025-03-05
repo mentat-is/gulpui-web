@@ -54,7 +54,7 @@ export namespace SelectFiles {
       return (
         <div className={s.wrapper}>
           {contexts.map((context) => (
-            <ContextComponent {...context} />
+            <ContextComponent key={context.id} {...context} />
           ))}
         </div>
       )
@@ -67,8 +67,8 @@ export namespace SelectFiles {
         if (!files) {
           return (
             <Fragment>
-              {Array.from({ length: 8 }).map(() => (
-                <Skeleton height={20} width="100%" />
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} height={20} width="100%" />
               ))}
             </Fragment>
           )
@@ -77,7 +77,7 @@ export namespace SelectFiles {
         return (
           <Fragment>
             {files.map((file) => (
-              <FileComponent {...file} />
+              <FileComponent key={file.id} {...file} />
             ))}
           </Fragment>
         )

@@ -27,11 +27,6 @@ export namespace Session {
         }
 
         setLoading(true)
-        setTimeout(() => {
-          Info.setCurrentSessionOptions(
-            Info.app.general.sessions[selectedSession],
-          )
-        }, 500)
         destroyBanner()
       }
 
@@ -62,6 +57,7 @@ export namespace Session {
               {sessions.length ? (
                 sessions.map((name) => (
                   <SelectItem
+                    key={name}
                     value={name}
                     onClick={() => setSelectedSession(name)}
                   >
@@ -106,7 +102,7 @@ export namespace Session {
           return
         }
 
-        const resp = await api(
+        await api(
           '/user_data_create',
           {
             method: 'POST',

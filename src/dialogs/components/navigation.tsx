@@ -52,6 +52,7 @@ export function Navigation({ event }: Navigation.Props) {
       <Stack className={s.content} jc="center">
         {events.map((e) => (
           <SymmetricSvg
+            key={e.id}
             className={cn(e.id === event.id && s.focus)}
             onClick={navigatorEventClickHandlerConstructor(e)}
             text={e.id}

@@ -76,7 +76,7 @@ export function Pointers({
   }
 
   return (
-    <Stack pos="absolute" className={s.pointers}>
+    <Stack pos="absolute" className={s.pointers} {...props}>
       {[you, ...app.timeline.pointers].map((p) => {
         const isYours = p.id === ('You' as λUser['id'])
         const x = p.x || getPixelPosition(p.timestamp)
@@ -84,6 +84,7 @@ export function Pointers({
 
         return (
           <Stack
+            key={p.id}
             className={cn(s.pointer, isRightSide && s.right)}
             style={{ top: isYours ? p.y : -scrollY + p.y, left: x }}
             pos="absolute"

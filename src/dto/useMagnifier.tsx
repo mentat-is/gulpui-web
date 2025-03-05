@@ -48,7 +48,11 @@ export const useMagnifier = (
     clientX,
     clientY,
   }: React.MouseEvent<HTMLDivElement>) => {
-    const { left, top } = canvas_ref.current!.getBoundingClientRect()
+    if (!canvas_ref.current) {
+      return
+    }
+
+    const { left, top } = canvas_ref.current.getBoundingClientRect()
     setMousePosition({
       x: clientX - left,
       y: clientY - top,

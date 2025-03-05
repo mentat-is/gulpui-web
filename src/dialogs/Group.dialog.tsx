@@ -27,7 +27,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
       title={`Choose event${events[0]?.timestamp ? ` for ${new Date(events[0].timestamp).toLocaleTimeString()} ${new Date(events[0].timestamp).toLocaleDateString()}` : ''}`}
       description={`List includes ${events.length} events`}
     >
-      {events.map((event: λEvent, i) => (
+      {events.map((event: λEvent) => (
         <div className={s.event} key={event.id}>
           <div className={s.combination}>
             <SymmetricSvg text={event.id} className={s.icon} />

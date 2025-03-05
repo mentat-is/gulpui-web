@@ -54,13 +54,13 @@ export interface RequestOptions {
   deassign?: boolean
 }
 
-type RawTrueOptions<T> = Omit<RequestInit, 'body'> & {
+type RawTrueOptions = Omit<RequestInit, 'body'> & {
   raw: true
 } & RequestOptions
-type RawFalseOptions<T> = Omit<RequestInit, 'body'> & {
+type RawFalseOptions = Omit<RequestInit, 'body'> & {
   raw?: false
 } & RequestOptions
-type AnyOptions<T> = Omit<RequestInit, 'body'> & {
+type AnyOptions = Omit<RequestInit, 'body'> & {
   raw?: boolean
 } & RequestOptions
 
@@ -72,24 +72,24 @@ export type Api = {
    * @param toast: keyof Locale | boolean
    * Используется при успешном запросе если string, или в случае boolean выводит сообщение об ошибке
    */
-  <T>(path: string, options: RawTrueOptions<T>): Promise<λ<ResponseBase<T>>>
-  <T>(path: string, options?: RawFalseOptions<T>): Promise<T>
-  <T>(path: string, options?: AnyOptions<T>): Promise<λ<ResponseBase<T>> | T>
+  <T>(path: string, options: RawTrueOptions): Promise<λ<ResponseBase<T>>>
+  <T>(path: string, options?: RawFalseOptions): Promise<T>
+  <T>(path: string, options?: AnyOptions): Promise<λ<ResponseBase<T>> | T>
 
   // Сигнатуры с callback
   <T>(
     path: string,
-    options: RawTrueOptions<T>,
+    options: RawTrueOptions,
     callback: Callback<λ<ResponseBase<T>>>,
   ): Promise<λ<ResponseBase<T>>>
   <T>(
     path: string,
-    options?: RawFalseOptions<T>,
+    options?: RawFalseOptions,
     callback?: Callback<T>,
   ): Promise<T>
   <T>(
     path: string,
-    options?: AnyOptions<T>,
+    options?: AnyOptions,
     callback?: Callback<λ<ResponseBase<T>> | T>,
   ): Promise<λ<ResponseBase<T>> | T>
 
@@ -97,17 +97,17 @@ export type Api = {
   <T>(
     path: string,
     callback: Callback<λ<ResponseBase<T>>>,
-    options: RawTrueOptions<T>,
+    options: RawTrueOptions,
   ): Promise<λ<ResponseBase<T>>>
   <T>(
     path: string,
     callback: Callback<T>,
-    options?: RawFalseOptions<T>,
+    options?: RawFalseOptions,
   ): Promise<T>
   <T>(
     path: string,
     callback: Callback<λ<ResponseBase<T>> | T>,
-    options?: AnyOptions<T>,
+    options?: AnyOptions,
   ): Promise<λ<ResponseBase<T>> | T>
 }
 

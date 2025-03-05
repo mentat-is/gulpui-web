@@ -9,13 +9,13 @@ interface FloatingWindowProps {
   focus: (note: λNote) => void
 }
 
-export function NotesWindow({ onClose, focus }: FloatingWindowProps) {
+export function NotesWindow({ onClose }: FloatingWindowProps) {
   const { app } = useApplication()
 
   return (
     <Banner title="Notes" onClose={onClose} className={s.main}>
       {app.target.notes.map((note) => (
-        <NotePoint.Combination note={note} />
+        <NotePoint.Combination key={note.id} note={note} />
       ))}
     </Banner>
   )

@@ -111,7 +111,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         </SelectTrigger>
         <SelectContent>
           {enginesBase.map((i) => (
-            <SelectItem value={i.plugin}>
+            <SelectItem value={i.plugin} key={i.plugin}>
               <Stack>
                 <Icon name={i.img} />
                 <p>{i.title}</p>
@@ -136,7 +136,9 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
           </SelectTrigger>
           <SelectContent>
             {Event.fields().map((field) => (
-              <SelectItem value={field}>{field}</SelectItem>
+              <SelectItem key={field} value={field}>
+                {field}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

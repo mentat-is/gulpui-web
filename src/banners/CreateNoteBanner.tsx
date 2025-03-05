@@ -61,7 +61,7 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
         name,
         color,
         private: String(_private),
-        glyph_id: icon!,
+        glyph_id: icon as λGlyph['id'],
       },
       body: {
         text,
@@ -142,7 +142,7 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
           <p>Tags:</p>
           {tags.length ? (
             tags.map((tag) => (
-              <Badge onClick={() => deleteTag(tag)} value={tag} />
+              <Badge key={tag} onClick={() => deleteTag(tag)} value={tag} />
             ))
           ) : (
             <Badge variant="outline" value="No tags here..." />
@@ -169,7 +169,7 @@ export function CreateNoteBanner({ event }: CreateNoteBannerProps) {
   )
 }
 
-function Editable({ icon, name, children, ...props }: EditableProps) {
+function Editable({ icon, name, ...props }: EditableProps) {
   return (
     <Stack className={cn(s.inp, s.editable)}>
       <p>{name}:</p>

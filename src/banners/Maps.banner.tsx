@@ -90,6 +90,7 @@ export namespace Maps {
 
     export type Reference = Ref<google.maps.Circle | null>
 
+    // eslint-disable-next-line no-inner-declarations
     function useCircle({
       onClick,
       onDrag,
@@ -132,9 +133,6 @@ export namespace Maps {
 
       useEffect(() => {
         if (!map) {
-          if (map === undefined)
-            console.error('<Circle> has to be inside a Map component.')
-
           return
         }
 
@@ -179,6 +177,7 @@ export namespace Maps {
       return circle
     }
 
+    // eslint-disable-next-line react/display-name
     export const Element = forwardRef(
       (props: Circle.Props, ref: Circle.Reference) => {
         const circle = useCircle(props)
@@ -188,5 +187,7 @@ export namespace Maps {
         return null
       },
     )
+
+    Element.displayName = 'Element'
   }
 }

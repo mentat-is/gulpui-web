@@ -24,7 +24,7 @@ interface TargetMenuProps {
 }
 
 export function FilesMenu({ files }: TargetMenuProps) {
-  const { Info, app } = useApplication()
+  const { Info } = useApplication()
 
   if (!files.length) return null
 
@@ -62,6 +62,7 @@ export function FilesMenu({ files }: TargetMenuProps) {
         <ContextMenuSubContent>
           {enginesBase.map((i) => (
             <ContextMenuItem
+              key={i.plugin}
               onClick={() =>
                 Info.file_set_render_engine(
                   files.map((file) => file.id),

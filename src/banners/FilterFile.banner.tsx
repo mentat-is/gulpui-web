@@ -263,7 +263,9 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
                   {Object.keys(
                     app.timeline.filtering_options[file.id] || {},
                   ).map((k) => (
-                    <SelectItem value={k}>{k}</SelectItem>
+                    <SelectItem key={k} value={k}>
+                      {k}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

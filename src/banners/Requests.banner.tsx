@@ -42,7 +42,7 @@ export namespace Requests {
           {app.general.requests
             .filter((r) => (isAll ? true : r.status !== 'done'))
             .map((request) => (
-              <Requests.Combination request={request} />
+              <Requests.Combination key={request.id} request={request} />
             ))}
         </Stack>
         <Toggle
@@ -75,7 +75,7 @@ export namespace Requests {
     }
 
     return (
-      <Stack className={s.combination}>
+      <Stack className={cn(s.combination, className)} {...props}>
         <Status status={request.status} />
         <p className={s.id}>{request.id}</p>
         <span>for</span>

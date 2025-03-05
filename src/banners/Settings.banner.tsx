@@ -1,5 +1,4 @@
 import { Internal } from '@/class/Info'
-import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
 import { useEffect, useState } from 'react'
@@ -9,7 +8,6 @@ export namespace Settings {
     export type Props = UIBanner.Props
   }
   export function Banner({ ...props }: Settings.Banner.Props) {
-    const { Info, app } = useApplication()
     const [crosshair, setCrosshair] = useState<boolean>(
       Internal.Settings.crosshair,
     )

@@ -45,7 +45,7 @@ export function Canvas({
   const overlay_ref = useRef<HTMLCanvasElement>(null)
   const wrapper_ref = useRef<HTMLDivElement>(null)
 
-  const { app, banner, spawnDialog, Info, dialog, mws } = useApplication()
+  const { app, banner, spawnDialog, Info, dialog } = useApplication()
   const [shifted, setShifted] = useState<λFile[]>([])
   const [isShiftPressed] = useKeyHandler('Shift')
   const dependencies = [
@@ -186,7 +186,11 @@ export function Canvas({
   const handleClick = (event: MouseEvent) => {
     if (event.button === 2) return event.preventDefault()
 
-    const { top, left } = canvas_ref.current!.getBoundingClientRect()
+    if (!canvas_ref.current) {
+      return
+    }
+
+    const { top, left } = canvas_ref.current.getBoundingClientRect()
     const clickX = event.clientX - left
     const clickY = event.clientY - top + scrollY
 
@@ -329,10 +333,12 @@ export function Canvas({
   )
 
   const handleContextMenu = (event: MouseEvent) => {
+    if (!timeline.current) {
+      return
+    }
+
     const index = Math.floor(
-      (event.clientY +
-        scrollY -
-        timeline.current!.getBoundingClientRect().top) /
+      (event.clientY + scrollY - timeline.current.getBoundingClientRect().top) /
         48,
     )
 

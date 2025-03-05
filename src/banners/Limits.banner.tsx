@@ -33,7 +33,7 @@ export function LimitsBanner() {
     destroyBanner()
   }
 
-  const validate = (type: keyof MinMax, value: boolean) => {
+  const validate = (type: keyof MinMax) => {
     if (type === 'min') {
       setIsMinValid(frame.min < frame.max)
     } else {
@@ -46,13 +46,13 @@ export function LimitsBanner() {
       const timestamp = new Date(value).valueOf()
       if (isNaN(timestamp) || timestamp === 0) {
         Logger.error(`Invalid date: ${value}`)
-        validate(type, false)
+        validate(type)
         return
       }
       setFrame((prev) => ({ ...prev, [type]: timestamp }))
-      validate(type, true)
+      validate(type)
     } catch {
-      validate(type, false)
+      validate(type)
     }
   }
 

@@ -23,7 +23,7 @@ export namespace Operation {
     }
 
     export function Banner({ ...props }: Operation.Select.Banner.Props) {
-      const { Info, spawnBanner } = useApplication()
+      const { Info, app, spawnBanner } = useApplication()
 
       const InitializeNewOperaion = () => (
         <Button
@@ -93,7 +93,7 @@ export namespace Operation {
               defaultValue={GulpOperationEntity.selected(Info.app)?.id}
               onValueChange={(id) =>
                 Info.operations_select(
-                  Info.app.target.operations.find((o) => o.id === id)!,
+                  GulpOperationEntity.id(app, id as λOperation['id']),
                 )
               }
             >
@@ -101,7 +101,7 @@ export namespace Operation {
               <SelectContent>
                 {Info.app.target.operations.length ? (
                   Info.app.target.operations.map((operation) => (
-                    <SelectItem value={operation.id}>
+                    <SelectItem key={operation.id} value={operation.id}>
                       <Icon name={GulpOperationEntity.icon(operation)} />
                       {operation.name}
                     </SelectItem>
@@ -123,7 +123,7 @@ export namespace Operation {
     }
 
     export function Banner({ ...props }: Operation.Create.Banner.Props) {
-      const { app, Info, spawnBanner } = useApplication()
+      const { Info, spawnBanner } = useApplication()
       const [name, setName] = useState<string>('')
       const [icon, setIcon] = useState<λGlyph['id'] | null>(
         Glyph.List.keys().next().value || null,

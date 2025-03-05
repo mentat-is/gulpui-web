@@ -62,7 +62,7 @@ export namespace Export {
     }
 
     return (
-      <UIBanner title="Export">
+      <UIBanner title="Export" {...props}>
         <Stack>
           <Button
             variant="secondary"

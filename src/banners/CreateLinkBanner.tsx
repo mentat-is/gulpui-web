@@ -137,6 +137,7 @@ export namespace LinkComponents {
             .filter((l) => !l.doc_ids.some((e) => e === event.id))
             .map((link) => (
               <Button
+                key={link.id}
                 variant="secondary"
                 style={{ color: link.color }}
                 onClick={connect(link)}

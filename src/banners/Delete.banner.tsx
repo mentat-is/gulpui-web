@@ -14,7 +14,7 @@ export namespace Delete {
       }
     }
     export function Banner({ context, ...props }: Delete.Context.Banner.Props) {
-      const { Info, destroyBanner } = useApplication()
+      const { Info } = useApplication()
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
       const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)
@@ -47,13 +47,13 @@ export namespace Delete {
           <Toggle
             option={['No, don`t delete', 'Yes, i`m sure']}
             checked={isSubmited}
-            onCheckedChange={(v) => setIsSubmited((v) => !v)}
+            onCheckedChange={setIsSubmited}
           />
           {isSubmited && (
             <Toggle
               option={['Don`t delete data inside', 'Delete data inside']}
               checked={isWipe}
-              onCheckedChange={(v) => setIsWipe((v) => !v)}
+              onCheckedChange={setIsWipe}
             />
           )}
         </UIBanner>
@@ -68,7 +68,7 @@ export namespace Delete {
       }
     }
     export function Banner({ file, ...props }: Delete.File.Banner.Props) {
-      const { Info, destroyBanner } = useApplication()
+      const { Info } = useApplication()
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
       const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)
@@ -101,13 +101,13 @@ export namespace Delete {
           <Toggle
             option={['No, don`t delete', 'Yes, i`m sure']}
             checked={isSubmited}
-            onCheckedChange={(v) => setIsSubmited((v) => !v)}
+            onCheckedChange={setIsSubmited}
           />
           {isSubmited && (
             <Toggle
               option={['Don`t delete data inside', 'Delete data inside']}
               checked={isWipe}
-              onCheckedChange={(v) => setIsWipe((v) => !v)}
+              onCheckedChange={setIsWipe}
             />
           )}
         </UIBanner>

@@ -49,7 +49,7 @@ export class HeightEngine
 
   get(file: λFile): typeof HeightEngine.target {
     if (this.is(file))
-      return this.map.get(file.id)! as typeof HeightEngine.target
+      return this.map.get(file.id) as typeof HeightEngine.target
 
     const map = new Map() as typeof HeightEngine.target
 

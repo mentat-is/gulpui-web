@@ -182,7 +182,7 @@ export function UploadBanner() {
       return
     }
 
-    setProgress(Math.floor(((i + end / file.size) / files!.length) * 100))
+    setProgress(Math.floor(((i + end / file.size) / files.length) * 100))
 
     if (end < file.size) {
       await send(file, end, i, response.req_id)
@@ -252,7 +252,7 @@ export function UploadBanner() {
 
     const mappings = Mapping.mappings(
       app,
-      plugin || settings[filename].plugin!,
+      plugin || (settings[filename].plugin as string),
       method,
     )
 
@@ -398,7 +398,7 @@ export function UploadBanner() {
   const MappingSelection = ({ file }: TargetSelection) => {
     const { plugin, method, mapping } = settings[file.name]
 
-    const mappings = Mapping.mappings(app, plugin!, method!)
+    const mappings = Mapping.mappings(app, plugin as string, method as string)
 
     return (
       <Select
@@ -533,7 +533,7 @@ export function UploadBanner() {
           (s) =>
             !s.plugin ||
             (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) ||
-            (Mapping.mappings(app, s.plugin, s.method!).length > 0
+            (Mapping.mappings(app, s.plugin, s.method as string).length > 0
               ? !s.mapping
               : false),
         ) ||
@@ -648,7 +648,7 @@ export function UploadBanner() {
           <Placeholder />
         ) : (
           Object.keys(settings).map((_, i) => (
-            <FilePreview file={files.item(i)!} />
+            <FilePreview key={_} file={files.item(i) as File} />
           ))
         )}
       </Stack>

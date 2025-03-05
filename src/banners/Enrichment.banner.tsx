@@ -96,6 +96,7 @@ export namespace Enrichment {
         variant="glass"
         img="Check"
         onClick={submit}
+        loading={loading}
       />
     )
 
@@ -136,7 +137,11 @@ export namespace Enrichment {
           <Trigger />
           <SelectContent>
             {File.selected(app).map((file) => {
-              return <SelectItem value={file.id}>{file.name}</SelectItem>
+              return (
+                <SelectItem key={file.id} value={file.id}>
+                  {file.name}
+                </SelectItem>
+              )
             })}
           </SelectContent>
         </Select>
@@ -171,7 +176,7 @@ export namespace Enrichment {
           <SelectContent>
             {plugins.map((plugin) => {
               return (
-                <SelectItem value={plugin.filename}>
+                <SelectItem key={plugin.filename} value={plugin.filename}>
                   {plugin.filename}
                 </SelectItem>
               )
@@ -297,7 +302,7 @@ export namespace Enrichment {
 
             if (param.type === 'bool') {
               return (
-                <Stack>
+                <Stack key={k}>
                   <Switch value={value} />
                 </Stack>
               )
@@ -348,6 +353,7 @@ export namespace Enrichment {
         title={event ? 'Event enrichment' : 'Data enrichment'}
         done={done}
         loading={!plugins}
+        {...props}
       >
         <PluginSelection />
         <FileSelection />

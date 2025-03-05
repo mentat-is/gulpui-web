@@ -16,7 +16,7 @@ import { download } from '@/ui/utils'
 import C2V from 'canvas2svg'
 
 export function StorylineBanner() {
-  const { Info, app } = useApplication()
+  const { app } = useApplication()
 
   const notes = app.target.notes
 
@@ -76,7 +76,7 @@ namespace Graph {
 }
 
 export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
-  const { Info, app, spawnBanner } = useApplication()
+  const { app } = useApplication()
   const graph = useRef<HTMLCanvasElement>(null)
 
   props.dir = props.dir ?? 'column'
@@ -143,9 +143,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
       })
     })
 
-    Array.from(matrix.entries()).map(([id, { x, y }]) => {
-      // const is = Ar  matrix.values().find(p => p.x >= x - 16 && p.x <= x + 16);
-
+    Array.from(matrix.entries()).map(([id, { x, y: _y }]) => {
       const note = Note.id(app, id)
 
       if (!note) {
@@ -189,6 +187,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
 
             return (
               <NotePoint.Point
+                key={id}
                 id={id}
                 description={note.description}
                 className={s.point}
@@ -223,6 +222,7 @@ function List() {
       {notes.map((note) => {
         return (
           <DetailedNote
+            key={note.id}
             note={note}
             active={active === note.id}
             activate={activate(note.id)}
@@ -243,6 +243,7 @@ namespace DetailedNote {
   export interface Detail {
     name: string
     value: Pick<λNote, 'glyph_id' | 'name'>
+    // @ts-ignore
     icon: (obj: any) => Icon.Name
   }
 }

@@ -7,7 +7,7 @@ import { Navigator } from './Navigator'
 import { Algorhithm } from '@/ui/utils'
 
 export function Timeline() {
-  const { app, Info, timeline, spawnDialog } = useApplication()
+  const { app, Info, timeline } = useApplication()
   const [scrollX, setScrollX] = useState<number>(0)
   const [scrollY, setScrollY] = useState<number>(-26)
 

@@ -16,7 +16,7 @@ export function NotesDisplayer({
   getPixelPosition,
   scrollY,
 }: NotesDisplayerProps) {
-  const { Info, app } = useApplication()
+  const { app } = useApplication()
 
   const selectedFiles = useMemo(
     () => new Set(app.target.files.filter((f) => f.selected).map((f) => f.id)),

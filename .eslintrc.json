@@ -27,14 +27,23 @@
         "endOfLine": "auto"
       }
     ],
+    "object-curly-newline": [
+      "error",
+      { "multiline": true, "consistent": true }
+    ],
     "react/react-in-jsx-scope": "off",
     "no-console": "warn",
     "@typescript-eslint/no-namespace": "off",
+    "no-case-declarations": "off",
+    "no-useless-escape": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/no-unused-vars": "off",
     "@typescript-eslint/ban-types": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "unused-imports/no-unused-imports": "error",
     "no-var": "off",
+    "@typescript-eslint/no-unnecessary-type-constraint": "off",
+    "@typescript-eslint/no-explicit-any": "off",
     "unused-imports/no-unused-vars": [
       "error",
       {

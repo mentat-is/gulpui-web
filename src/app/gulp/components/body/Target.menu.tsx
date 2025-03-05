@@ -60,6 +60,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         <ContextMenuSubContent>
           {enginesBase.map((i) => (
             <ContextMenuItem
+              key={i.plugin}
               onClick={() => Info.file_set_render_engine([file.id], i.plugin)}
               img={i.img}
             >
