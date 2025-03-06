@@ -4,7 +4,7 @@ import { useApplication } from '@/context/Application.context'
 import { Canvas } from './Canvas'
 import { Stack } from '@impactium/components'
 import { Navigator } from './Navigator'
-import { Algorhithm } from '@/ui/utils'
+import { Algorhithm, getTimestamp } from '@/ui/utils'
 
 export function Timeline() {
   const { app, Info, timeline } = useApplication()
@@ -49,7 +49,14 @@ export function Timeline() {
         setScrollX={setScrollX}
         setScrollY={setScrollY}
       />
-      <Navigator setScrollX={setScrollX} timeline={timeline} />
+      <Navigator
+        setScrollX={setScrollX}
+        timeline={timeline}
+        timestamp={getTimestamp(
+          scrollX + (timeline.current?.clientWidth || 0),
+          Info,
+        )}
+      />
     </Stack>
   )
 }

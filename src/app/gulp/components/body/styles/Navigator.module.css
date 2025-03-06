@@ -10,7 +10,7 @@
   height: 24px;
   width: 100%;
 }
-.heading > button,
+.heading button,
 .ws_edit {
   width: 24px;
   padding: 2px;
@@ -62,4 +62,7 @@
   background: var(--green-700);
   gap: 6px;
   height: 20px;
+}
+.goto p {
+  font-family: var(--font-mono);
 }

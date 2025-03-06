@@ -2,8 +2,8 @@ import { Button, Input, Stack } from '@impactium/components'
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { useApplication } from '@/context/Application.context'
-import { File, Note } from '@/class/Info'
-import { RefObject, useEffect, useRef, useState } from 'react'
+import { Context, File, Note } from '@/class/Info'
+import { ChangeEvent, RefObject, useEffect, useRef, useState } from 'react'
 import { λNote } from '@/dto/Dataset'
 import { NotePoint } from '@/ui/Note'
 import { Resizer } from '@/ui/Resizer'
@@ -12,11 +12,14 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom'
 import { NotesWindow } from '@/components/NotesWindow'
 import { SetState } from '@/class/API'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
+import { Logger } from '@/dto/Logger.class'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
     setScrollX: SetState<number>
     timeline: RefObject<HTMLDivElement>
+    timestamp: number
   }
 }
 
@@ -24,10 +27,58 @@ export function Navigator({
   setScrollX,
   timeline,
   className,
+  timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
   const { Info, app, spawnDialog, ws } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([])
+  const [timestamp, setTimestamp] = useState<number>(_timestamp)
+  const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
+
+  useEffect(() => {
+    setTimestamp(_timestamp)
+  }, [_timestamp])
+
+  const resetTimestamp = () => {
+    setTimestampInputValid(false)
+    setTimestamp(0)
+  }
+
+  const handleTimestampChangeHandler = (ev: ChangeEvent<HTMLInputElement>) => {
+    const { value } = ev.target
+    const limits = Context.frame(app)
+    if (!value) {
+      Logger.error(
+        `Expected number, got ${value}`,
+        'Navigator.handleTimestampChangeHandler',
+      )
+      resetTimestamp()
+      return
+    }
+
+    const num = parseInt(value)
+    if (isNaN(num) || num < 0) {
+      Logger.error(
+        `Expected number, got ${num}`,
+        'Navigator.handleTimestampChangeHandler',
+      )
+      resetTimestamp()
+      return
+    }
+
+    setTimestampInputValid(num < limits.max && num > limits.min)
+    setTimestamp(num)
+  }
+
+  const resetTimestampToInitialValue = () => {
+    setTimestamp(_timestamp)
+    setTimestampInputValid(true)
+  }
+
+  const goToTimestamp = () => {
+    // @ts-ignore
+    return window.focusCanvasOnTimestamp(timestamp)
+  }
 
   useEffect(() => {
     const files = File.selected(app)
@@ -244,6 +295,31 @@ export function Navigator({
           img={app.timeline.hidden_notes ? 'EyeOff' : 'Eye'}
           onClick={Info.toggle_notes_visibility}
         />
+        <Popover>
+          <PopoverTrigger>
+            <Button size="sm" variant="secondary" img="Crosshair" />
+          </PopoverTrigger>
+          <PopoverContent className={s.goto}>
+            <Stack dir="column" ai="flex-start">
+              <p>Go to timestamp:</p>
+              <Stack>
+                <Input
+                  variant="highlighted"
+                  img="Crosshair"
+                  value={timestamp}
+                  valid={timestampInputValid}
+                  onChange={handleTimestampChangeHandler}
+                />
+                <Button
+                  img="Undo2"
+                  variant="secondary"
+                  onClick={resetTimestampToInitialValue}
+                />
+                <Button img="Check" variant="glass" onClick={goToTimestamp} />
+              </Stack>
+            </Stack>
+          </PopoverContent>
+        </Popover>
         <Button
           size="sm"
           variant="secondary"

@@ -1,8 +1,8 @@
 .popover {
   z-index: 6;
   width: min-content;
-  border-radius: var(--border-s);
-  border: var(--geist-border);
+  border-radius: 6px;
+  border: 1px solid var(--gray-400);
   background-color: var(--soft-black);
   padding: var(--p3) var(--p4);
   color: var(--white);
