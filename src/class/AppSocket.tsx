@@ -137,15 +137,34 @@ export class MultiSocket extends WebSocket {
     }
 
     this.onmessage = ({ data }) => {
-      const message: {
-        data: Pointers.Pointer
-      } = JSON.parse(data)
-
-      if (message.data.id === this.info.app.general.id) {
+      if (!data) {
         return
       }
 
-      this.info.setPointers(message.data)
+      if (data.type === 'ws_connected') {
+        return
+      }
+
+      const message: {
+        data: {
+          data: Pointers.Pointer
+        }
+      } = JSON.parse(data)
+
+      if (!message?.data?.data?.id) {
+        return
+      }
+
+      if (message.data.data.id === this.info.app.general.id) {
+        return
+      }
+
+      Logger.log(
+        `Recieved new client data for ${message.data.data.id} with ${message.data.data.timestamp} and ${message.data.data.y}`,
+        'MuliSocket',
+      )
+
+      this.info.setPointers(message.data.data)
     }
 
     this.onerror = (error) => {

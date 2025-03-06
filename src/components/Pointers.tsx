@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context'
 import { Stack } from '@impactium/components'
 import s from './styles/Pointers.module.css'
 import { λUser } from '@/class/Info'
-import { useCallback, useEffect } from 'react'
+import { useRef, useState } from 'react'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
 import { XY } from '@/dto/XY.dto'
@@ -35,28 +35,44 @@ export function Pointers({
   timestamp,
   ...props
 }: Pointers.Props) {
-  const { mws, app } = useApplication()
+  const COLOR_MAPPING: string[] = [
+    'gray',
+    'blue',
+    'red',
+    'amber',
+    'green',
+    'teal',
+    'purple',
+    'pink',
+  ]
 
-  useEffect(() => {
+  const { mws, app } = useApplication()
+  const color = useRef<string>(
+    `var(--${COLOR_MAPPING[Math.round(Math.random() * COLOR_MAPPING.length)]})-700`,
+  )
+  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now())
+
+  const send = () => {
     if (!mws) {
       return
     }
 
-    const interval = setInterval(() => {
-      mws.sendPointer({
-        id: app.general.id,
-        timestamp: timestamp,
-        color: 'var(--green-700)',
-        y: self.y,
-      })
-    }, 250)
-
-    return () => {
-      clearInterval(interval)
+    if (lastSyncTimestamp + 250 > Date.now()) {
+      return
     }
-  }, [mws])
 
-  const getDate = useCallback((value: number) => {
+    mws.sendPointer({
+      id: app.general.id,
+      timestamp: timestamp,
+      color: color.current,
+      y: Math.round(self.y) + scrollY,
+    })
+    setLastSyncTimestamp(Date.now())
+  }
+
+  send()
+
+  const getDate = (value: number) => {
     try {
       return format(new Date(value).getTime(), 'yyyy.MM.dd HH:mm:ss SSS')
     } catch (error) {
@@ -66,7 +82,7 @@ export function Pointers({
       )
       return ''
     }
-  }, [])
+  }
 
   const you: Pointers.Pointer = {
     ...self,

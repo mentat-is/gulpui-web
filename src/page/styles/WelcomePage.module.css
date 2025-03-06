@@ -1,0 +1,68 @@
+.window {
+  position: relative !important;
+  padding: 12px;
+  height: 100vh;
+}
+.noWindows > h3 {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  margin-bottom: 36px;
+}
+.noWindows > p {
+  margin-bottom: 64px;
+  color: var(--text-dimmed);
+  font-size: 22px;
+}
+.rounded {
+  border-radius: var(--round);
+}
+.hint {
+  color: var(--text-dimmed);
+}
+.loading p {
+  color: var(--soft-black);
+  font-size: 16px;
+  line-height: 16px;
+}
+.active {
+  background: var(--geist-background);
+}
+.flow {
+  background: var(--meta-black);
+  min-width: 256px;
+  padding: 12px;
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  width: 285px;
+}
+.flow p {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--gray-800);
+  font-family: var(--font-mono);
+}
+.flow svg {
+  color: var(--gray-500);
+  border-radius: var(--round);
+  height: 12px !important;
+  width: 12px !important;
+}
+
+.flow p.check {
+  color: var(--green-700);
+}
+.flow p.check svg {
+  color: var(--green-700);
+  background: none !important;
+}
+.action {
+  width: 312px;
+}
+.logo {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  height: 24px;
+}

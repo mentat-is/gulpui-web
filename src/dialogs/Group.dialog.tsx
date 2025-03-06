@@ -5,7 +5,6 @@ import { SymmetricSvg } from '@/ui/SymmetricSvg'
 import { DisplayEventDialog } from './Event.dialog'
 import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
-import { useEffect, useState } from 'react'
 import { Stack } from '@impactium/components'
 
 interface DisplayGroupDialogProps {
@@ -14,13 +13,6 @@ interface DisplayGroupDialogProps {
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const { spawnDialog } = useApplication()
-  const [visible, setVisible] = useState<number>(16)
-
-  useEffect(() => {
-    return () => {
-      setVisible(16)
-    }
-  }, [events])
 
   return (
     <Dialog
@@ -28,14 +20,22 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
       description={`List includes ${events.length} events`}
     >
       {events.map((event: λEvent) => (
-        <div className={s.event} key={event.id}>
-          <div className={s.combination}>
-            <SymmetricSvg text={event.id} className={s.icon} />
-            <div className={s.group}>
-              <p className={s.title}>{event.id}</p>
-              <p className={s.description}>{event.code}</p>
-            </div>
-          </div>
+        <Stack key={event.id} className={s.event}>
+          <SymmetricSvg text={event.id} />
+          <Stack
+            dir="column"
+            jc="space-evenly"
+            ai="flex-start"
+            className={s.info}
+          >
+            <p className={s.id}>{event.id}</p>
+            <Stack className={s.description}>
+              <p>
+                Code <span>{event.code}</span> at{' '}
+                <span>{event.nanotimestamp.toString()}</span>
+              </p>
+            </Stack>
+          </Stack>
           <Button
             variant="outline"
             onClick={() => spawnDialog(<DisplayEventDialog event={event} />)}
@@ -44,18 +44,8 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
           >
             Open
           </Button>
-        </div>
-      ))}
-      {events.length > visible && (
-        <Stack gap={12} jc="center" ai="center">
-          <span style={{ fontSize: 14, color: 'var(--text-dimmed)' }}>
-            Displayed {visible} / {events.length} events
-          </span>
-          <Button onClick={() => setVisible((v) => v + 16)} img="Plus">
-            Display 16 more events
-          </Button>
         </Stack>
-      )}
+      ))}
     </Dialog>
   )
 }
