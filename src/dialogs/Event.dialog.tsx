@@ -8,12 +8,12 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
 import { copy, download } from '@/ui/utils'
 import { Button, Skeleton, Stack } from '@impactium/components'
-import { CreateNoteBanner } from '@/banners/CreateNoteBanner'
 import { File } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkComponents } from '@/banners/CreateLinkBanner'
 import { Maps } from '@/banners/Maps.banner'
+import { NoteFunctionality } from '@/banners/CreateNoteBanner'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -130,7 +130,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Stack className={s.group}>
             <Stack dir="column" flex>
               <Button
-                onClick={() => spawnBanner(<CreateNoteBanner event={event} />)}
+                onClick={() =>
+                  spawnBanner(<NoteFunctionality.Create.Banner event={event} />)
+                }
                 variant="secondary"
                 img="StickyNote"
               >

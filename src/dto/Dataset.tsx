@@ -134,7 +134,7 @@ export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   operation_id: λOperation['id']
   tags: string[]
   context_id: λContext['id']
-  source_id: λFile['id']
+  file_id: λFile['id']
   docs: λDoc[]
   time_pin: number
   last_editor_id: λUser

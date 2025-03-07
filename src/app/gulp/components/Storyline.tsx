@@ -317,7 +317,7 @@ function DetailedNote({ note, active, activate }: DetailedNote.Props) {
         />
         <Detail
           name="File"
-          value={File.id(app, note.source_id)}
+          value={File.id(app, note.file_id)}
           icon={File.icon}
         />
         <Separator />

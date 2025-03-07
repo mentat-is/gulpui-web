@@ -32,7 +32,7 @@ export function NotesDisplayer({
         if (timestamp) {
           acc[note.id] = {
             x: getPixelPosition(timestamp),
-            y: File.getHeight(app, note.source_id, 0),
+            y: File.getHeight(app, note.file_id, 0),
           }
         }
         return acc
@@ -56,7 +56,7 @@ export function NotesDisplayer({
   return (
     <Fragment>
       {app.target.notes
-        .filter((note) => selectedFiles.has(note.source_id))
+        .filter((note) => selectedFiles.has(note.file_id))
         .map((note) => {
           const position = getNotePosition(note)
           return position ? (

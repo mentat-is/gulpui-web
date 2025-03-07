@@ -2055,6 +2055,7 @@ export class Note {
       (n) =>
         ({
           ...n,
+          file_id: n.source_id,
           description: n.text,
           docs: Event.normalize(n.docs),
         }) satisfies λNote,
@@ -2070,7 +2071,7 @@ export class Note {
     )
 
   public static findByFile = (app: λApp, file: λFile) =>
-    app.target.notes.filter((n) => n.source_id === file.id)
+    app.target.notes.filter((n) => n.file_id === file.id)
 
   public static timestamp = (app: λApp, note: λNote): number => {
     let sum = 0
