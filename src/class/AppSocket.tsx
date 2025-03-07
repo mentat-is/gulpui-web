@@ -191,9 +191,10 @@ export class MultiSocket extends WebSocket {
   }
 
   sendPointer = (data: Pointers.Pointer) => {
-    if (!this.OPEN) {
-      return
+    try {
+      this.send(JSON.stringify({ data }))
+    } catch (error) {
+      Logger.error(error, 'MultiSocket.sendPointer')
     }
-    this.send(JSON.stringify({ data }))
   }
 }
