@@ -292,7 +292,11 @@ export function Navigator({
           size="sm"
           variant="secondary"
           title={app.timeline.hidden_notes ? 'Show notes' : 'Hide notes'}
-          img={app.timeline.hidden_notes ? 'EyeOff' : 'Eye'}
+          img={app.timeline.hidden_notes ? 'ToggleOffAlt' : 'ToggleOnAlt'}
+          className={cn(
+            s.notes_visibility,
+            app.timeline.hidden_notes && s.dimmed,
+          )}
           onClick={Info.toggle_notes_visibility}
         />
         <Popover>

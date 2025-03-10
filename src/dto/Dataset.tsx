@@ -181,7 +181,6 @@ export interface ΞRequest {
 
 export namespace Default {
   type Object =
-    | 'INDEX'
     | 'OPERATION'
     | 'CREATE_OPERATION'
     | 'CONTEXT'
@@ -191,7 +190,6 @@ export namespace Default {
     | 'EVENT'
 
   export const Icon: Record<Object, Icon.Name> = {
-    INDEX: 'Database',
     OPERATION: 'BookDashed',
     CREATE_OPERATION: 'BookPlus',
     CONTEXT: 'Box',
@@ -199,6 +197,16 @@ export namespace Default {
     FILE: 'File',
     NOTE: 'StickyNote',
     LINK: 'Link',
+  }
+
+  export const Color: Record<Object, string> = {
+    OPERATION: 'blue',
+    CREATE_OPERATION: 'blue',
+    CONTEXT: 'green',
+    FILE: 'yellow',
+    NOTE: 'teal',
+    LINK: 'amber',
+    EVENT: 'cyan',
   }
 }
 

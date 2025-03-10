@@ -1,0 +1,34 @@
+.wrapper {
+  overflow: auto;
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+}
+.table * {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+.table th {
+  padding: 0 8px;
+  text-align: left;
+  border-right: 1px solid var(--gray-400);
+  font-weight: 800;
+}
+.table svg {
+  transform: translateY(1px);
+  margin-right: 4px;
+}
+.value {
+  white-space: nowrap;
+  padding: 0 8px;
+  height: 100%;
+  border-right: 1px solid var(--gray-400);
+  border-top: 1px solid var(--gray-400);
+  color: var(--gray-1000);
+  font-weight: 300;
+}
+.blank {
+  color: var(--text-dimmed);
+  font-weight: 300;
+}

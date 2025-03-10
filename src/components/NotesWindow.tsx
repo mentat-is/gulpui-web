@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context'
 import s from './styles/NotesWindow.module.css'
 import { Banner } from '@/ui/Banner'
 import { λNote } from '@/dto/Dataset'
-import { NotePoint } from '@/ui/Note'
+import { Table } from './Table'
 
 interface FloatingWindowProps {
   onClose: () => void
@@ -14,9 +14,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   return (
     <Banner title="Notes" onClose={onClose} className={s.main}>
-      {app.target.notes.map((note) => (
-        <NotePoint.Combination key={note.id} note={note} />
-      ))}
+      <Table values={app.target.notes} />
     </Banner>
   )
 }

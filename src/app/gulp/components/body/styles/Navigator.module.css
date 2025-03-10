@@ -66,3 +66,9 @@
 .goto p {
   font-family: var(--font-mono);
 }
+.notes_visibility {
+  color: var(--teal-900);
+}
+.notes_visibility.dimmed {
+  color: var(--white) !important;
+}

@@ -8,12 +8,15 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
 import { copy, download } from '@/ui/utils'
 import { Button, Skeleton, Stack } from '@impactium/components'
-import { File } from '@/class/Info'
+import { Event, File, Note } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkComponents } from '@/banners/CreateLinkBanner'
 import { Maps } from '@/banners/Maps.banner'
 import { NoteFunctionality } from '@/banners/CreateNoteBanner'
+import { λNote } from '@/dto/Dataset'
+import { NotePoint } from '@/ui/Note'
+import { Select, SelectContent, SelectTrigger } from '@/ui/Select'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -24,10 +27,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const [detailedChunkEvent, setDetailedChunkEvent] =
     useState<λExtendedEvent | null>(null)
   const [rawJSON, setRawJSON] = useState<string>('')
+  const [notes, setNotes] = useState<λNote[]>([])
+  const [selectedNote, setSelectedNote] = useState<λNote['id'] | undefined>(
+    notes[0]?.id,
+  )
 
   useEffect(() => {
     Info.setTimelineTarget(event)
-  }, [event])
+    setNotes(Event.notes(app, event))
+  }, [event, app.target.notes])
+
+  useEffect(() => {
+    setSelectedNote(notes[0]?.id)
+  }, [notes])
 
   useEffect(() => {
     if (!detailedChunkEvent) reloadDetailedChunkEvent()
@@ -118,6 +130,27 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     )
   }, [rawJSON])
 
+  const notesList = useMemo(() => {
+    if (!notes.length) {
+      return null
+    }
+
+    return (
+      <Stack dir="column">
+        <Select onValueChange={(v) => setSelectedNote(v as λNote['id'])}>
+          <SelectTrigger
+            value={selectedNote}
+            defaultValue="Select note to see details"
+          ></SelectTrigger>
+          <SelectContent></SelectContent>
+        </Select>
+        {selectedNote ? (
+          <NotePoint.Combination note={Note.id(app, selectedNote)} />
+        ) : null}
+      </Stack>
+    )
+  }, [notes, selectedNote])
+
   return (
     <Dialog
       icon={<SymmetricSvg text={event.id} />}
@@ -176,6 +209,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               </Button>
             </Stack>
           </Stack>
+          {notesList}
           {highlights}
           <Stack>
             <Button
@@ -200,7 +234,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             >
               Download JSON
             </Button>
-
             <Button
               onClick={() => {
                 // @ts-ignore

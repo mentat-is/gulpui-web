@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { type λApp } from '@/dto'
 import {
   λOperation,
@@ -531,7 +532,13 @@ export class Info implements InfoProps {
     })
   }
 
-  query_file = async (file: λFile) => {
+  query_file: {
+    (file: λFile, preview: true): Promise<{
+      total_hits: number,
+      docs: λEvent[]
+    }>
+    (file: λFile, preview?: false): Promise<undefined>
+  } = async (file, preview = false) => {
     const operation = Operation.selected(this.app)
     if (!operation) {
       return
@@ -539,7 +546,11 @@ export class Info implements InfoProps {
 
     const body = Filter.body(this.getQuery(file.id))
 
-    return await api<void>(
+    if (preview) {
+      body.q_options.preview_mode = preview
+    }
+
+    return (await api<any>(
       '/query_raw',
       {
         method: 'POST',
@@ -559,8 +570,10 @@ export class Info implements InfoProps {
           on: Date.now(),
         })
       },
-    )
+    )).data
   }
+
+  preview_file = (file: λFile) => this.query_file(file, true)
 
   request_add = (req: λRequest) =>
     this.request_replace(...this.app.general.requests, req)
@@ -884,6 +897,12 @@ export class Info implements InfoProps {
       ),
       'target',
       'files',
+    )
+
+  file_set_total = (id: λFile['id'], total = 0) =>
+    this.setInfoByKey(
+      this.app.target.files.map(file => file.id === id ? { ...file, total } : file),
+      'target', 'files'
     )
 
   events_add = (newEvents: λEvent[]) => {
@@ -1737,8 +1756,8 @@ export class File {
   public static id = (use: λApp | λFile[], file: λFile | μ.File) =>
     typeof file === 'string'
       ? (Parser.use(use, 'files').find(
-          (s) => s.id === Parser.useUUID(file),
-        ) as λFile)
+        (s) => s.id === Parser.useUUID(file),
+      ) as λFile)
       : file
 
   public static unselect = (app: λApp, unselected: λFile[]): λFile[] =>

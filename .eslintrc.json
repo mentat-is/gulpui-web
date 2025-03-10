@@ -28,10 +28,12 @@
         "singleQuote": true
       }
     ],
+    "react/jsx-newline": ["error", { "prevent": true }],
     "object-curly-newline": [
       "error",
       { "multiline": true, "consistent": true }
     ],
+    "react/prop-types": "off",
     "react/react-in-jsx-scope": "off",
     "no-console": "warn",
     "@typescript-eslint/no-namespace": "off",
