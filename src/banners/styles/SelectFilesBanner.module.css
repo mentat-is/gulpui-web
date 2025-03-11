@@ -24,10 +24,11 @@
   font-size: 12px;
 }
 .branch {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
   padding: 8px 16px 20px 16px;
+  background: var(--meta-black);
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  height: 100%;
 }
 .contextHeading {
   display: flex;
@@ -65,12 +66,6 @@
   max-width: calc(100% - 128px);
   text-overflow: ellipsis;
   overflow: hidden;
-}
-.group {
-  display: flex;
-  width: 100%;
-  justify-content: flex-end;
-  gap: 16px;
 }
 .splitter {
   flex: 1;

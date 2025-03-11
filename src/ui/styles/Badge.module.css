@@ -42,11 +42,17 @@
   color: var(--red-900);
   cursor: pointer;
 }
-
 .destructive:hover {
   background-color: var(--red-300);
 }
-
+.warning {
+  background-color: var(--amber-200);
+  color: var(--amber-900);
+  cursor: pointer;
+}
+.warning:hover {
+  background-color: var(--amber-300);
+}
 .outline {
   border: var(--geist-border);
   background: var(--geist-background);

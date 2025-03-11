@@ -30,7 +30,7 @@ export function Navigator({
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, ws } = useApplication()
+  const { Info, app, spawnDialog } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([])
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
@@ -324,15 +324,6 @@ export function Navigator({
             </Stack>
           </PopoverContent>
         </Popover>
-        <Button
-          size="sm"
-          variant="secondary"
-          className={cn(s.ws, ws && ws.OPEN ? s.ws_opened : s.ws_closed)}
-          img={ws && ws.OPEN ? 'Wifi' : 'WifiOff'}
-        >
-          {ws && ws.OPEN ? 'Connected' : 'Disconnected'}
-        </Button>
-        {/* <Separator style={{ height: 16 }} color={`var(--${(ws && ws.OPEN) ? 'green' : 'red'}-600`} /><Button size='sm' img='PencilEdit' variant='ghost' className={s.ws_edit}>Edit</Button> */}
         {windowRef &&
           containerRef.current &&
           ReactDOM.createPortal(

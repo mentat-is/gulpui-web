@@ -1,15 +1,18 @@
-import React from 'react'
+/* eslint-disable prettier/prettier */
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@impactium/utils'
-import styles from './styles/Badge.module.css'
+import s from './styles/Badge.module.css'
+import { Icon } from '@impactium/icons'
+import { Stack } from '@impactium/components'
 
-const badgeVariants = cva(styles.badge, {
+const badgeVariants = cva(s.badge, {
   variants: {
     variant: {
-      default: styles.default,
-      secondary: styles.secondary,
-      destructive: styles.destructive,
-      outline: styles.outline,
+      default: s.default,
+      secondary: s.secondary,
+      destructive: s.destructive,
+      warning: s.warning,
+      outline: s.outline,
     },
   },
   defaultVariants: {
@@ -17,17 +20,20 @@ const badgeVariants = cva(styles.badge, {
   },
 })
 
-export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+export namespace Badge {
+  export interface Props
+    extends Stack.Props,
     VariantProps<typeof badgeVariants> {
-  value?: React.ReactNode
+    icon?: Icon.Name
+  }
 }
 
-function Badge({ className, variant, value, ...props }: BadgeProps) {
-  props.children = value || props.children
-
+function Badge({ className, variant, value, icon, ...props }: Badge.Props) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <Stack className={cn(badgeVariants({ variant }), className)} {...props}>
+      {icon ? <Icon name={icon} size={12} /> : null}
+      {value || props.children}
+    </Stack>
   )
 }
 

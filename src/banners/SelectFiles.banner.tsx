@@ -54,15 +54,6 @@ export namespace SelectFiles {
     return (
       <UIBanner
         title="Select sources"
-        subtitle={
-          <Button
-            onClick={reloadClickHandler}
-            variant="secondary"
-            img="RefreshClockwise"
-          >
-            Reload
-          </Button>
-        }
         className={s.banner}
         done={
           <Button
@@ -99,15 +90,23 @@ export namespace SelectFiles {
             </p>
           )}
         </Skeleton>
-        <div className={s.group}>
+        <Stack>
           <Button
             onClick={() => Info.selectAll(filter)}
             variant="secondary"
             style={{ width: '100%', background: 'var(--meta-black)' }}
+            img="CheckCheck"
           >
             Select all
           </Button>
-        </div>
+          <Button
+            onClick={reloadClickHandler}
+            variant="secondary"
+            img="RefreshClockwise"
+          >
+            Reload
+          </Button>
+        </Stack>
       </UIBanner>
     )
   }
@@ -125,8 +124,14 @@ function ContextComponent({ context }: { context: λContext }) {
   )
 
   return (
-    <div className={s.branch} key={context.id}>
-      <div className={s.contextHeading}>
+    <Stack
+      dir="column"
+      ai="stretch"
+      jc="flex-start"
+      className={s.branch}
+      key={context.id}
+    >
+      <Stack className={s.contextHeading}>
         <Checkbox
           checked={
             context.selected && files.every((f) => f.selected)
@@ -134,13 +139,14 @@ function ContextComponent({ context }: { context: λContext }) {
               : 'indeterminate'
           }
           onCheckedChange={handleContextCheck}
+          id={context.name}
         />
         <Label htmlFor={context.name}>{context.name}</Label>
         <hr style={{ flex: 1 }} />
-        <Badge value="Context" />
         <Badge
           value="Delete"
           variant="destructive"
+          icon="Trash2"
           onClick={() =>
             spawnBanner(
               <Delete.Context.Banner
@@ -150,12 +156,12 @@ function ContextComponent({ context }: { context: λContext }) {
             )
           }
         />
-      </div>
+      </Stack>
       <Separator />
       {files.map((file) => (
         <FileComponent key={file.id} file={file} />
       ))}
-    </div>
+    </Stack>
   )
 }
 
@@ -178,6 +184,16 @@ function FileComponent({ file }: { file: λFile }) {
     [Info, file],
   )
 
+  const FileIsTooBig = useMemo(() => {
+    if (file.total < 500_000) {
+      return null
+    }
+
+    return (
+      <Badge variant="warning" icon="Warning" value="This file is too big" />
+    )
+  }, [])
+
   return (
     <Stack className={s.pluginHeading} key={file.id}>
       <Checkbox
@@ -186,11 +202,13 @@ function FileComponent({ file }: { file: λFile }) {
         onCheckedChange={handleFileCheck}
       />
       <Label htmlFor={file.name}>{file.name}</Label>
+      {FileIsTooBig}
       <Badge variant="outline" value={file.total} />
       <Button
         img="PreviewEye"
         variant="secondary"
         size="sm"
+        style={{ width: 24 }}
         onClick={() =>
           events &&
           spawnBanner(
