@@ -109,7 +109,6 @@
     "customize-cra": "^1.0.0",
     "electron-builder": "^25.1.8",
     "electron-packager": "^17.1.2",
-    "eslint": "^8.57.1",
     "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",

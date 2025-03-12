@@ -77,7 +77,7 @@ export function Navigator({
 
   const goToTimestamp = () => {
     // @ts-ignore
-    return window.focusCanvasOnTimestamp(timestamp)
+    return window.focusCanvasOnTimestamp(timestamp, true)
   }
 
   useEffect(() => {

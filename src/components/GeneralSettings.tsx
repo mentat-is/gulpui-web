@@ -4,13 +4,7 @@ import { enginesBase } from '@/dto/Engine.dto'
 import { Button } from '@impactium/components'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Stack } from '@impactium/components'
 import { Switch } from '@/ui/Switch'
 import { Gradients, GradientsMap } from '@/ui/utils'
@@ -43,22 +37,19 @@ export function GeneralSettings() {
         <Stack dir="column" gap={12} className={s.generalSettings}>
           <Stack ai="center" gap={12}>
             <span style={fontStyle}>Renderer by default:</span>
-            <Select
-              onValueChange={(v: Engine.List) => (Internal.Settings.engine = v)}
-              value={Internal.Settings.engine}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Choose renderer" />
-              </SelectTrigger>
-              <SelectContent>
+            <Select.Root onValueChange={(v: Engine.List) => (Internal.Settings.engine = v)} value={Internal.Settings.engine}>
+              <Select.Trigger>
+                <Select.Value placeholder="Choose renderer" />
+              </Select.Trigger>
+              <Select.Content>
                 {enginesBase.map((i) => (
-                  <SelectItem key={i.title} value={i.plugin}>
+                  <Select.Item key={i.title} value={i.plugin}>
                     <Icon name={i.img} />
                     {i.title}
-                  </SelectItem>
+                  </Select.Item>
                 ))}
-              </SelectContent>
-            </Select>
+              </Select.Content>
+            </Select.Root>
           </Stack>
           <Stack ai="center">
             <span style={fontStyle}>Color palette by default:</span>

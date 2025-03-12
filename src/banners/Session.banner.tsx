@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Input, Stack } from '@impactium/components'
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Label } from '@radix-ui/react-select'
 import { Operation } from '@/class/Info'
 import s from './styles/Session.module.css'
@@ -46,31 +46,31 @@ export namespace Session {
 
       return (
         <UIBanner title="Choose session" done={<DoneButton />} {...props}>
-          <Select value={selectedSession} onValueChange={setSelectedSession}>
-            <SelectTrigger value={selectedSession}>
+          <Select.Root value={selectedSession} onValueChange={setSelectedSession}>
+            <Select.Trigger value={selectedSession}>
               <Stack>
                 <Icon name="ArchiveRestore" />
                 <p>{selectedSession || 'No session selected'}</p>
               </Stack>
-            </SelectTrigger>
-            <SelectContent>
+            </Select.Trigger>
+            <Select.Content>
               {sessions.length ? (
                 sessions.map((name) => (
-                  <SelectItem
+                  <Select.Item
                     key={name}
                     value={name}
                     onClick={() => setSelectedSession(name)}
                   >
                     {name}
-                  </SelectItem>
+                  </Select.Item>
                 ))
               ) : (
-                <SelectItem disabled value="X">
+                <Select.Item disabled value="X">
                   No sessions available
-                </SelectItem>
+                </Select.Item>
               )}
-            </SelectContent>
-          </Select>
+            </Select.Content>
+          </Select.Root>
         </UIBanner>
       )
     }

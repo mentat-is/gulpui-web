@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { type λApp } from '@/dto'
 import {
   λOperation,

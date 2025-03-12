@@ -16,7 +16,7 @@ import { Maps } from '@/banners/Maps.banner'
 import { NoteFunctionality } from '@/banners/CreateNoteBanner'
 import { λNote } from '@/dto/Dataset'
 import { NotePoint } from '@/ui/Note'
-import { Select, SelectContent, SelectTrigger } from '@/ui/Select'
+import { Select } from '@/ui/Select'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -137,13 +137,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     return (
       <Stack dir="column">
-        <Select onValueChange={(v) => setSelectedNote(v as λNote['id'])}>
-          <SelectTrigger
+        <Select.Root onValueChange={(v) => setSelectedNote(v as λNote['id'])}>
+          <Select.Trigger
             value={selectedNote}
             defaultValue="Select note to see details"
-          ></SelectTrigger>
-          <SelectContent></SelectContent>
-        </Select>
+          ></Select.Trigger>
+          <Select.Content></Select.Content>
+        </Select.Root>
         {selectedNote ? (
           <NotePoint.Combination note={Note.id(app, selectedNote)} />
         ) : null}

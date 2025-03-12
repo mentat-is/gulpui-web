@@ -60,19 +60,19 @@ export const throwableByTimestamp = (
     typeof timestamp === 'number'
       ? timestamp + offset
       : {
-          min: timestamp.min + offset,
-          max: timestamp.max + offset,
-        }
+        min: timestamp.min + offset,
+        max: timestamp.max + offset,
+      }
 
   return typeof time === 'number'
     ? time < limits.min ||
-        time > limits.max ||
-        time < (app.timeline.frame.min || 0) ||
-        time > (app.timeline.frame.max || Infinity)
+    time > limits.max ||
+    time < (app.timeline.frame.min || 0) ||
+    time > (app.timeline.frame.max || Infinity)
     : time.max < limits.min ||
-        time.min > limits.max ||
-        time.max < (app.timeline.frame.min || 0) ||
-        time.min > (app.timeline.frame.max || Infinity)
+    time.min > limits.max ||
+    time.max < (app.timeline.frame.min || 0) ||
+    time.min > (app.timeline.frame.max || Infinity)
 }
 
 export function generateUUID(): UUID {
@@ -99,7 +99,7 @@ export const getLimits = (
   const max =
     app.timeline.frame.min +
     ((scrollX + (timeline.current?.clientWidth ?? 0)) / Info.width) *
-      (app.timeline.frame.max - app.timeline.frame.min)
+    (app.timeline.frame.max - app.timeline.frame.min)
 
   return { min, max }
 }
@@ -387,7 +387,7 @@ export class Algorhithm implements Algorhithm.Constructor {
   abs_x_from_timestamp = (timestamp: number) =>
     Math.round(
       ((timestamp - this.frame.min) / (this.frame.max - this.frame.min)) *
-        this.width,
+      this.width,
     )
 
   rel_x_from_timestamp = (timestamp: number, scroll: XY = this.scroll) =>

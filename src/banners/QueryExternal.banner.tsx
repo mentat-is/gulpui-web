@@ -1,14 +1,8 @@
 import { GulpDataset } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
-import { Banner as BannerUI } from '@/ui/Banner'
+import { Banner as UIBanner } from '@/ui/Banner'
 import { Input } from '@impactium/components'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Switch } from '@/ui/Switch'
 import { Button, Skeleton, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
@@ -28,26 +22,26 @@ export namespace QueryExternal {
     if (!options) return <Skeleton />
 
     return (
-      <Select
+      <Select.Root
         value={selectedOption?.filename}
         onValueChange={onSelect}
         disabled={!options}
       >
-        <SelectTrigger>
-          <SelectValue
+        <Select.Trigger>
+          <Select.Value
             placeholder={options ? 'Select plugin to query' : 'Loading...'}
           >
             {selectedOption?.display_name ?? '????'}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
+          </Select.Value>
+        </Select.Trigger>
+        <Select.Content>
           {options.map((option) => (
-            <SelectItem key={option.filename} value={option.filename}>
+            <Select.Item key={option.filename} value={option.filename}>
               {option.display_name}
-            </SelectItem>
+            </Select.Item>
           ))}
-        </SelectContent>
-      </Select>
+        </Select.Content>
+      </Select.Root>
     )
   }
 
@@ -117,7 +111,13 @@ export namespace QueryExternal {
     )
   }
 
-  export const Banner = () => {
+  export namespace Banner {
+    export interface Props extends UIBanner.Props {
+
+    }
+  }
+
+  export const Banner = ({ ...props }: QueryExternal.Banner.Props) => {
     const { Info } = useApplication()
     const [options, setOptions] =
       useState<GulpDataset.PluginList.Summary | null>(null)
@@ -180,7 +180,7 @@ export namespace QueryExternal {
     )
 
     return (
-      <BannerUI title="Query external" loading={loading} done={done}>
+      <UIBanner title="Query external" loading={loading} done={done} {...props}>
         <PluginSelection
           options={options}
           selectedOption={selectedOption}
@@ -205,7 +205,7 @@ export namespace QueryExternal {
         <p className={s.hint}>
           Required params marked with <Icon name="Asterisk" />
         </p>
-      </BannerUI>
+      </UIBanner>
     )
   }
 }

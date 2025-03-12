@@ -4,12 +4,7 @@ import React, { useState } from 'react'
 import { useApplication } from '@/context/Application.context'
 import { Operation as GulpOperationEntity } from '@/class/Info'
 import { SelectFiles } from './SelectFiles.banner'
-import {
-  Select as UISelect,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/ui/Select'
+import { Select as UISelect } from '@/ui/Select'
 import { Icon } from '@impactium/icons'
 import { λOperation } from '@/dto'
 import { Glyph } from '@/ui/Glyph'
@@ -56,14 +51,14 @@ export namespace Operation {
       )
 
       const NoOperations = () => (
-        <SelectItem value="X">There is no operations</SelectItem>
+        <UISelect.Item value="X">There is no operations</UISelect.Item>
       )
 
       const Trigger = () => {
         const selected = GulpOperationEntity.selected(Info.app)
 
         return (
-          <SelectTrigger>
+          <UISelect.Trigger>
             <Stack>
               <Icon
                 name={GulpOperationEntity.icon((selected || {}) as λOperation)}
@@ -74,7 +69,7 @@ export namespace Operation {
                   : 'Select operation or create new one'}
               </p>
             </Stack>
-          </SelectTrigger>
+          </UISelect.Trigger>
         )
       }
 
@@ -89,7 +84,7 @@ export namespace Operation {
           {Info.app.target.operations.length === 0 ? (
             <Skeleton width="full" height="default" />
           ) : (
-            <UISelect
+            <UISelect.Root
               defaultValue={GulpOperationEntity.selected(Info.app)?.id}
               onValueChange={(id) =>
                 Info.operations_select(
@@ -98,19 +93,19 @@ export namespace Operation {
               }
             >
               <Trigger />
-              <SelectContent>
+              <UISelect.Content>
                 {Info.app.target.operations.length ? (
                   Info.app.target.operations.map((operation) => (
-                    <SelectItem key={operation.id} value={operation.id}>
+                    <UISelect.Item key={operation.id} value={operation.id}>
                       <Icon name={GulpOperationEntity.icon(operation)} />
                       {operation.name}
-                    </SelectItem>
+                    </UISelect.Item>
                   ))
                 ) : (
                   <NoOperations />
                 )}
-              </SelectContent>
-            </UISelect>
+              </UISelect.Content>
+            </UISelect.Root>
           )}
         </UIBanner>
       )

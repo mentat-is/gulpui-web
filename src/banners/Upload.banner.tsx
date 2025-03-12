@@ -1,13 +1,7 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
 import { Input } from '@impactium/components'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { ChangeEvent, useEffect, useState } from 'react'
 import s from './styles/UploadBanner.module.css'
 import {
@@ -324,26 +318,26 @@ export function UploadBanner() {
 
   const PluginSelection = ({ file }: TargetSelection) => {
     return (
-      <Select
+      <Select.Root
         onValueChange={(plugin) => setPlugin(plugin, file.name)}
         value={settings[file.name].plugin}
       >
-        <SelectTrigger>
-          <SelectValue
+        <Select.Trigger>
+          <Select.Value
             defaultValue={settings[file.name].plugin}
             placeholder="Choose filename"
           >
             {settings[file.name].plugin}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent>
+          </Select.Value>
+        </Select.Trigger>
+        <Select.Content>
           {Mapping.plugins(app).map((p) => (
-            <SelectItem key={p} value={p}>
+            <Select.Item key={p} value={p}>
               {p}
-            </SelectItem>
+            </Select.Item>
           ))}
-        </SelectContent>
-      </Select>
+        </Select.Content>
+      </Select.Root>
     )
   }
 
@@ -358,14 +352,14 @@ export function UploadBanner() {
 
     if (!methods.length) {
       return (
-        <Select disabled>
-          <SelectTrigger>
-            <SelectValue
+        <Select.Root disabled>
+          <Select.Trigger>
+            <Select.Value
               defaultValue={'x'}
               placeholder="No mappings available for this plugin"
             />
-          </SelectTrigger>
-        </Select>
+          </Select.Trigger>
+        </Select.Root>
       )
     }
 
@@ -376,22 +370,22 @@ export function UploadBanner() {
     }
 
     return (
-      <Select
+      <Select.Root
         disabled={methods.length < 2}
         onValueChange={(method) => setMethod(method, file.name)}
         value={settings[file.name].method}
       >
-        <SelectTrigger>
-          <SelectValue defaultValue={'x'} placeholder="Not selected" />
-        </SelectTrigger>
-        <SelectContent>
+        <Select.Trigger>
+          <Select.Value defaultValue={'x'} placeholder="Not selected" />
+        </Select.Trigger>
+        <Select.Content>
           {methods.map((m) => (
-            <SelectItem key={m} value={m}>
+            <Select.Item key={m} value={m}>
               {m}
-            </SelectItem>
+            </Select.Item>
           ))}
-        </SelectContent>
-      </Select>
+        </Select.Content>
+      </Select.Root>
     )
   }
 
@@ -401,22 +395,22 @@ export function UploadBanner() {
     const mappings = Mapping.mappings(app, plugin as string, method as string)
 
     return (
-      <Select
+      <Select.Root
         disabled={mappings.length < 2}
         onValueChange={(mapping) => setMapping(mapping, file.name)}
         value={mapping}
       >
-        <SelectTrigger defaultValue={mapping} value={mapping}>
+        <Select.Trigger defaultValue={mapping} value={mapping}>
           {mapping || 'Not selected'}
-        </SelectTrigger>
-        <SelectContent>
+        </Select.Trigger>
+        <Select.Content>
           {mappings.map((m) => (
-            <SelectItem key={m} value={m}>
+            <Select.Item key={m} value={m}>
               {m}
-            </SelectItem>
+            </Select.Item>
           ))}
-        </SelectContent>
-      </Select>
+        </Select.Content>
+      </Select.Root>
     )
   }
 
@@ -426,12 +420,12 @@ export function UploadBanner() {
     if (!context) setContext(contexts[0]?.name)
 
     return (
-      <Select
+      <Select.Root
         disabled={!contexts.length}
         onValueChange={setContext}
         value={context}
       >
-        <SelectTrigger className={s.trigger}>
+        <Select.Trigger className={s.trigger}>
           <Stack>
             <Icon
               name={Context.icon(
@@ -445,15 +439,15 @@ export function UploadBanner() {
                   : 'There is no contexts at this moment')}
             </p>
           </Stack>
-        </SelectTrigger>
-        <SelectContent>
+        </Select.Trigger>
+        <Select.Content>
           {contexts.map((c) => (
-            <SelectItem key={c.name} value={c.name}>
+            <Select.Item key={c.name} value={c.name}>
               {c.name}
-            </SelectItem>
+            </Select.Item>
           ))}
-        </SelectContent>
-      </Select>
+        </Select.Content>
+      </Select.Root>
     )
   }
 

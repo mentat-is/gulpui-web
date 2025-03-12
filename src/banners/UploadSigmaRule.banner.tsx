@@ -2,7 +2,7 @@ import { File as GulpFileEntity, GulpDataset } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Default, λFile } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Toggle } from '@/ui/Toggle'
 import { Button, Stack } from '@impactium/components'
 import { Input } from '@impactium/components'
@@ -80,59 +80,59 @@ export namespace SigmaRules {
 
     return (
       <UIBanner title="Apply sigma rule" done={<DoneButton />} {...props}>
-        <Select
+        <Select.Root
           onValueChange={(id) =>
             setFile(GulpFileEntity.id(app, id as λFile['id']))
           }
           value={file?.name || ''}
         >
-          <SelectTrigger>
+          <Select.Trigger>
             <Stack>
               <Icon
                 name={file ? GulpFileEntity.icon(file) : Default.Icon.FILE}
               />
               {file ? file.name : 'No file selected'}
             </Stack>
-          </SelectTrigger>
-          <SelectContent>
+          </Select.Trigger>
+          <Select.Content>
             {GulpFileEntity.selected(app).map((file) => {
               return (
-                <SelectItem key={file.id} value={file.id}>
+                <Select.Item key={file.id} value={file.id}>
                   <Stack>
                     <Icon name={GulpFileEntity.icon(file)} />
                     {file.name}
                   </Stack>
-                </SelectItem>
+                </Select.Item>
               )
             })}
-          </SelectContent>
-        </Select>
+          </Select.Content>
+        </Select.Root>
         <Input
           type="file"
           img="Sigma"
           variant="highlighted"
           onChange={rulesInputChangeHandler}
         />
-        <Select onValueChange={setPlugin} value={plugin ?? ''}>
-          <SelectTrigger>
+        <Select.Root onValueChange={setPlugin} value={plugin ?? ''}>
+          <Select.Trigger>
             <Stack>
               <Icon name="Puzzle" />
               {plugin ?? 'No plugin selected, select at least one'}
             </Stack>
-          </SelectTrigger>
-          <SelectContent>
+          </Select.Trigger>
+          <Select.Content>
             {plugins.map((plugin) => {
               return (
-                <SelectItem value={plugin.filename} key={plugin.filename}>
+                <Select.Item value={plugin.filename} key={plugin.filename}>
                   <Stack>
                     <Icon name="Puzzle" />
                     {plugin.filename}
                   </Stack>
-                </SelectItem>
+                </Select.Item>
               )
             })}
-          </SelectContent>
-        </Select>
+          </Select.Content>
+        </Select.Root>
         <Toggle
           option={['Ignore notes', 'Create notes']}
           checked={createNotes}

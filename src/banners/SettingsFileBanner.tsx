@@ -6,13 +6,7 @@ import { ChangeEvent, useState } from 'react'
 import s from './styles/SettingsFileBanner.module.css'
 import { FilterFileBanner } from './FilterFile.banner'
 import { Card } from '@/ui/Card'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Gradients, GradientsMap } from '@/ui/utils'
 import { Input } from '@impactium/components'
 import { Separator } from '@/ui/Separator'
@@ -95,8 +89,8 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         />
       </Card>
       <Separator />
-      <Select onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
-        <SelectTrigger className={s.trigger}>
+      <Select.Root onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
+        <Select.Trigger className={s.trigger}>
           <Stack>
             <Icon
               name={
@@ -108,18 +102,18 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
               {enginesBase.find((e) => e.plugin === engine)?.title ?? engine}
             </p>
           </Stack>
-        </SelectTrigger>
-        <SelectContent>
+        </Select.Trigger>
+        <Select.Content>
           {enginesBase.map((i) => (
-            <SelectItem value={i.plugin} key={i.plugin}>
+            <Select.Item value={i.plugin} key={i.plugin}>
               <Stack>
                 <Icon name={i.img} />
                 <p>{i.title}</p>
               </Stack>
-            </SelectItem>
+            </Select.Item>
           ))}
-        </SelectContent>
-      </Select>
+        </Select.Content>
+      </Select.Root>
       <Separator />
       <Stack jc="space-between">
         <p className={s.text}>Color palette:</p>
@@ -130,18 +124,18 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       </Stack>
       <Stack jc="space-between">
         <p className={s.text}>Target field:</p>
-        <Select onValueChange={(field: keyof λEvent) => setField(field)}>
-          <SelectTrigger className={s.trigger} value={engine}>
-            <SelectValue placeholder={field} />
-          </SelectTrigger>
-          <SelectContent>
+        <Select.Root onValueChange={(field: keyof λEvent) => setField(field)}>
+          <Select.Trigger className={s.trigger} value={engine}>
+            <Select.Value placeholder={field} />
+          </Select.Trigger>
+          <Select.Content>
             {Event.fields().map((field) => (
-              <SelectItem key={field} value={field}>
+              <Select.Item key={field} value={field}>
                 {field}
-              </SelectItem>
+              </Select.Item>
             ))}
-          </SelectContent>
-        </Select>
+          </Select.Content>
+        </Select.Root>
       </Stack>
     </Banner>
   )

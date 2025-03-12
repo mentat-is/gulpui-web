@@ -3,7 +3,7 @@ import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Default, λFile } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Select, SelectContent, SelectItem, SelectTrigger } from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Switch } from '@/ui/Switch'
 import { Button, Input, Skeleton, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
@@ -116,7 +116,7 @@ export namespace Enrichment {
 
       const Trigger = () => {
         return (
-          <SelectTrigger>
+          <Select.Trigger>
             <Stack style={{ pointerEvents: event ? 'none' : 'all' }} gap={16}>
               <Icon
                 variant="dimmed"
@@ -124,27 +124,23 @@ export namespace Enrichment {
               />
               {file ? file.name : 'Select source you want to enrich'}
             </Stack>
-          </SelectTrigger>
+          </Select.Trigger>
         )
       }
 
       return (
-        <Select
-          onValueChange={(fileId) =>
-            setFile(File.id(app, fileId as unknown as λFile['id']))
-          }
-        >
+        <Select.Root onValueChange={(fileId) => setFile(File.id(app, fileId as unknown as λFile['id']))}>
           <Trigger />
-          <SelectContent>
+          <Select.Content>
             {File.selected(app).map((file) => {
               return (
-                <SelectItem key={file.id} value={file.id}>
+                <Select.Item key={file.id} value={file.id}>
                   {file.name}
-                </SelectItem>
+                </Select.Item>
               )
             })}
-          </SelectContent>
-        </Select>
+          </Select.Content>
+        </Select.Root>
       )
     }
 
@@ -155,34 +151,30 @@ export namespace Enrichment {
 
       const Trigger = () => {
         return (
-          <SelectTrigger>
+          <Select.Trigger>
             <Stack gap={16}>
               <Icon variant="dimmed" name="Puzzle" />
               {plugin
                 ? plugin.filename
                 : 'Select plugin you want to use for enrichment'}
             </Stack>
-          </SelectTrigger>
+          </Select.Trigger>
         )
       }
 
       return (
-        <Select
-          onValueChange={(filename) =>
-            setPlugin(plugins.find((p) => p.filename === filename))
-          }
-        >
+        <Select.Root onValueChange={(filename) => setPlugin(plugins.find((p) => p.filename === filename))}>
           <Trigger />
-          <SelectContent>
+          <Select.Content>
             {plugins.map((plugin) => {
               return (
-                <SelectItem key={plugin.filename} value={plugin.filename}>
+                <Select.Item key={plugin.filename} value={plugin.filename}>
                   {plugin.filename}
-                </SelectItem>
+                </Select.Item>
               )
             })}
-          </SelectContent>
-        </Select>
+          </Select.Content>
+        </Select.Root>
       )
     }
 

@@ -78,9 +78,12 @@
 }
 .filePreview {
   width: 100%;
+  max-width: 60vw;
   height: 28px;
   background: var(--meta-black);
-  padding: 0 6px;
+}
+.filePreview > svg {
+  margin-left: 8px;
 }
 .files .filePreview:not(:last-child) {
   border-bottom: 1px solid var(--gray-400);
@@ -104,14 +107,21 @@
 .filePreview button[role = 'combobox']::before {
   content: none !important;
 }
+.filePreview > button {
+  border-radius: 0;
+  height: 28px;
+}
 .weight {
   min-width: 64px;
   max-width: 64px;
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--text-dimmed);
+  margin-left: 8px;
 }
 .filename {
   width: 128px;
   overflow: hidden;
+  margin-right: 8px;
+  flex-shrink: 0;
 }

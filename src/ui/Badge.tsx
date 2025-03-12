@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@impactium/utils'
 import s from './styles/Badge.module.css'

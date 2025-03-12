@@ -1,19 +1,11 @@
 import s from './styles/FilterFileBanner.module.css'
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-
 import { Banner } from '@/ui/Banner'
 import { useApplication } from '@/context/Application.context'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/ui/Select'
+import { Select } from '@/ui/Select'
 import { Button, Stack, Input } from '@impactium/components'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Filter, FilterOptions, λFilter } from '@/class/Info'
-import React from 'react'
 import { copy, fws } from '@/ui/utils'
 import { λFile } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
@@ -209,42 +201,42 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
             key={condition.id}
           >
             <Stack style={fws}>
-              <Select
+              <Select.Root
                 value={condition.operator}
                 onValueChange={(value) =>
                   updateCondition(condition.id, 'operator', value)
                 }
               >
-                <SelectTrigger className={s.value}>
-                  <SelectValue placeholder="Operator" />
-                </SelectTrigger>
-                <SelectContent>
+                <Select.Trigger className={s.value}>
+                  <Select.Value placeholder="Operator" />
+                </Select.Trigger>
+                <Select.Content>
                   {OpenSearchQueryBuilder.OPERATORS.map((op) => (
-                    <SelectItem key={op.value} value={op.value}>
+                    <Select.Item key={op.value} value={op.value}>
                       <Icon name={op.icon} />
                       {op.label}
-                    </SelectItem>
+                    </Select.Item>
                   ))}
-                </SelectContent>
-              </Select>
-              <Select
+                </Select.Content>
+              </Select.Root>
+              <Select.Root
                 value={condition.type}
                 onValueChange={(value) =>
                   updateCondition(condition.id, 'type', value)
                 }
               >
-                <SelectTrigger className={s.value}>
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
+                <Select.Trigger className={s.value}>
+                  <Select.Value placeholder="Type" />
+                </Select.Trigger>
+                <Select.Content>
                   {OpenSearchQueryBuilder.CONDITIONS.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
+                    <Select.Item key={type.value} value={type.value}>
                       <Icon name={type.icon} />
                       {type.label}
-                    </SelectItem>
+                    </Select.Item>
                   ))}
-                </SelectContent>
-              </Select>
+                </Select.Content>
+              </Select.Root>
               <Button
                 variant="outline"
                 onClick={() => removeCondition(condition.id)}
@@ -252,23 +244,23 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
               />
             </Stack>
             <Stack style={fws}>
-              <Select
+              <Select.Root
                 value={condition.field}
                 onValueChange={(e) => updateCondition(condition.id, 'field', e)}
               >
-                <SelectTrigger className={s.trigger}>
-                  <SelectValue placeholder="Field name" />
-                </SelectTrigger>
-                <SelectContent>
+                <Select.Trigger className={s.trigger}>
+                  <Select.Value placeholder="Field name" />
+                </Select.Trigger>
+                <Select.Content>
                   {Object.keys(
                     app.timeline.filtering_options[file.id] || {},
                   ).map((k) => (
-                    <SelectItem key={k} value={k}>
+                    <Select.Item key={k} value={k}>
                       {k}
-                    </SelectItem>
+                    </Select.Item>
                   ))}
-                </SelectContent>
-              </Select>
+                </Select.Content>
+              </Select.Root>
               <Input
                 variant="highlighted"
                 img="ChevronRightSmall"
