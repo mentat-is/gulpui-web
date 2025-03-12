@@ -23,6 +23,7 @@ import { TargetMenu } from './Target.menu'
 import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
+import { XY } from '@/dto/XY.dto'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -191,16 +192,18 @@ export function Canvas({
     }
 
     const { top, left } = canvas_ref.current.getBoundingClientRect()
-    const clickX = event.clientX - left
-    const clickY = event.clientY - top + scrollY
+    const click: XY = {
+      x: Math.round(event.clientX - left),
+      y: Math.round(event.clientY - top + scrollY)
+    }
 
-    const index = Math.floor(clickY / 48)
+    const index = Math.floor(click.y / 48)
 
     const file = File.selected(app)[index]
 
     if (!file) return
 
-    const clickPosition = Math.round(clickX)
+    if (click.x < getPixelPosition(file.timestamp.min) || getPixelPosition(file.timestamp.max) < click.x) return
 
     const events: λEvent[] = []
 
@@ -208,22 +211,22 @@ export function Canvas({
       const pos = getPixelPosition(event.timestamp + file.settings.offset)
 
       if (file.settings.engine === 'graph') {
-        if (clickPosition >= pos - 16 && clickPosition <= pos) {
+        if (click.x >= pos - 16 && click.x <= pos) {
           events.push(event)
         }
         continue
       }
 
-      if (clickPosition === pos) {
+      if (click.x === pos) {
         events.push(event)
       }
 
-      if (clickPosition > pos) {
+      if (click.x > pos) {
         break
       }
     }
 
-    LoggerHandler.canvasClick(file, events, clickPosition)
+    LoggerHandler.canvasClick(file, events, click.x)
 
     if (events.length > 0) {
       spawnDialog(
@@ -315,19 +318,12 @@ export function Canvas({
     }
   }, dependencies)
 
-  useEffect(() => {
-    if (dialog) {
-      return
-    }
-    spawnDialog(<DisplayGroupDialog events={[]} />)
-  }, [app.target.events])
-
   const getPixelPosition = useCallback(
     (timestamp: number) =>
       Math.round(
         ((timestamp - app.timeline.frame.min) /
           (app.timeline.frame.max - app.timeline.frame.min)) *
-          Info.width,
+        Info.width,
       ) - scrollX,
     [scrollX, Info.width, app.timeline.frame],
   )
@@ -339,7 +335,7 @@ export function Canvas({
 
     const index = Math.floor(
       (event.clientY + scrollY - timeline.current.getBoundingClientRect().top) /
-        48,
+      48,
     )
 
     const file = File.selected(app)[index]

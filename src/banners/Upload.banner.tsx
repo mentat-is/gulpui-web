@@ -2,29 +2,20 @@ import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
 import { Input } from '@impactium/components'
 import { Select } from '@/ui/Select'
-import { ChangeEvent, useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import s from './styles/UploadBanner.module.css'
-import {
-  Context,
-  GulpDataset,
-  Mapping,
-  MinMax,
-  MinMaxBase,
-  Operation,
-} from '@/class/Info'
+import { Context, GulpDataset, Mapping, MinMaxBase, Operation } from '@/class/Info'
 import { formatBytes } from '@/ui/utils'
-import { Progress } from '@/ui/Progress'
 import { SelectFiles } from './SelectFiles.banner'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { Button, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { Toggle } from '@/ui/Toggle'
-import { toast } from 'sonner'
 import { Separator } from '@/ui/Separator'
 import { cn } from '@impactium/utils'
 import { Default, λContext } from '@/dto/Dataset'
 
-interface λIngestFileSettings {
+interface FileSettings {
   plugin?: string
   method?: string
   mapping?: string
@@ -64,44 +55,200 @@ Object.values(FILE_SIGNATURES).forEach((array) => {
   })
 })
 
-interface TargetSelection {
-  file: File
+
+namespace UploadLogic {
+  export const useFileSettings = (files: FileList) => {
+    const [settings, setSettings] = useState<Record<string, FileSettings>>({})
+
+    const updateSettings = useCallback(
+      (filename: string, update: Partial<FileSettings>) => {
+        setSettings(prev => ({
+          ...prev,
+          [filename]: { ...prev[filename], ...update }
+        }))
+      },
+      []
+    )
+
+    const detectFileType = useCallback((file: File) => {
+      return readFileChunk(file)
+        .then(buffer =>
+          Object.keys(FILE_SIGNATURES)
+            .find(key => FILE_SIGNATURES[key]
+              .some(uint => compareSignature(buffer, uint))))
+    }, [])
+
+    useEffect(() => {
+      ;[...files].forEach(file => {
+        detectFileType(file).then(plugin => {
+          if (plugin) {
+            updateSettings(file.name, { plugin })
+          }
+        })
+      })
+    }, [files])
+
+    return { settings, updateSettings }
+  }
+
+  const readFileChunk = (file: File): Promise<ArrayBuffer> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as ArrayBuffer)
+      reader.onerror = reject
+      reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH))
+    })
+  }
+
+  const compareSignature = (buffer: ArrayBuffer, signature: Uint8Array): boolean => {
+    const slice = new Uint8Array(buffer)
+    return signature.every((value, index) => value === slice[index])
+  }
+}
+
+namespace Components {
+  export const ContextSelector = ({ app, context, setContext }: {
+    app: any
+    context: string
+    setContext: (value: string) => void
+  }) => {
+    const contexts = Operation.contexts(app)
+
+    return (
+      <Select.Root value={context} onValueChange={setContext} disabled={!contexts.length}>
+        <Select.Trigger className={s.trigger}>
+          <Stack>
+            <Icon name={Context.icon(Context.findByName(app, context) ?? {} as λContext)} />
+            <p>{context || 'Select context'}</p>
+          </Stack>
+        </Select.Trigger>
+        <Select.Content>
+          {contexts.map(c => (
+            <Select.Item key={c.name} value={c.name}>{c.name}</Select.Item>
+          ))}
+        </Select.Content>
+      </Select.Root>
+    )
+  }
+
+  export const FilePreview = ({ file, settings, updateSettings }: {
+    file: File
+    settings: FileSettings
+    updateSettings: (update: Partial<FileSettings>) => void
+  }) => {
+    const { app } = useApplication();
+    const methods = Mapping.methods(app, settings.plugin || '')
+    const mappings = Mapping.mappings(app, settings.plugin || '', settings.method || '')
+
+    useEffect(() => {
+      if (methods.length === 1) updateSettings({ method: methods[0] })
+      if (mappings.length === 1) updateSettings({ mapping: mappings[0] })
+    }, [methods, mappings])
+
+    return (
+      <Stack className={s.filePreview} gap={16}>
+        <Stack>
+          <Icon name="File" size={14} fromGeist />
+          <p className={s.weight}>{formatBytes(file.size)}</p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <p className={s.filename}>{file.name}</p>
+            </PopoverTrigger>
+            <PopoverContent className={s.popover}>{file.name}</PopoverContent>
+          </Popover>
+        </Stack>
+        <Stack gap={0}>
+          <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
+          <PluginSelector {...{ settings, updateSettings, app }} />
+          <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
+          <MethodSelector {...{ settings, updateSettings, app, methods }} />
+          <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
+          <MappingSelector {...{ settings, updateSettings, mappings }} />
+        </Stack>
+      </Stack>
+    )
+  }
+
+  const PluginSelector = ({ settings, updateSettings, app }: {
+    settings: FileSettings
+    updateSettings: (update: Partial<FileSettings>) => void
+    app: any
+  }) => (
+    <Select.Root
+      value={settings.plugin}
+      onValueChange={plugin => updateSettings({ plugin })}
+    >
+      <Select.Trigger>
+        <Select.Value placeholder="Select plugin">
+          {settings.plugin}
+        </Select.Value>
+      </Select.Trigger>
+      <Select.Content>
+        {Mapping.plugins(app).map(p => (
+          <Select.Item key={p} value={p}>{p}</Select.Item>
+        ))}
+      </Select.Content>
+    </Select.Root>
+  )
+
+  const MethodSelector = ({ settings, updateSettings, methods }: {
+    settings: FileSettings
+    updateSettings: (update: Partial<FileSettings>) => void
+    methods: string[]
+  }) => (
+    <Select.Root
+      value={settings.method}
+      onValueChange={method => updateSettings({ method })}
+      disabled={methods.length < 2}
+    >
+      <Select.Trigger>
+        <Select.Value placeholder={methods.length ? "Select method" : "No methods"}>
+          {settings.method}
+        </Select.Value>
+      </Select.Trigger>
+      <Select.Content>
+        {methods.map(m => (
+          <Select.Item key={m} value={m}>{m}</Select.Item>
+        ))}
+      </Select.Content>
+    </Select.Root>
+  )
+
+  const MappingSelector = ({ settings, updateSettings, mappings }: {
+    settings: FileSettings
+    updateSettings: (update: Partial<FileSettings>) => void
+    mappings: string[]
+  }) => (
+    <Select.Root
+      value={settings.mapping}
+      onValueChange={mapping => updateSettings({ mapping })}
+      disabled={mappings.length < 2}
+    >
+      <Select.Trigger>
+        <Select.Value placeholder={mappings.length ? "Select mapping" : "No mappings"}>
+          {settings.mapping}
+        </Select.Value>
+      </Select.Trigger>
+      <Select.Content>
+        {mappings.map(m => (
+          <Select.Item key={m} value={m}>{m}</Select.Item>
+        ))}
+      </Select.Content>
+    </Select.Root>
+  )
 }
 
 export function UploadBanner() {
   const { Info, app, spawnBanner } = useApplication()
   const [files, setFiles] = useState<FileList>([] as unknown as FileList)
-  const [settings, setSettings] = useState<
-    Record<File['name'], λIngestFileSettings>
-  >({})
-  const [context, setContext] = useState<string>('')
-  const [loading, setLoading] = useState<boolean>(false)
-  const [progress, setProgress] = useState<number>(0)
-  const [
-    isExistingContextChooserAvalable,
-    setIsExistingContextChooserAvalable,
-  ] = useState<boolean>(false)
-  const [chunkSize, setChunkSize] = useState<number>(2)
+  const [context, setContext] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [useExistingContext, setUseExistingContext] = useState(false)
+  const [chunkSize, setChunkSize] = useState(2)
+  const [customFrame, setCustomFrame] = useState(false)
+  const [frame, setFrame] = useState(MinMaxBase)
 
-  const chunkSizeInputChangeHandler = (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
-    const { valueAsNumber } = event.target
-
-    if (isNaN(valueAsNumber)) {
-      return toast('Chunk size should be valid integer')
-    }
-
-    if (valueAsNumber < 1 || valueAsNumber > 1024) {
-      return toast('Chunk size should be bigger than 1 and less than 1024')
-    }
-
-    setChunkSize(valueAsNumber)
-  }
-
-  useEffect(() => {
-    setContext('')
-  }, [isExistingContextChooserAvalable])
+  const { settings, updateSettings } = UploadLogic.useFileSettings(files)
 
   const send = async (file: File, start: number, i: number, id?: string) => {
     const size = 1024 * chunkSize * 1024
@@ -176,16 +323,13 @@ export function UploadBanner() {
       return
     }
 
-    setProgress(Math.floor(((i + end / file.size) / files.length) * 100))
-
     if (end < file.size) {
       await send(file, end, i, response.req_id)
     }
   }
 
-  const submit = async () => {
+  const handleSubmit = useCallback(async () => {
     setLoading(true)
-    setProgress(0)
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -198,397 +342,46 @@ export function UploadBanner() {
     setLoading(false)
 
     spawnBanner(<SelectFiles.Banner />)
-  }
+  }, [files, settings, context, chunkSize, customFrame, frame])
 
-  const setPlugin = (plugin: string, filename: File['name']) => {
-    setSettings((s) => ({
-      ...s,
-      [filename]: {
-        ...s[filename],
-        plugin,
-      },
-    }))
-
-    const fileDefinedMethod = settings[filename].method
-
-    if (!fileDefinedMethod) {
-      return
-    }
-
-    const methods = Mapping.methods(app, plugin)
-
-    const isNewPluginAllowsFileToHasAnExistanseMethod =
-      methods.includes(fileDefinedMethod)
-
-    if (!isNewPluginAllowsFileToHasAnExistanseMethod) {
-      setMethod(methods.length === 1 ? methods[0] : undefined, filename, plugin)
-    }
-  }
-
-  const setMethod = (
-    method: string | undefined,
-    filename: File['name'],
-    plugin?: string,
-  ) => {
-    setSettings((s) => ({
-      ...s,
-      [filename]: {
-        ...s[filename],
-        method,
-      },
-    }))
-
-    if (!method) {
-      return setMapping(undefined, filename)
-    }
-
-    const fileDefinedMapping = settings[filename].mapping
-
-    const mappings = Mapping.mappings(
-      app,
-      plugin || (settings[filename].plugin as string),
-      method,
-    )
-
-    const isNewMethodAllowsFileToHasAnExistanseMapping = fileDefinedMapping
-      ? mappings.includes(fileDefinedMapping)
-      : false
-
-    if (!isNewMethodAllowsFileToHasAnExistanseMapping) {
-      setMapping(mappings.length === 1 ? mappings[0] : undefined, filename)
-    }
-  }
-
-  const setMapping = (mapping: string | undefined, filename: File['name']) => {
-    setSettings((s) => ({
-      ...s,
-      [filename]: {
-        ...s[filename],
-        mapping,
-      },
-    }))
-  }
-
-  useEffect(() => {
-    const newSettings: typeof settings = {}
-
-    Object.entries(settings).forEach((file) => {
-      const [filename, settings] = file
-
-      newSettings[filename] = settings
-    })
-  }, [settings])
-
-  const getExtensionMapping = async (
-    file: File,
-  ): Promise<string | undefined> => {
-    const isEqual = (buffer: ArrayBuffer, uint: Uint8Array) => {
-      const slice = new Uint8Array(buffer)
-      return uint.every((value, index) => value === slice[index])
-    }
-
-    const readChunk = (): Promise<ArrayBuffer> =>
-      new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result as ArrayBuffer)
-        reader.onerror = reject
-        reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH))
-      })
-
-    const buffer = await readChunk()
-
-    return Object.keys(FILE_SIGNATURES).find((key) =>
-      FILE_SIGNATURES[key].some((uint) => isEqual(buffer, uint)),
-    )
-  }
-
-  useEffect(() => {
-    ;[...(files || [])].forEach((file) =>
-      getExtensionMapping(file).then((plugin) => {
-        if (plugin) setPlugin(plugin, file.name)
-      }),
-    )
-  }, [files])
-
-  useEffect(() => {
-    if (app.target.mappings.length === 0) {
-      Info.mapping_file_list()
-    }
-  }, [app.target.mappings])
-
-  const PluginSelection = ({ file }: TargetSelection) => {
-    return (
-      <Select.Root
-        onValueChange={(plugin) => setPlugin(plugin, file.name)}
-        value={settings[file.name].plugin}
-      >
-        <Select.Trigger>
-          <Select.Value
-            defaultValue={settings[file.name].plugin}
-            placeholder="Choose filename"
-          >
-            {settings[file.name].plugin}
-          </Select.Value>
-        </Select.Trigger>
-        <Select.Content>
-          {Mapping.plugins(app).map((p) => (
-            <Select.Item key={p} value={p}>
-              {p}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-    )
-  }
-
-  const MethodSelection = ({ file }: TargetSelection) => {
-    const plugin = settings[file.name].plugin
-
-    if (!plugin) {
-      return null
-    }
-
-    const methods = Mapping.methods(app, plugin)
-
-    if (!methods.length) {
-      return (
-        <Select.Root disabled>
-          <Select.Trigger>
-            <Select.Value
-              defaultValue={'x'}
-              placeholder="No mappings available for this plugin"
-            />
-          </Select.Trigger>
-        </Select.Root>
-      )
-    }
-
-    const isFileMethodMissing = !settings[file.name].method
-
-    if (isFileMethodMissing && methods.length === 1) {
-      setMethod(methods[0], file.name)
-    }
-
-    return (
-      <Select.Root
-        disabled={methods.length < 2}
-        onValueChange={(method) => setMethod(method, file.name)}
-        value={settings[file.name].method}
-      >
-        <Select.Trigger>
-          <Select.Value defaultValue={'x'} placeholder="Not selected" />
-        </Select.Trigger>
-        <Select.Content>
-          {methods.map((m) => (
-            <Select.Item key={m} value={m}>
-              {m}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-    )
-  }
-
-  const MappingSelection = ({ file }: TargetSelection) => {
-    const { plugin, method, mapping } = settings[file.name]
-
-    const mappings = Mapping.mappings(app, plugin as string, method as string)
-
-    return (
-      <Select.Root
-        disabled={mappings.length < 2}
-        onValueChange={(mapping) => setMapping(mapping, file.name)}
-        value={mapping}
-      >
-        <Select.Trigger defaultValue={mapping} value={mapping}>
-          {mapping || 'Not selected'}
-        </Select.Trigger>
-        <Select.Content>
-          {mappings.map((m) => (
-            <Select.Item key={m} value={m}>
-              {m}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-    )
-  }
-
-  const ContextSelection = () => {
-    const contexts = Operation.contexts(app)
-
-    if (!context) setContext(contexts[0]?.name)
-
-    return (
-      <Select.Root
-        disabled={!contexts.length}
-        onValueChange={setContext}
-        value={context}
-      >
-        <Select.Trigger className={s.trigger}>
-          <Stack>
-            <Icon
-              name={Context.icon(
-                Context.findByName(app, context) ?? ({} as λContext),
-              )}
-            />
-            <p>
-              {context ??
-                (contexts.length
-                  ? `Choose one context from list below (exist: ${contexts.length})`
-                  : 'There is no contexts at this moment')}
-            </p>
-          </Stack>
-        </Select.Trigger>
-        <Select.Content>
-          {contexts.map((c) => (
-            <Select.Item key={c.name} value={c.name}>
-              {c.name}
-            </Select.Item>
-          ))}
-        </Select.Content>
-      </Select.Root>
-    )
-  }
-
-  const filesSelectHandler = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = event.currentTarget.files
-
-    if (!files) return
-
-    setFiles(files)
-
-    const settings: Record<File['name'], λIngestFileSettings> = {}
-
-    for (let index = 0; index < files.length; index++) {
-      const file = files.item(index)
-
-      if (!file) continue
-
-      settings[file.name] = {}
-    }
-
-    setSettings(settings)
-  }
-
-  function addFromExternalQueryButtonHandler() {
-    toast('Not paid', {
-      description: 'Its paid feature',
-    })
-  }
-
-  function FilePreview({ file }: TargetSelection) {
-    return (
-      <Stack className={s.filePreview} gap={16}>
-        <Stack>
-          <Icon name="File" size={14} fromGeist />
-          <p className={s.weight}>{formatBytes(file.size)}</p>
-          <Popover>
-            <PopoverTrigger asChild>
-              <p className={s.filename}>{file.name}</p>
-            </PopoverTrigger>
-            <PopoverContent className={s.popover}>{file.name}</PopoverContent>
-          </Popover>
-        </Stack>
-        <Stack gap={0}>
-          <Separator
-            style={{ height: 28 }}
-            color="var(--gray-400)"
-            orientation="vertical"
-          />
-          <PluginSelection file={file} />
-          <Separator
-            style={{ height: 28 }}
-            color="var(--gray-400)"
-            orientation="vertical"
-          />
-          <MethodSelection file={file} />
-          <Separator
-            style={{ height: 28 }}
-            color="var(--gray-400)"
-            orientation="vertical"
-          />
-          <MappingSelection file={file} />
-        </Stack>
-      </Stack>
-    )
-  }
-
-  const done = (
-    <Button
-      variant="glass"
-      onClick={submit}
-      img="Check"
-      className={s.done}
-      disabled={
-        !context ||
-        files.length === 0 ||
-        Object.values(settings).some(
-          (s) =>
-            !s.plugin ||
-            (Mapping.methods(app, s.plugin).length > 0 ? !s.method : false) ||
-            (Mapping.mappings(app, s.plugin, s.method as string).length > 0
-              ? !s.mapping
-              : false),
-        ) ||
-        chunkSize < 1 ||
-        chunkSize > 1024
-      }
-      loading={loading}
-    />
+  const isValidSettings = Object.values(settings).every(s =>
+    s.plugin &&
+    (!Mapping.methods(app, s.plugin).length || s.method) &&
+    (!Mapping.mappings(app, s.plugin, s.method!).length || s.mapping)
   )
 
-  const option = (
-    <Button
-      variant="ghost"
-      onClick={addFromExternalQueryButtonHandler}
-      img="Kv"
-    />
-  )
-
-  const [customFrame, setCustomFrame] = useState<boolean>(false)
-  const [frame, setFrame] = useState<MinMax>(MinMaxBase)
-
-  const frameInputChangeHandler = (
-    event: ChangeEvent<HTMLInputElement>,
-    type: keyof MinMax,
-  ) => {
-    const value = event.target.valueAsDate
-
-    if (!value) {
-      toast.error('Date is not valid', {
-        richColors: true,
-      })
-      return
-    }
-
-    setFrame((f) => ({
-      ...f,
-      [type]: value.valueOf(),
-    }))
-  }
-
-  const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
-    frameInputChangeHandler(event, 'min')
-
-  const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
-    frameInputChangeHandler(event, 'max')
+  const DoneButton = useMemo(() => {
+    return (
+      <Button
+        variant="glass"
+        onClick={handleSubmit}
+        img="Check"
+        className={s.done}
+        disabled={!context || !files.length || !isValidSettings}
+        loading={loading}
+      />
+    )
+  }, [context, handleSubmit, files, isValidSettings, loading])
 
   return (
-    <Banner title="Upload files" done={done} option={option}>
+    <Banner
+      title="Upload files"
+      done={DoneButton
+
+      }>
       <Toggle
-        option={['New context', 'Choose from existing one']}
-        checked={isExistingContextChooserAvalable}
-        onCheckedChange={setIsExistingContextChooserAvalable}
+        option={['New context', 'Existing context']}
+        checked={useExistingContext}
+        onCheckedChange={setUseExistingContext}
       />
-      {isExistingContextChooserAvalable ? (
-        <ContextSelection />
+      {useExistingContext ? (
+        <Components.ContextSelector app={app} context={context} setContext={setContext} />
       ) : (
         <Input
           variant="highlighted"
           img={Default.Icon.CONTEXT}
           value={context}
-          onChange={(e) => setContext(e.target.value)}
+          onChange={e => setContext(e.target.value)}
           placeholder="Context name"
         />
       )}
@@ -596,57 +389,23 @@ export function UploadBanner() {
         <Input
           variant="highlighted"
           type="file"
-          id="ingest_input"
           multiple
-          onChange={filesSelectHandler}
+          onChange={e => setFiles(e.target.files || {} as FileList)}
         />
         <Button variant="outline" className={s.addFiles} img="Plus">
           Add files
         </Button>
       </Stack>
-      <Toggle
-        option={['Ingest everything', 'Use limits']}
-        checked={customFrame}
-        onCheckedChange={setCustomFrame}
-      />
-      {customFrame ? (
-        <Stack>
-          <Input
-            variant="highlighted"
-            type="date"
-            img="CalendarArrowUp"
-            onChange={frameMinInputChangeHandler}
+      <Stack dir="column" gap={0} className={cn(s.files, !files.length && s.fill)}>
+        {files.length ? [...files].map((file, i) => (
+          <Components.FilePreview
+            key={i}
+            file={file}
+            settings={settings[file.name] || {}}
+            updateSettings={(update) => updateSettings(file.name, update)}
           />
-          <Input
-            variant="highlighted"
-            type="date"
-            img="CalendarArrowDown"
-            onChange={frameMaxInputChangeHandler}
-          />
-        </Stack>
-      ) : null}
-      <Input
-        variant="highlighted"
-        type="number"
-        onChange={chunkSizeInputChangeHandler}
-        value={chunkSize}
-        img="DataPoint"
-        valid={chunkSize >= 1 && chunkSize <= 1024}
-      />
-      <Stack
-        dir="column"
-        gap={0}
-        className={cn(s.files, files.length === 0 && s.fill)}
-      >
-        {files.length === 0 ? (
-          <Placeholder />
-        ) : (
-          Object.keys(settings).map((_, i) => (
-            <FilePreview key={_} file={files.item(i) as File} />
-          ))
-        )}
+        )) : <Placeholder />}
       </Stack>
-      {progress > 0 && <Progress value={progress} />}
     </Banner>
   )
 }
@@ -655,7 +414,7 @@ function Placeholder() {
   return (
     <Stack>
       <Icon name="FileScan" />
-      <p>Choose files which you want to upload</p>
+      <p>Choose files to upload</p>
     </Stack>
   )
 }

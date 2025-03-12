@@ -13,18 +13,13 @@ export namespace Select {
     ElementRef<typeof SelectPrimitive.Trigger>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
   >(({ className, children, ...props }, ref) => (
-    <SelectPrimitive.Trigger
-      ref={ref}
-      className={cn(s.trigger, className)}
-      {...props}
-    >
+    <SelectPrimitive.Trigger ref={ref} className={cn(s.trigger, className)} {...props}>
       {children}
-
     </SelectPrimitive.Trigger>
   ))
   export const Icon = ({ name, className, ...props }: ImpactiumIcon.Props) => (
     <SelectPrimitive.Icon asChild>
-      <Icon name={name} className={cn(s.icon, className)} {...props} />
+      <ImpactiumIcon name={name} className={cn(s.icon, className)} {...props} />
     </SelectPrimitive.Icon>
   )
   export namespace ScrollButton {

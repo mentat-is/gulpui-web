@@ -1,11 +1,10 @@
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Input, Skeleton, Stack } from '@impactium/components'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useApplication } from '@/context/Application.context'
 import { Operation as GulpOperationEntity } from '@/class/Info'
 import { SelectFiles } from './SelectFiles.banner'
 import { Select as UISelect } from '@/ui/Select'
-import { Icon } from '@impactium/icons'
 import { λOperation } from '@/dto'
 import { Glyph } from '@/ui/Glyph'
 import { λGlyph, Default } from '@/dto/Dataset'
@@ -14,7 +13,7 @@ import s from './styles/OperationBanner.module.css'
 export namespace Operation {
   export namespace Select {
     export namespace Banner {
-      export type Props = UIBanner.Props
+      export interface Props extends UIBanner.Props { }
     }
 
     export function Banner({ ...props }: Operation.Select.Banner.Props) {
@@ -54,21 +53,13 @@ export namespace Operation {
         <UISelect.Item value="X">There is no operations</UISelect.Item>
       )
 
-      const Trigger = () => {
+      const SelectTrigger = () => {
         const selected = GulpOperationEntity.selected(Info.app)
 
         return (
           <UISelect.Trigger>
-            <Stack>
-              <Icon
-                name={GulpOperationEntity.icon((selected || {}) as λOperation)}
-              />
-              <p>
-                {selected
-                  ? selected.name
-                  : 'Select operation or create new one'}
-              </p>
-            </Stack>
+            <UISelect.Icon name={GulpOperationEntity.icon((selected || {}) as λOperation)} />
+            {selected ? selected.name : 'Select operation or create new one'}
           </UISelect.Trigger>
         )
       }
@@ -92,12 +83,12 @@ export namespace Operation {
                 )
               }
             >
-              <Trigger />
+              <SelectTrigger />
               <UISelect.Content>
                 {Info.app.target.operations.length ? (
                   Info.app.target.operations.map((operation) => (
                     <UISelect.Item key={operation.id} value={operation.id}>
-                      <Icon name={GulpOperationEntity.icon(operation)} />
+                      <UISelect.Icon name={GulpOperationEntity.icon(operation)} />
                       {operation.name}
                     </UISelect.Item>
                   ))
@@ -114,7 +105,7 @@ export namespace Operation {
 
   export namespace Create {
     export namespace Banner {
-      export type Props = UIBanner.Props
+      export interface Props extends UIBanner.Props { }
     }
 
     export function Banner({ ...props }: Operation.Create.Banner.Props) {

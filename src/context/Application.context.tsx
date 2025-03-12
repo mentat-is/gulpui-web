@@ -15,6 +15,7 @@ import { Logger } from '@/dto/Logger.class'
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -48,7 +49,7 @@ export const useApplication = (): ApplicationContextProps =>
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [app, setInfo] = useState<λApp>(BaseInfo)
   const [banner, setBanner] = useState<ReactNode>()
-  const [dialog, setDialog] = useState<ReactNode>()
+  const [dialog, setDialog] = useState<ReactNode>(<DisplayGroupDialog events={[]} />)
   const timeline = useRef<HTMLDivElement>(null)
 
   const logout = () => {
