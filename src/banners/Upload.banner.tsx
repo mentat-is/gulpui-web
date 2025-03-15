@@ -2,9 +2,9 @@ import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
 import { Input } from '@impactium/components'
 import { Select } from '@/ui/Select'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, ChangeEvent } from 'react'
 import s from './styles/UploadBanner.module.css'
-import { Context, GulpDataset, Mapping, MinMaxBase, Operation } from '@/class/Info'
+import { Context, FileEntity, GulpDataset, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info'
 import { formatBytes } from '@/ui/utils'
 import { SelectFiles } from './SelectFiles.banner'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
@@ -14,12 +14,7 @@ import { Toggle } from '@/ui/Toggle'
 import { Separator } from '@/ui/Separator'
 import { cn } from '@impactium/utils'
 import { Default, λContext } from '@/dto/Dataset'
-
-interface FileSettings {
-  plugin?: string
-  method?: string
-  mapping?: string
-}
+import { toast } from 'sonner'
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
   'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],
@@ -58,10 +53,10 @@ Object.values(FILE_SIGNATURES).forEach((array) => {
 
 namespace UploadLogic {
   export const useFileSettings = (files: FileList) => {
-    const [settings, setSettings] = useState<Record<string, FileSettings>>({})
+    const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({})
 
     const updateSettings = useCallback(
-      (filename: string, update: Partial<FileSettings>) => {
+      (filename: string, update: Partial<FileEntity.Settings>) => {
         setSettings(prev => ({
           ...prev,
           [filename]: { ...prev[filename], ...update }
@@ -133,8 +128,8 @@ namespace Components {
 
   export const FilePreview = ({ file, settings, updateSettings }: {
     file: File
-    settings: FileSettings
-    updateSettings: (update: Partial<FileSettings>) => void
+    settings: FileEntity.Settings
+    updateSettings: (update: Partial<FileEntity.Settings>) => void
   }) => {
     const { app } = useApplication();
     const methods = Mapping.methods(app, settings.plugin || '')
@@ -170,8 +165,8 @@ namespace Components {
   }
 
   const PluginSelector = ({ settings, updateSettings, app }: {
-    settings: FileSettings
-    updateSettings: (update: Partial<FileSettings>) => void
+    settings: FileEntity.Settings
+    updateSettings: (update: Partial<FileEntity.Settings>) => void
     app: any
   }) => (
     <Select.Root
@@ -192,8 +187,8 @@ namespace Components {
   )
 
   const MethodSelector = ({ settings, updateSettings, methods }: {
-    settings: FileSettings
-    updateSettings: (update: Partial<FileSettings>) => void
+    settings: FileEntity.Settings
+    updateSettings: (update: Partial<FileEntity.Settings>) => void
     methods: string[]
   }) => (
     <Select.Root
@@ -215,8 +210,8 @@ namespace Components {
   )
 
   const MappingSelector = ({ settings, updateSettings, mappings }: {
-    settings: FileSettings
-    updateSettings: (update: Partial<FileSettings>) => void
+    settings: FileEntity.Settings
+    updateSettings: (update: Partial<FileEntity.Settings>) => void
     mappings: string[]
   }) => (
     <Select.Root
@@ -241,92 +236,14 @@ namespace Components {
 export function UploadBanner() {
   const { Info, app, spawnBanner } = useApplication()
   const [files, setFiles] = useState<FileList>([] as unknown as FileList)
-  const [context, setContext] = useState('')
+  const [context, setContext] = useState<FileEntity.IngestOptions['context']>('')
   const [loading, setLoading] = useState(false)
   const [useExistingContext, setUseExistingContext] = useState(false)
   const [chunkSize, setChunkSize] = useState(2)
   const [customFrame, setCustomFrame] = useState(false)
-  const [frame, setFrame] = useState(MinMaxBase)
+  const [frame, setFrame] = useState<FileEntity.IngestOptions['frame']>(MinMaxBase)
 
   const { settings, updateSettings } = UploadLogic.useFileSettings(files)
-
-  const send = async (file: File, start: number, i: number, id?: string) => {
-    const size = 1024 * chunkSize * 1024
-    const end = Math.min(file.size, start + size)
-
-    const operation = Operation.selected(app)
-    if (!operation) {
-      return
-    }
-
-    const plugin = settings[file.name].plugin
-    if (!plugin) {
-      return
-    }
-
-    const formData = new FormData()
-    const payload: Record<any, any> = {
-      plugin_params: {
-        mapping_file: settings[file.name].method,
-        mapping_id: settings[file.name].mapping,
-      },
-      original_file_path: file.name,
-    }
-    if (customFrame) {
-      payload.flt = {
-        int_filter: [frame.min, frame.max],
-      }
-    }
-
-    formData.append('payload', JSON.stringify(payload))
-    formData.append('f', file.slice(start, end), file.name)
-
-    const query: Record<string, string> = {
-      plugin: plugin.split('.')[0],
-      operation_id: operation.id,
-      context_name: context,
-      ws_id: 'pashalko',
-    }
-
-    if (id) {
-      query.req_id = id
-    }
-
-    const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
-      method: 'POST',
-      body: formData,
-      deassign: true,
-      raw: true,
-      toast: false,
-      query,
-      headers: {
-        size: file.size.toString(),
-        continue_offset: start.toString(),
-      },
-    })
-
-    Info.request_add({
-      for: null,
-      id: response.req_id,
-      status: response.status,
-      type: 'ingest',
-      on: Date.now(),
-    })
-
-    if (response.isError() && response.data.continue_offset) {
-      await send(
-        file,
-        response.data.continue_offset,
-        file.size / (file.size - response.data.continue_offset),
-        response.req_id,
-      )
-      return
-    }
-
-    if (end < file.size) {
-      await send(file, end, i, response.req_id)
-    }
-  }
 
   const handleSubmit = useCallback(async () => {
     setLoading(true)
@@ -334,7 +251,15 @@ export function UploadBanner() {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
 
-      send(file, 0, i)
+      Info.file_ingest({
+        context,
+        file,
+        start: 0,
+        size: chunkSize,
+        index: i,
+        settings: settings[file.name],
+        frame: customFrame ? frame : undefined
+      })
     }
 
     await Info.sync()
@@ -362,6 +287,45 @@ export function UploadBanner() {
       />
     )
   }, [context, handleSubmit, files, isValidSettings, loading])
+
+  const frameInputChangeHandler = (
+    event: ChangeEvent<HTMLInputElement>,
+    type: keyof MinMax,
+  ) => {
+    const value = event.target.valueAsDate
+
+    if (!value) {
+      toast.error('Date is not valid', {
+        richColors: true,
+      })
+      return
+    }
+
+    setFrame((f) => ({
+      ...f!,
+      [type]: value.valueOf(),
+    }))
+  }
+
+  const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
+    frameInputChangeHandler(event, 'min')
+
+  const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
+    frameInputChangeHandler(event, 'max')
+
+  const chunkSizeInputChangeHandler = (
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const { valueAsNumber } = event.target
+
+    if (isNaN(valueAsNumber)) {
+      return toast('Chunk size should be valid integer')
+    }
+
+    if (valueAsNumber < 1 || valueAsNumber > 1024) {
+      return toast('Chunk size should be bigger than 1 and less than 1024')
+    }
+  }
 
   return (
     <Banner
@@ -396,6 +360,35 @@ export function UploadBanner() {
           Add files
         </Button>
       </Stack>
+      <Toggle
+        option={['Ingest everything', 'Use limits']}
+        checked={customFrame}
+        onCheckedChange={setCustomFrame}
+      />
+      {customFrame ? (
+        <Stack>
+          <Input
+            variant="highlighted"
+            type="date"
+            img="CalendarArrowUp"
+            onChange={frameMinInputChangeHandler}
+          />
+          <Input
+            variant="highlighted"
+            type="date"
+            img="CalendarArrowDown"
+            onChange={frameMaxInputChangeHandler}
+          />
+        </Stack>
+      ) : null}
+      <Input
+        variant="highlighted"
+        type="number"
+        onChange={chunkSizeInputChangeHandler}
+        value={chunkSize}
+        img="DataPoint"
+        valid={chunkSize >= 1 && chunkSize <= 1024}
+      />
       <Stack dir="column" gap={0} className={cn(s.files, !files.length && s.fill)}>
         {files.length ? [...files].map((file, i) => (
           <Components.FilePreview

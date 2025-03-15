@@ -574,8 +574,12 @@ export class Info implements InfoProps {
 
   preview_file = (file: λFile) => this.query_file(file, true)
 
-  request_add = (req: λRequest) =>
-    this.request_replace(...this.app.general.requests, req)
+  request_add = (req: λRequest) => {
+    if (this.app.general.requests.every(r => r.id !== req.id)) {
+      this.request_replace(...this.app.general.requests, req)
+    }
+  }
+
 
   request_replace = (...req: λRequest[]) =>
     this.setInfoByKey(
@@ -870,6 +874,108 @@ export class Info implements InfoProps {
       },
       this.sync,
     )
+  }
+
+  file_ingest = async ({
+    context,
+    file,
+    frame,
+    settings,
+    start,
+    size,
+    index,
+    id
+  }: FileEntity.IngestOptions) => {
+    const chunkSize = 1024 * size * 1024
+    const end = Math.min(file.size, start + size)
+
+    const operation = Operation.selected(this.app)
+    if (!operation) {
+      return
+    }
+
+    const plugin = settings.plugin
+    if (!plugin) {
+      return
+    }
+
+    const formData = new FormData()
+    const payload: Record<any, any> = {
+      plugin_params: {
+        mapping_file: settings.method,
+        mapping_id: settings.mapping,
+      },
+      original_file_path: file.name,
+    }
+    if (frame) {
+      payload.flt = {
+        int_filter: [frame.min, frame.max],
+      }
+    }
+
+    formData.append('payload', JSON.stringify(payload))
+    formData.append('f', file.slice(start, end), file.name)
+
+    const query: Record<string, string> = {
+      plugin: plugin.split('.')[0],
+      operation_id: operation.id,
+      context_name: context,
+      ws_id: 'pashalko',
+    }
+
+    if (id) {
+      query.req_id = id
+    }
+
+    const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
+      method: 'POST',
+      body: formData,
+      deassign: true,
+      raw: true,
+      toast: false,
+      query,
+      headers: {
+        size: file.size.toString(),
+        continue_offset: start.toString(),
+      },
+    })
+
+    this.request_add({
+      for: null,
+      id: response.req_id,
+      status: response.status,
+      type: 'ingest',
+      on: Date.now(),
+    })
+
+    if (response.isError() && response.data.continue_offset) {
+      // if uploadig failed - resume uploading
+      await this.file_ingest({
+        context,
+        file,
+        size,
+        settings,
+        frame,
+        start: response.data.continue_offset,
+        index: file.size / (file.size - response.data.continue_offset),
+        id: response.req_id
+      })
+      return
+    }
+
+    if (end < file.size) {
+      // if uploadig done - upload next chunk
+      await this.file_ingest({
+        context,
+        file,
+        frame,
+        settings,
+        size,
+        start: end,
+        index,
+        id: response.req_id
+      })
+    }
   }
 
   // ⚠️ UNTOUCHABLE
@@ -1723,6 +1829,27 @@ export class Context {
     ...c,
     selected: false,
   })
+}
+
+export namespace FileEntity {
+  export interface IngestOptions {
+    context: λContext['id'] | string
+    file: any;
+    start: number;
+    // Chunk size / bit numeric representation
+    size: number;
+    index: number;
+    // req_id to continue uploading
+    id?: string;
+    frame?: MinMax;
+    settings: FileEntity.Settings;
+  }
+
+  export interface Settings {
+    plugin?: string
+    method?: string
+    mapping?: string
+  }
 }
 
 export class File {
