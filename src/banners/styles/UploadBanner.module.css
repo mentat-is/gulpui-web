@@ -80,6 +80,7 @@
   width: 100%;
   max-width: 60vw;
   height: 28px;
+  padding-right: 1px;
   background: var(--meta-black);
 }
 .filePreview > svg {
@@ -88,26 +89,26 @@
 .files .filePreview:not(:last-child) {
   border-bottom: 1px solid var(--gray-400);
 }
-.filePreview * {
+.filePreview *:not(path) {
   font-size: 11px;
   font-family: var(--font-mono);
   color: var(--text-white);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.filePreview button[role = 'combobox'] {
-  height: 24px;
+.select {
+  height: 28px;
   overflow: hidden;
   min-height: unset;
   border: none;
-  width: unset !important;
   background: unset;
   border-radius: 2px;
+  box-shadow: none !important;
 }
-.filePreview button[role = 'combobox']::before {
+.select::before {
   content: none !important;
 }
-.filePreview > button {
+.select > button {
   border-radius: 0;
   height: 28px;
 }
@@ -124,4 +125,21 @@
   overflow: hidden;
   margin-right: 8px;
   flex-shrink: 0;
+}
+.progress {
+  background: var(--meta-black);
+  height: 100%;
+  width: 100%;
+  padding: 8px;
+  z-index: 5;
+}
+.progress .bar {
+  background: var(--soft-black);
+}
+.allSettings {
+  border-radius: 2px;
+  border: 1px solid var(--gray-400);
+}
+.allSettings > button {
+  width: fit-content;
 }

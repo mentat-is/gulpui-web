@@ -4,11 +4,11 @@
   height: 32px;
   width: 100%;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   border-radius: 6px;
   border: 1px solid var(--gray-400);
   background-color: var(--meta-black);
-  gap: 12px;
+  gap: 16px;
   overflow: hidden;
   padding: 8px;
   color: var(--white);

@@ -280,6 +280,7 @@
 
 html, body {
   background: var(--meta-black) !important;
+  overscroll-behavior-x: none;
 }
 
 img {

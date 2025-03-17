@@ -51,8 +51,8 @@ export function Table<T extends Object>({
   }, [_values])
 
   return (
-    <Stack ai="flex-start" jc="flex-start" dir="column" className={s.wrapper}>
-      <table className={cn(s.table, className)} {...props}>
+    <Stack ai="flex-start" jc="flex-start" dir="column" className={cn(s.wrapper, className)} {...props}>
+      <table className={s.table}>
         <thead>
           <tr>
             {columns.map((c, i) => (

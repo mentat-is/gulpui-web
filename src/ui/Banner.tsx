@@ -107,10 +107,10 @@ export function Banner({
           {done}
         </Cell>
         {Side}
-        <h6>
+        {title && <h6>
           {loading ? <Skeleton width="long" height={24} /> : title}
           {subtitle ? loading ? <Skeleton height={24} /> : subtitle : null}
-        </h6>
+        </h6>}
         <Stack dir="column" ai="unset" gap={16} className={s.content}>
           {children}
         </Stack>

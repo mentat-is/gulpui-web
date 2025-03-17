@@ -5,8 +5,10 @@ import s from './styles/Progress.module.css'
 
 const Progress = React.forwardRef<
   React.ElementRef<typeof ProgressPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root>
->(({ className, value, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
+    background?: string
+  }
+>(({ className, value, color = 'var(--meta-black)', background = 'white', ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(s.root, className)}
@@ -16,7 +18,7 @@ const Progress = React.forwardRef<
       className={s.bar}
       style={{ width: `${Math.round(value || 0)}%` }}
     >
-      <span className={s.label}>{value}%</span>
+      <span style={{ color, background }} className={s.label}>{value}%</span>
     </ProgressPrimitive.Indicator>
   </ProgressPrimitive.Root>
 ))

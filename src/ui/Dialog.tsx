@@ -3,7 +3,7 @@ import s from './styles/Dialog.module.css'
 import { cn } from '@impactium/utils'
 import { Stack } from '@impactium/components'
 import { useApplication } from '@/context/Application.context'
-import { Loading } from './Loading'
+import { Loading } from '@impactium/components'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 
 export namespace Dialog {
@@ -61,7 +61,7 @@ export function Dialog({
         </div>
       </div>
       <div className={cn(s.content, loading && s.loading)}>
-        {loading ? <Loading size={48} variant="white" no_text /> : children}
+        {loading ? <Loading size='lg' variant="white" /> : children}
       </div>
     </Stack>
   )

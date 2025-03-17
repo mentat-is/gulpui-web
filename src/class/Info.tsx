@@ -697,7 +697,7 @@ export class Info implements InfoProps {
   }
 
   mapping_file_list = async (): Promise<λMapping.Plugin[]> => {
-    const shit = await api<λMapping.Raw[]>('/mapping_file_list', Mapping.parse)
+    const shit = await api<λMapping.Raw[]>('/mapping_file_list')
 
     const parsed_shit = Mapping.parse(shit)
 
@@ -881,14 +881,10 @@ export class Info implements InfoProps {
     file,
     frame,
     settings,
-    start,
     size,
-    index,
-    id
+    setProgress,
+    preview
   }: FileEntity.IngestOptions) => {
-    const chunkSize = 1024 * size * 1024
-    const end = Math.min(file.size, start + size)
-
     const operation = Operation.selected(this.app)
     if (!operation) {
       return
@@ -912,70 +908,67 @@ export class Info implements InfoProps {
         int_filter: [frame.min, frame.max],
       }
     }
-
     formData.append('payload', JSON.stringify(payload))
-    formData.append('f', file.slice(start, end), file.name)
 
-    const query: Record<string, string> = {
+    const chunkSize = 1024 * size * 1024
+
+    const query: Record<string, string | boolean> = {
       plugin: plugin.split('.')[0],
       operation_id: operation.id,
       context_name: context,
       ws_id: 'pashalko',
     }
 
-    if (id) {
-      query.req_id = id
+    if (preview) {
+      query.preview_mode = preview
     }
 
-    const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
-      method: 'POST',
-      body: formData,
-      deassign: true,
-      raw: true,
-      toast: false,
-      query,
-      headers: {
-        size: file.size.toString(),
-        continue_offset: start.toString(),
-      },
-    })
+    const ingest = async (start = 0, id?: string): Promise<void | λEvent[]> => {
+      formData.delete('f')
 
-    this.request_add({
-      for: null,
-      id: response.req_id,
-      status: response.status,
-      type: 'ingest',
-      on: Date.now(),
-    })
+      const end = Math.min(file.size, preview ? file.size : start + chunkSize)
 
-    if (response.isError() && response.data.continue_offset) {
+      formData.append('f', file.slice(start, end), file.name)
+
+      if (id && !query.req_id) {
+        query.req_id = id
+      }
+
+      const response = await api<GulpDataset.IngestFile.Summary>('/ingest_file', {
+        method: 'POST',
+        body: formData,
+        deassign: true,
+        raw: true,
+        toast: false,
+        query,
+        headers: {
+          size: file.size.toString(),
+          continue_offset: start.toString(),
+        },
+      })
+
+      this.request_add({
+        for: null,
+        id: response.req_id,
+        status: response.status,
+        type: 'ingest',
+        on: response.timestamp.valueOf(),
+      })
+
+      if (preview) {
+        return response.data as unknown as λEvent[]
+      }
+
       // if uploadig failed - resume uploading
-      await this.file_ingest({
-        context,
-        file,
-        size,
-        settings,
-        frame,
-        start: response.data.continue_offset,
-        index: file.size / (file.size - response.data.continue_offset),
-        id: response.req_id
-      })
-      return
+      if (response.isError() && response.data.continue_offset) return ingest(response.data.continue_offset, response.req_id)
+
+
+      setProgress(end / file.size * 100)
+      // if uploadig done - upload next chunk
+      if (end < file.size) return ingest(end, response.req_id);
     }
 
-    if (end < file.size) {
-      // if uploadig done - upload next chunk
-      await this.file_ingest({
-        context,
-        file,
-        frame,
-        settings,
-        size,
-        start: end,
-        index,
-        id: response.req_id
-      })
-    }
+    return ingest();
   }
 
   // ⚠️ UNTOUCHABLE
@@ -1258,6 +1251,8 @@ export class Info implements InfoProps {
     const operations: λOperation[] = []
     const contexts: λContext[] = []
     const files: λFile[] = []
+
+    await this.mapping_file_list()
 
     const details = await api<GulpDataset.QueryOperations.Summary>(
       '/query_operations',
@@ -1835,14 +1830,12 @@ export namespace FileEntity {
   export interface IngestOptions {
     context: λContext['id'] | string
     file: any;
-    start: number;
     // Chunk size / bit numeric representation
     size: number;
-    index: number;
-    // req_id to continue uploading
-    id?: string;
     frame?: MinMax;
     settings: FileEntity.Settings;
+    setProgress: (num: number) => void;
+    preview?: boolean;
   }
 
   export interface Settings {
