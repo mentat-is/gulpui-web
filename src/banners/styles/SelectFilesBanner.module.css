@@ -2,17 +2,14 @@
   max-height: 64vh;
   height: 64vh;
 }
+.banner > div {
+  overflow: visible;
+}
 .wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
+  height: 100%;
+  width: calc(100% + 16px);
   overflow: auto;
-  padding-right: 10px;
-  position: relative;
-  border-radius: var(--border-s);
-  border: 1px solid var(--gray-400);
-  background: var(--meta-black);
+  padding-right: 8px;
 }
 .noData {
   height: 100%;
@@ -24,49 +21,32 @@
   font-size: 12px;
 }
 .branch {
-  padding: 8px 16px 20px 16px;
+  padding: 16px;
   background: var(--meta-black);
   border: 1px solid var(--gray-400);
   border-radius: 6px;
-  height: 100%;
-}
-.contextHeading {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+  width: 100%;
 }
 .contextHeading label {
-  font-size: 18px;
+  font-size: 16px;
   font-family: var(--font-mono);
-  padding: 4px;
-}
-.pluginHeading {
-  display: flex;
-  gap: 8px;
-  margin-left: 12px;
-  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 512px;
 }
 .pluginHeading label {
-  font-size: 12px;
+  font-size: 11px;
   font-family: var(--font-mono);
-  max-width: 333px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
 }
-.file {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: center;
-}
-.file label {
-  white-space: nowrap;
-  max-width: calc(100% - 128px);
-  text-overflow: ellipsis;
-  overflow: hidden;
-}
-.splitter {
-  flex: 1;
+.separator {
+  width: calc(100% + 32px);
+  left: -16px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  position: relative;
 }

@@ -7,3 +7,6 @@
 .textarea::placeholder {
   color: var(--text-dimmed);
 }
+.fixed {
+  resize: none;
+}

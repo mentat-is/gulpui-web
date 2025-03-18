@@ -1,4 +1,3 @@
-'use client'
 import React, { forwardRef } from 'react'
 import * as SeparatorPrimitive from '@radix-ui/react-separator'
 import s from './styles/Separator.module.css'
@@ -13,7 +12,7 @@ type ComponentPropsWithoutRef = React.ComponentPropsWithoutRef<
 const Separator = forwardRef<SeparatorPrimitiveProps, ComponentPropsWithoutRef>(
   (
     {
-      color = 'var(--accent-3)',
+      color = 'var(--gray-400)',
       className,
       orientation = 'horizontal',
       style,

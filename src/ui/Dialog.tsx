@@ -52,17 +52,17 @@ export function Dialog({
   }, [])
 
   return (
-    <Stack className={cn(s.dialog, className)} dir="column" {...props}>
-      <div className={s.wrapper}>
-        {typeof icon === 'string' ? <img src={icon} alt="" /> : icon}
-        <div className={s.header}>
+    <Stack className={cn(s.dialog, className)} dir="column" ai='stretch' {...props}>
+      <Stack className={s.wrapper} gap={12}>
+        {icon}
+        <Stack className={s.header} dir='column' ai='flex-start' gap={0} flex>
           <h2>{title}</h2>
           {description && <p>{description}</p>}
-        </div>
-      </div>
-      <div className={cn(s.content, loading && s.loading)}>
+        </Stack>
+      </Stack>
+      <Stack dir='column' ai='stretch' className={cn(s.content, loading && s.loading)}>
         {loading ? <Loading size='lg' variant="white" /> : children}
-      </div>
+      </Stack>
     </Stack>
   )
 }

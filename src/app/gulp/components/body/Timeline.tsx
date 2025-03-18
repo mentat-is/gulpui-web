@@ -18,7 +18,7 @@ export function Timeline() {
   const focusTimestamp = (timestamp: number, onLeft = false) => {
     const instanse = getAlgothitmInstance()
 
-    setScrollX(onLeft ? instanse.center_scroll_from_timestamp(timestamp) : instanse.abs_x_from_timestamp(timestamp))
+    setScrollX(onLeft ? instanse.abs_x_from_timestamp(timestamp) : instanse.center_scroll_from_timestamp(timestamp))
   }
 
   const getAlgothitmInstance = () => {

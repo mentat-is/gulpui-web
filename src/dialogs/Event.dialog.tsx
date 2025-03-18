@@ -24,13 +24,8 @@ interface DisplayEventDialogProps {
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication()
-  const [detailedChunkEvent, setDetailedChunkEvent] =
-    useState<λExtendedEvent | null>(null)
   const [rawJSON, setRawJSON] = useState<string>('')
-  const [notes, setNotes] = useState<λNote[]>([])
-  const [selectedNote, setSelectedNote] = useState<λNote['id'] | undefined>(
-    notes[0]?.id,
-  )
+  const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
 
   useEffect(() => {
     Info.setTimelineTarget(event)
@@ -38,78 +33,18 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event, app.target.notes])
 
   useEffect(() => {
-    setSelectedNote(notes[0]?.id)
-  }, [notes])
+    if (!rawJSON) loadEvent()
+  }, [rawJSON])
 
   useEffect(() => {
-    if (!detailedChunkEvent) reloadDetailedChunkEvent()
-  }, [detailedChunkEvent])
-
-  useEffect(() => {
-    setDetailedChunkEvent(null)
+    setRawJSON('')
   }, [event])
 
-  const reloadDetailedChunkEvent = async () => {
+  const loadEvent = async () => {
     const detailed = await Info.query_single_id(event.id, event.operation_id)
 
     setRawJSON(JSON.stringify(detailed?.raw, null, 2))
-
-    setDetailedChunkEvent(detailed?.normalized || null)
   }
-
-  const defaultJSON = useMemo(() => {
-    return rawJSON ? JSON.parse(rawJSON) : {}
-  }, [rawJSON])
-
-  const Locations = useMemo(() => {
-    const source = defaultJSON?.['source.ip']
-    const destination = defaultJSON?.['destination.ip']
-
-    if (!source && !destination) {
-      return null
-    }
-
-    return (
-      <Stack style={{ flexWrap: 'wrap' }}>
-        {source && (
-          <Button
-            style={{ flex: 1 }}
-            variant="glass"
-            onClick={() =>
-              spawnBanner(
-                <Maps.Banner lat={41.7593026} lng={12.6005981} ip={source} />,
-              )
-            }
-            img="Location"
-          >
-            Visualize source ip address {source} on map
-          </Button>
-        )}
-        {destination ? (
-          <Button
-            style={{ flex: 1 }}
-            variant="glass"
-            onClick={() =>
-              spawnBanner(
-                <Maps.Banner
-                  lat={81.7593026}
-                  lng={43.6005981}
-                  ip={destination}
-                />,
-              )
-            }
-            img="Target"
-          >
-            See {source} location on map
-          </Button>
-        ) : source ? (
-          <Button img="Robot" variant="disabled" style={{ flex: 1 }}>
-            There is no destination address
-          </Button>
-        ) : null}
-      </Stack>
-    )
-  }, [defaultJSON])
 
   const index = useMemo(() => {
     const events = File.events(app, event.file_id)
@@ -123,33 +58,17 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         className={s.highlighter}
         customStyle={{ maxWidth: '100%', borderRadius: 6 }}
         language="JSON"
-        style={highlight.vs2015}
-      >
+        style={highlight.vs2015}>
         {rawJSON}
       </SyntaxHighlighter>
     )
   }, [rawJSON])
 
   const notesList = useMemo(() => {
-    if (!notes.length) {
-      return null
-    }
-
     return (
-      <Stack dir="column">
-        <Select.Root onValueChange={(v) => setSelectedNote(v as λNote['id'])}>
-          <Select.Trigger
-            value={selectedNote}
-            defaultValue="Select note to see details"
-          ></Select.Trigger>
-          <Select.Content></Select.Content>
-        </Select.Root>
-        {selectedNote ? (
-          <NotePoint.Combination note={Note.id(app, selectedNote)} />
-        ) : null}
-      </Stack>
+      <NotePoint.Detailed notes={notes} />
     )
-  }, [notes, selectedNote])
+  }, [notes])
 
   return (
     <Dialog
@@ -158,7 +77,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       description={File.id(app, event.file_id).name}
     >
       <Navigation event={event} />
-      {detailedChunkEvent ? (
+      {rawJSON ? (
         <Fragment>
           <Stack className={s.group}>
             <Stack dir="column" flex>
@@ -211,29 +130,17 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Stack>
           {notesList}
           {highlights}
-          <Stack>
-            <Button
-              variant="secondary"
-              style={{ width: '100%' }}
-              onClick={() => copy(rawJSON)}
-              img="Copy"
-            >
-              Copy JSON
-            </Button>
-            <Button
-              variant="secondary"
-              style={{ width: '100%' }}
-              onClick={() =>
-                download(
-                  rawJSON,
-                  'application/json',
-                  `${event.id}_from_${event.file_id}.json`,
-                )
-              }
+          <Stack className={s.actionButtons}  >
+            <Button variant="secondary" onClick={() => copy(rawJSON)} img="Copy">Copy JSON</Button>
+            <Button variant="secondary" onClick={() =>
+              download(
+                rawJSON,
+                'application/json',
+                `${event.id}_from_${event.file_id}.json`,
+              )
+            }
               img="Download"
-            >
-              Download JSON
-            </Button>
+            >Download JSON</Button>
             <Button
               onClick={() => {
                 // @ts-ignore
@@ -241,10 +148,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               }}
               variant="secondary"
               img="Crosshair"
+              style={{ flex: 0 }}
               title="Focus timeline on this event"
             />
           </Stack>
-          {Locations}
         </Fragment>
       ) : (
         <Stack

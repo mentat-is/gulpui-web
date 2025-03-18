@@ -57,3 +57,6 @@
   border: var(--geist-border);
   background: var(--geist-background);
 }
+.bordered {
+  border-color: currentColor;
+}

@@ -4,10 +4,16 @@ import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λNote } from '@/dto/Dataset'
 import { Event, Note } from '@/class/Info'
 import { Point as UIPoint } from './Point'
-import { Button, Stack } from '@impactium/components'
+import { Button, Input, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
+import { Badge } from './Badge'
+import { formatDistanceToNow } from 'date-fns'
+import { Separator } from './Separator'
+import { Markdown } from './Markdown'
+import { useEffect, useState } from 'react'
+import { Select } from './Select'
 
 export namespace NotePoint {
   export interface Props
@@ -54,7 +60,7 @@ export namespace NotePoint {
       >
         <Icon name={Note.icon(note)} />
         <p>{note.name}</p>
-        <span>{note.description}</span>
+        <span>{note.text}</span>
         <Button
           img="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}
@@ -95,5 +101,65 @@ export namespace NotePoint {
         {...props}
       />
     )
+  }
+
+  export namespace Detailed {
+    export interface Props extends Stack.Props {
+      notes: λNote[]
+    }
+  }
+
+  export function Detailed({ notes, className, ...props }: Detailed.Props) {
+    if (notes.length === 0) {
+      return null
+    }
+
+    const { app } = useApplication();
+    const [note, setNote] = useState<λNote>(notes[0])
+    const [isRevealed, setIsRevealed] = useState<boolean>(false);
+
+    useEffect(() => {
+      if (note) {
+        setNote(Note.id(app, note.id))
+      } else {
+        setNote(notes[0])
+      }
+    }, [notes])
+
+    return (
+      <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
+        <Stack dir='column' ai='stretch' className={s.header}>
+          <Stack>
+            <Select.Root onValueChange={(v) => setNote(Note.id(app, v as λNote['id']))}>
+              <Select.Trigger style={{ color: note.color }} value={note.id}>
+                <Select.Icon name={Note.icon(note)} />
+                <p>{note.name}</p>
+              </Select.Trigger>
+              <Select.Content>
+                {notes.map(note => (
+                  <Select.Item style={{ color: note.color }} value={note.id}>
+                    <Select.Icon name={Note.icon(note)} />
+                    <p>{note.name}</p>
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+            <Button variant='ghost' img='Trash2'>Delete</Button>
+          </Stack>
+          <Stack style={{ flexWrap: 'wrap' }} jc='space-between'>
+            <Badge variant='outline' icon='ClockRewind' style={{ color: 'var(--gray-900)', background: 'var(--gray-300)', whiteSpace: 'nowrap' }}>
+              Created {formatDistanceToNow(note.time_created, { addSuffix: true })}
+            </Badge>
+            <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20 }}>Edit</Button>
+          </Stack>
+        </Stack>
+        <Separator />
+        <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
+          <Markdown className={cn(s.description, isRevealed && s.revealed)} value={note.text} />
+          <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsRevealed(v => !v)} img='AcronymMarkdown'>{isRevealed ? 'Hide' : 'Reveal'} description</Button>
+        </Stack>
+      </Stack>
+    )
+
   }
 }

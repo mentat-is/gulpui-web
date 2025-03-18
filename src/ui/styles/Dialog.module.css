@@ -1,47 +1,17 @@
 .dialog {
   width: 100%;
-  padding: var(--card-padding);
+  padding: 16px;
   z-index: 5;
-  overflow: hidden;
-  height: 100%;
   border-radius: 4px;
   border: 1px solid var(--gray-400);
-  display: flex;
   background: var(--soft-black);
-  flex-direction: column;
-  gap: var(--card-gap);
   height: 100%;
-  align-items: flex-start;
-  justify-content: flex-start;
-  pointer-events: all;
-}
-.wrapper {
-  display: flex;
-  flex-direction: row;
-  width: 100%;
-  min-height: 32px;
-  gap: var(--card-gap);
-  overflow: hidden;
 }
 .wrapper > img,
 .wrapper > svg {
   border-radius: var(--round);
   min-width: 32px;
 }
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-  gap: 2px;
-  text-align: center;
-  width: 100%;
-  min-height: 32px;
-  align-items: flex-start;
-  justify-content: center;
-}
-
 .header > h2 {
   font-size: 18px;
   max-width: calc(100% - 32px - 8px);
@@ -67,14 +37,10 @@
   right: 0;
 }
 .content {
-  width: calc(100% + 14px);
-  overflow: hidden;
-  padding-right: 8px;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
-  border-radius: 6px;
+  gap: 8px;
   min-height: calc(100% - 48px);
 }
 .content::-webkit-scrollbar {

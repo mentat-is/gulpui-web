@@ -334,11 +334,11 @@ export namespace Internal {
   }
 
   export class IconExtractor {
-    public static activate = <T extends Pick<GulpObject<μ.File>, 'glyph_id'>>(
+    public static activate = <T extends Pick<GulpObject<μ.File>, 'glyph_id'> | null>(
       defaultValue: Icon.Name,
     ): ((obj: T) => Icon.Name) => {
       return (obj: T) => {
-        if (obj.glyph_id) {
+        if (obj?.glyph_id) {
           return Glyph.List.get(obj.glyph_id) ?? defaultValue
         }
 
@@ -963,7 +963,8 @@ export class Info implements InfoProps {
       if (response.isError() && response.data.continue_offset) return ingest(response.data.continue_offset, response.req_id)
 
 
-      setProgress(end / file.size * 100)
+      if (setProgress) setProgress(end / file.size * 100)
+
       // if uploadig done - upload next chunk
       if (end < file.size) return ingest(end, response.req_id);
     }
@@ -1683,7 +1684,7 @@ export class Info implements InfoProps {
 }
 
 export class Operation {
-  public static icon = Internal.IconExtractor.activate<λOperation>(
+  public static icon = Internal.IconExtractor.activate<λOperation | null>(
     Default.Icon.OPERATION,
   )
 
@@ -1731,7 +1732,7 @@ export class Operation {
 }
 
 export class Context {
-  public static icon = Internal.IconExtractor.activate<λContext>(
+  public static icon = Internal.IconExtractor.activate<λContext | null>(
     Default.Icon.CONTEXT,
   )
 
@@ -1834,7 +1835,7 @@ export namespace FileEntity {
     size: number;
     frame?: MinMax;
     settings: FileEntity.Settings;
-    setProgress: (num: number) => void;
+    setProgress?: (num: number) => void;
     preview?: boolean;
   }
 
@@ -1847,7 +1848,7 @@ export namespace FileEntity {
 
 export class File {
   // @ts-ignore
-  public static icon = Internal.IconExtractor.activate<λFile>(Default.Icon.FILE)
+  public static icon = Internal.IconExtractor.activate<λFile | null>(Default.Icon.FILE)
 
   // ⚠️ UNTOUCHABLE
   public static selected = (app: λApp): λFile[] =>
@@ -2186,7 +2187,7 @@ export class Event {
 }
 
 export class Note {
-  public static icon = Internal.IconExtractor.activate<λNote>(Default.Icon.NOTE)
+  public static icon = Internal.IconExtractor.activate<λNote | null>(Default.Icon.NOTE)
 
   public static normalize = (notes: ΞNote[]) =>
     notes.map(
@@ -2194,7 +2195,6 @@ export class Note {
         ({
           ...n,
           file_id: n.source_id,
-          description: n.text,
           docs: Event.normalize(n.docs),
         }) satisfies λNote,
     )
@@ -2219,7 +2219,7 @@ export class Note {
 }
 
 export class Link {
-  public static icon = Internal.IconExtractor.activate<λLink>(Default.Icon.LINK)
+  public static icon = Internal.IconExtractor.activate<λLink | null>(Default.Icon.LINK)
 
   public static selected = (app: λApp) =>
     app.target.links.filter((link) =>

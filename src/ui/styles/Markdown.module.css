@@ -1,0 +1,39 @@
+.markdown {
+  overflow: auto !important;
+  overflow-x: hidden !important;
+}
+.markdown > h1:first-of-type {
+  margin-top: 0;
+}
+.markdown > * {
+  all: revert;
+  line-height: 150%;
+  font-family: var(--font-sans);
+}
+.markdown a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.markdown ul,
+.markdown li {
+  all: revert;
+}
+.markdown li {
+  margin-bottom: 8px;
+}
+pre[class*="language-"] {
+  padding: 1em;
+  margin: .5em 0;
+  overflow: auto;
+}
+.markdown code:not(pre[class*="language-"] code) {
+  background: var(--gray-200);
+  border: var(--geist-border);
+  border-radius: 4px;
+  padding: 1px 3px;
+  font-family: var(--font-mono);
+  color: var(--gray-900);
+}
+.markdown a:has(code) {
+  text-decoration-color: var(--gray-900);
+}

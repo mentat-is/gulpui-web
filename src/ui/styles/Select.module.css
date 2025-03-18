@@ -23,8 +23,10 @@
 .trigger * {
   z-index: 1;
 }
-.trigger > div {
-  gap: 16px !important;
+.trigger p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: currentColor;
 }
 .trigger::before {
   position: absolute;
@@ -205,17 +207,26 @@
   transition: background-color 0.2s, color 0.2s;
   transition-duration: 150ms;
   transition-timing-function: var(--transition);
+  color: var(--text-dimmed);
+}
+.item p {
+  color: currentColor;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .item span {
-  color: var(--text-dimmed);
+  color: currentColor;
   display: flex;
   flex-direction: row;
   gap: 8px;
   align-items: center;
   text-align: left;
 }
+.item[data-state="checked"] {
+  color: var(--white);
+}
 .item[data-state="checked"] span {
-  color: var(--white) !important;
+  color: currentColor;
 }
 .item:focus,
 .item:hover {

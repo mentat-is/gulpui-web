@@ -120,7 +120,7 @@ export type ΞNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   source_id: λFile['id']
   docs: ΞDoc[]
   time_pin: number
-  last_editor_id: λUser
+  owner_user_id: λUser['id']
   text: string
   edits: Record<string, any>[]
 }
@@ -130,14 +130,13 @@ export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   T
 > & {
   type: 'note'
-  description: string
   operation_id: λOperation['id']
   tags: string[]
   context_id: λContext['id']
   file_id: λFile['id']
   docs: λDoc[]
   time_pin: number
-  last_editor_id: λUser
+  owner_user_id: λUser['id']
   text: string
   edits: Record<string, any>[]
 }
@@ -147,13 +146,13 @@ export type λRequest = {
   type: 'query' | 'ingest' | 'unknown'
   for: λFile['id'] | null
   status:
-    | 'done'
-    | 'failed'
-    | 'canceled'
-    | 'ongoing'
-    | 'pending'
-    | 'error'
-    | 'success'
+  | 'done'
+  | 'failed'
+  | 'canceled'
+  | 'ongoing'
+  | 'pending'
+  | 'error'
+  | 'success'
   on: number
 }
 

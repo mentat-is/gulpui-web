@@ -24,12 +24,14 @@ export namespace Badge {
     extends Stack.Props,
     VariantProps<typeof badgeVariants> {
     icon?: Icon.Name
+    border?: boolean
+    radius?: number | string
   }
 }
 
-function Badge({ className, variant, value, icon, ...props }: Badge.Props) {
+function Badge({ className, variant, value, icon, border, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
   return (
-    <Stack className={cn(badgeVariants({ variant }), className)} {...props}>
+    <Stack className={cn(badgeVariants({ variant }), className, border && s.bordered)} style={{ borderRadius }} {...props}>
       {icon ? <Icon name={icon} size={12} /> : null}
       {value || props.children}
     </Stack>

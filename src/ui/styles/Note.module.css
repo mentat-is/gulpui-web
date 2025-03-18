@@ -28,3 +28,22 @@
   font-family: var(--font-mono);
   color: var(--text-dimmed);
 }
+.detailed {
+  width: 100%;
+  background: var(--meta-black);
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  padding: 8px;
+}
+.detailed .header {
+  width: 100%;
+}
+.detailed .description {
+  height: 0px;
+  padding-left: 6px;
+  transition: all 0.250s var(--transition);
+}
+.detailed .revealed {
+  height: 256px;
+  padding-bottom: 32px;
+}

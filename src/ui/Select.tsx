@@ -15,6 +15,7 @@ export namespace Select {
   >(({ className, children, ...props }, ref) => (
     <SelectPrimitive.Trigger ref={ref} className={cn(s.trigger, className)} {...props}>
       {children}
+      <Select.Icon style={{ marginLeft: 'auto' }} name='ChevronDown' />
     </SelectPrimitive.Trigger>
   ))
   export const Icon = ({ name, className, ...props }: ImpactiumIcon.Props) => (
@@ -74,11 +75,9 @@ export namespace Select {
     ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
   >(({ className, children, ...props }, ref) => (
     <SelectPrimitive.Item ref={ref} className={cn(s.item, className)} {...props}>
-      <span>
-        <SelectPrimitive.ItemIndicator>
-          <Select.Icon name='Check' />
-        </SelectPrimitive.ItemIndicator>
-      </span>
+      <SelectPrimitive.ItemIndicator>
+        <Select.Icon name='Check' />
+      </SelectPrimitive.ItemIndicator>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   ))

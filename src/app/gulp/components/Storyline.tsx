@@ -86,7 +86,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
       Math.round(
         ((timestamp - app.timeline.frame.min) /
           (app.timeline.frame.max - app.timeline.frame.min)) *
-          512,
+        512,
       ),
     [min, max],
   )
@@ -185,7 +185,7 @@ export function Graph({ min, max, notes, className, ...props }: Graph.Props) {
               <NotePoint.Point
                 key={id}
                 id={id}
-                description={note.description}
+                description={note.text}
                 className={s.point}
                 note={note}
                 x={x}
@@ -332,7 +332,7 @@ function DetailedNote({ note, active, activate }: DetailedNote.Props) {
           )
         })}
         <Separator />
-        {note.description}
+        {note.text}
       </Stack>
     </Stack>
   )

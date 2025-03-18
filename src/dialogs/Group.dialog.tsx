@@ -20,7 +20,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
       description={`List includes ${events.length} events`}
     >
       {events.map((event: λEvent) => (
-        <Stack key={event.id} className={s.event}>
+        <Stack key={event.id} className={s.event} style={{ flexShrink: 0, height: 32 }}>
           <SymmetricSvg text={event.id} />
           <Stack
             dir="column"

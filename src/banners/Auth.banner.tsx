@@ -69,8 +69,8 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
       const validate = (str: string): string | void =>
         !Pattern.Server.test(str)
           ? (() => {
-              toast('Server URL didn`t match pattern')
-            })()
+            toast('Server URL didn`t match pattern')
+          })()
           : removeOverload(str)
 
       const validatedServer = validate(server)
@@ -115,11 +115,6 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     Info.login(user)
     await Info.plugin_list()
     await Info.glyphs_reload()
-    await Info.sync()
-    await Info.sync()
-    await Info.sync()
-    await Info.sync()
-    await Info.sync()
     await Info.sync()
     await Info.sync()
     spawnBanner(<Operation.Select.Banner />)

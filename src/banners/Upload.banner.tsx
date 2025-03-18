@@ -152,8 +152,7 @@ namespace Components {
         context: 'context',
         file,
         settings,
-        size: 0,
-        setProgress: () => { }
+        size: 0
       })
 
       setPreview(preview ?? null);
@@ -181,7 +180,7 @@ namespace Components {
             <Button img='PreviewDocument' size='sm' style={{ width: 24 }} variant='ghost' />
           </PopoverTrigger>
           <PopoverContent style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
-            {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} /> : <Loading variant='white' size='default' />}
+            {false ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview ?? []} /> : <Loading style={{ width: 'fit-content', whiteSpace: 'nowrap' }} variant='white' size='default' />}
           </PopoverContent>
         </Popover>
       </Stack>

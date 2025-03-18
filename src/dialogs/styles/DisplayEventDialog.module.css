@@ -14,3 +14,9 @@
 .group button {
   width: 100%;
 }
+.actionButtons {
+  flex-wrap: wrap;
+}
+.actionButtons button {
+  flex: 1;
+}

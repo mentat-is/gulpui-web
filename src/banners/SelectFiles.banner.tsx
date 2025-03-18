@@ -51,6 +51,18 @@ export namespace SelectFiles {
       [app, filter],
     )
 
+    const SearchInput = useMemo(() => {
+      return (
+        <Input
+          img="Search"
+          placeholder="Filter files by name"
+          variant="highlighted"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+      )
+    }, [filter])
+
     return (
       <UIBanner
         title="Select sources"
@@ -72,24 +84,21 @@ export namespace SelectFiles {
         }
         {...props}
       >
-        <Input
-          img="Search"
-          placeholder="Filter files by name"
-          variant="highlighted"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-        />
-        <Skeleton show={!hasData} width="full">
-          {filteredContexts.length > 0 ? (
-            filteredContexts.map((context) => (
-              <ContextComponent key={context.id} context={context} />
-            ))
-          ) : (
-            <p className={s.noData}>
-              There is no data to analyze. Click below to upload...
-            </p>
-          )}
-        </Skeleton>
+        {SearchInput}
+        <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
+          <Skeleton show={!hasData} width="full">
+            {filteredContexts.length > 0 ? (
+              filteredContexts.map((context) => (
+                <ContextComponent key={context.id} context={context} />
+              ))
+            ) : (
+              <p className={s.noData}>
+                There is no data to analyze. Click below to upload...
+              </p>
+            )}
+          </Skeleton>
+        </Stack>
+
         <Stack>
           <Button
             onClick={() => Info.selectAll(filter)}
@@ -133,6 +142,7 @@ function ContextComponent({ context }: { context: λContext }) {
     >
       <Stack className={s.contextHeading}>
         <Checkbox
+          style={{ height: 20, width: 20 }}
           checked={
             context.selected && files.every((f) => f.selected)
               ? true
@@ -144,8 +154,10 @@ function ContextComponent({ context }: { context: λContext }) {
         <Label htmlFor={context.name}>{context.name}</Label>
         <hr style={{ flex: 1 }} />
         <Badge
+          border
           value="Delete"
           variant="destructive"
+          radius={2}
           icon="Trash2"
           onClick={() =>
             spawnBanner(
@@ -157,7 +169,7 @@ function ContextComponent({ context }: { context: λContext }) {
           }
         />
       </Stack>
-      <Separator />
+      <Separator className={s.separator} />
       {files.map((file) => (
         <FileComponent key={file.id} file={file} />
       ))}
@@ -170,13 +182,13 @@ function FileComponent({ file }: { file: λFile }) {
   const [events, setEvents] = useState<λEvent[] | null>(null)
 
   useEffect(() => {
-    if (!events || !events.length) {
+    if (!events) {
       Info.preview_file(file).then(({ total_hits, docs }) => {
         Info.file_set_total(file.id, total_hits)
         setEvents(docs)
       })
     }
-  }, [events, Info, file])
+  }, [events])
 
   const handleFileCheck = useCallback(
     (value: boolean) =>
@@ -190,7 +202,7 @@ function FileComponent({ file }: { file: λFile }) {
     }
 
     return (
-      <Badge variant="warning" icon="Warning" value="This file is too big" />
+      <Badge radius={2} border variant="warning" icon="Warning" value="This file is too big" />
     )
   }, [])
 
@@ -203,12 +215,12 @@ function FileComponent({ file }: { file: λFile }) {
       />
       <Label htmlFor={file.name}>{file.name}</Label>
       {FileIsTooBig}
-      <Badge variant="outline" value={file.total} />
+      <Badge radius={2} variant="outline" value={file.total} />
       <Button
         img="PreviewEye"
         variant="secondary"
         size="sm"
-        style={{ width: 24 }}
+        style={{ width: 20, height: 20, borderRadius: 2 }}
         onClick={() =>
           events &&
           spawnBanner(
