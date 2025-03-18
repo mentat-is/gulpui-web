@@ -2,7 +2,7 @@ import { Context, Event, File, Operation } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Stack } from '@impactium/components'
-import { ColorPickerPopover } from '@/ui/Color'
+import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { TextareaHTMLAttributes, useRef, useState } from 'react'
 import s from './styles/CreateNoteBanner.module.css'
 import { Input } from '@impactium/components'
@@ -120,18 +120,20 @@ export namespace NoteFunctionality {
             onChange={(e) => setName(String(e.currentTarget.value))}
             placeholder="Note title"
           />
+          <ColorPicker color={color} setColor={setColor}>
+            <ColorPickerTrigger />
+            <ColorPickerPopover />
+          </ColorPicker>
           <Textarea
             className={s.textarea}
             value={text}
             onChange={(e) => setText(String(e.currentTarget.value))}
             placeholder="Description"
           />
-          <Popover>
-            <PopoverTrigger>
-              <Editable name="Color" icon="Paintbrush" value={color} />
-            </PopoverTrigger>
-            <ColorPickerPopover color={color} setColor={setColor} />
-          </Popover>
+          <Stack gap={4} style={{ color: 'var(--gray-900)', marginLeft: 'auto', fontSize: 13 }}>
+            <Icon name='AcronymMarkdown' size={20} />
+            markdown supported.
+          </Stack>
           <Separator />
           <Stack jc="space-between" dir="row">
             <p>Glyph:</p>

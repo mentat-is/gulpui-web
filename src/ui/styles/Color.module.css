@@ -95,9 +95,34 @@
 .image:active {
   transform: scale(1.05);
 }
-
-.group {
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
+.picker .select {
+  position: absolute;
+  z-index: 3;
+  border: transparent;
+  background: none;
+  width: 32px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  min-height: unset;
+  padding: 9px;
+}
+.picker .select input::-webkit-color-swatch-wrapper {
+  padding: 0;
+  height: 16px;
+  width: 16px;
+  max-width: 16px;
+  max-height: 16px;
+}
+.picker .select input::-webkit-color-swatch {
+  height: 16px;
+  width: 16px;
+  aspect-ratio: 1 / 1;
+  border: none;
+  border-radius: 3px;
+}
+.picker .manual input {
+  width: 100%;
+}
+.trigger input {
+  pointer-events: none;
 }

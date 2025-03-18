@@ -1,6 +1,6 @@
 import { createContext, HTMLAttributes, useContext, useState } from 'react'
 import { Popover, PopoverContent, PopoverTrigger } from './Popover'
-import { Button, Input } from '@impactium/components'
+import { Button, Input, Stack } from '@impactium/components'
 import {
   arrayToLinearGradientCSS,
   COLORS,
@@ -40,14 +40,13 @@ export const useColor = (): ColorPickerContext =>
 type ColorPickerProps =
   | Button.Props
   | ((Button.Props & ColorPickerContext) & {
-      default?: string
-    })
+    default?: string
+  })
 
 export function ColorPicker(props: ColorPickerProps) {
   const [_color, _setColor] = useState<string>('#ffa647')
   const context: ColorPickerContext = {
-    // @ts-ignore
-    color: 'color' in props ? props.color : _color,
+    color: 'color' in props ? props.color! : _color,
     setColor: 'setColor' in props ? props.setColor : _setColor,
   }
 
@@ -65,27 +64,24 @@ export function ColorPickerTrigger({
   ...props
 }: ColorPickerTriggerProps) {
   const { color } = useColor()
+
   return (
     <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        className={cn(s.button, !color && s.muted, className)}
-        {...props}
-      >
-        {color ? (
-          <div
-            className={s.preview}
-            style={{
-              background: Object.keys(GradientsMap).includes(color)
-                ? arrayToLinearGradientCSS(GradientsMap[color as Gradients])
-                : color,
-            }}
-          />
-        ) : (
-          <Icon name="Paintbrush" className={s.icon} />
-        )}
-        {color ? capitalize(color) : 'Pick a color'}
-      </Button>
+      <Stack pos='relative' className={cn(s.picker, s.trigger)}>
+        <Input
+          className={s.select}
+          disabled
+          variant="color"
+          value={color}
+        />
+        <Input
+          className={s.manual}
+          variant='highlighted'
+          img='Dot'
+          id="custom"
+          value={color}
+        />
+      </Stack>
     </PopoverTrigger>
   )
 }
@@ -154,18 +150,22 @@ export function ColorPickerPopover({
       </Tabs>
 
       {tab !== 'gradient' && (
-        <div className={s.group}>
+        <Stack pos='relative' className={s.picker}>
           <Input
+            className={s.select}
             variant="color"
             value={color}
             onChange={(e) => setColor(e.currentTarget.value)}
           />
           <Input
+            className={s.manual}
+            variant='highlighted'
+            img='Dot'
             id="custom"
             value={color}
             onChange={(e) => setColor(e.currentTarget.value)}
           />
-        </div>
+        </Stack>
       )}
     </PopoverContent>
   )
