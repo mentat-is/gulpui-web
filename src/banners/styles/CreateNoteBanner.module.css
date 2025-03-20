@@ -69,7 +69,11 @@
 }
 .inp > p {
   font-size: 14px;
-  min-width: 80px;
+  min-width: 88px;
+}
+.chooser {
+  max-width: 164px;
+  flex-shrink: 0;
 }
 .selection input {
   pointer-events: none;
@@ -84,4 +88,9 @@
 }
 .textarea::placeholder {
   color: var(--text-dimmed);
+}
+.sidebar {
+  height: 100%;
+  overflow: auto;
+  padding: 8px;
 }

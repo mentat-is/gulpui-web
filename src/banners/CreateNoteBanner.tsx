@@ -3,7 +3,7 @@ import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Stack } from '@impactium/components'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
-import { TextareaHTMLAttributes, useRef, useState } from 'react'
+import { TextareaHTMLAttributes, useMemo, useRef, useState } from 'react'
 import s from './styles/CreateNoteBanner.module.css'
 import { Input } from '@impactium/components'
 import { Badge } from '@/ui/Badge'
@@ -13,9 +13,9 @@ import { λEvent } from '@/dto/ChunkEvent.dto'
 import { λGlyph, λNote } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import { Textarea } from '@/ui/Textarea'
-import { Popover, PopoverTrigger } from '@/ui/Popover'
 import { Glyph } from '@/ui/Glyph'
 import { cn } from '@impactium/utils'
+import { Markdown } from '@/ui/Markdown'
 
 export namespace NoteFunctionality {
   export namespace Create {
@@ -42,6 +42,15 @@ export namespace NoteFunctionality {
       )
       const [loading, setLoading] = useState<boolean>(false)
       const tag_ref = useRef<HTMLInputElement>(null)
+
+      const Sidebar = useMemo(() => {
+        return (
+          <Stack className={s.sidebar}>
+            <Markdown value={text} />
+          </Stack>
+
+        )
+      }, [text]);
 
       const send = async () => {
         const operation = Operation.selected(app)
@@ -97,6 +106,7 @@ export namespace NoteFunctionality {
               img="Check"
             />
           }
+          side={Sidebar}
           {...props}
         >
           <Stack className={s.general} ai="stretch" dir="column" gap={8}>
@@ -120,10 +130,17 @@ export namespace NoteFunctionality {
             onChange={(e) => setName(String(e.currentTarget.value))}
             placeholder="Note title"
           />
-          <ColorPicker color={color} setColor={setColor}>
-            <ColorPickerTrigger />
-            <ColorPickerPopover />
-          </ColorPicker>
+          <Stack>
+            <Stack jc="space-between" flex className={s.inp}>
+              <p>Glyph:</p>
+              <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
+            </Stack>
+            <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
+              <ColorPickerTrigger />
+              <ColorPickerPopover />
+            </ColorPicker>
+          </Stack>
+
           <Textarea
             className={s.textarea}
             value={text}
@@ -134,39 +151,6 @@ export namespace NoteFunctionality {
             <Icon name='AcronymMarkdown' size={20} />
             markdown supported.
           </Stack>
-          <Separator />
-          <Stack jc="space-between" dir="row">
-            <p>Glyph:</p>
-            <Glyph.Chooser icon={icon} setIcon={setIcon} />
-          </Stack>
-          <Card className={s.tags}>
-            <div className={s.content}>
-              <p>Tags:</p>
-              {tags.length ? (
-                tags.map((tag) => (
-                  <Badge key={tag} onClick={() => deleteTag(tag)} value={tag} />
-                ))
-              ) : (
-                <Badge variant="outline" value="No tags here..." />
-              )}
-            </div>
-            <div className={s.group}>
-              <Input
-                placeholder="Input tag name here..."
-                ref={tag_ref}
-                onChange={(e) => setTag(e.currentTarget.value)}
-                value={tag}
-              />
-              <Button
-                img="Plus"
-                variant={tag.length > 0 ? 'outline' : 'disabled'}
-                className={cn(tag.length > 0 && s.focus)}
-                onClick={addTag}
-              >
-                Add
-              </Button>
-            </div>
-          </Card>
         </UIBanner>
       )
     }

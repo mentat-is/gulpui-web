@@ -2,8 +2,10 @@ import { λGlyph } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
 import { Popover, PopoverContent, PopoverTrigger } from './Popover'
-import { Button } from '@impactium/components'
+import { Button, Input } from '@impactium/components'
 import s from './styles/Glyph.module.css'
+import { cn } from '@impactium/utils'
+import { CSSProperties } from 'react'
 
 export function Glyph({ glyph, ...props }: Glyph.Props) {
   const icon = Glyph.List.get(glyph)
@@ -26,12 +28,14 @@ export namespace Glyph {
 
   export namespace Chooser {
     export interface Props {
-      icon: λGlyph['id'] | null
-      setIcon: React.Dispatch<React.SetStateAction<λGlyph['id'] | null>>
+      className?: string;
+      style?: CSSProperties;
+      icon: λGlyph['id'] | null;
+      setIcon: React.Dispatch<React.SetStateAction<λGlyph['id'] | null>>;
     }
   }
 
-  export const Chooser = ({ icon, setIcon }: Chooser.Props) => {
+  export const Chooser = ({ style, className, icon, setIcon }: Chooser.Props) => {
     const uploadGlyph = () => {
       toast.info('This is paid feature', {
         description: 'Leave 5 bucks in the disk drive of your PC',
@@ -45,15 +49,7 @@ export namespace Glyph {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <div className={s.trigger}>
-            <Button variant="ghost">
-              {icon ? Glyph.List.get(icon) : 'Choose icon'}
-            </Button>
-            <Button
-              variant="glass"
-              img={icon ? Glyph.List.get(icon) : 'SquareDashed'}
-            />
-          </div>
+          <Input variant='highlighted' className={cn(s.input, className)} style={style} img={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} />
         </PopoverTrigger>
         <PopoverContent align="end" className={s.map}>
           {map.map(([k, n]) =>

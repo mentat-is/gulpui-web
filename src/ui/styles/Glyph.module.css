@@ -13,3 +13,9 @@
   display: flex;
   gap: 8px;
 }
+.input input {
+  max-width: calc(100% - 16px);
+  overflow: hidden !important;
+  text-overflow: ellipsis;
+  text-align: left;
+}
