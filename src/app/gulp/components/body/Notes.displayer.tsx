@@ -18,6 +18,9 @@ export function NotesDisplayer({
 }: NotesDisplayerProps) {
   const { app } = useApplication()
 
+  if (app.timeline.hidden_notes)
+    return null;
+
   const selectedFiles = useMemo(
     () => new Set(app.target.files.filter((f) => f.selected).map((f) => f.id)),
     [app.target.files],
@@ -51,23 +54,49 @@ export function NotesDisplayer({
     [scrollY, mapping],
   )
 
-  if (app.timeline.hidden_notes) return null
+  const matrix: Map<string, λNote[]> = new Map();
+
+  app.target.notes.filter((note) => selectedFiles.has(note.file_id)).forEach(note => {
+    const pos = getNotePosition(note);
+    if (!pos) {
+      return;
+    }
+
+    const key = `${pos.left}|${pos.top}`;
+
+    if (!matrix.has(key)) {
+      matrix.set(key, [])
+    }
+
+    matrix.get(key)!.push(note)
+  })
 
   return (
     <Fragment>
-      {app.target.notes
-        .filter((note) => selectedFiles.has(note.file_id))
-        .map((note) => {
-          const position = getNotePosition(note)
-          return position ? (
+      {Array.from(matrix.entries()).map(([_, notes]) => {
+        if (notes.length === 1) {
+          const note = notes[0]
+          const pos = getNotePosition(note);
+          if (!pos) {
+            return null
+          }
+
+          return (
             <NotePoint.Point
               key={note.id}
               note={note}
-              x={position.left}
-              y={position.top}
+              x={pos.left}
+              y={pos.top}
             />
-          ) : null
-        })}
+          )
+        }
+
+        const nums = _.split('|').map(x => parseInt(x));
+
+        return (
+          <NotePoint.Group notes={notes} x={nums[0]} y={nums[1]} />
+        )
+      })}
     </Fragment>
   )
 }

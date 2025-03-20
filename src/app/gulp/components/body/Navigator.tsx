@@ -172,11 +172,16 @@ export function Navigator({
     }
 
     return (
-      <>
+      <Stack
+        style={{ width: '100%', height: '100%', overflow: 'auto' }}
+        ai="center"
+        jc="flex-start"
+        dir='column'
+      >
         {notes.map((note) => (
           <NotePoint.Combination key={note.id} note={note} />
         ))}
-      </>
+      </Stack>
     )
   }
 

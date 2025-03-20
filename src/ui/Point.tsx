@@ -33,11 +33,11 @@ export function Point({
       style={{ ...props.style, left: x, top: y, borderColor: accent }}
       {...props}
     >
-      <Icon name={icon} color={accent} />
+      {props.children ?? <Icon name={icon} color={accent} />}
       <hr style={{ background: accent }} />
-      <p className={s.desc} style={{ y, x, borderColor: accent }}>
+      {name && <p className={s.desc} style={{ y, x, borderColor: accent }}>
         {name}
-      </p>
+      </p>}
       {description && (
         <span style={{ pointerEvents: 'none' }}>{description}</span>
       )}

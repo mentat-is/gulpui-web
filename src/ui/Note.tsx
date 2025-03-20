@@ -14,6 +14,7 @@ import { Separator } from './Separator'
 import { Markdown } from './Markdown'
 import { useEffect, useState } from 'react'
 import { Select } from './Select'
+import { Popover, PopoverContent, PopoverTrigger } from './Popover'
 
 export namespace NotePoint {
   export interface Props
@@ -100,6 +101,29 @@ export namespace NotePoint {
         name={note.name}
         {...props}
       />
+    )
+  }
+
+  export namespace Group {
+    export interface Props extends Omit<UIPoint.Props, 'name' | 'accent' | 'icon'> {
+      notes: λNote[]
+    }
+  }
+
+  export function Group({ notes, ...props }: Group.Props) {
+    if (notes.length === 0) {
+      return null
+    }
+
+    return (
+      <Stack className={s.wrapper} pos='absolute' style={{ top: props.y, left: props.x }} dir='column-reverse' gap={0}>
+        <UIPoint icon='Dot' accent='var(--gray-1000)' name='' y={0} x={0}>
+          {notes.length}
+        </UIPoint>
+        <Stack className={s.content} dir='column'>
+          {notes.map(note => <NotePoint.Combination note={note} />)}
+        </Stack>
+      </Stack>
     )
   }
 
