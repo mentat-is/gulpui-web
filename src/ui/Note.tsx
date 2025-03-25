@@ -14,7 +14,7 @@ import { Separator } from './Separator'
 import { Markdown } from './Markdown'
 import { useEffect, useState } from 'react'
 import { Select } from './Select'
-import { Popover, PopoverContent, PopoverTrigger } from './Popover'
+import { NoteFunctionality } from '@/banners/CreateNoteBanner'
 
 export namespace NotePoint {
   export interface Props
@@ -138,7 +138,7 @@ export namespace NotePoint {
       return null
     }
 
-    const { app } = useApplication();
+    const { app, spawnBanner } = useApplication();
     const [note, setNote] = useState<λNote>(notes[0])
     const [isRevealed, setIsRevealed] = useState<boolean>(false);
 
@@ -174,7 +174,7 @@ export namespace NotePoint {
             <Badge variant='outline' icon='ClockRewind' style={{ color: 'var(--gray-900)', background: 'var(--gray-300)', whiteSpace: 'nowrap' }}>
               Created {formatDistanceToNow(note.time_created, { addSuffix: true })}
             </Badge>
-            <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20 }}>Edit</Button>
+            <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20 }} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={Event.id(app, note.docs[0].id)} note={note} />)}>Edit</Button>
           </Stack>
         </Stack>
         <Separator />

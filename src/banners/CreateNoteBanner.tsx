@@ -32,20 +32,15 @@ export namespace NoteFunctionality {
       ...props
     }: NoteFunctionality.Create.Banner.Props) {
       const { app, destroyBanner, Info } = useApplication()
-      const [tag, setTag] = useState<string>('')
-      const [tags, setTags] = useState<Array<string>>(note?.tags || [])
       const [color, setColor] = useState<string>(note?.color || '#ffffff')
       const [name, setName] = useState<string>(note?.name || '')
       const [text, setText] = useState<string>(note?.text || '')
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(
-        note?.glyph_id || Glyph.List.keys().next().value || null,
-      )
+      const [icon, setIcon] = useState<λGlyph['id'] | null>(note?.glyph_id || Glyph.List.keys().next().value || null)
       const [loading, setLoading] = useState<boolean>(false)
-      const tag_ref = useRef<HTMLInputElement>(null)
 
       const Sidebar = useMemo(() => {
         return (
-          <Stack className={s.sidebar}>
+          <Stack className={s.sidebar} ai='flex-start'>
             <Markdown value={text} />
           </Stack>
 
@@ -73,7 +68,8 @@ export namespace NoteFunctionality {
           },
           body: {
             text,
-            tags,
+            // TODO
+            tags: [],
             docs: Event.formatForServer(event),
           },
         }).then(() => {
@@ -82,21 +78,9 @@ export namespace NoteFunctionality {
         })
       }
 
-      const addTag = () => {
-        setTags((tags) =>
-          tag_ref.current && !tags.includes(tag_ref.current.value)
-            ? [...tags, tag_ref.current.value]
-            : tags,
-        )
-        setTag('')
-      }
-
-      const deleteTag = (tag: string) =>
-        setTags((tags) => tags.filter((t) => t !== tag))
-
       return (
         <UIBanner
-          title="Create note"
+          title={note ? 'Edit note' : 'Create note'}
           done={
             <Button
               loading={loading}
@@ -140,7 +124,6 @@ export namespace NoteFunctionality {
               <ColorPickerPopover />
             </ColorPicker>
           </Stack>
-
           <Textarea
             className={s.textarea}
             value={text}
