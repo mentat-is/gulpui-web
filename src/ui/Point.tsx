@@ -28,6 +28,7 @@ export function Point({
   return (
     <Button
       size="icon"
+      tabIndex={-1}
       variant="glass"
       className={cn(className, s.target)}
       style={{ ...props.style, left: x, top: y, borderColor: accent }}

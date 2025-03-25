@@ -1265,6 +1265,7 @@ export class Info implements InfoProps {
       )
       .then((sources) =>
         sources.map((source) => {
+          console.log(source)
           return {
             id: source.id,
             name: source.name,
@@ -1287,6 +1288,8 @@ export class Info implements InfoProps {
           }
         }),
       )
+
+    console.log(details);
 
     const rawOperations = await api<OperationTree[]>('/operation_list', {
       method: 'POST',
@@ -1518,7 +1521,7 @@ export class Info implements InfoProps {
 
     if (!query) {
       const base: λQuery = {
-        string: Filter.base(File.id(this.app, id)),
+        string: Filter.base(File.id(this.app, id), this.app.timeline.frame),
         filters: [],
       }
 

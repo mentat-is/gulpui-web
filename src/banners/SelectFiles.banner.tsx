@@ -179,16 +179,12 @@ function ContextComponent({ context }: { context: λContext }) {
 
 function FileComponent({ file }: { file: λFile }) {
   const { Info, spawnBanner } = useApplication()
-  const [events, setEvents] = useState<λEvent[] | null>(null)
+  const [loading, setLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (!events) {
-      Info.preview_file(file).then(({ total_hits, docs }) => {
-        Info.file_set_total(file.id, total_hits)
-        setEvents(docs)
-      })
-    }
-  }, [events])
+  const previewButtonClickHandler = () => {
+    setLoading(true)
+    Info.preview_file(file).then(({ docs }) => spawnBanner(<Preview.Banner values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />))
+  }
 
   const handleFileCheck = useCallback(
     (value: boolean) =>
@@ -219,18 +215,9 @@ function FileComponent({ file }: { file: λFile }) {
       <Button
         img="PreviewEye"
         variant="secondary"
-        size="sm"
-        style={{ width: 20, height: 20, borderRadius: 2 }}
-        onClick={() =>
-          events &&
-          spawnBanner(
-            <Preview.Banner
-              values={events}
-              fixed
-              back={() => spawnBanner(<SelectFiles.Banner />)}
-            />,
-          )
-        }
+        loading={loading}
+        className={s.previewButton}
+        onClick={previewButtonClickHandler}
       />
     </Stack>
   )

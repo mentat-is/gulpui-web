@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Banner } from '../ui/Banner'
 import { Button, Stack } from '@impactium/components'
 import { useApplication } from '../context/Application.context'
@@ -41,7 +41,7 @@ export function LimitsBanner() {
     }
   }
 
-  const handleDateChange = (type: keyof MinMax, value: number | string) => {
+  const handleDateChange = useCallback((type: keyof MinMax, value: number | string) => {
     try {
       const timestamp = new Date(value).valueOf()
       if (isNaN(timestamp) || timestamp === 0) {
@@ -54,26 +54,24 @@ export function LimitsBanner() {
     } catch {
       validate(type)
     }
-  }
+  }, [])
 
-  function InputDateSelection({ type }: { type: keyof MinMax }) {
+  const InputDateSelection = ({ type }: { type: keyof MinMax }) => {
     const inputRef = useRef<HTMLInputElement | null>(null)
+    const [localValue, setLocalValue] = useState(format(frame[type], "yyyy-MM-dd'T'HH:mm"))
+
+    useEffect(() => {
+      setLocalValue(format(frame[type], "yyyy-MM-dd'T'HH:mm"))
+    }, [frame[type]])
 
     useEffect(() => {
       const input = inputRef.current
       const icon = input?.parentElement?.querySelector('svg')
 
-      const clickHandler = () => {
-        if (input?.showPicker) {
-          input.showPicker()
-        }
-      }
+      const clickHandler = () => input?.showPicker?.()
 
       icon?.addEventListener('click', clickHandler)
-
-      return () => {
-        icon?.removeEventListener('click', clickHandler)
-      }
+      return () => icon?.removeEventListener('click', clickHandler)
     }, [])
 
     return (
@@ -83,8 +81,9 @@ export function LimitsBanner() {
         valid={type === 'min' ? isMinValid : isMaxValid}
         variant="highlighted"
         img="Calendar"
-        value={format(frame[type], "yyyy-MM-dd'T'HH:mm")}
-        onChange={(e) => handleDateChange(type, e.target.value)}
+        value={localValue}
+        onChange={(e) => setLocalValue(e.target.value)}
+        onBlur={() => handleDateChange(type, localValue)}
         className={s.input}
       />
     )
