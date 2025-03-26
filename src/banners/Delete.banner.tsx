@@ -1,9 +1,9 @@
 import { useApplication } from '@/context/Application.context'
-import { λContext, λFile } from '@/dto/Dataset'
+import { λContext, λFile, λNote } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
 import { Button } from '@impactium/components'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 
 export namespace Delete {
@@ -110,6 +110,51 @@ export namespace Delete {
               onCheckedChange={setIsWipe}
             />
           )}
+        </UIBanner>
+      )
+    }
+  }
+  export namespace Note {
+    export namespace Banner {
+      export interface Props extends UIBanner.Props {
+        note: λNote
+      }
+    }
+    export function Banner({ note, ...props }: Note.Banner.Props) {
+      const { Info, destroyBanner } = useApplication();
+      const [loading, setLoading] = useState<boolean>(false);
+      const [isSubmited, setIsSubmited] = useState<boolean>(false)
+
+      const DeleteButton = () => (
+        <Button
+          loading={loading}
+          img="Trash2"
+          variant="glass"
+          onClick={deleteFile}
+          disabled={!isSubmited}
+        />
+      )
+
+      const deleteFile = async () => {
+        setLoading(true)
+        await Info.note_delete(note)
+        setLoading(false)
+        if (props.back) {
+          props.back()
+        } else {
+          destroyBanner();
+        }
+        toast(`Note ${note.name} has been deleted successfully`)
+      }
+
+      return (
+        <UIBanner title='Delete note' done={<DeleteButton />} {...props}>
+          <p>Are you sure you want to delete note: <code>{note.name}</code></p>
+          <Toggle
+            option={['No, don`t delete', 'Yes, i`m sure']}
+            checked={isSubmited}
+            onCheckedChange={setIsSubmited}
+          />
         </UIBanner>
       )
     }

@@ -1110,6 +1110,74 @@ export class Info implements InfoProps {
       this.notes_reload,
     )
 
+  note_create = ({
+    name,
+    text,
+    color,
+    glyph_id,
+    event
+  }: {
+    name: string,
+    text: string,
+    color: string,
+    event: λEvent,
+    glyph_id: λGlyph['id']
+  }) => api('/note_create', {
+    method: 'POST',
+    query: {
+      operation_id: event.operation_id,
+      context_id: event.context_id,
+      source_id: event.file_id,
+      ws_id: this.app.general.ws_id,
+      name,
+      color,
+      glyph_id,
+    },
+    body: {
+      text,
+      // TODO
+      tags: [],
+      docs: Event.formatForServer(event),
+    },
+  }).then(() => {
+    this.notes_reload()
+    toast(`Note ${name} has been created successfully`)
+  })
+
+  note_edit = ({
+    id: object_id,
+    name,
+    text,
+    color,
+    glyph_id,
+    event
+  }: {
+    id: λNote['id'],
+    name: string,
+    text: string,
+    color: string,
+    event: λEvent,
+    glyph_id: λGlyph['id']
+  }) => api('/note_update', {
+    method: 'PATCH',
+    query: {
+      object_id,
+      ws_id: this.app.general.ws_id,
+      name,
+      glyph_id,
+      color,
+    },
+    body: {
+      text,
+      // TODO
+      tags: [],
+      docs: Event.formatForServer(event),
+    }
+  }).then(() => {
+    this.notes_reload();
+    toast(`Note ${name} has been updated successfully`)
+  })
+
   // ⚠️ UNTOUCHABLE
   links_reload = async () => {
     return api<ΞLink[]>(

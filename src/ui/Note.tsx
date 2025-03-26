@@ -15,6 +15,7 @@ import { Markdown } from './Markdown'
 import { useEffect, useState } from 'react'
 import { Select } from './Select'
 import { NoteFunctionality } from '@/banners/CreateNoteBanner'
+import { Delete } from '@/banners/Delete.banner'
 
 export namespace NotePoint {
   export interface Props
@@ -144,11 +145,20 @@ export namespace NotePoint {
 
     useEffect(() => {
       if (note) {
-        setNote(Note.id(app, note.id))
+        const updated = Note.id(app, note.id);
+        if (updated) {
+          setNote(Note.id(app, note.id))
+        } else {
+          setNote(notes[0])
+        }
       } else {
         setNote(notes[0])
       }
     }, [notes])
+
+    if (!note) {
+      return null;
+    }
 
     return (
       <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
@@ -168,7 +178,7 @@ export namespace NotePoint {
                 ))}
               </Select.Content>
             </Select.Root>
-            <Button variant='ghost' img='Trash2'>Delete</Button>
+            <Button onClick={() => spawnBanner(<Delete.Note.Banner note={note} />)} variant='ghost' img='Trash2'>Delete</Button>
           </Stack>
           <Stack style={{ flexWrap: 'wrap' }} jc='space-between'>
             <Badge variant='outline' icon='ClockRewind' style={{ color: 'var(--gray-900)', background: 'var(--gray-300)', whiteSpace: 'nowrap' }}>

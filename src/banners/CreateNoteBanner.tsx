@@ -16,6 +16,7 @@ import { Textarea } from '@/ui/Textarea'
 import { Glyph } from '@/ui/Glyph'
 import { cn } from '@impactium/utils'
 import { Markdown } from '@/ui/Markdown'
+import { toast } from 'sonner'
 
 export namespace NoteFunctionality {
   export namespace Create {
@@ -54,28 +55,27 @@ export namespace NoteFunctionality {
           return
         }
 
-        api('/note_create', {
-          method: 'POST',
-          setLoading,
-          query: {
-            operation_id: operation.id,
-            context_id: event.context_id,
-            source_id: note?.file_id || event.file_id,
-            ws_id: app.general.ws_id,
+        const glyph_id = icon as λGlyph['id']
+
+        if (note) {
+          await Info.note_edit({
+            id: note.id,
             name,
-            color,
-            glyph_id: icon as λGlyph['id'],
-          },
-          body: {
             text,
-            // TODO
-            tags: [],
-            docs: Event.formatForServer(event),
-          },
-        }).then(() => {
-          destroyBanner()
-          Info.notes_reload()
-        })
+            color,
+            event,
+            glyph_id
+          })
+        } else {
+          await Info.note_create({
+            color,
+            event,
+            glyph_id,
+            name,
+            text
+          })
+        }
+        destroyBanner()
       }
 
       return (
