@@ -91,8 +91,12 @@ namespace Components {
     const mappings = Mapping.mappings(app, settings.plugin || '', settings.method || '')
 
     useEffect(() => {
-      if (methods.length === 1) updateSettings({ method: methods[0] })
-      if (mappings.length === 1) updateSettings({ mapping: mappings[0] })
+      if (settings.plugin && !settings.method) {
+        if (methods.length === 1) updateSettings({ method: methods[0] })
+      }
+      if (settings.plugin && settings.method && !settings.mapping) {
+        if (mappings.length === 1) updateSettings({ mapping: mappings[0] })
+      }
     }, [methods, mappings])
 
     const loadPreview = async () => {
@@ -284,7 +288,7 @@ namespace Components {
     useEffect(() => {
       if (methods.length === 1) updateSettings('all', { method: methods[0] })
       if (mappings.length === 1) updateSettings('all', { mapping: mappings[0] })
-    }, [settings, methods, mappings])
+    }, [methods, mappings])
 
     return (
       <Popover>
@@ -338,7 +342,7 @@ export function UploadBanner() {
   }, [])
 
   useEffect(() => {
-    ;[...files].forEach(file => {
+    files.forEach(file => {
       detectFileType(file).then(plugin => {
         updateSettings(file.name, { plugin: plugin || 'win_evtx.py' })
       })
