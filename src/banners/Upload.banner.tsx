@@ -54,57 +54,6 @@ Object.values(FILE_SIGNATURES).forEach((array) => {
   })
 })
 
-
-namespace UploadLogic {
-  export const useFileSettings = (files: File[]) => {
-    const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({})
-
-    const updateSettings = useCallback(
-      (filename: string, update: Partial<FileEntity.Settings>) => {
-        setSettings(prev => ({
-          ...prev,
-          [filename]: { ...prev[filename], ...update }
-        }))
-      },
-      []
-    )
-
-    const detectFileType = useCallback((file: File) => {
-      return readFileChunk(file)
-        .then(buffer =>
-          Object.keys(FILE_SIGNATURES)
-            .find(key => FILE_SIGNATURES[key]
-              .some(uint => compareSignature(buffer, uint))))
-    }, [])
-
-    useEffect(() => {
-      ;[...files].forEach(file => {
-        detectFileType(file).then(plugin => {
-          if (plugin) {
-            updateSettings(file.name, { plugin })
-          }
-        })
-      })
-    }, [files])
-
-    return { settings, updateSettings }
-  }
-
-  const readFileChunk = (file: File): Promise<ArrayBuffer> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as ArrayBuffer)
-      reader.onerror = reject
-      reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH))
-    })
-  }
-
-  const compareSignature = (buffer: ArrayBuffer, signature: Uint8Array): boolean => {
-    const slice = new Uint8Array(buffer)
-    return signature.every((value, index) => value === slice[index])
-  }
-}
-
 namespace Components {
   export const ContextSelector = ({ app, context, setContext }: {
     app: any
@@ -316,11 +265,12 @@ namespace Components {
     )
   }
 
-  export const ApplySettinsForAllFiles = ({ setSettings }: {
+  export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings }: {
+    settings: Record<string, FileEntity.Settings>,
+    updateSettings: any,
     setSettings: (s: FileEntity.Settings) => void
   }) => {
     const { app } = useApplication();
-    const { settings, updateSettings } = UploadLogic.useFileSettings([]);
 
     useEffect(() => {
       if (!settings.all) {
@@ -366,7 +316,51 @@ export function UploadBanner() {
   const [chunkSize, setChunkSize] = useState(2)
   const [customFrame, setCustomFrame] = useState(false)
   const [frame, setFrame] = useState<FileEntity.IngestOptions['frame']>(MinMaxBase)
-  const { settings, updateSettings } = UploadLogic.useFileSettings(files)
+
+  const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({})
+
+  const updateSettings = useCallback(
+    (filename: string, update: Partial<FileEntity.Settings>) => {
+      setSettings(prev => ({
+        ...prev,
+        [filename]: { ...prev[filename], ...update }
+      }))
+    },
+    []
+  )
+
+  const detectFileType = useCallback((file: File) => {
+    return readFileChunk(file)
+      .then(buffer =>
+        Object.keys(FILE_SIGNATURES)
+          .find(key => FILE_SIGNATURES[key]
+            .some(uint => compareSignature(buffer, uint))))
+  }, [])
+
+  useEffect(() => {
+    ;[...files].forEach(file => {
+      detectFileType(file).then(plugin => {
+        if (plugin) {
+          updateSettings(file.name, { plugin })
+        }
+      })
+    })
+  }, [files])
+
+  const readFileChunk = (file: File): Promise<ArrayBuffer> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as ArrayBuffer)
+      reader.onerror = reject
+      reader.readAsArrayBuffer(file.slice(0, MAX_BYTE_LENGTH))
+    })
+  }
+
+  const compareSignature = (buffer: ArrayBuffer, signature: Uint8Array): boolean => {
+    const slice = new Uint8Array(buffer)
+    return signature.every((value, index) => value === slice[index])
+  }
+
   const [progress, setProgress] = useState<Record<string, number>>({});
 
   const setFileProgressConstrustor = (file: File) => (num: number) => {
@@ -522,7 +516,7 @@ export function UploadBanner() {
           />
         )) : <Placeholder />}
       </Stack>
-      <Components.ApplySettinsForAllFiles setSettings={updateAllSettings} />
+      <Components.ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
     </Banner>
   )
 }
