@@ -1521,7 +1521,10 @@ export class Info implements InfoProps {
 
     if (!query) {
       const base: λQuery = {
-        string: Filter.base(File.id(this.app, id), this.app.timeline.frame),
+        string: Filter.base(File.id(this.app, id), {
+          min: Internal.Transformator.toNanos(this.app.timeline.frame.min).toString() as unknown as number,
+          max: Internal.Transformator.toNanos(this.app.timeline.frame.max).toString() as unknown as number
+        }),
         filters: [],
       }
 

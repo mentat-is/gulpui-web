@@ -5,7 +5,6 @@
   "homepage": ".",
   "dependencies": {
     "@impactium/components": "^1.1.10",
-    "@impactium/console": "^1.0.7",
     "@impactium/icons": "^1.2.4",
     "@impactium/types": "^1.0.0",
     "@impactium/utils": "^1.0.2",

@@ -10,7 +10,7 @@ import React, {
 import { λApp, BaseInfo } from '@/dto'
 import { AppSocket, MultiSocket } from '@/class/AppSocket'
 import { File, Info } from '@/class/Info'
-import { Console } from '@impactium/console'
+// import { Console } from '@impactium/console'
 import { Logger } from '@/dto/Logger.class'
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
@@ -175,7 +175,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     <ApplicationContext.Provider value={props}>
       {children}
       {banner}
-      <Console
+      {/* <Console
         noise={true}
         onCommand={onCommand}
         history={Logger.history()}
@@ -189,7 +189,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
           />
         }
         prefix={prefix}
-      />
+      /> */}
     </ApplicationContext.Provider>
   )
 }
