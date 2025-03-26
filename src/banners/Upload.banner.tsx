@@ -395,11 +395,14 @@ export function UploadBanner() {
     spawnBanner(<SelectFiles.Banner />)
   }, [files, settings, context, chunkSize, customFrame, frame])
 
-  const isValidSettings = Object.values(settings).every(s =>
-    s.plugin &&
-    (!Mapping.methods(app, s.plugin).length || s.method) &&
-    (!Mapping.mappings(app, s.plugin, s.method!).length || s.mapping)
-  )
+  const isValidSettings = Object.keys(settings).every(k => {
+    if (k === 'all') {
+      return true;
+    }
+    const s = settings[k];
+
+    return s.plugin && (!Mapping.methods(app, s.plugin).length || s.method) && (!Mapping.mappings(app, s.plugin, s.method!).length || s.mapping);
+  })
 
   const DoneButton = useMemo(() => {
     return (
