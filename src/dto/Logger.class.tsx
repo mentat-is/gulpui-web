@@ -1,3 +1,4 @@
+// @ts-ignore
 import { Console } from '@impactium/console'
 import { MinMax } from '@/class/Info'
 import { λEvent } from './ChunkEvent.dto'

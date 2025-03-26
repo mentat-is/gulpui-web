@@ -1,6 +1,5 @@
 import ReactDOM from 'react-dom/client'
 import './global.css'
-import { LanguageProvider } from './context/Language.context'
 import {
   ApplicationProvider,
   useApplication,
@@ -32,12 +31,10 @@ declare global {
 
 function Root() {
   return (
-    <LanguageProvider>
-      <ApplicationProvider>
-        <Main />
-        <Toaster />
-      </ApplicationProvider>
-    </LanguageProvider>
+    <ApplicationProvider>
+      <Main />
+      <Toaster />
+    </ApplicationProvider>
   )
 }
 
