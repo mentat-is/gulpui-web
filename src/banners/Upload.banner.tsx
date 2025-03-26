@@ -340,9 +340,7 @@ export function UploadBanner() {
   useEffect(() => {
     ;[...files].forEach(file => {
       detectFileType(file).then(plugin => {
-        if (plugin) {
-          updateSettings(file.name, { plugin })
-        }
+        updateSettings(file.name, { plugin: plugin || 'win_evtx.py' })
       })
     })
   }, [files])
