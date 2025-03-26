@@ -6,6 +6,8 @@ import { DisplayEventDialog } from './Event.dialog'
 import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Stack } from '@impactium/components'
+import { format } from 'date-fns'
+import { Internal } from '@/class/Info'
 
 interface DisplayGroupDialogProps {
   events: λEvent[]
@@ -32,7 +34,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
             <Stack className={s.description}>
               <p>
                 Code <span>{event.code}</span> at{' '}
-                <span>{event.nanotimestamp.toString()}</span>
+                <span>{`${format(new Date(Internal.Transformator.toTimestamp(event.nanotimestamp)), 'yyyy-MM-dd HH:mm:ss')} x ${String(event.nanotimestamp % 1_000_000n).padStart(6, '0')}`}</span>
               </p>
             </Stack>
           </Stack>

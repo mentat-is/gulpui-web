@@ -6,14 +6,14 @@ import { Badge } from '@/ui/Badge'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
 import { Context, Operation } from '@/class/Info'
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { LimitsBanner } from './Limits.banner'
 import { UploadBanner } from './Upload.banner'
 import { λContext, λFile } from '@/dto/Dataset'
 import { Separator } from '@/ui/Separator'
 import { Delete } from './Delete.banner'
 import { Preview } from './Preview.banner'
-import { λEvent } from '@/dto/ChunkEvent.dto'
+import { FilterFileBanner } from './FilterFile.banner'
 
 export namespace SelectFiles {
   export namespace Banner {
@@ -211,6 +211,7 @@ function FileComponent({ file }: { file: λFile }) {
       />
       <Label htmlFor={file.name}>{file.name}</Label>
       {FileIsTooBig}
+      <Badge radius={2} variant="outline" icon='Filter' onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)} />
       <Badge radius={2} variant="outline" value={file.total} />
       <Button
         img="PreviewEye"

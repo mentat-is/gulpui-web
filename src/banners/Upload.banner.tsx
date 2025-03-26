@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
 import { Gauge, Input, Loading } from '@impactium/components'
 import { Select } from '@/ui/Select'
-import { useEffect, useState, useCallback, useMemo, ChangeEvent } from 'react'
+import { useEffect, useState, useCallback, useMemo, ChangeEvent, useRef } from 'react'
 import s from './styles/UploadBanner.module.css'
 import { Context, FileEntity, GulpDataset, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info'
 import { formatBytes } from '@/ui/utils'
@@ -56,7 +56,7 @@ Object.values(FILE_SIGNATURES).forEach((array) => {
 
 
 namespace UploadLogic {
-  export const useFileSettings = (files: FileList) => {
+  export const useFileSettings = (files: File[]) => {
     const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({})
 
     const updateSettings = useCallback(
@@ -320,7 +320,7 @@ namespace Components {
     setSettings: (s: FileEntity.Settings) => void
   }) => {
     const { app } = useApplication();
-    const { settings, updateSettings } = UploadLogic.useFileSettings([] as unknown as FileList);
+    const { settings, updateSettings } = UploadLogic.useFileSettings([]);
 
     useEffect(() => {
       if (!settings.all) {
@@ -359,7 +359,7 @@ namespace Components {
 
 export function UploadBanner() {
   const { Info, app, spawnBanner } = useApplication()
-  const [files, setFiles] = useState<FileList>([] as unknown as FileList)
+  const [files, setFiles] = useState<File[]>([])
   const [context, setContext] = useState<FileEntity.IngestOptions['context']>('')
   const [loading, setLoading] = useState(false)
   const [useExistingContext, setUseExistingContext] = useState(false)
@@ -370,11 +370,10 @@ export function UploadBanner() {
   const [progress, setProgress] = useState<Record<string, number>>({});
 
   const setFileProgressConstrustor = (file: File) => (num: number) => {
-    setProgress(p => {
-      p[file.name] = num
-
-      return p
-    })
+    setProgress(p => ({
+      ...p,
+      [file.name]: num
+    }))
   }
 
   const handleSubmit = useCallback(async () => {
@@ -445,6 +444,22 @@ export function UploadBanner() {
     }
   }
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const addFilesButtonClickHandler = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const arr = [...(event.target.files || [])];
+
+    arr.filter(f => ![...files].some(fx => fx.webkitRelativePath === f.webkitRelativePath))
+
+    setFiles(f => [...f, ...arr]);
+  };
+
   return (
     <Banner
       title="Upload files"
@@ -468,15 +483,19 @@ export function UploadBanner() {
         />
       )}
       <Stack>
-        <Input
-          variant="highlighted"
+        <Button img='Upload' variant='secondary' onClick={addFilesButtonClickHandler} style={{ flex: 1 }}>
+          {files.length === 1 ? 'Selected 1 file' : `Selected ${files.length} files`}
+        </Button>
+        <Button variant="outline" className={s.addFiles} img="Cross" onClick={() => setFiles([])}>
+          Clear selection
+        </Button>
+        <input
+          ref={fileInputRef}
           type="file"
           multiple
-          onChange={e => setFiles(e.target.files || {} as FileList)}
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
         />
-        <Button variant="outline" className={s.addFiles} img="Plus">
-          Add files
-        </Button>
       </Stack>
       <Toggle
         option={['Ingest everything', 'Use limits']}

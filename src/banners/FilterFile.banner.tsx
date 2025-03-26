@@ -11,6 +11,7 @@ import { λFile } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import SyntaxHighlighter from 'react-syntax-highlighter'
 import { Separator } from '@/ui/Separator'
+import { Preview } from './Preview.banner'
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
@@ -66,7 +67,7 @@ interface FilterFileBannerProps extends Banner.Props {
 }
 
 export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
-  const { app, Info, destroyBanner } = useApplication()
+  const { app, Info, spawnBanner, destroyBanner } = useApplication()
   const [loading, setLoading] = useState<boolean>(false)
   const query = Info.getQuery(file.id)
 
@@ -99,14 +100,19 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     setLoading(true)
     Info.filters_cache(file)
     Info.refetch({ ids: file.id }).then(() => {
-      destroyBanner()
       Info.render()
+      if (props.back) {
+        props.back()
+      } else {
+        destroyBanner()
+      }
     })
   }
 
   const Done = () => (
     <Button img="Check" variant="glass" loading={loading} onClick={submit} />
   )
+
   const Undo = () => (
     <Button
       img="Undo"
@@ -145,7 +151,7 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     )
   }, [file, Info])
 
-  const Preview = () => {
+  const PreviewFilter = () => {
     const query = Filter.query(Info.getQuery(file.id))
     const string = JSON.stringify(query, null, 2)
 
@@ -277,11 +283,21 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     )
   }, [query.filters, app.timeline.filtering_options, updateCondition])
 
+  const previewCurrentFilterButtonClickHandler = async () => {
+    setIsPreviewLoading(true);
+    const { docs } = await Info.preview_file(file)
+    setIsPreviewLoading(false)
+
+    spawnBanner(<Preview.Banner values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} />)} />)
+  }
+
+  const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
+
   return (
     <Banner
       title="Choose filtering options"
       done={<Done />}
-      side={<Preview />}
+      side={<PreviewFilter />}
       className={s.banner}
       option={<Undo />}
       {...props}
@@ -295,14 +311,15 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
       </Stack>
       <Separator />
       {QueryConditions}
-      <Button
-        variant="secondary"
-        style={{ width: '100%' }}
-        onClick={() => Info.request_cancel_for_file(file.id)}
-        img="FileX"
-      >
-        Cancel all requests for this file
-      </Button>
+      <Stack>
+        <Button
+          variant="secondary"
+          style={{ width: '100%' }}
+          onClick={() => Info.request_cancel_for_file(file.id)}
+          img="FileX"
+        >Cancel all requests for this file</Button>
+        <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} img='PreviewDocument'>Preview result of current filter</Button>
+      </Stack>
     </Banner>
   )
 }

@@ -154,8 +154,7 @@ export function Canvas({
     render.ruler.sections()
 
     // @ts-ignore
-    window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark =
-      renderCanvas
+    window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark = renderCanvas
   }
 
   const renderOverlay = () => {

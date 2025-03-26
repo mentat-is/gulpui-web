@@ -136,11 +136,12 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    const key = event.key.toLowerCase()
-
-    if (!app.timeline.target || !dialog) {
+    if (!app.timeline.target || banner) {
+      console.log('Banner is open, prewenting')
       return
     }
+
+    const key = event.key.toLowerCase()
 
     const events = File.events(app, app.timeline.target.file_id)
 
@@ -169,7 +170,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       window.removeEventListener('keydown', handleKeyDown as any)
     }
-  }, [dialog, app.timeline.target])
+  }, [dialog, app.timeline.target, banner])
 
   return (
     <ApplicationContext.Provider value={props}>

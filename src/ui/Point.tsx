@@ -30,6 +30,7 @@ export function Point({
       size="icon"
       tabIndex={-1}
       variant="glass"
+      aria-exportable
       className={cn(className, s.target)}
       style={{ ...props.style, left: x, top: y, borderColor: accent }}
       {...props}

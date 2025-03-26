@@ -26,7 +26,7 @@ export function Dialog({
   children,
   ...props
 }: Dialog.Props) {
-  const { Info, spawnDialog } = useApplication()
+  const { Info, banner, spawnDialog } = useApplication()
 
   const close = () => {
     if (callback) {
@@ -39,6 +39,9 @@ export function Dialog({
 
   const handleDialogClose = (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
+      if (banner) {
+        return;
+      }
       close()
     }
   }
