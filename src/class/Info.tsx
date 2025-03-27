@@ -549,7 +549,7 @@ export class Info implements InfoProps {
       body.q_options.preview_mode = preview
     }
 
-    return (await api<any>(
+    const resp = await api<any>(
       '/query_raw',
       {
         method: 'POST',
@@ -569,7 +569,19 @@ export class Info implements InfoProps {
           on: Date.now(),
         })
       },
-    )).data
+    )
+
+    if (preview) {
+      toast(`Total hits for this filter is ${resp.data?.total_hits || 0}`, {
+        description: `${resp.data?.total_hits || 0} of ${file.total}`
+      })
+    }
+
+
+    return resp.data || {
+      docs: [],
+      total_hits: 0
+    };
   }
 
   preview_file = (file: λFile) => this.query_file(file, true)

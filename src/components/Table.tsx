@@ -15,7 +15,7 @@ export namespace Table {
 }
 
 export function Table<T extends Object>({
-  values: _values,
+  values: _values = [],
   className,
   ...props
 }: Table.Props<T>) {

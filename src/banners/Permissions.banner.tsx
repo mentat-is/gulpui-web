@@ -86,16 +86,16 @@ export namespace Permissions {
         >
           {users.length
             ? users.map((user) => (
-                <User.Combination
-                  key={user.id}
-                  user={user}
-                  update={update}
-                  users={users}
-                />
-              ))
+              <User.Combination
+                key={user.id}
+                user={user}
+                update={update}
+                users={users}
+              />
+            ))
             : Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} width="full" />
-              ))}
+              <Skeleton key={i} width="full" />
+            ))}
         </Stack>
       ),
       [users],
@@ -275,11 +275,11 @@ export namespace Permissions {
             setValid: SetState<boolean>,
             regexp: RegExp,
           ) =>
-          (event: ChangeEvent<HTMLInputElement>) => {
-            const { value } = event.target
-            setValid(value.length > 3 ? true : regexp.test(value))
-            set(value)
-          }
+            (event: ChangeEvent<HTMLInputElement>) => {
+              const { value } = event.target
+              setValid(value.length > 3 ? true : regexp.test(value))
+              set(value)
+            }
 
         const submit = () => {
           api(
@@ -296,7 +296,7 @@ export namespace Permissions {
                   )?.[0] as string),
               },
               setLoading,
-              body: JSON.stringify(permissions.split(',').map((v) => v.trim())),
+              body: permissions.split(',').map((v) => v.trim())
             },
             () => spawnBanner(<Permissions.Banner />),
           )
@@ -412,11 +412,11 @@ export namespace Permissions {
             setValid: SetState<boolean>,
             regexp: RegExp,
           ) =>
-          (event: ChangeEvent<HTMLInputElement>) => {
-            const { value } = event.target
-            setValid(value.length > 3 ? true : regexp.test(value))
-            set(value)
-          }
+            (event: ChangeEvent<HTMLInputElement>) => {
+              const { value } = event.target
+              setValid(value.length > 3 ? true : regexp.test(value))
+              set(value)
+            }
 
         const submit = () => {
           api(

@@ -285,10 +285,10 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
 
   const previewCurrentFilterButtonClickHandler = async () => {
     setIsPreviewLoading(true);
-    const { docs } = await Info.preview_file(file)
+    const { docs, total_hits } = await Info.preview_file(file)
     setIsPreviewLoading(false)
 
-    spawnBanner(<Preview.Banner values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} />)} />)
+    spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} />)} />)
   }
 
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);

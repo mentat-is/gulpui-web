@@ -120,7 +120,7 @@ export function parseApiOptions<T>(
   _path: string,
 ) {
   const options: RequestInit & RequestOptions & { raw?: boolean } = {}
-  let callback: Callback<T> | undefined
+  let callback: Callback<T> | Callback<Promise<T>> | undefined
 
   if (typeof a === 'function') {
     callback = a

@@ -17,6 +17,7 @@
     transform: translateY(256px);
     opacity: 0;
   }
+
   100% {
     transform: translateY(0px);
     opacity: 1;
@@ -25,19 +26,19 @@
 
 .banner {
   min-width: 600px;
-  max-width: 90vw;
+  max-width: calc(100vw - 352px);
   padding: var(--p5) var(--p6);
   background: var(--soft-black);
   position: absolute;
   border: 1px solid var(--gray-400);
   display: flex;
-  max-height: 64vh;
+  max-height: calc(100vh - 352px);
   gap: 16px;
   flex-direction: column;
   animation: InitialAnimation 0.3s cubic-bezier(0.075, 0.82, 0.165, 1) forwards;
 }
 
-.banner > h6 {
+.banner>h6 {
   font-size: var(--text-large);
   display: flex;
   width: 100%;
@@ -46,24 +47,29 @@
   gap: 16px;
   align-items: center;
 }
+
 .button_wrapper {
   flex: 1;
   display: flex;
   justify-content: flex-end;
 }
+
 .close {
   box-shadow: none !important;
   background: none !important;
 }
+
 .content {
   padding: 2px;
   padding-right: 8px;
   overflow: auto;
   min-height: calc(100% - 40px);
 }
+
 .cell {
   background-color: var(--soft-black);
 }
+
 .side {
   --graph-width: calc(var(--cell-size, 88px)* 3);
   border: 1px solid var(--gray-400);
@@ -78,6 +84,7 @@
   overflow-x: hidden;
   overflow-y: auto;
 }
+
 .side_content {
   width: var(--graph-width);
   flex-shrink: 0;
@@ -86,6 +93,7 @@
   background: var(--soft-black);
   height: 100%;
 }
+
 .side.open {
   width: var(--graph-width);
 }
