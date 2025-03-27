@@ -62,6 +62,9 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   }, [isKeyPressed])
 
   const DoneButton = () => {
+
+
+
     const login = async () => {
       const removeOverload = (str: string): string =>
         str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str

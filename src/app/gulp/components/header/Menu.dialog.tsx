@@ -13,6 +13,7 @@ import { Enrichment } from '@/banners/Enrichment.banner'
 import { Permissions } from '@/banners/Permissions.banner'
 import { Export } from '@/banners/Export.banner'
 import { Requests } from '@/banners/Requests.banner'
+import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -80,6 +81,12 @@ export function Menu() {
         title="Export canvas"
         img="ImageDown"
         onClick={() => spawnBanner(<Export.Banner />)}
+      />
+      <Button
+        variant="secondary"
+        title="Global query"
+        img="Globe"
+        onClick={() => spawnBanner(<GlobalQuery.Banner />)}
       />
       <Button
         variant="secondary"

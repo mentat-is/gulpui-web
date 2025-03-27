@@ -32,9 +32,9 @@ export class λ<T extends ResponseBase<any>> {
     this.data = data
       ? data.data
       : ({
-          message: 'internal_server_error',
-          statusCode: 500,
-        } as ResponseError['data'])
+        message: 'internal_server_error',
+        statusCode: 500,
+      } as ResponseError['data'])
   }
 
   isError = (): this is ResponseError => this.status === 'error'
@@ -155,11 +155,11 @@ export function parseApiOptions<T>(
   const toStringObject = (obj: typeof options.query) =>
     obj
       ? Object.fromEntries(
-          Object.entries(options.query || {}).map(([key, value]) => [
-            key,
-            String(value),
-          ]),
-        )
+        Object.entries(options.query || {}).map(([key, value]) => [
+          key,
+          String(value),
+        ]),
+      )
       : ''
 
   const query = new URLSearchParams(toStringObject(options.query))
@@ -204,16 +204,15 @@ const api: Api = async function <T>(
   const result = options.raw ? res : isSuccess ? res.data : null
 
   if (isSuccess) {
+    if (typeof options.toast === 'string') {
+      toast(options.toast)
+    }
     if (callback) {
       await callback(result)
     }
   } else if (options.toast !== false) {
     toast.error(
-      toSeparatedCase(
-        typeof options.toast === 'string'
-          ? options.toast
-          : res.data?.__error?.name,
-      ),
+      toSeparatedCase(res.data?.__error?.name),
       {
         description: res.data?.__error?.msg
           ? capitalize(res.data.__error.msg)

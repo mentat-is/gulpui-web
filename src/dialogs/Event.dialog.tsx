@@ -8,15 +8,13 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
 import { copy, download } from '@/ui/utils'
 import { Button, Skeleton, Stack } from '@impactium/components'
-import { Event, File, Note } from '@/class/Info'
+import { Event, File } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkComponents } from '@/banners/CreateLinkBanner'
-import { Maps } from '@/banners/Maps.banner'
-import { NoteFunctionality } from '@/banners/CreateNoteBanner'
-import { λNote } from '@/dto/Dataset'
-import { NotePoint } from '@/ui/Note'
-import { Select } from '@/ui/Select'
+import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
+import { λLink, λNote } from '@/dto/Dataset'
+import { Collab } from '@/components/CollabList'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -26,11 +24,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication()
   const [rawJSON, setRawJSON] = useState<string>('')
   const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
+  const [links, setLinks] = useState<λLink[]>(Event.links(app, event));
 
   useEffect(() => {
     Info.setTimelineTarget(event)
     setNotes(Event.notes(app, event))
-  }, [event, app.target.notes])
+    setLinks(Event.links(app, event))
+  }, [event, app.target.notes, app.target.links])
 
   useEffect(() => {
     if (!rawJSON) loadEvent()
@@ -64,11 +64,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     )
   }, [rawJSON])
 
-  const notesList = useMemo(() => {
+  const collabList = useMemo(() => {
     return (
-      <NotePoint.Detailed notes={notes} />
+      <Collab.List notes={notes} links={links} />
     )
-  }, [notes])
+  }, [notes, links])
 
   return (
     <Dialog
@@ -92,10 +92,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               </Button>
               <Button
                 onClick={() =>
-                  spawnBanner(<LinkComponents.Create.Banner event={event} />)
+                  spawnBanner(<LinkFunctionality.Create.Banner event={event} />)
                 }
                 variant="secondary"
-                img="Link"
+                img="GitPullRequestCreate"
               >
                 Create link
               </Button>
@@ -117,18 +117,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               >
                 Enrich
               </Button>
-              <Button
-                onClick={() =>
-                  spawnBanner(<LinkComponents.Connect.Banner event={event} />)
-                }
-                variant="secondary"
-                img="Link"
-              >
-                Connect link
-              </Button>
+              <Button onClick={() => spawnBanner(<LinkComponents.Connect.Banner event={event} />)} variant="secondary" img="GitPullRequestCreateArrow">Connect link</Button>
             </Stack>
           </Stack>
-          {notesList}
+          {collabList}
           {highlights}
           <Stack className={s.actionButtons}  >
             <Button variant="secondary" onClick={() => copy(rawJSON)} img="Copy">Copy JSON</Button>

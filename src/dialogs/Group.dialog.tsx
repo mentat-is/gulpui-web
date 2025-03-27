@@ -8,6 +8,7 @@ import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Stack } from '@impactium/components'
 import { format } from 'date-fns'
 import { Internal } from '@/class/Info'
+import { Separator } from '@/ui/Separator'
 
 interface DisplayGroupDialogProps {
   events: λEvent[]
@@ -22,31 +23,33 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
       description={`List includes ${events.length} events`}
     >
       {events.map((event: λEvent) => (
-        <Stack key={event.id} className={s.event} style={{ flexShrink: 0, height: 32 }}>
-          <SymmetricSvg text={event.id} />
-          <Stack
-            dir="column"
-            jc="space-evenly"
-            ai="flex-start"
-            className={s.info}
-          >
-            <p className={s.id}>{event.id}</p>
-            <Stack className={s.description}>
-              <p>
-                Code <span>{event.code}</span> at{' '}
-                <span>{`${format(new Date(Internal.Transformator.toTimestamp(event.nanotimestamp)), 'yyyy-MM-dd HH:mm:ss')} x ${String(event.nanotimestamp % 1_000_000n).padStart(6, '0')}`}</span>
-              </p>
+        <>
+          <Stack key={event.id} className={s.event} style={{ flexShrink: 0, height: 32 }}>
+            <SymmetricSvg text={event.id} />
+            <Stack
+              dir="column"
+              jc="space-evenly"
+              ai="flex-start"
+              flex
+              className={s.info}
+              gap={2}
+            >
+              <p className={s.id}>{event.id}</p>
+              <span className={s.description}>
+                {`${format(new Date(Internal.Transformator.toTimestamp(event.nanotimestamp)), 'yyyy-MM-dd HH:mm:ss')} x ${String(event.nanotimestamp % 1_000_000n).padStart(6, '0')}`}
+              </span>
             </Stack>
+            <Button
+              variant="outline"
+              onClick={() => spawnDialog(<DisplayEventDialog event={event} />)}
+              img="ArrowRight"
+              revert
+            >
+              Open
+            </Button>
           </Stack>
-          <Button
-            variant="outline"
-            onClick={() => spawnDialog(<DisplayEventDialog event={event} />)}
-            img="ArrowRight"
-            revert
-          >
-            Open
-          </Button>
-        </Stack>
+          <Separator />
+        </>
       ))}
     </Dialog>
   )

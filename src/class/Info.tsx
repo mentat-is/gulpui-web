@@ -1113,7 +1113,7 @@ export class Info implements InfoProps {
   note_create = ({
     name,
     text,
-    color,
+    color = Default.Color.NOTE,
     glyph_id,
     event
   }: {
@@ -1174,8 +1174,8 @@ export class Info implements InfoProps {
       docs: Event.formatForServer(event),
     }
   }).then(() => {
-    this.notes_reload();
     toast(`Note ${name} has been updated successfully`)
+    return this.notes_reload();
   })
 
   // ⚠️ UNTOUCHABLE
@@ -1231,21 +1231,81 @@ export class Info implements InfoProps {
       this.links_reload,
     )
 
-  links_connect = async (link: λLink, event: λEvent) => {
-    const links = await api<λLink>('/link_update', {
+  link_create = ({
+    name,
+    event,
+    glyph_id,
+    color = Default.Color.LINK,
+    description
+  }: {
+    name: string,
+    event: λEvent,
+    glyph_id: λGlyph['id'],
+    color: string,
+    description: string
+  }) => {
+    return api<λLink>('/link_create', {
+      method: 'POST',
+      query: {
+        doc_id_from: event.id,
+        operation_id: event.operation_id,
+        ws_id: this.app.general.ws_id,
+        name,
+        glyph_id,
+        color,
+        description
+      },
+      toast: `Link ${name} has been created successfully`,
+      body: {
+        doc_ids: [event.id]
+      }
+    }).then(this.links_reload);
+  }
+
+  link_edit = ({
+    id: object_id,
+    name,
+    color = Default.Color.LINK,
+    glyph_id,
+    events,
+    description
+  }: {
+    id: λLink['id'],
+    name: string,
+    glyph_id: λGlyph['id'],
+    color: string,
+    events: λEvent['id'][],
+    description: string
+  }) => {
+    return api('/link_update', {
+      method: 'PATCH',
+      query: {
+        object_id,
+        name,
+        color,
+        glyph_id,
+        ws_id: this.app.general.ws_id,
+        description
+      },
+      toast: `Link ${name} has been updated successfully`,
+      body: {
+        doc_ids: events
+      },
+    }).then(this.links_reload);
+  }
+
+  links_connect = (link: λLink, event: λEvent) => {
+    return api<λLink>('/link_update', {
       method: 'PATCH',
       query: {
         object_id: link.id,
         ws_id: this.app.general.ws_id,
       },
+      toast: `Event ${event.id} has been connected to link ${link.name} successfully`,
       body: {
         doc_ids: [...link.doc_ids, event.id],
       },
-    })
-
-    await this.links_reload()
-
-    return links
+    }).then(this.links_reload);
   }
 
   glyphs_reload = async () => {
@@ -2258,6 +2318,10 @@ export class Event {
 
   public static notes = (app: λApp, event: λEvent) =>
     app.target.notes.filter((n) => n.docs.some((doc) => doc.id === event.id))
+
+  public static links = (app: λApp, event: λEvent) =>
+    app.target.links.filter((l) => l.docs.some((doc) => doc.id === event.id))
+
 }
 
 export class Note {
@@ -2294,6 +2358,8 @@ export class Note {
 
 export class Link {
   public static icon = Internal.IconExtractor.activate<λLink | null>(Default.Icon.LINK)
+
+  public static id = (app: λApp, id: λLink['id']): λLink => app.target.links.find(link => link.id === id)!;
 
   public static selected = (app: λApp) =>
     app.target.links.filter((link) =>

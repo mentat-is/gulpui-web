@@ -95,6 +95,7 @@ export type ΞLink<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   μ.Link,
   T
 > & {
+  type: 'link'
   owner_user_id: string
   description: string
   operation_id: λOperation['id']

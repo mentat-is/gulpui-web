@@ -2,17 +2,21 @@
   width: 100%;
 }
 .info {
-  width: 100%;
+  overflow: hidden;
 }
 .id {
   font-size: 16px;
-  font-weight: 600; 
+  font-weight: 600;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  max-width: 100%;
 }
-.description p {
+.description {
   font-size: 14px;
   font-family: var(--font-mono);
   color: var(--text-dimmed);
-}
-.description p span {
-  color: var(--text-white);
+  width: calc(100% - 13px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

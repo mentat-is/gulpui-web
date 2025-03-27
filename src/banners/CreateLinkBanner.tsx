@@ -12,189 +12,48 @@ import { Default, λGlyph, λLink } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import { Glyph } from '@/ui/Glyph'
 import { cn } from '@impactium/utils'
+import { LinkFunctionality } from './Collab.functionality'
 
 export namespace LinkComponents {
-  export namespace Create {
-    export interface Props {
-      event: λEvent
-    }
-    export function Banner({ event }: LinkComponents.Create.Props) {
-      const { app, spawnBanner, destroyBanner, Info } = useApplication()
-      const [color, setColor] = useState<string>('#ffffff')
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(null)
-      const [name, setName] = useState<string>('')
-      const [_private, _setPrivate] = useState<boolean>(false)
-      const [loading, setLoading] = useState<boolean>(false)
-
-      const context = useMemo(() => {
-        return Context.id(app, event.context_id)
-      }, [event])
-
-      const file = useMemo(() => {
-        return File.id(app, event.file_id)
-      }, [event])
-
-      const send = async () => {
-        api(
-          '/link_create',
-          {
-            method: 'POST',
-            query: {
-              doc_id_from: event.id,
-              operation_id: event.operation_id,
-              ws_id: app.general.ws_id,
-              name,
-              glyph_id: icon || Default.Icon.LINK,
-              color,
-            },
-            body: {
-              doc_ids: [event.id],
-            },
-            setLoading,
-          },
-          () => {
-            destroyBanner()
-            Info.links_reload()
-          },
-        )
-      }
-
-      const Option = useCallback(
-        () => (
-          <Button
-            onClick={() =>
-              spawnBanner(<LinkComponents.Connect.Banner event={event} />)
-            }
-            variant="ghost"
-            img="GitPullRequest"
-          />
-        ),
-        [event],
-      )
-
-      const Done = useCallback(() => {
-        return (
-          <Button
-            loading={loading}
-            onClick={send}
-            variant="glass"
-            disabled={!name || !icon}
-            img="Check"
-          />
-        )
-      }, [loading, name, send])
-
-      return (
-        <UIBanner title="Create link" done={<Done />} option={<Option />}>
-          <Stack className={s.general} ai="stretch" dir="column" gap={8}>
-            <DetailedLinkInfoUnit
-              name="Context"
-              value={context.name}
-              icon="Box"
-            />
-            <DetailedLinkInfoUnit name="File" value={file.name} icon="File" />
-            <DetailedLinkInfoUnit
-              name="Event"
-              value={event.id}
-              icon="Triangle"
-            />
-            <Separator />
-            <EditableLinkField name="Title">
-              <Input
-                variant="highlighted"
-                img="TextTitle"
-                value={name}
-                onChange={(e) => setName(e.currentTarget.value)}
-              />
-            </EditableLinkField>
-            <EditableLinkField name="Color">
-              <ColorPicker color={color} setColor={setColor}>
-                <ColorPickerTrigger />
-                <ColorPickerPopover />
-              </ColorPicker>
-            </EditableLinkField>
-            <EditableLinkField name="Glyph">
-              <Glyph.Chooser icon={icon} setIcon={setIcon} />
-            </EditableLinkField>
-          </Stack>
-        </UIBanner>
-      )
-    }
-  }
-
   export namespace Connect {
     export interface Props {
       event: λEvent
     }
     export function Banner({ event }: LinkComponents.Connect.Props) {
-      const { app, Info } = useApplication()
+      const { app, Info, spawnBanner } = useApplication()
 
       const connect = (link: λLink) => () => Info.links_connect(link, event)
 
+      const links = useMemo(() => {
+        return Link.selected(app).filter((l) => !l.doc_ids.some((e) => e === event.id))
+      }, [app.target.links])
+
+      const NoLinks = useMemo(() => {
+        const { spawnBanner } = useApplication();
+
+        return (
+          <Stack dir='column' gap={16}>
+            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--text-dimmed)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
+            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} img='GitPullRequestArrow'>Create link</Button>
+          </Stack>
+        )
+      }, [spawnBanner])
+
       return (
         <UIBanner title="Connect link">
-          {Link.selected(app)
-            .filter((l) => !l.doc_ids.some((e) => e === event.id))
-            .map((link) => (
-              <Button
-                key={link.id}
-                variant="secondary"
-                style={{ color: link.color }}
-                onClick={connect(link)}
-                img={Link.icon(link)}
-              >
-                {link.name}
-              </Button>
-            ))}
+          {links.length ? links.map((link) => (
+            <Button
+              key={link.id}
+              variant="secondary"
+              style={{ color: link.color }}
+              onClick={connect(link)}
+              img={Link.icon(link)}
+            >
+              {link.name}
+            </Button>
+          )) : NoLinks}
         </UIBanner>
       )
     }
   }
-}
-
-namespace EditableLinkField {
-  export interface Props extends Stack.Props {
-    name: string
-  }
-}
-
-function EditableLinkField({
-  name,
-  className,
-  children,
-  ...props
-}: EditableLinkField.Props) {
-  return (
-    <Stack dir="row" className={cn(s.unit, s.editable, className)} {...props}>
-      <p>{name}:</p>
-      {children}
-    </Stack>
-  )
-}
-
-namespace DetailedLinkInfoUnit {
-  export interface Props {
-    name: string
-    icon: Icon.Name
-    value: string
-  }
-}
-
-function DetailedLinkInfoUnit({
-  name,
-  icon,
-  value,
-}: DetailedLinkInfoUnit.Props) {
-  return (
-    <Stack className={s.unit}>
-      <p>{name}:</p>
-      <Input
-        variant="highlighted"
-        className={s.inp_input}
-        img={icon}
-        disabled
-        value={value}
-      />
-    </Stack>
-  )
 }
