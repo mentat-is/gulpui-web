@@ -87,17 +87,49 @@ namespace Components {
   }) => {
     const { Info, app } = useApplication();
     const [preview, setPreview] = useState<λEvent[] | null>(null);
-    const methods = Mapping.methods(app, settings.plugin || '')
-    const mappings = Mapping.mappings(app, settings.plugin || '', settings.method || '')
+
+    const methods = Mapping.methods(app, settings.plugin)
+    const mappings = Mapping.mappings(app, settings.plugin, settings.method)
 
     useEffect(() => {
-      if (settings.plugin && !settings.method) {
-        if (methods.length === 1) updateSettings({ method: methods[0] })
+      if (!settings.plugin) {
+        return
       }
-      if (settings.plugin && settings.method && !settings.mapping) {
-        if (mappings.length === 1) updateSettings({ mapping: mappings[0] })
+
+      if (methods.length === 0) {
+        updateSettings({
+          method: undefined
+        })
+      } else if (methods.length === 1) {
+        updateSettings({
+          method: methods[0]
+        })
+      } else if (settings.method !== undefined && !methods.includes(settings.method)) {
+        updateSettings({
+          method: undefined
+        })
       }
-    }, [methods, mappings])
+    }, [settings.plugin])
+
+    useEffect(() => {
+      if (!settings.plugin) {
+        return
+      }
+
+      if (mappings.length === 0 || !settings.method) {
+        updateSettings({
+          mapping: undefined
+        })
+      } else if (mappings.length === 1) {
+        updateSettings({
+          mapping: mappings[0]
+        })
+      } else if (settings.mapping && !mappings.includes(settings.mapping)) {
+        updateSettings({
+          mapping: undefined
+        })
+      }
+    }, [settings.method])
 
     const loadPreview = async () => {
       const preview = await Info.file_ingest({
@@ -156,6 +188,8 @@ namespace Components {
   }) => {
     const { app } = useApplication();
 
+    const plugins = Mapping.plugins(app);
+
     return (
       <Select.Root
         value={settings.plugin}
@@ -163,11 +197,11 @@ namespace Components {
       >
         <Select.Trigger className={s.select}>
           <Select.Value placeholder="Select plugin">
-            {settings.plugin}
+            <p>{settings.plugin ? settings.plugin : plugins.length > 0 ? 'Select plugin' : 'No plugins'}</p>
           </Select.Value>
         </Select.Trigger>
         <Select.Content>
-          {Mapping.plugins(app).map(p => (
+          {plugins.map(p => (
             <Select.Item key={p} value={p}>{p}</Select.Item>
           ))}
         </Select.Content>
@@ -180,12 +214,10 @@ namespace Components {
     updateSettings: (update: Partial<FileEntity.Settings>) => void
     methods: string[]
   }) => {
-    return (
+    return methods.length > 0 ? (
       <Select.Root value={settings.method} onValueChange={method => updateSettings({ method })}>
         <Select.Trigger className={s.select}>
-          <Select.Value placeholder={methods.length ? "Select method" : "No methods"}>
-            {settings.method}
-          </Select.Value>
+          <p>{settings.method ? settings.method : methods.length > 0 ? 'Select method' : '-'}</p>
         </Select.Trigger>
         <Select.Content>
           {methods.map(m => (
@@ -193,22 +225,20 @@ namespace Components {
           ))}
         </Select.Content>
       </Select.Root>
-    )
+    ) : null
   }
 
   const MappingSelector = ({ settings, updateSettings, mappings }: {
     settings: FileEntity.Settings
     updateSettings: (update: Partial<FileEntity.Settings>) => void
     mappings: string[]
-  }) => (
+  }) => mappings.length > 0 ? (
     <Select.Root
       value={settings.mapping}
       onValueChange={mapping => updateSettings({ mapping })}
     >
       <Select.Trigger className={s.select}>
-        <Select.Value placeholder={mappings.length ? "Select mapping" : "No mappings"}>
-          {settings.mapping}
-        </Select.Value>
+        <p>{settings.mapping ? settings.mapping : mappings.length > 0 ? 'Select mapping' : (settings.method ? 'No mappings' : '-')}</p>
       </Select.Trigger>
       <Select.Content>
         {mappings.map(m => (
@@ -216,7 +246,7 @@ namespace Components {
         ))}
       </Select.Content>
     </Select.Root>
-  )
+  ) : null
 
   export const FrameSelector = ({ isCustomFrame, setFrame }: {
     isCustomFrame: boolean,
@@ -282,13 +312,48 @@ namespace Components {
       }
     }, [settings]);
 
-    const methods = Mapping.methods(app, settings.all?.plugin || '')
-    const mappings = Mapping.mappings(app, settings.all?.plugin || '', settings.all?.method || '')
+    const methods = Mapping.methods(app, settings.all?.plugin)
+    const mappings = Mapping.mappings(app, settings.all?.plugin, settings.all?.method)
 
     useEffect(() => {
-      if (methods.length === 1) updateSettings('all', { method: methods[0] })
-      if (mappings.length === 1) updateSettings('all', { mapping: mappings[0] })
-    }, [methods, mappings])
+      if (!settings.all?.plugin) {
+        return
+      }
+
+      if (methods.length === 0) {
+        updateSettings('all', {
+          method: undefined
+        })
+      } else if (methods.length === 1) {
+        updateSettings('all', {
+          method: methods[0]
+        })
+      } else if (settings.all?.method !== undefined && !methods.includes(settings.all?.method)) {
+        updateSettings('all', {
+          method: undefined
+        })
+      }
+    }, [settings.all?.plugin])
+
+    useEffect(() => {
+      if (!settings.all?.plugin) {
+        return
+      }
+
+      if (mappings.length === 0 || !settings.all?.method) {
+        updateSettings('all', {
+          mapping: undefined
+        })
+      } else if (mappings.length === 1) {
+        updateSettings('all', {
+          mapping: mappings[0]
+        })
+      } else if (settings.all?.mapping && !mappings.includes(settings.all?.mapping)) {
+        updateSettings('all', {
+          mapping: undefined
+        })
+      }
+    }, [settings.all?.method])
 
     return (
       <Popover>

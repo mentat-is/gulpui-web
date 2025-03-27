@@ -2348,7 +2348,7 @@ export class Mapping {
 
   public static methods = (
     app: λApp,
-    plugin: λMapping.Plugin['name'],
+    plugin?: λMapping.Plugin['name'],
   ): λMapping.Method['name'][] =>
     app.target.mappings
       .find((p) => p.name === plugin)
@@ -2356,8 +2356,8 @@ export class Mapping {
 
   public static mappings = (
     app: λApp,
-    plugin: λMapping.Plugin['name'],
-    method: λMapping.Method['name'],
+    plugin?: λMapping.Plugin['name'],
+    method?: λMapping.Method['name'],
   ): λMapping.Mapping[] =>
     app.target.mappings
       .find((p) => p.name === plugin)
