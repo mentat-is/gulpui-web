@@ -6,7 +6,7 @@ import { Badge } from '@/ui/Badge';
 export namespace Preview {
   export namespace Banner {
     export interface Props extends UIBanner.Props {
-      total?: number;
+      total: number;
       values: Record<string, any>[]
     }
   }

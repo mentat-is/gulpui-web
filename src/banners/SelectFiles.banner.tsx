@@ -183,7 +183,7 @@ function FileComponent({ file }: { file: λFile }) {
 
   const previewButtonClickHandler = () => {
     setLoading(true)
-    Info.preview_file(file).then(({ docs }) => spawnBanner(<Preview.Banner values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />))
+    Info.preview_file(file).then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button img='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
   }
 
   const handleFileCheck = useCallback(

@@ -288,7 +288,7 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     const { docs, total_hits } = await Info.preview_file(file)
     setIsPreviewLoading(false)
 
-    spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} />)} />)
+    spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} {...props} />)} />)
   }
 
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
