@@ -8,14 +8,6 @@ import { Button, Input, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
-import { Badge } from './Badge'
-import { formatDistanceToNow } from 'date-fns'
-import { Separator } from './Separator'
-import { Markdown } from './Markdown'
-import { useEffect, useState } from 'react'
-import { Select } from './Select'
-import { NoteFunctionality } from '@/banners/Collab.functionality'
-import { Delete } from '@/banners/Delete.banner'
 
 export namespace NotePoint {
   export interface Props

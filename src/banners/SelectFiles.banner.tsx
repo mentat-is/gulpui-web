@@ -5,7 +5,7 @@ import s from './styles/SelectFilesBanner.module.css'
 import { Badge } from '@/ui/Badge'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
-import { Context, Operation } from '@/class/Info'
+import { Context, Filter, Operation } from '@/class/Info'
 import { useState, useMemo, useCallback } from 'react'
 import { LimitsBanner } from './Limits.banner'
 import { UploadBanner } from './Upload.banner'
@@ -104,9 +104,17 @@ export namespace SelectFiles {
             onClick={() => Info.selectAll(filter)}
             variant="secondary"
             style={{ width: '100%', background: 'var(--meta-black)' }}
-            img="CheckCheck"
+            img="FilePlus"
           >
             Select all
+          </Button>
+          <Button
+            onClick={() => Info.unselectAll(filter)}
+            variant="secondary"
+            style={{ width: '100%', background: 'var(--meta-black)' }}
+            img="FileMinus"
+          >
+            Unselect all
           </Button>
           <Button
             onClick={reloadClickHandler}
@@ -178,7 +186,7 @@ function ContextComponent({ context }: { context: λContext }) {
 }
 
 function FileComponent({ file }: { file: λFile }) {
-  const { Info, spawnBanner } = useApplication()
+  const { app, Info, spawnBanner } = useApplication()
   const [loading, setLoading] = useState<boolean>(false);
 
   const previewButtonClickHandler = () => {
@@ -211,7 +219,7 @@ function FileComponent({ file }: { file: λFile }) {
       />
       <Label htmlFor={file.name}>{file.name}</Label>
       {FileIsTooBig}
-      <Badge radius={2} variant="outline" icon='Filter' onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)} />
+      <Badge radius={2} variant={Filter.hasFilter(app, file) ? 'outline' : "secondary"} icon='Filter' onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)} />
       <Badge radius={2} variant="outline" value={file.total} />
       <Button
         img="PreviewEye"

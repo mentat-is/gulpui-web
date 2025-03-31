@@ -7,9 +7,7 @@ import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
 
 export function Timeline() {
-  const { app, Info, timeline } = useApplication()
-  const [scrollX, setScrollX] = useState<number>(0)
-  const [scrollY, setScrollY] = useState<number>(-26)
+  const { app, Info, timeline, setScrollX, scrollX, scrollY } = useApplication()
 
   useEffect(() => {
     Info.refetch()
@@ -45,15 +43,8 @@ export function Timeline() {
       dir="column"
       ref={timeline}
     >
-      <Canvas
-        timeline={timeline}
-        scrollX={scrollX}
-        scrollY={scrollY}
-        setScrollX={setScrollX}
-        setScrollY={setScrollY}
-      />
+      <Canvas timeline={timeline} />
       <Navigator
-        setScrollX={setScrollX}
         timeline={timeline}
         timestamp={getTimestamp(
           scrollX + (timeline.current?.clientWidth || 0),

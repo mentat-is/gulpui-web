@@ -7,16 +7,14 @@ import { useMemo, useCallback, Fragment, useState, useEffect } from 'react'
 
 interface NotesDisplayerProps {
   getPixelPosition: (num: number) => number
-  scrollY: number
 }
 
 type NoteMapping = Record<λNote['id'], XY>
 
 export function NotesDisplayer({
   getPixelPosition,
-  scrollY,
 }: NotesDisplayerProps) {
-  const { app } = useApplication()
+  const { app, scrollY } = useApplication()
 
   if (app.timeline.hidden_notes)
     return null;
@@ -48,7 +46,7 @@ export function NotesDisplayer({
       const pos = mapping[note.id]
       if (!pos) return null
 
-      const top = pos.y - scrollY
+      const top = pos.y
       return pos.x > 0 && top > 0 ? { left: pos.x, top } : null
     },
     [scrollY, mapping],
@@ -86,7 +84,7 @@ export function NotesDisplayer({
               key={note.id}
               note={note}
               x={pos.left}
-              y={pos.top}
+              y={pos.top - scrollY}
             />
           )
         }

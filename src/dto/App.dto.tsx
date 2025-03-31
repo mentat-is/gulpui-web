@@ -12,7 +12,7 @@ import {
   μ,
 } from '@/class/Info'
 import { Engine } from '@/class/Engine.dto'
-import { XY } from './XY.dto'
+import { XY, XYBase } from './XY.dto'
 import { λContext, λFile, λGlyph, λLink, λNote, λRequest } from './Dataset'
 import { λMapping } from './MappingFileList.dto'
 import { Pointers } from '@/components/Pointers'
@@ -45,7 +45,6 @@ export interface λApp {
   general: λUser & {
     server: string
     ws_id: string
-    sessions: Record<string, Session>
     glyphs_syncronized: boolean
     requests: λRequest[]
   }
@@ -53,7 +52,6 @@ export interface λApp {
     scale: number
     frame: MinMax
     target: λEvent | null
-    loaded: μ.File[]
     filter: string
     cache: {
       data: Map<μ.File, λEvent[]>
@@ -74,14 +72,12 @@ export const BaseInfo: λApp = {
     id: '' as λUser['id'],
     time_expire: Infinity,
     token: '',
-    sessions: {},
     glyphs_syncronized: false,
     requests: [],
   },
   timeline: {
     scale: 1,
     target: null,
-    loaded: [],
     filter: '',
     cache: {
       data: new Map<μ.File, λEvent[]>(),
@@ -114,12 +110,3 @@ export const BaseInfo: λApp = {
   },
 }
 
-export interface Session {
-  render: Array<{
-    filename: string
-    context: string
-    engine: Engine.List
-    selected: boolean
-  }>
-  scroll: XY
-}

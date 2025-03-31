@@ -11,8 +11,7 @@ import { λColor } from '@/ui/utils'
 import { File, MinMax } from '@/class/Info'
 
 export class DefaultEngine
-  implements Engine.Interface<typeof DefaultEngine.target>
-{
+  implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null
   static target: Map<Hardcode.X, [Hardcode.Height, Hardcode.Timestamp]> &
     Scale &
@@ -79,17 +78,15 @@ export class DefaultEngine
     }
 
     const getTimestampForPixel = (x: number): number => {
-      const scrollX = this.renderer.scrollX
-
       const visibleWidth =
         this.renderer.ctx.canvas.width * this.renderer.info.app.timeline.scale
-      const pixelOffset = x + scrollX
+      const pixelOffset = x + this.renderer.scrollX
 
       return (
         this.renderer.info.app.timeline.frame.min +
         (pixelOffset / visibleWidth) *
-          (this.renderer.info.app.timeline.frame.max -
-            this.renderer.info.app.timeline.frame.min)
+        (this.renderer.info.app.timeline.frame.max -
+          this.renderer.info.app.timeline.frame.min)
       )
     }
 

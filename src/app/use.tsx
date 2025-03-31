@@ -1,6 +1,4 @@
-import { SetState } from '@/class/API'
 import { DragDealer } from '@/class/dragDealer.class'
-import { Info } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto'
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
@@ -34,22 +32,8 @@ export function useKeyHandler(key: string) {
   return [isKeyPressed]
 }
 
-export namespace UseDrugs {
-  export interface Props {
-    Info: Info
-    timeline: RefObject<HTMLCanvasElement>
-    setScrollX: SetState<number>
-    setScrollY: SetState<number>
-  }
-}
-
-export const useDrugs = ({
-  Info,
-  timeline,
-  setScrollX,
-  setScrollY,
-}: UseDrugs.Props) => {
-  const { app } = useApplication()
+export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
+  const { app, Info, setScrollX, scrollX, setScrollY, scrollY } = useApplication()
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 
@@ -61,15 +45,15 @@ export const useDrugs = ({
   )
 
   const dragState = useRef(
-    new DragDealer({ info: Info, timeline, setScrollX, increaseScrollY }),
+    new DragDealer({ info: Info, timeline, increaseScrollY, setScrollX }),
   )
 
   useEffect(() => {
     dragState.current = new DragDealer({
       info: Info,
       timeline,
-      setScrollX,
       increaseScrollY,
+      setScrollX
     })
   }, [timeline])
 
@@ -118,7 +102,7 @@ export const useDrugs = ({
 
         if (!isFinite(scale)) return toast('Selected frame too small')
 
-        setScrollX((s) => (s + min) * (scale / Info.app.timeline.scale))
+        setScrollX(x => (x + min) * (scale / Info.app.timeline.scale))
         setTimeout(() => {
           Info.setTimelineScale(scale)
         }, 10)
@@ -127,7 +111,7 @@ export const useDrugs = ({
       setResize(StartEndBase)
       setIsResizing(false)
     },
-    [isResizing, resize, Info, setScrollX, Info.app.timeline.scale],
+    [isResizing, resize, Info, Info.app.timeline.scale, scrollX],
   )
 
   return {

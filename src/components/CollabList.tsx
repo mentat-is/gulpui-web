@@ -61,7 +61,7 @@ export namespace Collab {
 
     return (
       <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
-        <Stack dir='column' ai='stretch' className={s.header}>
+        <Stack dir='column' ai='stretch'>
           <Stack>
             <Select.Root onValueChange={(v) => setTarget(Note.id(app, v as λNote['id']) || Link.id(app, v as λLink['id']))}>
               <Select.Trigger style={{ color: target.color }} value={target.id}>

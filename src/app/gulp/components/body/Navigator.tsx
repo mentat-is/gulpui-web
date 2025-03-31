@@ -17,20 +17,18 @@ import { Logger } from '@/dto/Logger.class'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
-    setScrollX: SetState<number>
     timeline: RefObject<HTMLDivElement>
     timestamp: number
   }
 }
 
 export function Navigator({
-  setScrollX,
   timeline,
   className,
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog } = useApplication()
+  const { Info, app, spawnDialog, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([])
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
@@ -209,7 +207,7 @@ export function Navigator({
     const left = scaledOffset - centerOffset
 
     Info.setTimelineScale(clampedScale)
-    setScrollX(Math.round(scrollX + left))
+    setScrollX(x => Math.round(x + left))
   }
 
   const handleControllers = (event: KeyboardEvent) => {
@@ -238,10 +236,6 @@ export function Navigator({
       window.removeEventListener('keypress', handleControllers)
     }
   }, [])
-
-  useEffect(() => {
-    resetScaleAndScroll()
-  }, [app.timeline.frame])
 
   return (
     <Stack

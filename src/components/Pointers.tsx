@@ -12,7 +12,6 @@ import { Logger } from '@/dto/Logger.class'
 export namespace Pointers {
   export interface Props extends Stack.Props {
     getPixelPosition: (t: number) => number
-    scrollY: number
     width: number
     self: XY
     timestamp: number
@@ -29,7 +28,6 @@ export namespace Pointers {
 
 export function Pointers({
   getPixelPosition,
-  scrollY,
   width,
   self,
   timestamp,
@@ -46,7 +44,7 @@ export function Pointers({
     'pink',
   ]
 
-  const { mws, app } = useApplication()
+  const { mws, app, scrollY } = useApplication()
   const color = useRef<string>(
     `var(--${COLOR_MAPPING[Math.round(Math.random() * COLOR_MAPPING.length)]})-700`,
   )
@@ -105,7 +103,7 @@ export function Pointers({
             style={{ top: isYours ? p.y : -scrollY + p.y, left: x }}
             pos="absolute"
           >
-            <Icon name="Pointer" color={p.color} fill={p.color} />
+            <Icon name="Gps" color={p.color} fill={p.color} />
             <p style={{ background: p.color }}>
               {p.id} {isYours ? `on ${getDate(timestamp)}ms` : null}
             </p>

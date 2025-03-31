@@ -14,9 +14,10 @@ import { Permissions } from '@/banners/Permissions.banner'
 import { Export } from '@/banners/Export.banner'
 import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
+import { Session } from '@/banners/Session.banner'
 
 export function Menu() {
-  const { app, spawnBanner } = useApplication()
+  const { app, spawnBanner, scrollX, scrollY } = useApplication()
   const { setWindows } = useWindows()
 
   const backToOperations = () => {
@@ -28,9 +29,7 @@ export function Menu() {
     spawnBanner(<Enrichment.Banner />)
   }
 
-  const logout = () => {
-    location.reload()
-  }
+  const logoutButtonClickHandler = () => spawnBanner(<Session.Save.Banner />);
 
   return (
     <Stack
@@ -122,7 +121,7 @@ export function Menu() {
         variant="secondary"
         img="LogOut"
         title="Logout"
-        onClick={logout}
+        onClick={logoutButtonClickHandler}
       />
     </Stack>
   )

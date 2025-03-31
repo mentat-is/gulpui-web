@@ -13,7 +13,6 @@ import { LoggerHandler } from '@/dto/Logger.class'
 import { λFile } from '@/dto/Dataset'
 import { File } from '@/class/Info'
 import Crosshair from './Crosshair'
-import { SetState } from '@/class/API'
 import { Stack } from '@impactium/components'
 import { debounce } from 'lodash'
 import { useDrugs, useKeyHandler } from '@/app/use'
@@ -28,25 +27,15 @@ import { XY } from '@/dto/XY.dto'
 export namespace Canvas {
   export interface Props extends Stack.Props {
     timeline: React.RefObject<HTMLDivElement>
-    scrollX: number
-    setScrollX: SetState<number>
-    scrollY: number
-    setScrollY: SetState<number>
   }
 }
 
-export function Canvas({
-  timeline,
-  scrollX,
-  setScrollX,
-  scrollY,
-  setScrollY,
-}: Canvas.Props) {
+export function Canvas({ timeline }: Canvas.Props) {
   const canvas_ref = useRef<HTMLCanvasElement>(null)
   const overlay_ref = useRef<HTMLCanvasElement>(null)
   const wrapper_ref = useRef<HTMLDivElement>(null)
 
-  const { app, banner, spawnDialog, Info, dialog } = useApplication()
+  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, Info, dialog } = useApplication()
   const [shifted, setShifted] = useState<λFile[]>([])
   const [isShiftPressed] = useKeyHandler('Shift')
   const dependencies = [
@@ -60,7 +49,6 @@ export function Canvas({
     app.target.links,
     dialog,
     app.timeline.target,
-    app.timeline.loaded,
     app.timeline.filter,
     shifted,
     app.timeline.dialogSize,
@@ -68,13 +56,21 @@ export function Canvas({
   ]
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, dependencies)
-  const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } =
-    useDrugs({
-      Info,
-      timeline: canvas_ref,
-      setScrollX,
-      setScrollY,
-    })
+  const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
+
+  useEffect(() => {
+    if (app.timeline.target) {
+      spawnDialog(<DisplayEventDialog event={app.timeline.target} />);
+    }
+  }, []);
+
+
+  const [isRescaleBlocked, setIsRescaleBlokced] = useState<boolean>(true);
+  useEffect(() => {
+    setTimeout(() => {
+      setIsRescaleBlokced(false);
+    }, 250);
+  }, []);
 
   const renderCanvas = (
     force?: boolean,
@@ -84,10 +80,7 @@ export function Canvas({
       return
     }
 
-    if (
-      wrapper_ref.current &&
-      canvas_ref.current.width !== wrapper_ref.current.clientWidth
-    ) {
+    if (wrapper_ref.current && canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
       const oldWidth = canvas_ref.current.width
       const newWidth = wrapper_ref.current.clientWidth
 
@@ -95,6 +88,10 @@ export function Canvas({
       canvas_ref.current.height = wrapper_ref.current.clientHeight
 
       const delta = oldWidth / newWidth
+
+      if (isRescaleBlocked) {
+        return;
+      }
 
       Info.setTimelineScale(app.timeline.scale * delta)
       setScrollX((s) => s - newWidth + oldWidth)
@@ -381,17 +378,17 @@ export function Canvas({
         onKeyDown={toggler}
         tabIndex={0}
       >
-        <NotesDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
-        <LinksDisplayer getPixelPosition={getPixelPosition} scrollY={scrollY} />
+        <NotesDisplayer getPixelPosition={getPixelPosition} />
+        <LinksDisplayer getPixelPosition={getPixelPosition} />
         <canvas
           ref={canvas_ref}
           id="canvas"
+          width={wrapper_ref.current?.offsetWidth}
           height={timeline.current?.clientHeight}
         />
         <Crosshair containerRef={wrapper_ref} />
         <Pointers
           getPixelPosition={getPixelPosition}
-          scrollY={scrollY}
           width={canvas_ref.current?.clientWidth || 1}
           self={mousePosition}
           timestamp={getTimestamp(scrollX + mousePosition.x, Info)}

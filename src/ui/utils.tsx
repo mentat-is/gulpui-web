@@ -338,3 +338,7 @@ export const bich =
   }
 
 export const fws = { width: '100%' }
+
+export async function sleep(ms = 0) {
+  return new Promise(res => setTimeout(res, ms))
+}

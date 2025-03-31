@@ -57,6 +57,9 @@
   gap: 6px;
   white-space: nowrap;
 }
+.trigger svg:not(:first-of-type) {
+  color: var(--white);
+}
 .scroll {
   background: var(--meta-black);
   display: flex;

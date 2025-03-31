@@ -1,7 +1,7 @@
 import SyntaxHighlighter from 'react-syntax-highlighter'
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
 import { useApplication } from '@/context/Application.context'
-import { λEvent, λExtendedEvent } from '@/dto/ChunkEvent.dto'
+import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Dialog } from '@/ui/Dialog'
 import { SymmetricSvg } from '@/ui/SymmetricSvg'
 import { Fragment, useEffect, useMemo, useState } from 'react'
@@ -73,8 +73,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   return (
     <Dialog
       icon={<SymmetricSvg text={event.id} />}
-      title={`Event №${index}`}
-      description={File.id(app, event.file_id).name}
+      title='Event'
+      description={`From ${File.id(app, event.file_id).name}`}
     >
       <Navigation event={event} />
       {rawJSON ? (

@@ -16,6 +16,7 @@ import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
+import { SetState } from '@/class/API'
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -30,13 +31,16 @@ interface ApplicationContextProps {
   spawnDialog: (dialog: JSX.Element) => void
   dialog: React.ReactNode
   app: λApp
+  scrollX: number;
+  scrollY: number;
+  setScrollX: SetState<number>;
+  setScrollY: SetState<number>;
   ws: AppSocket | undefined
   mws: MultiSocket | undefined
   setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
   setInfo: (info: λApp) => void
   Info: Info
   timeline: React.RefObject<HTMLDivElement>
-  logout: () => void
 }
 
 export const ApplicationContext = createContext<
@@ -51,20 +55,10 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [banner, setBanner] = useState<ReactNode>()
   const [dialog, setDialog] = useState<ReactNode>(<DisplayGroupDialog events={[]} />)
   const timeline = useRef<HTMLDivElement>(null)
+  const [scrollX, setScrollX] = useState<number>(0)
+  const [scrollY, setScrollY] = useState<number>(-26)
 
-  const logout = () => {
-    api('/logout', {
-      method: 'POST',
-      query: {
-        ws_id: app.general.ws_id,
-      },
-    }).then(() => {
-      destroyBanner()
-      setInfo(BaseInfo)
-    })
-  }
-
-  const instance = new Info({ app, setInfo, timeline })
+  const instance = new Info({ app, setInfo, timeline, setScrollX, setScrollY })
 
   const [ws, setWs] = useState<AppSocket>()
   const [mws, setMws] = useState<MultiSocket>()
@@ -88,6 +82,10 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     setDialog(dialog)
   }
 
+  useEffect(() => {
+    console.log(scrollX, app.timeline.scale, app.timeline.frame);
+  }, [scrollX]);
+
   const props: ApplicationContextProps = {
     spawnBanner,
     destroyBanner,
@@ -97,11 +95,14 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     ws,
     mws,
     app,
+    scrollX,
+    scrollY,
+    setScrollX,
+    setScrollY,
     setWs,
     setInfo,
     Info: instance,
-    timeline,
-    logout,
+    timeline
   }
 
   const handleLoggerExportCommand = () => {
@@ -136,10 +137,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!app.timeline.target || banner) {
-      console.log('Banner is open, prewenting')
-      return
-    }
+    if (!app.timeline.target || banner) return;
 
     const key = event.key.toLowerCase()
 

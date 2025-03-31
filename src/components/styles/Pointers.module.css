@@ -6,7 +6,8 @@
   pointer-events: none;
 }
 .pointer {
-  transform: translate(-12px, -4px);
+  transition: transform 0.125s var(--transition);
+  transform: translate(-15px, -2px) !important;
 }
 .pointer p {
   color: var(--meta-black);
@@ -22,15 +23,15 @@
   white-space: nowrap;
 }
 .pointer svg {
-  rotate: 90deg;
+  rotate: 0deg;
   transition: all 0.125s var(--transition);
 }
 .right {
-  transform: translate(0, -4px) !important;
+  transform: translate(0px, -2px) !important;
 }
 .right p {
   transform: translate(-4px, 100%);
 }
 .right svg {
-  rotate: 0deg;
+  rotate: -90deg;
 }

@@ -11,6 +11,7 @@ import { Operation } from './Operation.banner'
 import { Icon } from '@impactium/icons'
 import { capitalize } from '@impactium/utils'
 import { addDays } from 'date-fns'
+import { sleep } from '@/ui/utils'
 
 export namespace AuthBanner {
   export type Props = Banner.Props
@@ -24,23 +25,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   const [id, setId] = useState<string>(Info.app.general.id || 'admin')
   const [password, setPassword] = useState<string>('admin')
   const [loading, setLoading] = useState<boolean>(false)
-  const [methods, setMethods] =
-    useState<GulpDataset.GetAvailableLoginApi.Response>([])
-
-  const ContinueFromSession = useCallback(
-    () => (
-      <Button
-        variant="ghost"
-        onClick={() =>
-          spawnBanner(
-            <Session.Load.Banner back={() => spawnBanner(<AuthBanner />)} />,
-          )
-        }
-        img="Archive"
-      />
-    ),
-    [],
-  )
+  const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
 
   useEffect(() => {
     if (methods.length === 0) {
@@ -62,9 +47,6 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   }, [isKeyPressed])
 
   const DoneButton = () => {
-
-
-
     const login = async () => {
       const removeOverload = (str: string): string =>
         str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str
@@ -82,21 +64,17 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
       Internal.Settings.server = validatedServer
 
-      await api<λUser>(
-        '/login',
-        {
-          method: 'POST',
-          setLoading,
-          query: {
-            ws_id: Info.app.general.ws_id,
-          },
-          body: {
-            user_id: id,
-            password,
-          },
+      await api<λUser>('/login', {
+        method: 'POST',
+        setLoading,
+        query: {
+          ws_id: Info.app.general.ws_id,
         },
-        next,
-      )
+        body: {
+          user_id: id,
+          password,
+        },
+      }, next)
     }
 
     return (
@@ -116,11 +94,19 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
 
   const next = async (user: λUser) => {
     Info.login(user)
+
     await Info.plugin_list()
     await Info.glyphs_reload()
     await Info.sync()
     await Info.sync()
-    spawnBanner(<Operation.Select.Banner />)
+
+    const sessions = await Info.session_list(user.id);
+    if (sessions.length) {
+      spawnBanner(<Session.Load.Banner sessions={sessions} />)
+      return;
+    } else {
+      spawnBanner(<Operation.Select.Banner />)
+    }
   }
 
   useEffect(() => {
@@ -184,7 +170,6 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   return (
     <Banner
       title="Authentication"
-      option={<ContinueFromSession />}
       done={<DoneButton />}
       {...props}
     >

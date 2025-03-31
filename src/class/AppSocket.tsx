@@ -53,6 +53,11 @@ export class AppSocket extends WebSocket {
           })
           return
 
+        case message.type === 'collab_update' || message.type === 'collab_delete':
+          info.notes_reload()
+          info.links_reload()
+          return
+
         case message.type === 'enrich_done':
           toast(
             message.data.status === 'failed'

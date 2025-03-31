@@ -188,6 +188,7 @@ export namespace Default {
     | 'NOTE'
     | 'LINK'
     | 'EVENT'
+    | 'SESSION'
 
   export const Icon: Record<Object, Icon.Name> = {
     OPERATION: 'BookDashed',
@@ -197,18 +198,22 @@ export namespace Default {
     FILE: 'File',
     NOTE: 'StickyNote',
     LINK: 'Link',
+    SESSION: 'FacePlus'
   }
 
   export const Color: Record<Object, string> = {
-    OPERATION: 'blue',
-    CREATE_OPERATION: 'blue',
-    CONTEXT: 'green',
-    FILE: 'yellow',
-    NOTE: 'teal',
-    LINK: 'amber',
-    EVENT: 'cyan',
+    OPERATION: '#3399ff',
+    CREATE_OPERATION: '#3399ff',
+    CONTEXT: '#65b58b',
+    FILE: '#c99900',
+    NOTE: '#009999',
+    LINK: '#c99900',
+    EVENT: '#ff408c',
+    SESSION: '#ff4d4d'
   }
 }
+
+// '#a1a1a1', '#3399ff', '#ff4d4d', '#c99900', '#65b58b', '#009999', '#c266ff', '#ff408c'
 
 export interface λGlyph {
   id: μ.Glyph

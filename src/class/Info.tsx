@@ -24,13 +24,12 @@ import {
   ΞxtendedEvent,
 } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { Gradients } from '@/ui/utils'
+import { Gradients, sleep } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
 import { Logger } from '@/dto/Logger.class'
 import { Engine } from './Engine.dto'
-import { Session } from '@/dto/App.dto'
 import { SetState } from './API'
 import { λMapping } from '@/dto/MappingFileList.dto'
 import { Glyph } from '@/ui/Glyph'
@@ -39,6 +38,7 @@ import { Permissions } from '@/banners/Permissions.banner'
 import { toast } from 'sonner'
 import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner'
 import { Pointers } from '@/components/Pointers'
+import { XY } from '@/dto/XY.dto'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -168,6 +168,8 @@ interface InfoProps {
   app: λApp
   setInfo: React.Dispatch<React.SetStateAction<λApp>>
   timeline: React.RefObject<HTMLDivElement>
+  setScrollX: SetState<number>;
+  setScrollY: SetState<number>;
 }
 
 export namespace Internal {
@@ -396,6 +398,27 @@ export namespace Internal {
       return new Promise((resolve) => resolve(value))
     }
   }
+
+  export namespace Session {
+    export interface Data {
+      name: string
+      icon: Icon.Name
+      color: string
+      selected: {
+        files: λFile['id'][],
+        contexts: λContext['id'][],
+        operations?: λOperation['id']
+      },
+      timeline: {
+        scale: number,
+        frame: MinMax,
+        scroll: XY,
+        filter: string
+        target: λEvent | null,
+      },
+      filters: λApp['target']['filters']
+    }
+  }
 }
 
 export interface λUser {
@@ -440,12 +463,18 @@ export class Info implements InfoProps {
   setInfo: React.Dispatch<React.SetStateAction<λApp>>
   timeline: React.RefObject<HTMLDivElement>
   User: User
+  setScrollX: SetState<number>
+  setScrollY: SetState<number>
 
-  constructor({ app, setInfo, timeline }: InfoProps) {
+
+  constructor({ app, setInfo, timeline, setScrollX, setScrollY }: InfoProps) {
     this.app = app
     this.User = new User(app.general)
     this.setInfo = setInfo
     this.timeline = timeline
+    this.setScrollX = setScrollX
+    this.setScrollY = setScrollY
+
   }
 
   setTimelineFilteringoptions = (
@@ -740,7 +769,7 @@ export class Info implements InfoProps {
 
   operations_select = (operation: λOperation) => {
     this.setInfoByKey(
-      Operation.select(this.app, operation),
+      Operation.select(this.app, operation.id),
       'target',
       'operations',
     )
@@ -824,7 +853,7 @@ export class Info implements InfoProps {
     this.setInfoByKey(contexts, 'target', 'contexts')
   }
 
-  selectAll = (filter: string) => {
+  fileActionSelectable = (filter: string, select: boolean) => {
     const operation = Operation.selected(this.app)
 
     if (!operation) {
@@ -833,7 +862,7 @@ export class Info implements InfoProps {
 
     const contexts = Context.select(this.app, Operation.contexts(this.app))
 
-    const files = File.select(
+    const files = File[select ? 'select' : 'unselect'](
       this.app,
       Context.selected(contexts)
         .map((c) => Context.files(this.app, c))
@@ -850,6 +879,11 @@ export class Info implements InfoProps {
       },
     }))
   }
+
+  selectAll = (filter: string) => this.fileActionSelectable(filter, true)
+
+  unselectAll = (filter: string) => this.fileActionSelectable(filter, false)
+
   files_select = (files: λFile[]) => {
     this.setInfoByKey(File.select(this.app, files), 'target', 'files')
     setTimeout(() => {
@@ -1388,6 +1422,114 @@ export class Info implements InfoProps {
     this.setInfoByKey(pointers, 'timeline', 'pointers')
   }
 
+  session_create = async ({
+    name,
+    icon = Default.Icon.SESSION,
+    color = Default.Color.SESSION,
+    scroll
+  }: {
+    name: string,
+    icon: Icon.Name,
+    color: string,
+    scroll: XY
+  }) => {
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const sessions = await this.session_list();
+    if (sessions.some(s => s.name === name)) {
+      toast.error('Session with this name is already exist', {
+        richColors: true
+      })
+      return
+    }
+
+    sessions.push({
+      name,
+      icon,
+      color,
+      selected: {
+        files: File.selected(this.app).map(f => f.id),
+        contexts: Context.selected(this.app).map(c => c.id),
+        operations: operation.id
+      },
+      timeline: {
+        scale: this.app.timeline.scale,
+        frame: this.app.timeline.frame,
+        filter: this.app.timeline.filter,
+        target: this.app.timeline.target,
+        scroll,
+      },
+      filters: this.app.target.filters,
+    })
+
+    return api<undefined>('/user_update', {
+      method: 'PATCH',
+      query: {
+        user_id: this.app.general.id,
+      },
+      toast: `Session ${name} has been saved successfully`,
+      raw: true,
+      body: {
+        user_data: {
+          sessions
+        }
+      }
+    })
+  }
+
+  session_delete = async (name: string) => {
+    if (!name) {
+      Logger.error(`Name is not acceptable in this context. Expected valid string, but got ${name}`, 'Info.session_delete');
+      return
+    }
+    const sessions = await this.session_list();
+
+    return api<undefined>('/user_update', {
+      method: 'PATCH',
+      query: {
+        user_id: this.app.general.id,
+      },
+      toast: `Session ${name} has been deleted successfully`,
+      raw: true,
+      body: {
+        user_data: {
+          sessions: sessions.filter(s => s.name !== name)
+        }
+      }
+    })
+  }
+
+  session_load = async (session: Internal.Session.Data) => {
+    this.setScrollX(session.timeline.scroll.x);
+    this.setScrollY(session.timeline.scroll.y);
+
+    this.setInfo(info => ({
+      ...info,
+      timeline: {
+        ...info.timeline,
+        scale: session.timeline.scale,
+        target: session.timeline.target,
+        frame: session.timeline.frame,
+        filter: session.timeline.filter,
+      },
+      target: {
+        ...info.target,
+        operations: Operation.select(this.app, session.selected.operations),
+        contexts: Context.select(this.app, session.selected.contexts),
+        files: File.select(this.app, session.selected.files),
+        filters: session.filters
+      }
+    }));
+  }
+
+  session_list = (user_id = this.app.general.id): Promise<Internal.Session.Data[]> => api<any>('/user_get_by_id', {
+    method: 'GET',
+    query: { user_id }
+  }).then(data => data.user_data.sessions || []);
+
   sync = async () => {
     const operations: λOperation[] = []
     const contexts: λContext[] = []
@@ -1404,32 +1546,27 @@ export class Info implements InfoProps {
           .flat(3),
       )
       .then((sources) =>
-        sources.map((source) => {
-          console.log(source)
-          return {
-            id: source.id,
-            name: source.name,
-            total: source.doc_count,
-            code: {
-              min: source['min_event.code'],
-              max: source['max_event.code'],
-            },
-            timestamp: {
-              min: source['min_gulp.timestamp'] / 1_000_000,
-              max: Math.max(
-                source['max_gulp.timestamp'] / 1_000_000,
-                source['min_gulp.timestamp'] / 1_000_000 + 1,
-              ),
-            },
-            nanotimestamp: {
-              min: BigInt(source['min_gulp.timestamp']),
-              max: BigInt(source['max_gulp.timestamp']),
-            },
-          }
-        }),
+        sources.map((source) => ({
+          id: source.id,
+          name: source.name,
+          total: source.doc_count,
+          code: {
+            min: source['min_event.code'],
+            max: source['max_event.code'],
+          },
+          timestamp: {
+            min: source['min_gulp.timestamp'] / 1000000,
+            max: Math.max(
+              source['max_gulp.timestamp'] / 1000000,
+              source['min_gulp.timestamp'] / 1000000 + 1
+            ),
+          },
+          nanotimestamp: {
+            min: BigInt(source['min_gulp.timestamp']),
+            max: BigInt(source['max_gulp.timestamp']),
+          },
+        })),
       )
-
-    console.log(details);
 
     const rawOperations = await api<OperationTree[]>('/operation_list', {
       method: 'POST',
@@ -1445,7 +1582,7 @@ export class Info implements InfoProps {
         contexts: rawOperation.contexts.map((rawContext) => {
           const context: λContext = {
             ...rawContext,
-            selected: Context.id(this.app, rawContext.id)?.selected ?? true,
+            selected: Context.id(this.app, rawContext.id)?.selected ?? false,
             files: rawContext.sources.map((rawFile) => {
               const file: λFile = {
                 ...rawFile,
@@ -1464,7 +1601,7 @@ export class Info implements InfoProps {
                 },
                 ...File.id(this.app, rawFile.id),
                 ...details.find((f) => f.id === rawFile.id),
-                selected: File.id(this.app, rawFile.id)?.selected ?? true,
+                selected: File.id(this.app, rawFile.id)?.selected ?? false,
               }
               files.push(file)
               return file.id
@@ -1550,8 +1687,7 @@ export class Info implements InfoProps {
     return list
   }
 
-  setTimelineFrame = (frame: MinMax) =>
-    this.setInfoByKey(frame, 'timeline', 'frame')
+  setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame')
 
   login = (obj: λUser) => {
     Internal.Settings.token = obj.token
@@ -1699,7 +1835,7 @@ export class Info implements InfoProps {
     files[index - 1] = file
 
     this.setInfoByKey(files, 'target', 'files')
-    this.setTimelineScale(this.app.timeline.scale + 0.0001)
+    this.render();
   }
 
   files_reorder_lower = (id: λFile['id']) => {
@@ -1713,7 +1849,7 @@ export class Info implements InfoProps {
     files[index + 1] = file
 
     this.setInfoByKey(files, 'target', 'files')
-    this.setTimelineScale(this.app.timeline.scale + 0.0001)
+    this.render();
   }
 
   query_sigma = (body: Record<string, any>) => {
@@ -1786,7 +1922,7 @@ export class Info implements InfoProps {
     files[index].pinned = !files[index].pinned
 
     this.setInfoByKey(files, 'target', 'files')
-    this.setTimelineScale(this.app.timeline.scale + 0.0001)
+    this.render();
   }
 
   get width(): number {
@@ -1794,20 +1930,6 @@ export class Info implements InfoProps {
       this.app.timeline.scale *
       (document.getElementById('canvas')?.clientWidth || 1)
     )
-  }
-
-  getCurrentSessionOptions = (): Session => {
-    return {
-      render: [],
-      scroll: {
-        x: 0,
-        y: 0,
-      },
-    }
-  }
-
-  getSessions = (): Promise<λApp['general']['sessions']> => {
-    return {} as Promise<λApp['general']['sessions']>
   }
 
   private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(
@@ -1834,8 +1956,7 @@ export class Operation {
     Default.Icon.OPERATION,
   )
 
-  public static reload = (newOperations: λOperation[], app: λApp) =>
-    Operation.select(newOperations, Operation.selected(app))
+  public static reload = (newOperations: λOperation[], app: λApp) => Operation.select(newOperations, Operation.selected(app)?.id)
 
   public static selected = (app: λApp): λOperation | undefined =>
     Logger.assert(
@@ -1855,10 +1976,10 @@ export class Operation {
 
   public static select = (
     use: λApp | λOperation[],
-    operation: λOperation | undefined,
+    operation: λOperation['id'] | undefined,
   ): λOperation[] =>
     Parser.use(use, 'operations').map((o) =>
-      o.id === operation?.id ? Operation._select(o) : Operation._unselect(o),
+      o.id === operation ? Operation._select(o) : Operation._unselect(o),
     )
 
   public static contexts = (app: λApp): λContext[] =>
@@ -2000,15 +2121,15 @@ export class File {
   public static selected = (app: λApp): λFile[] =>
     File.pins(app.target.files.filter((s) => s.selected)).filter(
       (s) =>
-        s.name.toLowerCase().includes(app.timeline.filter.toLowerCase()) ||
+        s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) ||
         Context.id(app, s.context_id)
-          .name.toLowerCase()
+          .name?.toLowerCase()
           .includes(app.timeline.filter.toLowerCase()),
     )
 
-  public static select = (app: λApp, selected: λFile[]): λFile[] =>
+  public static select = (app: λApp, selected: λFile[] | λFile['id'][]): λFile[] =>
     app.target.files.map((f) =>
-      selected.find((s) => s.id === f.id) ? File._select(f) : f,
+      selected.map(s => Parser.useUUID(s)).find(id => id === f.id) ? File._select(f) : f,
     )
 
   public static pins = (use: λApp | λFile[]) =>
@@ -2050,14 +2171,9 @@ export class File {
       .map((s) => Note.findByFile(app, s))
       .flat()
 
-  public static index = (app: λApp, file: λFile | μ.File) =>
-    File.selected(app).findIndex((s) => s.id === Parser.useUUID(file))
+  public static index = (app: λApp, file: λFile | μ.File) => File.selected(app).findIndex((s) => s.id === Parser.useUUID(file))
 
-  public static getHeight = (
-    app: λApp,
-    file: λFile | μ.File,
-    scrollY: number,
-  ) => 48 * this.index(app, file) - scrollY + 24
+  public static getHeight = (app: λApp, file: λFile | μ.File, scrollY: number) => 48 * this.index(app, file) - scrollY + 24
 
   private static _select = (p: λFile): λFile => ({ ...p, selected: true })
 
@@ -2089,6 +2205,8 @@ export interface λQuery {
 }
 
 export class Filter {
+  public static hasFilter = (app: λApp, file: λFile): false => false
+
   static query = ({ filters, string }: λQuery) => {
     const query: Record<string, any> = structuredClone(
       OpenSearchQueryBuilder.INITIAL,

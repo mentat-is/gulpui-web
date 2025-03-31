@@ -3,74 +3,106 @@ import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Input, Stack } from '@impactium/components'
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Select } from '@/ui/Select'
-import { Label } from '@radix-ui/react-select'
-import { Operation } from '@/class/Info'
+import { Context, File, Internal, Operation } from '@/class/Info'
 import s from './styles/Session.module.css'
 import { Icon } from '@impactium/icons'
+import { Label } from '@/ui/Label'
+import { Separator } from '@/ui/Separator'
+import { toast } from 'sonner'
+import { Default, λGlyph } from '@/dto/Dataset'
+import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
+import { Glyph } from '@/ui/Glyph'
 
 export namespace Session {
   export namespace Load {
     export namespace Banner {
-      export type Props = UIBanner.Props
+      export interface Props extends UIBanner.Props {
+        sessions?: Internal.Session.Data[] | null
+      }
     }
-    export function Banner({ ...props }: Session.Load.Banner.Props) {
+    export function Banner({ sessions: initSessions = null, ...props }: Session.Load.Banner.Props) {
       const { destroyBanner, Info } = useApplication()
-      const [selectedSession, setSelectedSession] = useState<
-        string | undefined
-      >()
-      const [loading, setLoading] = useState<boolean>(false)
-      const done_ref = useRef<HTMLButtonElement>(null)
+      const [selectedSession, setSelectedSession] = useState<Internal.Session.Data | null>(null);
+      const [sessions, setSessions] = useState<Internal.Session.Data[] | null>(initSessions);
+      const [loading, setLoading] = useState<boolean>(!sessions);
 
-      const save = () => {
+      useEffect(() => {
+        if (!sessions) {
+          Info.session_list().then((sessions) => {
+            setSessions(sessions);
+            setLoading(false);
+          });
+        }
+      }, [sessions])
+
+      const save = async () => {
         if (!selectedSession) {
           return
         }
 
-        setLoading(true)
-        destroyBanner()
+        Info.session_load(selectedSession).then(() => {
+          if (props.back) {
+            props.back();
+          }
+
+          destroyBanner();
+        });
       }
 
       const DoneButton = useCallback(() => {
         return (
           <Button
-            img="Check"
-            variant="glass"
+            img='Check'
+            variant='glass'
             onClick={save}
             disabled={!selectedSession}
-            ref={done_ref}
           />
         )
-      }, [save, selectedSession, done_ref, loading])
+      }, [selectedSession])
 
-      const sessions = Object.keys(Info.app.general.sessions)
+      if (!sessions) {
+        return (
+          null
+        )
+      }
+
+      const deleteSessionButtonClickHandler = () => {
+        if (!selectedSession) {
+          return;
+        }
+
+        Info.session_delete(selectedSession.name).then(() => {
+          setSessions(s => (s || []).filter(s => s.name !== selectedSession.name));
+          setSelectedSession(null);
+        });
+      }
 
       return (
-        <UIBanner title="Choose session" done={<DoneButton />} {...props}>
-          <Select.Root value={selectedSession} onValueChange={setSelectedSession}>
-            <Select.Trigger value={selectedSession}>
-              <Stack>
-                <Icon name="ArchiveRestore" />
-                <p>{selectedSession || 'No session selected'}</p>
-              </Stack>
-            </Select.Trigger>
-            <Select.Content>
-              {sessions.length ? (
-                sessions.map((name) => (
-                  <Select.Item
-                    key={name}
-                    value={name}
-                    onClick={() => setSelectedSession(name)}
-                  >
-                    {name}
+        <UIBanner title="Choose session" loading={loading} done={<DoneButton />} {...props}>
+          <Stack>
+            <Select.Root value={selectedSession?.name} onValueChange={s => setSelectedSession(sessions.find(sx => sx.name === s)!)}>
+              <Select.Trigger value={selectedSession?.name} style={{ color: selectedSession?.color! }}>
+                <Select.Icon name={selectedSession?.icon || 'SquareDashed'} />
+                <p>{selectedSession?.name || 'No session selected'}</p>
+              </Select.Trigger>
+              <Select.Content>
+                {sessions.length ? (
+                  sessions.map((session) => (
+                    <Select.Item key={session.name} value={session.name}>
+                      <Select.Icon name={session.icon || Default.Icon.SESSION} style={{ color: session.color }} />
+                      {session.name}
+                    </Select.Item>
+                  ))
+                ) : (
+                  <Select.Item disabled value="X">
+                    No sessions available
                   </Select.Item>
-                ))
-              ) : (
-                <Select.Item disabled value="X">
-                  No sessions available
-                </Select.Item>
-              )}
-            </Select.Content>
-          </Select.Root>
+                )}
+              </Select.Content>
+            </Select.Root>
+            <Button onClick={deleteSessionButtonClickHandler} disabled={!selectedSession} variant='secondary' img='Trash2' />
+          </Stack>
+          <Button style={{ width: '100%' }} variant='secondary' onClick={destroyBanner}>Continue with new session</Button>
         </UIBanner>
       )
     }
@@ -80,97 +112,85 @@ export namespace Session {
       export type Props = UIBanner.Props
     }
     export function Banner({ ...props }: Session.Load.Banner.Props) {
-      const [sessionName, setSessionName] = useState<string>('')
-      const { app, Info, logout } = useApplication()
+      const [name, setName] = useState<string>('')
+      const [color, setColor] = useState<string>(Default.Color.OPERATION)
+      const [icon, setIcon] = useState<λGlyph['id'] | null>(null);
+      const { Info, app, scrollX, scrollY } = useApplication();
       const [loading, setLoading] = useState<boolean>(false)
       const [isNameValid, setIsNameValid] = useState<boolean>(true)
 
-      const changeSessionNameHandler = (
+      const changenameHandler = (
         event: ChangeEvent<HTMLInputElement>,
       ) => {
         const { value } = event.target
 
         setIsNameValid(value.length > 0)
 
-        setSessionName(value)
+        setName(value)
       }
 
       const saveSession = async () => {
         const operation = Operation.selected(app)
-
         if (!operation) {
           return
         }
 
-        await api(
-          '/user_data_create',
-          {
-            method: 'POST',
-            setLoading,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            query: {
-              name: sessionName,
-              user_id: app.general.id,
-              operation_id: operation.id,
-            },
-            body: JSON.stringify(Info.getCurrentSessionOptions()),
-          },
-          (data: any) => {
-            if (data.exception.name === 'ObjectAlreadyExists') {
-              setIsNameValid(false)
-            }
+        if (name.length < 3) {
+          setIsNameValid(false);
+          toast.error('Session name should be little bit longer', {
+            richColors: true
+          })
+          return;
+        }
 
-            logout()
-          },
-        )
-      }
-
-      const isButtonClickable = sessionName.length > 0
-
-      const save_button = useRef<HTMLButtonElement>(null)
-
-      const enterKeyPressHandler = (event: KeyboardEvent) => {
-        if (!isButtonClickable || !save_button.current) {
+        if (!icon) {
+          toast.error('Session name should have icon', {
+            richColors: true
+          })
           return
         }
 
-        event.preventDefault()
-
-        save_button.current.click()
+        setLoading(true);
+        await Info.session_create({
+          name,
+          color,
+          icon: Glyph.List.get(icon)!,
+          scroll: {
+            x: scrollX,
+            y: scrollY
+          }
+        });
+        setLoading(false);
       }
 
-      useEffect(() => {
-        window.addEventListener('keypress', enterKeyPressHandler)
+      const reloadWindow = () => {
+        window.location.reload();
+      }
 
-        return () => {
-          window.removeEventListener('keypress', enterKeyPressHandler)
-        }
-      }, [save_button])
-
-      const done = (
-        <Button
-          ref={save_button}
-          img="Check"
-          onClick={saveSession}
-          variant="glass"
-          disabled={!isButtonClickable}
-          loading={loading}
-        />
-      )
+      const DoneButton = () => <Button variant='glass' img='LogOut' onClick={reloadWindow} />;
 
       return (
-        <UIBanner title="Save session" done={done} {...props}>
-          <Stack className={s.param}>
-            <Label className={s.nameLabel}>Session name:</Label>
-            <Input
-              valid={isNameValid}
-              img="TextHeading"
-              variant="highlighted"
-              value={sessionName}
-              onChange={changeSessionNameHandler}
-            />
+        <UIBanner title="Save session" done={<DoneButton />} {...props}>
+          <Stack className={s.param} dir='column' ai='stretch' gap={12}>
+            <p style={{ fontSize: 14 }}>Session Name</p>
+            <Stack ai='stretch' style={{ width: '100%' }}>
+              <Input
+                valid={isNameValid}
+                img="TextTitle"
+                placeholder='Enter session name'
+                variant="highlighted"
+                value={name}
+                onChange={changenameHandler}
+              />
+              <Button loading={loading} onClick={saveSession} variant='secondary' img='Check'>Save session</Button>
+            </Stack>
+            <Stack>
+              <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
+                <ColorPickerTrigger />
+                <ColorPickerPopover />
+              </ColorPicker>
+              <Glyph.Chooser style={{ flex: 1 }} icon={icon} setIcon={setIcon} />
+            </Stack>
           </Stack>
         </UIBanner>
       )

@@ -4,13 +4,9 @@ import { Button, Input, Stack } from '@impactium/components'
 import {
   arrayToLinearGradientCSS,
   COLORS,
-  Gradients,
-  GradientsMap,
 } from './utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs'
 import s from './styles/Color.module.css'
-import { capitalize } from 'lodash'
-import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
