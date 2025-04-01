@@ -66,6 +66,27 @@
   padding: 8px;
   border-radius: 6px;
 }
+.key_input {
+  flex: 1;
+  padding-right: 0;
+}
+.key_input input {
+  padding-right: 38px;
+}
+.trigger {
+  width: 32px;
+  height: 30px;
+  min-height: unset;
+  flex-shrink: 0;
+  justify-content: center;
+  position: absolute;
+  right: 1px;
+  border-radius: 0;
+  border: none;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  border-left: 1px solid var(--gray-400);
+}
 .trigger::before {
   content: none;
 }

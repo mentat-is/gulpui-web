@@ -250,23 +250,22 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
               />
             </Stack>
             <Stack style={fws}>
-              <Select.Root
-                value={condition.field}
-                onValueChange={(e) => updateCondition(condition.id, 'field', e)}
-              >
-                <Select.Trigger className={s.trigger}>
-                  <Select.Value placeholder="Field name" />
-                </Select.Trigger>
-                <Select.Content>
-                  {Object.keys(
-                    app.timeline.filtering_options[file.id] || {},
-                  ).map((k) => (
-                    <Select.Item key={k} value={k}>
-                      {k}
-                    </Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
+              <Stack pos='relative'>
+                <Input className={s.key_input} img='Dot' variant='highlighted' placeholder='Field name' value={condition.field} onChange={(e) => updateCondition(condition.id, 'field', e.target.value)} />
+                <Select.Root
+                  value={condition.field}
+                  onValueChange={(e) => updateCondition(condition.id, 'field', e)}
+                >
+                  <Select.Trigger className={s.trigger} />
+                  <Select.Content>
+                    {Object.keys(app.timeline.filtering_options[file.id] || {}).map((k) => (
+                      <Select.Item key={k} value={k}>
+                        {k}
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Root>
+              </Stack>
               <Input
                 variant="highlighted"
                 img="ChevronRightSmall"

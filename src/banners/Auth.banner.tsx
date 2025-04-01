@@ -95,7 +95,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
   const next = async (user: λUser) => {
     Info.login(user)
 
-    await Info.plugin_list()
+    Info.plugin_list()
     await Info.glyphs_reload()
     await Info.sync()
     await Info.sync()
