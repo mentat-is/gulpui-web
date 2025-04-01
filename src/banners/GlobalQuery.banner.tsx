@@ -89,7 +89,7 @@ export namespace GlobalQuery {
           <Button style={{ flex: 1 }} variant='secondary' img='Table' loading={isPreviewLoading} onClick={tabularPreviewButtonClickHandler}>Tabular preview</Button>
         </Stack>
         <Notification variant='error' icon='Warning'>
-          <p><span>Attention</span>: We dont care if you f#ck up. Your query may brake gULP, build it with caution</p>
+          <p><span>Attention</span>: Some queries may make your PC explode. Build it with caution</p>
         </Notification>
       </UIBanner>
     )
