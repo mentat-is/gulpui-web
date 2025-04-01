@@ -509,7 +509,9 @@ export class Info implements InfoProps {
     await this.links_reload()
 
     files.forEach((file) => {
-      this.query_file(file)
+      const query = this.getQuery(file.id);
+
+      this.query_file(query);
     })
   }
 
@@ -560,50 +562,130 @@ export class Info implements InfoProps {
     })
   }
 
+  query_global = async ({
+    fileName,
+    contextName,
+    query,
+    total
+  }: {
+    contextName: string,
+    fileName: string,
+    query: λQuery,
+    total: number
+  }) => {
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const context_id = `temp-${contextName}` as λContext['id'];
+
+    const file: λFile = {
+      name: fileName,
+      id: `temp-${fileName}` as λFile['id'],
+      timestamp: this.app.timeline.frame,
+      nanotimestamp: {
+        min: BigInt(Math.round(this.app.timeline.frame.min)),
+        max: BigInt(Math.round(this.app.timeline.frame.max)),
+      },
+      code: {
+        min: 0,
+        max: 1000
+      },
+      settings: {
+        color: 'thermal',
+        engine: 'default',
+        field: 'code',
+        offset: 0
+      },
+      selected: true,
+      operation_id: operation.id,
+      context_id,
+      total,
+      type: 'file',
+      color: 'thermal',
+      description: '',
+      glyph_id: null as unknown as λGlyph['id'],
+      granted_user_group_ids: [],
+      granted_user_ids: [],
+      time_created: Date.now(),
+      time_updated: Date.now(),
+    }
+
+    const context: λContext = {
+      id: context_id,
+      files: [file.id],
+      color: '#00ff00',
+      description: '',
+      glyph_id: null as unknown as λGlyph['id'],
+      granted_user_group_ids: [],
+      granted_user_ids: [],
+      name: contextName,
+      operation_id: operation.id,
+      time_created: Date.now(),
+      time_updated: Date.now(),
+      type: 'context',
+      selected: true
+    }
+
+    this.setInfo(info => ({
+      ...info,
+      target: {
+        ...info.target,
+        files: [...info.target.files, file],
+        contexts: [...info.target.contexts, context]
+      }
+    }));
+
+    this.query_file(query, false, file.id);
+  }
+
   query_file: {
-    (file: λFile, preview: true): Promise<{
+    (query: λQuery, preview: true, id?: λFile['id']): Promise<{
       total_hits: number,
       docs: λEvent[]
     }>
-    (file: λFile, preview?: false): Promise<undefined>
-  } = async (file, preview = false) => {
+    (query: λQuery, preview?: false, id?: λFile['id']): Promise<undefined>
+  } = async (query: λQuery, preview = false, id) => {
     const operation = Operation.selected(this.app)
     if (!operation) {
       return
     }
 
-    const body = Filter.body(this.getQuery(file.id))
+    const body = Filter.body(query);
 
     if (preview) {
       body.q_options.preview_mode = preview
     }
 
+    const request_query: Record<string, string> = {
+      ws_id: this.app.general.ws_id,
+      operation_id: operation.id,
+    }
+
+    if (id) {
+      request_query.req_id = id;
+    }
+
     const resp = await api<any>(
-      '/query_raw',
-      {
-        method: 'POST',
-        query: {
-          ws_id: this.app.general.ws_id,
-          operation_id: operation.id,
-        },
-        body,
-        raw: true,
-      },
-      (res) => {
-        this.request_add({
-          id: res.req_id,
-          for: file.id,
-          status: res.status,
-          type: 'query',
-          on: Date.now(),
-        })
-      },
+      '/query_raw', {
+      method: 'POST',
+      query: request_query,
+      body,
+      raw: true,
+    }, ({ status, req_id }) => {
+      this.request_add({
+        id: req_id,
+        for: id || null,
+        status: status,
+        type: 'query',
+        on: Date.now(),
+      })
+    }
     )
 
     if (preview) {
-      toast(`Total hits for this filter is ${resp.data?.total_hits || 0}`, {
-        description: `${resp.data?.total_hits || 0} of ${file.total}`
-      })
+      toast(`Total hits for this filter is ${resp.data?.total_hits || 0}`)
     }
 
 
@@ -613,7 +695,10 @@ export class Info implements InfoProps {
     };
   }
 
-  preview_file = (file: λFile) => this.query_file(file, true)
+  preview_file = (file: λFile) => {
+    const query = this.getQuery(file.id);
+    return this.query_file(query, true);
+  }
 
   request_add = (req: λRequest) => {
     if (this.app.general.requests.every(r => r.id !== req.id)) {
@@ -1050,7 +1135,15 @@ export class Info implements InfoProps {
       'target', 'files'
     )
 
-  events_add = (newEvents: λEvent[]) => {
+  events_add = (newEvents: λEvent[], addTo?: λFile['id']) => {
+    if (addTo) {
+      const events = Event.addTo(this.app, addTo, newEvents)
+      console.log(events);
+      this.app.target.events = events;
+      this.setInfo(this.app);
+      return;
+    }
+
     const events = Event.add(this.app, newEvents)
 
     const ids = new Set<`${λEvent['id']}|${λFile['id']}`>()
@@ -2319,6 +2412,14 @@ export class Event {
     Logger.log(`${events.length} events has been processed`)
 
     return app.target.events
+  }
+
+  public static addTo = (app: λApp, file: λFile['id'], events: λEvent[]) => {
+    events.forEach(e => Event.get(app, file).push(e));
+
+    Logger.log(`${events.length} events has been added to file with id ${file}`);
+
+    return app.target.events;
   }
 
   public static toDoc = ({

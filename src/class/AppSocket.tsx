@@ -44,8 +44,13 @@ export class AppSocket extends WebSocket {
         case message.type === 'docs_chunk':
           const rawEvents: ΞEvent[] = chunk.docs
           const events = Event.parse(rawEvents)
-          this.info.events_add(events)
-          return
+          if (message.req_id.startsWith('temp-')) {
+            this.info.events_add(events, message.req_id);
+          } else {
+            this.info.events_add(events);
+          }
+
+          return;
 
         case message.type === 'ingest_source_done':
           info.sync().then(() => {
