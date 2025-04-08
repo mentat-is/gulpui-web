@@ -3,7 +3,7 @@
   display: flex;
   background: var(--meta-black);
   border-radius: var(--border-m);
-  border: 1px solid var(--accent-3);
+  border: 1px solid var(--gray-400);
   flex-direction: column;
 }
 .content {
@@ -16,7 +16,7 @@
 }
 .description {
   min-height: 56px;
-  border-top: 1px solid var(--accent-3);
+  border-top: 1px solid var(--gray-400);
   padding: 0 var(--card-padding);
   display: flex;
   align-items: center;

@@ -264,14 +264,7 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
   useEffect(() => {
     if (app.timeline.filtering_options[file.id]) return
 
-    api<FilterOptions>('/query_fields_by_source', {
-      query: {
-        operation_id: file.operation_id,
-        context_id: file.context_id,
-        source_id: file.id,
-        ws_id: app.general.ws_id,
-      },
-    }).then((data) => Info.setTimelineFilteringoptions(file, data))
+    Info.event_keys(file).then((data) => Info.setTimelineFilteringoptions(file, data))
   }, [app.timeline.filtering_options])
 
   const submit = async () => {

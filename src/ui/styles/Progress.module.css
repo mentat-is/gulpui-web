@@ -1,7 +1,7 @@
 .root {
   overflow: hidden;
   background-color: var(--meta-black);
-  border: 1px solid var(--accent-2);
+  border: 1px solid var(--gray-400);
   border-radius: var(--round);
   min-height: 12px;
   height: 12px;

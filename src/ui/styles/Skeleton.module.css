@@ -70,6 +70,6 @@
 
 @keyframes pulse {
   50% {
-    background-color: var(--accent-2);
+    background-color: var(--gray-400);
   }
 }

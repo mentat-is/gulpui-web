@@ -73,11 +73,11 @@
 }
 .up {
   top: 0;
-  border-bottom: 1px solid var(--accent-3);
+  border-bottom: 1px solid var(--gray-400);
 }
 .down {
   bottom: 0;
-  border-top: 1px solid var(--accent-3);
+  border-top: 1px solid var(--gray-400);
 }
 .content {
   position: relative;
@@ -86,7 +86,7 @@
   min-width: 128px;
   overflow: hidden;
   border-radius: 6px;
-  border: 1px solid var(--accent-3);
+  border: 1px solid var(--gray-400);
   background-color: var(--soft-black);
   color: var(--white);
   display: flex;

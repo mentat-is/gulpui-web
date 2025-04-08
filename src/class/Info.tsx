@@ -1211,6 +1211,17 @@ export class Info implements InfoProps {
     this.setInfo(this.app)
   }
 
+  event_keys = (file: λFile) => {
+    return api<FilterOptions>('/query_fields_by_source', {
+      query: {
+        operation_id: file.operation_id,
+        context_id: file.context_id,
+        source_id: file.id,
+        ws_id: this.app.general.ws_id,
+      }
+    })
+  }
+
   events_reset_in_file = (files: Arrayed<λFile>) =>
     this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
 
@@ -2529,18 +2540,6 @@ export class Event {
           duration: rawEvent['event.duration'],
         }) satisfies λEvent,
     )
-
-  public static fields = (): string[] => [
-    '_id',
-    'gulp.operation_id',
-    'gulp.context_id',
-    'gulp.source_id',
-    'gulp.timestamp',
-    '@timestamp',
-    'event.code',
-    'gulp.event_code',
-    'event.duration',
-  ]
 
   public static ids = (app: λApp, ids: λEvent['id'][]) =>
     Array.from(app.target.events.values())

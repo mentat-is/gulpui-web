@@ -47,6 +47,7 @@
   },
   "scripts": {
     "start": "react-app-rewired start",
+    "dev": "npm install && npm run start",
     "build": "react-app-rewired build",
     "server": "serve -s build -l 80"
   },

@@ -1,8 +1,8 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
-import { Button } from '@impactium/components'
+import { Button, Skeleton } from '@impactium/components'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/SettingsFileBanner.module.css'
 import { FilterFileBanner } from './FilterFile.banner'
 import { Card } from '@/ui/Card'
@@ -28,7 +28,6 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [color, setColor] = useState<any>(file.color)
   const [offset, setOffset] = useState<number>(file.settings.offset)
   const [engine, setEngine] = useState<Engine.List>(file.settings.engine)
-  const [field, setField] = useState<keyof λEvent>(file.settings.field)
   const [loading, setLoading] = useState<boolean>(false)
 
   const save = () => {
@@ -45,6 +44,18 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       destroyBanner()
     }, 500)
   }
+
+  const [eventKeys, setEventKeys] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    if (eventKeys) {
+      return;
+    }
+
+    Info.event_keys(file).then(Object.keys).then(setEventKeys);
+  }, [eventKeys]);
+
+  const [field, setField] = useState<keyof λEvent>(file.settings.field)
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target
@@ -63,6 +74,29 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       img="Filter"
     />
   )
+
+  const EventFieldsSelection = useMemo(() => {
+    if (!eventKeys) {
+      return (
+        <Skeleton width='full' />
+      )
+    }
+
+    return (
+      <Select.Root onValueChange={(field: keyof λEvent) => setField(field)}>
+        <Select.Trigger className={s.trigger} value={engine}>
+          <Select.Value placeholder={field} />
+        </Select.Trigger>
+        <Select.Content>
+          {eventKeys.map((field) => (
+            <Select.Item key={field} value={field}>
+              {field}
+            </Select.Item>
+          ))}
+        </Select.Content>
+      </Select.Root>
+    )
+  }, [eventKeys, field]);
 
   return (
     <Banner title="File settings" done={done} option={option}>
@@ -124,18 +158,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       </Stack>
       <Stack jc="space-between">
         <p className={s.text}>Target field:</p>
-        <Select.Root onValueChange={(field: keyof λEvent) => setField(field)}>
-          <Select.Trigger className={s.trigger} value={engine}>
-            <Select.Value placeholder={field} />
-          </Select.Trigger>
-          <Select.Content>
-            {Event.fields().map((field) => (
-              <Select.Item key={field} value={field}>
-                {field}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Root>
+        {EventFieldsSelection}
       </Stack>
     </Banner>
   )

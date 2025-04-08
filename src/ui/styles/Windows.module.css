@@ -1,7 +1,7 @@
 .navigation {
   height: 32px;
   padding: 0 4px;
-  border-bottom: 1px solid var(--accent-3);
+  border-bottom: 1px solid var(--gray-400);
   background: var(--soft-black);
 }
 .tab {

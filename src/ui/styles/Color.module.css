@@ -1,6 +1,6 @@
 .button {
   background-color: var(--soft-black);
-  border: 1px solid var(--accent-3);
+  border: 1px solid var(--gray-400);
   width: 128px;
   padding-left: 2px;
   justify-content: start;

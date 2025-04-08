@@ -39,7 +39,7 @@
   align-items: center;
 }
 .focus {
-  border: 1px solid var(--accent-2);
+  border: 1px solid var(--gray-400);
   background: var(--soft-black);
   color: var(--white);
 }
