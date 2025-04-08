@@ -18,13 +18,11 @@ import {
 import {
   λDoc,
   λEvent,
-  λExtendedEvent,
   ΞDoc,
   ΞEvent,
-  ΞxtendedEvent,
 } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { Gradients, sleep } from '@/ui/utils'
+import { Gradients } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
@@ -511,7 +509,7 @@ export class Info implements InfoProps {
     files.forEach((file) => {
       const query = this.getQuery(file.id);
 
-      this.query_file(query);
+      this.query_file(query, false, file.id);
     })
   }
 
@@ -564,14 +562,16 @@ export class Info implements InfoProps {
 
   query_global = async ({
     fileName,
+    ids,
     contextName,
     query,
     total
   }: {
-    contextName: string,
-    fileName: string,
-    query: λQuery,
-    total: number
+    contextName: string;
+    fileName: string;
+    ids: λFile['id'][];
+    query: λQuery;
+    total: number;
   }) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
@@ -580,37 +580,13 @@ export class Info implements InfoProps {
 
     const context_id = `temp-${contextName}` as λContext['id'];
 
-    const file: λFile = {
+    const file: λFile = File.virtualize(this.app, {
       name: fileName,
-      id: `temp-${fileName}` as λFile['id'],
-      timestamp: this.app.timeline.frame,
-      nanotimestamp: {
-        min: BigInt(Math.round(this.app.timeline.frame.min)),
-        max: BigInt(Math.round(this.app.timeline.frame.max)),
-      },
-      code: {
-        min: 0,
-        max: 1000
-      },
-      settings: {
-        color: 'thermal',
-        engine: 'default',
-        field: 'code',
-        offset: 0
-      },
-      selected: true,
-      operation_id: operation.id,
       context_id,
-      total,
-      type: 'file',
-      color: 'thermal',
-      description: '',
-      glyph_id: null as unknown as λGlyph['id'],
-      granted_user_group_ids: [],
-      granted_user_ids: [],
-      time_created: Date.now(),
-      time_updated: Date.now(),
-    }
+      files: ids.map(id => File.id(this.app, id)),
+      operation_id: operation.id,
+      total
+    });
 
     const context: λContext = {
       id: context_id,
@@ -643,7 +619,7 @@ export class Info implements InfoProps {
   query_file: {
     (query: λQuery, preview: true, id?: λFile['id']): Promise<{
       total_hits: number,
-      docs: λEvent[]
+      docs: ΞEvent[]
     }>
     (query: λQuery, preview?: false, id?: λFile['id']): Promise<undefined>
   } = async (query: λQuery, preview = false, id) => {
@@ -726,12 +702,7 @@ export class Info implements InfoProps {
     })
   }
 
-  request_cancel_for_file = (file: λFile['id']) =>
-    Promise.all(
-      this.app.general.requests
-        .filter((r) => r.for === file && r.status === 'pending')
-        .map((r) => this.request_cancel(r.id)),
-    )
+  request_cancel_for_file = (file: λFile['id']) => Promise.all(this.app.general.requests.filter((r) => r.for === file && r.status === 'pending').map((r) => this.request_cancel(r.id)));
 
   request_finish = (
     id: λRequest['id'],
@@ -1211,7 +1182,27 @@ export class Info implements InfoProps {
     this.setInfo(this.app)
   }
 
-  event_keys = (file: λFile) => {
+  event_keys = async (file: λFile): Promise<FilterOptions> => {
+    if (!file) {
+      return Internal.Transformator.toAsync({});
+    }
+
+    if (File.isVirtual(file)) {
+      const ids = file.id.split('-').slice(1) as λFile['id'][];
+
+      const filterOptionsStack = await Promise.all(ids.map(id => this.event_keys(File.id(this.app, id))));
+
+      return filterOptionsStack.flat().reduce<FilterOptions>((acc, cur) => {
+        Object.keys(cur).forEach(c => {
+          if (!acc[c]) {
+            acc[c] = cur[c];
+          }
+        });
+
+        return acc;
+      }, {});
+    };
+
     return api<FilterOptions>('/query_fields_by_source', {
       query: {
         operation_id: file.operation_id,
@@ -1349,15 +1340,7 @@ export class Info implements InfoProps {
               ),
             )
 
-            const docs: λDoc[] = []
-
-            events.forEach((event) => {
-              if (event) {
-                const doc = Event.toDoc(event.normalized)
-
-                docs.push(doc)
-              }
-            })
+            const docs: λDoc[] = Event.parse(events).map(e => Event.toDoc(e));
 
             links.push(Link.normalize(link, docs))
           }),
@@ -1745,22 +1728,13 @@ export class Info implements InfoProps {
   }
 
   query_single_id = (doc_id: λEvent['id'], operation_id: λOperation['id']) => {
-    return api<ΞxtendedEvent>('/query_single_id', {
+    return api<ΞEvent>('/query_single_id', {
       method: 'POST',
       query: {
         doc_id,
         operation_id,
       },
-    }).then((raw) => {
-      if (!raw) {
-        return
-      }
-
-      return {
-        normalized: Event.normalizeFromDetailed(raw),
-        raw,
-      }
-    })
+    });
   }
 
   // ⚠️ UNTOUCHABLE
@@ -2267,6 +2241,52 @@ export class File {
         : File._unselect(s),
     )
 
+  public static isVirtual = (file: λFile) => file.id.startsWith('temp');
+
+  public static virtualize = (app: λApp, {
+    name,
+    total,
+    context_id,
+    operation_id,
+    files
+  }: {
+    name: string;
+    total: number;
+    context_id: λContext['id'];
+    operation_id: λOperation['id'];
+    files: λFile[];
+  }): λFile => {
+    const codes = files.map(file => file.code).sort((a, b) => a.min - b.min);
+    const min = Math.min(...codes.map(c => c.min));
+    const max = Math.max(...codes.map(c => c.max));
+
+    return ({
+      name,
+      id: `temp-${files.map(f => f.id).join('-')}` as λFile['id'],
+      timestamp: app.timeline.frame,
+      nanotimestamp: {
+        min: BigInt(Math.round(app.timeline.frame.min)),
+        max: BigInt(Math.round(app.timeline.frame.max)),
+      },
+      code: { min, max },
+      settings: Internal.Settings.all(),
+      selected: true,
+      operation_id,
+      context_id,
+      total,
+      type: 'file',
+      color: Internal.Settings.color,
+      description: '',
+      glyph_id: null as unknown as λGlyph['id'],
+      granted_user_group_ids: [],
+      granted_user_ids: [],
+      time_created: Date.now(),
+      time_updated: Date.now(),
+    })
+  }
+
+  public static devirtualize = (app: λApp, file: λFile): λFile[] => file.id.split('-').slice(1).map(id => File.id(app, id as λFile['id'])).filter(f => f);
+
   public static events = (app: λApp, file: λFile | μ.File): λEvent[] =>
     Event.get(app, Parser.useUUID(file) as μ.File)
 
@@ -2458,57 +2478,6 @@ export class Event {
       context_id: r['gulp.context_id'],
       operation_id: r['gulp.operation_id'],
     }))
-
-  public static normalizeFromDetailed = (
-    raw: ΞxtendedEvent,
-  ): λExtendedEvent => {
-    return {
-      id: raw._id,
-      operation_id: raw['gulp.operation_id'],
-      context_id: raw['gulp.context_id'],
-      file_id: raw['gulp.source_id'],
-      timestamp: Internal.Transformator.toTimestamp(raw['@timestamp']),
-      nanotimestamp: Internal.Transformator.toNanos(raw['@timestamp']),
-      code: raw['event.code'],
-      weight: raw['gulp.event_code'],
-      duration: raw['event.duration'],
-      log: {
-        file: {
-          path: raw['log.file.path'],
-        },
-      },
-      agent: {
-        type: raw['agent.type'],
-      },
-      event: {
-        original: raw['event.original'],
-        sequence: raw['event.sequence'],
-      },
-      gulp: {
-        unmapped: {
-          Provider_Guid: raw['gulp.unmapped.Provider_Guid'],
-          Version: raw['gulp.unmapped.Version'],
-          Level: raw['gulp.unmapped.Level'],
-          Task: raw['gulp.unmapped.Task'],
-          Opcode: raw['gulp.unmapped.Opcode'],
-          Keywords: raw['gulp.unmapped.Keywords'],
-          TimeCreated_SystemTime: raw['gulp.unmapped.TimeCreated_SystemTime'],
-          Execution_ProcessID: raw['gulp.unmapped.Execution_ProcessID'],
-          Execution_ThreadID: raw['gulp.unmapped.Execution_ThreadID'],
-          Security_UserID: raw['gulp.unmapped.Security_UserID'],
-          updateTitle: raw['gulp.unmapped.updateTitle'],
-          updateGuid: raw['gulp.unmapped.updateGuid'],
-          updateRevisionNumber: raw['gulp.unmapped.updateRevisionNumber'],
-          serviceGuid: raw['gulp.unmapped.serviceGuid'],
-        },
-      },
-      winlog: {
-        record_id: raw['winlog.record_id'],
-        channel: raw['winlog.channel'],
-        computer_name: raw['winlog.computer_name'],
-      },
-    } satisfies λExtendedEvent
-  }
 
   public static formatForServer = (event: λEvent) => {
     return [

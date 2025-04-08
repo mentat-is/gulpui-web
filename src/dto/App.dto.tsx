@@ -1,5 +1,5 @@
 import { λOperation } from '.'
-import { λEvent, λExtendedEvent } from './ChunkEvent.dto'
+import { λEvent } from './ChunkEvent.dto'
 import { generateUUID } from '@/ui/utils'
 import {
   FilterOptions,
@@ -11,15 +11,13 @@ import {
   λUser,
   μ,
 } from '@/class/Info'
-import { Engine } from '@/class/Engine.dto'
-import { XY, XYBase } from './XY.dto'
 import { λContext, λFile, λGlyph, λLink, λNote, λRequest } from './Dataset'
 import { λMapping } from './MappingFileList.dto'
 import { Pointers } from '@/components/Pointers'
 
 export interface TimelineTarget {
   event: λEvent
-  detailed: λExtendedEvent | null
+  detailed: λEvent | null
 }
 
 export interface λApp {

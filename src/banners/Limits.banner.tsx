@@ -9,6 +9,7 @@ import { Context, MinMax } from '@/class/Info'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
 import { Icon } from '@impactium/icons'
+import { sleep } from '@/ui/utils'
 
 export function LimitsBanner() {
   const { Info, destroyBanner, app } = useApplication()
@@ -29,7 +30,7 @@ export function LimitsBanner() {
 
   const save = async (_min?: number) => {
     const { min, max } = { min: _min ?? frame.min, max: frame.max }
-    Info.setTimelineFrame({ min, max })
+    Info.setTimelineFrame({ min, max });
     destroyBanner()
   }
 

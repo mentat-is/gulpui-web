@@ -55,6 +55,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         </Tooltip>
       </TooltipProvider>
       <ContextMenuSeparator />
+      <ContextMenuItem onClick={() => Info.refetch({ ids: file.id })} img="CheckCheck">Refetch</ContextMenuItem>
       <ContextMenuSub>
         <ContextMenuSubTrigger img="Cpu">Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
@@ -151,6 +152,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
           </ContextMenuItem>
         )}
       </ContextMenuGroup>
+      <ContextMenuItem onClick={() => Info.request_cancel_for_file(file.id)} img="X">Cancel all requests</ContextMenuItem>
       <ContextMenuItem
         className={s.delete}
         img="Trash2"

@@ -264,7 +264,11 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
   useEffect(() => {
     if (app.timeline.filtering_options[file.id]) return
 
-    Info.event_keys(file).then((data) => Info.setTimelineFilteringoptions(file, data))
+    Info.event_keys(file).then((data) => {
+      if (data) {
+        Info.setTimelineFilteringoptions(file, data)
+      }
+    })
   }, [app.timeline.filtering_options])
 
   const submit = async () => {

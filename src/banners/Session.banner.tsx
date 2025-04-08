@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button, Input, Stack } from '@impactium/components'
+import { Badge, Button, Input, Stack } from '@impactium/components'
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { Select } from '@/ui/Select'
 import { Context, File, Internal, Operation } from '@/class/Info'
@@ -90,7 +90,8 @@ export namespace Session {
                   sessions.map((session) => (
                     <Select.Item key={session.name} value={session.name}>
                       <Select.Icon name={session.icon || Default.Icon.SESSION} style={{ color: session.color }} />
-                      {session.name}
+                      <p style={{ flex: 1 }}>{session.name}</p>
+                      <Badge icon={Default.Icon.OPERATION} value={session.selected.operations} variant='gray-subtle' size='sm' />
                     </Select.Item>
                   ))
                 ) : (

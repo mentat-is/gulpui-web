@@ -36,6 +36,10 @@ export class DefaultEngine
     const events = Array.from(map.entries())
 
     events.forEach(([_, [code, timestamp]]) => {
+      if (timestamp > this.renderer.info.app.timeline.frame.max || timestamp < this.renderer.info.app.timeline.frame.min) {
+        return;
+      }
+
       this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, {
         min: map[MinHeight],
         max: map[MaxHeight],

@@ -43,14 +43,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const loadEvent = async () => {
     const detailed = await Info.query_single_id(event.id, event.operation_id)
 
-    setRawJSON(JSON.stringify(detailed?.raw, null, 2))
+    setRawJSON(JSON.stringify(detailed, null, 2))
   }
-
-  const index = useMemo(() => {
-    const events = File.events(app, event.file_id)
-    const index = events.findIndex((e) => e.id === event.id)
-    return events.length - index
-  }, [event])
 
   const highlights = useMemo(() => {
     return (

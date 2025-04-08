@@ -1,4 +1,4 @@
-import { File, Filter, λFilter, λQuery } from '@/class/Info';
+import { Event, File, Filter, λFilter, λQuery } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Button, Input, Stack } from '@impactium/components';
@@ -9,6 +9,8 @@ import s from './styles/GlobalQueryBanner.module.css';
 import { Icon } from '@impactium/icons';
 import { Preview } from './Preview.banner';
 import { Notification } from '@/ui/Notification';
+import { λDoc, λEvent } from '@/dto/ChunkEvent.dto';
+import { λFile } from '@/dto/Dataset';
 
 export namespace GlobalQuery {
   export namespace Banner {
@@ -61,10 +63,10 @@ export namespace GlobalQuery {
     const [isQueryLoading, setIsQueryLoading] = useState<boolean>(false);
     const doneButtonClickHandler = async () => {
       setIsQueryLoading(true);
-      const { total_hits } = await Info.query_file(query, true);
+      const { docs, total_hits } = await Info.query_file(query, true);
       setIsQueryLoading(false);
 
-      spawnBanner(<GlobalQuery.Apply query={query} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} total={total_hits} />)
+      spawnBanner(<GlobalQuery.Apply query={query} docs={Event.normalize(docs)} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} total={total_hits} />)
     }
 
     const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
@@ -99,10 +101,11 @@ export namespace GlobalQuery {
     export interface Props extends UIBanner.Props {
       query: λQuery;
       total: number;
+      docs: λDoc[];
     }
   }
 
-  export function Apply({ query, total, ...props }: Apply.Props) {
+  export function Apply({ query, total, docs, ...props }: Apply.Props) {
     const { Info, destroyBanner } = useApplication();
     const [filename, setFilename] = useState<string>('');
     const [isFilenameValid, setIsFilenameValid] = useState<boolean>(true);
@@ -128,8 +131,16 @@ export namespace GlobalQuery {
 
     const doneButtonClickHandler = useCallback(() => {
       setLoading(true);
+
+      const ids: Set<λFile['id']> = new Set();
+
+      docs.forEach(doc => {
+        ids.add(doc.file_id);
+      });
+
       Info.query_global({
         fileName: filename,
+        ids: Array.from(ids.keys()),
         contextName: context,
         query,
         total
