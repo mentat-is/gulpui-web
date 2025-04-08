@@ -90,7 +90,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         >
           Filters
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => removeFilters(file)} img="FilterX">
+        <ContextMenuItem onClick={() => removeFilters(file)} img="Filter">
           Clear all filters
         </ContextMenuItem>
         {app.timeline.cache.data.has(file.id) && (

@@ -1,5 +1,5 @@
 import { useApplication } from '@/context/Application.context'
-import { Banner } from '@/ui/Banner'
+import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Skeleton } from '@impactium/components'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
@@ -98,8 +98,12 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     )
   }, [eventKeys, field]);
 
+  const manageRenderRulesButtonClickHandler = () => {
+    spawnBanner(<RenderRules.Banner back={() => spawnBanner(<SettingsFileBanner file={file} />)} />)
+  }
+
   return (
-    <Banner title="File settings" done={done} option={option}>
+    <UIBanner title="File settings" done={done} option={option}>
       <h4>
         {file.name} in {Context.id(app, file.context_id)?.name}
       </h4>
@@ -160,6 +164,23 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         <p className={s.text}>Target field:</p>
         {EventFieldsSelection}
       </Stack>
-    </Banner>
+      <Button onClick={manageRenderRulesButtonClickHandler} img='BarChart'>Manage render rules</Button>
+    </UIBanner>
   )
+}
+
+export namespace RenderRules {
+  export namespace Banner {
+    export interface Props extends UIBanner.Props {
+
+    }
+  }
+
+  export function Banner({ ...props }: Banner.Props) {
+    return (
+      <UIBanner title='Manage render rules' {...props}>
+
+      </UIBanner>
+    )
+  }
 }

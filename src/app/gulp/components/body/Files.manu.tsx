@@ -79,7 +79,7 @@ export function FilesMenu({ files }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        <ContextMenuItem onClick={() => removeFilters(files)} img="FilterX">
+        <ContextMenuItem onClick={() => removeFilters(files)} img="Filter">
           Clear all filters for all selected files
         </ContextMenuItem>
       </ContextMenuGroup>

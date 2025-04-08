@@ -75,9 +75,7 @@ export function Banner({
   return (
     <div className={s.wrapper}>
       <div
-        className={cn(s.banner, s.loading, className)}
-        style={{ ['--gray-400']: 'var(--gray-400)' }}
-      >
+        className={cn(s.banner, s.loading, className)}>
         <Cell key="cell-1" className={s.cell} top left>
           {back && <Button variant="ghost" img="CornerUpLeft" onClick={back} />}
         </Cell>
