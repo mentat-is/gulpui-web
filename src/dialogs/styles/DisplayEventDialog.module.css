@@ -5,6 +5,7 @@
 .highlighter * {
   font-size: 10px;
   white-space: break-spaces !important;
+  user-select: text !important;
 }
 .highlighter > pre {
   margin: 0 !important;

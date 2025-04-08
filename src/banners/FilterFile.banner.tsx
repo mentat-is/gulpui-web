@@ -301,18 +301,20 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
   ), [file, Info])
 
   const AddCondition = useMemo(() => {
+    const setFilters = (filters: λFilter[]) => Info.setFilters(file.id, filters);
+
     return (
-      <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={(filters: λFilter[]) => Info.setFilters(file.id, filters)} init={app.timeline.filtering_options[file.id]?.[0] ?? ''} />
+      <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} init={app.timeline.filtering_options[file.id]?.[0] ?? ''} />
     )
-  }, [query.filters, file.id]);
+  }, [query, Info, file]);
 
   const QueryConditions = useMemo(() => {
-    const setFilters = (filters: λFilter[]) => Info.setFilters(file.id, filters);;
+    const setFilters = (filters: λFilter[]) => Info.setFilters(file.id, filters);
 
     return (
       <OpenSearchQueryBuilder.Query.Filter filters={query.filters} setFilters={setFilters} keys={Object.keys(app.timeline.filtering_options[file.id] || {})} />
     )
-  }, [query.filters, app.timeline.filtering_options, file.id])
+  }, [query, app.timeline.filtering_options, Info, file.id])
 
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
 

@@ -1930,11 +1930,18 @@ export class Info implements InfoProps {
     this.render();
   }
 
-  query_sigma = (body: Record<string, any>) => {
+  query_sigma = (body: Record<string, any>, plugin: string) => {
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     return api('/query_sigma', {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
+        operation_id: operation.id,
+        plugin
       },
       body,
       toast: 'Sigma rule has been successfully applied',
@@ -1963,9 +1970,6 @@ export class Info implements InfoProps {
           return this.query_sigma({
             sigmas: [sigma.content],
             q_options: {
-              sigma_parameters: {
-                plugin,
-              },
               note_parameters: {
                 create_notes: notes,
               },
@@ -1973,7 +1977,7 @@ export class Info implements InfoProps {
             flt: {
               source_ids: [file.id],
             },
-          })
+          }, plugin);
         }),
       )
     },
