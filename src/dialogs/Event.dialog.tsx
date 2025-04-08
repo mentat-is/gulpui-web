@@ -1,5 +1,3 @@
-import SyntaxHighlighter from 'react-syntax-highlighter'
-import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
 import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Dialog } from '@/ui/Dialog'
@@ -15,6 +13,7 @@ import { LinkComponents } from '@/banners/CreateLinkBanner'
 import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
 import { λLink, λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
+import { Markdown } from '@/ui/Markdown'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -43,18 +42,22 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const loadEvent = async () => {
     const detailed = await Info.query_single_id(event.id, event.operation_id)
 
-    setRawJSON(JSON.stringify(detailed, null, 2))
+
+    const entries = Object.entries(detailed).filter(([k]) => k !== 'event.original')
+
+    const json = {
+      ...Object.fromEntries(entries.slice(0, 1)),
+      ...Object.fromEntries(entries.slice(1)),
+      // @ts-ignore
+      'event.original': detailed['event.original'],
+    }
+
+    setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``)
   }
 
   const highlights = useMemo(() => {
     return (
-      <SyntaxHighlighter
-        className={s.highlighter}
-        customStyle={{ maxWidth: '100%', borderRadius: 6 }}
-        language="JSON"
-        style={highlight.vs2015}>
-        {rawJSON}
-      </SyntaxHighlighter>
+      <Markdown className={s.highlighter} value={rawJSON} />
     )
   }, [rawJSON])
 

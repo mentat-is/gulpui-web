@@ -1,15 +1,13 @@
 .highlighter {
-  padding: 6px;
+  padding-right: 8px;
   height: 100%;
 }
-.highlighter code {
+.highlighter * {
+  font-size: 10px;
   white-space: break-spaces !important;
 }
-.highlighter code * {
-  font-family: var(--font-mono);
-  line-height: 1.05;
-  user-select: all !important;
-  -webkit-user-select: all !important;
+.highlighter > pre {
+  margin: 0 !important;
 }
 .group button {
   width: 100%;
