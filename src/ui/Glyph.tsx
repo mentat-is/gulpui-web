@@ -30,12 +30,13 @@ export namespace Glyph {
     export interface Props {
       className?: string;
       style?: CSSProperties;
+      asButton?: boolean;
       icon: λGlyph['id'] | null;
       setIcon: React.Dispatch<React.SetStateAction<λGlyph['id'] | null>>;
     }
   }
 
-  export const Chooser = ({ style, className, icon, setIcon }: Chooser.Props) => {
+  export const Chooser = ({ style, className, icon, setIcon, asButton }: Chooser.Props) => {
     const uploadGlyph = () => {
       toast.info('This is paid feature', {
         description: 'Leave 5 bucks in the disk drive of your PC',
@@ -49,7 +50,7 @@ export namespace Glyph {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <Input variant='highlighted' className={cn(s.input, className)} style={style} img={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} />
+          {asButton ? <Button img={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} img={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} />}
         </PopoverTrigger>
         <PopoverContent align="end" className={s.map}>
           {map.map(([k, n]) =>

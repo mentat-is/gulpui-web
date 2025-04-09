@@ -41,6 +41,8 @@ interface ApplicationContextProps {
   setInfo: (info: λApp) => void
   Info: Info
   timeline: React.RefObject<HTMLDivElement>
+  highlightsOverlay: React.ReactNode,
+  setHighlightsOverlay: SetState<React.ReactNode>;
 }
 
 export const ApplicationContext = createContext<
@@ -55,6 +57,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [banner, setBanner] = useState<ReactNode>()
   const [dialog, setDialog] = useState<ReactNode>(<DisplayGroupDialog events={[]} />)
   const timeline = useRef<HTMLDivElement>(null)
+  const [highlightsOverlay, setHighlightsOverlay] = useState<React.ReactNode>(null);
   const [scrollX, setScrollX] = useState<number>(0)
   const [scrollY, setScrollY] = useState<number>(-26)
 
@@ -82,10 +85,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     setDialog(dialog)
   }
 
-  useEffect(() => {
-    console.log(scrollX, app.timeline.scale, app.timeline.frame);
-  }, [scrollX]);
-
   const props: ApplicationContextProps = {
     spawnBanner,
     destroyBanner,
@@ -102,7 +101,9 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     setWs,
     setInfo,
     Info: instance,
-    timeline
+    timeline,
+    highlightsOverlay,
+    setHighlightsOverlay
   }
 
   const handleLoggerExportCommand = () => {

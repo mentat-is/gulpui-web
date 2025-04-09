@@ -49,7 +49,7 @@ export interface RequestOptions {
   useNumericHost?: boolean
   toast?: string | boolean
   setLoading?: SetState<boolean>
-  query?: Record<string, string | number | boolean> | string | URLSearchParams
+  query?: Record<string, string | number | boolean | null> | string | URLSearchParams
   body?: Record<string, any> | RequestInit['body']
   deassign?: boolean
 }

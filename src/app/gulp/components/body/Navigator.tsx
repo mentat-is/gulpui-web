@@ -14,6 +14,7 @@ import { NotesWindow } from '@/components/NotesWindow'
 import { SetState } from '@/class/API'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { Logger } from '@/dto/Logger.class'
+import { Highlights } from '@/app/overlays/Highlights'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -28,7 +29,7 @@ export function Navigator({
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
+  const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([])
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
@@ -237,6 +238,10 @@ export function Navigator({
     }
   }, [])
 
+  const createHighlightButtonClickHandler = () => {
+    setHighlightsOverlay(<Highlights.Create.Overlay />)
+  }
+
   return (
     <Stack
       pos="relative"
@@ -272,6 +277,12 @@ export function Navigator({
           ref={size_reset}
           onClick={resetScaleAndScroll}
           img="AlignHorizontalSpaceBetween"
+        />
+        <Button
+          variant="secondary"
+          size="sm"
+          img="ChartBarBig"
+          onClick={createHighlightButtonClickHandler}
         />
         <Input
           className={s.filter}

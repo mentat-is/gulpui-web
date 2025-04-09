@@ -22,7 +22,7 @@ import { TargetMenu } from './Target.menu'
 import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
-import { XY } from '@/dto/XY.dto'
+import { XY, XYBase } from '@/dto/XY.dto'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -31,11 +31,10 @@ export namespace Canvas {
 }
 
 export function Canvas({ timeline }: Canvas.Props) {
-  const canvas_ref = useRef<HTMLCanvasElement>(null)
-  const overlay_ref = useRef<HTMLCanvasElement>(null)
-  const wrapper_ref = useRef<HTMLDivElement>(null)
-
-  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, Info, dialog } = useApplication()
+  const canvas_ref = useRef<HTMLCanvasElement>(null);
+  const overlay_ref = useRef<HTMLCanvasElement>(null);
+  const wrapper_ref = useRef<HTMLDivElement>(null);
+  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, Info, dialog, highlightsOverlay } = useApplication()
   const [shifted, setShifted] = useState<λFile[]>([])
   const [isShiftPressed] = useKeyHandler('Shift')
   const dependencies = [
@@ -178,9 +177,22 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   useEffect(() => {
     renderOverlay()
-  }, [overlay_ref, canvas_ref, resize])
+  }, [overlay_ref, canvas_ref, resize]);
+
+  const [xyc, setXyc] = useState<XY>(XYBase(0));
+
+  const handleClickInit = (event: MouseEvent) => {
+    setXyc({
+      x: event.clientX,
+      y: event.clientY
+    })
+  }
 
   const handleClick = (event: MouseEvent) => {
+    if (xyc.x === event.clientX && event.clientY === xyc.y) {
+      return;
+    }
+
     if (event.button === 2) return event.preventDefault()
 
     if (!canvas_ref.current) {
@@ -305,11 +317,13 @@ export function Canvas({ timeline }: Canvas.Props) {
   useEffect(() => {
     renderCanvas()
 
-    canvas_ref.current?.addEventListener('mousedown', handleClick)
+    canvas_ref.current?.addEventListener('mousedown', handleClickInit)
+    canvas_ref.current?.addEventListener('mouseup', handleClick)
     const debugInterval = setInterval(() => renderCanvas(true), 300)
 
     return () => {
-      canvas_ref.current?.removeEventListener('mousedown', handleClick)
+      canvas_ref.current?.removeEventListener('mousedown', handleClickInit)
+      canvas_ref.current?.removeEventListener('mouseup', handleClick)
       clearInterval(debugInterval)
     }
   }, dependencies)
@@ -372,9 +386,9 @@ export function Canvas({ timeline }: Canvas.Props) {
         ref={wrapper_ref}
         className={cn(s.wrapper, isAltPressed && s.cursor)}
         onMouseLeave={handleMouseUpOrLeave as any}
-        onMouseUp={handleMouseUpOrLeave as any}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUpOrLeave as any}
         onKeyDown={toggler}
         tabIndex={0}
       >
@@ -399,6 +413,7 @@ export function Canvas({ timeline }: Canvas.Props) {
           mousePosition={mousePosition}
           isVisible={isAltPressed}
         />
+        {highlightsOverlay}
       </ContextMenuTrigger>
       <Menu />
     </ContextMenu>

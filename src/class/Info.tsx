@@ -506,6 +506,8 @@ export class Info implements InfoProps {
 
     await this.links_reload()
 
+    await this.highlights_reload()
+
     files.forEach((file) => {
       const query = this.getQuery(file.id);
 
@@ -1439,6 +1441,55 @@ export class Info implements InfoProps {
         doc_ids: [...link.doc_ids, event.id],
       },
     }).then(this.links_reload);
+  }
+
+  highlights_reload = async () => {
+    const highlights = await api('/highlight_list', {
+      method: 'POST'
+    })
+
+    return highlights;
+  }
+
+  highlight_create = async ({
+    range: time_range,
+    name,
+    icon: glyph_id,
+    color = Default.Color.HIGHLIGHT
+  }: {
+    range: Range,
+    name: string,
+    icon: λGlyph['id'] | null,
+    color: string
+  }) => {
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const files = File.selected(this.app);
+    if (!files.length) {
+      return;
+    }
+
+    const source_id = files[0].id;
+
+    return api('/highlight_create', {
+      method: 'POST',
+      query: {
+        operation_id: operation.id,
+        ws_id: this.app.general.ws_id,
+        source_id,
+        name,
+        color,
+        glyph_id
+      },
+      toast: `Highlight ${name} has been created successfully`,
+      body: {
+        time_range,
+        tags: []
+      }
+    }).then(this.highlights_reload);
   }
 
   glyphs_reload = async () => {
@@ -2705,6 +2756,11 @@ export namespace μ {
     readonly [Link]: unique symbol
   }
 
+  const Highlight = Symbol('Highlight')
+  export type Highlight = UUID & {
+    readonly [Highlight]: unique symbol
+  }
+
   const Glyph = Symbol('Glyph')
   export type Glyph = UUID & {
     readonly [Glyph]: unique symbol
@@ -2738,6 +2794,8 @@ export interface MinMax<T extends number | bigint = number> {
   min: T
   max: T
 }
+
+export type Range = [number, number];
 
 export const MinMaxBase = {
   min: 0,

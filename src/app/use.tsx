@@ -33,7 +33,7 @@ export function useKeyHandler(key: string) {
 }
 
 export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
-  const { app, Info, setScrollX, scrollX, setScrollY, scrollY } = useApplication()
+  const { app, Info, setScrollX, scrollX, setScrollY, highlightsOverlay } = useApplication()
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 
@@ -58,6 +58,10 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
   }, [timeline])
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
+    if (highlightsOverlay) {
+      return;
+    }
+
     dragState.current.dragStart(event)
     const rect = timeline.current?.getBoundingClientRect()
     if (!rect) {
@@ -68,7 +72,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
       setResize({ start: event.clientX - rect.x, end: event.clientX - rect.x })
       setIsResizing(true)
     }
-  }, [])
+  }, [highlightsOverlay]);
 
   const handleMouseMove = useCallback(
     (event: React.MouseEvent) => {
@@ -115,6 +119,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
   )
 
   return {
+    dragState,
     resize,
     isResizing,
     handleMouseDown,

@@ -322,6 +322,12 @@ export class Algorhithm implements Algorhithm.Constructor {
     Math.round(
       this.abs_x_from_timestamp(timestamp) - this.width / (2 * this.scale),
     )
+
+  timestamp_from_rel_x = (relX: number, scroll: XY = this.scroll) => {
+    const absX = relX + scroll.x;
+    const ratio = absX / this.width;
+    return Math.round(this.frame.min + ratio * (this.frame.max - this.frame.min));
+  }
 }
 
 export type Maybe<T> = T | null

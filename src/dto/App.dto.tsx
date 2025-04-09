@@ -11,7 +11,7 @@ import {
   λUser,
   μ,
 } from '@/class/Info'
-import { λContext, λFile, λGlyph, λLink, λNote, λRequest } from './Dataset'
+import { λContext, λFile, λGlyph, λHighlight, λLink, λNote, λRequest } from './Dataset'
 import { λMapping } from './MappingFileList.dto'
 import { Pointers } from '@/components/Pointers'
 
@@ -29,6 +29,7 @@ export interface λApp {
     filters: Record<λFile['id'], λQuery>
     notes: λNote[]
     links: λLink[]
+    highlights: λHighlight[]
     glyphs: λGlyph[]
     sigma: Record<
       λFile['id'],
@@ -101,6 +102,7 @@ export const BaseInfo: λApp = {
     filters: {},
     notes: [],
     links: [],
+    highlights: [],
     sigma: {},
     glyphs: [],
     mappings: [],

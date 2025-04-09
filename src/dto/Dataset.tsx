@@ -13,6 +13,7 @@ export type GulpDataType =
   | 'link'
   | 'note'
   | 'user'
+  | 'highlight'
 
 interface ΞSelectionField {
   selected?: boolean
@@ -126,10 +127,7 @@ export type ΞNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   edits: Record<string, any>[]
 }
 
-export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
-  μ.Note,
-  T
-> & {
+export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<μ.Note, T> & {
   type: 'note'
   operation_id: λOperation['id']
   tags: string[]
@@ -141,6 +139,10 @@ export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   text: string
   edits: Record<string, any>[]
 }
+
+export type λHighlight = GulpObject<μ.Highlight, {
+  type: 'highlight'
+}>
 
 export type λRequest = {
   id: μ.Request
@@ -189,6 +191,7 @@ export namespace Default {
     | 'LINK'
     | 'EVENT'
     | 'SESSION'
+    | 'HIGHLIGHT'
 
   export const Icon: Record<Object, Icon.Name> = {
     OPERATION: 'BookDashed',
@@ -198,7 +201,8 @@ export namespace Default {
     FILE: 'File',
     NOTE: 'StickyNote',
     LINK: 'Link',
-    SESSION: 'FacePlus'
+    SESSION: 'FacePlus',
+    HIGHLIGHT: 'Status'
   }
 
   export const Color: Record<Object, string> = {
@@ -209,7 +213,8 @@ export namespace Default {
     NOTE: '#009999',
     LINK: '#c99900',
     EVENT: '#ff408c',
-    SESSION: '#ff4d4d'
+    SESSION: '#ff4d4d',
+    HIGHLIGHT: '#3399ff',
   }
 }
 
