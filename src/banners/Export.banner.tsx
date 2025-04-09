@@ -83,6 +83,12 @@ export namespace Export {
       })
     }
 
+    const exportAsCSV = () => {
+      const doc: string = ''
+
+      download(doc, 'text/csv', 'gulp-csv-export.csv');
+    }
+
     return (
       <UIBanner title="Export" {...props}>
         <Stack>
@@ -103,7 +109,7 @@ export namespace Export {
           <Button variant="secondary" img="AcronymPage" onClick={no}>
             Export as XML
           </Button>
-          <Button variant="secondary" img="AcronymCsv" onClick={no}>
+          <Button variant="secondary" img="AcronymCsv" onClick={exportAsCSV}>
             Export as CSV
           </Button>
         </Stack>

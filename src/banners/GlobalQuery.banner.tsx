@@ -135,6 +135,7 @@ export namespace GlobalQuery {
       const ids: Set<λFile['id']> = new Set();
 
       docs.forEach(doc => {
+        // TODO ONLY 100;
         ids.add(doc.file_id);
       });
 
