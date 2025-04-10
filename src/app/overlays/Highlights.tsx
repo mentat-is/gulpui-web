@@ -7,7 +7,8 @@ import { useApplication } from "@/context/Application.context";
 import { Glyph } from "@/ui/Glyph";
 import { Default, λGlyph, λHighlight } from "@/dto/Dataset";
 import { Algorhithm } from "@/ui/utils";
-import { cn } from "@impactium/utils";
+import { capitalize, cn } from "@impactium/utils";
+import { Select } from "@/ui/Select";
 
 export namespace Highlights {
   export namespace Create {
@@ -66,6 +67,22 @@ export namespace Highlights {
             <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
               <Glyph.Chooser asButton icon={icon} setIcon={setIcon} />
               <Input placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
+              <Select.Root onValueChange={color => setColor(color as NonNullable<Badge.Variant>)}>
+                <Select.Trigger value={color}>
+                  <Icon name='Status' />
+                  <p>{capitalize(color)}</p>
+                </Select.Trigger>
+                <Select.Content>
+                  {["blue", "gray", "green", "pink", "purple", "red", "teal"].map(color => {
+                    return (
+                      <Select.Item value={color} style={{ color: `var(--${color}-700)`, background: `var(--${color}-200)` }}>
+                        <Icon name='Status' />
+                        <p>{capitalize(color)}</p>
+                      </Select.Item>
+                    )
+                  })}
+                </Select.Content>
+              </Select.Root>
               <Button variant='glass' img='Check' onMouseDown={submit}>Submit</Button>
               <Button className={s.x} variant='secondary' img='X' onMouseDown={unselect} />
             </Stack>
@@ -158,25 +175,59 @@ export namespace Highlights {
         return app.target.highlights
       }, [app.target.highlights]);
 
+      const computedDepths = useMemo(() => {
+        return computeDepths(highlights);
+      }, [highlights]);
+
+      // @ts-ignore
+      window.highlights = []
+
       return (
         <Stack pos='absolute' className={s.overlay} {...props}>
-          {highlights.map(highlight => {
+          {highlights.map((highlight, index) => {
             return (
-              <Highlights.Component highlight={highlight} />
+              <Highlights.Component highlight={highlight} index={computedDepths[index]} />
             )
           })}
         </Stack>
       )
+    }
+
+    function computeDepths(highlights: λHighlight[]): number[] {
+      const depths: number[] = [];
+
+      for (let i = 0; i < highlights.length; i++) {
+        const { time_range: [startA, endA] } = highlights[i];
+
+        const usedDepths = new Set<number>();
+
+        for (let j = 0; j < i; j++) {
+          const { time_range: [startB, endB] } = highlights[j];
+          const overlaps =
+            !(endA <= startB || startA >= endB);
+
+          if (overlaps) {
+            usedDepths.add(depths[j]);
+          }
+        }
+
+        let d = 0;
+        while (usedDepths.has(d)) d++;
+        depths.push(d);
+      }
+
+      return depths;
     }
   }
 
   export namespace Component {
     export interface Props extends Stack.Props {
       highlight: λHighlight
+      index?: number
     }
   }
 
-  export function Component({ highlight, ...props }: Highlights.Component.Props) {
+  export function Component({ highlight, style, className, index = 0, ...props }: Highlights.Component.Props) {
     const { Info, scrollX, scrollY } = useApplication();
 
     const range: Range = 'range' in highlight ? highlight.range as Range : highlight.time_range.map(t => {
@@ -197,8 +248,11 @@ export namespace Highlights {
 
     const width = Math.max(...range) - left;
 
+    // @ts-ignore
+    window.highlights.push([left, width, index, highlight.color]);
+
     return (
-      <Stack pos='absolute' style={{ left, width }} className={s.highlight} jc='flex-end' ai='flex-start' {...props}>
+      <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index }} jc='flex-end' ai='flex-start' {...props}>
         <Badge variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
       </Stack>
     )

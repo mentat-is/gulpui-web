@@ -1,4 +1,4 @@
-import { MinMax } from '@/class/Info'
+import { MinMax, Range } from '@/class/Info'
 import { Event, Info, File } from './Info'
 import { Color, stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
@@ -9,6 +9,16 @@ import { Scale, Engine } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
 import { λFile, λLink } from '@/dto/Dataset'
+
+const mappedColors: Record<string, string> = {
+  red: '#d9303629',
+  blue: '#0062d129',
+  amber: '#ff990a29',
+  green: '#398e4a29',
+  teal: '#0d8c7d29',
+  purple: '#763da929',
+  pink: '#df267029'
+}
 
 interface RenderEngineConstructor {
   ctx: CanvasRenderingContext2D
@@ -158,6 +168,19 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     })
   }
 
+  public highlight = (x: number, width: number, index: number, color: string) => {
+    this.ctx.fillStyle = mappedColors[color];
+
+    const y = 32 * (index + 1);
+
+    const height = this.ctx.canvas.height + 16 - (32 * 2 * (index + 1));
+
+    // height: calc(100% + 16px - calc(32px * 2 * (var(--index, 0) + 1)));
+    // top: calc(32px * (var(--index, 0) + 1));
+
+    this.ctx.fillRect(x, y, width, height);
+  }
+
   public connection = (dots: Dot[], center?: XY) => {
     if (dots.length < 2) return
 
@@ -228,7 +251,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const x = this.getPixelPosition(
         e.timestamp +
-          (File.selected(this.info.app)[index]?.settings.offset || 0),
+        (File.selected(this.info.app)[index]?.settings.offset || 0),
       )
       const y = index * 48 + 20 - this.scrollY || 0
       const color =
@@ -350,8 +373,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(
       0,
       File.selected(this.info.app).findIndex((f) => f.id === file.id) * 48 +
-        23 -
-        this.scrollY,
+      23 -
+      this.scrollY,
       window.innerWidth,
       1,
     )

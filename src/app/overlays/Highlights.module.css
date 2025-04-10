@@ -22,6 +22,9 @@
   color: var(--text-dimmed);
   position: relative;
 }
+.hint > div {
+  width: unset !important;
+}
 .hint code {
   color: currentColor;
   font-family: var(--font-mono);
@@ -35,21 +38,31 @@
   margin-left: 8px; 
 }
 .highlight {
-  background: hsla(var(--blue-800-value), 0.16);
   border-radius: 4px;
-  border: 1px solid var(--blue-800);
-  height: calc(100% - 40px);
-  top: 32px;
+  border: 1px solid var(--variant);
+  height: calc(100% + 16px - calc(32px * 2 * (var(--index, 0) + 1)));
+  top: calc(32px * (var(--index, 0) + 1));
   overflow: hidden;
+  z-index: var(--index);
 }
 .highlight.minified {
   height: calc(100% - 106px);
 }
 .highlight > div {
   flex: 1;
+  padding: 0 4px !important;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
   justify-content: flex-start !important;
   max-width: 100%;
   border-radius: 0px !important;
+}
+.highlight > div::after {
+  content: '';
+  right: 0;
+  position: absolute;
+  width: 8px;
+  height: 24px;
+  background: linear-gradient(to left, var(--variant) 20%, transparent 100%);
 }
