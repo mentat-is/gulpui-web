@@ -23,6 +23,7 @@ import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
 import { XY, XYBase } from '@/dto/XY.dto'
+import { Highlights } from '@/app/overlays/Highlights'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -394,6 +395,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       >
         <NotesDisplayer getPixelPosition={getPixelPosition} />
         <LinksDisplayer getPixelPosition={getPixelPosition} />
+        <Highlights.List.Overlay />
         <canvas
           ref={canvas_ref}
           id="canvas"

@@ -5,6 +5,7 @@ import { Engine } from '@/class/Engine.dto'
 import { MinMax } from '@/class/Info'
 import { λDoc, λEvent, ΞDoc } from './ChunkEvent.dto'
 import { Icon } from '@impactium/icons'
+import { Badge } from '@impactium/components'
 
 export type GulpDataType =
   | 'operation'
@@ -143,7 +144,8 @@ export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<μ
 export type λHighlight = GulpObject<μ.Highlight, {
   type: 'highlight',
   time_range: Range,
-  tags: string[]
+  tags: string[],
+  color: string
 }>
 
 export type λRequest = {
@@ -216,7 +218,7 @@ export namespace Default {
     LINK: '#c99900',
     EVENT: '#ff408c',
     SESSION: '#ff4d4d',
-    HIGHLIGHT: '#3399ff',
+    HIGHLIGHT: 'blue',
   }
 }
 

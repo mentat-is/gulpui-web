@@ -1,12 +1,13 @@
 import { Badge, Button, Input, Stack } from "@impactium/components";
 import s from './Highlights.module.css';
 import { Icon } from "@impactium/icons";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { MinMax, MinMaxBase, Range } from "@/class/Info";
+import { useMemo, useRef, useState } from "react";
+import { Range } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { Glyph } from "@/ui/Glyph";
-import { λGlyph, λHighlight } from "@/dto/Dataset";
+import { Default, λGlyph, λHighlight } from "@/dto/Dataset";
 import { Algorhithm } from "@/ui/utils";
+import { cn } from "@impactium/utils";
 
 export namespace Highlights {
   export namespace Create {
@@ -20,8 +21,8 @@ export namespace Highlights {
       const { Info, setHighlightsOverlay, scrollX, scrollY } = useApplication();
       const [icon, setIcon] = useState<λGlyph['id'] | null>(null);
       const [name, setName] = useState<string>('');
-      const [color, setColor] = useState<string>('');
-      const [selection, setSelection] = useState<[number, number] | null>([100, 300]);
+      const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
+      const [range, setSelection] = useState<[number, number] | null>([100, 300]);
       const [isSelected, setIsSelected] = useState<boolean>(false);
       const overlay = useRef<HTMLDivElement>(null);
 
@@ -35,7 +36,7 @@ export namespace Highlights {
       }
 
       const submit = () => {
-        if (!selection) {
+        if (!range) {
           return;
         }
 
@@ -49,18 +50,18 @@ export namespace Highlights {
           width: Info.width
         })
 
-        const range: Range = selection.map(v => algo.timestamp_from_rel_x(v)) as unknown as Range;
+        const time_range: Range = range.map(v => algo.timestamp_from_rel_x(v)) as unknown as Range;
 
         Info.highlight_create({
           name,
           color,
           icon,
-          range
+          time_range
         });
       }
 
       const Hint = useMemo(() => {
-        if (selection) {
+        if (range) {
           return (
             <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
               <Glyph.Chooser asButton icon={icon} setIcon={setIcon} />
@@ -78,7 +79,7 @@ export namespace Highlights {
             <Button className={s.close} variant='secondary' size='sm' img='Logout' onMouseDown={destroyOverlay}>Exit</Button>
           </Stack>
         )
-      }, [destroyOverlay, unselect, icon, name, setName, selection, submit])
+      }, [destroyOverlay, unselect, icon, name, setName, range, submit])
 
       const createHighlightOverlayMouseDownHandler = (event: React.MouseEvent) => {
         if (!overlay.current) {
@@ -99,43 +100,42 @@ export namespace Highlights {
       }
 
       const createHighlightOverlayMouseMoveHandler = (event: React.MouseEvent) => {
-        if (!overlay.current || isSelected || !selection) {
+        if (!overlay.current || isSelected || !range) {
           return;
         }
 
         const rect = overlay.current.getBoundingClientRect();
 
         const x = Math.round(event.clientX - rect.x);
-        setSelection([selection[0], x]);
+        setSelection([range[0], x]);
       }
 
-      const Selection = () => {
-        if (!selection) {
+      const Highlight = useMemo(() => {
+        if (!range) {
           return null;
         }
 
-        const left = Math.min(...selection);
-
-        const width = Math.max(...selection) - left;
-
         return (
-          <Stack pos='absolute' style={{ left, width }} className={s.highlight} jc='flex-end' ai='flex-start'>
-            <Badge variant='blue' value={name || 'Selection'} icon={icon ? Glyph.List.get(icon) || 'Status' : 'Status'} className={s.badge} />
-          </Stack>
+          <Highlights.Component highlight={{
+            color,
+            name,
+            glyph_id: icon!,
+            range
+          } as unknown as λHighlight} />
         )
-      }
+      }, [color, name, icon, range]);
 
       return (
         <Stack
           ref={overlay}
-          className={s.overlay}
+          className={cn(s.overlay, s.focus)}
           pos='absolute'
           onMouseDown={createHighlightOverlayMouseDownHandler}
           onMouseMove={createHighlightOverlayMouseMoveHandler}
           onMouseLeave={createHighlightOverlayMouseUpHandler}
           onMouseUp={createHighlightOverlayMouseUpHandler}
           {...props}>
-          <Selection />
+          {Highlight}
           <Stack pos='absolute' className={s.hint_wrapper} jc='center'>
             {Hint}
           </Stack>
@@ -151,10 +151,20 @@ export namespace Highlights {
       }
     }
 
-    export function Overlay({ ...props }: Highlights.List.Overlay) {
+    export function Overlay({ ...props }: Highlights.List.Overlay.Props) {
+      const { app } = useApplication();
+
+      const highlights = useMemo(() => {
+        return app.target.highlights
+      }, [app.target.highlights]);
+
       return (
-        <Stack pos='absolute' {...props}>
-          <
+        <Stack pos='absolute' className={s.overlay} {...props}>
+          {highlights.map(highlight => {
+            return (
+              <Highlights.Component highlight={highlight} />
+            )
+          })}
         </Stack>
       )
     }
@@ -167,9 +177,29 @@ export namespace Highlights {
   }
 
   export function Component({ highlight, ...props }: Highlights.Component.Props) {
-    return (
-      <Stack {...props}>
+    const { Info, scrollX, scrollY } = useApplication();
 
+    const range: Range = 'range' in highlight ? highlight.range as Range : highlight.time_range.map(t => {
+      const algo = new Algorhithm({
+        frame: Info.app.timeline.frame,
+        scale: Info.app.timeline.scale,
+        scroll: {
+          x: scrollX,
+          y: scrollY
+        },
+        width: Info.width
+      });
+
+      return algo.rel_x_from_timestamp(t);
+    }) as Range;
+
+    const left = Math.min(...range);
+
+    const width = Math.max(...range) - left;
+
+    return (
+      <Stack pos='absolute' style={{ left, width }} className={s.highlight} jc='flex-end' ai='flex-start' {...props}>
+        <Badge variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
       </Stack>
     )
   }

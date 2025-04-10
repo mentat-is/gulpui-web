@@ -38,6 +38,7 @@ import { toast } from 'sonner'
 import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner'
 import { Pointers } from '@/components/Pointers'
 import { XY } from '@/dto/XY.dto'
+import { Badge } from '@impactium/components'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -1444,30 +1445,21 @@ export class Info implements InfoProps {
     }).then(this.links_reload);
   }
 
-  highlights_reload = async () => {
-    const highlights = await api<λHighlight[]>('/highlight_list', {
-      method: 'POST'
-    }).then(highlights => highlights.map(highlight => ({
-      ...highlight,
-      time_range: highlight.tags.filter(t => t.startsWith('ra-')).map(parseInt).sort((a, b) => a - b) as Range,
-    })))
-
-    this.setInfoByKey(highlights, 'target', 'highlights');
-
-    return highlights;
-  }
+  highlights_reload = () => api<λHighlight[]>('/highlight_list', {
+    method: 'POST'
+  }, h => this.setInfoByKey(h, 'target', 'highlights'));
 
   highlight_create = async ({
-    range: time_range,
+    time_range,
     name,
     icon: glyph_id,
-    color = Default.Color.HIGHLIGHT,
+    color = Default.Color.HIGHLIGHT as NonNullable<Badge.Variant>,
     tags = []
   }: {
-    range: Range,
+    time_range: Range,
     name: string,
     icon: λGlyph['id'] | null,
-    color: string
+    color: Badge.Variant
     tags?: string[]
   }) => {
     const operation = Operation.selected(this.app);
@@ -1494,11 +1486,8 @@ export class Info implements InfoProps {
       },
       toast: `Highlight ${name} has been created successfully`,
       body: {
-        time_range: [
-          0,
-          1
-        ],
-        tags: [...time_range.map(t => `ra-${t.toString()}`), ...tags]
+        time_range,
+        tags
       }
     }).then(this.highlights_reload);
   }
