@@ -61,6 +61,7 @@ export class AppSocket extends WebSocket {
         case message.type === 'collab_update' || message.type === 'collab_delete':
           info.notes_reload()
           info.links_reload()
+          info.highlights_reload()
           return
 
         case message.type === 'enrich_done':
