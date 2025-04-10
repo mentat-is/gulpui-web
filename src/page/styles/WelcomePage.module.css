@@ -39,11 +39,16 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 12px;
   color: var(--gray-800);
+  width: 100%;
+}
+.flow span {
+  color: currentColor;
+  flex: 1;
+  font-size: 12px;
   font-family: var(--font-mono);
 }
-.flow svg {
+.flow > svg {
   color: var(--gray-500);
   border-radius: var(--round);
   height: 12px !important;
@@ -53,7 +58,7 @@
 .flow p.check {
   color: var(--green-700);
 }
-.flow p.check svg {
+.flow p.check > svg {
   color: var(--green-700);
   background: none !important;
 }

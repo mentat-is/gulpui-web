@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MinMax, MinMaxBase, Range } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { Glyph } from "@/ui/Glyph";
-import { λGlyph } from "@/dto/Dataset";
+import { λGlyph, λHighlight } from "@/dto/Dataset";
 import { Algorhithm } from "@/ui/utils";
 
 export namespace Highlights {
@@ -142,5 +142,35 @@ export namespace Highlights {
         </Stack>
       )
     }
+  }
+
+  export namespace List {
+    export namespace Overlay {
+      export interface Props extends Stack.Props {
+
+      }
+    }
+
+    export function Overlay({ ...props }: Highlights.List.Overlay) {
+      return (
+        <Stack pos='absolute' {...props}>
+          <
+        </Stack>
+      )
+    }
+  }
+
+  export namespace Component {
+    export interface Props extends Stack.Props {
+      highlight: λHighlight
+    }
+  }
+
+  export function Component({ highlight, ...props }: Highlights.Component.Props) {
+    return (
+      <Stack {...props}>
+
+      </Stack>
+    )
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Loading, Stack } from '@impactium/components'
+import { Badge, Button, Loading, Stack } from '@impactium/components'
 import s from './styles/WelcomePage.module.css'
 import { useWindows } from '../ui/Windows'
 import { Icon } from '@impactium/icons'
@@ -88,6 +88,7 @@ export namespace Welcome {
         name: 'Authorized',
         cond: Info.User.isAuthorized(),
         trigger: ActionButtonConstructor('Log In', 'LogIn', <AuthBanner />),
+        banner: <AuthBanner />
       },
       {
         name: 'At least one operation',
@@ -97,6 +98,7 @@ export namespace Welcome {
           Default.Icon.CREATE_OPERATION,
           <Operation.Create.Banner />,
         ),
+        banner: <Operation.Create.Banner />
       },
       {
         name: 'Operation selected',
@@ -106,6 +108,7 @@ export namespace Welcome {
           Default.Icon.OPERATION,
           <Operation.Select.Banner />,
         ),
+        banner: <Operation.Select.Banner />,
       },
       {
         name: 'At least one context',
@@ -115,6 +118,7 @@ export namespace Welcome {
           Default.Icon.CONTEXT,
           <UploadBanner />,
         ),
+        banner: <UploadBanner />,
       },
       {
         name: 'At least one file',
@@ -124,6 +128,7 @@ export namespace Welcome {
           'Upload',
           <UploadBanner />,
         ),
+        banner: <UploadBanner />,
       },
       {
         name: 'Sources selected',
@@ -133,6 +138,7 @@ export namespace Welcome {
           Default.Icon.FILE,
           <SelectFiles.Banner />,
         ),
+        banner: <SelectFiles.Banner />,
       },
       {
         name: 'Timeframe selected',
@@ -142,6 +148,7 @@ export namespace Welcome {
           'TableColumnsSplit',
           <LimitsBanner />,
         ),
+        banner: <LimitsBanner />,
       },
       {
         name: 'Glyphs syncronized',
@@ -221,6 +228,7 @@ export namespace Welcome {
       trigger: JSX.Element
       icon?: Icon.Name
       loading?: boolean
+      banner?: React.ReactNode
     }
 
     export interface Props {
@@ -259,6 +267,7 @@ export namespace Welcome {
     icon,
     loading: _loading,
     trigger,
+    banner
   }: Flow.Step) => {
     const { spawnBanner } = useApplication()
     const [loading, setLoading] = useState(_loading)
@@ -279,16 +288,16 @@ export namespace Welcome {
       <Loading variant="dimmed" size="icon" />
     ) : (
       <Icon
-        onClick={() => (cond ? void 0 : spawnBanner(trigger))}
         name={icon || (resolvedCond ? 'CheckCircleFill' : 'CheckCircle')}
-        size={12}
       />
     )
 
     return (
       <p key={name} className={cn(resolvedCond && s.check)}>
         {Image}
-        {name}
+        <span style={{ flex: 1 }}>{name}</span>
+        {/* @ts-ignore */}
+        <Badge variant='gray-subtle' onClick={() => banner ? spawnBanner(banner) : null} value={resolvedCond ? 'Done' : 'Do'} icon={resolvedCond ? undefined : 'Function'} size='sm' />
       </p>
     )
   }

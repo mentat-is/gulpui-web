@@ -14,6 +14,7 @@ import {
   λGroup,
   λRequest,
   ΞRequest,
+  λHighlight,
 } from '@/dto/Dataset'
 import {
   λDoc,
@@ -1444,9 +1445,14 @@ export class Info implements InfoProps {
   }
 
   highlights_reload = async () => {
-    const highlights = await api('/highlight_list', {
+    const highlights = await api<λHighlight[]>('/highlight_list', {
       method: 'POST'
-    })
+    }).then(highlights => highlights.map(highlight => ({
+      ...highlight,
+      time_range: highlight.tags.filter(t => t.startsWith('ra-')).map(parseInt).sort((a, b) => a - b) as Range,
+    })))
+
+    this.setInfoByKey(highlights, 'target', 'highlights');
 
     return highlights;
   }
@@ -1455,12 +1461,14 @@ export class Info implements InfoProps {
     range: time_range,
     name,
     icon: glyph_id,
-    color = Default.Color.HIGHLIGHT
+    color = Default.Color.HIGHLIGHT,
+    tags = []
   }: {
     range: Range,
     name: string,
     icon: λGlyph['id'] | null,
     color: string
+    tags?: string[]
   }) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
@@ -1486,8 +1494,11 @@ export class Info implements InfoProps {
       },
       toast: `Highlight ${name} has been created successfully`,
       body: {
-        time_range,
-        tags: []
+        time_range: [
+          0,
+          1
+        ],
+        tags: [...time_range.map(t => `ra-${t.toString()}`), ...tags]
       }
     }).then(this.highlights_reload);
   }

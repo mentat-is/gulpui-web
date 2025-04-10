@@ -1,5 +1,5 @@
 import { Color } from '@impactium/types'
-import { λUser, μ } from '@/class/Info'
+import { Range, λUser, μ } from '@/class/Info'
 import { Gradients } from '@/ui/utils'
 import { Engine } from '@/class/Engine.dto'
 import { MinMax } from '@/class/Info'
@@ -141,7 +141,9 @@ export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<μ
 }
 
 export type λHighlight = GulpObject<μ.Highlight, {
-  type: 'highlight'
+  type: 'highlight',
+  time_range: Range,
+  tags: string[]
 }>
 
 export type λRequest = {
