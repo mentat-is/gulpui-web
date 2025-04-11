@@ -173,7 +173,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     const y = 32 * (index + 1);
 
-    const height = this.ctx.canvas.height + 16 - (32 * 2 * (index + 1));
+    const height = this.ctx.canvas.height - (20 * 2 * (index + 1));
 
     // height: calc(100% + 16px - calc(32px * 2 * (var(--index, 0) + 1)));
     // top: calc(32px * (var(--index, 0) + 1));

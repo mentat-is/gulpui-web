@@ -23,7 +23,7 @@ export namespace Highlights {
       const [icon, setIcon] = useState<λGlyph['id'] | null>(null);
       const [name, setName] = useState<string>('');
       const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
-      const [range, setSelection] = useState<[number, number] | null>([100, 300]);
+      const [range, setSelection] = useState<[number, number] | null>(null);
       const [isSelected, setIsSelected] = useState<boolean>(false);
       const overlay = useRef<HTMLDivElement>(null);
 
@@ -65,10 +65,10 @@ export namespace Highlights {
         if (range) {
           return (
             <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
-              <Glyph.Chooser asButton icon={icon} setIcon={setIcon} />
-              <Input placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
+              <Input className={s.name} variant='highlighted' img={Glyph.List.get(icon!) ?? Default.Icon.HIGHLIGHT} placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
+              <Glyph.Chooser rootClassName={s.icon} asButton icon={icon} setIcon={setIcon} />
               <Select.Root onValueChange={color => setColor(color as NonNullable<Badge.Variant>)}>
-                <Select.Trigger value={color}>
+                <Select.Trigger value={color} className={s.select}>
                   <Icon name='Status' />
                   <p>{capitalize(color)}</p>
                 </Select.Trigger>
@@ -83,7 +83,7 @@ export namespace Highlights {
                   })}
                 </Select.Content>
               </Select.Root>
-              <Button variant='glass' img='Check' onMouseDown={submit}>Submit</Button>
+              <Button variant='glass' disabled={!name || !icon} img='Check' onMouseDown={submit}>Create</Button>
               <Button className={s.x} variant='secondary' img='X' onMouseDown={unselect} />
             </Stack>
           )
@@ -137,8 +137,8 @@ export namespace Highlights {
             color,
             name,
             glyph_id: icon!,
-            range
-          } as unknown as λHighlight} />
+            range,
+          } as unknown as λHighlight} native />
         )
       }, [color, name, icon, range]);
 
@@ -171,19 +171,12 @@ export namespace Highlights {
     export function Overlay({ ...props }: Highlights.List.Overlay.Props) {
       const { app } = useApplication();
 
-      const highlights = useMemo(() => {
-        return app.target.highlights
-      }, [app.target.highlights]);
+      const highlights = useMemo(() => app.target.highlights, [app.target.highlights]);
 
-      const computedDepths = useMemo(() => {
-        return computeDepths(highlights);
-      }, [highlights]);
-
-      // @ts-ignore
-      window.highlights = []
+      const computedDepths = useMemo(() => computeDepths(highlights), [highlights]);
 
       return (
-        <Stack pos='absolute' className={s.overlay} {...props}>
+        <Stack pos='absolute' className={cn(s.overlay, s.ignore)} {...props}>
           {highlights.map((highlight, index) => {
             return (
               <Highlights.Component highlight={highlight} index={computedDepths[index]} />
@@ -222,39 +215,55 @@ export namespace Highlights {
 
   export namespace Component {
     export interface Props extends Stack.Props {
-      highlight: λHighlight
-      index?: number
+      highlight: λHighlight;
+      index?: number;
+      native?: boolean;
     }
   }
 
-  export function Component({ highlight, style, className, index = 0, ...props }: Highlights.Component.Props) {
-    const { Info, scrollX, scrollY } = useApplication();
+  export function Component({ highlight, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
+    const { Info, app, scrollX } = useApplication();
 
-    const range: Range = 'range' in highlight ? highlight.range as Range : highlight.time_range.map(t => {
-      const algo = new Algorhithm({
-        frame: Info.app.timeline.frame,
-        scale: Info.app.timeline.scale,
-        scroll: {
-          x: scrollX,
-          y: scrollY
-        },
-        width: Info.width
-      });
+    const range = useMemo((): Range => {
+      if ('range' in highlight && Array.isArray(highlight.range)) {
+        return highlight.range as Range;
+      }
 
-      return algo.rel_x_from_timestamp(t);
-    }) as Range;
+      return highlight.time_range.map(t => Math.round(((t - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX) as Range;
+    }, [app.timeline.frame, app.timeline.scale, scrollX, highlight]);
 
-    const left = Math.min(...range);
+    const [left, width] = useMemo(() => {
+      const left = Math.min(...range);
+      const width = Math.max(...range) - left;
 
-    const width = Math.max(...range) - left;
+      if (!native) {
+        Highlights.set(highlight.id, left, width, index, highlight.color);
+      }
 
-    // @ts-ignore
-    window.highlights.push([left, width, index, highlight.color]);
+      return [left, width];
+    }, [range]);
 
     return (
-      <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index }} jc='flex-end' ai='flex-start' {...props}>
+      <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index, background: native ? `hsla(var(--${highlight.color}-800-value), 0.16)` : 'transparent' }} jc='flex-end' ai='flex-start' {...props}>
         <Badge variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
       </Stack>
     )
+  }
+
+  export function init() {
+    // @ts-ignore
+    window.highlights = window.highlights ?? {};
+  }
+
+  export function list(): [number, number, number, string][] {
+    Highlights.init();
+    // @ts-ignore
+    return Object.values(window.highlights);
+  }
+
+  export function set(id: λHighlight['id'], left: number, width: number, index: number, color: string) {
+    init();
+    // @ts-ignore
+    window.highlights[id] = [left, width, index, color];
   }
 }
