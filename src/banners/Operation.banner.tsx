@@ -1,6 +1,6 @@
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Button, Input, Skeleton, Stack } from '@impactium/components'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useApplication } from '@/context/Application.context'
 import { Operation as GulpOperationEntity } from '@/class/Info'
 import { SelectFiles } from './SelectFiles.banner'
@@ -64,15 +64,26 @@ export namespace Operation {
         )
       }
 
+      const [loading, setLoading] = useState<boolean>(Info.app.target.operations.length === 0);
+
+      useEffect(() => {
+        if (loading) {
+          return;
+        }
+        setTimeout(() => {
+          setLoading(false);
+        }, 500);
+      }, [loading])
+
       return (
         <UIBanner
           title="Choose operation"
           option={<InitializeNewOperaion />}
           done={<DoneButton />}
-          loading={Info.app.target.operations.length === 0}
+          loading={loading}
           {...props}
         >
-          {Info.app.target.operations.length === 0 ? (
+          {loading ? (
             <Skeleton width="full" height="default" />
           ) : (
             <UISelect.Root
