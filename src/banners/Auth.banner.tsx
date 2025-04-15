@@ -96,7 +96,7 @@ export function AuthBanner({ ...props }: AuthBanner.Props) {
     Info.login(user)
 
     Info.plugin_list()
-    await Info.glyphs_reload()
+    Info.glyphs_reload()
     await Info.sync()
     await Info.sync()
 

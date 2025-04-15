@@ -50,7 +50,7 @@ export namespace Operation {
       )
 
       const NoOperations = () => (
-        <UISelect.Item value="X">There is no operations</UISelect.Item>
+        <UISelect.Item value="X" disabled>There is no operations</UISelect.Item>
       )
 
       const SelectTrigger = () => {
@@ -67,9 +67,6 @@ export namespace Operation {
       const [loading, setLoading] = useState<boolean>(Info.app.target.operations.length === 0);
 
       useEffect(() => {
-        if (loading) {
-          return;
-        }
         setTimeout(() => {
           setLoading(false);
         }, 500);

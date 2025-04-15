@@ -22,7 +22,10 @@ export namespace Glyph {
     glyph: λGlyph['id']
   }
 
-  export const Raw = Object.keys(Icon.icons);
+  export const Raw = (() => {
+    console.log(Object.keys(Icon.icons));
+    return Object.keys(Icon.icons)
+  })();
 
   export const List: Map<λGlyph['id'], Icon.Name> = new Map()
 
