@@ -67,10 +67,8 @@ type AnyOptions = Omit<RequestInit, 'body'> & {
 export type Api = {
   /**
    * @param setLoading: SetState<boolean>
-   * Ставит true в перед запросом и false после ответа
    *
    * @param toast: keyof Locale | boolean
-   * Используется при успешном запросе если string, или в случае boolean выводит сообщение об ошибке
    */
   <T>(path: string, options: RawTrueOptions): Promise<λ<ResponseBase<T>>>
   <T>(path: string, options?: RawFalseOptions): Promise<T>

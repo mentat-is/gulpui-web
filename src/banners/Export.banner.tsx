@@ -70,8 +70,8 @@ export namespace Export {
         download(svgString, 'image/svg+xml', 'gulp_canvas.svg')
       } catch (e) {
         Logger.error(e)
-        toast('Out of memory', {
-          description: 'This feature requires minimum 64GB of RAM',
+        toast('gULP don`t have access to your clipboard', {
+          description: 'Allow clipboard access in your browser settings',
         })
       }
     }

@@ -135,9 +135,6 @@ export class MultiSocket extends WebSocket {
       Logger.log(
         `MultiSocket has been initialized with id: ${this.info.app.general.ws_id}`,
         MultiSocket.name,
-        {
-          toast: true,
-        },
       )
       this.send(
         JSON.stringify({
