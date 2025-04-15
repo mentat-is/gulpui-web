@@ -1,6 +1,6 @@
 {
-  "name": "gulp-web-client",
-  "version": "0.1.0",
+  "name": "gulpui-web",
+  "version": "0.2.0",
   "private": true,
   "homepage": ".",
   "dependencies": {
