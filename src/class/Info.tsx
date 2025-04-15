@@ -180,6 +180,7 @@ export namespace Internal {
     TIMELINE_FOCUS_FIELD = 'settings.__field',
     GENERAL_SERVER_VALUE = '__server',
     GENERAL_TOKEN_VALUE = '__token',
+    IS_UTC_TIMESTAMPS = '__is_utc_timestamps',
   }
 
   export namespace Sync {
@@ -322,7 +323,23 @@ export namespace Internal {
         return value === 'true'
       }
 
-      Internal.Settings.crosshair = Internal.Settings.default.crosshair
+      Internal.Settings.crosshair = true
+
+      return Internal.Settings.crosshair
+    }
+
+    public static set isUTCTimestamps(is: boolean) {
+      localStorage.setItem(Internal.LocalStorageItemsList.IS_UTC_TIMESTAMPS, String(is))
+    }
+
+    public static get isUTCTimestamps(): boolean {
+      const value = localStorage.getItem(Internal.LocalStorageItemsList.IS_UTC_TIMESTAMPS)
+
+      if (value) {
+        return value === 'true'
+      }
+
+      Internal.Settings.isUTCTimestamps = false;
 
       return Internal.Settings.crosshair
     }

@@ -1,8 +1,8 @@
 import { useApplication } from '@/context/Application.context'
 import { Stack } from '@impactium/components'
 import s from './styles/Pointers.module.css'
-import { λUser } from '@/class/Info'
-import { useRef, useState } from 'react'
+import { Internal, λUser } from '@/class/Info'
+import { useCallback, useRef, useState } from 'react'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
 import { XY } from '@/dto/XY.dto'
@@ -70,9 +70,34 @@ export function Pointers({
 
   send()
 
+  const format = (date: Date, formatStr: string) => {
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+
+    const getters = {
+      year: Internal.Settings.isUTCTimestamps ? date.getUTCFullYear() : date.getFullYear(),
+      month: Internal.Settings.isUTCTimestamps ? date.getUTCMonth() + 1 : date.getMonth() + 1,
+      day: Internal.Settings.isUTCTimestamps ? date.getUTCDate() : date.getDate(),
+      hour: Internal.Settings.isUTCTimestamps ? date.getUTCHours() : date.getHours(),
+      minute: Internal.Settings.isUTCTimestamps ? date.getUTCMinutes() : date.getMinutes(),
+      second: Internal.Settings.isUTCTimestamps ? date.getUTCSeconds() : date.getSeconds(),
+      ms: Internal.Settings.isUTCTimestamps ? date.getUTCMilliseconds() : date.getMilliseconds(),
+    }
+
+    return formatStr
+      .replace('yyyy', getters.year.toString())
+      .replace('MM', pad(getters.month))
+      .replace('dd', pad(getters.day))
+      .replace('HH', pad(getters.hour))
+      .replace('mm', pad(getters.minute))
+      .replace('ss', pad(getters.second))
+      .replace('SSS', pad(getters.ms, 3))
+  };
+
   const getDate = (value: number) => {
+    Internal.Settings.isUTCTimestamps
     try {
-      return format(new Date(value).getTime(), 'yyyy.MM.dd HH:mm:ss SSS')
+      const date = new Date(value)
+      return format(date, 'yyyy.MM.dd HH:mm:ss SSS')
     } catch (error) {
       Logger.error(
         `Invalid time value. Expected number | string | Date, got ${value}`,

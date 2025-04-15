@@ -8,9 +8,8 @@ export namespace Settings {
     export type Props = UIBanner.Props
   }
   export function Banner({ ...props }: Settings.Banner.Props) {
-    const [crosshair, setCrosshair] = useState<boolean>(
-      Internal.Settings.crosshair,
-    )
+    const [crosshair, setCrosshair] = useState<boolean>(Internal.Settings.crosshair);
+    const [isUTCTimestamps, setIsUTCTimestamps] = useState<boolean>(Internal.Settings.isUTCTimestamps);
 
     useEffect(() => {
       Internal.Settings.crosshair = crosshair
@@ -22,6 +21,11 @@ export namespace Settings {
           option={['Use cursor', 'Use crosshair']}
           checked={crosshair}
           onCheckedChange={setCrosshair}
+        />
+        <Toggle
+          option={['Local timestamps', 'UTC timestamps']}
+          checked={isUTCTimestamps}
+          onCheckedChange={setIsUTCTimestamps}
         />
       </UIBanner>
     )
