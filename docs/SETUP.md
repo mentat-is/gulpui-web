@@ -9,17 +9,17 @@ There are three options for setting up the Gulp web client depending on your nee
 
 To set up the production version of `gulpui-web`, follow these steps:
 ### Requirements:
-- **Git**
-- **Node.js** version > 20.15.0
-- **npm** version > 10.7.0
+- **Node.js**: 22.14.1 // https://nodejs.org/en
+- **pnpm**: 10.8.1 // https://pnpm.io/
+- **gulp**: latest // https://github.com/mentat-is/gulp
 
 ### Installation:
 1. Open a terminal and run the following commands:
     ```sh
     git clone https://github.com/mentat-is/gulpui-web
     cd gulpui-web
-    npm ci
-    npm run build
+    pnpm install
+    pnpm run build
     ```
 
 2. Once the build completes successfully, navigate to the `/build` directory and launch a local server. You can use `LiveServer` or any other static file server.
@@ -30,23 +30,18 @@ To set up the production version of `gulpui-web`, follow these steps:
 
 ## 2. Development Version
 
-For development, you can run `gulpui-web` in watch mode, which automatically reloads after any code changes.
-
-### Requirements:
-- **Git**
-- **Node.js** version > 20.15.0
-- **npm** version > 10.7.0
+For development, you can run `gulpui-web` in watch mode using command `pnpm run dev`, which automatically reloads application and apply changes.
 
 ### Installation:
 1. Open a terminal and run the following commands:
     ```sh
     git clone https://github.com/mentat-is/gulpui-web
     cd gulpui-web
-    npm install
-    npm start
+    pnpm install
+    pnpm run dev
     ```
 
-2. When you modify any files in the `/src` directory, the `gulpui-web` will automatically reload to reflect changes.
+2. When you modify any files in the `/src` directory, the `gulpui-web` will automatically reload to reflect changes.    
 
 ---
 

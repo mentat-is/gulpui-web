@@ -6,7 +6,7 @@ export const useMagnifier = (
   magnifierSize = 100,
   magnificationFactor = 2,
 ) => {
-  const magnifier_ref = useRef<HTMLCanvasElement>(null)
+  const magnifier_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement)
   const [isAltPressed, setIsAltPressed] = useState<boolean>(false)
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
     x: 0,

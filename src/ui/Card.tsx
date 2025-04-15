@@ -5,11 +5,11 @@ import { cn } from '@impactium/utils'
 export namespace Card {
   export interface Props {
     description?:
-      | string
-      | {
-          text: string
-          button: JSX.Element
-        }
+    | string
+    | {
+      text: string
+      button: React.ReactNode
+    }
     children: ReactNode
     className?: string | string[]
   }

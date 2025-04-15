@@ -39,7 +39,7 @@ export namespace Welcome {
     const ActionButtonConstructor = (
       text: string,
       img: Icon.Name,
-      banner: JSX.Element,
+      banner: React.ReactNode,
       processing?: boolean,
     ) => {
       return (
@@ -225,7 +225,7 @@ export namespace Welcome {
     export interface Step {
       name: string
       cond: boolean
-      trigger: JSX.Element
+      trigger: React.ReactNode
       icon?: Icon.Name
       loading?: boolean
       banner?: React.ReactNode

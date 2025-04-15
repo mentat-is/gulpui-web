@@ -25,10 +25,10 @@ export class ApplicationError extends Error {
 }
 
 interface ApplicationContextProps {
-  spawnBanner: (banner: JSX.Element) => void
+  spawnBanner: (banner: React.ReactNode) => void
   destroyBanner: () => void
   banner: React.ReactNode
-  spawnDialog: (dialog: JSX.Element) => void
+  spawnDialog: (dialog: React.ReactNode) => void
   dialog: React.ReactNode
   app: λApp
   scrollX: number;
@@ -56,7 +56,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [app, setInfo] = useState<λApp>(BaseInfo)
   const [banner, setBanner] = useState<ReactNode>()
   const [dialog, setDialog] = useState<ReactNode>(<DisplayGroupDialog events={[]} />)
-  const timeline = useRef<HTMLDivElement>(null)
+  const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const [highlightsOverlay, setHighlightsOverlay] = useState<React.ReactNode>(null);
   const [scrollX, setScrollX] = useState<number>(0)
   const [scrollY, setScrollY] = useState<number>(-26)
@@ -71,7 +71,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     if (app.general.token) setMws(new MultiSocket(instance))
   }, [instance, app])
 
-  const spawnBanner = (banner: JSX.Element) => {
+  const spawnBanner = (banner: React.ReactNode) => {
     setBanner(banner)
     document.querySelector('body')?.classList.add('no-scroll')
   }
@@ -81,7 +81,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     document.querySelector('body')?.classList.remove('no-scroll')
   }
 
-  const spawnDialog = (dialog: JSX.Element) => {
+  const spawnDialog = (dialog: React.ReactNode) => {
     setDialog(dialog)
   }
 

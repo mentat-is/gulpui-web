@@ -1,14 +1,14 @@
-import { Badge, Button, Input, Stack } from "@impactium/components";
+import { Badge, Button, Input, Stack } from '@impactium/components';
 import s from './Highlights.module.css';
-import { Icon } from "@impactium/icons";
-import { useMemo, useRef, useState } from "react";
-import { Range } from "@/class/Info";
-import { useApplication } from "@/context/Application.context";
-import { Glyph } from "@/ui/Glyph";
-import { Default, λGlyph, λHighlight } from "@/dto/Dataset";
-import { Algorhithm } from "@/ui/utils";
-import { capitalize, cn } from "@impactium/utils";
-import { Select } from "@/ui/Select";
+import { Icon } from '@impactium/icons';
+import { useMemo, useRef, useState } from 'react';
+import { Range } from '@/class/Info';
+import { useApplication } from '@/context/Application.context';
+import { Glyph } from '@/ui/Glyph';
+import { Default, λGlyph, λHighlight } from '@/dto/Dataset';
+import { Algorhithm } from '@/ui/utils';
+import { capitalize, cn } from '@impactium/utils';
+import { Select } from '@/ui/Select';
 
 export namespace Highlights {
   export namespace Create {
@@ -73,7 +73,7 @@ export namespace Highlights {
                   <p>{capitalize(color)}</p>
                 </Select.Trigger>
                 <Select.Content>
-                  {["blue", "gray", "green", "pink", "purple", "red", "teal"].map(color => {
+                  {['blue', 'gray', 'green', 'pink', 'purple', 'red', 'teal'].map(color => {
                     return (
                       <Select.Item value={color} style={{ color: `var(--${color}-700)`, background: `var(--${color}-200)` }}>
                         <Icon name='Status' />
@@ -244,6 +244,7 @@ export namespace Highlights {
     }, [range]);
 
     return (
+      // @ts-ignore
       <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index, background: native ? `hsla(var(--${highlight.color}-800-value), 0.16)` : 'transparent' }} jc='flex-end' ai='flex-start' {...props}>
         <Badge variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
       </Stack>

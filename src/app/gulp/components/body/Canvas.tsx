@@ -32,9 +32,9 @@ export namespace Canvas {
 }
 
 export function Canvas({ timeline }: Canvas.Props) {
-  const canvas_ref = useRef<HTMLCanvasElement>(null);
-  const overlay_ref = useRef<HTMLCanvasElement>(null);
-  const wrapper_ref = useRef<HTMLDivElement>(null);
+  const canvas_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
+  const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
+  const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, Info, dialog, highlightsOverlay } = useApplication()
   const [shifted, setShifted] = useState<λFile[]>([])
   const [isShiftPressed] = useKeyHandler('Shift')
