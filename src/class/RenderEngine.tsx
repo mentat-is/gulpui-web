@@ -117,9 +117,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return this
   }
 
-  /**
-   * Рисует линию разграничения снизу исходя из названия контекста
-   */
   public lines = (file: λFile) => {
     const color = stringToHexColor(File.context(this.info.app, file).name)
     const y = File.getHeight(this.info.app, file, this.scrollY)
@@ -134,9 +131,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     )
   }
 
-  /**
-   * Рисует линию как из метода `this.lines` но только вверху
-   */
   public primary = (file: λFile) => {
     const y = File.getHeight(this.info.app, file, this.scrollY)
 
@@ -146,11 +140,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(0, y - 25, window.innerWidth, 1)
   }
 
-  /**
-   *
-   * @param color `Color` - цвет заливки
-   * @param y `number` - позиция по середине `λFile`
-   */
   public fill = (color: Color, y: number, isShifted: boolean) => {
     this.ctx.fillStyle = color + (isShifted ? 12 : 32)
     this.ctx.fillRect(0, y - 24, window.innerWidth, 48)

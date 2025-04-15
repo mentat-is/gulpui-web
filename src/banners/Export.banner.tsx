@@ -65,7 +65,6 @@ export namespace Export {
           svgRoot.appendChild(img)
         }
 
-        // Экспорт
         const serializer = new XMLSerializer()
         const svgString = serializer.serializeToString(svgRoot)
         download(svgString, 'image/svg+xml', 'gulp_canvas.svg')
