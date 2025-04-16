@@ -1021,8 +1021,12 @@ export class Info implements InfoProps {
     const formData = new FormData()
     const payload: Record<any, any> = {
       plugin_params: {
-        mapping_file: settings.method,
-        mapping_id: settings.mapping,
+        mapping_parameters: {
+          mapping_file: settings.method,
+          mapping_id: settings.mapping,
+          mappings: {}
+        },
+        custom_parameters: {},
       },
       original_file_path: file.name,
     }
@@ -1082,14 +1086,16 @@ export class Info implements InfoProps {
         return response.data as unknown as λEvent[]
       }
 
-      // if uploadig failed - resume uploading
-      if (response.isError() && response.data.continue_offset) return ingest(response.data.continue_offset, response.req_id)
+      // resume
+      if (response.isError() && response.data.continue_offset)
+        return ingest(response.data.continue_offset, response.req_id);
 
 
       if (setProgress) setProgress(end / file.size * 100)
 
-      // if uploadig done - upload next chunk
-      if (end < file.size) return ingest(end, response.req_id);
+      // next
+      if (end < file.size)
+        return ingest(end, response.req_id);
     }
 
     return ingest();
