@@ -14,6 +14,7 @@ import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functiona
 import { λLink, λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
 import { Markdown } from '@/ui/Markdown'
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/ui/ContextMenu'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -55,9 +56,39 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``)
   }
 
+  const [selection, setSelection] = useState<string>('');
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+      if (!selection) {
+        return;
+      }
+
+      setSelection(selection.toString().trim());
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, []);
+
   const highlights = useMemo(() => {
     return (
-      <Markdown className={s.highlighter} value={rawJSON} />
+      <ContextMenu>
+        <ContextMenuTrigger>
+          <Markdown className={s.highlighter} value={rawJSON} />
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem disabled={!selection} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
+            text: selection
+          } as λNote} />)} img='StickyNote'>New note</ContextMenuItem>
+          <ContextMenuItem disabled={!selection} img='GitPullRequestCreate'>New link</ContextMenuItem>
+          <ContextMenuItem disabled img='Filter'>New filter</ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
     )
   }, [rawJSON])
 

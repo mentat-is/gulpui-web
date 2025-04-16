@@ -59,7 +59,7 @@ export namespace NoteFunctionality {
 
         const glyph_id = icon as λGlyph['id']
 
-        if (note) {
+        if (note?.id) {
           await Info.note_edit({
             id: note.id,
             name,
@@ -82,7 +82,7 @@ export namespace NoteFunctionality {
 
       return (
         <UIBanner
-          title={note ? 'Edit note' : 'Create note'}
+          title={note?.id ? 'Edit note' : 'Create note'}
           done={
             <Button
               loading={loading}
