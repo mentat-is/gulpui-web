@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
-import { Gauge, Input, Loading } from '@impactium/components'
+import { Input, Spinner } from '@impactium/components'
 import { Select } from '@/ui/Select'
 import { useEffect, useState, useCallback, useMemo, ChangeEvent, useRef } from 'react'
 import s from './styles/UploadBanner.module.css'
@@ -165,7 +165,7 @@ namespace Components {
             <Button img='PreviewDocument' size='sm' style={{ width: 24 }} variant='ghost' />
           </PopoverTrigger>
           <PopoverContent style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
-            {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} /> : <Loading style={{ width: 'fit-content', whiteSpace: 'nowrap' }} variant='white' size='default' />}
+            {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
           </PopoverContent>
         </Popover>
       </Stack>

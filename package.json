@@ -4,7 +4,7 @@
   "private": true,
   "homepage": ".",
   "dependencies": {
-    "@impactium/components": "^1.1.17",
+    "@impactium/components": "^1.2.4",
     "@impactium/icons": "^1.2.8",
     "@impactium/types": "^1.0.0",
     "@impactium/utils": "^1.0.2",

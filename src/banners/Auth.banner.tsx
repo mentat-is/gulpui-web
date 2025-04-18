@@ -1,6 +1,6 @@
 import { Banner } from '@/ui/Banner'
 import { Button, Stack } from '@impactium/components'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Session } from './Session.banner'
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@impactium/components'
@@ -11,7 +11,6 @@ import { Operation } from './Operation.banner'
 import { Icon } from '@impactium/icons'
 import { capitalize } from '@impactium/utils'
 import { addDays } from 'date-fns'
-import { sleep } from '@/ui/utils'
 
 export namespace AuthBanner {
   export type Props = Banner.Props

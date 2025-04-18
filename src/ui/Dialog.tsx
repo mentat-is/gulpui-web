@@ -1,9 +1,8 @@
 import { useEffect } from 'react'
 import s from './styles/Dialog.module.css'
 import { cn } from '@impactium/utils'
-import { Stack } from '@impactium/components'
+import { Spinner, Stack } from '@impactium/components'
 import { useApplication } from '@/context/Application.context'
-import { Loading } from '@impactium/components'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 
 export namespace Dialog {
@@ -64,7 +63,7 @@ export function Dialog({
         </Stack>
       </Stack>
       <Stack dir='column' ai='stretch' className={cn(s.content, loading && s.loading)}>
-        {loading ? <Loading size='lg' variant="white" /> : children}
+        {loading ? <Spinner size={24} /> : children}
       </Stack>
     </Stack>
   )

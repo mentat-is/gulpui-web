@@ -34,6 +34,7 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
   }
 
   return (
+    // @ts-ignore
     <Point
       onClick={openEvent}
       icon={Link.icon(link)}

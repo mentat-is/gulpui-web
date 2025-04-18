@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@impactium/components':
-        specifier: ^1.1.17
-        version: 1.1.17(@types/node@22.14.1)(@types/react@19.1.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tailwind-merge@2.6.0)(typescript@5.8.3)
+        specifier: ^1.2.4
+        version: 1.2.4(@types/node@22.14.1)(@types/react@19.1.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tailwind-merge@2.6.0)(typescript@5.8.3)
       '@impactium/icons':
         specifier: ^1.2.8
         version: 1.2.8(@types/node@22.14.1)(class-variance-authority@0.7.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
@@ -1114,8 +1114,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@impactium/components@1.1.17':
-    resolution: {integrity: sha512-OHj0rg9Bh9Z03Qrdh2KcDINSIRLEIiOEewUO563v6cheLx726eN1dLFejpNcnFcESrON0+j/gOkzVvU+WVseDw==}
+  '@impactium/components@1.2.4':
+    resolution: {integrity: sha512-CwisHLUpUnkNjRVPcoe0d36iSnaAP5MkcBtX6DlWod1JZQY/oJ0/doe9+hxYZZx6U6pH8SFJoW222wscp4Mi2Q==}
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
     peerDependencies:
       class-variance-authority: ^0.7.1
@@ -1132,9 +1132,6 @@ packages:
         optional: true
       tailwind-merge:
         optional: true
-
-  '@impactium/design@1.0.1':
-    resolution: {integrity: sha512-tcf1dpAi/UMQC4GRTFZzI52bQlxXc11eH92vuNV/McS+fzzewxA0imm1hqRu2yFAEPy51uxlbsUgZFcImvu5Fg==}
 
   '@impactium/icons@1.2.8':
     resolution: {integrity: sha512-1EAOwnnA0Lvb6a/MRAvNq3hUpfpiwMjzR7k2rIjBtlLv4HkXkSo2zs2405EFO9Xl8iHUmL+Mw5mi3fIEGU+rpw==}
@@ -8024,9 +8021,8 @@ snapshots:
   '@img/sharp-win32-x64@0.34.1':
     optional: true
 
-  '@impactium/components@1.1.17(@types/node@22.14.1)(@types/react@19.1.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tailwind-merge@2.6.0)(typescript@5.8.3)':
+  '@impactium/components@1.2.4(@types/node@22.14.1)(@types/react@19.1.2)(class-variance-authority@0.7.1)(clsx@2.1.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(tailwind-merge@2.6.0)(typescript@5.8.3)':
     dependencies:
-      '@impactium/design': 1.0.1
       '@impactium/icons': 1.2.8(@types/node@22.14.1)(class-variance-authority@0.7.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)
       '@impactium/utils': 1.0.2
       '@radix-ui/react-slot': 1.2.0(@types/react@19.1.2)(react@19.1.0)
@@ -8042,8 +8038,6 @@ snapshots:
       - '@types/node'
       - '@types/react'
       - typescript
-
-  '@impactium/design@1.0.1': {}
 
   '@impactium/icons@1.2.8(@types/node@22.14.1)(class-variance-authority@0.7.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.8.3)':
     dependencies:

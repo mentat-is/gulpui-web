@@ -87,6 +87,7 @@ export namespace NotePoint {
     }
 
     return (
+      // @ts-ignore
       <UIPoint
         onClick={openEvent}
         icon={Note.icon(note)}

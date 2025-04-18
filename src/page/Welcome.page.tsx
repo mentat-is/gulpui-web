@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Badge, Button, Loading, Stack } from '@impactium/components'
+import { Badge, Button, Spinner, Stack } from '@impactium/components'
 import s from './styles/WelcomePage.module.css'
 import { useWindows } from '../ui/Windows'
 import { Icon } from '@impactium/icons'
@@ -285,7 +285,7 @@ export namespace Welcome {
     }, [cond, resolvedCond])
 
     const Image = loading ? (
-      <Loading variant="dimmed" size="icon" />
+      <Spinner />
     ) : (
       <Icon
         name={icon || (resolvedCond ? 'CheckCircleFill' : 'CheckCircle')}
