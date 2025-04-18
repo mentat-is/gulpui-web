@@ -4,9 +4,9 @@ import { Dialog } from '@/ui/Dialog'
 import { SymmetricSvg } from '@/ui/SymmetricSvg'
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
-import { copy, download } from '@/ui/utils'
+import { copy, download, generateUUID } from '@/ui/utils'
 import { Button, Skeleton, Stack } from '@impactium/components'
-import { Event, File } from '@/class/Info'
+import { Event, File, Filter, λFilter } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkComponents } from '@/banners/CreateLinkBanner'
@@ -15,6 +15,8 @@ import { λLink, λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
 import { Markdown } from '@/ui/Markdown'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/ui/ContextMenu'
+import { FilterFileBanner } from '@/banners/FilterFile.banner'
+import { toast } from 'sonner'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -53,7 +55,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       'event.original': detailed['event.original'],
     }
 
-    setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``)
+    setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``);
   }
 
   const [selection, setSelection] = useState<string>('');
@@ -74,6 +76,57 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     };
   }, []);
 
+  function toKeyValue(raw: string): Record<string, string> {
+    const result: Record<string, string> = {}
+
+    for (const line of raw.split("\n")) {
+      const [rawKey, rawValue] = line.split(":")
+      if (!rawKey) continue
+
+      const key = rawKey.trim().replace(/^"+|"+$/g, "")
+      const value = rawValue
+        ?.trim()
+        .replace(/^"+|"+$/g, "")
+        .replace(/[,"]+$/, "")
+        || "*"
+
+      result[key] = value
+    }
+
+    return result
+  }
+
+  const applySelectionAsFileFilter = () => {
+    if (!selection) {
+      return;
+    }
+
+    const { filters } = Info.getQuery(event.file_id);
+
+    const object = toKeyValue(selection);
+
+    if (Object.keys(object).length === 0) {
+      toast(`Invalid selection. Unnable to add new filters`);
+      return;
+    }
+
+    const newFilters: λFilter[] = Object.keys(object).map(k => {
+      return {
+        id: generateUUID() as λFilter['id'],
+        type: (object[k].includes('*') || k.includes('*')) ? 'regexp' : 'match',
+        operator: 'must',
+        field: k,
+        value: object[k]
+      } satisfies λFilter
+    })
+
+    Info.setFilters(event.file_id, [...filters, ...newFilters]);
+
+    toast(`Has been added ${newFilters.length} new filters`)
+
+    spawnBanner(<FilterFileBanner file={File.id(app, event.file_id)} />);
+  };
+
   const highlights = useMemo(() => {
     return (
       <ContextMenu>
@@ -83,14 +136,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
         <ContextMenuContent>
           <ContextMenuItem disabled={!selection} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
             text: selection
-          } as λNote} />)} img='StickyNote'>New note</ContextMenuItem>
-          <ContextMenuItem disabled={!selection} img='GitPullRequestCreate'>New link</ContextMenuItem>
-          <ContextMenuItem disabled img='Filter'>New filter</ContextMenuItem>
+          } as λNote} />)} img='StickyNote'>Create new note</ContextMenuItem>
+          <ContextMenuItem disabled={!selection} img='GitPullRequestCreate'>Create new link</ContextMenuItem>
+          <ContextMenuItem onClick={applySelectionAsFileFilter} img='Filter'>New filter</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
 
     )
-  }, [rawJSON])
+  }, [rawJSON, selection]);
 
   const collabList = useMemo(() => {
     return (
