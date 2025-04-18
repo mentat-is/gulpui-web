@@ -166,6 +166,7 @@ const Crosshair = ({ containerRef }: Crosshair.Props) => {
   return (
     <div
       ref={cursorRef}
+      aria-crosshair
       className="cursor"
       style={{
         position: containerRef ? 'absolute' : 'fixed',

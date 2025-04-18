@@ -392,7 +392,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     <ContextMenu>
       <ContextMenuTrigger
         ref={wrapper_ref}
-        className={cn(s.wrapper, isAltPressed && s.cursor)}
+        className={cn(s.wrapper, isAltPressed && s.cursor, s.no_cursor)}
         onMouseLeave={handleMouseUpOrLeave as any}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}

@@ -6,6 +6,7 @@ import html2canvas from 'html2canvas'
 // @ts-ignore
 import C2S from 'canvas2svg'
 import { Button, Stack } from '@impactium/components'
+import s from '../app/gulp/components/body/styles/Canvas.module.css';
 
 export namespace Export {
   export namespace Banner {
@@ -14,8 +15,17 @@ export namespace Export {
 
   export function Banner({ ...props }: Banner.Props) {
     const exportCanvasAsImage = async () => {
-      const parent = document.querySelector('#canvas')?.parentElement
-      if (!parent) return
+      const canvas = document.querySelector('#canvas');
+      if (!canvas) {
+        return;
+      }
+
+      canvas.classList.add(s.no_cursor);
+
+      const parent = canvas.parentElement;
+      if (!parent) {
+        return;
+      }
 
       const exportedCanvas = await html2canvas(parent, {
         backgroundColor: null,
@@ -28,6 +38,8 @@ export namespace Export {
       link.href = url
       link.download = `exported_canvas_${Date.now()}.png`
       link.click()
+
+      canvas.classList.remove(s.no_cursor);
     }
 
     const exportCanvasAsSvg = async () => {
