@@ -5,7 +5,7 @@ import { Info, MinMax, MinMaxBase } from '@/class/Info'
 import { ChangeEvent, RefObject } from 'react'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Hardcode } from '@/class/Engine.dto'
-import { λFile } from '@/dto/Dataset'
+import { GulpObject, λFile, λOperation } from '@/dto/Dataset'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { SetState } from '@/class/API'
 
@@ -75,12 +75,12 @@ export const throwableByTimestamp = (
     time.min > (app.timeline.frame.max || Infinity)
 }
 
-export function generateUUID(): UUID {
+export function generateUUID<T>(): T {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
     const v = c === 'x' ? r : (r & 0x3) | 0x8
     return v.toString(16) as UUID
-  }) as UUID
+  }) as T
 }
 export const getLimits = (
   app: λApp,

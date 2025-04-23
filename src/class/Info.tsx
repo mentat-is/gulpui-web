@@ -1458,7 +1458,7 @@ export class Info implements InfoProps {
     return api<λLink>('/link_update', {
       method: 'PATCH',
       query: {
-        object_id: link.id,
+        obj_id: link.id,
         ws_id: this.app.general.ws_id,
       },
       toast: `Event ${event.id} has been connected to link ${link.name} successfully`,

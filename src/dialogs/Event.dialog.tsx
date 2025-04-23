@@ -110,15 +110,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return;
     }
 
-    const newFilters: λFilter[] = Object.keys(object).map(k => {
-      return {
-        id: generateUUID() as λFilter['id'],
-        type: (object[k].includes('*') || k.includes('*')) ? 'regexp' : 'match',
-        operator: 'must',
-        field: k,
-        value: object[k]
-      } satisfies λFilter
-    })
+    const newFilters: λFilter[] = Object.keys(object).map(k => ({
+      id: generateUUID<λFilter['id']>(),
+      type: (object[k].includes('*') || k.includes('*')) ? 'regexp' : 'match',
+      operator: 'must',
+      field: k,
+      value: object[k]
+    }));
 
     Info.setFilters(event.file_id, [...filters, ...newFilters]);
 

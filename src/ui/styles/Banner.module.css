@@ -69,7 +69,9 @@
 .cell {
   background-color: var(--soft-black);
 }
-
+.done * {
+  --spinner-size: 28px !important;
+}
 .side {
   --graph-width: calc(var(--cell-size, 88px)* 3);
   border: 1px solid var(--gray-400);

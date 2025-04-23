@@ -101,7 +101,7 @@ export function Banner({
             option
           )}
         </Cell>
-        <Cell key="cell-4" className={s.cell} bottom right>
+        <Cell key="cell-4" className={cn(s.cell, s.done)} bottom right>
           {done}
         </Cell>
         {Side}
