@@ -23,6 +23,7 @@ export namespace NotePoint {
 
   export function Combination({
     className,
+    style,
     note,
     ...props
   }: Combination.Props) {
@@ -49,7 +50,7 @@ export namespace NotePoint {
     return (
       <Stack
         className={cn(s.combination, className)}
-        style={{ color: note.color }}
+        style={{ ...style, color: note.color }}
         {...props}
       >
         <Icon name={Note.icon(note)} />
@@ -105,12 +106,13 @@ export namespace NotePoint {
   }
 
   export function Group({ notes, ...props }: Group.Props) {
+    const { scrollY } = useApplication();
     if (notes.length === 0) {
       return null
     }
 
     return (
-      <Stack className={s.wrapper} pos='absolute' style={{ top: props.y, left: props.x }} dir='column-reverse' gap={0}>
+      <Stack className={s.wrapper} pos='absolute' style={{ top: props.y - scrollY, left: props.x }} dir='column-reverse' gap={0}>
         <UIPoint icon='Dot' accent='var(--gray-1000)' name='' y={0} x={0}>
           {notes.length}
         </UIPoint>

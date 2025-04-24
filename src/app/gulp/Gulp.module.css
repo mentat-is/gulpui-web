@@ -5,17 +5,20 @@
   display: flex;
   flex-direction: row;
 }
-.timeline > span {
+
+.timeline>span {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
   height: 100%;
 }
+
 .content {
   display: flex;
   position: relative;
 }
+
 .controls {
   position: absolute;
   bottom: 12px;
@@ -24,28 +27,34 @@
   display: flex;
   gap: 8px;
 }
+
 .cm_title {
   max-width: 256px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .menu {
   height: 100%;
 }
+
 .menu button {
   height: 36px;
   width: 36px;
 }
+
 .menu button svg {
   height: 18px;
   width: 18px;
 }
+
 .delete {
   background: var(--red-100);
   transition: all 0.125s var(--transition);
   color: var(--red-1000);
 }
+
 .delete:hover {
   background: var(--red-200);
 }
