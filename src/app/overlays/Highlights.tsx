@@ -2,13 +2,25 @@ import { Badge, Button, Input, Stack } from '@impactium/components';
 import s from './Highlights.module.css';
 import { Icon } from '@impactium/icons';
 import { useMemo, useRef, useState } from 'react';
-import { Range } from '@/class/Info';
+import { Operation, Range } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Glyph } from '@/ui/Glyph';
 import { Default, λGlyph, λHighlight } from '@/dto/Dataset';
 import { Algorhithm } from '@/ui/utils';
 import { capitalize, cn } from '@impactium/utils';
 import { Select } from '@/ui/Select';
+import { λApp } from '@/dto';
+
+export class Highlight {
+  static selected = (app: λApp): λHighlight[] => {
+    const operation = Operation.selected(app);
+    if (!operation) {
+      return [];
+    }
+
+    return app.target.highlights.filter(h => h.operation_id === operation.id);
+  }
+}
 
 export namespace Highlights {
   export namespace Create {
@@ -171,7 +183,7 @@ export namespace Highlights {
     export function Overlay({ ...props }: Highlights.List.Overlay.Props) {
       const { app } = useApplication();
 
-      const highlights = useMemo(() => app.target.highlights, [app.target.highlights]);
+      const highlights = useMemo(() => Highlight.selected(app), [app.target.highlights, app.target.operations]);
 
       const computedDepths = useMemo(() => computeDepths(highlights), [highlights]);
 

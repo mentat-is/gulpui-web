@@ -19,18 +19,25 @@ export const parseTokensFromCookies = (tokens: string) => {
   }
 }
 
+const colorCache = new Map<string, Color>()
+
 export const stringToHexColor = (str: string): Color => {
+  if (colorCache.has(str)) return colorCache.get(str)!
+
   let hash = 0
   for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+    hash = (hash << 5) - hash + str.charCodeAt(i)
+    hash |= 0
   }
-  let color = '#'
-  for (let i = 0; i < 3; i++) {
-    const value = (hash >> (i * 8)) & 0xff
-    color += ('00' + value.toString(16)).slice(-2)
-  }
-  return color as Color
+
+  const color = `#${[0, 1, 2]
+    .map(i => ((hash >> (i * 8)) & 0xff).toString(16).padStart(2, '0'))
+    .join('')}` as Color
+
+  colorCache.set(str, color)
+  return color
 }
+
 
 export const parse = (str: string) => parseFloat(str.replace('px', ''))
 

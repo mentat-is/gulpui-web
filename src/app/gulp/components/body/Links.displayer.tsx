@@ -26,9 +26,15 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
       if (!event || !selectedFiles.has(event.file_id)) return acc
 
       const timestamp = Link.timestamp(link)
+
+      console.log(timestamp)
+
       if (!timestamp) return acc
 
       const left = getPixelPosition(timestamp)
+
+      console.log(left)
+
       const totalHeight = link.docs.reduce((acc, doc) => acc + File.getHeight(app, doc.file_id, 0), 0)
 
       const top = totalHeight / (link.docs.length || 1)
@@ -36,12 +42,12 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
       if (top > 0) acc[link.id] = { left, top }
       return acc
     }, {})
-  }, [app.target.links, selectedFiles, getPixelPosition, scrollX, scrollY])
+  }, [app.target.links, selectedFiles, getPixelPosition]);
 
   return (
     <Fragment>
       {Object.entries(mapping).map(([id, { left, top }]) => (
-        <LinkPoint key={id} link={app.target.links.find(link => link.id === id)!} x={left} y={top} />
+        <LinkPoint key={id} link={app.target.links.find(link => link.id === id)!} x={left} y={top - scrollY} />
       ))}
     </Fragment>
   )

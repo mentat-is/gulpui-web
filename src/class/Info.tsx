@@ -1271,7 +1271,7 @@ export class Info implements InfoProps {
       {
         method: 'DELETE',
         query: {
-          object_id: note.id,
+          obj_id: note.id,
           ws_id: this.app.general.ws_id,
         },
       },
@@ -1313,7 +1313,7 @@ export class Info implements InfoProps {
   })
 
   note_edit = ({
-    id: object_id,
+    id: obj_id,
     name,
     text,
     color,
@@ -1329,7 +1329,7 @@ export class Info implements InfoProps {
   }) => api('/note_update', {
     method: 'PATCH',
     query: {
-      object_id,
+      obj_id,
       ws_id: this.app.general.ws_id,
       name,
       glyph_id,
@@ -1337,7 +1337,6 @@ export class Info implements InfoProps {
     },
     body: {
       text,
-      // TODO
       tags: [],
       docs: Event.formatForServer(event),
     }
@@ -1384,7 +1383,7 @@ export class Info implements InfoProps {
       {
         method: 'DELETE',
         query: {
-          object_id: link.id,
+          obj_id: link.id,
           ws_id: this.app.general.ws_id,
         },
       },
@@ -1423,7 +1422,7 @@ export class Info implements InfoProps {
   }
 
   link_edit = ({
-    id: object_id,
+    id: obj_id,
     name,
     color = Default.Color.LINK,
     glyph_id,
@@ -1440,7 +1439,7 @@ export class Info implements InfoProps {
     return api('/link_update', {
       method: 'PATCH',
       query: {
-        object_id,
+        obj_id,
         name,
         color,
         glyph_id,
@@ -1469,7 +1468,7 @@ export class Info implements InfoProps {
   }
 
   highlights_reload = () => api<λHighlight[]>('/highlight_list', {
-    method: 'POST'
+    method: 'POST',
   }, h => this.setInfoByKey(h, 'target', 'highlights'));
 
   highlight_create = async ({
@@ -2654,8 +2653,9 @@ export class Link {
   public static timestamp = (link: λLink): number => {
     let sum = 0
 
-    link.docs?.forEach((d) => (sum += d.timestamp))
-    return sum / link.docs?.length || 1
+    link.docs.forEach((d) => (sum += d.timestamp))
+
+    return sum / link.docs.length || 1
   }
 }
 

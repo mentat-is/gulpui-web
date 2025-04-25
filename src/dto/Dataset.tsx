@@ -145,6 +145,7 @@ export type λHighlight = GulpObject<μ.Highlight, {
   type: 'highlight',
   time_range: Range,
   tags: string[],
+  operation_id: λOperation['id'];
   color: string
 }>
 
