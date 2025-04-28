@@ -6,7 +6,7 @@ import html2canvas from 'html2canvas'
 // @ts-ignore
 import C2S from 'canvas2svg'
 import { Button, Stack } from '@impactium/components'
-import s from '../app/gulp/components/body/styles/Canvas.module.css';
+import s from '../app/body/styles/Canvas.module.css';
 
 export namespace Export {
   export namespace Banner {

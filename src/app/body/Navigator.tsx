@@ -14,7 +14,7 @@ import { NotesWindow } from '@/components/NotesWindow'
 import { SetState } from '@/class/API'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { Logger } from '@/dto/Logger.class'
-import { Highlights } from '@/app/overlays/Highlights'
+import { Highlights } from '@/overlays/Highlights'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {

@@ -4,12 +4,13 @@ import {
   ApplicationProvider,
   useApplication,
 } from './context/Application.context'
-import { GulpPage } from './app/gulp/Gulp'
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect } from 'react'
 import { AuthBanner } from './banners/Auth.banner'
 import { λthrow } from '@impactium/utils'
+import { Windows } from './ui/Windows'
+import { PluginProvider } from './context/Plugin.context'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -32,8 +33,10 @@ declare global {
 function Root() {
   return (
     <ApplicationProvider>
-      <Main />
-      <Toaster />
+      <PluginProvider>
+        <Main />
+        <Toaster />
+      </PluginProvider>
     </ApplicationProvider>
   )
 }
@@ -49,5 +52,5 @@ function Main() {
     }
   }, [app.general])
 
-  return <GulpPage />
+  return <Windows.Provider />
 }

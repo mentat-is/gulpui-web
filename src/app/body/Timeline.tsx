@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import s from '../../Gulp.module.css'
+import s from '../Gulp.module.css'
 import { useApplication } from '@/context/Application.context'
 import { Canvas } from './Canvas'
 import { Stack } from '@impactium/components'

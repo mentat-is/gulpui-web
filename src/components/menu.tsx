@@ -1,5 +1,5 @@
 import { Button, Stack } from '@impactium/components'
-import s from '../../Gulp.module.css'
+import s from './styles/menu.module.css'
 import { UploadBanner } from '@/banners/Upload.banner'
 import { useApplication } from '@/context/Application.context'
 import { SelectFiles } from '@/banners/SelectFiles.banner'

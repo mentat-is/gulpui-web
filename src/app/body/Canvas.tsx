@@ -15,7 +15,7 @@ import { File } from '@/class/Info'
 import Crosshair from './Crosshair'
 import { Stack } from '@impactium/components'
 import { debounce } from 'lodash'
-import { useDrugs, useKeyHandler } from '@/app/use'
+import { useDrugs, useKeyHandler } from '@/decorator/use'
 import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { FilesMenu } from './Files.manu'
 import { TargetMenu } from './Target.menu'
@@ -23,7 +23,7 @@ import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
 import { XY, XYBase } from '@/dto/XY.dto'
-import { Highlights } from '@/app/overlays/Highlights'
+import { Highlights } from '@/overlays/Highlights'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {

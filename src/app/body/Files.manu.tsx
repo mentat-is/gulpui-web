@@ -1,4 +1,4 @@
-import s from './../../Gulp.module.css'
+import s from '../Gulp.module.css'
 import { useApplication } from '@/context/Application.context'
 import { enginesBase } from '@/dto/Engine.dto'
 import { λFile } from '@/dto/Dataset'

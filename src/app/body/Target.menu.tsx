@@ -1,4 +1,4 @@
-import s from './../../Gulp.module.css'
+import s from '../Gulp.module.css'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner'
 import { useApplication } from '@/context/Application.context'
