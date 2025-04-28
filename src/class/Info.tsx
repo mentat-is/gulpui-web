@@ -2016,7 +2016,13 @@ export class Info implements InfoProps {
         operation_id: operation.id,
         plugin
       },
-      body,
+      body: {
+        ...body,
+        mapping_parameters: {
+          mapping_file: Mapping.methods(this.app, plugin)[0],
+          mappings: {}
+        }
+      },
       toast: 'Sigma rule has been successfully applied',
     })
   }
