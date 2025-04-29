@@ -15,6 +15,7 @@ import { Export } from '@/banners/Export.banner'
 import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
+import { Plugin } from '@/context/Plugin.context'
 
 export function Menu() {
   const { app, spawnBanner, scrollX, scrollY } = useApplication()
@@ -93,6 +94,12 @@ export function Menu() {
         img="PrismColor"
         onClick={enrichment}
       />
+      <Button
+        variant="secondary"
+        title="Plugins"
+        img="LogoImpactium"
+        onClick={() => spawnBanner(<Plugin.Upload.Banner />)}
+      />
       <Stack flex />
       <Button
         className={s.requests}
@@ -103,14 +110,12 @@ export function Menu() {
       >
         {app.general.requests.filter((r) => r.status === 'pending').length}
       </Button>
-      {
-        <Button
-          variant="secondary"
-          title="Manage Permissions"
-          img="UserSettings"
-          onClick={() => spawnBanner(<Permissions.Banner />)}
-        />
-      }
+      <Button
+        variant="secondary"
+        title="Manage Permissions"
+        img="UserSettings"
+        onClick={() => spawnBanner(<Permissions.Banner />)}
+      />
       <Button
         variant="secondary"
         title="Back to operations"

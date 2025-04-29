@@ -8,6 +8,7 @@ import { Menu } from '@/components/menu'
 import { cn } from '@impactium/utils'
 import { Resizer } from './Resizer'
 import { Welcome } from '../page/Welcome.page'
+import { Plugin } from '@/context/Plugin.context'
 
 export namespace Windows {
   export interface Props {

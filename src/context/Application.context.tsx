@@ -174,22 +174,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ApplicationContext.Provider value={props}>
       {children}
-      {banner}
-      {/* <Console
-        noise={true}
-        onCommand={onCommand}
-        history={Logger.history()}
-        title="Gulp Web Client"
-        trigger="\"
-        icon={
-          <img
-            style={{ filter: `var(--filter-to-white)`, width: 14 }}
-            src="/gulp-no-text.svg"
-            alt=""
-          />
-        }
-        prefix={prefix}
-      /> */}
     </ApplicationContext.Provider>
   )
 }
