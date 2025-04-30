@@ -94,12 +94,7 @@ export function Menu() {
         img="PrismColor"
         onClick={enrichment}
       />
-      <Button
-        variant="secondary"
-        title="Plugins"
-        img="LogoImpactium"
-        onClick={() => spawnBanner(<Plugin.Upload.Banner />)}
-      />
+      <Plugin.All type='menu' />
       <Stack flex />
       <Button
         className={s.requests}

@@ -11,6 +11,7 @@ import { Operation } from './Operation.banner'
 import { Icon } from '@impactium/icons'
 import { capitalize } from '@impactium/utils'
 import { addDays } from 'date-fns'
+import { Plugin } from '@/context/Plugin.context'
 
 export namespace AuthBanner {
   export type Props = Banner.Props
@@ -18,6 +19,7 @@ export namespace AuthBanner {
 
 export function AuthBanner({ ...props }: AuthBanner.Props) {
   const { spawnBanner, Info } = useApplication()
+  const { plugins } = Plugin.use();
   const loginButton = useRef<HTMLButtonElement>(null)
   const [isKeyPressed] = useKeyHandler('Enter')
   const [server, setServer] = useState<string>(Info.app.general.server)

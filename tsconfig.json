@@ -30,6 +30,7 @@
     "src",
     "src/**/*",
     "global.d.ts",
-    "custom.d.ts"
+    "custom.d.ts",
+    "public/some_crazy_plugin"
   ]
 }

@@ -1,11 +1,14 @@
-import { ChangeEvent, createContext, lazy, ReactNode, useContext, useState } from "react";
-import { Banner as UIBanner } from "@/ui/Banner";
-import { Input } from "@impactium/components";
+import { createContext, ReactNode, Suspense, useContext, useEffect, useState } from "react";
 import * as esbuild from 'esbuild-wasm';
 import { toast } from "sonner";
 import { useApplication } from "./Application.context";
+import React from "react";
+
+const __component = Symbol('λ_plugin_component');
 
 export function PluginProvider({ children }: Plugin.Provider.Props) {
+  const x = ['some_crazy_plugin'];
+
   const { banner } = useApplication();
   const [plugins, setPlugins] = useState<Plugin.Interface[]>([]);
   const [initialized, setInitialized] = useState<boolean>(false);
@@ -30,30 +33,83 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
     });
   }
 
-  const parse = async (raw: string) => {
+  const parse = async (mapping: Plugin.Mapping, raw: string): Promise<React.LazyExoticComponent<React.ComponentType<any>>> => {
     await initialize();
 
-    const result = await esbuild.transform(raw, {
-      loader: "tsx",
+    const { code } = await esbuild.transform(raw, {
+      loader: mapping.entry.endsWith('.jsx') ? 'jsx' : 'tsx',
       jsx: "transform",
-      target: "es2017",
-      format: "esm"
+      target: "es2017"
     });
 
-    const blob = new Blob([result.code], { type: "application/javascript" })
-    const url = URL.createObjectURL(blob)
+    const blob = new Blob([code], { type: 'application/javascript' });
 
-    const promise = import(/* @vite-ignore */ url);
+    const url = URL.createObjectURL(blob);
 
-    const LazyComponent = lazy(() => promise);
-
-    return {
-      name: 'Plugin | A',
-      component: <LazyComponent />,
-      parent: "root",
-      raw
-    } satisfies Plugin.Interface;
+    return React.lazy(() => import(/* webpackIgnore: true */ url));
   }
+
+  const validate = (object: Record<string, string>): {
+    mapping: Plugin.Mapping,
+    error: (() => void) | null;
+  } => {
+    const mapping = object as unknown as Plugin.Mapping;
+
+    return { mapping, error: null };
+  }
+
+  const error = (error: string) => {
+    toast.error(error.toString(), {
+      richColors: true
+    });
+  }
+
+  const load = async (name: string) => {
+    try {
+      const response = await fetch(`/plugins/${name}/mapping.json`);
+
+      const data = await response.json();
+
+      const { mapping, error } = validate(data)
+      if (error !== null) {
+        error();
+        return void 0;
+      }
+
+      const response2 = await fetch(`/plugins/${name}/${mapping.entry}`);
+
+      const data2 = await response2.text();
+
+      const component = await parse(mapping, data2);
+
+      return {
+        ...mapping,
+        [__component]: component,
+      };
+    } catch (e: any) {
+      console.error(e);
+      error(e);
+    }
+  }
+
+  const loadAll = async () => {
+    const plugins: Plugin.Interface[] = []
+    for (const key in x) {
+      const name = x[key];
+
+      const plugin = await load(name);
+
+      if (plugin) {
+        plugins.push(plugin);
+      }
+    }
+
+    setPlugins(plugins);
+  }
+
+  useEffect(() => {
+    loadAll()
+  }, []);
 
   const pluginProps: Plugin.Export = {
     add,
@@ -70,18 +126,21 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
 };
 
 export namespace Plugin {
-  export interface Interface {
+  export interface Interface extends Mapping {
+    [__component]: React.LazyExoticComponent<React.ComponentType<any>>;
+  }
+
+  export interface Mapping {
     name: string;
-    component?: ReactNode;
-    parent: string;
-    raw: string;
+    entry: string;
+    type: 'menu'
   }
 
   export const Context = createContext<Plugin.Export | undefined>(undefined);
 
   export interface Export {
     add: (plugin: Plugin.Interface) => void;
-    parse: (str: string) => Promise<Plugin.Interface>;
+    parse: (mapping: Plugin.Mapping, raw: string) => Promise<Function>;
     plugins: Plugin.Interface[];
   }
 
@@ -97,41 +156,28 @@ export namespace Plugin {
     }
   }
 
-  export namespace Upload {
-    export namespace Banner {
-      export interface Props extends UIBanner.Props {
+  export function All({ type }: {
+    type: Mapping['type']
+  }) {
+    const { plugins } = Plugin.use();
 
-      }
+    return plugins
+      .filter(plugin => plugin.type === type)
+      .map(plugin => <Plugin.Component plugin={plugin} />);
+  }
+
+  export namespace Component {
+    export interface Props {
+      plugin: Plugin.Interface;
+    }
+  }
+
+  export function Component({ plugin }: Plugin.Component.Props) {
+    const Component = plugin[__component];
+    if (!Component) {
+      return null;
     }
 
-    export function Banner({ ...props }: Plugin.Upload.Banner.Props) {
-      const { plugins, parse, add } = Plugin.use();
-      const [loading, setLoading] = useState<boolean>(false);
-
-
-      const pluginInputChangeHandler = async (event: ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0]
-        if (!file) {
-          return toast.error('Select plugin file with .tsx extension');
-        }
-
-        setLoading(true);
-
-        const raw = await file.text();
-
-        const plugin = await parse(raw);
-
-        add(plugin);
-
-        setLoading(false);
-      }
-
-      return (
-        <UIBanner title='Upload plugin component' loading={loading} {...props}>
-          <Input variant='highlighted' img='Puzzle' type='file' placeholder='Upload plugin' onChange={pluginInputChangeHandler} />
-          {plugins.map(plugin => plugin.component || null)}
-        </UIBanner>
-      )
-    }
+    return <Component React={React} useApplication={useApplication} />
   }
 }
