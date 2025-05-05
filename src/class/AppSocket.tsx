@@ -21,10 +21,11 @@ export class AppSocket extends WebSocket {
 
     this.onopen = () => {
       Logger.log(
-        `WebSocket has been initialized with id: ${this.info.app.general.ws_id}`,
+        `WebSocket has been initialized`,
         AppSocket.name,
         {
           toast: true,
+          icon: 'Serverless'
         },
       )
       this.send(

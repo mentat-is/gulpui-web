@@ -293,12 +293,12 @@ export namespace Welcome {
     )
 
     return (
-      <p key={name} className={cn(resolvedCond && s.check)}>
+      <div key={name} className={cn(s.unit, resolvedCond && s.check)}>
         {Image}
         <span style={{ flex: 1 }}>{name}</span>
         {/* @ts-ignore */}
         <Badge variant='gray-subtle' onClick={() => banner ? spawnBanner(banner) : null} value={resolvedCond ? 'Done' : 'Do'} icon={resolvedCond ? undefined : 'Function'} size='sm' />
-      </p>
+      </div>
     )
   }
 }

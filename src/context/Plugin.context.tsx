@@ -108,7 +108,7 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
   }
 
   useEffect(() => {
-    loadAll()
+    // loadAll()
   }, []);
 
   const pluginProps: Plugin.Export = {

@@ -35,7 +35,7 @@
   border-radius: 6px;
   width: 285px;
 }
-.flow p {
+.unit {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -55,10 +55,10 @@
   width: 12px !important;
 }
 
-.flow p.check {
+.unit.check {
   color: var(--green-700);
 }
-.flow p.check > svg {
+.unit.check > svg {
   color: var(--green-700);
   background: none !important;
 }

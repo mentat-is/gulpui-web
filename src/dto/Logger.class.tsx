@@ -7,9 +7,11 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λFile } from './Dataset'
 import { toast } from 'sonner'
+import { Icon } from '@impactium/icons'
 
 interface Options {
   toast?: boolean
+  icon?: Icon.Name
 }
 
 export class Logger {
@@ -18,7 +20,9 @@ export class Logger {
   static log(message: any, context?: Arrayed<string>, options?: Options) {
     Logger.store('log', message, context)
     if (options?.toast) {
-      toast(message)
+      toast(message, {
+        icon: options.icon ? <Icon name={options.icon} /> : undefined
+      })
     }
   }
 
@@ -27,6 +31,7 @@ export class Logger {
     if (options?.toast) {
       toast.error(message, {
         richColors: true,
+        icon: options.icon ? <Icon name={options.icon} /> : undefined
       })
     }
   }
@@ -106,35 +111,6 @@ export class Logger {
 }
 
 export class LoggerHandler {
-  public static bucketSelection = (selected: MinMax, timestamp: MinMax) => {
-    if (selected.min >= selected.max) {
-      Logger.error(
-        `Dates: 'selected.min' value > then 'selected.max' value.
-Values: ${JSON.stringify({ selected }, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2)}`,
-        LoggerHandler.name,
-      )
-    }
-
-    if (selected.min < timestamp.min) {
-      Logger.warn(
-        `Dates: 'selected.min' value is < then 'timestamp.min'
-Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`,
-        LoggerHandler.name,
-      )
-    } else if (selected.max > timestamp.max) {
-      Logger.warn(
-        `Dates: 'selected.max' value is > then 'timestamp.max'
-Values: ${JSON.stringify({ selected, timestamp }, null, 2)}`,
-        LoggerHandler.name,
-      )
-    }
-
-    Logger.log(
-      `Has been selected date from ${new Date(selected.min).toDateString()} to ${new Date(selected.max).toDateString()}`,
-      LoggerHandler.name,
-    )
-  }
-
   public static canvasClick = (
     file: λFile,
     events: λEvent[],
