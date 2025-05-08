@@ -145,7 +145,7 @@ export class DefaultEngine
 
       const event = events[closestIndex]
       map.set(x as Hardcode.X, [
-        parseInt(event[file.settings.field].toString()) as Hardcode.Height,
+        (parseInt(event[file.settings.field]?.toString()) || 0) as Hardcode.Height,
         event.timestamp as Hardcode.Timestamp,
       ])
     }

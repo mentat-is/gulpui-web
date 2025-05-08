@@ -1947,28 +1947,21 @@ export class Info implements InfoProps {
     const query = this.app.target.filters[id]
 
     if (!query) {
-      const base: λQuery = {
-        string: Filter.base(File.id(this.app, id), {
-          min: Internal.Transformator.toNanos(this.app.timeline.frame.min).toString() as unknown as number,
-          max: Internal.Transformator.toNanos(this.app.timeline.frame.max).toString() as unknown as number
-        }),
-        filters: [],
-      }
+      const q = Filter.default(this.app, id)
 
-      this.setQuery(id, base)
+      this.setQuery(id, q)
 
-      return base
+      return q
     }
 
     return query
   }
 
-  filters_remove = (file: λFile | λFile['id']) =>
-    this.setInfoByKey(
-      { ...this.app.target.filters, [Parser.useUUID(file)]: [] },
-      'target',
-      'filters',
-    )
+
+  filters_remove = (file: λFile | λFile['id']) => {
+    this.app.target.filters[Parser.useUUID(file) as λFile['id']] = Filter.default(this.app, file);
+    return this.setInfo(this.app);
+  }
 
   useReverseScroll = (bool: boolean) => {
     localStorage.setItem('settings.__isScrollReversed', String(bool))
@@ -2419,7 +2412,7 @@ export class Filter {
       OpenSearchQueryBuilder.INITIAL,
     )
 
-    if (string.trim()) {
+    if (string?.trim()) {
       query.bool.must.push({
         query_string: {
           query: string,
@@ -2477,8 +2470,19 @@ export class Filter {
   private static quotes = (str: string) =>
     str.includes(' ') ? `"${str}"` : str
 
-  public static base = (file: λFile, range?: MinMax) =>
-    `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
+  public static base = (file: λFile, range?: MinMax) => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
+
+  public static default = (app: λApp, file: λFile | λFile['id']): λQuery => {
+    const id = typeof file === 'object' ? file.id : file;
+
+    return {
+      string: Filter.base(File.id(app, id), {
+        min: Internal.Transformator.toNanos(app.timeline.frame.min).toString() as unknown as number,
+        max: Internal.Transformator.toNanos(app.timeline.frame.max).toString() as unknown as number
+      }),
+      filters: [],
+    }
+  }
 
   static body = (query: λQuery) => {
     const body: Record<string, any> = {

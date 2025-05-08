@@ -48,12 +48,8 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [eventKeys, setEventKeys] = useState<string[] | null>(null);
 
   useEffect(() => {
-    if (eventKeys) {
-      return;
-    }
-
     Info.event_keys(file).then(Object.keys).then(setEventKeys);
-  }, [eventKeys]);
+  }, []);
 
   const [field, setField] = useState<keyof λEvent>(file.settings.field)
 
