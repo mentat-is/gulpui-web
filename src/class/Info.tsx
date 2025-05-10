@@ -2035,8 +2035,6 @@ export class Info implements InfoProps {
 
       this.setInfoByKey(newSigma, 'target', 'sigma')
 
-      this.events_reset_in_file(files)
-
       return Promise.all(
         files.map((file) => {
           return this.query_sigma({
@@ -2058,7 +2056,6 @@ export class Info implements InfoProps {
 
       delete this.app.target.sigma[id]
       this.setInfoByKey(this.app.target.sigma, 'target', 'sigma')
-      this.refetch({ ids: typeof file === 'string' ? file : file.id })
     },
   }
 
