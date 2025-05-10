@@ -1,4 +1,4 @@
-import { File as GulpFileEntity, GulpDataset } from '@/class/Info'
+import { File as GulpFileEntity, GulpDataset, Context } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Default, λFile } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
@@ -91,7 +91,7 @@ export namespace SigmaRules {
               <Icon
                 name={file ? GulpFileEntity.icon(file) : Default.Icon.FILE}
               />
-              {file ? file.name : 'No file selected'}
+              {file ? file.name + 'in' + Context.id(app, file.context_id).name : 'No file selected'}
             </Stack>
           </Select.Trigger>
           <Select.Content>
