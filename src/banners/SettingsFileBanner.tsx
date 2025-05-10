@@ -79,13 +79,15 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     }
 
     return (
-      <Select.Root onValueChange={(field: keyof λEvent) => setField(field)}>
+      <Select.Root onValueChange={(field: keyof λEvent) => setField(field)} defaultValue={field}>
         <Select.Trigger className={s.trigger} value={engine}>
-          <Select.Value placeholder={field} />
+          <Icon name='Dot' />
+          {field}
         </Select.Trigger>
         <Select.Content>
           {eventKeys.map((field) => (
             <Select.Item key={field} value={field}>
+              <Icon name='Dot' />
               {field}
             </Select.Item>
           ))}
@@ -103,9 +105,9 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <h4>
         {file.name} in {Context.id(app, file.context_id)?.name}
       </h4>
-      <Card>
-        <p className={s.text}>
-          File offset:{' '}
+      <Stack dir='column' gap={8} ai='flex-start'>
+        <p>
+          Offset:{' '}
           {formatDuration(intervalToDuration({ start: 0, end: offset }), {
             format: ['years', 'months', 'days', 'hours', 'minutes', 'seconds'],
             zero: false,
@@ -115,27 +117,24 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
             ' milliseconds'}
         </p>
         <Input
+          variant='highlighted'
           img="AlarmClockPlus"
           accept="number"
           value={offset}
           placeholder="Offset time in ms"
           onChange={handleInputChange}
         />
-      </Card>
+      </Stack>
       <Separator />
       <Select.Root onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
         <Select.Trigger className={s.trigger}>
-          <Stack>
-            <Icon
-              name={
-                enginesBase.find((e) => e.plugin === engine)?.img ??
-                'CircleDashed'
-              }
-            />
-            <p>
-              {enginesBase.find((e) => e.plugin === engine)?.title ?? engine}
-            </p>
-          </Stack>
+          <Icon
+            name={
+              enginesBase.find((e) => e.plugin === engine)?.img ??
+              'CircleDashed'
+            }
+          />
+          {enginesBase.find((e) => e.plugin === engine)?.title ?? engine}
         </Select.Trigger>
         <Select.Content>
           {enginesBase.map((i) => (
@@ -160,7 +159,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         <p className={s.text}>Target field:</p>
         {EventFieldsSelection}
       </Stack>
-      <Button onClick={manageRenderRulesButtonClickHandler} img='BarChart'>Manage render rules</Button>
+      {/* <Button onClick={manageRenderRulesButtonClickHandler} img='BarChart'>Manage render rules</Button> */}
     </UIBanner>
   )
 }

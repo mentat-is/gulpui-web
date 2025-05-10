@@ -14,6 +14,8 @@ import { Separator } from '@/ui/Separator'
 import { Preview } from './Preview.banner'
 import { SetState } from '@/class/API'
 import { cn } from '@impactium/utils'
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
+import { Switch } from '@/ui/Switch'
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
@@ -136,6 +138,7 @@ export namespace OpenSearchQueryBuilder {
           field: init,
           value: '',
           operator: 'must',
+          enabled: true
         })
         setFilters(filters);
       }, [filters, init, setFilters]);
@@ -159,7 +162,7 @@ export namespace OpenSearchQueryBuilder {
     }
 
     export const Filter = ({ filters, setFilters, keys }: Query.Filter.Props) => {
-      const update = useCallback((id: λFilter['id'], key: string, value: string) => {
+      const update = useCallback((id: λFilter['id'], key: string, value: any) => {
         setFilters(filters.map((condition) =>
           condition.id === id ? { ...condition, [key]: value } : condition,
         ))
@@ -171,18 +174,18 @@ export namespace OpenSearchQueryBuilder {
 
       return (
         <Stack ai='stretch' dir='column'>
-          {filters.map((condition) => (
+          {filters.map((filter) => (
             <Stack
               dir='column'
               ai='flex-start'
-              className={s.card}
-              key={condition.id}
+              className={cn(s.card, !filter.enabled && s.disabled)}
+              key={filter.id}
             >
               <Stack style={fws}>
                 <Select.Root
-                  value={condition.operator}
+                  value={filter.operator}
                   onValueChange={(value) =>
-                    update(condition.id, 'operator', value)
+                    update(filter.id, 'operator', value)
                   }
                 >
                   <Select.Trigger className={s.value}>
@@ -198,8 +201,8 @@ export namespace OpenSearchQueryBuilder {
                   </Select.Content>
                 </Select.Root>
                 <Select.Root
-                  value={condition.type}
-                  onValueChange={(value) => update(condition.id, 'type', value)}
+                  value={filter.type}
+                  onValueChange={(value) => update(filter.id, 'type', value)}
                 >
                   <Select.Trigger className={s.value}>
                     <Select.Value placeholder='Type' />
@@ -213,18 +216,19 @@ export namespace OpenSearchQueryBuilder {
                     ))}
                   </Select.Content>
                 </Select.Root>
+                <Switch checked={filter.enabled} onCheckedChange={value => update(filter.id, 'enabled', value)} />
                 <Button
                   variant='outline'
-                  onClick={() => remove(condition.id)}
+                  onClick={() => remove(filter.id)}
                   img='Trash2'
                 />
               </Stack>
               <Stack style={fws}>
                 <Stack pos='relative'>
-                  <Input className={s.key_input} img='Dot' variant='highlighted' placeholder='Field name' value={condition.field} onChange={(e) => update(condition.id, 'field', e.target.value)} />
+                  <Input className={s.key_input} img='Dot' variant='highlighted' placeholder='Field name' value={filter.field} onChange={(e) => update(filter.id, 'field', e.target.value)} />
                   <Select.Root
-                    value={condition.field}
-                    onValueChange={(e) => update(condition.id, 'field', e)}
+                    value={filter.field}
+                    onValueChange={(e) => update(filter.id, 'field', e)}
                   >
                     <Select.Trigger className={s.trigger} />
                     <Select.Content>
@@ -239,9 +243,9 @@ export namespace OpenSearchQueryBuilder {
                 <Input
                   variant='highlighted'
                   img='ChevronRightSmall'
-                  placeholder={condition.type === 'range' ? 'min,max' : 'Value'}
-                  value={condition.value}
-                  onChange={(e) => update(condition.id, 'value', e.target.value)}
+                  placeholder={filter.type === 'range' ? 'min,max' : 'Value'}
+                  value={filter.value}
+                  onChange={(e) => update(filter.id, 'value', e.target.value)}
                 />
               </Stack>
             </Stack>
@@ -326,11 +330,27 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} {...props} />)} />)
   }
 
+  const LastQueries = useMemo(() => {
+    return (
+      <Popover>
+        <PopoverTrigger>
+          <Button img='ClockFading' variant='secondary'>
+            Last filters
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent>
+          Хуй
+        </PopoverContent>
+      </Popover>
+    )
+  }, []);
+
   return (
     <Banner
       title='Choose filtering options'
       done={<Done />}
       side={<OpenSearchQueryBuilder.Preview query={Filter.query(Info.getQuery(file.id))} />}
+      subtitle={LastQueries}
       className={s.banner}
       option={<Undo />}
       {...props}

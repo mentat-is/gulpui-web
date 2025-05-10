@@ -127,13 +127,17 @@ const contextMenuLabel = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Label>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Label> & {
     inset?: boolean
+    icon?: Icon.Name
   }
->(({ className, inset, ...props }, ref) => (
+>(({ className, children, icon, inset, ...props }, ref) => (
   <ContextMenuPrimitive.Label
     ref={ref}
     className={cn(s.label, inset && s.labelInset, className)}
     {...props}
-  />
+  >
+    {icon ? <Icon size={12} name={icon} /> : null}
+    {children}
+  </ContextMenuPrimitive.Label>
 ))
 contextMenuLabel.displayName = ContextMenuPrimitive.Label.displayName
 

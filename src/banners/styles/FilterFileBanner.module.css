@@ -104,3 +104,12 @@
   right: 8px;
   top: 8px;
 }
+.disabled {
+  opacity: 0.5;
+}
+.disabled *:not([role="switch"]):not(div) {
+  pointer-events: none;
+}
+.disabled *:not([role="switch"]) {
+  box-shadow: none !important;
+}

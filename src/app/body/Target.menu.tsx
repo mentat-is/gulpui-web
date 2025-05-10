@@ -55,7 +55,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         </Tooltip>
       </TooltipProvider>
       <ContextMenuSeparator />
-      <ContextMenuItem onClick={() => Info.refetch({ ids: file.id })} img="CheckCheck">Refetch</ContextMenuItem>
+      <ContextMenuItem onClick={() => Info.refetch({ ids: file.id })} img="RefreshClockwise">Refetch</ContextMenuItem>
       <ContextMenuSub>
         <ContextMenuSubTrigger img="Cpu">Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
@@ -85,14 +85,11 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        <ContextMenuItem
-          onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
-          img="Filter"
-        >
-          Filters
+        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={file} />)} img='Filter'>
+          Manage filters
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => removeFilters(file)} img="Filter">
-          Clear all filters
+        <ContextMenuItem onClick={() => removeFilters(file)} img="X">
+          Reset filters
         </ContextMenuItem>
         {app.timeline.cache.data.has(file.id) && (
           <ContextMenuItem onClick={() => Info.filters_undo(file)} img="Undo">

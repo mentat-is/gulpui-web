@@ -2397,6 +2397,7 @@ export type λFilter = {
   operator: OpenSearchQueryBuilder.Operator
   field: string
   value: any
+  enabled: boolean
 }
 
 export interface λQuery {
@@ -2420,8 +2421,8 @@ export class Filter {
       })
     }
 
-    filters.forEach(({ type, field, value, operator }) => {
-      if (!field || !value) return
+    filters.forEach(({ type, field, value, operator, enabled }) => {
+      if (!field || !value || !enabled) return
 
       let conditionObj = {}
 

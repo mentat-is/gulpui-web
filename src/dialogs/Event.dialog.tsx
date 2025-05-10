@@ -115,7 +115,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       type: (object[k].includes('*') || k.includes('*')) ? 'regexp' : 'match',
       operator: 'must',
       field: k,
-      value: object[k]
+      value: object[k],
+      enabled: true
     }));
 
     Info.setFilters(event.file_id, [...filters, ...newFilters]);
