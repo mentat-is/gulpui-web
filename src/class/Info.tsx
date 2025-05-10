@@ -1996,7 +1996,7 @@ export class Info implements InfoProps {
     this.render();
   }
 
-  query_sigma = (body: Record<string, any>) => {
+  query_sigma = (body: Record<string, any>, plugin: string) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
       return;
@@ -2006,9 +2006,16 @@ export class Info implements InfoProps {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
-        operation_id: operation.id
+        operation_id: operation.id,
+        plugin
       },
-      body,
+      body: {
+        ...body,
+        mapping_parameters: {
+          mapping_file: Mapping.methods(this.app, plugin)[0],
+          mappings: {}
+        }
+      },
       toast: 'Sigma rule has been successfully applied',
     })
   }
@@ -2016,6 +2023,7 @@ export class Info implements InfoProps {
   sigma = {
     set: async (
       files: Arrayed<λFile>,
+      plugin: string,
       sigma: GulpDataset.SigmaFile,
       notes: boolean,
     ) => {
@@ -2026,6 +2034,8 @@ export class Info implements InfoProps {
       files.forEach((file) => (newSigma[file.id] = sigma))
 
       this.setInfoByKey(newSigma, 'target', 'sigma')
+
+      this.events_reset_in_file(files)
 
       return Promise.all(
         files.map((file) => {
@@ -2039,7 +2049,7 @@ export class Info implements InfoProps {
             flt: {
               source_ids: [file.id],
             },
-          });
+          }, plugin);
         }),
       )
     },
@@ -2048,6 +2058,7 @@ export class Info implements InfoProps {
 
       delete this.app.target.sigma[id]
       this.setInfoByKey(this.app.target.sigma, 'target', 'sigma')
+      this.refetch({ ids: typeof file === 'string' ? file : file.id })
     },
   }
 
