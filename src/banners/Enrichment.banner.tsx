@@ -5,6 +5,8 @@ import { Default, λFile } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
 import { Switch } from '@/ui/Switch'
+import { Label } from '@/ui/Label'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 import { Button, Input, Skeleton, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { format } from 'date-fns'
@@ -294,21 +296,43 @@ export namespace Enrichment {
 
             if (param.type === 'bool') {
               return (
-                <Stack key={k}>
-                  <Switch value={value} />
-                </Stack>
+                <Fragment>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>🛈</TooltipTrigger>
+                      <Label>{param.name}:</Label>
+                      <TooltipContent>
+                        {param.desc}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <Stack key={k}>
+                    <Switch value={value} />
+                  </Stack>
+                </Fragment>
               )
             }
 
             return (
-              <Input
-                key={k}
-                placeholder={`${k} value should be in ${param.type} format`}
-                onChange={customParameterInputChangeHandlerConstructor(k)}
-                value={Array.isArray(value) ? value.join(', ') : value}
-                variant="highlighted"
-                img={mapping[k] || 'Status'}
-              />
+              <Fragment>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>🛈</TooltipTrigger>
+                    <Label>{param.name}:</Label>
+                    <TooltipContent>
+                      {param.desc}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Input
+                  key={k}
+                  placeholder={`${k} value should be in ${param.type} format`}
+                  onChange={customParameterInputChangeHandlerConstructor(k)}
+                  value={Array.isArray(value) ? value.join(', ') : value}
+                  variant="highlighted"
+                  img={mapping[k] || 'Status'}
+                />
+              </Fragment>
             )
           })}
         </Fragment>
