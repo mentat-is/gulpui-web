@@ -20,6 +20,8 @@ import {
   useState,
 } from 'react'
 import s from './styles/EnrichmentBanner.module.css'
+import { capitalize } from '@impactium/utils'
+import { Toggle } from '@/ui/Toggle'
 
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
@@ -296,31 +298,39 @@ export namespace Enrichment {
 
             if (param.type === 'bool') {
               return (
-                <Fragment>
+                <Stack key={k} dir='column' ai='flex-start'>
                   <TooltipProvider>
                     <Tooltip>
-                      <TooltipTrigger>🛈</TooltipTrigger>
-                      <Label>{param.name}:</Label>
+                      <TooltipTrigger asChild>
+                        <Stack>
+                          <Icon name='Info' />
+                          <p>{param.name}:</p>
+                        </Stack>
+                      </TooltipTrigger>
                       <TooltipContent>
-                        {param.desc}
+                        {capitalize(param.desc)}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  <Stack key={k}>
-                    <Switch value={value} />
+                  <Stack style={{ width: '100%' }}>
+                    <Toggle onCheckedChange={value => setCustomParameters((c) => ({ ...c, [k]: value }))} checked={value} option={['Enable', 'Disable']} />
                   </Stack>
-                </Fragment>
+                </Stack>
               )
             }
 
             return (
-              <Fragment>
+              <Stack key={k} dir='column' ai='flex-start'>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger>🛈</TooltipTrigger>
-                    <Label>{param.name}:</Label>
+                    <TooltipTrigger asChild>
+                      <Stack>
+                        <Icon name='Info' />
+                        <p>{param.name}:</p>
+                      </Stack>
+                    </TooltipTrigger>
                     <TooltipContent>
-                      {param.desc}
+                      {capitalize(param.desc)}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -332,7 +342,7 @@ export namespace Enrichment {
                   variant="highlighted"
                   img={mapping[k] || 'Status'}
                 />
-              </Fragment>
+              </Stack>
             )
           })}
         </Fragment>

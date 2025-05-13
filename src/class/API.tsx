@@ -218,13 +218,18 @@ const api: Api = async function <T>(
       },
     )
   }
-  if (res.isError() && res.data?.__error?.name === 'MissingPermission') {
+  if (res.data?.__error?.name === 'MissingPermission') {
     const message = 'Session expired, reloading window'
     Logger.warn(message, 'API')
     Internal.Settings.token = ''
     toast.error(message, {
       richColors: true,
     })
+    await new Promise(res => {
+      setTimeout(() => {
+        res(void 0);
+      }, 500);
+    });
   }
 
   soft(false, options.setLoading)
