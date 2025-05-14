@@ -1,6 +1,5 @@
 .popover {
   z-index: 6;
-  width: min-content;
   border-radius: 6px;
   border: 1px solid var(--gray-400);
   background-color: var(--soft-black);

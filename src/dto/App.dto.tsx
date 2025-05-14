@@ -39,7 +39,7 @@ export interface λApp {
       }
     >
     mappings: λMapping.Plugin[]
-    plugins: GulpDataset.PluginList.Summary
+    plugins: GulpDataset.PluginList.Interface[]
   }
   general: λUser & {
     server: string

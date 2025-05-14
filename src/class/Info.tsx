@@ -39,6 +39,7 @@ import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner'
 import { Pointers } from '@/components/Pointers'
 import { XY } from '@/dto/XY.dto'
 import { Badge } from '@impactium/components'
+import { CustomParameters } from '@/components/CustomParameters'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -97,41 +98,22 @@ export namespace GulpDataset {
     export type Summary = Operation[]
   }
   export namespace PluginList {
-    export type Summary = Object[]
-
     export type Type = 'ingestion' | 'enrichment' | 'external'
 
     export namespace SigmaSupport {
       export type Type = 'backends' | 'pipelines' | 'output_formats'
 
-      export interface Object {
+      export interface Interface {
         name: string
         description: string
       }
 
-      export type List = Object[]
-
-      export type Summary = Record<SigmaSupport.Type, SigmaSupport.List>[]
-    }
-
-    export namespace CustomParameters {
-      export type Type = 'int' | 'str' | 'bool' | 'dict' | 'list'
-
-      export interface Object {
-        name: string
-        type: Type
-        default_value: any
-        desc: string
-        required: boolean
-        invalid?: boolean
-      }
-
-      export type List = Object[]
+      export type Summary = Record<SigmaSupport.Type, SigmaSupport.Interface>[]
     }
 
     export type DependsOn = 'eml'
 
-    export interface Object {
+    export interface Interface {
       display_name: string
       type: Type[]
       desc: string
@@ -139,7 +121,7 @@ export namespace GulpDataset {
       data: {}
       filename: string
       sigma_support: SigmaSupport.Summary
-      custom_parameters: CustomParameters.List
+      custom_parameters: CustomParameters.Interface[]
       depends_on: DependsOn[]
       tags: string[]
       version: string
@@ -1026,7 +1008,7 @@ export class Info implements InfoProps {
           mapping_id: settings.mapping,
           mappings: {}
         },
-        custom_parameters: {},
+        custom_parameters: settings.custom_parameters,
       },
       original_file_path: file.name,
     }
@@ -1811,7 +1793,7 @@ export class Info implements InfoProps {
   }
 
   // ⚠️ UNTOUCHABLE
-  plugin_list = async (): Promise<GulpDataset.PluginList.Summary> => {
+  plugin_list = async (): Promise<GulpDataset.PluginList.Interface[]> => {
     const plugins = this.app.target.plugins
     if (plugins.length) {
       return Internal.Transformator.toAsync(plugins)
@@ -1820,7 +1802,7 @@ export class Info implements InfoProps {
     Logger.warn('No plugins found in application data', 'plugin_list')
     Logger.log('Fetching plugins...', 'plugin_list')
 
-    const list = await api<GulpDataset.PluginList.Summary>('/plugin_list').then(
+    const list = await api<GulpDataset.PluginList.Interface[]>('/plugin_list').then(
       (list) => list.sort((a, b) => a.filename.localeCompare(b.filename)),
     )
 
@@ -2258,9 +2240,10 @@ export namespace FileEntity {
   }
 
   export interface Settings {
-    plugin?: string
-    method?: string
-    mapping?: string
+    plugin?: string;
+    method?: string;
+    mapping?: string;
+    custom_parameters: Record<string, any>;
   }
 }
 

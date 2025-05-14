@@ -24,7 +24,7 @@ export namespace SigmaRules {
     const { Info, app, destroyBanner } = useApplication()
     const [rules, setRules] = useState<GulpDataset.SigmaFile | null>(null)
     const [file, setFile] = useState<λFile | null>(initFile ?? null)
-    const [plugins, setPlugins] = useState<GulpDataset.PluginList.Summary>([])
+    const [plugins, setPlugins] = useState<GulpDataset.PluginList.Interface[]>([])
     const [plugin, setPlugin] = useState<string | null>(null)
     const [createNotes, setCreateNotes] = useState<boolean>(true)
 

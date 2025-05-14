@@ -15,8 +15,8 @@ export namespace QueryExternal {
     selectedOption,
     onSelect,
   }: {
-    options: GulpDataset.PluginList.Summary | null
-    selectedOption: GulpDataset.PluginList.Object | null
+    options: GulpDataset.PluginList.Interface[] | null
+    selectedOption: GulpDataset.PluginList.Interface | null
     onSelect: (name: string) => void
   }) => {
     if (!options) return <Skeleton />
@@ -50,7 +50,7 @@ export namespace QueryExternal {
     params,
     setParams,
   }: {
-    selectedOption: GulpDataset.PluginList.Object | null
+    selectedOption: GulpDataset.PluginList.Interface | null
     params: Record<string, any>
     setParams: React.Dispatch<React.SetStateAction<Record<string, any>>>
   }) => {
@@ -119,10 +119,8 @@ export namespace QueryExternal {
 
   export const Banner = ({ ...props }: QueryExternal.Banner.Props) => {
     const { Info } = useApplication()
-    const [options, setOptions] =
-      useState<GulpDataset.PluginList.Summary | null>(null)
-    const [selectedOption, setSelectedOption] =
-      useState<GulpDataset.PluginList.Object | null>(null)
+    const [options, setOptions] = useState<GulpDataset.PluginList.Interface[] | null>(null)
+    const [selectedOption, setSelectedOption] = useState<GulpDataset.PluginList.Interface | null>(null)
     const [loading, setLoading] = useState<boolean>(false)
     const [url, setUrl] = useState<string>('')
     const [isUrlValid, setIsUrlValid] = useState<boolean>(true)
@@ -138,20 +136,6 @@ export namespace QueryExternal {
       }
       fetchOptions()
     }, [options, Info])
-
-    useEffect(() => {
-      if (!selectedOption) {
-        return
-      }
-
-      const params: Record<string, any> = {}
-
-      selectedOption?.custom_parameters.forEach((c) => {
-        params[c.name] = c.default_value
-      })
-
-      setParams(params)
-    }, [selectedOption])
 
     const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
       const value = event.target.value.trim()

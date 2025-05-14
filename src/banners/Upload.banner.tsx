@@ -19,6 +19,7 @@ import { SetState } from '@/class/API'
 import { Progress as UIProgress } from '@/ui/Progress';
 import { Table } from '@/components/Table'
 import { λEvent } from '@/dto/ChunkEvent.dto'
+import { CustomParameters } from '@/components/CustomParameters'
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
   'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],
@@ -143,6 +144,12 @@ namespace Components {
       setPreview(preview ?? null);
     }
 
+    const setCustomParameters = (custom_parameters: Record<string, any>) => {
+      updateSettings({ custom_parameters });
+    }
+
+    console.log(app.target.plugins, settings.plugin);
+
     return (
       <Stack className={s.filePreview} gap={0} pos='relative'>
         {progress && <Progress value={progress} />}
@@ -160,6 +167,16 @@ namespace Components {
         <MethodSelector settings={settings} updateSettings={updateSettings} methods={methods} />
         <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
         <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
+        {(app.target.plugins.find(p => p.filename === settings.plugin)?.custom_parameters.length ?? 0) > 0 &&
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button img='Settings' size='sm' style={{ width: 24 }} variant='ghost' />
+            </PopoverTrigger>
+            <PopoverContent>
+              <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters} />
+            </PopoverContent>
+          </Popover>
+        }
         <Popover onOpenChange={o => o && loadPreview()}>
           <PopoverTrigger asChild>
             <Button img='PreviewDocument' size='sm' style={{ width: 24 }} variant='ghost' />
@@ -308,7 +325,9 @@ namespace Components {
 
     useEffect(() => {
       if (!settings.all) {
-        settings.all = {}
+        settings.all = {
+          custom_parameters: {}
+        }
       }
     }, [settings]);
 
@@ -409,7 +428,10 @@ export function UploadBanner() {
   useEffect(() => {
     files.forEach(file => {
       detectFileType(file).then(plugin => {
-        updateSettings(file.name, { plugin: plugin || 'win_evtx.py' })
+        updateSettings(file.name, {
+          plugin: plugin || 'win_evtx.py',
+          custom_parameters: {}
+        })
       })
     })
   }, [files])

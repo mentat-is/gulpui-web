@@ -22,6 +22,7 @@ import {
 import s from './styles/EnrichmentBanner.module.css'
 import { capitalize } from '@impactium/utils'
 import { Toggle } from '@/ui/Toggle'
+import { CustomParameters } from '@/components/CustomParameters'
 
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
@@ -34,8 +35,8 @@ export namespace Enrichment {
     const [file, setFile] = useState<λFile | null>(
       event ? File.id(app, event.file_id) : null,
     )
-    const [plugins, setPlugins] = useState<GulpDataset.PluginList.Summary>()
-    const [plugin, setPlugin] = useState<GulpDataset.PluginList.Object>()
+    const [plugins, setPlugins] = useState<GulpDataset.PluginList.Interface[]>()
+    const [plugin, setPlugin] = useState<GulpDataset.PluginList.Interface>()
     const [customParameters, setCustomParameters] = useState<
       Record<string, any>
     >({})
@@ -49,7 +50,7 @@ export namespace Enrichment {
       const parameters: typeof customParameters = {}
 
       plugin.custom_parameters.forEach((p) => {
-        parameters[p.name] = p.default_value
+        parameters[p.name] = null;
       })
 
       setCustomParameters(parameters)
@@ -251,104 +252,6 @@ export namespace Enrichment {
       )
     }, [event, frame, plugins])
 
-    const CustomParameters = useMemo(() => {
-      if (!plugin) {
-        return null
-      }
-
-      const customParameterInputChangeHandlerConstructor =
-        (name: string) => (event: ChangeEvent<HTMLInputElement>) => {
-          const { value: raw } = event.target
-
-          const type = plugin.custom_parameters.find(
-            (p) => p.name === name,
-          )?.type
-
-          const value = !type
-            ? raw
-            : type === 'list'
-              ? raw.split(',').map((v) => v.trim())
-              : type === 'int'
-                ? Number(raw) || 0
-                : type === 'dict'
-                  ? raw
-                  : type === 'bool'
-                    ? Boolean(raw)
-                    : raw
-
-          setCustomParameters((c) => ({
-            ...c,
-            [name]: value,
-          }))
-        }
-
-      const mapping: Record<string, Icon.Name> = {
-        ip_fields: 'Location',
-      }
-
-      return (
-        <Fragment>
-          {Object.keys(customParameters).map((k) => {
-            const value = customParameters[k]
-
-            const param = plugin.custom_parameters.find((c) => c.name === k)
-            if (!param) {
-              return null
-            }
-
-            if (param.type === 'bool') {
-              return (
-                <Stack key={k} dir='column' ai='flex-start'>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Stack>
-                          <Icon name='Info' />
-                          <p>{param.name}:</p>
-                        </Stack>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {capitalize(param.desc)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  <Stack style={{ width: '100%' }}>
-                    <Toggle onCheckedChange={value => setCustomParameters((c) => ({ ...c, [k]: value }))} checked={value} option={['Enable', 'Disable']} />
-                  </Stack>
-                </Stack>
-              )
-            }
-
-            return (
-              <Stack key={k} dir='column' ai='flex-start'>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Stack>
-                        <Icon name='Info' />
-                        <p>{param.name}:</p>
-                      </Stack>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {capitalize(param.desc)}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <Input
-                  key={k}
-                  placeholder={`${k} value should be in ${param.type} format`}
-                  onChange={customParameterInputChangeHandlerConstructor(k)}
-                  value={Array.isArray(value) ? value.join(', ') : value}
-                  variant="highlighted"
-                  img={mapping[k] || 'Status'}
-                />
-              </Stack>
-            )
-          })}
-        </Fragment>
-      )
-    }, [plugin, customParameters, setCustomParameters])
-
     const Hint = () => {
       return (
         <Stack
@@ -384,7 +287,7 @@ export namespace Enrichment {
         <PluginSelection />
         <FileSelection />
         <FrameSelector />
-        {CustomParameters}
+        <CustomParameters.Editor customParameters={customParameters} setCustomParameters={setCustomParameters} plugin={plugin} />
         <Hint />
       </UIBanner>
     )
