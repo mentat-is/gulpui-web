@@ -23,6 +23,8 @@ import {
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { SigmaRules } from '@/banners/UploadSigmaRule.banner'
 import { Delete } from '@/banners/Delete.banner'
+import { Stack } from '@impactium/components'
+import { File } from '@/class/Info'
 
 interface TargetMenuProps {
   file?: λFile
@@ -129,6 +131,21 @@ export function TargetMenu({ file }: TargetMenuProps) {
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
+        <Stack gap={2}>
+
+        </Stack>
+        <ContextMenuItem
+          onClick={() => Info.setTimelineTarget(File.events(app, file)[0])}
+          img="ArrowLeftFromLine"
+        >
+          Show first event
+        </ContextMenuItem>
+        <ContextMenuItem
+          onClick={() => Info.setTimelineTarget(File.events(app, file).pop())}
+          img="ArrowRightFromLine"
+        >
+          Show last event
+        </ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>
