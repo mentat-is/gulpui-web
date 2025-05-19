@@ -5,6 +5,7 @@
   border-radius: 4px;
   border: 1px solid var(--gray-400);
   background-color: var(--soft-black);
+  flex-basis: unset !important;
 }
 .heading {
   height: 24px;
