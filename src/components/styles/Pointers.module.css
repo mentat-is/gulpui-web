@@ -5,6 +5,10 @@
   width: 100%;
   pointer-events: none;
 }
+.guest {
+  border: 2px solid black;
+  background: white;
+}
 .pointer {
   transition: transform 0.125s var(--transition);
   transform: translate(-15px, -2px) !important;

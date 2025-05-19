@@ -124,7 +124,7 @@ export function Pointers({
         return (
           <Stack
             key={p.id}
-            className={cn(s.pointer, isRightSide && s.right)}
+            className={cn(s.pointer, isRightSide && s.right, !isYours && s.guest)}
             style={{ top: isYours ? p.y : -scrollY + p.y, left: x }}
             pos="absolute"
           >
