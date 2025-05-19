@@ -46,7 +46,7 @@ export function Pointers({
 
   const { mws, app, scrollY } = useApplication()
   const color = useRef<string>(
-    `var(--${COLOR_MAPPING[Math.round(Math.random() * COLOR_MAPPING.length)]})-700`,
+    `var(--${COLOR_MAPPING[Math.round(Math.random() * COLOR_MAPPING.length)]}-700, white)`,
   )
   const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now())
 
