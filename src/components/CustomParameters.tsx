@@ -103,7 +103,7 @@ export namespace CustomParameters {
                   <Toggle
                     onCheckedChange={v => setCustomParameters(c => ({ ...c, [k]: v }))}
                     checked={value}
-                    option={['Enable', 'Disable']}
+                    option={['Disabled', 'Enabled']}
                   />
                 </Stack>
               ) : (
