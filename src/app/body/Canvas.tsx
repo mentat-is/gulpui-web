@@ -114,12 +114,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     render.ruler.draw()
 
-
-    if ('highlights' in window) {
-      Highlights.list().map(v => render.highlight(...v));
-    } else {
-      Highlights.init();
-    }
+    Highlights.list().map(v => render.highlight(...v));
 
     File.selected(app).forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY)

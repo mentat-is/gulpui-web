@@ -68,7 +68,25 @@
 .highlight.minified {
   height: calc(100% - 106px);
 }
-.highlight > div {
+.buttons {
+  background: var(--geist-background);
+  border: var(--geist-border);
+  border-radius: 4px;
+  z-index: 2;
+  backdrop-filter: blur(6px);
+  position: sticky;
+  pointer-events: all;
+}
+.buttons * {
+  backdrop-filter: none;
+  pointer-events: all;
+  width: 24px;
+  color: var(--text-white) !important;
+  background: none !important;
+  border: none;
+}
+.title,
+[data-type="badge"] {
   flex: 1;
   padding: 0 4px !important;
   overflow: hidden;
@@ -78,11 +96,15 @@
   max-width: 100%;
   border-radius: 0px !important;
 }
+.highlight > div {
+  width: 100%;
+  padding: 2px;
+}
 .highlight > div::after {
   content: '';
   right: 0;
   position: absolute;
-  width: 8px;
-  height: 24px;
-  background: linear-gradient(to left, var(--variant) 20%, transparent 100%);
+  width: 64px;
+  height: 30px;
+  background: linear-gradient(to right, transparent 0%, #000000ad 100%);
 }

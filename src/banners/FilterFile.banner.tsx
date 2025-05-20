@@ -16,6 +16,7 @@ import { SetState } from '@/class/API'
 import { cn } from '@impactium/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { Switch } from '@/ui/Switch'
+import { Toggle } from '@/ui/Toggle'
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
@@ -248,6 +249,7 @@ export namespace OpenSearchQueryBuilder {
                   onChange={(e) => update(filter.id, 'value', e.target.value)}
                 />
               </Stack>
+              {filter.type === 'wildcard' ? <Toggle option={['Case sensitive', 'Case insensitive']} checked={filter.case_insensitive} onCheckedChange={v => update(filter.id, 'case_insensitive', v)} /> : null}
             </Stack>
           ))}
         </Stack>

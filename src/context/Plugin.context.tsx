@@ -66,7 +66,7 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
 
   const load = async (name: string) => {
     try {
-      const response = await fetch(`/plugins/${name}/mapping.json`);
+      const response = await fetch(`/plugins/${name}/package.json`);
 
       const data = await response.json();
 
@@ -133,7 +133,8 @@ export namespace Plugin {
   export interface Mapping {
     name: string;
     entry: string;
-    type: 'menu'
+    type: string;
+    placement: 'menu'
   }
 
   export const Context = createContext<Plugin.Export | undefined>(undefined);

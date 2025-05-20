@@ -258,7 +258,13 @@ export namespace Highlights {
     return (
       // @ts-ignore
       <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index, background: native ? `hsla(var(--${highlight.color}-800-value), 0.16)` : 'transparent' }} jc='flex-end' ai='flex-start' {...props}>
-        <Badge variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
+        <Stack style={{ background: `var(--${highlight.color}-700)` }}>
+          <Badge className={s.title} data-type='badge' variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
+          <Stack gap={0} className={s.buttons}>
+            <Button size='sm' variant='glass' img='PencilEdit' onClick={() => { }} />
+            <Button size='sm' variant='glass' img='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />
+          </Stack>
+        </Stack>
       </Stack>
     )
   }
@@ -278,5 +284,10 @@ export namespace Highlights {
     init();
     // @ts-ignore
     window.highlights[id] = [left, width, index, color];
+  }
+
+  export function remove(id: λHighlight['id']) {
+    // @ts-ignore
+    delete window.highlights[id]
   }
 }

@@ -40,6 +40,7 @@ import { Pointers } from '@/components/Pointers'
 import { XY } from '@/dto/XY.dto'
 import { Badge } from '@impactium/components'
 import { CustomParameters } from '@/components/CustomParameters'
+import { Highlights } from '@/overlays/Highlights'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -1496,6 +1497,17 @@ export class Info implements InfoProps {
     }).then(this.highlights_reload);
   }
 
+  highlight_delete = (obj_id: λHighlight['id']) => api('highlight_delete', {
+    method: 'DELETE',
+    query: {
+      obj_id,
+      ws_id: this.app.general.ws_id,
+    }
+  }).then(() => {
+    Highlights.remove(obj_id)
+    this.highlights_reload();
+  });
+
   glyphs_reload = async () => {
     Glyph.List.clear()
 
@@ -2378,6 +2390,7 @@ export type λFilter = {
   field: string
   value: any
   enabled: boolean
+  case_insensitive?: boolean
 }
 
 export interface λQuery {
@@ -2401,7 +2414,7 @@ export class Filter {
       })
     }
 
-    filters.forEach(({ type, field, value, operator, enabled }) => {
+    filters.forEach(({ type, field, value, operator, enabled, case_insensitive = false }) => {
       if (!field || !value || !enabled) return
 
       let conditionObj = {}
@@ -2420,7 +2433,7 @@ export class Filter {
           conditionObj = { prefix: { [field]: value } }
           break
         case 'wildcard':
-          conditionObj = { wildcard: { [field]: value } }
+          conditionObj = { wildcard: { [field]: { value, case_insensitive } } }
           break
         case 'range':
           conditionObj = {
