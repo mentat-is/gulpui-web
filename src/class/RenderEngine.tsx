@@ -173,43 +173,43 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public connection = (dots: Dot[], center?: XY) => {
     if (dots.length < 2) return
 
-    for (let i = 0; i < dots.length - 1; i++) {
+    for (let i = 0; i < dots.length; i++) {
       this.ctx.lineWidth = 2
-      const start = dots[i]
+      // const start = dots[i]
       const end = dots[i + 1] || dots[0]
 
-      const gradient = this.ctx.createLinearGradient(
-        start.x,
-        start.y,
-        end.x,
-        end.y,
-      )
-      gradient.addColorStop(0, start.color)
-      gradient.addColorStop(1, end.color)
+      // const gradient = this.ctx.createLinearGradient(
+      //   start.x,
+      //   start.y,
+      //   end.x,
+      //   end.y,
+      // )
+      // gradient.addColorStop(0, start.color)
+      // gradient.addColorStop(1, end.color)
 
-      this.ctx.strokeStyle = gradient
+      // this.ctx.strokeStyle = gradient
 
-      this.ctx.beginPath()
-      this.ctx.moveTo(start.x, start.y)
-      this.ctx.lineTo(end.x, end.y)
-      this.ctx.stroke()
+      // this.ctx.beginPath()
+      // this.ctx.moveTo(start.x, start.y)
+      // this.ctx.lineTo(end.x, end.y)
+      // this.ctx.stroke()
 
-      // if (false && center?.x && center?.y) {
-      //   const centerGradient = this.ctx.createLinearGradient(
-      //     end.x,
-      //     end.y,
-      //     center.x,
-      //     center.y,
-      //   )
-      //   centerGradient.addColorStop(0, end.color + '48')
-      //   centerGradient.addColorStop(1, end.color)
+      if (center?.x && center?.y) {
+        const centerGradient = this.ctx.createLinearGradient(
+          end.x,
+          end.y,
+          center.x,
+          center.y,
+        )
+        centerGradient.addColorStop(0, end.color + '48')
+        centerGradient.addColorStop(1, end.color)
 
-      //   this.ctx.strokeStyle = centerGradient
-      //   this.ctx.beginPath()
-      //   this.ctx.moveTo(end.x, end.y)
-      //   this.ctx.lineTo(center.x, center.y)
-      //   this.ctx.stroke()
-      // }
+        this.ctx.strokeStyle = centerGradient
+        this.ctx.beginPath()
+        this.ctx.moveTo(end.x, end.y)
+        this.ctx.lineTo(center.x, center.y)
+        this.ctx.stroke()
+      }
     }
   }
 

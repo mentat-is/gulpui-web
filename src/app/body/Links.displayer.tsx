@@ -20,37 +20,34 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
     [app.target.files],
   )
 
-  const points = useMemo(() => {
-    const result: Array<{ link: λLink; x: number; y: number }> = [];
+  const mapping = useMemo(() => {
+    return app.target.links.reduce<LinkMapping>((acc, link) => {
+      const event = Event.id(app, link.doc_id_from)
+      if (!event || !selectedFiles.has(event.file_id)) return acc
 
-    for (const link of app.target.links) {
-      const ev = Event.id(app, link.doc_id_from);
-      if (!ev || !selectedFiles.has(ev.file_id)) continue;
+      const timestamp = Link.timestamp(link)
 
-      const ys = link.docs.map(d => File.getHeight(app, d.file_id, 0));
-      const xs = link.docs.map(d => getPixelPosition(d.timestamp));
-      if (ys.length < 2 || xs.length < 2) continue;
+      console.log(timestamp)
 
-      for (let i = 0; i < ys.length - 1; i++) {
-        const x1 = xs[i];
-        const y1 = ys[i];
+      if (!timestamp) return acc
 
-        const x2 = xs[i + 1]
-        const y2 = ys[i + 1]
+      const left = getPixelPosition(timestamp)
 
-        const x = (x1 + x2) / 2;
-        const y = (y1 + y2) / 2;
-        result.push({ link, x, y });
-      }
-    }
+      console.log(left)
 
-    return result;
+      const totalHeight = link.docs.reduce((acc, doc) => acc + File.getHeight(app, doc.file_id, 0), 0)
+
+      const top = totalHeight / (link.docs.length || 1)
+
+      if (top > 0) acc[link.id] = { left, top }
+      return acc
+    }, {})
   }, [app.target.links, selectedFiles, getPixelPosition]);
 
   return (
     <Fragment>
-      {points.map(({ link, x, y }, i) => (
-        <LinkPoint key={i} link={link} x={x} y={y - scrollY} />
+      {Object.entries(mapping).map(([id, { left, top }]) => (
+        <LinkPoint key={id} link={app.target.links.find(link => link.id === id)!} x={left} y={top - scrollY} />
       ))}
     </Fragment>
   )
