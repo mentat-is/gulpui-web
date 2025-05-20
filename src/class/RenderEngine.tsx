@@ -332,24 +332,37 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public draw_info = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY) + 4
+    const y = File.getHeight(this.info.app, file, this.scrollY) + 4;
+    const x = 10;
+    const lineHeight = 14;
 
-    this.ctx.textAlign = 'left'
-    this.ctx.fillStyle = '#e8e8e8'
-    this.ctx.fillText(file.name, 10, y)
-    this.ctx.fillText(
-      File.events(this.info.app, file).length.toString(),
-      10,
-      y + 14,
-    )
+    const lines: Array<{ text: string; dy: number; color: string }> = [
+      { text: file.name, dy: 0, color: '#e8e8e8' },
+      { text: File.events(this.info.app, file).length.toString(), dy: lineHeight, color: '#e8e8e8' },
+      { text: `${file.total.toString()} | ${File.context(this.info.app, file).name}`, dy: -lineHeight, color: '#a1a1a1' },
+    ];
 
-    this.ctx.fillStyle = '#a1a1a1'
-    this.ctx.fillText(
-      `${file.total.toString()} | ${File.context(this.info.app, file).name}`,
-      10,
-      y - 14,
-    )
+    this.ctx.font = '12px sans-serif';
+    const maxWidth = this.ctx.measureText(lines[0].text).width;
+
+    const topY = y + lines[0].dy - 12;
+    const totalHeight = lineHeight + 4;
+
+    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    this.ctx.fillRect(
+      x - 2,
+      topY,
+      maxWidth + 4,
+      totalHeight
+    );
+
+    this.ctx.textAlign = 'left';
+    for (const { text, dy, color } of lines) {
+      this.ctx.fillStyle = color;
+      this.ctx.fillText(text, x, y + dy);
+    }
   }
+
 
   public target = () => {
     if (!this.info.app.timeline.target) return

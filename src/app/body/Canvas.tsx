@@ -209,16 +209,13 @@ export function Canvas({ timeline }: Canvas.Props) {
   }
 
   const handleClick = (event: MouseEvent) => {
-    console.log('called')
-    console.log(dragState.current.clicked)
-    if (event.button === 2) return event.preventDefault()
+    if (event.button === 2) {
+      event.preventDefault();
+      return;
+    }
 
     if (!canvas_ref.current) {
       return
-    }
-
-    if (dragState.current.clicked) {
-      // return;
     }
 
     const { top, left } = canvas_ref.current.getBoundingClientRect()
