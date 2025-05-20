@@ -34,6 +34,7 @@
     "lodash": "^4.17.21",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-json-view-lite": "^2.4.1",
     "react-markdown": "^10.1.0",
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^15.6.1",

@@ -18,12 +18,17 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { toast } from 'sonner'
 
+
+import { JsonView, allExpanded, darkStyles, defaultStyles } from 'react-json-view-lite';
+import 'react-json-view-lite/dist/index.css';
+
 interface DisplayEventDialogProps {
   event: λEvent
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication()
+  const [json, setJSON] = useState<object>({})
   const [rawJSON, setRawJSON] = useState<string>('')
   const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
   const [links, setLinks] = useState<λLink[]>(Event.links(app, event));
@@ -54,6 +59,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       // @ts-ignore
       'event.original': detailed['event.original'],
     }
+    setJSON(json)
 
     setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``);
   }
@@ -127,10 +133,40 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   };
 
   const highlights = useMemo(() => {
+    type NestedObject = { [key: string]: any };
+
+    const unflattenObject = (
+      obj: { [key: string]: any },
+      delimiter: string = '.'
+    ): NestedObject =>
+      Object.keys(obj).reduce((res: NestedObject, k: string) => {
+        k.split(delimiter).reduce(
+          (acc: any, e: string, i: number, keys: string[]) =>
+            acc[e] ||
+            (acc[e] = isNaN(Number(keys[i + 1]))
+              ? keys.length - 1 === i
+                ? obj[k]
+                : {}
+              : []),
+          res
+        );
+        return res;
+      }, {});
+
+    const newStyles = {
+      ...darkStyles,
+      stringValue: "jsonview-string",
+      numberValue: "jsonview-numeric",
+      booleanValue: "jsonview-bool",
+      nullValue: "jsonview-null",
+      container: "jsonview-container",
+      label: "jsonview-label",
+    }
+
     return (
       <ContextMenu>
         <ContextMenuTrigger>
-          <Markdown className={s.highlighter} value={rawJSON} />
+          <JsonView data={unflattenObject(json)} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem disabled={!selection} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
