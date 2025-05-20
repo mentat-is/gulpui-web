@@ -19,3 +19,34 @@
 .actionButtons button {
   flex: 1;
 }
+.basic ul div span {
+  margin-left: 6px;
+}
+.collapse {
+  background: red;
+}
+.container {
+  background-color: var(--soft-black);
+  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.label {
+  color: var(--text-dimmed);
+}
+
+.numeric {
+  color: var(--green-900)
+}
+
+.string {
+  color: var(--amber-900)
+}
+.bool {
+  color: red
+}
+
+.null {
+  color: grey
+}

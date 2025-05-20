@@ -13,14 +13,12 @@ import { LinkComponents } from '@/banners/CreateLinkBanner'
 import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
 import { λLink, λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
-import { Markdown } from '@/ui/Markdown'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { toast } from 'sonner'
-
-
-import { JsonView, allExpanded, darkStyles, defaultStyles } from 'react-json-view-lite';
+import { JsonView, allExpanded, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
+import { StyleProps } from 'react-json-view-lite/dist/DataRenderer'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -28,8 +26,7 @@ interface DisplayEventDialogProps {
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication()
-  const [json, setJSON] = useState<object>({})
-  const [rawJSON, setRawJSON] = useState<string>('')
+  const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
   const [links, setLinks] = useState<λLink[]>(Event.links(app, event));
 
@@ -40,32 +37,23 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event, app.target.notes, app.target.links])
 
   useEffect(() => {
-    if (!rawJSON) loadEvent()
-  }, [rawJSON])
-
-  useEffect(() => {
-    setRawJSON('')
-  }, [event])
+    if (!json) loadEvent()
+  }, [json, event]);
 
   const loadEvent = async () => {
     const detailed = await Info.query_single_id(event.id, event.operation_id)
 
-    setJSON(detailed as unknown as λEvent);
-  }
-
-  const setJSON = (event: λEvent) => {
-    const entries = Object.entries(event).filter(([k]) => k !== 'event.original')
+    const entries = Object.entries(detailed).filter(([k]) => k !== 'event.original')
 
     const json = {
       ...Object.fromEntries(entries.slice(0, 1)),
       ...Object.fromEntries(entries.slice(1)),
       // @ts-ignore
-      'event.original': event['event.original'],
+      'event.original': detailed['event.original'],
     }
-    setJSON(json)
 
-    return setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``)
-  };
+    setJSON(detailed as unknown as typeof json);
+  }
 
   const [selection, setSelection] = useState<string>('');
 
@@ -136,40 +124,38 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   };
 
   const highlights = useMemo(() => {
-    type NestedObject = { [key: string]: any };
+    if (!json) {
+      return null;
+    }
 
-    const unflattenObject = (
-      obj: { [key: string]: any },
-      delimiter: string = '.'
-    ): NestedObject =>
-      Object.keys(obj).reduce((res: NestedObject, k: string) => {
-        k.split(delimiter).reduce(
-          (acc: any, e: string, i: number, keys: string[]) =>
-            acc[e] ||
-            (acc[e] = isNaN(Number(keys[i + 1]))
-              ? keys.length - 1 === i
-                ? obj[k]
-                : {}
-              : []),
-          res
-        );
-        return res;
-      }, {});
+    const unflattenObject = Object.keys(json).reduce((res, k) => {
+      k.split('.').reduce(
+        (acc: any, e, i, keys) => acc[e] || (acc[e] = isNaN(Number(keys[i + 1]))
+          ? keys.length - 1 === i
+            ? json[k]
+            : {}
+          : []),
+        res
+      );
+      return res;
+    }, {});
 
-    const newStyles = {
+    const newStyles: StyleProps = {
       ...darkStyles,
-      stringValue: "jsonview-string",
-      numberValue: "jsonview-numeric",
-      booleanValue: "jsonview-bool",
-      nullValue: "jsonview-null",
-      container: "jsonview-container",
-      label: "jsonview-label",
+      noQuotesForStringValues: true,
+      childFieldsContainer: s.basic,
+      stringValue: s.string,
+      numberValue: s.numeric,
+      booleanValue: s.bool,
+      nullValue: s.null,
+      container: s.container,
+      label: s.label,
     }
 
     return (
       <ContextMenu>
         <ContextMenuTrigger>
-          <JsonView data={unflattenObject(json)} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
+          <JsonView data={unflattenObject} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
         </ContextMenuTrigger>
         <ContextMenuContent>
           <ContextMenuItem disabled={!selection} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
@@ -181,7 +167,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       </ContextMenu>
 
     )
-  }, [rawJSON, selection]);
+  }, [json, selection]);
 
   const collabList = useMemo(() => {
     return (
@@ -196,7 +182,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       description={`From ${File.id(app, event.file_id).name}`}
     >
       <Navigation event={event} />
-      {rawJSON ? (
+      {json ? (
         <Fragment>
           <Stack className={s.group}>
             <Stack dir="column" flex>
@@ -225,7 +211,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                   spawnBanner(
                     <Enrichment.Banner
                       event={event}
-                      onEnrichment={setJSON}
+                      onEnrichment={e => setJSON(e as unknown as typeof json)}
                     />,
                   )
                 }
@@ -240,10 +226,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           {collabList}
           {highlights}
           <Stack className={s.actionButtons}  >
-            <Button variant="secondary" onClick={() => copy(rawJSON)} img="Copy">Copy JSON</Button>
+            <Button variant="secondary" onClick={() => copy(JSON.stringify(json, null, 2))} img="Copy">Copy JSON</Button>
             <Button variant="secondary" onClick={() =>
               download(
-                rawJSON,
+                JSON.stringify(json, null, 2),
                 'application/json',
                 `${event.id}_from_${event.file_id}.json`,
               )
