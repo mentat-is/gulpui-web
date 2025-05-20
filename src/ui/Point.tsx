@@ -5,13 +5,14 @@ import { cn } from '@impactium/utils'
 import s from './styles/Point.module.css'
 
 export namespace Point {
-  export interface Props extends Button.Props {
+  export interface Props extends Omit<Button.Props, 'type'> {
     x: number
     y: number
     icon: Icon.Name
     accent: Color
     name: string
     description?: string
+    type: 'link' | 'note'
   }
 }
 
@@ -23,6 +24,7 @@ export function Point({
   className,
   name,
   description,
+  type,
   ...props
 }: Point.Props) {
   return (
@@ -31,7 +33,7 @@ export function Point({
       tabIndex={-1}
       variant="glass"
       aria-exportable
-      className={cn(className, s.target)}
+      className={cn(type === 'link' && s.round, className, s.target)}
       style={{ ...props.style, left: x, top: y, borderColor: accent }}
       {...props}
     >

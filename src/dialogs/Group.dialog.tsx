@@ -36,7 +36,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
             >
               <p className={s.id}>{event.id}</p>
               <span className={s.description}>
-                {`${format(new Date(Internal.Transformator.toTimestamp(event.nanotimestamp)), 'yyyy-MM-dd HH:mm:ss')}.${String(event.nanotimestamp % 1_000_000n).padStart(6, '0')}`}
+                {`${format(new Date(Internal.Transformator.toTimestamp(event.nanotimestamp)), 'yyyy-MM-dd HH:mm:ss')}.${String(event.nanotimestamp % 1_000_000n).padStart(6, '0')}`} | {event.code}
               </span>
             </Stack>
             <Button

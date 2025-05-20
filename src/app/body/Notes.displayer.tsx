@@ -49,7 +49,7 @@ export function NotesDisplayer({
       const top = pos.y
       return pos.x > 0 && top > 0 ? { left: pos.x, top } : null
     },
-    [scrollY, mapping],
+    [scrollY, app.timeline.filter, mapping],
   )
 
   const matrix: Map<string, λNote[]> = new Map();
@@ -81,6 +81,7 @@ export function NotesDisplayer({
 
           return (
             <NotePoint.Point
+              type='note'
               key={note.id}
               note={note}
               x={pos.left}
@@ -92,7 +93,7 @@ export function NotesDisplayer({
         const nums = _.split('|').map(x => parseInt(x));
 
         return (
-          <NotePoint.Group notes={notes} x={nums[0]} y={nums[1]} />
+          <NotePoint.Group type='note' notes={notes} x={nums[0]} y={nums[1]} />
         )
       })}
     </Fragment>

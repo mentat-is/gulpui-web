@@ -113,7 +113,7 @@ export namespace NotePoint {
 
     return (
       <Stack className={s.wrapper} pos='absolute' style={{ top: props.y - scrollY, left: props.x }} dir='column-reverse' gap={0}>
-        <UIPoint icon='Dot' accent='var(--gray-1000)' name='' y={0} x={0}>
+        <UIPoint type='note' icon='Dot' accent='var(--gray-1000)' name='' y={0} x={0}>
           {notes.length}
         </UIPoint>
         <Stack className={s.content} dir='column'>

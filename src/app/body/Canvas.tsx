@@ -56,7 +56,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   ]
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, dependencies)
-  const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
+  const { dragState, resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
 
   useEffect(() => {
     if (app.timeline.target) {
@@ -182,21 +182,37 @@ export function Canvas({ timeline }: Canvas.Props) {
     renderOverlay()
   }, [overlay_ref, canvas_ref, resize]);
 
-  const [xyc, setXyc] = useState<XY>(XYBase(0));
+  // [ ] TODO: Move to Info.tsx;
+  const getEventsListFromFileByClickX = (x: number, file: λFile) => {
+    const events: λEvent[] = [];
 
-  const handleClickInit = (event: MouseEvent) => {
-    setXyc({
-      x: event.clientX,
-      y: event.clientY
-    })
+    for (const event of File.events(app, file)) {
+      const pos = getPixelPosition(event.timestamp + file.settings.offset)
+
+      if (file.settings.engine === 'graph') {
+        if (x >= pos - 16 && x <= pos) {
+          events.push(event)
+        }
+        continue
+      }
+
+      if (x === pos) {
+        events.push(event)
+      }
+
+      if (x > pos) {
+        break
+      }
+    }
+
+    return events;
   }
 
   const handleClick = (event: MouseEvent) => {
-    if (xyc.x === event.clientX && event.clientY === xyc.y) {
+    if (event.button === 2) {
+      event.preventDefault();
       return;
     }
-
-    if (event.button === 2) return event.preventDefault()
 
     if (!canvas_ref.current) {
       return
@@ -216,25 +232,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     if (click.x < getPixelPosition(file.timestamp.min) || getPixelPosition(file.timestamp.max) < click.x) return
 
-    const events: λEvent[] = []
-
-    for (const event of File.events(app, file)) {
-      const pos = getPixelPosition(event.timestamp + file.settings.offset)
-
-      if (file.settings.engine === 'graph') {
-        if (click.x >= pos - 16 && click.x <= pos) {
-          events.push(event)
-        }
-        continue
-      }
-
-      if (click.x === pos) {
-        events.push(event)
-      }
-
-      if (click.x > pos) {
-        break
-      }
+    let events = getEventsListFromFileByClickX(click.x, file);
+    if (events.length === 0) {
+      events = getEventsListFromFileByClickX(click.x - 1, file);
+    }
+    if (events.length === 0) {
+      events = getEventsListFromFileByClickX(click.x + 1, file);
     }
 
     LoggerHandler.canvasClick(file, events, click.x)
@@ -249,6 +252,9 @@ export function Canvas({ timeline }: Canvas.Props) {
       )
     }
   }
+
+  // @ts-ignore
+  window.xxc = handleClick;
 
   const [bounding, setBounding] = useState<DOMRect | null>(null)
 
@@ -320,13 +326,19 @@ export function Canvas({ timeline }: Canvas.Props) {
   useEffect(() => {
     renderCanvas()
 
-    canvas_ref.current?.addEventListener('mousedown', handleClickInit)
-    canvas_ref.current?.addEventListener('mouseup', handleClick)
+    // canvas_ref.current?.addEventListener('mouseup', (e) => {
+    //   setTimeout(() => {
+    //     handleClick(e);
+    //   }, 1)
+    // })
     const debugInterval = setInterval(() => renderCanvas(true), 300)
 
     return () => {
-      canvas_ref.current?.removeEventListener('mousedown', handleClickInit)
-      canvas_ref.current?.removeEventListener('mouseup', handleClick)
+      // canvas_ref.current?.removeEventListener('mouseup', (e) => {
+      //   setTimeout(() => {
+      //     handleClick(e);
+      //   }, 1)
+      // })
       clearInterval(debugInterval)
     }
   }, dependencies)

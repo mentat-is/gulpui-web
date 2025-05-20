@@ -13,6 +13,7 @@ export class DragDealer implements DragDealerProps {
   y: number
   x: number
   info: Info
+  dragging: boolean
   timeline: React.RefObject<HTMLCanvasElement>
   setScrollX: React.Dispatch<React.SetStateAction<number>>
   increaseScrollY: (λy: number) => void
@@ -30,20 +31,22 @@ export class DragDealer implements DragDealerProps {
     this.timeline = timeline
     this.setScrollX = setScrollX
     this.increaseScrollY = increaseScrollY
+    this.dragging = true
   }
 
   dragStart = (ev: React.MouseEvent) => {
     this.y = ev.clientY
     this.x = ev.clientX
-    this.clicked = true
   }
 
   dragStop = () => {
-    window.requestAnimationFrame(() => (this.clicked = false))
+    this.clicked = false
   }
 
   dragMove = (ev: React.MouseEvent) => {
     if (!this.clicked) return
+
+    this.dragging = true
 
     const λy = this.y - ev.clientY
     const λx = this.x - ev.clientX

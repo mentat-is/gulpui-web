@@ -550,19 +550,17 @@ export class Info implements InfoProps {
     plugin: string,
     event: λEvent,
     custom_parameters: Record<string, any>,
-  ): Promise<Record<string, string>> | undefined => {
-    return api('/enrich_single_id', {
-      method: 'POST',
-      query: {
-        plugin,
-        operation_id: event.operation_id,
-        ws_id: this.app.general.ws_id,
-        doc_id: event.id,
-      },
-      body: { custom_parameters },
-      toast: 'Enrichment Error',
-    })
-  }
+  ): Promise<λEvent> | undefined => api<λEvent>('/enrich_single_id', {
+    method: 'POST',
+    query: {
+      plugin,
+      operation_id: event.operation_id,
+      ws_id: this.app.general.ws_id,
+      doc_id: event.id,
+    },
+    body: { custom_parameters },
+    toast: 'Document has been enriched successfully',
+  })
 
   query_global = async ({
     fileName,

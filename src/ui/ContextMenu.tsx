@@ -70,11 +70,12 @@ const contextMenuItem = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
     inset?: boolean
     img?: Icon.Name
+    revert?: boolean
   }
->(({ className, img, children, inset, ...props }, ref) => (
+>(({ className, img, children, inset, revert, ...props }, ref) => (
   <ContextMenuPrimitive.Item
     ref={ref}
-    className={cn(s.item, inset && s.itemInset, className)}
+    className={cn(s.item, inset && s.itemInset, className, revert && s.revert)}
     {...props}
   >
     {img && <Icon name={img} className={s.icon} />}

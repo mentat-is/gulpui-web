@@ -42,19 +42,20 @@
 }
 .desc {
   position: absolute;
-  font-size: 11px;
+  font-size: 10px;
   transform: translateY(26px);
   font-family: var(--font-mono);
   max-width: 128px;
   min-width: 32px;
   overflow: hidden;
+  font-weight: 300;
   text-overflow: ellipsis;
-  height: 16px;
+  height: 20px;
+  line-height: 12px;
   background: var(--meta-black);
-  padding: 3px;
+  padding: 3px 5px;
   border: 1px solid var(--white);
   border-radius: 4px;
-  text-rendering: optimizeLegibility;
   text-align: center;
 }
 .tags {
@@ -153,4 +154,20 @@
   max-width: 144px;
   padding: 4px;
   border: 1px solid var(--gray-400);
+}
+.round {
+  border-radius: var(--round);
+  height: 28px !important;
+  min-height: unset;
+  width: 28px !important;
+  min-width: unset;
+}
+.round hr {
+  display: none;
+}
+.round p {
+  transform: translateX(calc(50% + 9.75px));
+  border-left: none;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
 }

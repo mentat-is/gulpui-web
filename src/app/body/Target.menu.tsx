@@ -132,20 +132,20 @@ export function TargetMenu({ file }: TargetMenuProps) {
           </ContextMenuSubContent>
         </ContextMenuSub>
         <Stack gap={2}>
-
+          <ContextMenuItem
+            onClick={() => Info.setTimelineTarget(File.events(app, file)[0])}
+            img="ArrowLeftFromLine"
+          >
+            Show first event
+          </ContextMenuItem>
+          <ContextMenuItem
+            revert
+            onClick={() => Info.setTimelineTarget(File.events(app, file).pop())}
+            img="ArrowRightFromLine"
+          >
+            Show last event
+          </ContextMenuItem>
         </Stack>
-        <ContextMenuItem
-          onClick={() => Info.setTimelineTarget(File.events(app, file)[0])}
-          img="ArrowLeftFromLine"
-        >
-          Show first event
-        </ContextMenuItem>
-        <ContextMenuItem
-          onClick={() => Info.setTimelineTarget(File.events(app, file).pop())}
-          img="ArrowRightFromLine"
-        >
-          Show last event
-        </ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>
