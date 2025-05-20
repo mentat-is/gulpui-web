@@ -27,7 +27,7 @@ import { CustomParameters } from '@/components/CustomParameters'
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
     event?: λEvent
-    onEnrichment?: (event: Record<string, string>) => void
+    onEnrichment?: (event: λEvent) => void
   }
 
   export function Banner({ event, onEnrichment, ...props }: Enrichment.Props) {
@@ -78,9 +78,9 @@ export namespace Enrichment {
         )
         if (enriched && onEnrichment) {
           onEnrichment(enriched)
-          setLoading(false)
           destroyBanner()
         }
+        setLoading(false);
         return
       }
 

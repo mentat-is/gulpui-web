@@ -1,6 +1,7 @@
 .subTrigger {
   display: flex;
   cursor: default;
+  gap: 6px;
   user-select: none;
   align-items: center;
   border-radius: 0.375rem;
@@ -50,7 +51,11 @@
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
   outline: none;
+  gap: 6px;
   transition: background-color 0.2s, color 0.2s;
+}
+.item.revert {
+  flex-direction: row-reverse;
 }
 
 .item:hover,
@@ -62,7 +67,6 @@
 .icon {
   height: 14px;
   width: 14px;
-  margin-right: 6px;
 }
 
 .itemInset {

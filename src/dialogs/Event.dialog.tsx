@@ -45,18 +45,21 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const loadEvent = async () => {
     const detailed = await Info.query_single_id(event.id, event.operation_id)
 
+    setJSON(detailed as unknown as λEvent);
+  }
 
-    const entries = Object.entries(detailed).filter(([k]) => k !== 'event.original')
+  const setJSON = (event: λEvent) => {
+    const entries = Object.entries(event).filter(([k]) => k !== 'event.original')
 
     const json = {
       ...Object.fromEntries(entries.slice(0, 1)),
       ...Object.fromEntries(entries.slice(1)),
       // @ts-ignore
-      'event.original': detailed['event.original'],
+      'event.original': event['event.original'],
     }
 
-    setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``);
-  }
+    return setRawJSON(`\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\``)
+  };
 
   const [selection, setSelection] = useState<string>('');
 
@@ -186,9 +189,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                   spawnBanner(
                     <Enrichment.Banner
                       event={event}
-                      onEnrichment={(e: Record<string, string>) =>
-                        setRawJSON(JSON.stringify(e, null, 2))
-                      }
+                      onEnrichment={setJSON}
                     />,
                   )
                 }

@@ -207,6 +207,10 @@ namespace Components {
 
     const plugins = Mapping.plugins(app);
 
+    const cutExtension = useCallback((str: string) => {
+      return str.split('.').slice(0, -1).join('')
+    }, []);
+
     return (
       <Select.Root
         value={settings.plugin}
@@ -214,12 +218,12 @@ namespace Components {
       >
         <Select.Trigger className={s.select}>
           <Select.Value placeholder="Select plugin">
-            <p>{settings.plugin ? settings.plugin : plugins.length > 0 ? 'Select plugin' : 'No plugins'}</p>
+            <p>{settings.plugin ? cutExtension(settings.plugin) : plugins.length > 0 ? 'Select plugin' : 'No plugins'}</p>
           </Select.Value>
         </Select.Trigger>
         <Select.Content>
           {plugins.map(p => (
-            <Select.Item key={p} value={p}>{p}</Select.Item>
+            <Select.Item key={p} value={p}>{cutExtension(p)}</Select.Item>
           ))}
         </Select.Content>
       </Select.Root>

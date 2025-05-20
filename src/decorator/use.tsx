@@ -1,7 +1,7 @@
 import { DragDealer } from '@/class/dragDealer.class'
 import { useApplication } from '@/context/Application.context'
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto'
-import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { RefObject, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 export function useKeyHandler(key: string) {
@@ -37,12 +37,9 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 
-  const increaseScrollY = useCallback(
-    (λy: number) => {
-      setScrollY((y) => Math.round(y + λy))
-    },
-    [app, timeline],
-  )
+  const increaseScrollY = (λy: number) => {
+    setScrollY((y) => Math.round(y + λy))
+  }
 
   const dragState = useRef(
     new DragDealer({ info: Info, timeline, increaseScrollY, setScrollX }),
@@ -57,11 +54,12 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
     })
   }, [timeline])
 
-  const handleMouseDown = useCallback((event: React.MouseEvent) => {
+  const handleMouseDown = (event: React.MouseEvent) => {
     if (highlightsOverlay) {
       return;
     }
 
+    dragState.current.clicked = true;
     dragState.current.dragStart(event)
     const rect = timeline.current?.getBoundingClientRect()
     if (!rect) {
@@ -72,9 +70,9 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
       setResize({ start: event.clientX - rect.x, end: event.clientX - rect.x })
       setIsResizing(true)
     }
-  }, [highlightsOverlay]);
+  }
 
-  const handleMouseMove = useCallback(
+  const handleMouseMove =
     (event: React.MouseEvent) => {
       const rect = timeline.current?.getBoundingClientRect()
       if (!rect) {
@@ -87,36 +85,39 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
       }
 
       dragState.current.dragMove(event)
-    },
-    [isResizing],
-  )
+    }
 
-  const handleMouseUpOrLeave = useCallback(
-    (event: MouseEvent) => {
-      event.preventDefault()
-      dragState.current.dragStop()
+  const handleMouseUpOrLeave = (event: MouseEvent) => {
+    if (dragState.current.dragging === true) {
+      dragState.current.dragging = false;
+      dragState.current.clicked = false;
+    } else {
+      // @ts-ignore
+      window.xxc(event);
+    }
 
-      if (isResizing) {
-        const min = Math.min(resize.end, resize.start)
-        const max = Math.max(resize.end, resize.start)
-        const scale =
-          (document.getElementById('canvas')!.clientWidth *
-            Info.app.timeline.scale) /
-          (max - min)
+    event.preventDefault()
+    dragState.current.dragStop()
 
-        if (!isFinite(scale)) return toast('Selected frame too small')
+    if (isResizing) {
+      const min = Math.min(resize.end, resize.start)
+      const max = Math.max(resize.end, resize.start)
+      const scale =
+        (document.getElementById('canvas')!.clientWidth *
+          Info.app.timeline.scale) /
+        (max - min)
 
-        setScrollX(x => (x + min) * (scale / Info.app.timeline.scale))
-        setTimeout(() => {
-          Info.setTimelineScale(scale)
-        }, 10)
-      }
+      if (!isFinite(scale)) return toast('Selected frame too small')
 
-      setResize(StartEndBase)
-      setIsResizing(false)
-    },
-    [isResizing, resize, Info, Info.app.timeline.scale, scrollX],
-  )
+      setScrollX(x => (x + min) * (scale / Info.app.timeline.scale))
+      setTimeout(() => {
+        Info.setTimelineScale(scale)
+      }, 10)
+    }
+
+    setResize(StartEndBase)
+    setIsResizing(false)
+  }
 
   return {
     dragState,
