@@ -1,7 +1,7 @@
 import { DragDealer } from '@/class/dragDealer.class'
 import { useApplication } from '@/context/Application.context'
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto'
-import { RefObject, useEffect, useRef, useState } from 'react'
+import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 export function useKeyHandler(key: string) {
@@ -54,7 +54,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
     })
   }, [timeline])
 
-  const handleMouseDown = (event: React.MouseEvent) => {
+  const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (highlightsOverlay) {
       return;
     }
@@ -70,24 +70,23 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
       setResize({ start: event.clientX - rect.x, end: event.clientX - rect.x })
       setIsResizing(true)
     }
-  }
+  }, [highlightsOverlay, dragState])
 
-  const handleMouseMove =
-    (event: React.MouseEvent) => {
-      const rect = timeline.current?.getBoundingClientRect()
-      if (!rect) {
-        return
-      }
-
-      if (isResizing) {
-        setResize((prev) => ({ ...prev, end: event.clientX - rect.x }))
-        return
-      }
-
-      dragState.current.dragMove(event)
+  const handleMouseMove = useCallback((event: React.MouseEvent) => {
+    const rect = timeline.current?.getBoundingClientRect()
+    if (!rect) {
+      return
     }
 
-  const handleMouseUpOrLeave = (event: MouseEvent) => {
+    if (isResizing) {
+      setResize((prev) => ({ ...prev, end: event.clientX - rect.x }))
+      return
+    }
+
+    dragState.current.dragMove(event)
+  }, [isResizing, highlightsOverlay, dragState])
+
+  const handleMouseUpOrLeave = useCallback((event: MouseEvent) => {
     if (dragState.current.dragging === true) {
       dragState.current.dragging = false;
       dragState.current.clicked = false;
@@ -117,7 +116,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
 
     setResize(StartEndBase)
     setIsResizing(false)
-  }
+  }, [dragState, isResizing, resize, Info.app.timeline.scale]);
 
   return {
     dragState,
