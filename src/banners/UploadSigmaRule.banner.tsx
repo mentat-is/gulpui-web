@@ -24,27 +24,17 @@ export namespace SigmaRules {
     const { Info, app, destroyBanner } = useApplication()
     const [rules, setRules] = useState<GulpDataset.SigmaFile | null>(null)
     const [file, setFile] = useState<λFile | null>(initFile ?? null)
-    const [plugins, setPlugins] = useState<GulpDataset.PluginList.Interface[]>([])
-    const [plugin, setPlugin] = useState<string | null>(null)
     const [createNotes, setCreateNotes] = useState<boolean>(true)
 
-    useEffect(() => {
-      Info.plugin_list().then((plugins) => {
-        setPlugins(
-          plugins.filter((plugin) => plugin.type.includes('ingestion')),
-        )
-      })
-    }, [])
-
     const DoneButton = () => {
-      const falsy_condition = !file || !plugin || !rules
+      const falsy_condition = !file || !rules
 
       const submit = async () => {
         if (falsy_condition) {
           return
         }
 
-        await Info.sigma.set(file, plugin, rules, createNotes)
+        await Info.sigma.set(file, rules, createNotes)
 
         destroyBanner()
       }
@@ -113,26 +103,6 @@ export namespace SigmaRules {
           variant="highlighted"
           onChange={rulesInputChangeHandler}
         />
-        <Select.Root onValueChange={setPlugin} value={plugin ?? ''}>
-          <Select.Trigger>
-            <Stack>
-              <Icon name="Puzzle" />
-              {plugin ?? 'No plugin selected, select at least one'}
-            </Stack>
-          </Select.Trigger>
-          <Select.Content>
-            {plugins.map((plugin) => {
-              return (
-                <Select.Item value={plugin.filename} key={plugin.filename}>
-                  <Stack>
-                    <Icon name="Puzzle" />
-                    {plugin.filename}
-                  </Stack>
-                </Select.Item>
-              )
-            })}
-          </Select.Content>
-        </Select.Root>
         <Toggle
           option={['Ignore notes', 'Create notes']}
           checked={createNotes}

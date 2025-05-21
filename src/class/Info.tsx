@@ -1988,7 +1988,7 @@ export class Info implements InfoProps {
     this.render();
   }
 
-  query_sigma = (body: Record<string, any>, plugin: string) => {
+  query_sigma = (body: Record<string, any>) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
       return;
@@ -1998,16 +1998,9 @@ export class Info implements InfoProps {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
-        operation_id: operation.id,
-        plugin
+        operation_id: operation.id
       },
-      body: {
-        ...body,
-        mapping_parameters: {
-          mapping_file: Mapping.methods(this.app, plugin)[0],
-          mappings: {}
-        }
-      },
+      body,
       toast: 'Sigma rule has been successfully applied',
     })
   }
@@ -2015,7 +2008,6 @@ export class Info implements InfoProps {
   sigma = {
     set: async (
       files: Arrayed<λFile>,
-      plugin: string,
       sigma: GulpDataset.SigmaFile,
       notes: boolean,
     ) => {
@@ -2036,10 +2028,8 @@ export class Info implements InfoProps {
                 create_notes: notes,
               },
             },
-            flt: {
-              source_ids: [file.id],
-            },
-          }, plugin);
+            src_ids: [file.id],
+          });
         }),
       )
     },
