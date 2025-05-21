@@ -29,7 +29,7 @@ export function Navigator({
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay } = useApplication()
+  const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([])
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
@@ -76,7 +76,7 @@ export function Navigator({
 
   const goToTimestamp = () => {
     // @ts-ignore
-    return window.focusCanvasOnTimestamp(timestamp, true)
+    return window.focusCanvasOnEvent(timestamp, true)
   }
 
   useEffect(() => {
@@ -242,6 +242,11 @@ export function Navigator({
     setHighlightsOverlay(<Highlights.Create.Overlay />)
   }
 
+  const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setScrollY(-26)
+    Info.setTimelineFilter(e.target.value)
+  }
+
   return (
     <Stack
       pos="relative"
@@ -288,7 +293,7 @@ export function Navigator({
           className={s.filter}
           value={app.timeline.filter}
           placeholder="Filter by filenames and context"
-          onChange={(e) => Info.setTimelineFilter(e.target.value)}
+          onChange={handleFilterChange}
           img="Filter"
         />
         <Button

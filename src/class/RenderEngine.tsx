@@ -343,18 +343,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     ];
 
     this.ctx.font = '12px sans-serif';
-    const maxWidth = this.ctx.measureText(lines[0].text).width;
-
-    const topY = y + lines[0].dy - 12;
-    const totalHeight = lineHeight + 4;
-
-    this.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    this.ctx.fillRect(
-      x - 2,
-      topY,
-      maxWidth + 4,
-      totalHeight
-    );
 
     this.ctx.textAlign = 'left';
     for (const { text, dy, color } of lines) {
@@ -362,7 +350,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       this.ctx.fillText(text, x, y + dy);
     }
   }
-
 
   public target = () => {
     if (!this.info.app.timeline.target) return

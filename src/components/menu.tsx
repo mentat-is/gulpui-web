@@ -34,7 +34,6 @@ export function Menu() {
 
   return (
     <Stack
-      title="Menu"
       className={s.menu}
       dir="column"
       ai="flex-start"
@@ -78,18 +77,12 @@ export function Menu() {
       />
       <Button
         variant="secondary"
-        title="Export canvas"
-        img="ImageDown"
-        onClick={() => spawnBanner(<Export.Banner />)}
-      />
-      <Button
-        variant="secondary"
         title="Global query"
         img="Globe"
         onClick={() => spawnBanner(<GlobalQuery.Banner />)}
       />
       <Button
-        variant="secondary"
+        variant="glass"
         title="Data enrichment"
         img="PrismColor"
         onClick={enrichment}

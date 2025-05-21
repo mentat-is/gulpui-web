@@ -5,18 +5,27 @@ import { Canvas } from './Canvas'
 import { Stack } from '@impactium/components'
 import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
+import { λEvent } from '@/dto/ChunkEvent.dto'
+import { File } from '@/class/Info'
+import { λFile } from '@/dto/Dataset'
 
 export function Timeline() {
-  const { app, Info, timeline, setScrollX, scrollX, scrollY } = useApplication()
+  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
 
   useEffect(() => {
     Info.refetch()
   }, [])
 
-  const focusTimestamp = (timestamp: number, onLeft = false) => {
+  const focusEvent = (timestamp: number, onLeft = false, file_id?: λFile['id']) => {
     const instanse = getAlgothitmInstance()
 
     setScrollX(onLeft ? instanse.abs_x_from_timestamp(timestamp) : instanse.center_scroll_from_timestamp(timestamp))
+    if (file_id) {
+      const canvas = document.getElementById('canvas') as HTMLCanvasElement;
+      if (!canvas) return
+
+      setScrollY(File.getHeight(app, file_id, 0) - 26 - canvas.clientHeight / 2);
+    }
   }
 
   const getAlgothitmInstance = () => {
@@ -32,7 +41,7 @@ export function Timeline() {
   }
 
   // @ts-ignore
-  window.focusCanvasOnTimestamp = focusTimestamp
+  window.focusCanvasOnEvent = focusEvent
 
   return (
     <Stack

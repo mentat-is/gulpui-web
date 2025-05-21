@@ -239,7 +239,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             <Button
               onClick={() => {
                 // @ts-ignore
-                return window.focusCanvasOnTimestamp(event.timestamp)
+                return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
               }}
               variant="secondary"
               img="Crosshair"
