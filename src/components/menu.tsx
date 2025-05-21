@@ -56,7 +56,7 @@ export function Menu() {
         variant="secondary"
         title="Upload sigma rule"
         img="Sigma"
-        onClick={() => spawnBanner(<SigmaRules.Banner />)}
+        onClick={() => spawnBanner(<SigmaRules.Banner file={null} />)}
       />
       <Button
         variant="secondary"

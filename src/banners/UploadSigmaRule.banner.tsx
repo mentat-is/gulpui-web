@@ -13,28 +13,33 @@ import { toast } from 'sonner'
 export namespace SigmaRules {
   export namespace Banner {
     export interface Props extends UIBanner.Props {
-      file?: λFile
+      file: λFile | null
     }
   }
 
   export function Banner({
-    file: initFile,
+    file,
     ...props
   }: SigmaRules.Banner.Props) {
     const { Info, app, destroyBanner } = useApplication()
     const [rules, setRules] = useState<GulpDataset.SigmaFile | null>(null)
-    const [file, setFile] = useState<λFile | null>(initFile ?? null)
     const [createNotes, setCreateNotes] = useState<boolean>(true)
 
     const DoneButton = () => {
-      const falsy_condition = !file || !rules
+      const falsy_condition = !rules
 
       const submit = async () => {
         if (falsy_condition) {
           return
         }
 
-        await Info.sigma.set(file, rules, createNotes)
+        if (file) {
+          await Info.sigma.set(file, rules, createNotes)
+        } else {
+          for (const file of GulpFileEntity.selected(app)) {
+            await Info.sigma.set(file, rules, createNotes)
+          }
+        }
 
         destroyBanner()
       }
@@ -70,33 +75,9 @@ export namespace SigmaRules {
 
     return (
       <UIBanner title="Apply sigma rule" done={<DoneButton />} {...props}>
-        <Select.Root
-          onValueChange={(id) =>
-            setFile(GulpFileEntity.id(app, id as λFile['id']))
-          }
-          value={file?.name || ''}
-        >
-          <Select.Trigger>
-            <Stack>
-              <Icon
-                name={file ? GulpFileEntity.icon(file) : Default.Icon.FILE}
-              />
-              {file ? file.name + 'in' + Context.id(app, file.context_id).name : 'No file selected'}
-            </Stack>
-          </Select.Trigger>
-          <Select.Content>
-            {GulpFileEntity.selected(app).map((file) => {
-              return (
-                <Select.Item key={file.id} value={file.id}>
-                  <Stack>
-                    <Icon name={GulpFileEntity.icon(file)} />
-                    {file.name}
-                  </Stack>
-                </Select.Item>
-              )
-            })}
-          </Select.Content>
-        </Select.Root>
+        {file && (
+          <p>{Context.id(app, file.context_id).name + '/' + file.name}</p>
+        )}
         <Input
           type="file"
           img="Sigma"
