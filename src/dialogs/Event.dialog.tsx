@@ -19,6 +19,9 @@ import { toast } from 'sonner'
 import { JsonView, allExpanded, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import { StyleProps } from 'react-json-view-lite/dist/DataRenderer'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
+import { Table } from '@/components/Table'
+import { Markdown } from '@/ui/Markdown'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -60,7 +63,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       'event.original': detailed['event.original'],
     }
 
-    console.log(json)
     setJSON(detailed as unknown as typeof json);
   }
 
@@ -163,9 +165,24 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     return (
       <ContextMenu>
-        <ContextMenuTrigger>
-          <JsonView data={unflattenObject} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
-        </ContextMenuTrigger>
+        <Tabs defaultValue="tree-view" orientation="vertical">
+          <TabsList>
+            <TabsTrigger value="tree">Tree</TabsTrigger>
+            <TabsTrigger value="raw">Raw</TabsTrigger>
+            <TabsTrigger value="table">Table</TabsTrigger>
+          </TabsList>
+          <ContextMenuTrigger>
+            <TabsContent value="tree">
+              <JsonView data={unflattenObject} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
+            </TabsContent>
+            <TabsContent value="raw">
+              <Markdown className={s.highlighter} value={`\`\`\`json\n${JSON.stringify(json, null, 2)}\`\`\``} />
+            </TabsContent>
+            <TabsContent value="table">
+              <Table values={[json]}></Table>
+            </TabsContent>
+          </ContextMenuTrigger>
+        </Tabs>
         <ContextMenuContent>
           <ContextMenuItem disabled={!selection} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
             text: selection
