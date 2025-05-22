@@ -29,8 +29,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
   const [links, setLinks] = useState<λLink[]>(Event.links(app, event));
-  const [loadedEventId, setLoadedEventId] = useState<string | null>(null);
-  const isLoadingRef = useRef(false);
 
   useEffect(() => {
     Info.setTimelineTarget(event)
@@ -39,36 +37,30 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   }, [event, app.target.notes, app.target.links])
 
   useEffect(() => {
-    // Only load if we haven't loaded this specific event yet
-    if (event.id !== loadedEventId && !isLoadingRef.current) {
-      setJSON(null); // Clear previous data
+    if (!json) {
       loadEvent();
+      return
     }
-  }, [event.id, loadedEventId]);
+
+    if (json.id !== event.id) {
+      return setJSON(null);
+    }
+
+  }, [event.id, json]);
 
   const loadEvent = async () => {
-    isLoadingRef.current = true;
+    const detailed = await Info.query_single_id(event.id, event.operation_id)
 
-    try {
-      const detailed = await Info.query_single_id(event.id, event.operation_id)
+    const entries = Object.entries(detailed).filter(([k]) => k !== 'event.original')
 
-      const entries = Object.entries(detailed).filter(([k]) => k !== 'event.original')
-
-      const json = {
-        ...Object.fromEntries(entries.slice(0, 1)),
-        ...Object.fromEntries(entries.slice(1)),
-        // @ts-ignore
-        'event.original': detailed['event.original'],
-      }
-
-      setJSON(detailed as unknown as typeof json);
-      setLoadedEventId(event.id);
-    } catch (error) {
-      console.error('Error loading event:', error)
-      toast('Failed to load event details')
-    } finally {
-      isLoadingRef.current = false;
+    const json = {
+      ...Object.fromEntries(entries.slice(0, 1)),
+      ...Object.fromEntries(entries.slice(1)),
+      // @ts-ignore
+      'event.original': detailed['event.original'],
     }
+
+    setJSON(detailed as unknown as typeof json);
   }
 
   const [selection, setSelection] = useState<string>('');
