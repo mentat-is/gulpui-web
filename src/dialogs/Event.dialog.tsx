@@ -42,7 +42,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return
     }
 
-    if (json.id !== event.id) {
+    if (json._id !== event.id) {
       return setJSON(null);
     }
 
@@ -60,6 +60,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       'event.original': detailed['event.original'],
     }
 
+    console.log(json)
     setJSON(detailed as unknown as typeof json);
   }
 
