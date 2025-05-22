@@ -28,8 +28,10 @@
 .container {
   background-color: var(--soft-black);
   border: 1px solid var(--gray-400);
-  border-radius: 6px;
-  padding: 12px;
+  border-radius: 4px;
+  padding: 6px;
+  margin-right: 8px;
+  overflow: scroll;
 }
 
 .label {
@@ -49,4 +51,32 @@
 
 .null {
   color: grey
+}
+.tabs_wrapper {
+  max-height: 100%;
+  overflow: hidden;
+}
+.tabs_wrapper > span {
+  max-height: calc(100% - 36px);
+  display: flex;
+}
+.scrollable {
+  overflow: scroll;
+}
+.tabs_wrapper div[role='tabpanel'] {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding-right: 0px;
+}
+.triggers {
+  width: 100%;
+}
+.triggers button[aria-state='active'] {
+  flex: 1;
+}
+.triggers button {
+  font-family: var(--font-mono);
+}
+.triggers button svg {
+  margin-right: 6px;
 }

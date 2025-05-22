@@ -22,6 +22,7 @@ import { StyleProps } from 'react-json-view-lite/dist/DataRenderer'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Table } from '@/components/Table'
 import { Markdown } from '@/ui/Markdown'
+import { Icon } from '@impactium/icons'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -54,16 +55,22 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const loadEvent = async () => {
     const detailed = await Info.query_single_id(event.id, event.operation_id)
 
-    const entries = Object.entries(detailed).filter(([k]) => k !== 'event.original')
+    const parsedEvent = cutEventOriginal(detailed);
+
+    setJSON(parsedEvent);
+  }
+
+  const cutEventOriginal = (obj: Record<string, any>): Record<string, string> => {
+    const entries = Object.entries(obj).filter(([k]) => k !== 'event.original')
 
     const json = {
       ...Object.fromEntries(entries.slice(0, 1)),
       ...Object.fromEntries(entries.slice(1)),
       // @ts-ignore
-      'event.original': detailed['event.original'],
+      'event.original': obj['event.original'],
     }
 
-    setJSON(detailed as unknown as typeof json);
+    return json
   }
 
   const [selection, setSelection] = useState<string>('');
@@ -165,14 +172,23 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     return (
       <ContextMenu>
-        <Tabs defaultValue="tree-view" orientation="vertical">
-          <TabsList>
-            <TabsTrigger value="tree">Tree</TabsTrigger>
-            <TabsTrigger value="raw">Raw</TabsTrigger>
-            <TabsTrigger value="table">Table</TabsTrigger>
+        <Tabs defaultValue="raw" style={{ overflow: 'scroll' }} className={s.tabs_wrapper}>
+          <TabsList className={s.triggers}>
+            <TabsTrigger value="tree">
+              <Icon name='GitFork' size={14} />
+              Tree
+            </TabsTrigger>
+            <TabsTrigger value="raw">
+              <Icon name='CodeBracket' size={14} />
+              Raw
+            </TabsTrigger>
+            <TabsTrigger value="table">
+              <Icon name='Table' size={14} />
+              Table
+            </TabsTrigger>
           </TabsList>
           <ContextMenuTrigger>
-            <TabsContent value="tree">
+            <TabsContent value="tree" className={s.scrollable}>
               <JsonView data={unflattenObject} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
             </TabsContent>
             <TabsContent value="raw">
