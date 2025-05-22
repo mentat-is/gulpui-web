@@ -62,7 +62,7 @@ export function Dialog({
           {description && <p>{description}</p>}
         </Stack>
       </Stack>
-      <Stack dir='column' ai='stretch' className={cn(s.content, loading && s.loading)}>
+      <Stack dir='column' ai='stretch' className={cn(s.content, loading && s.loading)} data-content>
         {loading ? <Spinner size={24} /> : children}
       </Stack>
     </Stack>

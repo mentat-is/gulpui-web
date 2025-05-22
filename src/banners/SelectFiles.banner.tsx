@@ -41,15 +41,13 @@ export namespace SelectFiles {
       spawnBanner(<Banner {...props} />)
     }, [Info, destroyBanner, spawnBanner, props])
 
-    const filteredContexts = useMemo(
-      () =>
-        Operation.contexts(app).filter((ctx) =>
-          Context.files(app, ctx).some((f) =>
-            f.name.toLowerCase().includes(filter.toLowerCase()),
-          ),
+    const filteredContexts = useMemo(() =>
+      Operation.contexts(app).filter((ctx) =>
+        Context.files(app, ctx).some((f) =>
+          f.name.toLowerCase().includes(filter.toLowerCase()),
         ),
-      [app, filter],
-    )
+      ),
+      [app, filter, setFilter]);
 
     const SearchInput = useMemo(() => {
       return (
@@ -61,7 +59,7 @@ export namespace SelectFiles {
           onChange={(e) => setFilter(e.target.value)}
         />
       )
-    }, [filter])
+    }, [filter, setFilter])
 
     return (
       <UIBanner
@@ -89,7 +87,7 @@ export namespace SelectFiles {
           <Skeleton show={!hasData} width="full">
             {filteredContexts.length > 0 ? (
               filteredContexts.map((context) => (
-                <ContextComponent key={context.id} context={context} />
+                <ContextComponent key={context.id} context={context} filter={filter} />
               ))
             ) : (
               <p className={s.noData}>
@@ -129,9 +127,10 @@ export namespace SelectFiles {
   }
 }
 
-function ContextComponent({ context }: { context: λContext }) {
+function ContextComponent({ context, filter }: { context: λContext, filter: string }) {
   const { app, Info, spawnBanner } = useApplication()
-  const files = useMemo(() => Context.files(app, context), [app, context])
+  const files = useMemo(() => Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())), [app, context, filter])
+
   const handleContextCheck = useCallback(
     (value: boolean) =>
       value

@@ -21,6 +21,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     <Dialog
       title={`Choose event${events[0]?.timestamp ? ` for ${new Date(events[0].timestamp).toLocaleTimeString()} ${new Date(events[0].timestamp).toLocaleDateString()}` : ''}`}
       description={`List includes ${events.length} events`}
+      className={s.dialog}
     >
       {events.map((event: λEvent) => (
         <>
@@ -40,12 +41,13 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
               </span>
             </Stack>
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={() => spawnDialog(<DisplayEventDialog event={event} />)}
               img="ArrowRight"
               revert
+              size='sm'
             >
-              Open
+              View
             </Button>
           </Stack>
           <Separator />

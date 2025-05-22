@@ -1,3 +1,10 @@
+.dialog [data-content] {
+  padding: 12px;
+  border-radius: 6px;
+  border: var(--geist-border);
+  background: var(--geist-background);
+  overflow: scroll;
+}
 .event {
   width: 100%;
 }
