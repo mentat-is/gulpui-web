@@ -8,6 +8,7 @@ import { Hardcode } from '@/class/Engine.dto'
 import { GulpObject, λFile, λOperation } from '@/dto/Dataset'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { SetState } from '@/class/API'
+import React from 'react'
 
 export type Color = `#${string}`
 
@@ -355,3 +356,6 @@ export const fws = { width: '100%' }
 export async function sleep(ms = 0) {
   return new Promise(res => setTimeout(res, ms))
 }
+
+
+export type NodeFile = NonNullable<NonNullable<ChangeEvent<HTMLInputElement>['target']['files']>[0]>

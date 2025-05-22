@@ -71,7 +71,7 @@
 .triggers {
   width: 100%;
 }
-.triggers button[aria-state='active'] {
+.triggers button[data-state='active'] {
   flex: 1;
 }
 .triggers button {

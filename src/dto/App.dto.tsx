@@ -31,13 +31,6 @@ export interface λApp {
     links: λLink[]
     highlights: λHighlight[]
     glyphs: λGlyph[]
-    sigma: Record<
-      λFile['id'],
-      {
-        name: string
-        content: string
-      }
-    >
     mappings: λMapping.Plugin[]
     plugins: GulpDataset.PluginList.Interface[]
   }
@@ -103,7 +96,6 @@ export const BaseInfo: λApp = {
     notes: [],
     links: [],
     highlights: [],
-    sigma: {},
     glyphs: [],
     mappings: [],
     plugins: [],

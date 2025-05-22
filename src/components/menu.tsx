@@ -87,7 +87,6 @@ export function Menu() {
         img="PrismColor"
         onClick={enrichment}
       />
-      <Plugin.All type='menu' />
       <Stack flex />
       <Button
         className={s.requests}

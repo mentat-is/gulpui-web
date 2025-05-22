@@ -1,14 +1,17 @@
-import { File as GulpFileEntity, GulpDataset, Context } from '@/class/Info'
+import { File as GulpFileEntity, Context } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
-import { Default, λFile } from '@/dto/Dataset'
+import { Plugin } from '@/context/Plugin.context'
+import { λFile } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Select } from '@/ui/Select'
 import { Toggle } from '@/ui/Toggle'
+import { NodeFile } from '@/ui/utils'
 import { Button, Stack } from '@impactium/components'
 import { Input } from '@impactium/components'
 import { Icon } from '@impactium/icons'
-import { ChangeEvent, useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
+import ts from 'typescript'
+import { Sigma } from './UploadSigmaZip.banner'
 
 export namespace SigmaRules {
   export namespace Banner {
@@ -21,25 +24,20 @@ export namespace SigmaRules {
     file,
     ...props
   }: SigmaRules.Banner.Props) {
-    const { Info, app, destroyBanner } = useApplication()
-    const [rules, setRules] = useState<GulpDataset.SigmaFile | null>(null)
+    const { Info, app, destroyBanner, spawnBanner } = useApplication()
+    const [rules, setRules] = useState<NodeFile[] | null>()
     const [createNotes, setCreateNotes] = useState<boolean>(true)
 
     const DoneButton = () => {
-      const falsy_condition = !rules
-
       const submit = async () => {
-        if (falsy_condition) {
-          return
+        if (!rules) {
+          return toast('Select at least one rule or zip file')
         }
 
-        if (file) {
-          await Info.sigma.set(file, rules, createNotes)
-        } else {
-          for (const file of GulpFileEntity.selected(app)) {
-            await Info.sigma.set(file, rules, createNotes)
-          }
-        }
+        await Info.sigma_file(file
+          ? [file]
+          : GulpFileEntity.selected(app), rules, createNotes
+        )
 
         destroyBanner()
       }
@@ -49,7 +47,7 @@ export namespace SigmaRules {
           img="Check"
           onClick={submit}
           variant="glass"
-          disabled={falsy_condition}
+          disabled={!rules}
         />
       )
     }
@@ -63,18 +61,22 @@ export namespace SigmaRules {
         return
       }
 
-      const fileData = await Promise.all(
-        Array.from(files).map(async (file) => ({
-          name: file.name,
-          content: await file.text(),
-        })),
+      const fileData: NodeFile[] = await Promise.all(
+        Array.from(files).map(async (file) => file),
       )
 
-      setRules(fileData[0])
+      setRules(fileData)
     }
 
+    const option = useMemo(() => {
+      const plugin = app.target.plugins.find(p => p.filename === 'query_sigma_zip.py');
+      return plugin
+        ? <Button variant='glass' img='FileZip' onClick={() => spawnBanner(<Sigma.Banner file={file} back={() => spawnBanner(<SigmaRules.Banner file={file} {...props} />)} />)} />
+        : null
+    }, [app.target.plugins]);
+
     return (
-      <UIBanner title="Apply sigma rule" done={<DoneButton />} {...props}>
+      <UIBanner title="Apply sigma rule" done={<DoneButton />} option={option} {...props}>
         {file && (
           <p>{Context.id(app, file.context_id).name + '/' + file.name}</p>
         )}

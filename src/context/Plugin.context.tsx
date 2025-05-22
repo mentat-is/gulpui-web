@@ -7,11 +7,16 @@ import React from "react";
 const __component = Symbol('λ_plugin_component');
 
 export function PluginProvider({ children }: Plugin.Provider.Props) {
-  const x = ['some_crazy_plugin'];
-
+  const { Info } = useApplication();
   const { banner } = useApplication();
   const [plugins, setPlugins] = useState<Plugin.Interface[]>([]);
   const [initialized, setInitialized] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (Info.User.isAuthorized()) {
+      Info.plugin_list();
+    }
+  }, [Info.app.general.id]);
 
   const initialize = async () => {
     if (initialized)
@@ -25,12 +30,8 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
     setInitialized(true);
   };
 
-  const add = (plugin: Plugin.Interface) => {
-    setPlugins(plugins => {
-      plugins.push(plugin);
+  const get = () => {
 
-      return plugins
-    });
   }
 
   const parse = async (mapping: Plugin.Mapping, raw: string): Promise<React.LazyExoticComponent<React.ComponentType<any>>> => {
@@ -64,23 +65,15 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
     });
   }
 
-  const load = async (name: string) => {
+  const load = async (name: string): Promise<Plugin.Interface | undefined> => {
     try {
-      const response = await fetch(`/plugins/${name}/package.json`);
+      const mapping = await api<Plugin.Mapping>(`/client_plugin_package/${name}`);
 
-      const data = await response.json();
+      const response2 = await api<string>(`/client_plugin_data/${name}`, {
+        raw: true
+      });
 
-      const { mapping, error } = validate(data)
-      if (error !== null) {
-        error();
-        return void 0;
-      }
-
-      const response2 = await fetch(`/plugins/${name}/${mapping.entry}`);
-
-      const data2 = await response2.text();
-
-      const component = await parse(mapping, data2);
+      const component = await parse(mapping, response2.data as string);
 
       return {
         ...mapping,
@@ -93,11 +86,11 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
   }
 
   const loadAll = async () => {
-    const plugins: Plugin.Interface[] = []
-    for (const key in x) {
-      const name = x[key];
+    const app_plugins = Info.app.target.plugins.filter(p => p.tags.includes('extension'))
+    for (const key in app_plugins) {
+      const name = app_plugins[key];
 
-      const plugin = await load(name);
+      const plugin = await load(name.path);
 
       if (plugin) {
         plugins.push(plugin);
@@ -112,9 +105,11 @@ export function PluginProvider({ children }: Plugin.Provider.Props) {
   }, []);
 
   const pluginProps: Plugin.Export = {
-    add,
     parse,
-    plugins
+    plugins,
+    add: function (plugin: Plugin.Interface): void {
+      throw new Error("Function not implemented.");
+    }
   };
 
   return (
@@ -155,16 +150,6 @@ export namespace Plugin {
     export interface Props {
       children: ReactNode
     }
-  }
-
-  export function All({ type }: {
-    type: Mapping['type']
-  }) {
-    const { plugins } = Plugin.use();
-
-    return plugins
-      .filter(plugin => plugin.type === type)
-      .map(plugin => <Plugin.Component plugin={plugin} />);
   }
 
   export namespace Component {

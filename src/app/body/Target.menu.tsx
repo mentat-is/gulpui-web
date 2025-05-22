@@ -150,21 +150,9 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem
-          onClick={() => spawnBanner(<SigmaRules.Banner file={file} />)}
-          img="Sigma"
-        >
+        <ContextMenuItem onClick={() => spawnBanner(<SigmaRules.Banner file={file} />)} img="Sigma" >
           Upload rule
         </ContextMenuItem>
-        {app.target.sigma[file.id] && (
-          <ContextMenuItem
-            className={s.remove_sigma}
-            onClick={() => Info.sigma.remove(file)}
-            img="X"
-          >
-            Disable rule: {app.target.sigma[file.id].name}
-          </ContextMenuItem>
-        )}
       </ContextMenuGroup>
       <ContextMenuItem onClick={() => Info.request_cancel_for_file(file.id)} img="X">Cancel all requests</ContextMenuItem>
       <ContextMenuItem

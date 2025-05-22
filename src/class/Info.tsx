@@ -23,7 +23,7 @@ import {
   ΞEvent,
 } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { Gradients } from '@/ui/utils'
+import { Gradients, NodeFile } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
@@ -124,7 +124,7 @@ export namespace GulpDataset {
       sigma_support: SigmaSupport.Summary
       custom_parameters: CustomParameters.Interface[]
       depends_on: DependsOn[]
-      tags: string[]
+      tags: (string | 'extension')[]
       version: string
     }
   }
@@ -2005,41 +2005,17 @@ export class Info implements InfoProps {
     })
   }
 
-  sigma = {
-    set: async (
-      files: Arrayed<λFile>,
-      sigma: GulpDataset.SigmaFile,
-      notes: boolean,
-    ) => {
-      files = Parser.array(files)
-
-      const newSigma: typeof this.app.target.sigma = this.app.target.sigma
-
-      files.forEach((file) => (newSigma[file.id] = sigma))
-
-      this.setInfoByKey(newSigma, 'target', 'sigma')
-
-      return Promise.all(
-        files.map((file) => {
-          return this.query_sigma({
-            sigmas: [sigma.content],
-            q_options: {
-              note_parameters: {
-                create_notes: notes,
-              },
-            },
-            src_ids: [file.id],
-          });
-        }),
-      )
-    },
-    remove: (file: λFile | λFile['id']) => {
-      const id = Parser.useUUID(file) as λFile['id']
-
-      delete this.app.target.sigma[id]
-      this.setInfoByKey(this.app.target.sigma, 'target', 'sigma')
-    },
-  }
+  sigma_file = async (files: λFile[], sigmas: NodeFile[], notes: boolean) =>
+    Promise.all(files.map((file) => this.query_sigma({
+      sigmas,
+      q_options: {
+        note_parameters: {
+          create_notes: notes,
+        },
+      },
+      src_ids: [file.id],
+    }))
+    )
 
   toggle_notes_visibility = () =>
     this.setInfoByKey(
