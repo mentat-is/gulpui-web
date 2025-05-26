@@ -5,7 +5,7 @@
 /dist
 /.pnp
 .pnp.js
-/public/plugins/*
+**/plugins/*
 
 # testing
 /coverage

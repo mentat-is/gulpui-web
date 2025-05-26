@@ -1,16 +1,21 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, lazy, ReactNode, Suspense, useContext, useEffect, useState } from "react";
 import * as esbuild from 'esbuild-wasm';
 import { useApplication } from "./Application.context";
 import React from "react";
 import { GulpDataset } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
+import { Skeleton } from "@impactium/components";
 
 const __component = Symbol('λ_extension_component');
 
-const KNOWN_EXTENSIONS = [
-  'SigmaZip.banner.tsx',
-  'ExportTimeline.banner.tsx'
-] as const;
+const KNOWN_EXTENSIONS: Record<string, Pick<Extension.Interface, 'type'>> = {
+  'SigmaZip.banner': {
+    type: []
+  },
+  'ExportTimeline.banner': {
+    type: ['menu']
+  }
+} as const;
 
 export function ExtensionProvider({ children }: Extension.Provider.Props) {
   const { Info, app } = useApplication();
@@ -33,20 +38,20 @@ export function ExtensionProvider({ children }: Extension.Provider.Props) {
       });
     }
 
-    for (const index in KNOWN_EXTENSIONS) {
-      const plugin = KNOWN_EXTENSIONS[index];
-      local(plugin).then(e => {
-        if (!e) {
-          return;
-        }
+    for (const plugin in KNOWN_EXTENSIONS) {
+      const extension = KNOWN_EXTENSIONS[plugin];
+      const Component = Extension.safe(() => import(`@/plugins/${plugin}`));
 
-        new_extensions[plugin] = e;
-      });
+      const Compiled = <Component />;
+      if (Compiled) {
+        Logger.log(`Component ${plugin} has been successfully loaded and memorized`);
+      }
 
-
-
+      new_extensions[plugin] = {
+        ...extension,
+        [__component]: Component
+      }
     }
-
 
     setExtensions(new_extensions);
   }, [app.target.plugins]);
@@ -98,22 +103,22 @@ export function ExtensionProvider({ children }: Extension.Provider.Props) {
     };
   }
 
-  const local = async (name: string): Promise<Extension.Interface | undefined> => {
-    try {
-      const response2 = await fetch(`/plugins/${name}.tsx`);
+  // const local = async (name: string): Promise<Extension.Interface | undefined> => {
+  //   try {
+  //     const response2 = await fetch(`/plugins/${name}.tsx`);
 
-      const data2 = await response2.text();
+  //     const data2 = await response2.text();
 
-      const component = await parse(data2);
+  //     const component = await parse(data2);
 
-      return {
-        type: ['menu'],
-        [__component]: component,
-      };
-    } catch (e: any) {
-      Logger.error(e);
-    }
-  }
+  //     return {
+  //       type: ['menu'],
+  //       [__component]: component,
+  //     };
+  //   } catch (e: any) {
+  //     Logger.error(e);
+  //   }
+  // }
 
   const extensionProps: Extension.Export = {
     extensions
@@ -153,6 +158,15 @@ export namespace Extension {
     }
   }
 
+  export const safe = (func: () => Promise<{ default: React.ComponentType<any> }>) => lazy(async () => {
+    try {
+      return await func();
+    } catch (error) {
+      Logger.log('Component not found or failed to load:', String(error));
+      return { default: () => null };
+    }
+  })
+
   export namespace Component {
     export interface Props {
       name: string;
@@ -173,7 +187,9 @@ export namespace Extension {
       return null;
     }
 
-    return <Component React={React} useApplication={useApplication} />
+    return (
+      <Component useApplication={useApplication} />
+    )
   }
 
   export namespace Components {

@@ -32,6 +32,6 @@
     "global.d.ts",
     "custom.d.ts",
     "public/some_crazy_plugin",
-    "public/plugins/SigmaZip.banner.tsx"
+    "src/plugins/SigmaZip.banner.tsx"
   ]
 }

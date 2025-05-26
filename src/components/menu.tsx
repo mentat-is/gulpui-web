@@ -80,13 +80,13 @@ export function Menu() {
         img="Globe"
         onClick={() => spawnBanner(<GlobalQuery.Banner />)}
       />
+      <Extension.Components type='menu' />
       <Button
         variant="glass"
         title="Data enrichment"
         img="PrismColor"
         onClick={enrichment}
       />
-      <Extension.Components type='menu' />
       <Stack flex />
       <Button
         className={s.requests}

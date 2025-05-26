@@ -9,7 +9,7 @@ import { Input } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { SigmaZip } from '../../public/plugins/SigmaZip.banner'
+import { SigmaZip } from '../plugins/SigmaZip.banner'
 import { Extension } from '@/context/Extension.context'
 
 export namespace Sigma {
@@ -83,7 +83,7 @@ export namespace Sigma {
           checked={createNotes}
           onCheckedChange={setCreateNotes}
         />
-        <Extension.Component name='query_sigma_zip.py' />
+        <Extension.Component name='SigmaZip.banner' />
       </UIBanner>
     )
   }
