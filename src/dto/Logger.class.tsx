@@ -102,11 +102,15 @@ export class Logger {
     const contextInfo = context ? `[${Parser.array(context).join('.')}] ` : ''
     const traceInfo = trace ? ` ${trace}` : ''
 
-    return (
+    const log = (
       λLogger[Logger.preformat[level]] as (text?: string | null) => string
     )(
       `[Gulp]${pid} - ${λLogger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${λLogger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2) : message}${traceInfo}`,
     )
+
+    console.log(log);
+
+    return log
   }
 }
 

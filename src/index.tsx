@@ -10,7 +10,7 @@ import { useEffect } from 'react'
 import { AuthBanner } from './banners/Auth.banner'
 import { λthrow } from '@impactium/utils'
 import { Windows } from './ui/Windows'
-import { PluginProvider } from './context/Plugin.context'
+import { ExtensionProvider } from './context/Extension.context'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -33,10 +33,10 @@ declare global {
 function Root() {
   return (
     <ApplicationProvider>
-      <PluginProvider>
+      <ExtensionProvider>
         <Main />
         <Toaster />
-      </PluginProvider>
+      </ExtensionProvider>
     </ApplicationProvider>
   )
 }
@@ -47,7 +47,7 @@ function Main() {
   useEffect(() => {
     if (Info.User.isAuthorized() === false) {
       setTimeout(() => {
-        spawnBanner(<AuthBanner />)
+        spawnBanner(<AuthBanner />);
       }, 30)
     }
   }, [app.general])

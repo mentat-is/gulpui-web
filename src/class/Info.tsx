@@ -99,7 +99,7 @@ export namespace GulpDataset {
     export type Summary = Operation[]
   }
   export namespace PluginList {
-    export type Type = 'ingestion' | 'enrichment' | 'external'
+    export type Type = 'ingestion' | 'enrichment' | 'external' | 'extension'
 
     export namespace SigmaSupport {
       export type Type = 'backends' | 'pipelines' | 'output_formats'

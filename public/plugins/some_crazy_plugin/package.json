@@ -1,6 +1,0 @@
-{
-  "name": "some-crazy-plugin",
-  "entry": "index.js",
-  "type": "module",
-  "placement": "menu"
-}

@@ -4,18 +4,17 @@ import { UploadBanner } from '@/banners/Upload.banner'
 import { useApplication } from '@/context/Application.context'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { LimitsBanner } from '@/banners/Limits.banner'
-import { SigmaRules } from '@/banners/UploadSigmaRule.banner'
+import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
 import { StorylineBanner } from '@/banners/storyline.banner'
 import { Operation } from '@/banners/Operation.banner'
 import { useWindows } from '@/ui/Windows'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { Permissions } from '@/banners/Permissions.banner'
-import { Export } from '@/banners/Export.banner'
 import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
-import { Plugin } from '@/context/Plugin.context'
+import { Extension } from '@/context/Extension.context'
 
 export function Menu() {
   const { app, spawnBanner, scrollX, scrollY } = useApplication()
@@ -55,7 +54,7 @@ export function Menu() {
         variant="secondary"
         title="Upload sigma rule"
         img="Sigma"
-        onClick={() => spawnBanner(<SigmaRules.Banner file={null} />)}
+        onClick={() => spawnBanner(<Sigma.Banner file={null} />)}
       />
       <Button
         variant="secondary"
@@ -87,6 +86,7 @@ export function Menu() {
         img="PrismColor"
         onClick={enrichment}
       />
+      <Extension.Components type='menu' />
       <Stack flex />
       <Button
         className={s.requests}

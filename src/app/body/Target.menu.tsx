@@ -21,7 +21,7 @@ import {
   TooltipTrigger,
 } from '@/ui/Tooltip'
 import { Enrichment } from '@/banners/Enrichment.banner'
-import { SigmaRules } from '@/banners/UploadSigmaRule.banner'
+import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { Delete } from '@/banners/Delete.banner'
 import { Stack } from '@impactium/components'
 import { File } from '@/class/Info'
@@ -150,7 +150,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<SigmaRules.Banner file={file} />)} img="Sigma" >
+        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner file={file} />)} img="Sigma" >
           Upload rule
         </ContextMenuItem>
       </ContextMenuGroup>
