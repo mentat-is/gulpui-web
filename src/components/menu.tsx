@@ -15,6 +15,7 @@ import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
+import Drawer from '@/ui/Drawer'
 
 export function Menu() {
   const { app, spawnBanner, scrollX, scrollY } = useApplication()

@@ -41,7 +41,8 @@
     "rehype-prism-plus": "^2.0.1",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vaul": "^1.1.2"
   },
   "scripts": {
     "start": "react-app-rewired start",

@@ -1,3 +1,5 @@
+/* Просто хуита, разрабы дауны, и нужно игнорить фатальную ошибку которую невозможно словить */
+iframe#webpack-dev-server-client-overlay{display:none!important}
 @font-face {
   font-family: "GeistMono";
   src: local('GeistMono'), url("./font/GeistMono.ttf") format("truetype");
@@ -407,7 +409,13 @@ body {
   min-height: 100vh;
   line-height: 1;
 }
-
+#root {
+  transition: transform 0.125s var(--transition), filter 0.125s var(--transition);
+}
+body[data-scroll-locked='1'] #root {
+  transform: scale(0.98);
+  filter: brightness(0.5);
+}
 ol,
 ul {
   list-style: none;

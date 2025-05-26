@@ -106,37 +106,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     setHighlightsOverlay
   }
 
-  const handleLoggerExportCommand = () => {
-    const content = Logger.history()
-      .map((l) => l.message.replace(/x1b\[[0-9;]*m/g, ''))
-      .join('\n')
-    const blob = new Blob([content], { type: 'text/plain' })
-
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `gulpui-web_log_${Date.now()}.log`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
-
-  const prefix = useMemo(() => {
-    return 'root@Gulp:/web-ui#'
-  }, [])
-
-  const onCommand = (cmd: string) => {
-    Logger.push(prefix + cmd)
-    switch (true) {
-      case cmd === 'export':
-        handleLoggerExportCommand()
-        break
-
-      default:
-        Logger.error('Unknown command', Logger.name)
-        break
-    }
-  }
-
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!app.timeline.target || banner) return;
 

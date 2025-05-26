@@ -31,6 +31,29 @@ declare global {
 }
 
 function Root() {
+  if (window.onerror) {
+    window.onerror = function (
+      message,
+      source,
+      lineno,
+      colno,
+      error
+    ) {
+      console.error('[Global Error]', {
+        message,
+        source,
+        lineno,
+        colno,
+        error
+      });
+
+      // Optionally send to logging service
+      // sendErrorToServer({ message, source, lineno, colno, stack: error?.stack });
+    };
+
+  }
+
+
   return (
     <ApplicationProvider>
       <ExtensionProvider>
