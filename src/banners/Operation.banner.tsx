@@ -132,10 +132,7 @@ export namespace Operation {
             method: 'POST',
             setLoading,
             query: { name },
-            deassign: true,
-            body: {
-              description
-            },
+            body: { description },
           },
           Info.sync,
         ).then(() => {
