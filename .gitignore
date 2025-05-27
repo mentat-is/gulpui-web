@@ -6,6 +6,7 @@
 /.pnp
 .pnp.js
 **/plugins/*
+!**/plugins/coconut.jpg
 
 # testing
 /coverage
