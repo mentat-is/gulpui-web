@@ -133,7 +133,9 @@ export namespace Operation {
             setLoading,
             query: { name },
             deassign: true,
-            body: description.toString(),
+            body: {
+              description
+            },
           },
           Info.sync,
         ).then(() => {

@@ -4,15 +4,15 @@ import { Banner } from '@/ui/Banner'
 import { useApplication } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
 import { Button, Stack, Input } from '@impactium/components'
-import { ChangeEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { Filter, FilterOptions, λFilter } from '@/class/Info'
+import { ChangeEvent, use, useCallback, useEffect, useMemo, useState } from 'react'
+import { Filter, FilterOptions, λFilter, λQuery } from '@/class/Info'
 import { copy, fws } from '@/ui/utils'
 import { λFile } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import SyntaxHighlighter from 'react-syntax-highlighter'
 import { Separator } from '@/ui/Separator'
 import { Preview } from './Preview.banner'
-import { SetState } from '@/class/API'
+import { SetState, λ } from '@/class/API'
 import { cn } from '@impactium/utils'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { Switch } from '@/ui/Switch'
@@ -332,20 +332,32 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
     spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner file={file} {...props} />)} />)
   }
 
+  const [lastQueriesList, setLastQueriesList] = useState<λQuery[]>([]);
+
+  const refetchLastQueriesList = () => Info.getLastQueries().then(setLastQueriesList);
+
+  useEffect(() => {
+    if (!lastQueriesList.length) {
+      refetchLastQueriesList();
+    }
+  }, [lastQueriesList]);
+
   const LastQueries = useMemo(() => {
     return (
-      <Popover>
+      <Popover onOpenChange={v => v && refetchLastQueriesList()}>
         <PopoverTrigger>
           <Button img='ClockFading' variant='secondary'>
             Last filters
           </Button>
         </PopoverTrigger>
         <PopoverContent>
-          Хуй
+          {lastQueriesList.map(q => (
+            <p>{typeof q}</p>
+          ))}
         </PopoverContent>
       </Popover>
     )
-  }, []);
+  }, [lastQueriesList, refetchLastQueriesList]);
 
   return (
     <Banner

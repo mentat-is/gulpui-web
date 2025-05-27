@@ -23,7 +23,7 @@ import {
   ΞEvent,
 } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { Gradients, NodeFile } from '@/ui/utils'
+import { generateUUID, Gradients, NodeFile } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
@@ -127,6 +127,31 @@ export namespace GulpDataset {
       tags: (string | 'extension')[]
       version: string
     }
+  }
+  export namespace QueryHistoryGet {
+    export interface Interface {
+      query: {
+        query: {
+          bool: Record<OpenSearchQueryBuilder.Operator, Record<OpenSearchQueryBuilder.Condition, any>[]>;
+        }
+      },
+      external: boolean,
+      query_options: {
+        loop: boolean,
+        name: string,
+        sort: {
+          '@timestamp': 'desc' | 'asc'
+        },
+        limit: number,
+        preview_mode: boolean,
+        note_parameters: {
+          note_tags: string[]
+        },
+        ensure_default_fields: boolean
+      },
+      timestamp_msec: number
+    }
+    export type Response = Interface[]
   }
   export interface SigmaFile {
     name: string
@@ -672,6 +697,66 @@ export class Info implements InfoProps {
       total_hits: 0
     };
   }
+
+  getLastQueries = (): Promise<λQuery[]> => api<GulpDataset.QueryHistoryGet.Response>('/query_history_get').then(list => {
+    const queries: λQuery[] = [];
+
+    list.forEach(query => {
+      const root = query.query.query;
+
+      let string = '';
+      const filters: λFilter[] = [];
+
+      Object.entries(root.bool).forEach(([key, arr]) => {
+        const operator = key as OpenSearchQueryBuilder.Operator;
+
+        arr.forEach((obj) => {
+          Object.entries(obj).forEach(([type, v]) => {
+            if (type === 'query_string') {
+              string = v
+              return;
+            }
+
+            Object.keys(v).forEach(key => {
+              if (typeof v[key] !== 'object') {
+                filters.push({
+                  operator,
+                  type: type as OpenSearchQueryBuilder.Condition,
+                  id: generateUUID(),
+                  field: key,
+                  value: v[key],
+                  enabled: true
+                })
+              } else {
+                filters.push({
+                  operator,
+                  type: type as OpenSearchQueryBuilder.Condition,
+                  id: generateUUID(),
+                  field: key,
+                  value: v[key].value,
+                  enabled: true
+                })
+              }
+            })
+          })
+        })
+      });
+
+      if (!string) {
+        Logger.error(`Cannot find query_string part in given object: \n${JSON.stringify(query, null, 2)}`, 'Info.getLastQueries');
+        string = Filter.base(File.selected(this.app)[0]);
+      }
+
+      queries.push({
+        string,
+        filters
+      })
+    })
+
+    console.log(queries);
+
+    return queries;
+  });
 
   preview_file = (file: λFile) => {
     const query = this.getQuery(file.id);
