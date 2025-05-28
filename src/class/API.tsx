@@ -193,7 +193,7 @@ const api: Api = async function <T>(
     {
       ...options,
     },
-  ).catch(() => undefined)
+  ).catch(() => { });
 
   const res = new λ(await response?.json())
 
