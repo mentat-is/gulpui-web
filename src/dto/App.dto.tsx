@@ -83,7 +83,7 @@ export const BaseInfo: λApp = {
     isScrollReversed:
       localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
-    footerSize: window.innerHeight / 4,
+    footerSize: 42,
     hidden_notes: false,
     pointers: [],
   },

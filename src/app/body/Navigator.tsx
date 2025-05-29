@@ -3,7 +3,7 @@ import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { useApplication } from '@/context/Application.context'
 import { Context, File, Note } from '@/class/Info'
-import { ChangeEvent, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, RefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { λNote } from '@/dto/Dataset'
 import { NotePoint } from '@/ui/Note'
 import { Resizer } from '@/ui/Resizer'
@@ -79,14 +79,6 @@ export function Navigator({
     return window.focusCanvasOnEvent(timestamp, true)
   }
 
-  useEffect(() => {
-    const files = File.selected(app)
-
-    const notes = files.map((file) => Note.findByFile(app, file)).flat()
-
-    setNotes(notes)
-  }, [app.target.notes])
-
   const [windowRef, setWindowRef] = useState<Window | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
@@ -155,7 +147,7 @@ export function Navigator({
     }
   }
 
-  const Content = () => {
+  const Content = useMemo(() => {
     if (notes.length === 0) {
       return (
         <Stack
@@ -182,7 +174,7 @@ export function Navigator({
         ))}
       </Stack>
     )
-  }
+  }, [notes, app.timeline.filter]);
 
   const size_plus = useRef<HTMLButtonElement>(null)
   const size_reset = useRef<HTMLButtonElement>(null)
@@ -346,7 +338,6 @@ export function Navigator({
             containerRef.current,
           )}
       </Stack>
-      <Content />
     </Stack>
   )
 }

@@ -13,16 +13,17 @@ import React, { useMemo, useState } from 'react'
 
 interface DisplayGroupDialogProps {
   events: λEvent[]
-  pageSize?: number
 }
 
-export function DisplayGroupDialog({ events, pageSize = 10 }: DisplayGroupDialogProps) {
+export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const { spawnDialog } = useApplication()
+
+  const PAGE_SIZE = 16;
   const [currentPage, setCurrentPage] = useState(0)
 
-  const totalPages = Math.ceil(events.length / pageSize)
-  const startIndex = currentPage * pageSize
-  const endIndex = Math.min(startIndex + pageSize, events.length)
+  const totalPages = Math.ceil(events.length / PAGE_SIZE)
+  const startIndex = currentPage * PAGE_SIZE
+  const endIndex = Math.min(startIndex + PAGE_SIZE, events.length)
   const currentEvents = events.slice(startIndex, endIndex)
 
   const elements: React.ReactNode[] = useMemo(() => {
@@ -47,7 +48,6 @@ export function DisplayGroupDialog({ events, pageSize = 10 }: DisplayGroupDialog
             <Button
               variant="secondary"
               onClick={() => spawnDialog(<DisplayEventDialog event={event} />)}
-              img="ArrowRight"
               revert
               size='sm'
             >
@@ -74,36 +74,32 @@ export function DisplayGroupDialog({ events, pageSize = 10 }: DisplayGroupDialog
       description={`List includes ${events.length} events (Page ${currentPage + 1} of ${totalPages})`}
       className={s.dialog}
     >
+      <Stack jc='space-between' ai='center' pos='relative'>
+        <Button
+          variant="secondary"
+          onClick={handlePrevPage}
+          disabled={currentPage === 0}
+          img='ArrowLeft'
+          rounded
+        >
+          Previous
+        </Button>
+        <span className={s.pagination}>
+          {startIndex + 1}-{endIndex} of {events.length}
+        </span>
+        <Button
+          revert
+          variant="secondary"
+          onClick={handleNextPage}
+          disabled={currentPage === totalPages - 1 || events.length === 0}
+          img='ArrowRight'
+          rounded
+        >
+          Next
+        </Button>
+      </Stack>
+      <Separator />
       {elements}
-
-      {totalPages > 1 && (
-        <>
-          <Separator />
-          <Stack jc="space-between" ai="center" style={{ padding: '8px 0' }}>
-            <Button
-              variant="secondary"
-              onClick={handlePrevPage}
-              disabled={currentPage === 0}
-              size="sm"
-            >
-              Previous
-            </Button>
-
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-              Showing {startIndex + 1}-{endIndex} of {events.length}
-            </span>
-
-            <Button
-              variant="secondary"
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages - 1}
-              size="sm"
-            >
-              Next
-            </Button>
-          </Stack>
-        </>
-      )}
     </Dialog>
   )
 }

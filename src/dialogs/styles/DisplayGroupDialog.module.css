@@ -27,3 +27,7 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.pagination {
+  color: var(--text-dimmed);
+  pointer-events: none;
+}
