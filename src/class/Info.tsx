@@ -1385,7 +1385,6 @@ export class Info implements InfoProps {
     color,
     glyph_id,
     event,
-    isPrivate,
     tags
   }: {
     id: λNote['id'],
@@ -1394,7 +1393,6 @@ export class Info implements InfoProps {
     color: string,
     event: λEvent,
     glyph_id: λGlyph['id'],
-    isPrivate: boolean,
     tags: string[]
   }) => api('/note_update', {
     method: 'PATCH',
@@ -1404,7 +1402,6 @@ export class Info implements InfoProps {
       name,
       glyph_id,
       color,
-      private: isPrivate,
     },
     body: {
       text,

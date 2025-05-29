@@ -3,8 +3,7 @@ import { Delete } from "@/banners/Delete.banner";
 import { Event, Link, Note } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
 import { λLink, λNote } from "@/dto/Dataset";
-import { Badge } from "@/ui/Badge";
-import { Stack, Button } from "@impactium/components";
+import { Stack, Button, Badge } from "@impactium/components";
 import { cn } from "@impactium/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
@@ -45,7 +44,7 @@ export namespace Collab {
         ? () => spawnBanner(<NoteFunctionality.Create.Banner event={Event.id(app, target.docs[0].id)} note={target} />)
         : () => spawnBanner(<LinkFunctionality.Create.Banner event={Event.id(app, target.doc_id_from)} link={target} />);
 
-      return <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20 }} onClick={callback}>Edit</Button>
+      return <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20, marginLeft: 'auto' }} onClick={callback}>Edit</Button>
     }, [target])
 
     const List = useMemo(() => {
@@ -74,10 +73,11 @@ export namespace Collab {
             </Select.Root>
             <Button onClick={() => spawnBanner(target.type === 'note' ? <Delete.Note.Banner note={target} /> : <Delete.Link.Banner link={target} />)} variant='ghost' img='Trash2'>Delete</Button>
           </Stack>
-          <Stack style={{ flexWrap: 'wrap' }} jc='space-between'>
-            <Badge variant='outline' icon='ClockRewind' style={{ color: 'var(--gray-900)', background: 'var(--gray-300)', whiteSpace: 'nowrap' }}>
+          <Stack style={{ flexWrap: 'wrap' }} jc='flex-start' ai='center'>
+            <Badge variant='gray-subtle' icon='ClockRewind' style={{ color: 'var(--gray-900)', background: 'var(--gray-300)', whiteSpace: 'nowrap' }} size='sm'>
               Created {formatDistanceToNow(target.time_created, { addSuffix: true })}
             </Badge>
+            {notes.map(n => n.tags).flat().map(tag => <Badge icon='Status' value={tag} variant={target.type === 'note' ? 'teal' : 'amber'} size='sm' />)}
             {Edit}
           </Stack>
         </Stack>

@@ -9,7 +9,6 @@ import { Button, Skeleton, Stack } from '@impactium/components'
 import { Event, File, Filter, λFilter } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
-import { LinkComponents } from '@/banners/CreateLinkBanner'
 import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
 import { λLink, λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
@@ -262,7 +261,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               >
                 Enrich
               </Button>
-              <Button onClick={() => spawnBanner(<LinkComponents.Connect.Banner event={event} />)} variant="secondary" img="GitPullRequestCreateArrow">Connect link</Button>
+              <Button onClick={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)} variant="secondary" img="GitPullRequestCreateArrow">Connect link</Button>
             </Stack>
           </Stack>
           {collabList}

@@ -18,6 +18,7 @@ import { cn } from '@impactium/utils'
 import { Markdown } from '@/ui/Markdown'
 import { toast } from 'sonner'
 import { Description } from '@radix-ui/react-dialog'
+import { Toggle } from '@/ui/Toggle'
 
 export namespace NoteFunctionality {
   export namespace Create {
@@ -37,6 +38,8 @@ export namespace NoteFunctionality {
       const [color, setColor] = useState<string>(note?.color || '#ffffff')
       const [name, setName] = useState<string>(note?.name || '')
       const [text, setText] = useState<string>(note?.text || '')
+      const [rawTags, setRawTags] = useState<string>(note?.tags.join(', ') ?? '');
+      const [isPrivate, setIsPrivate] = useState<boolean>(false);
       const [icon, setIcon] = useState<λGlyph['id'] | null>(note?.glyph_id || Glyph.List.keys().next().value || null)
       const [loading, setLoading] = useState<boolean>(false)
 
@@ -58,6 +61,10 @@ export namespace NoteFunctionality {
 
         const glyph_id = icon as λGlyph['id']
 
+        const tags = rawTags.split(',').map(tag => tag.trim());
+
+        setLoading(true);
+
         if (note?.id) {
           await Info.note_edit({
             id: note.id,
@@ -65,7 +72,8 @@ export namespace NoteFunctionality {
             text,
             color,
             event,
-            glyph_id
+            glyph_id,
+            tags
           })
         } else {
           await Info.note_create({
@@ -73,9 +81,13 @@ export namespace NoteFunctionality {
             event,
             glyph_id,
             name,
-            text
+            text,
+            isPrivate,
+            tags
           })
         }
+
+        setLoading(false);
         destroyBanner()
       }
 
@@ -125,6 +137,8 @@ export namespace NoteFunctionality {
               <ColorPickerPopover />
             </ColorPicker>
           </Stack>
+          <Input placeholder='Tags separated by comma' value={rawTags} onChange={e => setRawTags(e.target.value)} />
+          {note?.id ? null : <Toggle option={['Public', 'Private']} checked={isPrivate} onCheckedChange={setIsPrivate} />}
           <Textarea
             className={s.textarea}
             value={text}
