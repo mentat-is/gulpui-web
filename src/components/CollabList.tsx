@@ -28,7 +28,7 @@ export namespace Collab {
 
     const { app, spawnBanner } = useApplication();
     const [target, setTarget] = useState<λNote | λLink>(notes[0] || links[0])
-    const [isRevealed, setIsRevealed] = useState<boolean>(false);
+    const [inOpen, setIsOpen] = useState<boolean>(false);
 
     useEffect(() => {
       const updated = target ? target.type === 'note' ? Note.id(app, target.id) : Link.id(app, target.id) : notes[0];
@@ -82,10 +82,24 @@ export namespace Collab {
           </Stack>
         </Stack>
         <Separator />
-        <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
-          <Markdown className={cn(s.description, isRevealed && s.revealed)} value={target.type === 'note' ? target.text : target.description} />
-          <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsRevealed(v => !v)} img='AcronymMarkdown'>{isRevealed ? 'Hide' : 'Reveal'} description</Button>
-        </Stack>
+        <Description value={target.type === 'note' ? target.text : target.description} />
+      </Stack>
+    )
+  }
+
+  export namespace Description {
+    export interface Props {
+      value: string
+      isDefaultOpen?: boolean
+    }
+  }
+
+  export function Description({ value, isDefaultOpen = false }: Description.Props) {
+    const [inOpen, setIsOpen] = useState<boolean>(isDefaultOpen)
+    return (
+      <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
+        <Markdown className={cn(s.description, inOpen && s.revealed)} value={value} />
+        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} img='AcronymMarkdown'>{inOpen ? 'Hide' : 'Reveal'} description</Button>
       </Stack>
     )
   }

@@ -1313,10 +1313,6 @@ export class Info implements InfoProps {
     this.setInfoByKey(number, 'timeline', 'dialogSize')
   }
 
-  setFooterSize = (number: number) => {
-    this.setInfoByKey(number, 'timeline', 'footerSize')
-  }
-
   // ⚠️ UNTOUCHABLE
   notes_reload = () =>
     api<ΞNote[]>(
@@ -1349,13 +1345,17 @@ export class Info implements InfoProps {
     text,
     color = Default.Color.NOTE,
     glyph_id,
-    event
+    event,
+    isPrivate,
+    tags
   }: {
     name: string,
     text: string,
     color: string,
     event: λEvent,
-    glyph_id: λGlyph['id']
+    glyph_id: λGlyph['id'],
+    isPrivate: boolean,
+    tags: string[]
   }) => api('/note_create', {
     method: 'POST',
     query: {
@@ -1366,11 +1366,11 @@ export class Info implements InfoProps {
       name,
       color,
       glyph_id,
+      private: isPrivate,
     },
     body: {
       text,
-      // TODO
-      tags: [],
+      tags,
       docs: Event.formatForServer(event),
     },
   }).then(() => {
@@ -1384,14 +1384,18 @@ export class Info implements InfoProps {
     text,
     color,
     glyph_id,
-    event
+    event,
+    isPrivate,
+    tags
   }: {
     id: λNote['id'],
     name: string,
     text: string,
     color: string,
     event: λEvent,
-    glyph_id: λGlyph['id']
+    glyph_id: λGlyph['id'],
+    isPrivate: boolean,
+    tags: string[]
   }) => api('/note_update', {
     method: 'PATCH',
     query: {
@@ -1400,10 +1404,11 @@ export class Info implements InfoProps {
       name,
       glyph_id,
       color,
+      private: isPrivate,
     },
     body: {
       text,
-      tags: [],
+      tags,
       docs: Event.formatForServer(event),
     }
   }).then(() => {

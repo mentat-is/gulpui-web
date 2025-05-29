@@ -17,7 +17,6 @@ import { Glyph } from '@/ui/Glyph'
 import { cn } from '@impactium/utils'
 import { Markdown } from '@/ui/Markdown'
 import { toast } from 'sonner'
-import { LinkComponents } from './CreateLinkBanner'
 import { Description } from '@radix-ui/react-dialog'
 
 export namespace NoteFunctionality {
@@ -206,7 +205,7 @@ export namespace LinkFunctionality {
       const Option = useCallback(
         () => (
           <Button
-            onClick={() => spawnBanner(<LinkComponents.Connect.Banner event={event} />)}
+            onClick={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)}
             variant="ghost"
             img="GitPullRequestCreateArrow"
           />
@@ -261,6 +260,48 @@ export namespace LinkFunctionality {
               markdown supported.
             </Stack>
           </Stack>
+        </UIBanner>
+      )
+    }
+  }
+
+  export namespace Connect {
+    export interface Props {
+      event: λEvent
+    }
+    export function Banner({ event }: LinkFunctionality.Connect.Props) {
+      const { app, Info, spawnBanner } = useApplication()
+
+      const connect = (link: λLink) => () => Info.links_connect(link, event)
+
+      const links = useMemo(() => {
+        return Link.selected(app).filter((l) => !l.doc_ids.some((e) => e === event.id))
+      }, [app.target.links])
+
+      const NoLinks = useMemo(() => {
+        const { spawnBanner } = useApplication();
+
+        return (
+          <Stack dir='column' gap={16}>
+            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--text-dimmed)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
+            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} img='GitPullRequestArrow'>Create link</Button>
+          </Stack>
+        )
+      }, [spawnBanner])
+
+      return (
+        <UIBanner title="Connect link">
+          {links.length ? links.map((link) => (
+            <Button
+              key={link.id}
+              variant="secondary"
+              style={{ color: link.color }}
+              onClick={connect(link)}
+              img={Link.icon(link)}
+            >
+              {link.name}
+            </Button>
+          )) : NoLinks}
         </UIBanner>
       )
     }

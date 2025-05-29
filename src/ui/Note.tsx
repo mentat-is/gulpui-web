@@ -2,9 +2,9 @@ import { useApplication } from '@/context/Application.context'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λNote } from '@/dto/Dataset'
-import { Event, Note } from '@/class/Info'
+import { Context, Event, File, Note } from '@/class/Info'
 import { Point as UIPoint } from './Point'
-import { Button, Input, Stack } from '@impactium/components'
+import { Badge, Button, Input, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
@@ -18,6 +18,7 @@ export namespace NotePoint {
   export namespace Combination {
     export interface Props extends Omit<Stack.Props, 'onClick'> {
       note: λNote
+      withSource?: boolean
     }
   }
 
@@ -25,6 +26,7 @@ export namespace NotePoint {
     className,
     style,
     note,
+    withSource,
     ...props
   }: Combination.Props) {
     const { app, spawnDialog } = useApplication()
@@ -56,6 +58,7 @@ export namespace NotePoint {
         <Icon name={Note.icon(note)} />
         <p>{note.name}</p>
         <span>{note.text}</span>
+        {withSource && <Badge style={{ whiteSpace: 'nowrap' }} size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.file_id).name}`} variant='inverted' />}
         <Button
           img="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}

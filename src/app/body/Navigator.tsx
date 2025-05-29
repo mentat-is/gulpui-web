@@ -245,14 +245,8 @@ export function Navigator({
       dir="column"
       ai="flex-start"
       className={cn(className, s.navigator)}
-      style={{ height: app.timeline.footerSize }}
       {...props}
     >
-      <Resizer
-        init={app.timeline.footerSize}
-        set={Info.setFooterSize}
-        horizontal
-      />
       <Stack className={s.heading} flex={0}>
         <Button
           variant="secondary"

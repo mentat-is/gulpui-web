@@ -51,8 +51,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     app.timeline.target,
     app.timeline.filter,
     shifted,
-    app.timeline.dialogSize,
-    app.timeline.footerSize,
+    app.timeline.dialogSize
   ]
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, dependencies)

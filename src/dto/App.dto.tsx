@@ -52,7 +52,6 @@ export interface λApp {
     filtering_options: Record<μ.File, FilterOptions>
     isScrollReversed: boolean
     dialogSize: number
-    footerSize: number
     hidden_notes: boolean
     pointers: Pointers.Pointer[]
   }
@@ -83,7 +82,6 @@ export const BaseInfo: λApp = {
     isScrollReversed:
       localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
-    footerSize: 42,
     hidden_notes: false,
     pointers: [],
   },
