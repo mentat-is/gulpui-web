@@ -9,9 +9,7 @@ import React, {
 } from 'react'
 import { λApp, BaseInfo } from '@/dto'
 import { AppSocket, MultiSocket } from '@/class/AppSocket'
-import { File, Info } from '@/class/Info'
-// import { Console } from '@impactium/console'
-import { Logger } from '@/dto/Logger.class'
+import { File, Info } from '@/class/Info';
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'

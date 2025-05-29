@@ -350,8 +350,7 @@ export function Canvas({ timeline }: Canvas.Props) {
           (app.timeline.frame.max - app.timeline.frame.min)) *
         Info.width,
       ) - scrollX,
-    [scrollX, Info.width, app.timeline.frame],
-  )
+    [scrollX, Info.width, app.timeline.frame])
 
   const handleContextMenu = (event: MouseEvent) => {
     if (!timeline.current) {
