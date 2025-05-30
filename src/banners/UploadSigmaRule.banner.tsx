@@ -21,7 +21,7 @@ export namespace Sigma {
     file,
     ...props
   }: Sigma.Banner.Props) {
-    const { Info, app, destroyBanner, spawnBanner } = useApplication()
+    const { Info, app, destroyBanner } = useApplication()
     const [rules, setRules] = useState<NodeFile[] | null>()
     const [createNotes, setCreateNotes] = useState<boolean>(true)
 
@@ -73,6 +73,7 @@ export namespace Sigma {
         <Input
           type="file"
           img="Sigma"
+          multiple
           variant="highlighted"
           onChange={rulesInputChangeHandler}
         />

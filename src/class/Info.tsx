@@ -2093,8 +2093,8 @@ export class Info implements InfoProps {
   }
 
   sigma_file = async (files: λFile[], sigmas: NodeFile[], notes: boolean) =>
-    Promise.all(files.map((file) => this.query_sigma({
-      sigmas,
+    Promise.all(files.map(async (file) => this.query_sigma({
+      sigmas: await Promise.all(sigmas.map(s => s.text())),
       q_options: {
         note_parameters: {
           create_notes: notes,
