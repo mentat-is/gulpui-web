@@ -194,7 +194,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <Markdown className={s.highlighter} value={`\`\`\`json\n${JSON.stringify(json, null, 2)}\`\`\``} />
             </TabsContent>
             <TabsContent value="table">
-              <Table values={[json]}></Table>
+              <Table values={Object.entries(json)}></Table>
             </TabsContent>
           </ContextMenuTrigger>
         </Tabs>
