@@ -11,6 +11,9 @@ const KNOWN_EXTENSIONS: Record<string, Pick<Extension.Interface, 'type'>> = {
   },
   'ExportTimeline.banner': {
     type: ['menu']
+  },
+  'Storyline.banner': {
+    type: ['menu']
   }
 } as const;
 

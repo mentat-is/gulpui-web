@@ -325,19 +325,9 @@ export function Canvas({ timeline }: Canvas.Props) {
   useEffect(() => {
     renderCanvas()
 
-    // canvas_ref.current?.addEventListener('mouseup', (e) => {
-    //   setTimeout(() => {
-    //     handleClick(e);
-    //   }, 1)
-    // })
     const debugInterval = setInterval(() => renderCanvas(true), 300)
 
     return () => {
-      // canvas_ref.current?.removeEventListener('mouseup', (e) => {
-      //   setTimeout(() => {
-      //     handleClick(e);
-      //   }, 1)
-      // })
       clearInterval(debugInterval)
     }
   }, dependencies)

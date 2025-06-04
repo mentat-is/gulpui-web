@@ -1101,7 +1101,8 @@ export class Info implements InfoProps {
         int_filter: [frame.min, frame.max],
       }
     }
-    formData.append('payload', JSON.stringify(payload))
+
+    formData.append('payload', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
     const chunkSize = 1024 * size * 1024
 
@@ -2670,6 +2671,12 @@ export class Note {
 
   public static id = (app: λApp, id: λNote['id']) =>
     app.target.notes.find((n) => n.id === id) as λNote
+
+  public static selected = (app: λApp): λNote[] => {
+    const files = File.selected(app).map(file => file.id);
+
+    return app.target.notes.filter((note) => note.docs.every((doc) => files.includes(doc.file_id)));
+  }
 
   public static events = (app: λApp, note: λNote): λEvent[] =>
     Event.ids(

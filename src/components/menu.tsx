@@ -65,12 +65,6 @@ export function Menu() {
       />
       <Button
         variant="secondary"
-        title="Open storyline"
-        img="Scroll"
-        onClick={() => spawnBanner(<StorylineBanner />)}
-      />
-      <Button
-        variant="secondary"
         title="Change workflow frame"
         img="AlignHorizontalSpaceAround"
         onClick={() => spawnBanner(<LimitsBanner />)}
