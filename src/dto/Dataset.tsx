@@ -235,3 +235,5 @@ export interface λGroup {
   id: μ.Group
   [key: string]: any
 }
+
+export type Version = `${number}.${number}.${number}`;

@@ -55,14 +55,18 @@ The `.json` file must define the plugin metadata.
 The structure of this metadata is described in:
 `gulpui-web/src/context/Extension.context.tsx` → `KNOWN_PLUGINS`
 
-### Example `.json` File
+### Example `.json` File (src/plugins/coconut.tsx.json)
 
 ```json
 {
-  "name": "example plugin",
-  "description": "<BLANK>",
-  "main": "coconut.tsx",
-  "type": ["menu"]
+  "display_name": "Example UI Plugin",
+  "plugin": "some_gulp_plugin.py",
+  "extension": true,
+  "version": "1.0.0",
+  "desc": "THIS IS A SAMPLE UI PLUGIN!",
+  "path": "/home/gulp/src/gulp/plugins/ui/example_ui_plugin.tsx",
+  "filename": "example_ui_plugin.tsx",
+  "type": []
 }
 ```
 

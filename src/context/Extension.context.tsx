@@ -2,45 +2,36 @@ import { createContext, lazy, ReactNode, useContext, useEffect, useState } from 
 import { useApplication } from "./Application.context";
 import React from "react";
 import { Logger } from "@/dto/Logger.class";
+import { Version } from "@/dto/Dataset";
 
 const __component = Symbol('λ_extension_component');
 
-const KNOWN_EXTENSIONS: Record<string, Pick<Extension.Interface, 'type'>> = {
-  'SigmaZip.banner': {
-    type: []
-  },
-  'ExportTimeline.banner': {
-    type: ['menu']
-  },
-  'Storyline.banner': {
-    type: ['menu']
-  }
-} as const;
-
 export function ExtensionProvider({ children }: Extension.Provider.Props) {
-  const { app } = useApplication();
+  const { Info, app } = useApplication();
   const { banner } = useApplication();
   const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
 
   useEffect(() => {
-    const new_extensions: typeof extensions = {};
+    api<Extension.Interface[]>('/ui_plugin_list').then(plugins => {
+      const new_extensions: typeof extensions = {};
 
-    for (const plugin in KNOWN_EXTENSIONS) {
-      const extension = KNOWN_EXTENSIONS[plugin];
-      const Component = Extension.safe(() => import(`@/plugins/${plugin}`));
+      for (const plugin of plugins) {
+        const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
 
-      const Compiled = <Component />;
-      if (Compiled) {
-        Logger.log(`Component ${plugin} has been successfully loaded and memorized`);
+        const Compiled = <Component />;
+        if (Compiled) {
+          Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`);
+        }
+
+        new_extensions[plugin.filename] = {
+          ...plugin,
+          type: plugin.type ?? [],
+          [__component]: Component
+        }
       }
 
-      new_extensions[plugin] = {
-        ...extension,
-        [__component]: Component
-      }
-    }
-
-    setExtensions(new_extensions);
+      setExtensions(new_extensions);
+    })
   }, [app.target.plugins]);
 
   const extensionProps: Extension.Export = {
@@ -59,6 +50,13 @@ export namespace Extension {
   export type Type = 'menu' | 'banner';
 
   export interface Interface {
+    display_name: string,
+    plugin: string,
+    extension: boolean,
+    version: Version,
+    desc: string,
+    path: string,
+    filename: string
     type: Type[]
     [__component]: React.LazyExoticComponent<React.ComponentType<any>> | ((props: any) => React.JSX.Element);
   }
