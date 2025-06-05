@@ -1,0 +1,8 @@
+{
+  "name": "example plugin",
+  "description": "<BLANK>",
+  "main": "coconut.tsx",
+  "type": [
+    "menu"
+  ]
+}

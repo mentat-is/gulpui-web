@@ -148,8 +148,6 @@ namespace Components {
       updateSettings({ custom_parameters });
     }
 
-    console.log(app.target.plugins, settings.plugin);
-
     return (
       <Stack className={s.filePreview} gap={0} pos='relative'>
         {progress && <Progress value={progress} />}
