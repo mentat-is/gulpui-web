@@ -32,7 +32,7 @@ export namespace Highlights {
 
     export function Overlay({ className, ...props }: Highlights.Create.Overlay.Props) {
       const { Info, setHighlightsOverlay, scrollX, scrollY } = useApplication();
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(null);
+      const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value!);
       const [name, setName] = useState<string>('');
       const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
       const [range, setSelection] = useState<[number, number] | null>(null);
@@ -95,7 +95,7 @@ export namespace Highlights {
                   })}
                 </Select.Content>
               </Select.Root>
-              <Button variant='glass' disabled={!name || !icon} img='Check' onMouseDown={submit}>Create</Button>
+              <Button variant='glass' disabled={!name} img='Check' onMouseDown={submit}>Create</Button>
               <Button className={s.x} variant='secondary' img='X' onMouseDown={unselect} />
             </Stack>
           )

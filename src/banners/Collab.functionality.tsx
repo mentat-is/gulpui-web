@@ -167,7 +167,7 @@ export namespace LinkFunctionality {
     export function Banner({ link, event, ...props }: LinkFunctionality.Create.Banner.Props) {
       const { app, spawnBanner, destroyBanner, Info } = useApplication()
       const [color, setColor] = useState<string>(link?.color || Default.Color.LINK)
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(link?.glyph_id || null)
+      const [icon, setIcon] = useState<λGlyph['id'] | null>(link?.glyph_id || Glyph.List.keys().next().value || null)
       const [name, setName] = useState<string>(link?.name || '')
       const [description, setDescription] = useState<string>(link?.description || '');
       const [loading, setLoading] = useState<boolean>(false)

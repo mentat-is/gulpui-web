@@ -1345,7 +1345,7 @@ export class Info implements InfoProps {
     name,
     text,
     color = Default.Color.NOTE,
-    glyph_id,
+    glyph_id = Glyph.List.entries().find(e => e[1] === Default.Icon.NOTE)![0]!,
     event,
     isPrivate,
     tags
@@ -1384,7 +1384,7 @@ export class Info implements InfoProps {
     name,
     text,
     color,
-    glyph_id,
+    glyph_id = Glyph.List.entries().find(e => e[1] === Default.Icon.NOTE)![0]!,
     event,
     tags
   }: {
@@ -1462,7 +1462,7 @@ export class Info implements InfoProps {
   link_create = ({
     name,
     event,
-    glyph_id,
+    glyph_id = Glyph.List.entries().find(e => e[1] === Default.Icon.LINK)![0]!,
     color = Default.Color.LINK,
     description
   }: {
@@ -1543,7 +1543,7 @@ export class Info implements InfoProps {
   highlight_create = async ({
     time_range,
     name,
-    icon: glyph_id,
+    icon: glyph_id = Glyph.List.entries().find(e => e[1] === Default.Icon.HIGHLIGHT)![0]!,
     color = Default.Color.HIGHLIGHT as NonNullable<Badge.Variant>,
     tags = []
   }: {
