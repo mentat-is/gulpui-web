@@ -82,7 +82,7 @@ export namespace Sigma {
           checked={createNotes}
           onCheckedChange={setCreateNotes}
         />
-        <Extension.Component name='SigmaZip.banner' />
+        <Extension.Component name='SigmaZip.banner.tsx' />
       </UIBanner>
     )
   }
