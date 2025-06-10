@@ -2702,7 +2702,7 @@ export class Link {
   public static selected = (app: λApp) =>
     app.target.links.filter((link) =>
       link.doc_ids.every(
-        (id) => File.id(app, Event.id(app, id).file_id).selected,
+        (id) => File.id(app, Event.id(app, id)?.file_id)?.selected,
       ),
     )
 

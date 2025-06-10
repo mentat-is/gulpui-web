@@ -251,6 +251,7 @@ export function Navigator({
         <Button
           variant="secondary"
           size="sm"
+          title='Zoom in'
           ref={size_minus}
           onClick={() => zoom(false)}
           img="ZoomIn"
@@ -258,6 +259,7 @@ export function Navigator({
         <Button
           variant="secondary"
           size="sm"
+          title='Zoom out'
           ref={size_plus}
           onClick={() => zoom(true)}
           img="ZoomOut"
@@ -265,6 +267,7 @@ export function Navigator({
         <Button
           variant="secondary"
           size="sm"
+          title='Reset scale'
           ref={size_reset}
           onClick={resetScaleAndScroll}
           img="AlignHorizontalSpaceBetween"
@@ -272,6 +275,7 @@ export function Navigator({
         <Button
           variant="secondary"
           size="sm"
+          title='Create highlight'
           img="ChartBarBig"
           onClick={createHighlightButtonClickHandler}
         />

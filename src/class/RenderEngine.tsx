@@ -150,9 +150,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       if (link.docs.some((e) => !File.id(this.info.app, e.file_id)?.selected))
         return
 
-      const { dots, center } = this.calcDots(link)
+      const { dots } = this.calcDots(link)
 
-      this.connection(dots, center)
+      this.connection(dots)
       dots.forEach((dot) => this.dot(dot))
     })
   }
@@ -170,57 +170,48 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(x, y, width, height);
   }
 
-  public connection = (dots: Dot[], center?: XY) => {
-    if (dots.length < 2) return
+  public connection = (dots: Dot[]) => {
+    try {
+      if (dots.length < 2) return
 
-    for (let i = 0; i < dots.length - 1; i++) {
-      this.ctx.lineWidth = 2
-      const start = dots[i]
-      const end = dots[i + 1] || dots[0]
+      for (let i = 0; i < dots.length - 1; i++) {
+        this.ctx.lineWidth = 2
+        const start = dots[i]
+        const end = dots[i + 1] || dots[0]
 
-      const gradient = this.ctx.createLinearGradient(
-        start.x,
-        start.y,
-        end.x,
-        end.y,
-      )
-      gradient.addColorStop(0, start.color)
-      gradient.addColorStop(1, end.color)
+        const gradient = this.ctx.createLinearGradient(
+          start.x,
+          start.y,
+          end.x,
+          end.y,
+        )
+        gradient.addColorStop(0, start.color)
+        gradient.addColorStop(1, end.color)
 
-      this.ctx.strokeStyle = gradient
+        this.ctx.strokeStyle = gradient
 
-      this.ctx.beginPath()
-      this.ctx.moveTo(start.x, start.y)
-      this.ctx.lineTo(end.x, end.y)
-      this.ctx.stroke()
-
-      // if (center?.x && center?.y) {
-      //   const centerGradient = this.ctx.createLinearGradient(
-      //     end.x,
-      //     end.y,
-      //     center.x,
-      //     center.y,
-      //   )
-      //   centerGradient.addColorStop(0, end.color + '48')
-      //   centerGradient.addColorStop(1, end.color)
-
-      //   this.ctx.strokeStyle = centerGradient
-      //   this.ctx.beginPath()
-      //   this.ctx.moveTo(end.x, end.y)
-      //   this.ctx.lineTo(center.x, center.y)
-      //   this.ctx.stroke()
-      // }
-    }
+        this.ctx.beginPath()
+        this.ctx.moveTo(start.x, start.y)
+        this.ctx.lineTo(end.x, end.y)
+        this.ctx.stroke()
+      }
+    } catch (_) { }
   }
 
   public dot = ({ x, y, color }: Dot) => {
     this.ctx.fillStyle = '#e8e8e8'
     this.ctx.beginPath()
-    this.ctx.roundRect(x - 4, y - 4, 8, 8, [999])
+    if (typeof this.ctx.roundRect == 'function') {
+      this.ctx.roundRect(x - 4, y - 4, 8, 8, [999])
+    }
+
     this.ctx.fill()
     this.ctx.fillStyle = color
     this.ctx.beginPath()
-    this.ctx.roundRect(x - 3, y - 3, 6, 6, [999])
+    if (typeof this.ctx.roundRect == 'function') {
+      this.ctx.roundRect(x - 3, y - 3, 6, 6, [999])
+    }
+
     this.ctx.fill()
   }
 
@@ -228,9 +219,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     link: λLink,
   ): {
     dots: Dot[]
-    center: XY
   } => {
-    const center = XYBase(0)
     const dots: Dot[] = []
 
     link.docs.forEach((e) => {
@@ -247,9 +236,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         link.color ||
         stringToHexColor(link.docs.map((e) => e.file_id).toString())
 
-      center.x += x
-      center.y += y
-
       dots.push({
         x,
         y,
@@ -257,10 +243,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       })
     })
 
-    center.x = center.x / (dots.length || 1)
-    center.y = center.y / (dots.length || 1)
-
-    return { dots, center }
+    return { dots }
   }
 
   public locals = (file: λFile) => {
@@ -323,12 +306,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public loading = (file: λFile) => {
     this.ctx.beginPath()
     this.ctx.strokeStyle = '#e8e8e8'
-    this.ctx.setLineDash([5, 5])
+    if (this.ctx.setLineDash) {
+      this.ctx.setLineDash([5, 5])
+    }
+
     const height = File.getHeight(this.info.app, file, this.scrollY)
     this.ctx.moveTo(0, height)
     this.ctx.lineTo(2000, height)
     this.ctx.stroke()
-    this.ctx.setLineDash([])
+    if (this.ctx.setLineDash) {
+      this.ctx.setLineDash([])
+    }
   }
 
   public draw_info = (file: λFile) => {
