@@ -359,3 +359,19 @@ export async function sleep(ms = 0) {
 
 
 export type NodeFile = NonNullable<NonNullable<ChangeEvent<HTMLInputElement>['target']['files']>[0]>
+
+export class Refractor {
+  public static readonly reflect = {
+    toVar: <T extends Record<string, any>>(obj: T) => {
+      const reflection: Record<string, any> = {};
+      Object.keys(obj).forEach(key => {
+        reflection[`--${key}`] = obj[key];
+      });
+      return reflection as { [K in keyof T as `--${string & K}`]: T[K] };
+    }
+  }
+}
+
+export const toVar = (obj: { [key: string]: any }) => {
+
+}

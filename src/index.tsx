@@ -6,11 +6,13 @@ import {
 } from './context/Application.context'
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthBanner } from './banners/Auth.banner'
 import { λthrow } from '@impactium/utils'
 import { Windows } from './ui/Windows'
 import { ExtensionProvider } from './context/Extension.context'
+import { Logger } from './dto/Logger.class'
+import { Preloader } from './components/Preloader'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -32,27 +34,10 @@ declare global {
 
 function Root() {
   if (window.onerror) {
-    window.onerror = function (
-      message,
-      source,
-      lineno,
-      colno,
-      error
-    ) {
-      console.error('[Global Error]', {
-        message,
-        source,
-        lineno,
-        colno,
-        error
-      });
-
-      // Optionally send to logging service
-      // sendErrorToServer({ message, source, lineno, colno, stack: error?.stack });
+    window.onerror = function (...props) {
+      Logger.error('[Global Error]', props.join('\n'));
     };
-
   }
-
 
   return (
     <ApplicationProvider>
@@ -65,15 +50,20 @@ function Root() {
 }
 
 function Main() {
-  const { Info, app, spawnBanner } = useApplication()
+  const [isPreloaded, setIsPreloaded] = useState(false);
 
   useEffect(() => {
-    if (Info.User.isAuthorized() === false) {
-      setTimeout(() => {
-        spawnBanner(<AuthBanner />);
-      }, 30)
-    }
-  }, [app.general])
+    if (isPreloaded)
+      return;
+
+    setTimeout(() => {
+      setIsPreloaded(true);
+    }, 2500);
+  }, [isPreloaded]);
+
+  if (!isPreloaded) {
+    return <Preloader />
+  }
 
   return <Windows.Provider />
 }
