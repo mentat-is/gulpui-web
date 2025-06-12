@@ -1,0 +1,23 @@
+.wrapper {
+  min-width: 50%;
+  height: 100vh;
+  border-left: 2px solid var(--gray-400);
+  padding: 0 128px;
+}
+.wrapper > div {
+  width: 100%;
+}
+.title {
+  color: var(--gray-800);
+  font-size: 24px;
+  font-family: var(--font-mono);
+  margin-bottom: 12px;
+}
+.operation {
+  overflow: hidden;
+  height: 0px;
+}
+.operation.visible {
+  height: 52px;
+  overflow: visible;
+}

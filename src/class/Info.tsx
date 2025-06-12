@@ -1878,6 +1878,8 @@ export class Info implements InfoProps {
     this.app.target.contexts = contexts
     this.app.target.files = files
     this.setInfo(this.app)
+
+    return { operations, contexts, files };
   }
 
   query_single_id = (doc_id: λEvent['id'], operation_id: λOperation['id']) => {

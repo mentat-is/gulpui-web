@@ -1,21 +1,19 @@
-import React from 'react'
-import * as LabelPrimitive from '@radix-ui/react-label'
-import { cva, type VariantProps } from 'class-variance-authority'
+import { cn } from "@impactium/utils";
+import { HTMLAttributes } from "react";
 import s from './styles/Label.module.css'
-import { cn } from '@impactium/utils'
-const labelVariants = cva(s.label)
 
-const Label = React.forwardRef<
-  React.ElementRef<typeof LabelPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root> &
-  VariantProps<typeof labelVariants>
->(({ className, ...props }, ref) => (
-  <LabelPrimitive.Root
-    ref={ref}
-    className={cn(labelVariants(), className)}
-    {...props}
-  />
-))
-Label.displayName = LabelPrimitive.Root.displayName
+export namespace Label {
+  export interface Props extends HTMLAttributes<HTMLLabelElement> {
+    value?: string
+  }
+}
 
-export { Label }
+export function Label({ value, className, ...props }: Label.Props) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <label className={cn(s.label, className)} {...props}>{value}</label>
+  )
+}

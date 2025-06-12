@@ -1,5 +1,5 @@
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button, Input, Skeleton, Stack } from '@impactium/components'
+import { Button, Skeleton, Stack } from '@impactium/components'
 import { useEffect, useState } from 'react'
 import { useApplication } from '@/context/Application.context'
 import { Operation as GulpOperationEntity } from '@/class/Info'
@@ -9,6 +9,8 @@ import { λOperation } from '@/dto'
 import { Glyph } from '@/ui/Glyph'
 import { λGlyph, Default } from '@/dto/Dataset'
 import s from './styles/OperationBanner.module.css'
+import { Input } from '@/ui/Input'
+import { Label } from '@/ui/Label'
 
 export namespace Operation {
   export namespace Select {
@@ -119,9 +121,7 @@ export namespace Operation {
     export function Banner({ ...props }: Operation.Create.Banner.Props) {
       const { Info, spawnBanner } = useApplication()
       const [name, setName] = useState<string>('')
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(
-        Glyph.List.keys().next().value || null,
-      )
+      const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.getIdByName(Default.Icon.OPERATION));
       const [description, setDescription] = useState<string>('')
       const [loading, setLoading] = useState<boolean>(false)
 
@@ -151,33 +151,26 @@ export namespace Operation {
       )
 
       return (
-        <UIBanner title="Create an Operation" done={<DoneButton />} {...props}>
-          <Stack ai="center">
-            <p className={s.paramName}>Operation name:</p>
-            <Input
-              variant="highlighted"
-              className={s.input}
-              img={icon ? Glyph.List.get(icon) : Default.Icon.OPERATION}
-              value={name}
-              onChange={(e) => setName(e.currentTarget.value)}
-              placeholder="Operation name"
-            />
-          </Stack>
-          <Stack ai="center">
-            <p className={s.paramName}>Operation description:</p>
-            <Input
-              className={s.input}
-              variant="highlighted"
-              img="Text"
-              value={description}
-              onChange={(e) => setDescription(e.currentTarget.value)}
-              placeholder="Operation description"
-            />
-          </Stack>
-          <Stack ai="center">
-            <p className={s.paramName}>Operation icon:</p>
+        <UIBanner title="Create new operation" done={<DoneButton />} className={s.wrapper} {...props}>
+          <Input
+            label='Name'
+            className={s.input}
+            value={name}
+            onChange={(e) => setName(e.currentTarget.value)}
+            placeholder="Operation name"
+          />
+          <Input
+            label='Description'
+            className={s.input}
+            value={description}
+            onChange={(e) => setDescription(e.currentTarget.value)}
+            placeholder="Operation description"
+          />
+          <Stack dir='column' gap={6} ai='flex-start' data-input>
+            <Label value='Operation icon' />
             <Glyph.Chooser icon={icon} setIcon={setIcon} />
           </Stack>
+
         </UIBanner>
       )
     }

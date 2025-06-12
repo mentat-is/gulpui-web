@@ -29,6 +29,8 @@ export namespace Glyph {
 
   export const List: Map<λGlyph['id'], Icon.Name> = new Map()
 
+  export const getIdByName = (name: Icon.Name): λGlyph['id'] => Glyph.List.entries().find(([id, n]) => name === n)?.[0]!;
+
   export namespace Chooser {
     export interface Props {
       className?: string;

@@ -372,6 +372,8 @@ export class Refractor {
   }
 }
 
-export const toVar = (obj: { [key: string]: any }) => {
-
+export interface RGB {
+  r: number,
+  g: number,
+  b: number
 }

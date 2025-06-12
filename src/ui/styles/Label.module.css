@@ -1,5 +1,6 @@
 .label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1;
+  cursor: text;
+  font-size: 13px;
+  color: var(--gray-900);
+  max-width: 100%;
 }

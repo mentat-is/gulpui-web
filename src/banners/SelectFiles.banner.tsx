@@ -158,7 +158,7 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
           onCheckedChange={handleContextCheck}
           id={context.name}
         />
-        <Label htmlFor={context.name}>{context.name}</Label>
+        <Label value={context.name} />
         <hr style={{ flex: 1 }} />
         <Badge
           border
@@ -216,7 +216,7 @@ function FileComponent({ file }: { file: λFile }) {
         checked={file.selected}
         onCheckedChange={handleFileCheck}
       />
-      <Label htmlFor={file.name}>{file.name}</Label>
+      <Label value={file.name} />
       {FileIsTooBig}
       <Badge radius={2} variant={Filter.hasFilter(app, file) ? 'outline' : "secondary"} icon='Filter' onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)} />
       <Badge radius={2} variant="outline" value={file.total} />

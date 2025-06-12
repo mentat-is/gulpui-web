@@ -7,12 +7,13 @@ import {
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect, useState } from 'react'
-import { AuthBanner } from './banners/Auth.banner'
 import { λthrow } from '@impactium/utils'
 import { Windows } from './ui/Windows'
 import { ExtensionProvider } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
+import { LoginPage } from './page/Login.page'
+import { Operation } from './class/Info'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -50,6 +51,7 @@ function Root() {
 }
 
 function Main() {
+  const { Info } = useApplication();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
   useEffect(() => {
@@ -65,5 +67,5 @@ function Main() {
     return <Preloader />
   }
 
-  return <Windows.Provider />
+  return Info.User.isAuthorized() && Operation.selected(Info.app) ? <Windows.Provider /> : <LoginPage />
 }

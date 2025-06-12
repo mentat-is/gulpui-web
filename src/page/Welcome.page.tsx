@@ -6,7 +6,7 @@ import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
 import { Separator } from '@radix-ui/react-separator'
 import { Timeline } from '../app/body/Timeline'
-import { AuthBanner } from '../banners/Auth.banner'
+import { Auth } from './Auth.page'
 import { LimitsBanner } from '../banners/Limits.banner'
 import { SelectFiles } from '../banners/SelectFiles.banner'
 import { Settings } from '../banners/Settings.banner'
@@ -87,8 +87,8 @@ export namespace Welcome {
       {
         name: 'Authorized',
         cond: Info.User.isAuthorized(),
-        trigger: ActionButtonConstructor('Log In', 'LogIn', <AuthBanner />),
-        banner: <AuthBanner />
+        trigger: ActionButtonConstructor('Log In', 'LogIn', <Auth.Page />),
+        banner: <Auth.Page />
       },
       {
         name: 'At least one operation',

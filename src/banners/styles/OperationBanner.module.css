@@ -3,6 +3,9 @@
   font-size: 12px;
   flex: 1;
 }
+.wrapper [data-input] > div {
+  background: var(--meta-black);
+}
 .input {
   width: 256px;
 }
