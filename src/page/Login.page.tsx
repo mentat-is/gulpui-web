@@ -2,6 +2,7 @@ import Matrix from "@/components/Matrix";
 import { Stack } from "@impactium/components";
 import s from './styles/LoginPage.module.css';
 import { Auth } from "@/page/Auth.page";
+import { ASCII } from '@/ui/ASCII';
 
 export function LoginPage() {
   return (
@@ -12,6 +13,10 @@ export function LoginPage() {
         centerVignette={true}
         outerVignette={true}
         smooth={true} />
+      <ASCII
+        enableWaves={false}
+        text='gULP'
+      />
       <Auth.Page />
     </Stack>
   )

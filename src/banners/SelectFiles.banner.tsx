@@ -103,6 +103,7 @@ export namespace SelectFiles {
             variant="secondary"
             style={{ width: '100%', background: 'var(--meta-black)' }}
             img="FilePlus"
+            disabled={app.target.files.length === 0}
           >
             Select all
           </Button>
@@ -111,6 +112,7 @@ export namespace SelectFiles {
             variant="secondary"
             style={{ width: '100%', background: 'var(--meta-black)' }}
             img="FileMinus"
+            disabled={app.target.files.length === 0}
           >
             Unselect all
           </Button>
@@ -118,6 +120,7 @@ export namespace SelectFiles {
             onClick={reloadClickHandler}
             variant="secondary"
             img="RefreshClockwise"
+            loading={loading}
           >
             Reload
           </Button>
