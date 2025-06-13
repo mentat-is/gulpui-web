@@ -27,7 +27,6 @@ export namespace Collab {
 
     const { app, spawnBanner } = useApplication();
     const [target, setTarget] = useState<λNote | λLink>(notes[0] || links[0])
-    const [inOpen, setIsOpen] = useState<boolean>(false);
 
     useEffect(() => {
       const updated = target ? target.type === 'note' ? Note.id(app, target.id) : Link.id(app, target.id) : notes[0];
