@@ -148,7 +148,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public links = () => {
     this.info.app.target.links.forEach((link) => {
-      if (link.docs.some((e) => !File.id(this.info.app, e['gulp.source_id'])?.selected))
+      if (link.doc_ids.some(id => !File.id(this.info.app, Event.id(this.info.app, id)?.['gulp.source_id'])?.selected))
         return
 
       const { dots } = this.calcDots(link)
@@ -223,7 +223,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   } => {
     const dots: Dot[] = []
 
-    link.docs.forEach((e) => {
+    link.doc_ids.forEach((id) => {
+      const e = Event.id(this.info.app, id);
+      if (!e) {
+        return;
+      }
       const index = File.selected(this.info.app).findIndex(
         (f) => f.id === e['gulp.source_id'],
       )
@@ -235,7 +239,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const y = index * 48 + 20 - this.scrollY || 0
       const color =
         link.color ||
-        stringToHexColor(link.docs.map((e) => e['gulp.source_id']).toString())
+        stringToHexColor(link.doc_ids.map((id) => File.id(this.info.app, Event.id(this.info.app, id)['gulp.source_id'])).toString())
 
       dots.push({
         x,

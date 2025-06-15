@@ -61,7 +61,7 @@ export namespace NoteFunctionality {
 
         const glyph_id = icon as λGlyph['id']
 
-        const tags = rawTags.split(',').map(tag => tag.trim());
+        const tags = rawTags.split(',').map(tag => tag.trim()).filter(t => t.length);
 
         setLoading(true);
 

@@ -20,7 +20,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    setSortedNotes(app.target.notes.filter(n => n.name.includes(search) || n.text.includes(search) || File.id(app, n.file_id).name.includes(search) || Context.id(app, n.context_id).name.includes(search)).sort((a, b) => a.context_id.localeCompare(b.context_id)).sort((a, b) => a.file_id.localeCompare(b.file_id)));
+    setSortedNotes(app.target.notes.filter(n => n.name.includes(search) || n.text.includes(search) || File.id(app, n.source_id).name.includes(search) || Context.id(app, n.context_id).name.includes(search)).sort((a, b) => a.context_id.localeCompare(b.context_id)).sort((a, b) => a.source_id.localeCompare(b.source_id)));
   }, [app.target.notes, search]);
 
   return (

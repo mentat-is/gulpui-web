@@ -89,7 +89,6 @@ export namespace Maps {
 
     export type Reference = Ref<google.maps.Circle | null>
 
-    // eslint-disable-next-line no-inner-declarations
     function useCircle({
       onClick,
       onDrag,
@@ -146,19 +145,19 @@ export namespace Maps {
         if (!circle) return
 
         const gme = google.maps.event
-        ;[
-          ['click', 'onClick'],
-          ['drag', 'onDrag'],
-          ['dragstart', 'onDragStart'],
-          ['dragend', 'onDragEnd'],
-          ['mouseover', 'onMouseOver'],
-          ['mouseout', 'onMouseOut'],
-        ].forEach(([eventName, eventCallback]) => {
-          gme.addListener(circle, eventName, (e: google.maps.MapMouseEvent) => {
-            const callback = callbacks.current[eventCallback]
-            if (callback) callback(e)
+          ;[
+            ['click', 'onClick'],
+            ['drag', 'onDrag'],
+            ['dragstart', 'onDragStart'],
+            ['dragend', 'onDragEnd'],
+            ['mouseover', 'onMouseOver'],
+            ['mouseout', 'onMouseOut'],
+          ].forEach(([eventName, eventCallback]) => {
+            gme.addListener(circle, eventName, (e: google.maps.MapMouseEvent) => {
+              const callback = callbacks.current[eventCallback]
+              if (callback) callback(e)
+            })
           })
-        })
         gme.addListener(circle, 'radius_changed', () => {
           const newRadius = circle.getRadius()
           callbacks.current.onRadiusChanged?.(newRadius)
@@ -176,7 +175,6 @@ export namespace Maps {
       return circle
     }
 
-    // eslint-disable-next-line react/display-name
     export const Element = forwardRef(
       (props: Circle.Props, ref: Circle.Reference) => {
         const circle = useCircle(props)

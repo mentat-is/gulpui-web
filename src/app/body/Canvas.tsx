@@ -334,14 +334,9 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
   }, dependencies)
 
-  const getPixelPosition = useCallback(
-    (timestamp: number) =>
-      Math.round(
-        ((timestamp - app.timeline.frame.min) /
-          (app.timeline.frame.max - app.timeline.frame.min)) *
-        Info.width,
-      ) - scrollX,
-    [scrollX, Info.width, app.timeline.frame])
+  const getPixelPosition = useCallback((timestamp: number) => {
+    return Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
+  }, [scrollX, Info.width, app.timeline.frame])
 
   const handleContextMenu = (event: MouseEvent) => {
     if (!timeline.current) {

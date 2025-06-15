@@ -16,16 +16,16 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
   const { app, spawnDialog } = useApplication()
 
   const openEvent = () => {
-    if (link.docs.length === 0) {
+    if (link.doc_ids.length === 0) {
       return null
     }
 
     const dialog =
-      link.docs.length === 1 ? (
-        <DisplayEventDialog event={Event.id(app, link.docs[0]._id)} />
+      link.doc_ids.length === 1 ? (
+        <DisplayEventDialog event={Event.id(app, link.doc_id_from)} />
       ) : (
         <DisplayGroupDialog
-          events={link.docs.map((doc) => Event.id(app, doc._id))}
+          events={link.doc_ids.map(id => Event.id(app, id))}
         />
       )
     s

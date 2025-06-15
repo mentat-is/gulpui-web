@@ -8,9 +8,7 @@ import {
   λLink,
   λNote,
   Default,
-  ΞNote,
   GulpObject,
-  ΞLink,
   λGroup,
   λRequest,
   ΞRequest,
@@ -1246,7 +1244,7 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   notes_reload = () =>
-    api<ΞNote[]>(
+    api<λNote[]>(
       '/note_list',
       {
         method: 'POST',
@@ -1254,7 +1252,7 @@ export class Info implements InfoProps {
           source_ids: File.selected(this.app).map((f) => f.id),
         },
       },
-      (notes) => this.setInfoByKey(Note.normalize(notes), 'target', 'notes'),
+      (notes) => this.setInfoByKey(notes, 'target', 'notes'),
     )
 
   // ⚠️ UNTOUCHABLE
@@ -1302,7 +1300,7 @@ export class Info implements InfoProps {
     body: {
       text,
       tags,
-      docs: event,
+      docs: [Event.toDoc(event)],
     },
   }).then(() => {
     this.notes_reload()
@@ -1337,7 +1335,7 @@ export class Info implements InfoProps {
     body: {
       text,
       tags,
-      docs: event,
+      docs: [Event.toDoc(event)],
     }
   }).then(() => {
     toast(`Note ${name} has been updated successfully`)
@@ -1346,7 +1344,7 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   links_reload = async () => {
-    return api<ΞLink[]>(
+    return api<λLink[]>(
       '/link_list',
       {
         method: 'POST',
@@ -1354,25 +1352,7 @@ export class Info implements InfoProps {
           source_ids: File.selected(this.app).map((f) => f.id),
         },
       },
-      async (raw) => {
-        const links: λLink[] = []
-
-        await Promise.all(
-          raw.map(async (link) => {
-            const events = await Promise.all(
-              link.doc_ids.map((id) =>
-                this.query_single_id(id, link.operation_id),
-              ),
-            )
-
-            const docs: λDoc[] = events;
-
-            links.push(Link.normalize(link, docs))
-          }),
-        )
-
-        this.setInfoByKey(links, 'target', 'links')
-      },
+      links => this.setInfoByKey(links, 'target', 'links'),
     )
   }
 
@@ -2477,6 +2457,15 @@ export class Filter {
 }
 
 export class Event {
+  public static toDoc = (event: λEvent) => ({
+    '_id': event._id,
+    '@timestamp': event['@timestamp'],
+    'gulp.context_id': event['gulp.context_id'],
+    'gulp.operation_id': event['gulp.operation_id'],
+    'gulp.source_id': event['gulp.source_id'],
+    'gulp.timestamp': event['gulp.timestamp'],
+  })
+
   public static delete = (app: λApp, files: Arrayed<λFile>) => {
     files = Parser.array(files)
 
@@ -2527,21 +2516,12 @@ export class Event {
     app.target.notes.filter((n) => n.docs.some((doc) => doc._id === event._id))
 
   public static links = (app: λApp, event: λEvent) =>
-    app.target.links.filter((l) => l.docs.some((doc) => doc._id === event._id))
+    app.target.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
 
 }
 
 export class Note {
   public static icon = Internal.IconExtractor.activate<λNote | null>(Default.Icon.NOTE)
-
-  public static normalize = (notes: ΞNote[]) =>
-    notes.map(
-      (n) =>
-        ({
-          ...n,
-          file_id: n.source_id,
-        }) satisfies λNote,
-    )
 
   public static id = (app: λApp, id: λNote['id']) =>
     app.target.notes.find((n) => n.id === id) as λNote
@@ -2559,7 +2539,7 @@ export class Note {
     )
 
   public static findByFile = (app: λApp, file: λFile) =>
-    app.target.notes.filter((n) => n.file_id === file.id)
+    app.target.notes.filter((n) => n.source_id === file.id)
 
   public static timestamp = (app: λApp, note: λNote): number => {
     let sum = 0
@@ -2576,22 +2556,20 @@ export class Link {
   public static selected = (app: λApp) =>
     app.target.links.filter((link) =>
       link.doc_ids.every(
-        (id) => File.id(app, Event.id(app, id)['gulp.source_id'])?.selected,
+        (id) => File.id(app, Event.id(app, id)?.['gulp.source_id'])?.selected,
       ),
     )
 
-  public static normalize = (link: ΞLink, docs: λDoc[]): λLink =>
-    ({
-      ...link,
-      docs,
-    }) satisfies λLink
+  public static timestamp = (app: λApp, link: λLink): number => {
+    if (link.doc_ids.length === 0) {
+      return 0;
+    }
 
-  public static timestamp = (link: λLink): number => {
     let sum = 0
 
-    link.docs.forEach((d) => (sum += new Date(d['@timestamp']).getTime()))
+    link.doc_ids.forEach(d => sum += Event.timestamp(Event.id(app, d)));
 
-    return sum / link.docs.length || 1
+    return sum / link.doc_ids.length;
   }
 }
 

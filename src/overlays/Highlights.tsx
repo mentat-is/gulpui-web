@@ -2,7 +2,7 @@ import { Badge, Button, Input, Stack } from '@impactium/components';
 import s from './Highlights.module.css';
 import { Icon } from '@impactium/icons';
 import { useMemo, useRef, useState } from 'react';
-import { Operation, Range } from '@/class/Info';
+import { MinMax, Operation, Range } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Glyph } from '@/ui/Glyph';
 import { Default, λGlyph, λHighlight } from '@/dto/Dataset';
@@ -176,11 +176,13 @@ export namespace Highlights {
   export namespace List {
     export namespace Overlay {
       export interface Props extends Stack.Props {
-
+        frame?: Partial<MinMax>;
+        layoutWidth?: number;
+        fixed?: boolean;
       }
     }
 
-    export function Overlay({ ...props }: Highlights.List.Overlay.Props) {
+    export function Overlay({ frame, fixed, layoutWidth, ...props }: Highlights.List.Overlay.Props) {
       const { app } = useApplication();
 
       const highlights = useMemo(() => Highlight.selected(app), [app.target.highlights, app.target.operations]);
@@ -191,7 +193,7 @@ export namespace Highlights {
         <Stack pos='absolute' className={cn(s.overlay, s.ignore)} {...props}>
           {highlights.map((highlight, index) => {
             return (
-              <Highlights.Component highlight={highlight} index={computedDepths[index]} />
+              <Highlights.Component fixed={fixed} frame={frame} layoutWidth={layoutWidth} highlight={highlight} index={computedDepths[index]} />
             )
           })}
         </Stack>
@@ -230,10 +232,13 @@ export namespace Highlights {
       highlight: λHighlight;
       index?: number;
       native?: boolean;
+      frame?: Partial<MinMax>;
+      layoutWidth?: number;
+      fixed?: boolean;
     }
   }
 
-  export function Component({ highlight, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
+  export function Component({ highlight, fixed, layoutWidth, frame = {}, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
     const { Info, app, scrollX } = useApplication();
 
     const range = useMemo((): Range => {
@@ -241,8 +246,8 @@ export namespace Highlights {
         return highlight.range as Range;
       }
 
-      return highlight.time_range.map(t => Math.round(((t - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX) as Range;
-    }, [app.timeline.frame, app.timeline.scale, scrollX, highlight]);
+      return highlight.time_range.map(t => Math.round(((t - (frame.min ?? app.timeline.frame.min)) / ((frame.max ?? app.timeline.frame.max) - (frame.min ?? app.timeline.frame.min))) * (layoutWidth ?? Info.width)) - (fixed ? 0 : scrollX)) as Range;
+    }, [app.timeline.frame, app.timeline.scale, fixed ? undefined : scrollX, highlight]);
 
     const [left, width] = useMemo(() => {
       const left = Math.min(...range);
@@ -256,7 +261,6 @@ export namespace Highlights {
     }, [range]);
 
     return (
-      // @ts-ignore
       <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index, background: native ? `hsla(var(--${highlight.color}-800-value), 0.16)` : 'transparent' }} jc='flex-end' ai='flex-start' {...props}>
         <Stack style={{ background: `var(--${highlight.color}-700)` }}>
           <Badge className={s.title} data-type='badge' variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />

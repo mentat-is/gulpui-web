@@ -33,7 +33,7 @@ export function NotesDisplayer({
         if (timestamp) {
           acc[note.id] = {
             x: getPixelPosition(timestamp),
-            y: File.getHeight(app, note.file_id, 0),
+            y: File.getHeight(app, note.source_id, 0),
           }
         }
         return acc
@@ -54,7 +54,7 @@ export function NotesDisplayer({
 
   const matrix: Map<string, λNote[]> = new Map();
 
-  app.target.notes.filter((note) => selectedFiles.has(note.file_id)).forEach(note => {
+  app.target.notes.filter((note) => selectedFiles.has(note.source_id)).forEach(note => {
     const pos = getNotePosition(note);
     if (!pos) {
       return;

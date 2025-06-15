@@ -92,10 +92,7 @@ export interface ΞSettings {
   crosshair: boolean
 }
 
-export type ΞLink<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
-  μ.Link,
-  T
-> & {
+export type λLink = GulpObject<μ.Link, {
   type: 'link'
   owner_user_id: string
   description: string
@@ -103,15 +100,9 @@ export type ΞLink<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   tags: string[]
   doc_id_from: λEvent['_id']
   doc_ids: λEvent['_id'][]
-}
+}>
 
-export type λLink<T extends Extendable = typeof DEFAULT_OBJECT> = ΞLink<
-  {
-    docs: λDoc[]
-  } & T
->
-
-export type ΞNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
+export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   μ.Note,
   T
 > & {
@@ -120,19 +111,6 @@ export type ΞNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   tags: string[]
   context_id: λContext['id']
   source_id: λFile['id']
-  docs: λDoc[]
-  time_pin: number
-  owner_user_id: λUser['id']
-  text: string
-  edits: Record<string, any>[]
-}
-
-export type λNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<μ.Note, T> & {
-  type: 'note'
-  operation_id: λOperation['id']
-  tags: string[]
-  context_id: λContext['id']
-  file_id: λFile['id']
   docs: λDoc[]
   time_pin: number
   owner_user_id: λUser['id']

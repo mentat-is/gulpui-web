@@ -27,8 +27,8 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
       const ev = Event.id(app, link.doc_id_from);
       if (!ev || !selectedFiles.has(ev['gulp.source_id'])) continue;
 
-      const ys = link.docs.map(d => File.getHeight(app, d['gulp.source_id'], 0));
-      const xs = link.docs.map(d => getPixelPosition(Internal.Transformator.toTimestamp(d['@timestamp'])));
+      const ys = link.doc_ids.map(d => File.getHeight(app, Event.id(app, d)?.['gulp.source_id'], 0));
+      const xs = link.doc_ids.map(d => getPixelPosition(Event.id(app, d)?.timestamp ?? 0));
       if (ys.length < 2 || xs.length < 2) continue;
 
       for (let i = 0; i < ys.length - 1; i++) {
