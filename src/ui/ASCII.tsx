@@ -92,7 +92,7 @@ class AsciiFilter {
     this.deg = 0;
     this.invert = invert ?? true;
     this.fontSize = fontSize ?? 12;
-    this.fontFamily = fontFamily ?? "'Courier New', monospace";
+    this.fontFamily = fontFamily ?? "GeistMono";
     this.charset = charset ?? " .'`^\",:;Il!i~+_-?][}{1)(|/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
 
     if (this.context) {
@@ -326,7 +326,7 @@ class CanvAscii {
   setMesh() {
     this.textCanvas = new CanvasTxt(this.textString, {
       fontSize: this.textFontSize,
-      fontFamily: 'IBM Plex Mono',
+      fontFamily: 'GeistMono',
       color: this.textColor,
     });
     this.textCanvas.resize();
@@ -363,7 +363,7 @@ class CanvAscii {
     this.renderer.setClearColor(0x000000, 0);
 
     this.filter = new AsciiFilter(this.renderer, {
-      fontFamily: 'IBM Plex Mono',
+      fontFamily: 'GeistMono',
       fontSize: this.asciiFontSize,
       invert: true,
     });
@@ -512,8 +512,6 @@ export function ASCII({
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&display=swap');
-
         body {
           margin: 0;
           padding: 0;

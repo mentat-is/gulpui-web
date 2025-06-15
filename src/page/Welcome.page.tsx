@@ -16,6 +16,7 @@ import { Default } from '../dto/Dataset'
 import { Glyph } from '../ui/Glyph'
 import { Operation } from '../banners/Operation.banner'
 import { File, Operation as GulpOperationEntity } from '../class/Info'
+import { Shimmer } from '@/ui/Shimmer'
 
 export namespace Welcome {
   export function Page({ ...props }: Stack.Props) {
@@ -175,7 +176,7 @@ export namespace Welcome {
         jc="center"
         {...props}
       >
-        <h3>Welcome to gULP workspace</h3>
+        <Shimmer as='h3' color='var(--gray-800)' duration={2}>[ gULP ]</Shimmer>
         <p>Choose action below</p>
         <ActionButton />
         <Flow flow={flow} />

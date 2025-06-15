@@ -3,14 +3,14 @@
   padding: 12px;
   height: 100vh;
 }
-.noWindows > h3 {
+.noWindows h3 {
   font-family: var(--font-mono);
-  font-size: 32px;
-  margin-bottom: 36px;
+  font-size: 48px;
+  margin-bottom: 8px;
+  font-weight: 300;
 }
 .noWindows > p {
   margin-bottom: 64px;
-  color: var(--text-dimmed);
   font-size: 22px;
 }
 .rounded {

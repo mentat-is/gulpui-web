@@ -17,15 +17,15 @@ const Matrix = ({
   const lastGlitchTime = useRef(Date.now());
 
   const fontSize = 16;
+  const charHeight = 14;
   const charWidth = 10;
-  const charHeight = 20;
 
   const lettersAndSymbols = [
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     '!', '@', '#', '$', '&', '*', '(', ')', '-', '_', '+', '=', '/',
     '[', ']', '{', '}', ';', ':', '<', '>', ',', '0', '1', '2', '3',
-    '4', '5', '6', '7', '8', '9'
+    '4', '5', '6', '7', '8', '9', 'λ'
   ];
 
   const getRandomChar = () => {
@@ -110,8 +110,8 @@ const Matrix = ({
 
     const { width, height } = canvasRef.current.getBoundingClientRect();
     ctx.clearRect(0, 0, width, height);
-    ctx.font = `${fontSize}px monospace`;
-    ctx.textBaseline = 'top';
+    ctx.font = `${fontSize}px GeistMono`;
+    ctx.textBaseline = 'middle';
 
     letters.current.forEach((letter: any, index: number) => {
       const x = (index % grid.current.columns) * charWidth;
