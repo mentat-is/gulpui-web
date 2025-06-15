@@ -1,22 +1,19 @@
 import { λFile } from '@/dto/Dataset'
 import {
   Engine,
-  Hardcode,
-  MaxHeight,
-  MinHeight,
-  Scale,
+  Hardcode
 } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
 import { λColor } from '@/ui/utils'
-import { File, MinMax } from '@/class/Info'
+import { Event, File, MinMax } from '@/class/Info'
 
-export class DefaultEngine
-  implements Engine.Interface<typeof DefaultEngine.target> {
+export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null
-  static target: Map<Hardcode.X, [Hardcode.Height, Hardcode.Timestamp]> &
-    Scale &
-    MinHeight &
-    MaxHeight
+  static target: Map<number, [number, number]> & {
+    [Hardcode.MinHeight]: number,
+    [Hardcode.MaxHeight]: number,
+    [Hardcode.Scale]: number,
+  }
   private renderer!: RenderEngine
   map = new Map<λFile['id'], typeof DefaultEngine.target>()
 
@@ -41,8 +38,8 @@ export class DefaultEngine
       }
 
       this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, {
-        min: map[MinHeight],
-        max: map[MaxHeight],
+        min: map[Hardcode.MinHeight],
+        max: map[Hardcode.MaxHeight],
       })
 
       this.renderer.ctx.fillRect(
@@ -144,22 +141,19 @@ export class DefaultEngine
       const closestIndex = findClosestEventIndex(targetTimestamp)
 
       const event = events[closestIndex]
-      map.set(x as Hardcode.X, [
-        (parseInt(event[file.settings.field]?.toString()) || 0) as Hardcode.Height,
-        event.timestamp as Hardcode.Timestamp,
+      map.set(x, [
+        Number(event[file.settings.field]),
+        Event.timestamp(event),
       ])
     }
 
-    map[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale
-    map[MinHeight] = file.code.min as Hardcode.Height
-    map[MaxHeight] = file.code.max as Hardcode.Height
+    map[Hardcode.Scale] = this.renderer.info.app.timeline.scale
+    map[Hardcode.MinHeight] = file.code.min
+    map[Hardcode.MaxHeight] = file.code.max
     this.map.set(file.id, map)
 
     return map as typeof DefaultEngine.target
   }
 
-  is = (file: λFile) =>
-    Boolean(
-      this.map.get(file.id)?.[Scale] === this.renderer.info.app.timeline.scale,
-    )
+  is = (file: λFile) => Boolean(this.map.get(file.id)?.[Hardcode.Scale] === this.renderer.info.app.timeline.scale);
 }

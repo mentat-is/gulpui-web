@@ -30,8 +30,8 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     return (
       currentEvents.map((event: λEvent, index: number) => (
         <>
-          <Stack key={event.id} className={s.event} style={{ flexShrink: 0, height: 32 }}>
-            <SymmetricSvg text={event.id} />
+          <Stack key={event._id} className={s.event} style={{ flexShrink: 0, height: 32 }}>
+            <SymmetricSvg text={event._id} />
             <Stack
               dir="column"
               jc="space-evenly"
@@ -40,9 +40,9 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
               className={s.info}
               gap={2}
             >
-              <p className={s.id}>{event.id}</p>
+              <p className={s.id}>{event._id}</p>
               <span className={s.description}>
-                {`${format(new Date(Internal.Transformator.toTimestamp(event.nanotimestamp)), 'yyyy-MM-dd HH:mm:ss')}.${String(event.nanotimestamp % 1_000_000n).padStart(6, '0')}`} | {event.code}
+                {`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}
               </span>
             </Stack>
             <Button
@@ -81,9 +81,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
           disabled={currentPage === 0}
           img='ArrowLeft'
           rounded
-        >
-          Previous
-        </Button>
+        />
         <span className={s.pagination}>
           {startIndex + 1}-{endIndex} of {events.length}
         </span>
@@ -94,9 +92,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
           disabled={currentPage === totalPages - 1 || events.length === 0}
           img='ArrowRight'
           rounded
-        >
-          Next
-        </Button>
+        />
       </Stack>
       <Separator />
       {elements}

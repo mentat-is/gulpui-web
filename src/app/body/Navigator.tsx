@@ -302,10 +302,10 @@ export function Navigator({
             s.notes_visibility,
             app.timeline.hidden_notes && s.dimmed,
           )}
-          onClick={Info.toggle_notes_visibility}
+          onClick={() => Info.toggle_notes_visibility()}
         />
         <Popover>
-          <PopoverTrigger>
+          <PopoverTrigger asChild>
             <Button size="sm" variant="secondary" img="Crosshair" />
           </PopoverTrigger>
           <PopoverContent className={s.goto}>

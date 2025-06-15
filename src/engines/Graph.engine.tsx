@@ -1,12 +1,6 @@
 import {
-  End,
   Engine,
   Hardcode,
-  Length,
-  MaxHeight,
-  Scale,
-  Start,
-  StartEnd,
 } from '../class/Engine.dto'
 import { Dot, RenderEngine } from '../class/RenderEngine'
 import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils'
@@ -14,7 +8,7 @@ import { Event } from '../class/Info'
 import { HeightEngine } from './Height.engine'
 import { λFile } from '@/dto/Dataset'
 
-type Target = typeof HeightEngine.target & MaxHeight & Length & Scale & StartEnd
+type Target = any
 
 export class GraphEngine implements Engine.Interface<Target> {
   private renderer: RenderEngine
@@ -29,13 +23,13 @@ export class GraphEngine implements Engine.Interface<Target> {
 
     const graphs =
       map &&
-      map[Scale] === this.renderer.info.app.timeline.scale &&
-      map[Start] > this.renderer.limits.max &&
-      map[End] > this.renderer.limits.min
+        map[Hardcode.Scale] === this.renderer.info.app.timeline.scale &&
+        map[Hardcode.Start] > this.renderer.limits.max &&
+        map[Hardcode.End] > this.renderer.limits.min
         ? this.map.get(file.id)!
         : this.get(file)
 
-    const max = graphs[MaxHeight]
+    const max = graphs[Hardcode.MaxHeight]
 
     let last: Dot | null = null
 
@@ -81,6 +75,7 @@ export class GraphEngine implements Engine.Interface<Target> {
         continue
 
       const x = this.renderer.getPixelPosition(timestamp)
+      // @ts-ignore
       const [lastTimestamp, lastHeight] = Array.from(result).pop() || []
 
       if (lastTimestamp && lastHeight) {
@@ -91,7 +86,7 @@ export class GraphEngine implements Engine.Interface<Target> {
           const deltaTimestamp = (timestamp - lastTimestamp) / (steps + 1)
 
           for (let i = 1; i <= steps; i++)
-            result.set(lastTimestamp + deltaTimestamp * i, 0 as Hardcode.Height)
+            result.set(lastTimestamp + deltaTimestamp * i, 0)
         }
       }
 
@@ -106,12 +101,15 @@ export class GraphEngine implements Engine.Interface<Target> {
       }
     }
 
+    // @ts-ignore
     const max = Math.max(...Array.from(result).map((v) => v[1]))
 
-    result[Scale] = this.renderer.info.app.timeline.scale as Hardcode.Scale
-    result[MaxHeight] = max as Hardcode.Height
-    result[Start] = (Array.from(result)[0]?.[0] || 0) as Hardcode.Timestamp
-    result[End] = (Array.from(result).pop()?.[0] || 0) as Hardcode.Timestamp
+    result[Hardcode.Scale] = this.renderer.info.app.timeline.scale
+    result[Hardcode.MaxHeight] = max
+    // @ts-ignore
+    result[Hardcode.Start] = Array.from(result)[0]?.[0] ?? 0
+    // @ts-ignore
+    result[Hardcode.End] = Array.from(result).pop()?.[0] ?? 0
 
     this.map.set(file.id, result)
 
@@ -119,7 +117,7 @@ export class GraphEngine implements Engine.Interface<Target> {
   }
 
   is(file: λFile) {
-    const length = this.map.get(file.id)?.[Length]
+    const length = this.map.get(file.id)?.[Hardcode.Length]
 
     return Boolean(
       length && length >= Event.get(this.renderer.info.app, file.id).length,

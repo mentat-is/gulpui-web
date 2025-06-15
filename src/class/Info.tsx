@@ -19,8 +19,6 @@ import {
 import {
   λDoc,
   λEvent,
-  ΞDoc,
-  ΞEvent,
 } from '@/dto/ChunkEvent.dto'
 import React from 'react'
 import { generateUUID, Gradients, NodeFile } from '@/ui/utils'
@@ -202,7 +200,7 @@ export namespace Internal {
     static default: ΞSettings = {
       engine: 'default',
       color: 'thermal',
-      field: 'weight',
+      field: 'gulp.event_code',
       offset: 0,
       crosshair: true,
     }
@@ -266,7 +264,7 @@ export namespace Internal {
     public static set field(field: keyof λEvent) {
       localStorage.setItem(
         Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD,
-        field,
+        field.toString(),
       )
     }
 
@@ -529,11 +527,11 @@ export class Info implements InfoProps {
 
     files.forEach(this.events_reset_in_file)
 
-    await this.notes_reload()
+    this.notes_reload()
 
-    await this.links_reload()
+    this.links_reload()
 
-    await this.highlights_reload()
+    this.highlights_reload()
 
     files.forEach((file) => {
       const query = this.getQuery(file.id);
@@ -579,9 +577,9 @@ export class Info implements InfoProps {
     method: 'POST',
     query: {
       plugin,
-      operation_id: event.operation_id,
+      operation_id: event['gulp.operation_id'],
       ws_id: this.app.general.ws_id,
-      doc_id: event.id,
+      doc_id: event._id,
     },
     body: { custom_parameters },
     toast: 'Document has been enriched successfully',
@@ -646,7 +644,7 @@ export class Info implements InfoProps {
   query_file: {
     (query: λQuery, preview: true, id?: λFile['id']): Promise<{
       total_hits: number,
-      docs: ΞEvent[]
+      docs: λEvent[]
     }>
     (query: λQuery, preview?: false, id?: λFile['id']): Promise<undefined>
   } = async (query: λQuery, preview = false, id) => {
@@ -1038,7 +1036,7 @@ export class Info implements InfoProps {
       this.app.timeline.target &&
       Parser.array(files)
         .map((file) => file.id)
-        .includes(this.app.timeline.target.file_id)
+        .includes(this.app.timeline.target['gulp.source_id'])
     ) {
       this.setTimelineTarget(null)
     }
@@ -1201,77 +1199,9 @@ export class Info implements InfoProps {
     )
 
   events_add = (newEvents: λEvent[], addTo?: λFile['id']) => {
-    if (addTo) {
-      const events = Event.addTo(this.app, addTo, newEvents)
-      console.log(events);
-      this.app.target.events = events;
-      this.setInfo(this.app);
-      return;
-    }
-
-    const events = Event.add(this.app, newEvents)
-
-    const ids = new Set<`${λEvent['id']}|${λFile['id']}`>()
-
-    newEvents.forEach((e) => {
-      ids.add(`${e.id}|${e.file_id}`)
-    })
-
-    let hasToSync = false
-
-    Array.from(ids).forEach((unit) => {
-      const [eid, fid] = unit.split('|')
-
-      const exist = this.app.target.files.find((file) => file.id === fid)
-      if (!exist) {
-        const event = newEvents.find((e) => e.id === eid)
-        if (!event) {
-          Logger.error('WTF?', 'AppSocket', {
-            toast: true,
-          })
-
-          return
-        }
-
-        hasToSync = true
-
-        this.app.target.files.push({
-          id: event.file_id,
-          name: 'Unknown file',
-          color: 'thermal',
-          code: {
-            min: 0,
-            max: 1,
-          },
-          context_id: event.context_id,
-          description: '?',
-          glyph_id: Default.Icon.FILE as λGlyph['id'],
-          granted_user_group_ids: [],
-          granted_user_ids: [],
-          type: 'file',
-          operation_id: event.operation_id,
-          time_created: 0,
-          time_updated: 0,
-          settings: Internal.Settings.all(),
-          timestamp: {
-            min: 0,
-            max: new Date(Date.now()).getTime(),
-          },
-          nanotimestamp: {
-            min: 0n,
-            max: 0n,
-          },
-          total: -1,
-          selected: true,
-        })
-      }
-    })
+    const events = addTo ? Event.addTo(this.app, addTo, newEvents) : Event.add(this.app, newEvents)
 
     this.app.target.events = events
-
-    if (hasToSync) {
-      this.sync()
-    }
 
     this.setInfo(this.app)
   }
@@ -1360,9 +1290,9 @@ export class Info implements InfoProps {
   }) => api('/note_create', {
     method: 'POST',
     query: {
-      operation_id: event.operation_id,
-      context_id: event.context_id,
-      source_id: event.file_id,
+      operation_id: event['gulp.operation_id'],
+      context_id: event['gulp.context_id'],
+      source_id: event['gulp.source_id'],
       ws_id: this.app.general.ws_id,
       name,
       color,
@@ -1372,7 +1302,7 @@ export class Info implements InfoProps {
     body: {
       text,
       tags,
-      docs: Event.formatForServer(event),
+      docs: event,
     },
   }).then(() => {
     this.notes_reload()
@@ -1407,7 +1337,7 @@ export class Info implements InfoProps {
     body: {
       text,
       tags,
-      docs: Event.formatForServer(event),
+      docs: event,
     }
   }).then(() => {
     toast(`Note ${name} has been updated successfully`)
@@ -1435,7 +1365,7 @@ export class Info implements InfoProps {
               ),
             )
 
-            const docs: λDoc[] = Event.parse(events).map(e => Event.toDoc(e));
+            const docs: λDoc[] = events;
 
             links.push(Link.normalize(link, docs))
           }),
@@ -1475,8 +1405,8 @@ export class Info implements InfoProps {
     return api<λLink>('/link_create', {
       method: 'POST',
       query: {
-        doc_id_from: event.id,
-        operation_id: event.operation_id,
+        doc_id_from: event._id,
+        operation_id: event['gulp.operation_id'],
         ws_id: this.app.general.ws_id,
         name,
         glyph_id,
@@ -1485,7 +1415,7 @@ export class Info implements InfoProps {
       },
       toast: `Link ${name} has been created successfully`,
       body: {
-        doc_ids: [event.id]
+        doc_ids: [event._id]
       }
     }).then(this.links_reload);
   }
@@ -1502,7 +1432,7 @@ export class Info implements InfoProps {
     name: string,
     glyph_id: λGlyph['id'],
     color: string,
-    events: λEvent['id'][],
+    events: λEvent['_id'][],
     description: string
   }) => {
     return api('/link_update', {
@@ -1529,9 +1459,9 @@ export class Info implements InfoProps {
         obj_id: link.id,
         ws_id: this.app.general.ws_id,
       },
-      toast: `Event ${event.id} has been connected to link ${link.name} successfully`,
+      toast: `Event ${event._id} has been connected to link ${link.name} successfully`,
       body: {
-        doc_ids: [...link.doc_ids, event.id],
+        doc_ids: [...link.doc_ids, event._id],
       },
     }).then(this.links_reload);
   }
@@ -1882,8 +1812,8 @@ export class Info implements InfoProps {
     return { operations, contexts, files };
   }
 
-  query_single_id = (doc_id: λEvent['id'], operation_id: λOperation['id']) => {
-    return api<ΞEvent>('/query_single_id', {
+  query_single_id = (doc_id: λEvent['_id'], operation_id: λOperation['id']) => {
+    return api<λEvent>('/query_single_id', {
       method: 'POST',
       query: {
         doc_id,
@@ -1945,8 +1875,8 @@ export class Info implements InfoProps {
     const { target } = this.app.timeline
 
     if (typeof event === 'number' && target) {
-      const events = File.events(this.app, target.file_id)
-      const index = events.findIndex((event) => event.id === target.id) + event
+      const events = File.events(this.app, target['gulp.source_id'])
+      const index = events.findIndex((event) => event._id === target._id) + event
       event = events[index]
     }
 
@@ -2107,9 +2037,9 @@ export class Info implements InfoProps {
     }))
     )
 
-  toggle_notes_visibility = () =>
+  toggle_notes_visibility = (value?: boolean) =>
     this.setInfoByKey(
-      !this.app.timeline.hidden_notes,
+      value ?? !this.app.timeline.hidden_notes,
       'timeline',
       'hidden_notes',
     )
@@ -2558,10 +2488,10 @@ export class Event {
     return app.target.events
   }
 
-  public static id = (app: λApp, event: λEvent['id']): λEvent =>
+  public static id = (app: λApp, event: λEvent['_id']): λEvent =>
     Array.from(app.target.events.values())
       .flat()
-      .find((e) => e.id === event) as λEvent
+      .find((e) => e._id === event) as λEvent
 
   public static get = (app: λApp, id: μ.File): λEvent[] =>
     app.target.events.get(id) ||
@@ -2573,9 +2503,7 @@ export class Event {
       .flat()
 
   public static add = (app: λApp, events: λEvent[]) => {
-    events.forEach((e) => Event.get(app, e.file_id).push(e))
-
-    Logger.log(`${events.length} events has been processed`)
+    events.forEach((e) => Event.get(app, e['gulp.source_id']).push(e))
 
     return app.target.events
   }
@@ -2588,73 +2516,18 @@ export class Event {
     return app.target.events;
   }
 
-  public static toDoc = ({
-    id,
-    file_id,
-    context_id,
-    nanotimestamp,
-    operation_id,
-    timestamp,
-  }: λEvent): λDoc => ({
-    id,
-    file_id,
-    context_id,
-    nanotimestamp,
-    operation_id,
-    timestamp,
-  })
+  public static timestamp = (event: λEvent) => Internal.Transformator.toTimestamp(event['@timestamp']);
 
-  public static normalize = (raw: ΞDoc[]): λDoc[] =>
-    raw.map((r) => ({
-      id: r._id,
-      timestamp: Internal.Transformator.toTimestamp(r['@timestamp']),
-      nanotimestamp: Internal.Transformator.toNanos(r['@timestamp']),
-      file_id: r['gulp.source_id'],
-      context_id: r['gulp.context_id'],
-      operation_id: r['gulp.operation_id'],
-    }))
-
-  public static formatForServer = (event: λEvent) => {
-    return [
-      {
-        '@timestamp': Internal.Transformator.toISO(event.nanotimestamp),
-        _id: event.id,
-        'gulp.context_id': event.context_id,
-        'gulp.operation_id': event.operation_id,
-        'gulp.source_id': event.file_id,
-        'gulp.timestamp': Math.round(
-          Internal.Transformator.toTimestamp(event.nanotimestamp),
-        ),
-      },
-    ]
-  }
-
-  public static parse = (rawEvents: ΞEvent[]): λEvent[] =>
-    rawEvents.map(
-      (rawEvent) =>
-        ({
-          id: rawEvent._id,
-          operation_id: rawEvent['gulp.operation_id'],
-          context_id: rawEvent['gulp.context_id'],
-          file_id: rawEvent['gulp.source_id'],
-          timestamp: Math.round(rawEvent['gulp.timestamp'] / 1_000_000),
-          nanotimestamp: BigInt(rawEvent['gulp.timestamp']),
-          code: rawEvent['event.code'],
-          weight: rawEvent['gulp.event_code'],
-          duration: rawEvent['event.duration'],
-        }) satisfies λEvent,
-    )
-
-  public static ids = (app: λApp, ids: λEvent['id'][]) =>
+  public static ids = (app: λApp, ids: λEvent['_id'][]) =>
     Array.from(app.target.events.values())
       .flat()
-      .filter((e) => ids.includes(e.id))
+      .filter((e) => ids.includes(e._id))
 
   public static notes = (app: λApp, event: λEvent) =>
-    app.target.notes.filter((n) => n.docs.some((doc) => doc.id === event.id))
+    app.target.notes.filter((n) => n.docs.some((doc) => doc._id === event._id))
 
   public static links = (app: λApp, event: λEvent) =>
-    app.target.links.filter((l) => l.docs.some((doc) => doc.id === event.id))
+    app.target.links.filter((l) => l.docs.some((doc) => doc._id === event._id))
 
 }
 
@@ -2667,7 +2540,6 @@ export class Note {
         ({
           ...n,
           file_id: n.source_id,
-          docs: Event.normalize(n.docs),
         }) satisfies λNote,
     )
 
@@ -2677,13 +2549,13 @@ export class Note {
   public static selected = (app: λApp): λNote[] => {
     const files = File.selected(app).map(file => file.id);
 
-    return app.target.notes.filter((note) => note.docs.every((doc) => files.includes(doc.file_id)));
+    return app.target.notes.filter((note) => note.docs.every((doc) => files.includes(doc['gulp.source_id'])));
   }
 
   public static events = (app: λApp, note: λNote): λEvent[] =>
     Event.ids(
       app,
-      note.docs.map((d) => d.id),
+      note.docs.map((d) => d._id),
     )
 
   public static findByFile = (app: λApp, file: λFile) =>
@@ -2691,7 +2563,7 @@ export class Note {
 
   public static timestamp = (app: λApp, note: λNote): number => {
     let sum = 0
-    note.docs.forEach((d) => (sum += d.timestamp))
+    note.docs.forEach((d) => (sum += new Date(d['@timestamp']).getTime()))
     return sum / note.docs.length || 1
   }
 }
@@ -2704,7 +2576,7 @@ export class Link {
   public static selected = (app: λApp) =>
     app.target.links.filter((link) =>
       link.doc_ids.every(
-        (id) => File.id(app, Event.id(app, id)?.file_id)?.selected,
+        (id) => File.id(app, Event.id(app, id)['gulp.source_id'])?.selected,
       ),
     )
 
@@ -2717,7 +2589,7 @@ export class Link {
   public static timestamp = (link: λLink): number => {
     let sum = 0
 
-    link.docs.forEach((d) => (sum += d.timestamp))
+    link.docs.forEach((d) => (sum += new Date(d['@timestamp']).getTime()))
 
     return sum / link.docs.length || 1
   }
@@ -2783,7 +2655,7 @@ export class Parser {
   ): string => (typeof unknown === 'string' ? unknown : unknown.name)
 
   public static useId = (unknown: λEvent | string): string =>
-    typeof unknown === 'string' ? unknown : unknown.id
+    typeof unknown === 'string' ? unknown : unknown._id
 
   public static useUUID = <
     T extends λContext | λFile | λFile | λFile | λFilter,

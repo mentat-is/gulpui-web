@@ -45,14 +45,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return
     }
 
-    if (json._id !== event.id) {
+    if (json._id !== event._id) {
       return setJSON(null);
     }
 
-  }, [event.id, json]);
+  }, [event._id, json]);
 
   const loadEvent = async () => {
-    const detailed = await Info.query_single_id(event.id, event.operation_id)
+    const detailed = await Info.query_single_id(event._id, event['gulp.operation_id'])
 
     const parsedEvent = cutEventOriginal(detailed);
 
@@ -115,7 +115,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return;
     }
 
-    const { filters } = Info.getQuery(event.file_id);
+    const { filters } = Info.getQuery(event['gulp.source_id']);
 
     const object = toKeyValue(selection);
 
@@ -133,11 +133,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       enabled: true
     }));
 
-    Info.setFilters(event.file_id, [...filters, ...newFilters]);
+    Info.setFilters(event['gulp.source_id'], [...filters, ...newFilters]);
 
     toast(`Has been added ${newFilters.length} new filters`)
 
-    spawnBanner(<FilterFileBanner file={File.id(app, event.file_id)} />);
+    spawnBanner(<FilterFileBanner file={File.id(app, event['gulp.source_id'])} />);
   };
 
   const highlights = useMemo(() => {
@@ -218,9 +218,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
   return (
     <Dialog
-      icon={<SymmetricSvg text={event.id} />}
+      icon={<SymmetricSvg text={event._id} />}
       title='Event'
-      description={`From ${File.id(app, event.file_id).name}`}
+      description={`From ${File.id(app, event['gulp.source_id']).name}`}
     >
       <Navigation event={event} />
       {json ? (
@@ -272,7 +272,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               download(
                 JSON.stringify(json, null, 2),
                 'application/json',
-                `${event.id}_from_${event.file_id}.json`,
+                `${event._id}_from_${event['gulp.source_id']}.json`,
               )
             }
               img="Download"

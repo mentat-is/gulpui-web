@@ -34,7 +34,7 @@ export namespace NotePoint {
     const targetNoteButtonHandler = (note: λNote) => {
       const events = Event.ids(
         app,
-        note.docs.map((d) => d.id),
+        note.docs.map((d) => d._id),
       )
       if (events.length === 0) {
         return
@@ -120,7 +120,7 @@ export namespace NotePoint {
           {notes.length}
         </UIPoint>
         <Stack className={s.content} dir='column'>
-          {notes.map(note => <NotePoint.Combination note={note} />)}
+          {notes.map(note => <NotePoint.Combination key={note.id} note={note} />)}
         </Stack>
       </Stack>
     )

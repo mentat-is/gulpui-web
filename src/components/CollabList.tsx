@@ -40,7 +40,7 @@ export namespace Collab {
 
     const Edit = useMemo(() => {
       const callback = target.type === 'note'
-        ? () => spawnBanner(<NoteFunctionality.Create.Banner event={Event.id(app, target.docs[0].id)} note={target} />)
+        ? () => spawnBanner(<NoteFunctionality.Create.Banner event={Event.id(app, target.docs[0]._id)} note={target} />)
         : () => spawnBanner(<LinkFunctionality.Create.Banner event={Event.id(app, target.doc_id_from)} link={target} />);
 
       return <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20, marginLeft: 'auto' }} onClick={callback}>Edit</Button>

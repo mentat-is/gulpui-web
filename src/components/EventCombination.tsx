@@ -16,10 +16,10 @@ export function EventCombination({
 }: EventCombinationProps) {
   return (
     <div className={cn(s.unit, className)} {...props}>
-      <SymmetricSvg text={event.id} />
+      <SymmetricSvg text={event._id} />
       <div className={s.text}>
-        <p className={s.top}>{event.id}</p>
-        <p className={s.bottom}>{event.file_id}</p>
+        <p className={s.top}>{event._id}</p>
+        <p className={s.bottom}>{event['gulp.source_id']}</p>
       </div>
       {children}
     </div>

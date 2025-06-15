@@ -78,10 +78,6 @@ export namespace Requests {
       <Stack className={cn(s.combination, className)} {...props}>
         <Status status={request.status} />
         <p className={s.id}>{request.id}</p>
-        <span>for</span>
-        <p className={s.file}>
-          {request.for ? File.id(app, request.for).name : 'unknown file'}
-        </p>
         <hr />
         <p className={s.time_ago}>{timeAgo(request.on)}</p>
         {!Requests.Status.FinishedStatuses.includes(request.status) && (

@@ -136,14 +136,14 @@ export class LoggerHandler {
 
     if (events.length === 1) {
       return Logger.log(
-        `One event on click position. Opening ${DisplayEventDialog.name} with ${events[0].id}`,
+        `One event on click position. Opening ${DisplayEventDialog.name} with ${events[0]._id}`,
         loggerContext,
       )
     }
 
     Logger.log(
       `Events amount on click position: ${events.length}. Opening ${DisplayGroupDialog.name} with events ${JSON.stringify(
-        events.map((e) => e.id),
+        events.map((e) => e._id),
         null,
         2,
       )}`,

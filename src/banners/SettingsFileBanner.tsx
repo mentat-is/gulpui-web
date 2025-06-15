@@ -79,7 +79,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     }
 
     return (
-      <Select.Root onValueChange={(field: keyof λEvent) => setField(field)} defaultValue={field}>
+      <Select.Root onValueChange={(field: keyof λEvent) => setField(field)} defaultValue={field.toString()}>
         <Select.Trigger className={s.trigger} value={engine}>
           <Icon name='Dot' />
           {field}

@@ -22,7 +22,6 @@
 .target svg {
   position: relative;
   top: -1px;
-  filter: drop-shadow(0 0 1px hsla(0, 0%, 100%, .145));
 }
 .target .backplate {
   position: absolute;

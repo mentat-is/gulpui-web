@@ -24,6 +24,8 @@ import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { Highlights } from '@/overlays/Highlights'
+import { toast } from 'sonner'
+import { Icon } from '@impactium/icons'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -383,6 +385,16 @@ export function Canvas({ timeline }: Canvas.Props) {
     )
   }, [shifted])
 
+  useEffect(() => {
+    if (app.target.notes.length > 500) {
+      toast('Too much notes', {
+        description: `${app.target.notes.length} notes is out of settled limit (500)`,
+        icon: <Icon name='Warning' />
+      });
+      Info.toggle_notes_visibility(true) // hide
+    }
+  }, [app.target.notes]);
+
   return (
     <ContextMenu>
       <ContextMenuTrigger
@@ -405,12 +417,12 @@ export function Canvas({ timeline }: Canvas.Props) {
           height={timeline.current?.clientHeight}
         />
         <Crosshair containerRef={wrapper_ref} />
-        <Pointers
+        {/* <Pointers
           getPixelPosition={getPixelPosition}
           width={canvas_ref.current?.clientWidth || 1}
           self={mousePosition}
           timestamp={getTimestamp(scrollX + mousePosition.x, Info)}
-        />
+        /> */}
         <canvas className={s.resize} ref={overlay_ref} />
         <Magnifier
           self={magnifier_ref}

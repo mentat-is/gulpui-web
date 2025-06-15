@@ -4,11 +4,9 @@ import { λApp } from '@/dto'
 import { Info, MinMax, MinMaxBase } from '@/class/Info'
 import { ChangeEvent, RefObject } from 'react'
 import { λEvent } from '@/dto/ChunkEvent.dto'
-import { Hardcode } from '@/class/Engine.dto'
-import { GulpObject, λFile, λOperation } from '@/dto/Dataset'
+import { λFile } from '@/dto/Dataset'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { SetState } from '@/class/API'
-import React from 'react'
 
 export type Color = `#${string}`
 
@@ -268,7 +266,7 @@ export function numericRepresentationOfAnyString(input: string): number {
 export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(
   file: λFile,
   event: λEvent,
-): Hardcode.Height {
+): number {
   let key: unknown = event[file.settings.field]
 
   if (typeof key === 'object' && key !== null) {
@@ -283,7 +281,7 @@ export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngin
 
   return ((typeof key === 'string' && numericRepresentationOfAnyString(key)) ||
     (typeof key === 'number' ? key : NaN) ||
-    0) as Hardcode.Height
+    0)
 }
 
 export function download(content: string, type: string, name: string) {

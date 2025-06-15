@@ -1,11 +1,11 @@
-import { MinMax, Range } from '@/class/Info'
+import { Internal, MinMax, Range } from '@/class/Info'
 import { Event, Info, File } from './Info'
 import { Color, stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
-import { Scale, Engine } from './Engine.dto'
+import { Engine, Hardcode } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
 import { λFile, λLink } from '@/dto/Dataset'
@@ -36,8 +36,7 @@ export interface Status {
   heights: number[]
 }
 
-export type StatusMap = Map<number, Status> & Scale
-
+export type StatusMap = Map<number, Status> & Hardcode.Scale;
 type Engines = {
   [key in Engine.List]: Engine.Interface<any>
 }
@@ -118,6 +117,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public lines = (file: λFile) => {
+    this.ctx.textRendering = 'optimizeLegibility';
+
     const color = stringToHexColor(File.context(this.info.app, file).name)
     const y = File.getHeight(this.info.app, file, this.scrollY)
 
@@ -147,7 +148,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public links = () => {
     this.info.app.target.links.forEach((link) => {
-      if (link.docs.some((e) => !File.id(this.info.app, e.file_id)?.selected))
+      if (link.docs.some((e) => !File.id(this.info.app, e['gulp.source_id'])?.selected))
         return
 
       const { dots } = this.calcDots(link)
@@ -224,17 +225,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     link.docs.forEach((e) => {
       const index = File.selected(this.info.app).findIndex(
-        (f) => f.id === e.file_id,
+        (f) => f.id === e['gulp.source_id'],
       )
 
       const x = this.getPixelPosition(
-        e.timestamp +
+        Internal.Transformator.toTimestamp(e['@timestamp']) +
         (File.selected(this.info.app)[index]?.settings.offset || 0),
       )
       const y = index * 48 + 20 - this.scrollY || 0
       const color =
         link.color ||
-        stringToHexColor(link.docs.map((e) => e.file_id).toString())
+        stringToHexColor(link.docs.map((e) => e['gulp.source_id']).toString())
 
       dots.push({
         x,
@@ -342,7 +343,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public target = () => {
     if (!this.info.app.timeline.target) return
 
-    const file = File.id(this.info.app, this.info.app.timeline.target.file_id)
+    const file = File.id(this.info.app, this.info.app.timeline.target['gulp.source_id'])
 
     if (!file) return
 
@@ -364,4 +365,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       window.innerWidth,
     )
   }
+
+  // public draw_notes() {
+  //   this.info.app.target.notes.forEach(note => {
+  //     note.
+  //   })
+  // }
 }

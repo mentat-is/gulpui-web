@@ -109,15 +109,15 @@ export namespace NoteFunctionality {
           <Stack className={s.general} ai="stretch" dir="column" gap={8}>
             <Selection
               name="Context"
-              value={Context.id(app, event.context_id).name}
+              value={Context.id(app, event['gulp.context_id']).name}
               icon="Box"
             />
             <Selection
               name="File"
-              value={File.id(app, event.file_id).name}
+              value={File.id(app, event['gulp.source_id']).name}
               icon="File"
             />
-            <Selection name="Event" value={event.id} icon="Triangle" />
+            <Selection name="Event" value={event._id} icon="Triangle" />
           </Stack>
           <Separator />
           <Editable
@@ -173,11 +173,11 @@ export namespace LinkFunctionality {
       const [loading, setLoading] = useState<boolean>(false)
 
       const context = useMemo(() => {
-        return Context.id(app, event.context_id)
+        return Context.id(app, event['gulp.context_id'])
       }, [event])
 
       const file = useMemo(() => {
-        return File.id(app, event.file_id)
+        return File.id(app, event['gulp.source_id'])
       }, [event])
 
       const send = async () => {
@@ -190,7 +190,7 @@ export namespace LinkFunctionality {
             id: link.id,
             color,
             description,
-            events: [event.id],
+            events: [event._id],
             glyph_id,
             name
           }).then(() => {
@@ -244,7 +244,7 @@ export namespace LinkFunctionality {
           <Stack className={s.general} ai="stretch" dir="column" gap={8}>
             <Selection name="Context" value={context.name} icon="Box" />
             <Selection name="File" value={file.name} icon="File" />
-            <Selection name="Event" value={event.id} icon="Triangle" />
+            <Selection name="Event" value={event._id} icon="Triangle" />
             <Separator />
             <Editable
               name="Title"
@@ -289,7 +289,7 @@ export namespace LinkFunctionality {
       const connect = (link: λLink) => () => Info.links_connect(link, event)
 
       const links = useMemo(() => {
-        return Link.selected(app).filter((l) => !l.doc_ids.some((e) => e === event.id))
+        return Link.selected(app).filter((l) => !l.doc_ids.some((e) => e === event._id))
       }, [app.target.links])
 
       const NoLinks = useMemo(() => {

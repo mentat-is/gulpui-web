@@ -22,10 +22,10 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
 
     const dialog =
       link.docs.length === 1 ? (
-        <DisplayEventDialog event={Event.id(app, link.docs[0].id)} />
+        <DisplayEventDialog event={Event.id(app, link.docs[0]._id)} />
       ) : (
         <DisplayGroupDialog
-          events={link.docs.map((doc) => Event.id(app, doc.id))}
+          events={link.docs.map((doc) => Event.id(app, doc._id))}
         />
       )
     s

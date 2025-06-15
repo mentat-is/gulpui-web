@@ -19,11 +19,11 @@ export function Navigation({ event }: Navigation.Props) {
   const [events, setEvents] = useState<λEvent[]>([])
 
   useEffect(() => {
-    const file = File.id(Info.app, event.file_id)
+    const file = File.id(Info.app, event['gulp.source_id'])
 
     const events = Event.get(Info.app, file.id)
 
-    const index = events.findIndex((ev) => ev.id === event.id)
+    const index = events.findIndex((ev) => ev._id === event._id)
 
     const nears = events.filter((e, i) => i > index - 16 && i < index + 16)
 
@@ -52,10 +52,10 @@ export function Navigation({ event }: Navigation.Props) {
       <Stack className={s.content} jc="center">
         {events.map((e) => (
           <SymmetricSvg
-            key={e.id}
-            className={cn(e.id === event.id && s.focus)}
+            key={e._id}
+            className={cn(e._id === event._id && s.focus)}
             onClick={navigatorEventClickHandlerConstructor(e)}
-            text={e.id}
+            text={e._id}
           />
         ))}
       </Stack>

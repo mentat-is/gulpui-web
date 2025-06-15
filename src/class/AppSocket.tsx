@@ -1,6 +1,6 @@
 import { Event, Info, Internal } from '@/class/Info'
 import { Pointers } from '@/components/Pointers'
-import { ΞEvent } from '@/dto/ChunkEvent.dto'
+import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Logger } from '@/dto/Logger.class'
 import { toast } from 'sonner'
 
@@ -43,8 +43,11 @@ export class AppSocket extends WebSocket {
 
       switch (true) {
         case message.type === 'docs_chunk':
-          const rawEvents: ΞEvent[] = chunk.docs
-          const events = Event.parse(rawEvents)
+          const events: λEvent[] = chunk.docs.map((e: λEvent) => ({
+            ...e,
+            ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
+            timestamp: Math.round(Number(e['gulp.timestamp']) / 1_000_000)
+          }))
           if (message.req_id.startsWith('temp-')) {
             this.info.events_add(events, message.req_id);
           } else {

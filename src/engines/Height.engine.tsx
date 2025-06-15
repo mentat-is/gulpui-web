@@ -1,4 +1,4 @@
-import { Engine, Hardcode, Length, MaxHeight } from '../class/Engine.dto'
+import { Engine, Hardcode } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
 import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils'
 import { Event, File } from '../class/Info'
@@ -11,7 +11,7 @@ const SAMPLE_SIZE = 60000;
 export class HeightEngine
   implements Engine.Interface<typeof HeightEngine.target> {
   private static instance: HeightEngine | null = null
-  static target: Map<number, number> & MaxHeight & Length
+  static target: Map<number, number>
   private renderer!: RenderEngine
   map = new Map<λFile['id'], typeof HeightEngine.target>()
   samples = new Map<λFile['id'], {
@@ -109,12 +109,12 @@ export class HeightEngine
     let outOfBoundsEvents = 0
 
     events.forEach(event => {
-      if (event.timestamp < actualMinTime || event.timestamp > actualMaxTime) {
+      if (Event.timestamp(event) < actualMinTime || Event.timestamp(event) > actualMaxTime) {
         outOfBoundsEvents++
         return
       }
 
-      const bucketIndex = Math.floor((event.timestamp - actualMinTime) / SAMPLE_SIZE)
+      const bucketIndex = Math.floor((Event.timestamp(event) - actualMinTime) / SAMPLE_SIZE)
       const bucketStart = actualMinTime + (bucketIndex * SAMPLE_SIZE)
 
       const currentCount = sampledData.get(bucketStart) || 0
@@ -144,25 +144,27 @@ export class HeightEngine
     const map = new Map() as typeof HeightEngine.target
 
     File.events(this.renderer.info.app, file).forEach((event) =>
-      map.set(event.timestamp, (map.get(event.timestamp) || 0) + 1),
+      map.set(Event.timestamp(event), (map.get(Event.timestamp(event)) || 0) + 1),
     )
 
-    map[Length] = Event.get(this.renderer.info.app, file.id)
-      .length as Hardcode.Length
+    // @ts-ignore
+    map[Hardcode.Length] = Event.get(this.renderer.info.app, file.id).length
     let maxHeight = -Infinity
     for (const value of map.values()) {
       if (value > maxHeight) {
         maxHeight = value
       }
     }
-    map[MaxHeight] = maxHeight as Hardcode.Height
+    // @ts-ignore
+    map[Hardcode.MaxHeight] = maxHeight
     this.map.set(file.id, map)
 
     return map
   }
 
   is(file: λFile) {
-    const length = this.map.get(file.id)?.[Length]
+    // @ts-ignore
+    const length = this.map.get(file.id)?.[Hardcode.Length]
     return Boolean(
       length && length >= Event.get(this.renderer.info.app, file.id).length,
     )
@@ -180,11 +182,12 @@ export class HeightEngine
     let updated = false
 
     newEvents.forEach(event => {
-      if (event.timestamp < actualMinTime || event.timestamp > sampledFile.actualMaxTime) {
+      const timestamp = Event.timestamp(event);
+      if (timestamp < actualMinTime || timestamp > sampledFile.actualMaxTime) {
         return
       }
 
-      const bucketIndex = Math.floor((event.timestamp - actualMinTime) / SAMPLE_SIZE)
+      const bucketIndex = Math.floor((timestamp - actualMinTime) / SAMPLE_SIZE)
       const bucketStart = actualMinTime + (bucketIndex * SAMPLE_SIZE)
 
       const currentCount = sampledData.get(bucketStart) || 0

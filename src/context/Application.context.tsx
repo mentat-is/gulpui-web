@@ -109,7 +109,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
     const key = event.key.toLowerCase()
 
-    const events = File.events(app, app.timeline.target.file_id)
+    const events = File.events(app, app.timeline.target['gulp.source_id'])
 
     if (key === 'd' || key === 'a') {
       const delta = Number(key === 'a') ? 1 : -1

@@ -66,7 +66,7 @@ export namespace GlobalQuery {
       const { docs, total_hits } = await Info.query_file(query, true);
       setIsQueryLoading(false);
 
-      spawnBanner(<GlobalQuery.Apply query={query} docs={Event.normalize(docs)} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} total={total_hits} />)
+      spawnBanner(<GlobalQuery.Apply query={query} docs={docs} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} total={total_hits} />)
     }
 
     const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
@@ -136,7 +136,7 @@ export namespace GlobalQuery {
 
       docs.forEach(doc => {
         // TODO ONLY 100;
-        ids.add(doc.file_id);
+        ids.add(doc['gulp.source_id']);
       });
 
       Info.query_global({

@@ -33,7 +33,7 @@ export namespace Enrichment {
   export function Banner({ event, onEnrichment, ...props }: Enrichment.Props) {
     const { Info, app, destroyBanner } = useApplication()
     const [file, setFile] = useState<λFile | null>(
-      event ? File.id(app, event.file_id) : null,
+      event ? File.id(app, event['gulp.source_id']) : null,
     )
     const [plugins, setPlugins] = useState<GulpDataset.PluginList.Interface[]>()
     const [plugin, setPlugin] = useState<GulpDataset.PluginList.Interface>()
@@ -201,7 +201,7 @@ export namespace Enrichment {
         return (
           <Skeleton width="full" className={s.skeleton} show={!plugins}>
             <Input
-              value={event.id}
+              value={event._id}
               variant="highlighted"
               style={disabledStyle}
               img={Default.Icon.EVENT}

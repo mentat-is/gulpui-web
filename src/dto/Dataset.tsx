@@ -3,9 +3,8 @@ import { Range, λUser, μ } from '@/class/Info'
 import { Gradients } from '@/ui/utils'
 import { Engine } from '@/class/Engine.dto'
 import { MinMax } from '@/class/Info'
-import { λDoc, λEvent, ΞDoc } from './ChunkEvent.dto'
+import { λDoc, λEvent } from './ChunkEvent.dto'
 import { Icon } from '@impactium/icons'
-import { Badge } from '@impactium/components'
 
 export type GulpDataType =
   | 'operation'
@@ -102,8 +101,8 @@ export type ΞLink<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   description: string
   operation_id: λOperation['id']
   tags: string[]
-  doc_id_from: λEvent['id']
-  doc_ids: λEvent['id'][]
+  doc_id_from: λEvent['_id']
+  doc_ids: λEvent['_id'][]
 }
 
 export type λLink<T extends Extendable = typeof DEFAULT_OBJECT> = ΞLink<
@@ -121,7 +120,7 @@ export type ΞNote<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
   tags: string[]
   context_id: λContext['id']
   source_id: λFile['id']
-  docs: ΞDoc[]
+  docs: λDoc[]
   time_pin: number
   owner_user_id: λUser['id']
   text: string

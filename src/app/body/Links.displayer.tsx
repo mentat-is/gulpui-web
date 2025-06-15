@@ -1,4 +1,4 @@
-import { File, Link, Event } from '@/class/Info'
+import { File, Link, Event, Internal } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { λLink } from '@/dto/Dataset'
 import { LinkPoint } from '@/ui/Link'
@@ -11,7 +11,7 @@ interface LinksDisplayerProps {
 type LinkMapping = Record<λLink['id'], { left: number; top: number }>
 
 export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
-  const { app, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
+  const { app, scrollY } = useApplication()
 
   if (!app.target.links.length) return null
 
@@ -25,10 +25,10 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
 
     for (const link of app.target.links) {
       const ev = Event.id(app, link.doc_id_from);
-      if (!ev || !selectedFiles.has(ev.file_id)) continue;
+      if (!ev || !selectedFiles.has(ev['gulp.source_id'])) continue;
 
-      const ys = link.docs.map(d => File.getHeight(app, d.file_id, 0));
-      const xs = link.docs.map(d => getPixelPosition(d.timestamp));
+      const ys = link.docs.map(d => File.getHeight(app, d['gulp.source_id'], 0));
+      const xs = link.docs.map(d => getPixelPosition(Internal.Transformator.toTimestamp(d['@timestamp'])));
       if (ys.length < 2 || xs.length < 2) continue;
 
       for (let i = 0; i < ys.length - 1; i++) {
