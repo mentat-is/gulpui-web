@@ -3,7 +3,7 @@ import s from './styles/menu.module.css'
 import { UploadBanner } from '@/banners/Upload.banner'
 import { useApplication } from '@/context/Application.context'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
-import { LimitsBanner } from '@/banners/Limits.banner'
+import { Frame } from '@/banners/Frame.banner'
 import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
 import { StorylineBanner } from '@/banners/storyline.banner'
@@ -67,7 +67,7 @@ export function Menu() {
         variant="secondary"
         title="Change workflow frame"
         img="AlignHorizontalSpaceAround"
-        onClick={() => spawnBanner(<LimitsBanner />)}
+        onClick={() => spawnBanner(<Frame.Banner />)}
       />
       <Button
         variant="secondary"

@@ -7,7 +7,7 @@ import { cn } from '@impactium/utils'
 import { Separator } from '@radix-ui/react-separator'
 import { Timeline } from '../app/body/Timeline'
 import { Auth } from './Auth.page'
-import { LimitsBanner } from '../banners/Limits.banner'
+import { Frame } from '../banners/Frame.banner'
 import { SelectFiles } from '../banners/SelectFiles.banner'
 import { Settings } from '../banners/Settings.banner'
 import { UploadBanner } from '../banners/Upload.banner'
@@ -147,9 +147,9 @@ export namespace Welcome {
         trigger: ActionButtonConstructor(
           'Choose workflow frame',
           'TableColumnsSplit',
-          <LimitsBanner />,
+          <Frame.Banner />,
         ),
-        banner: <LimitsBanner />,
+        banner: <Frame.Banner />,
       },
       {
         name: 'Glyphs syncronized',

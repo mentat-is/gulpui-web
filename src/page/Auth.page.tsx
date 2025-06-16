@@ -59,7 +59,9 @@ export namespace Auth {
         const validate = (str: string): string | void =>
           !Pattern.Server.test(str)
             ? (() => {
-              toast('Server URL didn`t match pattern')
+              toast('Incorrect server URL', {
+                icon: <Icon name='Warning' />
+              })
             })()
             : removeOverload(str)
 
@@ -72,6 +74,7 @@ export namespace Auth {
         await api<λUser>('/login', {
           method: 'POST',
           setLoading,
+          raw: true,
           query: {
             ws_id: Info.app.general.ws_id,
           },
@@ -79,7 +82,15 @@ export namespace Auth {
             user_id: id,
             password,
           },
-        }, next)
+        }).then(response => {
+          if (response.isSuccess()) {
+            next(response.data);
+          } else {
+            toast('Invalid server URL, or username, or password', {
+              icon: <Icon name='Warning' />
+            })
+          }
+        })
       }
 
       return (

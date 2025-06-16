@@ -7,7 +7,7 @@ import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
 import { Context, Filter, Operation } from '@/class/Info'
 import { useState, useMemo, useCallback } from 'react'
-import { LimitsBanner } from './Limits.banner'
+import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
 import { λContext, λFile } from '@/dto/Dataset'
 import { Separator } from '@/ui/Separator'
@@ -32,7 +32,7 @@ export namespace SelectFiles {
 
     const save = useCallback(async () => {
       setLoading(true)
-      spawnBanner(<LimitsBanner />)
+      spawnBanner(<Frame.Banner />)
     }, [spawnBanner])
 
     const reloadClickHandler = useCallback(async () => {
