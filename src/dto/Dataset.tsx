@@ -128,7 +128,7 @@ export type λHighlight = GulpObject<μ.Highlight, {
 
 export type λRequest = {
   id: μ.Request
-  type: 'query' | 'ingest' | 'unknown'
+  type: 'query' | 'sigma' | 'ingest' | 'unknown'
   for: λFile['id'] | null
   status:
   | 'done'

@@ -241,13 +241,17 @@ export namespace Highlights {
   export function Component({ highlight, fixed, layoutWidth, frame = {}, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
     const { Info, app, scrollX } = useApplication();
 
+    if (layoutWidth) {
+      native = true;
+    }
+
     const range = useMemo((): Range => {
       if ('range' in highlight && Array.isArray(highlight.range)) {
         return highlight.range as Range;
       }
 
       return highlight.time_range.map(t => Math.round(((t - (frame.min ?? app.timeline.frame.min)) / ((frame.max ?? app.timeline.frame.max) - (frame.min ?? app.timeline.frame.min))) * (layoutWidth ?? Info.width)) - (fixed ? 0 : scrollX)) as Range;
-    }, [app.timeline.frame, app.timeline.scale, fixed ? undefined : scrollX, highlight]);
+    }, [app.timeline.frame, app.timeline.scale, fixed ? undefined : scrollX, highlight, layoutWidth]);
 
     const [left, width] = useMemo(() => {
       const left = Math.min(...range);

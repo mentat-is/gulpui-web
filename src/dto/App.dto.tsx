@@ -54,6 +54,9 @@ export interface λApp {
     dialogSize: number
     hidden_notes: boolean
     pointers: Pointers.Pointer[]
+  },
+  settings: {
+    [key: string]: any;
   }
 }
 export const BaseInfo: λApp = {
@@ -79,8 +82,7 @@ export const BaseInfo: λApp = {
       max: Date.now(),
     },
     filtering_options: {},
-    isScrollReversed:
-      localStorage.getItem('settings.__isScrollReversed') === 'true',
+    isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
     hidden_notes: false,
     pointers: [],
@@ -98,5 +100,6 @@ export const BaseInfo: λApp = {
     mappings: [],
     plugins: [],
   },
+  settings: {}
 }
 

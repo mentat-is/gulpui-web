@@ -773,6 +773,8 @@ export class Info implements InfoProps {
       'requests',
     )
 
+  isSigmaRequest = (id: λRequest['id']) => this.app.general.requests.find(r => r.id === id && r.type === 'sigma');
+
   request_cancel = (req_id_to_cancel: λRequest['id']) => {
     const fileId = this.request_finish(req_id_to_cancel, 'canceled')
     toast(
@@ -1243,8 +1245,13 @@ export class Info implements InfoProps {
   }
 
   // ⚠️ UNTOUCHABLE
-  notes_reload = () =>
-    api<λNote[]>(
+  notes_reload = () => {
+    const files = File.selected(this.app).map((f) => f.id);
+    if (files.length === 0) {
+      Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info.name);
+      return;
+    }
+    return api<λNote[]>(
       '/note_list',
       {
         method: 'POST',
@@ -1252,8 +1259,16 @@ export class Info implements InfoProps {
           source_ids: File.selected(this.app).map((f) => f.id),
         },
       },
-      (notes) => this.setInfoByKey(notes, 'target', 'notes'),
+      (notes) => this.setInfoByKey(notes, 'target', 'notes')
     )
+  }
+
+  /**
+   * 
+   * @param key Key of settings object
+   * @param value Value to save. Be carreful, it can save any shit
+   */
+  setSettings = (key: string, value: any) => this.setInfoByKey(value, 'settings', key);
 
   // ⚠️ UNTOUCHABLE
   note_delete = (note: λNote) =>

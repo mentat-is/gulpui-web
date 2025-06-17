@@ -2,6 +2,7 @@ import { Event, Info, Internal } from '@/class/Info'
 import { Pointers } from '@/components/Pointers'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Logger } from '@/dto/Logger.class'
+import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
 
 export class AppSocket extends WebSocket {
@@ -43,6 +44,9 @@ export class AppSocket extends WebSocket {
 
       switch (true) {
         case message.type === 'docs_chunk':
+          if (this.info.isSigmaRequest(message.req_id)) {
+            return;
+          }
           const events: λEvent[] = chunk.docs.map((e: λEvent) => ({
             ...e,
             ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
@@ -81,9 +85,12 @@ export class AppSocket extends WebSocket {
 
         case message.type === 'query_done':
           if (message.data.status === 'done') {
-            toast('Query finished', {
-              description: `Total processed documents: ${message.data.total_hits ?? 0}`,
-            })
+            if (!this.info.isSigmaRequest(message.req_id)) {
+              toast('Query finished', {
+                description: `Total processed documents: ${message.data.total_hits ?? 0}`,
+              })
+            }
+
             this.info.request_finish(message.req_id, message.data.status)
           } else {
             toast.error('Query failed', {
@@ -93,6 +100,18 @@ export class AppSocket extends WebSocket {
             this.info.request_finish(message.req_id, message.data.status)
           }
           return
+
+        case message.type === 'query_group_done':
+          if (this.info.isSigmaRequest(message.req_id)) {
+            toast(`Sigma query finished with ${message.data.total_hits} hits`, {
+              description: `Errors: ${message.data.errors.length}. Queries: ${message.data.queries}`,
+              icon: <Icon name='Check' />
+            })
+            this.info.notes_reload();
+          }
+
+          this.info.request_finish(message.req_id, message.data.status)
+          return;
       }
     }
 

@@ -65,6 +65,10 @@
   overflow: hidden;
   z-index: var(--index);
 }
+.overlay[aria-storyline] .highlight {
+  height: calc(100% - calc(12px * 2 * (var(--index, 0) + 1)));
+  top: calc(12px * (var(--index, 0) + 1));
+}
 .highlight.minified {
   height: calc(100% - 106px);
 }
@@ -73,6 +77,7 @@
   border: var(--geist-border);
   border-radius: 4px;
   z-index: 2;
+  flex: 0 !important;
   backdrop-filter: blur(6px);
   position: sticky;
   pointer-events: all;
