@@ -74,7 +74,6 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
     const entries = Array.from(heightData.entries())
     let lastRenderedX = -Infinity
-    let maxHeight = 0;
 
     for (let i = 0; i < entries.length; i++) {
       const [timestamp, height] = entries[i]
@@ -113,16 +112,16 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
       }
 
       result.set(timestamp, height)
-      maxHeight = Math.max(maxHeight, height);
       lastRenderedX = x
     }
 
+    const heights = Array.from(result.values())
     const timestamps = Array.from(result.keys())
 
-    result[Hardcode.Scale] = this.renderer.info.app.timeline.scale;
-    result[Hardcode.MaxHeight] = maxHeight;
-    result[Hardcode.Start] = timestamps[0] ?? 0;
-    result[Hardcode.End] = timestamps[timestamps.length - 1] ?? 0;
+    result[Hardcode.Scale] = this.renderer.info.app.timeline.scale
+    result[Hardcode.MaxHeight] = Math.max(...heights, 0)
+    result[Hardcode.Start] = timestamps[0] ?? 0
+    result[Hardcode.End] = timestamps[timestamps.length - 1] ?? 0
 
     this.map.set(file.id, result)
 
