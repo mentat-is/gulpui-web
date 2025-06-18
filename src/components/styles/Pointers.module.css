@@ -10,7 +10,8 @@
   transform: translate(-15px, -2px) !important;
 }
 .pointer p {
-  color: var(--meta-black);
+  color: var(--text-white);
+  text-shadow: 0 0 1px black;
   border-radius: 4px;
   padding: 0 4px;
   transform: translate(calc(-100% - 24px), 100%);
@@ -21,7 +22,8 @@
   transition: all 0.125s var(--transition);
   font-family: var(--font-mono);
   white-space: nowrap;
-  border: 2px solid black;
+  border: var(--geist-border);
+  box-shadow: var(--shadow-border);
   background: white;
 }
 .pointer svg {

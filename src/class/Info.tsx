@@ -63,6 +63,13 @@ export namespace GulpDataset {
       default_value?: null
     }
   }
+  export namespace QueryGulp {
+    export interface Options {
+      preview?: boolean,
+      id?: λFile['id'],
+      refetchKeys?: Array<keyof λEvent>
+    }
+  }
   export namespace QueryOperations {
     interface Operation {
       name: string
@@ -165,7 +172,8 @@ export namespace GulpDataset {
 }
 
 interface RefetchOptions {
-  ids?: Arrayed<λFile['id']>
+  ids?: Arrayed<λFile['id']>;
+  refetchKeys?: Record<λFile['id'], Array<keyof λEvent>>;
 }
 
 interface InfoProps {
@@ -513,6 +521,7 @@ export class Info implements InfoProps {
 
   refetch = async ({
     ids: _ids = File.selected(this.app).map((f) => f.id),
+    refetchKeys
   }: RefetchOptions = {}) => {
     const files: λFile[] = Parser.array(_ids).map((id) => File.id(this.app, id))
 
@@ -523,8 +532,6 @@ export class Info implements InfoProps {
       return
     }
 
-    files.forEach(this.events_reset_in_file)
-
     this.notes_reload()
 
     this.links_reload()
@@ -534,8 +541,14 @@ export class Info implements InfoProps {
     files.forEach((file) => {
       const query = this.getQuery(file.id);
 
-      this.query_file(query, false, file.id);
+      this.query_file(query, {
+        id: file.id,
+        preview: false,
+        refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined
+      });
     })
+
+    files.forEach(this.events_reset_in_file)
   }
 
   enrichment = (
@@ -636,16 +649,17 @@ export class Info implements InfoProps {
       }
     }));
 
-    this.query_file(query, false, file.id);
+    this.query_file(query, {
+      id: file.id,
+      preview: false
+    });
   }
 
-  query_file: {
-    (query: λQuery, preview: true, id?: λFile['id']): Promise<{
-      total_hits: number,
-      docs: λEvent[]
-    }>
-    (query: λQuery, preview?: false, id?: λFile['id']): Promise<undefined>
-  } = async (query: λQuery, preview = false, id) => {
+  query_file = async (query: λQuery, {
+    preview = false,
+    id,
+    refetchKeys
+  }: GulpDataset.QueryGulp.Options) => {
     const operation = Operation.selected(this.app)
     if (!operation) {
       return
@@ -664,6 +678,7 @@ export class Info implements InfoProps {
 
     if (id) {
       request_query.req_id = id;
+      body.q_options.fields = refetchKeys ?? [File.id(this.app, id).settings.field];
     }
 
     const resp = await api<any>(
@@ -756,7 +771,9 @@ export class Info implements InfoProps {
 
   preview_file = (file: λFile) => {
     const query = this.getQuery(file.id);
-    return this.query_file(query, true);
+    return this.query_file(query, {
+      preview: true
+    });
   }
 
   request_add = (req: λRequest) => {
@@ -1181,16 +1198,26 @@ export class Info implements InfoProps {
     )
 
   // ⚠️ UNTOUCHABLE
-  file_set_settings = (ids: λFile['id'][], settings: λFile['settings']) =>
-    this.setInfoByKey(
-      this.app.target.files.map((file) =>
-        ids.includes(file.id)
-          ? { ...file, settings: { ...file.settings, ...settings } }
-          : file,
+  file_set_settings = (ids: λFile['id'][], settings: λFile['settings']) => {
+    const refetchKeys: RefetchOptions['refetchKeys'] = {};
+    ids.forEach(id => {
+      if (!File.isEventKeyFetched(this.app, id, [settings.field])) {
+        refetchKeys[id] = [settings.field]
+      }
+    });
+    const files = Object.keys(refetchKeys) as λFile['id'][];
+    if (files.length > 0) {
+      this.refetch({ ids: files, refetchKeys })
+    }
+    return this.setInfoByKey(
+      this.app.target.files.map((file) => ids.includes(file.id)
+        ? { ...file, settings: { ...file.settings, ...settings } }
+        : file
       ),
       'target',
-      'files',
+      'files'
     )
+  }
 
   file_set_total = (id: λFile['id'], total = 0) =>
     this.setInfoByKey(
@@ -2261,6 +2288,11 @@ export class File {
     Parser.use(use, 'files').sort((a, b) =>
       a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1,
     )
+
+  public static isEventKeyFetched = (app: λApp, id: λFile | μ.File, keys: Array<keyof λEvent> = []) => {
+    const file = File.id(app, id);
+    return File.events(app, file).slice(0, 100).every(e => [...keys, file.settings.field].every(k => typeof e[k] !== 'undefined'));
+  };
 
   public static context = (app: λApp, file: λFile) =>
     Context.id(app, file.context_id)

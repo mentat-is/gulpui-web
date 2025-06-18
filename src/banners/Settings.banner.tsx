@@ -13,12 +13,12 @@ export namespace Settings {
 
     useEffect(() => {
       Internal.Settings.crosshair = crosshair
-    }, [crosshair])
+    }, [crosshair]);
 
     return (
       <UIBanner title="Settings" {...props}>
         <Toggle
-          option={['Use cursor', 'Use crosshair']}
+          option={['Use timestamp', 'Use crosshair']}
           checked={crosshair}
           onCheckedChange={setCrosshair}
         />

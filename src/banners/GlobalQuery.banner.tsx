@@ -52,8 +52,6 @@ export namespace GlobalQuery {
       )
     }, [query, setFilters]);
 
-    console.log(query);
-
     const AddFilter = useMemo(() => {
       return (
         <OpenSearchQueryBuilder.Query.Add init='' setFilters={setFilters} filters={query.filters} />
@@ -63,7 +61,9 @@ export namespace GlobalQuery {
     const [isQueryLoading, setIsQueryLoading] = useState<boolean>(false);
     const doneButtonClickHandler = async () => {
       setIsQueryLoading(true);
-      const { docs, total_hits } = await Info.query_file(query, true);
+      const { docs, total_hits } = await Info.query_file(query, {
+        preview: true
+      });
       setIsQueryLoading(false);
 
       spawnBanner(<GlobalQuery.Apply query={query} docs={docs} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} total={total_hits} />)
@@ -72,7 +72,9 @@ export namespace GlobalQuery {
     const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
     const tabularPreviewButtonClickHandler = async () => {
       setIsPreviewLoading(true);
-      const { docs, total_hits } = await Info.query_file(query, true);
+      const { docs, total_hits } = await Info.query_file(query, {
+        preview: true
+      });
       setIsPreviewLoading(false);
 
       spawnBanner(<Preview.Banner total={total_hits} values={docs} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} />)

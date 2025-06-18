@@ -13,7 +13,7 @@ import { Separator } from '@/ui/Separator'
 import { enginesBase } from '@/dto/Engine.dto'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Icon } from '@impactium/icons'
-import { Context, Event } from '@/class/Info'
+import { Context, Event, File } from '@/class/Info'
 import { Engine } from '@/class/Engine.dto'
 import { Stack } from '@impactium/components'
 import { λEvent } from '@/dto/ChunkEvent.dto'
@@ -51,7 +51,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     Info.event_keys(file).then(Object.keys).then(setEventKeys);
   }, []);
 
-  const [field, setField] = useState<keyof λEvent>(file.settings.field)
+  const [field, setField] = useState<keyof λEvent>(file.settings.field);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target

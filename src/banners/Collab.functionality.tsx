@@ -190,7 +190,7 @@ export namespace LinkFunctionality {
             id: link.id,
             color,
             description,
-            events: [event._id],
+            events: link.doc_ids,
             glyph_id,
             name
           }).then(() => {

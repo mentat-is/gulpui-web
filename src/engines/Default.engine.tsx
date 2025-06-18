@@ -6,6 +6,7 @@ import {
 import { RenderEngine } from '../class/RenderEngine'
 import { λColor } from '@/ui/utils'
 import { Event, File, MinMax } from '@/class/Info'
+import { Logger } from '@/dto/Logger.class'
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null
@@ -147,9 +148,21 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       ])
     }
 
+    const values = events.map(e => Number(e[file.settings.field]));
+    let max = -Infinity;
+    let min = Infinity;
+    values.forEach(v => {
+      if (v > max) {
+        max = v
+      }
+      if (v < min) {
+        min = v
+      }
+    })
+
     map[Hardcode.Scale] = this.renderer.info.app.timeline.scale
-    map[Hardcode.MinHeight] = file.code.min
-    map[Hardcode.MaxHeight] = file.code.max
+    map[Hardcode.MinHeight] = min
+    map[Hardcode.MaxHeight] = max
     this.map.set(file.id, map)
 
     return map as typeof DefaultEngine.target
