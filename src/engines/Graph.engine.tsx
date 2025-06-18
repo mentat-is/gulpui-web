@@ -1,6 +1,6 @@
 import { Engine, Hardcode } from '../class/Engine.dto'
 import { Dot, RenderEngine } from '../class/RenderEngine'
-import { Gradients, λColor } from '@/ui/utils'
+import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils'
 import { λFile } from '@/dto/Dataset'
 
 export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> {
@@ -31,6 +31,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
     for (const [timestamp, height] of graphs) {
       const x = this.renderer.getPixelPosition(timestamp)
+      if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue;
       const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
       const color = λColor.gradient(file.color as Gradients, height, {
         min: 0,
@@ -73,14 +74,13 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
     const entries = Array.from(heightData.entries())
     let lastRenderedX = -Infinity
+    let maxHeight = 0;
 
     for (let i = 0; i < entries.length; i++) {
       const [timestamp, height] = entries[i]
       const x = this.renderer.getPixelPosition(timestamp)
 
-      // Skip if too close to last rendered point (enforce 8px minimum spacing)
       if (x - lastRenderedX < 8) {
-        // Merge with previous point if exists
         const prevTimestamp = Array.from(result.keys()).pop()
         if (prevTimestamp !== undefined) {
           const prevHeight = result.get(prevTimestamp) || 0
@@ -89,7 +89,6 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
         continue
       }
 
-      // Get previous entry for gap filling
       const prevEntry = i > 0 ? entries[i - 1] : null
 
       if (prevEntry) {
@@ -97,7 +96,6 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
         const prevX = this.renderer.getPixelPosition(prevTimestamp)
         const gap = Math.abs(x - prevX)
 
-        // Fill gaps larger than 16px with zero points (respecting 8px minimum spacing)
         if (gap > 16) {
           const steps = Math.floor(gap / 16)
           const timestampStep = (timestamp - prevTimestamp) / (steps + 1)
@@ -106,7 +104,6 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
             const fillTimestamp = prevTimestamp + timestampStep * step
             const fillX = this.renderer.getPixelPosition(fillTimestamp)
 
-            // Only add fill point if it maintains 8px spacing
             if (fillX - lastRenderedX >= 8) {
               result.set(fillTimestamp, 0)
               lastRenderedX = fillX
@@ -116,17 +113,16 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
       }
 
       result.set(timestamp, height)
+      maxHeight = Math.max(maxHeight, height);
       lastRenderedX = x
     }
 
-    // Calculate metadata
-    const heights = Array.from(result.values())
     const timestamps = Array.from(result.keys())
 
-    result[Hardcode.Scale] = this.renderer.info.app.timeline.scale
-    result[Hardcode.MaxHeight] = Math.max(...heights, 0)
-    result[Hardcode.Start] = timestamps[0] ?? 0
-    result[Hardcode.End] = timestamps[timestamps.length - 1] ?? 0
+    result[Hardcode.Scale] = this.renderer.info.app.timeline.scale;
+    result[Hardcode.MaxHeight] = maxHeight;
+    result[Hardcode.Start] = timestamps[0] ?? 0;
+    result[Hardcode.End] = timestamps[timestamps.length - 1] ?? 0;
 
     this.map.set(file.id, result)
 
