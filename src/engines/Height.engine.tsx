@@ -3,205 +3,91 @@ import { RenderEngine } from '../class/RenderEngine'
 import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils'
 import { Event, File } from '../class/Info'
 import { λFile } from '@/dto/Dataset'
-import { Logger } from '@/dto/Logger.class'
-import { λEvent } from '@/dto/ChunkEvent.dto'
 
 const SAMPLE_SIZE = 60000;
 
-export class HeightEngine
-  implements Engine.Interface<typeof HeightEngine.target> {
+export class HeightEngine implements Engine.Interface<typeof HeightEngine.target> {
   private static instance: HeightEngine | null = null
-  static target: Map<number, number>
+  static target: Map<number, number> & {
+    [Hardcode.MaxHeight]: number;
+  };
   private renderer!: RenderEngine
-  map = new Map<λFile['id'], typeof HeightEngine.target>()
-  samples = new Map<λFile['id'], {
-    data: Map<number, number>,
-    maxHeight: number,
-    actualMinTime: number,
-    actualMaxTime: number
-  }>()
+  map = new Map<λFile['id'], typeof HeightEngine.target>();
 
   constructor(renderer: Engine.Constructor) {
     if (HeightEngine.instance) {
       HeightEngine.instance.renderer = renderer
       return HeightEngine.instance
     }
-
-    this.renderer = renderer
+    this.renderer = renderer;
     HeightEngine.instance = this
   }
 
   render(file: λFile, y: number) {
-    const isPending = this.renderer.info.app.general.requests.filter(r => r.for === file.id && r.status === 'pending').length > 0
-
-    if (!isPending && !this.samples.has(file.id)) {
-      this.getSamples(file)
+    const hasPendingRequest = this.renderer.info.app.general.requests.some(r => r.for === file.id && r.status === 'pending');
+    if (hasPendingRequest) {
+      return;
     }
 
-    const sampledFile = this.samples.get(file.id)
-    if (!sampledFile) {
-      return
-    }
+    const samples = this.get(file)
+    const height = samples[Hardcode.MaxHeight];
 
-    const { data: sampledData, maxHeight } = sampledFile
+    const { min: visibleStart, max: visibleEnd } = this.renderer.limits
 
-    const visibleStartTime = this.renderer.limits.min
-    const visibleEndTime = this.renderer.limits.max
+    for (const [timestamp, amount] of samples) {
+      const adjustedTime = timestamp + file.settings.offset
 
-    let renderedBars = 0
-    let skippedNotVisible = 0
-    let skippedThrowable = 0
+      if (adjustedTime < visibleStart || adjustedTime > visibleEnd ||
+        throwableByTimestamp(adjustedTime, this.renderer.limits, this.renderer.info.app) ||
+        amount <= 0) continue
 
-    for (const [timestamp, amount] of sampledData.entries()) {
-      const adjustedTimestamp = timestamp + file.settings.offset
+      this.renderer.ctx.fillStyle = λColor.gradient(
+        file.settings.color as Gradients,
+        amount,
+        { min: 0, max: height }
+      )
 
-      if (adjustedTimestamp < visibleStartTime || adjustedTimestamp > visibleEndTime) {
-        skippedNotVisible++
-        continue
-      }
-
-      if (throwableByTimestamp(adjustedTimestamp, this.renderer.limits, this.renderer.info.app)) {
-        skippedThrowable++
-        continue
-      }
-
-      if (amount > 0) {
-        this.renderer.ctx.fillStyle = λColor.gradient(
-          file.settings.color as Gradients,
-          amount,
-          {
-            min: 0,
-            max: maxHeight,
-          },
-        )
-
-        this.renderer.ctx.fillRect(
-          this.renderer.getPixelPosition(adjustedTimestamp),
-          y + 47,
-          1,
-          -(1 + (47 - 1) * (amount / maxHeight)),
-        )
-        renderedBars++
-      }
+      this.renderer.ctx.fillRect(
+        this.renderer.getPixelPosition(adjustedTime),
+        y + 47,
+        1,
+        -(1 + 46 * (amount / height))
+      )
     }
   }
 
-  getSamples(file: λFile) {
-    const startTime = performance.now()
+  get(file: λFile) {
     const events = File.events(this.renderer.info.app, file)
+    const [minTime, maxTime] = [Math.min(file.timestamp.min, file.timestamp.max), Math.max(file.timestamp.min, file.timestamp.max)]
 
-    const actualMinTime = Math.min(file.timestamp.min, file.timestamp.max)
-    const actualMaxTime = Math.max(file.timestamp.min, file.timestamp.max)
-
-    const sampledData = new Map<number, number>()
-
-    const totalDuration = actualMaxTime - actualMinTime
-    const bucketCount = Math.ceil(totalDuration / SAMPLE_SIZE)
+    const bucketCount = Math.ceil((maxTime - minTime) / SAMPLE_SIZE)
+    const sampledData = new Map() as typeof HeightEngine.target;
 
     for (let i = 0; i <= bucketCount; i++) {
-      const timestamp = actualMinTime + (i * SAMPLE_SIZE)
-      if (timestamp <= actualMaxTime) {
+      const timestamp = minTime + (i * SAMPLE_SIZE)
+      if (timestamp <= maxTime) {
         sampledData.set(timestamp, 0)
       }
     }
 
-    let processedEvents = 0
-    let outOfBoundsEvents = 0
-
-    events.forEach(event => {
-      if (Event.timestamp(event) < actualMinTime || Event.timestamp(event) > actualMaxTime) {
-        outOfBoundsEvents++
-        return
-      }
-
-      const bucketIndex = Math.floor((Event.timestamp(event) - actualMinTime) / SAMPLE_SIZE)
-      const bucketStart = actualMinTime + (bucketIndex * SAMPLE_SIZE)
-
-      const currentCount = sampledData.get(bucketStart) || 0
-      sampledData.set(bucketStart, currentCount + 1)
-      processedEvents++
-    })
-
     let maxHeight = 0
-    for (const value of sampledData.values()) {
-      if (value > maxHeight) {
-        maxHeight = value
-      }
-    }
+    events.forEach(event => {
+      const eventTime = Event.timestamp(event)
+      if (eventTime < minTime || eventTime > maxTime) return
 
-    this.samples.set(file.id, {
-      data: sampledData,
-      maxHeight,
-      actualMinTime,
-      actualMaxTime
-    })
-  }
-
-  get(file: λFile): typeof HeightEngine.target {
-    if (this.is(file))
-      return this.map.get(file.id) as typeof HeightEngine.target
-
-    const map = new Map() as typeof HeightEngine.target
-
-    File.events(this.renderer.info.app, file).forEach((event) =>
-      map.set(Event.timestamp(event), (map.get(Event.timestamp(event)) || 0) + 1),
-    )
-
-    // @ts-ignore
-    map[Hardcode.Length] = Event.get(this.renderer.info.app, file.id).length
-    let maxHeight = -Infinity
-    for (const value of map.values()) {
-      if (value > maxHeight) {
-        maxHeight = value
-      }
-    }
-    // @ts-ignore
-    map[Hardcode.MaxHeight] = maxHeight
-    this.map.set(file.id, map)
-
-    return map
-  }
-
-  is(file: λFile) {
-    // @ts-ignore
-    const length = this.map.get(file.id)?.[Hardcode.Length]
-    return Boolean(
-      length && length >= Event.get(this.renderer.info.app, file.id).length,
-    )
-  }
-
-  updateSamplesIncremental(file: λFile, newEvents: λEvent[]) {
-    let sampledFile = this.samples.get(file.id)
-    if (!sampledFile) {
-      this.getSamples(file)
-      return
-    }
-
-    const { data: sampledData, actualMinTime } = sampledFile
-    let maxHeight = sampledFile.maxHeight
-    let updated = false
-
-    newEvents.forEach(event => {
-      const timestamp = Event.timestamp(event);
-      if (timestamp < actualMinTime || timestamp > sampledFile.actualMaxTime) {
-        return
-      }
-
-      const bucketIndex = Math.floor((timestamp - actualMinTime) / SAMPLE_SIZE)
-      const bucketStart = actualMinTime + (bucketIndex * SAMPLE_SIZE)
-
-      const currentCount = sampledData.get(bucketStart) || 0
-      const newCount = currentCount + 1
+      const bucketStart = minTime + Math.floor((eventTime - minTime) / SAMPLE_SIZE) * SAMPLE_SIZE
+      const newCount = (sampledData.get(bucketStart) || 0) + 1
       sampledData.set(bucketStart, newCount)
 
-      if (newCount > maxHeight) {
-        maxHeight = newCount
-        updated = true
-      }
+      if (newCount > maxHeight) maxHeight = newCount
     })
 
-    if (updated) {
-      sampledFile.maxHeight = maxHeight
-    }
+    sampledData[Hardcode.MaxHeight] = maxHeight;
+
+    this.map.set(file.id, sampledData)
+
+    return sampledData;
   }
+
+  is = () => Boolean();
 }

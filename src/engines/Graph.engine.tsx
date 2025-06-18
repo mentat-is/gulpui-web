@@ -1,126 +1,139 @@
-import {
-  Engine,
-  Hardcode,
-} from '../class/Engine.dto'
+import { Engine, Hardcode } from '../class/Engine.dto'
 import { Dot, RenderEngine } from '../class/RenderEngine'
-import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils'
-import { Event } from '../class/Info'
-import { HeightEngine } from './Height.engine'
+import { Gradients, λColor } from '@/ui/utils'
 import { λFile } from '@/dto/Dataset'
 
-type Target = any
-
-export class GraphEngine implements Engine.Interface<Target> {
-  private renderer: RenderEngine
-  map = new Map<λFile['id'], Target>()
+export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> {
+  private renderer!: RenderEngine
+  private static instance: GraphEngine | null = null
+  private static target: Map<number, number> & {
+    [Hardcode.Scale]: number
+    [Hardcode.MaxHeight]: number
+    [Hardcode.Start]: number
+    [Hardcode.End]: number
+  }
+  map = new Map<λFile['id'], typeof GraphEngine.target>()
 
   constructor(renderer: Engine.Constructor) {
+    if (GraphEngine.instance) {
+      GraphEngine.instance.renderer = renderer
+      return GraphEngine.instance
+    }
     this.renderer = renderer
+    GraphEngine.instance = this
   }
 
-  public render(file: λFile, _y: number) {
-    const map = this.map.get(file.id)
+  render(file: λFile, y: number) {
+    const graphs = this.getCachedOrGenerate(file)
+    const maxHeight = graphs[Hardcode.MaxHeight]
 
-    const graphs =
-      map &&
-        map[Hardcode.Scale] === this.renderer.info.app.timeline.scale &&
-        map[Hardcode.Start] > this.renderer.limits.max &&
-        map[Hardcode.End] > this.renderer.limits.min
-        ? this.map.get(file.id)!
-        : this.get(file)
-
-    const max = graphs[Hardcode.MaxHeight]
-
-    let last: Dot | null = null
+    let lastDot: Dot | null = null
 
     for (const [timestamp, height] of graphs) {
       const x = this.renderer.getPixelPosition(timestamp)
-      const y = _y + 47 - Math.floor((height / max) * 47)
+      const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
       const color = λColor.gradient(file.color as Gradients, height, {
         min: 0,
-        max,
+        max: maxHeight
       })
 
-      this.renderer.ctx.font = `8px Arial`
+      this.renderer.ctx.font = '8px Arial'
       this.renderer.ctx.fillStyle = color
-      this.renderer.ctx.fillText(height.toString(), x - 3.5, y - 8)
+      this.renderer.ctx.fillText(height.toString(), x - 3.5, dotY - 8)
 
-      const dot = { x, y, color }
+      const currentDot = { x, y: dotY, color }
 
-      if (last) {
-        this.renderer.connection([dot, last])
+      if (lastDot) {
+        this.renderer.connection([currentDot, lastDot])
       }
 
-      last = dot
-      this.renderer.dot(dot)
+      this.renderer.dot(currentDot)
+      lastDot = currentDot
     }
   }
 
-  get(file: λFile): Target {
-    const result = new Map() as Target
+  private getCachedOrGenerate(file: λFile): typeof GraphEngine.target {
+    const cached = this.map.get(file.id)
+    const currentScale = this.renderer.info.app.timeline.scale
+    const { min: limitMin, max: limitMax } = this.renderer.limits
 
-    for (const [timestamp, height] of Array.from(
-      this.renderer.height.get(file).entries(),
-    )) {
-      if (
-        throwableByTimestamp(
-          timestamp,
-          {
-            min: this.renderer.limits.min - 3000,
-            max: this.renderer.limits.max + 3000,
-          },
-          this.renderer.info.app,
-        )
-      )
-        continue
+    if (cached &&
+      cached[Hardcode.Scale] === currentScale &&
+      cached[Hardcode.Start] <= limitMax &&
+      cached[Hardcode.End] >= limitMin) {
+      return cached
+    }
 
+    return this.get(file)
+  }
+
+  get(file: λFile): typeof GraphEngine.target {
+    const heightData = this.renderer.height.get(file)
+    const result = new Map() as typeof GraphEngine.target
+
+    const entries = Array.from(heightData.entries())
+    let lastRenderedX = -Infinity
+
+    for (let i = 0; i < entries.length; i++) {
+      const [timestamp, height] = entries[i]
       const x = this.renderer.getPixelPosition(timestamp)
-      // @ts-ignore
-      const [lastTimestamp, lastHeight] = Array.from(result).pop() || []
 
-      if (lastTimestamp && lastHeight) {
-        const lastX = this.renderer.getPixelPosition(lastTimestamp)
+      // Skip if too close to last rendered point (enforce 8px minimum spacing)
+      if (x - lastRenderedX < 8) {
+        // Merge with previous point if exists
+        const prevTimestamp = Array.from(result.keys()).pop()
+        if (prevTimestamp !== undefined) {
+          const prevHeight = result.get(prevTimestamp) || 0
+          result.set(prevTimestamp, prevHeight + height)
+        }
+        continue
+      }
 
-        if (Math.abs(x - lastX) > 16) {
-          const steps = Math.floor(Math.abs(x - lastX) / 16)
-          const deltaTimestamp = (timestamp - lastTimestamp) / (steps + 1)
+      // Get previous entry for gap filling
+      const prevEntry = i > 0 ? entries[i - 1] : null
 
-          for (let i = 1; i <= steps; i++)
-            result.set(lastTimestamp + deltaTimestamp * i, 0)
+      if (prevEntry) {
+        const [prevTimestamp] = prevEntry
+        const prevX = this.renderer.getPixelPosition(prevTimestamp)
+        const gap = Math.abs(x - prevX)
+
+        // Fill gaps larger than 16px with zero points (respecting 8px minimum spacing)
+        if (gap > 16) {
+          const steps = Math.floor(gap / 16)
+          const timestampStep = (timestamp - prevTimestamp) / (steps + 1)
+
+          for (let step = 1; step <= steps; step++) {
+            const fillTimestamp = prevTimestamp + timestampStep * step
+            const fillX = this.renderer.getPixelPosition(fillTimestamp)
+
+            // Only add fill point if it maintains 8px spacing
+            if (fillX - lastRenderedX >= 8) {
+              result.set(fillTimestamp, 0)
+              lastRenderedX = fillX
+            }
+          }
         }
       }
 
-      if (
-        lastTimestamp &&
-        lastHeight &&
-        Math.abs(this.renderer.getPixelPosition(lastTimestamp) - x) < 8
-      ) {
-        result.set(lastTimestamp, (lastHeight + height) as Hardcode.Height)
-      } else {
-        result.set(timestamp, height)
-      }
+      result.set(timestamp, height)
+      lastRenderedX = x
     }
 
-    // @ts-ignore
-    const max = Math.max(...Array.from(result).map((v) => v[1]))
+    // Calculate metadata
+    const heights = Array.from(result.values())
+    const timestamps = Array.from(result.keys())
 
     result[Hardcode.Scale] = this.renderer.info.app.timeline.scale
-    result[Hardcode.MaxHeight] = max
-    // @ts-ignore
-    result[Hardcode.Start] = Array.from(result)[0]?.[0] ?? 0
-    // @ts-ignore
-    result[Hardcode.End] = Array.from(result).pop()?.[0] ?? 0
+    result[Hardcode.MaxHeight] = Math.max(...heights, 0)
+    result[Hardcode.Start] = timestamps[0] ?? 0
+    result[Hardcode.End] = timestamps[timestamps.length - 1] ?? 0
 
     this.map.set(file.id, result)
 
     return result
   }
 
-  is(file: λFile) {
-    const length = this.map.get(file.id)?.[Hardcode.Length]
-
-    return Boolean(
-      length && length >= Event.get(this.renderer.info.app, file.id).length,
-    )
+  is(file: λFile): boolean {
+    return this.map.has(file.id)
   }
 }
