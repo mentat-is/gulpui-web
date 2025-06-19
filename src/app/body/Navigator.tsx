@@ -30,7 +30,6 @@ export function Navigator({
   ...props
 }: Navigator.Props) {
   const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = useApplication()
-  const [notes, setNotes] = useState<λNote[]>([])
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
 
@@ -146,35 +145,6 @@ export function Navigator({
       setWindowRef(null)
     }
   }
-
-  const Content = useMemo(() => {
-    if (notes.length === 0) {
-      return (
-        <Stack
-          style={{ width: '100%', height: '100%' }}
-          ai="center"
-          jc="center"
-        >
-          <Button img="FaceUnhappy" variant="disabled">
-            There is no any notes or links
-          </Button>
-        </Stack>
-      )
-    }
-
-    return (
-      <Stack
-        style={{ width: '100%', height: '100%', overflow: 'auto' }}
-        ai="center"
-        jc="flex-start"
-        dir='column'
-      >
-        {notes.map((note) => (
-          <NotePoint.Combination key={note.id} note={note} />
-        ))}
-      </Stack>
-    )
-  }, [notes, app.timeline.filter]);
 
   const size_plus = useRef<HTMLButtonElement>(null)
   const size_reset = useRef<HTMLButtonElement>(null)

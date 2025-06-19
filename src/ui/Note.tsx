@@ -26,7 +26,6 @@ export namespace NotePoint {
     className,
     style,
     note,
-    withSource,
     ...props
   }: Combination.Props) {
     const { app, spawnDialog } = useApplication()
@@ -51,14 +50,15 @@ export namespace NotePoint {
 
     return (
       <Stack
-        className={cn(s.combination, className)}
+        className={cn(s.combination, note.tags.includes('auto') && s.hidden, className)}
         style={{ ...style, color: note.color }}
         {...props}
       >
         <Icon name={Note.icon(note)} />
         <p>{note.name}</p>
         <span>{note.text}</span>
-        {withSource && <Badge style={{ whiteSpace: 'nowrap' }} size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />}
+        <Badge style={{ whiteSpace: 'nowrap' }} size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />
+        {note.tags.map(t => <Badge value={t} variant='gray-subtle' />)}
         <Button
           img="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}

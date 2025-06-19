@@ -1,6 +1,7 @@
 import { Event, Info, Internal } from '@/class/Info'
 import { Pointers } from '@/components/Pointers'
 import { λEvent } from '@/dto/ChunkEvent.dto'
+import { λLink, λNote } from '@/dto/Dataset'
 import { Logger } from '@/dto/Logger.class'
 import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
@@ -67,8 +68,32 @@ export class AppSocket extends WebSocket {
           return
 
         case message.type === 'collab_update' || message.type === 'collab_delete':
-          info.notes_reload()
-          info.links_reload()
+          switch (message.data.type) {
+            case 'note':
+              const notes: λNote[] = message.data.data;
+              notes.forEach(note => {
+                const exist = message.data.bulk === true ? -2 : this.info.app.target.notes.findIndex(n => n.id === note.id);
+                if (exist >= 0) {
+                  this.info.app.target.notes[exist] = note;
+                } else {
+                  this.info.app.target.notes.push(note);
+                }
+              });
+              this.info.setInfo(this.info.app);
+              return;
+            case 'link':
+              const links: λLink[] = message.data.data;
+              links.forEach(link => {
+                const exist = message.data.bulk === true ? -2 : this.info.app.target.links.findIndex(n => n.id === link.id);
+                if (exist >= 0) {
+                  this.info.app.target.links[exist] = link;
+                } else {
+                  this.info.app.target.links.push(link);
+                }
+              });
+              this.info.setInfo(this.info.app);
+              return;
+          }
           info.highlights_reload()
           return
 

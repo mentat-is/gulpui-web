@@ -225,11 +225,6 @@ const api: Api = async function <T>(
     toast.error(message, {
       richColors: true,
     })
-    await new Promise(res => {
-      setTimeout(() => {
-        res(void 0);
-      }, 500);
-    });
   }
 
   soft(false, options.setLoading)

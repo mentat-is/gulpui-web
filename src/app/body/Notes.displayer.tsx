@@ -1,9 +1,9 @@
-import { Note as NoteClass, File } from '@/class/Info'
+import { Note as NoteClass, File, Note } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { λNote } from '@/dto/Dataset'
 import { XY } from '@/dto/XY.dto'
 import { NotePoint } from '@/ui/Note'
-import { useMemo, useCallback, Fragment, useState, useEffect } from 'react'
+import { useMemo, useCallback, Fragment, useState, useEffect, useRef } from 'react'
 
 interface NotesDisplayerProps {
   getPixelPosition: (num: number) => number
@@ -15,20 +15,17 @@ export function NotesDisplayer({
   getPixelPosition,
 }: NotesDisplayerProps) {
   const { app, scrollY } = useApplication()
+  const [notes, setNotes] = useState<λNote[]>([]);
 
-  if (app.timeline.hidden_notes)
-    return null;
-
-  const selectedFiles = useMemo(
-    () => new Set(app.target.files.filter((f) => f.selected).map((f) => f.id)),
-    [app.target.files],
-  )
+  useEffect(() => {
+    setNotes(app.timeline.hidden_notes ? [] : Note.selected(app).filter((note) => !note.tags.includes('auto')));
+  }, [app.target.notes, app.target.notes.length, app.target.files, app.target.files.length, app.timeline.hidden_notes]);
 
   const [mapping, setMapping] = useState<NoteMapping>({})
 
   useEffect(() => {
     setMapping(
-      app.target.notes.reduce<NoteMapping>((acc, note) => {
+      notes.reduce<NoteMapping>((acc, note) => {
         const timestamp = NoteClass.timestamp(app, note)
         if (timestamp) {
           acc[note.id] = {
@@ -39,7 +36,7 @@ export function NotesDisplayer({
         return acc
       }, {}),
     )
-  }, [app.target.notes, getPixelPosition, app.timeline.scale])
+  }, [notes, app.timeline.scale, getPixelPosition])
 
   const getNotePosition = useCallback(
     (note: λNote) => {
@@ -52,26 +49,29 @@ export function NotesDisplayer({
     [scrollY, app.timeline.filter, mapping],
   )
 
-  const matrix: Map<string, λNote[]> = new Map();
+  const matrix = useRef<Map<string, λNote[]>>(new Map());
 
-  app.target.notes.filter((note) => selectedFiles.has(note.source_id)).forEach(note => {
-    const pos = getNotePosition(note);
-    if (!pos) {
-      return;
-    }
+  useEffect(() => {
+    matrix.current.clear()
+    notes.forEach(note => {
+      const pos = getNotePosition(note);
+      if (!pos) {
+        return;
+      }
 
-    const key = `${pos.left}|${pos.top}`;
+      const key = `${pos.left}|${pos.top}`;
 
-    if (!matrix.has(key)) {
-      matrix.set(key, [])
-    }
+      if (!matrix.current.has(key)) {
+        matrix.current.set(key, [])
+      }
 
-    matrix.get(key)!.push(note)
-  })
+      matrix.current.get(key)!.push(note)
+    })
+  }, [getNotePosition, notes]);
 
   return (
     <Fragment>
-      {Array.from(matrix.entries()).map(([_, notes]) => {
+      {Array.from(matrix.current.entries()).map(([_, notes]) => {
         if (notes.length === 1) {
           const note = notes[0]
           const pos = getNotePosition(note);

@@ -1278,16 +1278,12 @@ export class Info implements InfoProps {
       Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info.name);
       return;
     }
-    return api<λNote[]>(
-      '/note_list',
-      {
-        method: 'POST',
-        body: {
-          source_ids: File.selected(this.app).map((f) => f.id),
-        },
+    return api<λNote[]>('/note_list', {
+      method: 'POST',
+      body: {
+        source_ids: File.selected(this.app).map((f) => f.id),
       },
-      (notes) => this.setInfoByKey(notes, 'target', 'notes')
-    )
+    }).then(notes => this.setInfoByKey(notes, 'target', 'notes'));
   }
 
   /**
@@ -1299,17 +1295,20 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   note_delete = (note: λNote) =>
-    api(
-      '/note_delete',
-      {
-        method: 'DELETE',
-        query: {
-          obj_id: note.id,
-          ws_id: this.app.general.ws_id,
-        },
+    api('/note_delete', {
+      method: 'DELETE',
+      query: {
+        obj_id: note.id,
+        ws_id: this.app.general.ws_id,
       },
-      this.notes_reload,
-    )
+    }).then(() => {
+      const index = this.app.target.notes.findIndex(n => n.id === note.id);
+      const updated = [...this.app.target.notes];
+      if (index !== -1) {
+        updated.splice(index, 1);
+        this.setInfoByKey(this.app.target.notes, 'target', 'notes');
+      }
+    });
 
   note_create = ({
     name,
@@ -1327,7 +1326,7 @@ export class Info implements InfoProps {
     glyph_id: λGlyph['id'],
     isPrivate: boolean,
     tags: string[]
-  }) => api('/note_create', {
+  }) => api<λNote>('/note_create', {
     method: 'POST',
     query: {
       operation_id: event['gulp.operation_id'],
@@ -1339,15 +1338,17 @@ export class Info implements InfoProps {
       glyph_id,
       private: isPrivate,
     },
+    toast: `Note ${name} has been created successfully`,
     body: {
       text,
       tags,
       docs: [Event.toDoc(event)],
     },
-  }).then(() => {
-    this.notes_reload()
-    toast(`Note ${name} has been created successfully`)
-  })
+  }).then(note => {
+    const updated = [...this.app.target.notes];
+    updated.push(note);
+    this.setInfoByKey(updated, 'target', 'notes');
+  });
 
   note_edit = ({
     id: obj_id,
@@ -1365,7 +1366,7 @@ export class Info implements InfoProps {
     event: λEvent,
     glyph_id: λGlyph['id'],
     tags: string[]
-  }) => api('/note_update', {
+  }) => api<λNote>('/note_update', {
     method: 'PATCH',
     query: {
       obj_id,
@@ -1374,15 +1375,22 @@ export class Info implements InfoProps {
       glyph_id,
       color,
     },
+    toast: `Note ${name} has been updated successfully`,
     body: {
       text,
       tags,
       docs: [Event.toDoc(event)],
     }
-  }).then(() => {
-    toast(`Note ${name} has been updated successfully`)
-    return this.notes_reload();
-  })
+  }).then(note => {
+    const index = this.app.target.notes.findIndex(n => n.id === note.id);
+    if (index === -1) {
+      Logger.error(`Note with id: ${note.id} was not found in application data`, Info.name + this.note_edit.name);
+      return;
+    }
+    const updated = [...this.app.target.notes];
+    updated[index] = note;
+    this.setInfoByKey(updated, 'target', 'notes');
+  });
 
   // ⚠️ UNTOUCHABLE
   links_reload = async () => {

@@ -9,16 +9,17 @@
   width: 100%;
   overflow: hidden;
 }
+
 .combination p {
   color: currentColor;
   font-size: 13px;
   white-space: nowrap;
   font-family: var(--font-mono);
-  min-width: 128px;
   max-width: 256px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .combination span {
   flex: 1;
   overflow: hidden;
@@ -28,15 +29,18 @@
   font-family: var(--font-mono);
   color: var(--text-dimmed);
 }
+
 .wrapper {
   height: 32px;
   width: 32px;
   transform: translate(-50%, -50%);
 }
-.wrapper > button {
+
+.wrapper>button {
   position: relative !important;
   transform: none;
 }
+
 .wrapper .content {
   pointer-events: none;
   opacity: 0;
@@ -48,12 +52,18 @@
   transform: translateY(16px);
   padding: 8px;
 }
+
 .wrapper:hover .content {
   opacity: 1;
   pointer-events: all;
   transform: translateY(0px);
-  
+
 }
-.content > button {
+
+.content>button {
   position: relative;
+}
+
+.hidden {
+  opacity: 0.5;
 }
