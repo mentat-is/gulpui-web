@@ -120,6 +120,15 @@ export const GradientsMap = {
     'ffbe00',
     'ffff01',
   ],
+  rainbow: [
+    "9400d3",
+    "4b0082",
+    "0000ff",
+    "00ff00",
+    "ffff00",
+    "ff7f00",
+    "ff0000"
+  ],
   sepal: ['fe2400', 'fcfafd', '7e51fe'],
   deep: ['54aef3', '142f48'],
   sunset: ['432371', 'faae7b'],
