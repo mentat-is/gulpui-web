@@ -4,7 +4,7 @@ import {
   Hardcode
 } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
-import { λColor } from '@/ui/utils'
+import { Refractor, λColor } from '@/ui/utils'
 import { Event, File, MinMax } from '@/class/Info'
 import { Logger } from '@/dto/Logger.class'
 
@@ -143,12 +143,12 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
 
       const event = events[closestIndex]
       map.set(x, [
-        Number(event[file.settings.field]),
+        Refractor.any.toNumber(event[file.settings.field]),
         Event.timestamp(event),
       ])
     }
 
-    const values = events.map(e => Number(e[file.settings.field]));
+    const values = map.values().map(([code, _]) => code);
     let max = -Infinity;
     let min = Infinity;
     values.forEach(v => {

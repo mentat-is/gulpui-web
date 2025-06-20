@@ -91,7 +91,7 @@ export function NotesDisplayer({
         key,
         notes,
         x: nums[0],
-        y: nums[1] - scrollY
+        y: nums[1]
       }
     }).filter(Boolean)
   }, [matrix, getNotePosition, scrollY])

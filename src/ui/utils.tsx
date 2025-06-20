@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { UUID } from 'crypto'
 import { λApp } from '@/dto'
-import { Info, MinMax, MinMaxBase } from '@/class/Info'
+import { Info, Internal, MinMax, MinMaxBase } from '@/class/Info'
 import { ChangeEvent, RefObject } from 'react'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { λFile } from '@/dto/Dataset'
@@ -366,6 +366,35 @@ export class Refractor {
         reflection[`--${key}`] = obj[key];
       });
       return reflection as { [K in keyof T as `--${string & K}`]: T[K] };
+    }
+  }
+
+  public static readonly string = {
+    toNumber: (str: string) => {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
+      }
+      return hash % 8000;
+    }
+  }
+
+  public static readonly any = {
+    toNumber: (value: any): number => {
+      switch (typeof value) {
+        case 'string':
+          return Refractor.string.toNumber(value);
+        case 'number':
+          return value;
+        case 'bigint':
+          return Internal.Transformator.toTimestamp(value);
+        default:
+          const result = Number(value);
+          if (isNaN(result)) {
+            return 0
+          }
+          return result;
+      }
     }
   }
 }

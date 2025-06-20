@@ -1028,6 +1028,19 @@ export class Info implements InfoProps {
         .filter((f) => f.name.toLowerCase().includes(filter)),
     )
 
+    if (select) {
+      const ids: λFile['id'][] = [];
+      files.forEach(file => {
+        const events = File.events(this.app, file)
+        if (!events.length) {
+          return ids.push(file.id);
+        }
+      })
+      if (ids.length) {
+        this.refetch({ ids });
+      }
+    }
+
     this.setInfo((i) => ({
       ...i,
       target: {
@@ -1306,9 +1319,10 @@ export class Info implements InfoProps {
           }, 15)
         })
       } else {
-        Logger.log(`${notes.length} notes has been fetched in ${offset / 500} rounds`, Info.name);
-        if (notes.length > 5000) {
-          toast.success(`${notes.length} notes has been fetched in ${offset / 500} rounds`, {
+        const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
+        Logger.log(message, Info.name);
+        if (notes.length >= 2500) {
+          toast.success(message, {
             icon: <Icon name='Check' />,
             richColors: true
           });
