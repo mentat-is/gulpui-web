@@ -16,6 +16,7 @@ import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
 import Drawer from '@/ui/Drawer'
+import { Debug } from '@/banners/Debug.banner'
 
 export function Menu() {
   const { app, spawnBanner, scrollX, scrollY } = useApplication()
@@ -92,6 +93,12 @@ export function Menu() {
       >
         {app.general.requests.filter((r) => r.status === 'pending').length}
       </Button>
+      <Button
+        variant="secondary"
+        title="Debugger"
+        img='BugOff'
+        onClick={() => spawnBanner(<Debug.Banner />)}
+      />
       <Button
         variant="secondary"
         title="Manage Permissions"

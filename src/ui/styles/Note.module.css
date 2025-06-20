@@ -67,3 +67,13 @@
 .hidden {
   opacity: 0.5;
 }
+.badge_wrapper {
+  display: flex;
+  max-width: 60%;
+  overflow: scroll hidden;
+  height: 48px;
+  margin-top: 8px;
+}
+.badge_wrapper > div {
+  white-space: nowrap;
+}

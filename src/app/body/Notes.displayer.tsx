@@ -21,22 +21,18 @@ export function NotesDisplayer({
     setNotes(app.timeline.hidden_notes ? [] : Note.selected(app).filter((note) => !note.tags.includes('auto')));
   }, [app.target.notes, app.target.notes.length, app.target.files, app.target.files.length, app.timeline.hidden_notes]);
 
-  const [mapping, setMapping] = useState<NoteMapping>({})
-
-  useEffect(() => {
-    setMapping(
-      notes.reduce<NoteMapping>((acc, note) => {
-        const timestamp = NoteClass.timestamp(app, note)
-        if (timestamp) {
-          acc[note.id] = {
-            x: getPixelPosition(timestamp),
-            y: File.getHeight(app, note.source_id, 0),
-          }
+  const mapping = useMemo<NoteMapping>(() => {
+    return notes.reduce<NoteMapping>((acc, note) => {
+      const timestamp = NoteClass.timestamp(app, note)
+      if (timestamp) {
+        acc[note.id] = {
+          x: getPixelPosition(timestamp),
+          y: File.getHeight(app, note.source_id, 0),
         }
-        return acc
-      }, {}),
-    )
-  }, [notes, app.timeline.scale, getPixelPosition])
+      }
+      return acc
+    }, {})
+  }, [notes, app.timeline.scale, getPixelPosition, app])
 
   const getNotePosition = useCallback(
     (note: λNote) => {
@@ -46,13 +42,13 @@ export function NotesDisplayer({
       const top = pos.y
       return pos.x > 0 && top > 0 ? { left: pos.x, top } : null
     },
-    [scrollY, app.timeline.filter, mapping],
+    [mapping], // Убираем лишние зависимости
   )
 
-  const matrix = useRef<Map<string, λNote[]>>(new Map());
+  // Мемоизируем матрицу группировки заметок
+  const matrix = useMemo(() => {
+    const matrixMap = new Map<string, λNote[]>()
 
-  useEffect(() => {
-    matrix.current.clear()
     notes.forEach(note => {
       const pos = getNotePosition(note);
       if (!pos) {
@@ -61,40 +57,70 @@ export function NotesDisplayer({
 
       const key = `${pos.left}|${pos.top}`;
 
-      if (!matrix.current.has(key)) {
-        matrix.current.set(key, [])
+      if (!matrixMap.has(key)) {
+        matrixMap.set(key, [])
       }
 
-      matrix.current.get(key)!.push(note)
+      matrixMap.get(key)!.push(note)
     })
-  }, [getNotePosition, notes]);
+
+    return matrixMap
+  }, [notes, getNotePosition])
+
+  const renderItems = useMemo(() => {
+    return Array.from(matrix.entries()).map(([key, notes]) => {
+      if (notes.length === 1) {
+        const note = notes[0]
+        const pos = getNotePosition(note);
+        if (!pos) {
+          return null
+        }
+
+        return {
+          type: 'single' as const,
+          key: note.id,
+          note,
+          x: pos.left,
+          y: pos.top - scrollY
+        }
+      }
+
+      const nums = key.split('|').map(x => parseInt(x));
+      return {
+        type: 'group' as const,
+        key,
+        notes,
+        x: nums[0],
+        y: nums[1] - scrollY
+      }
+    }).filter(Boolean)
+  }, [matrix, getNotePosition, scrollY])
 
   return (
     <Fragment>
-      {Array.from(matrix.current.entries()).map(([_, notes]) => {
-        if (notes.length === 1) {
-          const note = notes[0]
-          const pos = getNotePosition(note);
-          if (!pos) {
-            return null
-          }
+      {renderItems.map((item) => {
+        if (!item) return null
 
+        if (item.type === 'single') {
           return (
             <NotePoint.Point
               type='note'
-              key={note.id}
-              note={note}
-              x={pos.left}
-              y={pos.top - scrollY}
-
+              key={item.key}
+              note={item.note}
+              x={item.x}
+              y={item.y}
             />
           )
         }
 
-        const nums = _.split('|').map(x => parseInt(x));
-
         return (
-          <NotePoint.Group type='note' notes={notes} x={nums[0]} y={nums[1]} />
+          <NotePoint.Group
+            type='note'
+            key={item.key}
+            notes={item.notes}
+            x={item.x}
+            y={item.y}
+          />
         )
       })}
     </Fragment>

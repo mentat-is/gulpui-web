@@ -380,16 +380,6 @@ export function Canvas({ timeline }: Canvas.Props) {
     )
   }, [shifted])
 
-  useEffect(() => {
-    if (app.target.notes.length > 500) {
-      toast('Too much notes', {
-        description: `${app.target.notes.length} notes is out of settled limit (500)`,
-        icon: <Icon name='Warning' />
-      });
-      Info.toggle_notes_visibility(true) // hide
-    }
-  }, [app.target.notes]);
-
   return (
     <ContextMenu>
       <ContextMenuTrigger

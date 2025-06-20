@@ -2,15 +2,15 @@ import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Dialog } from '@/ui/Dialog'
 import { SymmetricSvg } from '@/ui/SymmetricSvg'
-import { Fragment, useEffect, useMemo, useState, useRef } from 'react'
+import { Fragment, useEffect, useMemo, useState, useRef, useCallback, memo } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
 import { copy, download, generateUUID } from '@/ui/utils'
 import { Button, Skeleton, Stack } from '@impactium/components'
-import { Event, File, Filter, λFilter } from '@/class/Info'
+import { Event, File, λFilter } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
-import { λLink, λNote } from '@/dto/Dataset'
+import { λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
@@ -30,36 +30,16 @@ interface DisplayEventDialogProps {
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
-  const [notes, setNotes] = useState<λNote[]>(Event.notes(app, event));
-  const [links, setLinks] = useState<λLink[]>(Event.links(app, event));
+  const [selection, setSelection] = useState<string>('');
+  const notes = useMemo(() => Event.notes(app, event), [app.target.notes, event]);
+  const links = useMemo(() => Event.links(app, event), [app.target.links, event]);
+  const file = useMemo(() => File.id(app, event['gulp.source_id']), [app.target.files, event]);
 
   useEffect(() => {
     Info.setTimelineTarget(event)
-    setNotes(Event.notes(app, event))
-    setLinks(Event.links(app, event))
-  }, [event, app.target.notes, app.target.links])
+  }, [event])
 
-  useEffect(() => {
-    if (!json) {
-      loadEvent();
-      return
-    }
-
-    if (json._id !== event._id) {
-      return setJSON(null);
-    }
-
-  }, [event._id, json]);
-
-  const loadEvent = async () => {
-    const detailed = await Info.query_single_id(event._id, event['gulp.operation_id'])
-
-    const parsedEvent = cutEventOriginal(detailed);
-
-    setJSON(parsedEvent);
-  }
-
-  const cutEventOriginal = (obj: Record<string, any>): Record<string, string> => {
+  const cutEventOriginal = useCallback((obj: Record<string, any>): Record<string, string> => {
     const entries = Object.entries(obj).filter(([k]) => k !== 'event.original')
 
     const json = {
@@ -70,9 +50,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     }
 
     return json
-  }
+  }, []);
 
-  const [selection, setSelection] = useState<string>('');
+  const loadEvent = useCallback(async () => {
+    const detailed = await Info.query_single_id(event._id, event['gulp.operation_id'])
+    const parsedEvent = cutEventOriginal(detailed);
+    setJSON(parsedEvent);
+  }, [Info, event._id, event['gulp.operation_id'], cutEventOriginal]);
+
+  useEffect(() => {
+    if (!json || json._id !== event._id) {
+      loadEvent();
+    }
+  }, [event._id, loadEvent, json]);
 
   useEffect(() => {
     const handleSelectionChange = () => {
@@ -90,7 +80,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     };
   }, []);
 
-  function toKeyValue(raw: string): Record<string, string> {
+  const toKeyValue = useCallback((raw: string): Record<string, string> => {
     const result: Record<string, string> = {}
 
     for (const line of raw.split("\n")) {
@@ -108,9 +98,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     }
 
     return result
-  }
+  }, []);
 
-  const applySelectionAsFileFilter = () => {
+  const applySelectionAsFileFilter = useCallback(() => {
     if (!selection) {
       return;
     }
@@ -137,8 +127,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     toast(`Has been added ${newFilters.length} new filters`)
 
-    spawnBanner(<FilterFileBanner file={File.id(app, event['gulp.source_id'])} />);
-  };
+    spawnBanner(<FilterFileBanner file={file} />);
+  }, [selection, Info, event, toKeyValue, spawnBanner, file]);
 
   const highlights = useMemo(() => {
     if (!json) {
@@ -199,28 +189,75 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </ContextMenuTrigger>
         </Tabs>
         <ContextMenuContent>
-          <ContextMenuItem disabled={!selection} onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
-            text: selection
-          } as λNote} />)} img='StickyNote'>Create new note</ContextMenuItem>
+          <ContextMenuItem
+            disabled={!selection}
+            onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
+              text: selection
+            } as λNote} />)}
+            img='StickyNote'
+          >
+            Create new note
+          </ContextMenuItem>
           <ContextMenuItem disabled={!selection} img='GitPullRequestCreate'>Create new link</ContextMenuItem>
           <ContextMenuItem onClick={applySelectionAsFileFilter} img='Filter'>New filter</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
-
     )
-  }, [json, selection]);
+  }, [json, selection, spawnBanner, event, applySelectionAsFileFilter]);
 
   const collabList = useMemo(() => {
     return (
       <Collab.List notes={notes} links={links} />
     )
-  }, [notes, links])
+  }, [notes, links]);
+
+  const handleCreateNote = useCallback(() => {
+    spawnBanner(<NoteFunctionality.Create.Banner event={event} />)
+  }, [spawnBanner, event]);
+
+  const handleCreateLink = useCallback(() => {
+    spawnBanner(<LinkFunctionality.Create.Banner event={event} />)
+  }, [spawnBanner, event]);
+
+  const handleEnrich = useCallback(() => {
+    spawnBanner(
+      <Enrichment.Banner
+        event={event}
+        onEnrichment={e => setJSON(e as unknown as typeof json)}
+      />,
+    )
+  }, [spawnBanner, event, json]);
+
+  const handleConnectLink = useCallback(() => {
+    spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)
+  }, [spawnBanner, event]);
+
+  const handleCopyJson = useCallback(() => {
+    if (json) {
+      copy(JSON.stringify(json, null, 2))
+    }
+  }, [json]);
+
+  const handleDownloadJson = useCallback(() => {
+    if (json) {
+      download(
+        JSON.stringify(json, null, 2),
+        'application/json',
+        `${event._id}_from_${event['gulp.source_id']}.json`,
+      )
+    }
+  }, [json, event._id, event]);
+
+  const handleFocusTimeline = useCallback(() => {
+    // @ts-ignore
+    return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
+  }, [event]);
 
   return (
     <Dialog
       icon={<SymmetricSvg text={event._id} />}
       title='Event'
-      description={`From ${File.id(app, event['gulp.source_id']).name}`}
+      description={`From ${file.name}`}
     >
       <Navigation event={event} />
       {json ? (
@@ -228,18 +265,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Stack className={s.group}>
             <Stack dir="column" flex>
               <Button
-                onClick={() =>
-                  spawnBanner(<NoteFunctionality.Create.Banner event={event} />)
-                }
+                onClick={handleCreateNote}
                 variant="secondary"
                 img="StickyNote"
               >
                 New note
               </Button>
               <Button
-                onClick={() =>
-                  spawnBanner(<LinkFunctionality.Create.Banner event={event} />)
-                }
+                onClick={handleCreateLink}
                 variant="secondary"
                 img="GitPullRequestCreate"
               >
@@ -248,40 +281,30 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             </Stack>
             <Stack dir="column" flex>
               <Button
-                onClick={() =>
-                  spawnBanner(
-                    <Enrichment.Banner
-                      event={event}
-                      onEnrichment={e => setJSON(e as unknown as typeof json)}
-                    />,
-                  )
-                }
+                onClick={handleEnrich}
                 variant="glass"
                 img="PrismColor"
               >
                 Enrich
               </Button>
-              <Button onClick={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)} variant="secondary" img="GitPullRequestCreateArrow">Connect link</Button>
+              <Button
+                onClick={handleConnectLink}
+                variant="secondary"
+                img="GitPullRequestCreateArrow"
+              >
+                Connect link
+              </Button>
             </Stack>
           </Stack>
           {collabList}
           {highlights}
-          <Stack className={s.actionButtons}  >
-            <Button variant="secondary" onClick={() => copy(JSON.stringify(json, null, 2))} img="Copy">Copy JSON</Button>
-            <Button variant="secondary" onClick={() =>
-              download(
-                JSON.stringify(json, null, 2),
-                'application/json',
-                `${event._id}_from_${event['gulp.source_id']}.json`,
-              )
-            }
-              img="Download"
-            >Download JSON</Button>
+          <Stack className={s.actionButtons}>
+            <Button variant="secondary" onClick={handleCopyJson} img="Copy">Copy JSON</Button>
+            <Button variant="secondary" onClick={handleDownloadJson} img="Download">
+              Download JSON
+            </Button>
             <Button
-              onClick={() => {
-                // @ts-ignore
-                return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
-              }}
+              onClick={handleFocusTimeline}
               variant="secondary"
               img="Crosshair"
               style={{ flex: 0 }}

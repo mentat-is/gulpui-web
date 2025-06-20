@@ -4,7 +4,7 @@ import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λNote } from '@/dto/Dataset'
 import { Context, Event, File, Note } from '@/class/Info'
 import { Point as UIPoint } from './Point'
-import { Badge, Button, Input, Stack } from '@impactium/components'
+import { Badge, Button, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
@@ -57,8 +57,11 @@ export namespace NotePoint {
         <Icon name={Note.icon(note)} />
         <p>{note.name}</p>
         <span>{note.text}</span>
-        <Badge style={{ whiteSpace: 'nowrap' }} size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />
-        {note.tags.map(t => <Badge value={t} variant='gray-subtle' />)}
+        <Stack className={s.badge_wrapper}>
+          <Badge size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />
+          {note.tags.map(t => <Badge size='sm' value={t} variant='gray-subtle' />)}
+        </Stack>
+
         <Button
           img="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}
@@ -91,7 +94,6 @@ export namespace NotePoint {
     }
 
     return (
-      // @ts-ignore
       <UIPoint
         onClick={openEvent}
         icon={Note.icon(note)}

@@ -6,13 +6,13 @@ import { λLink, λNote } from "@/dto/Dataset";
 import { Stack, Button, Badge } from "@impactium/components";
 import { cn } from "@impactium/utils";
 import { formatDistanceToNow } from "date-fns";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Markdown } from "@/ui/Markdown";
 import s from './styles/Collab.module.css';
 import { Select } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
-
-export namespace Collab {
+import { debounce } from "lodash";
+import React from "react"; export namespace Collab {
   export namespace List {
     export interface Props extends Stack.Props {
       notes: λNote[],
@@ -20,63 +20,148 @@ export namespace Collab {
     }
   }
 
+  const EDIT_BUTTON_STYLE = { height: 20, marginLeft: 'auto' } as const;
+  const FLEX_WRAP_STYLE = { flexWrap: 'wrap' } as const;
+  const BADGE_STYLE = {
+    color: 'var(--gray-900)',
+    background: 'var(--gray-300)',
+    whiteSpace: 'nowrap'
+  } as const;
+
+  const SelectItem = React.memo(({ item }: { item: λNote | λLink }) => {
+    const itemColorStyle = useMemo(() => ({ color: item.color }), [item.color]);
+    const itemIcon = useMemo(() =>
+      item.type === 'note' ? Note.icon(item) : Link.icon(item),
+      [item.type, item]
+    );
+    return (
+      <Select.Item style={itemColorStyle} value={item.id}>
+        <Select.Icon name={itemIcon} />
+        <p>{item.name}</p>
+      </Select.Item>
+    );
+  }, (prevProps, nextProps) => {
+    return prevProps.item.id === nextProps.item.id &&
+      prevProps.item.color === nextProps.item.color &&
+      prevProps.item.name === nextProps.item.name &&
+      prevProps.item.type === nextProps.item.type;
+  });
   export function List({ notes, links, className, ...props }: Collab.List.Props) {
     if (notes.length === 0 && links.length === 0) {
       return null
     }
-
     const { app, spawnBanner } = useApplication();
     const [target, setTarget] = useState<λNote | λLink>(notes[0] || links[0])
 
+    const debouncedSetTarget = useMemo(
+      () => debounce((newTarget: λNote | λLink) => setTarget(newTarget), 16),
+      []
+    );
     useEffect(() => {
-      const updated = target ? target.type === 'note' ? Note.id(app, target.id) : Link.id(app, target.id) : notes[0];
-
-      setTarget(updated || notes[0])
-    }, [notes, links])
-
+      const updated = target ?
+        target.type === 'note' ? Note.id(app, target.id) : Link.id(app, target.id) :
+        notes[0];
+      const newTarget = updated || notes[0];
+      if (newTarget && newTarget.id !== target?.id) {
+        debouncedSetTarget(newTarget);
+      }
+    }, [notes, links, target?.id, debouncedSetTarget])
     if (!target) {
       return null;
     }
 
-    const Edit = useMemo(() => {
-      const callback = target.type === 'note'
-        ? () => spawnBanner(<NoteFunctionality.Create.Banner event={Event.id(app, target.docs[0]._id)} note={target} />)
-        : () => spawnBanner(<LinkFunctionality.Create.Banner event={Event.id(app, target.doc_id_from)} link={target} />);
+    const handleEditClick = useCallback(() => {
+      const banner = target.type === 'note'
+        ? <NoteFunctionality.Create.Banner event={Event.id(app, target.docs[0]._id)} note={target} />
+        : <LinkFunctionality.Create.Banner event={Event.id(app, target.doc_id_from)} link={target} />;
+      spawnBanner(banner);
+    }, [target, app, spawnBanner]);
+    const handleDeleteClick = useCallback(() => {
+      const banner = target.type === 'note'
+        ? <Delete.Note.Banner note={target} />
+        : <Delete.Link.Banner link={target} />;
+      spawnBanner(banner);
+    }, [target, spawnBanner]);
+    const handleValueChange = useCallback((v: string) => {
+      const newTarget = Note.id(app, v as λNote['id']) || Link.id(app, v as λLink['id']);
+      setTarget(newTarget);
+    }, [app]);
 
-      return <Button rounded variant='glass' img='PencilEdit' size='sm' style={{ height: 20, marginLeft: 'auto' }} onClick={callback}>Edit</Button>
-    }, [target])
+    const targetColorStyle = useMemo(() => ({ color: target.color }), [target.color]);
+    const Edit = useMemo(() => {
+      return (
+        <Button
+          rounded
+          variant='glass'
+          img='PencilEdit'
+          size='sm'
+          style={EDIT_BUTTON_STYLE}
+          onClick={handleEditClick}
+        >
+          Edit
+        </Button>
+      );
+    }, [handleEditClick]);
 
     const List = useMemo(() => {
-      return (
-        [...notes, ...links].map(c => (
-          <Select.Item style={{ color: c.color }} value={c.id}>
-            <Select.Icon name={c.type === 'note' ? Note.icon(c) : Link.icon(c)} />
-            <p>{c.name}</p>
-          </Select.Item>
-        ))
-      )
+      return [...notes, ...links].map(c => (
+        <SelectItem key={c.id} item={c} />
+      ));
     }, [notes, links]);
 
+    const allTags = useMemo(() => {
+      return notes.map(n => n.tags).flat();
+    }, [notes]);
+    const targetIcon = useMemo(() => {
+      return target.type === 'note' ? Note.icon(target) : Link.icon(target);
+    }, [target]);
+
+    const MemoizedSelect = useMemo(() => {
+      return (
+        <Select.Root onValueChange={handleValueChange}>
+          <Select.Trigger style={targetColorStyle} value={target.id}>
+            <Select.Icon name={targetIcon} />
+            <p>{target.name}</p>
+          </Select.Trigger>
+          <Select.Content>
+            {List}
+          </Select.Content>
+        </Select.Root>
+      )
+    }, [handleValueChange, targetColorStyle, target, targetIcon, List]);
+
+    const badgeVariant = target.type === 'note' ? 'teal' : 'amber';
     return (
       <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
         <Stack dir='column' ai='stretch'>
           <Stack>
-            <Select.Root onValueChange={(v) => setTarget(Note.id(app, v as λNote['id']) || Link.id(app, v as λLink['id']))}>
-              <Select.Trigger style={{ color: target.color }} value={target.id}>
-                <Select.Icon name={target.type === 'note' ? Note.icon(target) : Link.icon(target)} />
-                <p>{target.name}</p>
-              </Select.Trigger>
-              <Select.Content>
-                {List}
-              </Select.Content>
-            </Select.Root>
-            <Button onClick={() => spawnBanner(target.type === 'note' ? <Delete.Note.Banner note={target} /> : <Delete.Link.Banner link={target} />)} variant='ghost' img='Trash2'>Delete</Button>
+            {MemoizedSelect}
+            <Button
+              onClick={handleDeleteClick}
+              variant='ghost'
+              img='Trash2'
+            >
+              Delete
+            </Button>
           </Stack>
-          <Stack style={{ flexWrap: 'wrap' }} jc='flex-start' ai='center'>
-            <Badge variant='gray-subtle' icon='ClockRewind' style={{ color: 'var(--gray-900)', background: 'var(--gray-300)', whiteSpace: 'nowrap' }} size='sm'>
+          <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
+            <Badge
+              variant='gray-subtle'
+              icon='ClockRewind'
+              style={BADGE_STYLE}
+              size='sm'
+            >
               Created {formatDistanceToNow(target.time_created, { addSuffix: true })}
             </Badge>
-            {notes.map(n => n.tags).flat().map(tag => <Badge icon='Status' value={tag} variant={target.type === 'note' ? 'teal' : 'amber'} size='sm' />)}
+            {allTags.map((tag, index) => (
+              <Badge
+                key={`${tag}-${index}`}
+                icon='Status'
+                value={tag}
+                variant={badgeVariant}
+                size='sm'
+              />
+            ))}
             {Edit}
           </Stack>
         </Stack>
@@ -85,14 +170,12 @@ export namespace Collab {
       </Stack>
     )
   }
-
   export namespace Description {
     export interface Props {
       value: string
       isDefaultOpen?: boolean
     }
   }
-
   export function Description({ value, isDefaultOpen = false }: Description.Props) {
     const [inOpen, setIsOpen] = useState<boolean>(isDefaultOpen)
     return (

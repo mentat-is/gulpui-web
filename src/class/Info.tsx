@@ -34,7 +34,7 @@ import { toast } from 'sonner'
 import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner'
 import { Pointers } from '@/components/Pointers'
 import { XY } from '@/dto/XY.dto'
-import { Badge } from '@impactium/components'
+import { Badge, Spinner } from '@impactium/components'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 
@@ -1272,18 +1272,53 @@ export class Info implements InfoProps {
   }
 
   // ⚠️ UNTOUCHABLE
-  notes_reload = () => {
+  notes_reload = async () => {
     const files = File.selected(this.app).map((f) => f.id);
     if (files.length === 0) {
       Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info.name);
       return;
     }
-    return api<λNote[]>('/note_list', {
-      method: 'POST',
-      body: {
-        source_ids: File.selected(this.app).map((f) => f.id),
-      },
-    }).then(notes => this.setInfoByKey(notes, 'target', 'notes'));
+    const notes: λNote[] = [];
+    const fetch = async (offset = 0) => {
+      const fetched = await api<λNote[]>('/note_list', {
+        method: 'POST',
+        body: {
+          source_ids: File.selected(this.app).map((f) => f.id),
+          offset,
+          limit: 500
+        },
+      });
+
+      if (fetched.length) {
+        notes.push(...fetched);
+        if (notes.length % 2500 === 0) {
+          toast(`Fetched ${notes.length} notes`, {
+            description: 'Continuing...',
+            icon: <Spinner />
+          })
+        }
+
+        this.setInfoByKey(notes, 'target', 'notes');
+
+        return new Promise(res => {
+          setTimeout(() => {
+            res(fetch(offset + 500));
+          }, 15)
+        })
+      } else {
+        Logger.log(`${notes.length} notes has been fetched in ${offset / 500} rounds`, Info.name);
+        if (notes.length > 5000) {
+          toast.success(`${notes.length} notes has been fetched in ${offset / 500} rounds`, {
+            icon: <Icon name='Check' />,
+            richColors: true
+          });
+        }
+      }
+    };
+
+    await fetch();
+
+    return notes;
   }
 
   /**

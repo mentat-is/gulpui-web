@@ -1,5 +1,5 @@
 import { Stack } from '@impactium/components'
-import React, { useState, createContext, useContext, memo } from 'react'
+import React, { useState, createContext, useContext, memo, useMemo } from 'react'
 import { generateUUID } from './utils'
 import s from './styles/Windows.module.css'
 import { Icon } from '@impactium/icons'
@@ -51,40 +51,84 @@ export namespace Windows {
 
   export const Context = createContext<Windows.Props | undefined>(undefined)
 
-  const ActiveWindow = memo(({ windows }: { windows: Windows.Window[] }) => {
-    const { dialog, app, Info } = useApplication()
-    const active = Windows.λWindow.active(windows)
+  // Мемоизированный компонент для диалога
+  const DialogContainer = memo(({ dialog, dialogSize, setDialogSize }: {
+    dialog: React.ReactNode
+    dialogSize: number
+    setDialogSize: (size: number) => void
+  }) => (
+    <Stack
+      className={cn(s.dialog, dialog && s.open)}
+      style={{ width: dialogSize }}
+      pos="relative"
+    >
+      <Resizer init={dialogSize} set={setDialogSize} />
+      {dialog}
+    </Stack>
+  ))
 
-    if (!active) {
-      return <Welcome.Page />
-    }
-
-    const { children, uuid, className, ...props } = active
+  // Мемоизированный компонент для активного окна
+  const ActiveWindowContent = memo(({
+    activeWindow,
+    dialog,
+    dialogSize,
+    setDialogSize
+  }: {
+    activeWindow: Windows.Window
+    dialog: React.ReactNode
+    dialogSize: number
+    setDialogSize: (size: number) => void
+  }) => {
+    const { children, uuid, className, ...props } = activeWindow
 
     return (
       <Stack key={uuid} gap={12} className={cn(s.window, className)} {...props}>
         <Menu />
         {children}
-        <Stack
-          className={cn(s.dialog, dialog && s.open)}
-          style={{ width: app.timeline.dialogSize }}
-          pos="relative"
-        >
-          <Resizer init={app.timeline.dialogSize} set={Info.setDialogSize} />
-          {dialog}
-        </Stack>
+        <DialogContainer
+          dialog={dialog}
+          dialogSize={dialogSize}
+          setDialogSize={setDialogSize}
+        />
       </Stack>
+    )
+  })
+
+  const ActiveWindow = memo(({ windows }: { windows: Windows.Window[] }) => {
+    const { dialog, app, Info } = useApplication()
+
+    // Мемоизируем активное окно - перерендер только при изменении активного окна
+    const activeWindow = useMemo(() => {
+      return Windows.λWindow.active(windows)
+    }, [windows])
+
+    // Мемоизируем стабильные значения из app и Info
+    const dialogSize = useMemo(() => app.timeline.dialogSize, [app.timeline.dialogSize])
+    const setDialogSize = useMemo(() => Info.setDialogSize, [Info.setDialogSize])
+
+    if (!activeWindow) {
+      return <Welcome.Page />
+    }
+
+    return (
+      <ActiveWindowContent
+        activeWindow={activeWindow}
+        dialog={dialog}
+        dialogSize={dialogSize}
+        setDialogSize={setDialogSize}
+      />
     )
   })
 
   export const Provider = () => {
     const [windows, setWindows] = useState<Windows.Window[]>([])
 
-    const newWindow = (window: Omit<Windows.Window, 'uuid'>) => {
+    // Мемоизируем функции чтобы избежать лишних перерендеров
+    const newWindow = useMemo(() => (window: Omit<Windows.Window, 'uuid'>) => {
       setWindows((windows) => [...windows, Windows.λWindow.normalize(window)])
-    }
+    }, [])
 
-    const closeWindow = (window: Windows.Window['uuid']) => {
+    const closeWindow = useMemo(() => (window: Windows.Window['uuid']) => {
       setWindows((winds) => {
         const newWindows = winds.filter((w) => w.uuid !== window)
 
@@ -94,14 +138,14 @@ export namespace Windows {
 
         return newWindows
       })
-    }
+    }, [])
 
-    const props: Windows.Props = {
+    const props: Windows.Props = useMemo(() => ({
       windows,
       setWindows,
       newWindow,
       closeWindow,
-    }
+    }), [windows, newWindow, closeWindow])
 
     return (
       <Windows.Context.Provider value={props}>
@@ -111,6 +155,8 @@ export namespace Windows {
   }
 
   ActiveWindow.displayName = 'ActiveWindow'
+  ActiveWindowContent.displayName = 'ActiveWindowContent'
+  DialogContainer.displayName = 'DialogContainer'
 }
 
 export const λWindow = Windows.λWindow

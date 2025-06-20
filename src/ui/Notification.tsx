@@ -11,6 +11,7 @@ export const notificationVariants = cva(s.notification, {
       success: s.success,
       warning: s.warning,
       error: s.error,
+      informational: s.informational
     }
   },
   defaultVariants: {

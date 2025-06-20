@@ -38,3 +38,8 @@
   border: 1px solid var(--green-400);
   color: var(--green-900);
 }
+.informational {
+  background: var(--blue-100);
+  border: 1px solid var(--blue-400);
+  color: var(--blue-900);
+}
