@@ -23,7 +23,7 @@ export function NotesDisplayer({
 
   const mapping = useMemo<NoteMapping>(() => {
     return notes.reduce<NoteMapping>((acc, note) => {
-      const timestamp = NoteClass.timestamp(app, note)
+      const timestamp = NoteClass.timestamp(note)
       if (timestamp) {
         acc[note.id] = {
           x: getPixelPosition(timestamp),

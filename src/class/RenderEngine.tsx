@@ -1,14 +1,16 @@
-import { Internal, MinMax, Range } from '@/class/Info'
+import { Internal, MinMax, Note, Range } from '@/class/Info'
 import { Event, Info, File } from './Info'
 import { Color, stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
-import { XY, XYBase } from '@/dto/XY.dto'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
 import { Engine, Hardcode } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
-import { λFile, λLink } from '@/dto/Dataset'
+import { λFile, λLink, λNote } from '@/dto/Dataset'
+
+const NOTE_SIZE = 32;
+const NOTE_OFFSET = 32 / 2 * -1;
 
 const mappedColors: Record<string, string> = {
   red: '#d9303629',
@@ -102,7 +104,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       width: info.width,
     })
     this.ctx = ctx
-    this.ctx.imageSmoothingEnabled = false
+    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.imageSmoothingQuality = 'high';
     this.ctx.font = '10px monospace'
     this.limits = limits
     this.shifted = shifted
@@ -164,9 +167,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const y = 32 * (index + 1);
 
     const height = this.ctx.canvas.height - (20 * 2 * (index + 1));
-
-    // height: calc(100% + 16px - calc(32px * 2 * (var(--index, 0) + 1)));
-    // top: calc(32px * (var(--index, 0) + 1));
 
     this.ctx.fillRect(x, y, width, height);
   }
@@ -306,6 +306,60 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     ) {
       this.loading(file)
     }
+  }
+
+  private drawRect(x: number, y: number, w: number, h: number, accent: string, color = '#000000') {
+    this.ctx.fillStyle = color;
+    this.ctx.strokeStyle = accent;
+    this.ctx.lineWidth = 1
+
+    this.ctx.beginPath()
+    this.ctx.roundRect(x, y, w, h, 6)
+    this.ctx.fill()
+    this.ctx.stroke()
+  }
+
+  private drawTextLabel(text: string, x: number, y: number, maxWidth: number, accent: string) {
+    this.ctx.font = '10px sans-serif'
+    const textWidth = this.ctx.measureText(text).width
+    const padding = 4
+    const labelWidth = Math.min(Math.max(textWidth + padding * 2, NOTE_SIZE), maxWidth)
+    const labelHeight = 14
+
+    const labelX = x - labelWidth / 2
+
+    this.drawRect(labelX, y + NOTE_SIZE - labelHeight - 2, labelWidth, labelHeight, accent)
+
+    // Текст по центру
+    this.ctx.fillStyle = '#ffffff'
+    this.ctx.textAlign = 'center'
+    this.ctx.textBaseline = 'middle'
+    this.ctx.fillText(text, x, y + NOTE_SIZE - labelHeight / 2 - 2, labelWidth - padding * 2)
+  }
+
+
+  public renderNote = (note: λNote) => {
+    const timestamp = Note.timestamp(note)
+    const x = this.getPixelPosition(timestamp) + NOTE_OFFSET
+    const y = File.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
+
+    this.ctx.save()
+
+    // Main
+    this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, note.color);
+    // Accent
+    this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, note.color, note.color);
+
+    // Icon
+    const iconSize = 8
+    this.ctx.fillStyle = note.color
+    this.ctx.beginPath()
+    this.ctx.arc(x + NOTE_SIZE / 2, y + NOTE_SIZE / 2, iconSize / 2, 0, Math.PI * 2)
+    this.ctx.fill()
+
+    this.drawTextLabel(note.name, x + 16, y + 20, 64, note.color);
+
+    this.ctx.restore()
   }
 
   public loading = (file: λFile) => {

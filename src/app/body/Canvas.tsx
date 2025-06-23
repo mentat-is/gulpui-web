@@ -11,7 +11,7 @@ import { NotesDisplayer } from './Notes.displayer'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { LoggerHandler } from '@/dto/Logger.class'
 import { λFile } from '@/dto/Dataset'
-import { File, Internal } from '@/class/Info'
+import { File, Internal, Note } from '@/class/Info'
 import Crosshair from './Crosshair'
 import { Stack } from '@impactium/components'
 import { debounce } from 'lodash'
@@ -72,6 +72,10 @@ export function Canvas({ timeline }: Canvas.Props) {
       setIsRescaleBlokced(false);
     }, 250);
   }, []);
+
+  useEffect(() => {
+    Note.updateIndexing(app);
+  }, [app.target.notes]);
 
   const renderCanvas = (
     force?: boolean,
@@ -136,6 +140,8 @@ export function Canvas({ timeline }: Canvas.Props) {
     render.target()
 
     render.links()
+
+    app.target.notes.forEach(note => render.renderNote(note));
 
     ctx.fillStyle = '#ff000080'
     ctx.fillRect(

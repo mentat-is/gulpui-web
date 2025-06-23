@@ -2426,10 +2426,7 @@ export class File {
   public static events = (app: λApp, file: λFile | μ.File): λEvent[] =>
     Event.get(app, Parser.useUUID(file) as μ.File)
 
-  public static notes = (app: λApp, files: Arrayed<λFile>): λNote[] =>
-    Parser.array(files)
-      .map((s) => Note.findByFile(app, s))
-      .flat()
+  public static notes = (app: λApp, files: Arrayed<λFile>): λNote[] => Parser.array(files).map((s) => Note.findByFile(app, s)).flat();
 
   public static index = (app: λApp, file: λFile | μ.File) => File.selected(app).findIndex((s) => s.id === Parser.useUUID(file))
 
@@ -2617,7 +2614,7 @@ export class Event {
       .filter((e) => ids.includes(e._id))
 
   public static notes = (app: λApp, event: λEvent) =>
-    app.target.notes.filter((n) => n.docs.some((doc) => doc._id === event._id))
+    Note.findByFile(app, event['gulp.source_id']).filter((n) => n.docs.some((doc) => doc._id === event._id))
 
   public static links = (app: λApp, event: λEvent) =>
     app.target.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
@@ -2642,10 +2639,32 @@ export class Note {
       note.docs.map((d) => d._id),
     )
 
-  public static findByFile = (app: λApp, file: λFile) =>
-    app.target.notes.filter((n) => n.source_id === file.id)
+  public static mappingFileIdToNotes = new Map<λFile['id'], λNote[]>();
 
-  public static timestamp = (app: λApp, note: λNote): number => {
+  public static indexSize = () => [...Note.mappingFileIdToNotes.values()].flat().length;
+
+  public static updateIndexing = (app: λApp) => {
+    Note.mappingFileIdToNotes.clear();
+
+    app.target.files.forEach(file => {
+      Note.mappingFileIdToNotes.set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
+    })
+
+    Logger.log(`NOTES_INDEXES_HAS_BEEN_CREATED:${Note.indexSize()}`, Note.name);
+  };
+
+  public static findByFile = (app: λApp, file: λFile | λFile['id']): λNote[] => {
+    const id = Parser.useUUID(file) as λFile['id'];
+    const notes = this.mappingFileIdToNotes.get(id);
+    if (notes) {
+      return notes;
+    } else {
+      this.updateIndexing(app);
+      return Note.findByFile(app, file);
+    }
+  };
+
+  public static timestamp = (note: λNote): number => {
     let sum = 0
     note.docs.forEach((d) => (sum += new Date(d['@timestamp']).getTime()))
     return sum / note.docs.length || 1

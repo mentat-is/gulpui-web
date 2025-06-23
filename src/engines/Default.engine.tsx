@@ -6,7 +6,6 @@ import {
 import { RenderEngine } from '../class/RenderEngine'
 import { Refractor, λColor } from '@/ui/utils'
 import { Event, File, MinMax } from '@/class/Info'
-import { Logger } from '@/dto/Logger.class'
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null
@@ -48,7 +47,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
         y,
         1,
         47,
-      )
+      );
     })
   }
 

@@ -76,7 +76,7 @@ export function Graph({ notes, className, ...props }: Graph.Props) {
   matrix.clear()
 
   notes.forEach((note) => {
-    const timestamp = Note.timestamp(app, note)
+    const timestamp = Note.timestamp(note)
     matrix.set(note.id, getNoteXPositionFromTimestamp(timestamp) + 64)
   })
 
