@@ -1355,7 +1355,7 @@ export class Info implements InfoProps {
       const updated = [...this.app.target.notes];
       if (index !== -1) {
         updated.splice(index, 1);
-        this.setInfoByKey(this.app.target.notes, 'target', 'notes');
+        this.setInfoByKey(updated.sort((a, b) => Note.timestamp(b) - Note.timestamp(a)), 'target', 'notes');
       }
     });
 
@@ -1396,7 +1396,7 @@ export class Info implements InfoProps {
   }).then(note => {
     const updated = [...this.app.target.notes];
     updated.push(note);
-    this.setInfoByKey(updated, 'target', 'notes');
+    this.setInfoByKey(updated.sort((a, b) => Note.timestamp(b) - Note.timestamp(a)), 'target', 'notes');
   });
 
   note_edit = ({
@@ -1438,7 +1438,7 @@ export class Info implements InfoProps {
     }
     const updated = [...this.app.target.notes];
     updated[index] = note;
-    this.setInfoByKey(updated, 'target', 'notes');
+    this.setInfoByKey(updated.sort((a, b) => Note.timestamp(b) - Note.timestamp(a)), 'target', 'notes');
   });
 
   // ⚠️ UNTOUCHABLE
@@ -2613,8 +2613,7 @@ export class Event {
       .flat()
       .filter((e) => ids.includes(e._id))
 
-  public static notes = (app: λApp, event: λEvent) =>
-    Note.findByFile(app, event['gulp.source_id']).filter((n) => n.docs.some((doc) => doc._id === event._id))
+  public static notes = (app: λApp, event: λEvent) => Note.findByFile(app, event['gulp.source_id']).filter((n) => n.docs.some((doc) => doc._id === event._id))
 
   public static links = (app: λApp, event: λEvent) =>
     app.target.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
@@ -2665,6 +2664,10 @@ export class Note {
   };
 
   public static timestamp = (note: λNote): number => {
+    if (!note || !note.docs) {
+      return 0;
+    }
+
     let sum = 0
     note.docs.forEach((d) => (sum += new Date(d['@timestamp']).getTime()))
     return sum / note.docs.length || 1

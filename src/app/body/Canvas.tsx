@@ -22,10 +22,8 @@ import { TargetMenu } from './Target.menu'
 import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
-import { XY, XYBase } from '@/dto/XY.dto'
+import { XY } from '@/dto/XY.dto'
 import { Highlights } from '@/overlays/Highlights'
-import { toast } from 'sonner'
-import { Icon } from '@impactium/icons'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -57,7 +55,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   ]
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, dependencies)
-  const { dragState, resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
+  const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
 
   useEffect(() => {
     if (app.timeline.target) {
@@ -76,6 +74,12 @@ export function Canvas({ timeline }: Canvas.Props) {
   useEffect(() => {
     Note.updateIndexing(app);
   }, [app.target.notes]);
+
+  const [selectedFiles, setSelectedFiles] = useState<λFile[]>([]);
+
+  useEffect(() => {
+    setSelectedFiles(File.selected(app));
+  }, [app.target.files]);
 
   const renderCanvas = (
     force?: boolean,
@@ -121,7 +125,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     Highlights.list().map(v => render.highlight(...v));
 
-    File.selected(app).forEach((file, i) => {
+    selectedFiles.forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY)
 
       if (
@@ -141,7 +145,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     render.links()
 
-    app.target.notes.forEach(note => render.renderNote(note));
+    if (force) {
+      render.reset();
+    }
+    if (!app.timeline.hidden_notes) {
+      render.notes(selectedFiles);
+    }
 
     ctx.fillStyle = '#ff000080'
     ctx.fillRect(
@@ -398,7 +407,10 @@ export function Canvas({ timeline }: Canvas.Props) {
         onKeyDown={toggler}
         tabIndex={0}
       >
-        <NotesDisplayer getPixelPosition={getPixelPosition} />
+        <NotesDisplayer
+          getPixelPosition={getPixelPosition}
+          self={mousePosition}
+        />
         <LinksDisplayer getPixelPosition={getPixelPosition} />
         <Highlights.List.Overlay />
         <canvas

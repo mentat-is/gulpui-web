@@ -1,6 +1,6 @@
 import { Internal, MinMax, Note, Range } from '@/class/Info'
 import { Event, Info, File } from './Info'
-import { Color, stringToHexColor } from '@/ui/utils'
+import { Color, getTimestamp, stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
@@ -8,9 +8,12 @@ import { Engine, Hardcode } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
 import { λFile, λLink, λNote } from '@/dto/Dataset'
+import { getCanvasIcon } from '@/ui/CanvasIcon'
+import { Logger } from '@/dto/Logger.class'
+import { Glyph } from '@/ui/Glyph'
 
 const NOTE_SIZE = 32;
-const NOTE_OFFSET = 32 / 2 * -1;
+const NOTE_OFFSET = NOTE_SIZE / 2 * -1;
 
 const mappedColors: Record<string, string> = {
   red: '#d9303629',
@@ -38,7 +41,9 @@ export interface Status {
   heights: number[]
 }
 
-export type StatusMap = Map<number, Status> & Hardcode.Scale;
+export type StatusMap = Map<number, Status> & {
+  [Hardcode.Scale]: number;
+};
 type Engines = {
   [key in Engine.List]: Engine.Interface<any>
 }
@@ -48,6 +53,8 @@ export interface Dot {
   y: number
   color: string
 }
+
+type Group = [index: number, count: number];
 
 export class RenderEngine implements RenderEngineConstructor, Engines {
   ctx!: CanvasRenderingContext2D
@@ -63,6 +70,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   height!: HeightEngine
   graph!: GraphEngine
   shifted: λFile[] = []
+
+  // CACHE
+  private static [Hardcode.Cache] = {
+    notes: new Map() as Map<λFile['id'], Group[]> & { [Hardcode.Scale]: number }
+  };
 
   constructor({
     ctx,
@@ -308,58 +320,243 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
   }
 
-  private drawRect(x: number, y: number, w: number, h: number, accent: string, color = '#000000') {
+  private drawRect(x: number, y: number, w: number, h: number, r: number, accent: string, color = '#000000') {
     this.ctx.fillStyle = color;
     this.ctx.strokeStyle = accent;
     this.ctx.lineWidth = 1
 
     this.ctx.beginPath()
-    this.ctx.roundRect(x, y, w, h, 6)
+    if (typeof this.ctx.roundRect === 'function') {
+      this.ctx.roundRect(x, y, w, h, r)
+    } else {
+      this.ctx.rect(x, y, w, h)
+    }
     this.ctx.fill()
     this.ctx.stroke()
   }
 
   private drawTextLabel(text: string, x: number, y: number, maxWidth: number, accent: string) {
-    this.ctx.font = '10px sans-serif'
+    this.ctx.font = '10px "GeistMono", sans-serif'
     const textWidth = this.ctx.measureText(text).width
-    const padding = 4
+    const padding = 5
     const labelWidth = Math.min(Math.max(textWidth + padding * 2, NOTE_SIZE), maxWidth)
-    const labelHeight = 14
+    const labelHeight = 20
 
     const labelX = x - labelWidth / 2
 
-    this.drawRect(labelX, y + NOTE_SIZE - labelHeight - 2, labelWidth, labelHeight, accent)
+    this.drawRect(labelX, y + NOTE_SIZE - labelHeight - 2, labelWidth, labelHeight, 5, accent)
 
-    // Текст по центру
     this.ctx.fillStyle = '#ffffff'
     this.ctx.textAlign = 'center'
     this.ctx.textBaseline = 'middle'
-    this.ctx.fillText(text, x, y + NOTE_SIZE - labelHeight / 2 - 2, labelWidth - padding * 2)
+
+    let displayText = text
+    if (textWidth > maxWidth - padding * 2) {
+      while (this.ctx.measureText(displayText + '...').width > maxWidth - padding * 2 && displayText.length > 0) {
+        displayText = displayText.slice(0, -1)
+      }
+      displayText += '...'
+    }
+
+    this.ctx.fillText(displayText, x, y + NOTE_SIZE - labelHeight / 2 - 2)
   }
 
-
-  public renderNote = (note: λNote) => {
+  public renderNote = async (note: λNote) => {
     const timestamp = Note.timestamp(note)
     const x = this.getPixelPosition(timestamp) + NOTE_OFFSET
     const y = File.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
 
     this.ctx.save()
 
+    if (!note.color) {
+      note.color = '#e8e8e8';
+    }
     // Main
-    this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, note.color);
+    this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, note.color);
     // Accent
-    this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, note.color, note.color);
+    this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, 4, note.color, note.color);
 
-    // Icon
-    const iconSize = 8
-    this.ctx.fillStyle = note.color
-    this.ctx.beginPath()
-    this.ctx.arc(x + NOTE_SIZE / 2, y + NOTE_SIZE / 2, iconSize / 2, 0, Math.PI * 2)
-    this.ctx.fill()
+    try {
+      const icon = getCanvasIcon({
+        name: Note.icon(note),
+        color: note.color
+      })
 
-    this.drawTextLabel(note.name, x + 16, y + 20, 64, note.color);
+      const iconSize = 16
+      const iconX = x + (NOTE_SIZE - iconSize) / 2
+      const iconY = y + (NOTE_SIZE - iconSize) / 2 - 1
+
+      this.ctx.drawImage(icon, iconX, iconY, iconSize, iconSize)
+    } catch (error) {
+      Logger.error(`Failed to load image for note ${note.id}. \n${JSON.stringify(error)}`, RenderEngine.name);
+      const iconSize = 8
+      this.ctx.fillStyle = note.color
+      this.ctx.beginPath()
+      this.ctx.arc(x + NOTE_SIZE / 2, y + NOTE_SIZE / 2, iconSize / 2, 0, Math.PI * 2)
+      this.ctx.fill()
+    }
+
+    this.drawTextLabel(note.name, x + NOTE_SIZE / 2, y + 26, 120, note.color);
 
     this.ctx.restore()
+  }
+
+  // [ ] WRONG FUNCTION
+  private getVisibleNotes = (file: λFile['id']) => {
+    const notes = Note.findByFile(this.info.app, file);
+    const min = this.getTimestamp(-128)
+    const max = this.getTimestamp(this.ctx.canvas.width + 128)
+
+    const start = this.binarySearch(notes, min, true)
+    const end = this.binarySearch(notes, max, false)
+
+    if (start === -1 || end === -1 || start > end) return [];
+
+    return notes.slice(start, end + 1);
+  }
+
+  private calculateNotesGroups(file: λFile['id']): {
+    notes: λNote[],
+    groups: Group[]
+  } {
+    const notes = this.getVisibleNotes(file);
+    console.log(notes);
+    if (notes.length === 0) {
+      RenderEngine[Hardcode.Cache].notes.set(file, [])
+      RenderEngine[Hardcode.Cache].notes[Hardcode.Scale] = this.info.app.timeline.scale
+      return {
+        notes: [],
+        groups: []
+      }
+    }
+
+    if (RenderEngine[Hardcode.Cache].notes[Hardcode.Scale] === this.info.app.timeline.scale && RenderEngine[Hardcode.Cache].notes.has(file)) {
+      return {
+        notes,
+        groups: RenderEngine[Hardcode.Cache].notes.get(file)!
+      }
+    }
+
+    const groups: Group[] = []
+
+    for (let i = 0; i < notes.length;) {
+      const groupEndIdx = this.findGroupEndIndexDirect(notes, i)
+      groups.push([i, groupEndIdx - i + 1])
+      i = groupEndIdx + 1
+    }
+
+    RenderEngine[Hardcode.Cache].notes.set(file, groups)
+    RenderEngine[Hardcode.Cache].notes[Hardcode.Scale] = this.info.app.timeline.scale
+    return { notes, groups };
+  }
+
+  public getTimestamp = (x: number): number => {
+    const visibleWidth = this.ctx.canvas.width * this.info.app.timeline.scale;
+    const pixelOffset = x + this.scrollX
+    return this.info.app.timeline.frame.min + (pixelOffset / visibleWidth) * (this.info.app.timeline.frame.max - this.info.app.timeline.frame.min)
+  }
+
+  private binarySearch(notes: λNote[], timestamp: number, findFirst: boolean): number {
+    let left = 0, right = notes.length - 1, result = -1
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2)
+      const noteTime = Note.timestamp(notes[mid])
+
+      if (findFirst ? noteTime >= timestamp : noteTime <= timestamp) {
+        result = mid
+        if (findFirst) right = mid - 1
+        else left = mid + 1
+      } else {
+        if (findFirst) left = mid + 1
+        else right = mid - 1
+      }
+    }
+
+    return result
+  }
+
+  private findGroupEndIndexDirect(notes: λNote[], startIdx: number): number {
+    const startTimestamp = Note.timestamp(notes[startIdx])
+    const startX = this.getPixelPosition(startTimestamp)
+
+    let left = startIdx + 1
+    let right = notes.length - 1
+    let result = startIdx
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2)
+      const midX = this.getPixelPosition(Note.timestamp(notes[mid]))
+      const distance = Math.abs(midX - startX);
+
+      if (distance <= 24) {
+        result = mid
+        left = mid + 1
+      } else {
+        right = mid - 1
+      }
+    }
+
+    return result
+  }
+
+  public static getNotesByX = (file: λFile, x: number, padding = 16): λNote[] => {
+    if (!RenderEngine.instance) {
+      return [];
+    }
+    const { notes, groups } = RenderEngine.instance.calculateNotesGroups(file.id);
+    if (groups.length === 0) {
+      return [];
+    }
+
+    const minTimestamp = RenderEngine.instance.getTimestamp(x - padding);
+    const maxTimestamp = RenderEngine.instance.getTimestamp(x + padding);
+
+    let left = 0;
+    let right = groups.length - 1;
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      const [groupIndex, groupCount] = groups[mid];
+
+      const groupStartTimestamp = Note.timestamp(notes[groupIndex]);
+      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount]);
+
+      if (groupStartTimestamp <= maxTimestamp && groupEndTimestamp >= minTimestamp) {
+        return notes.slice(groupIndex, groupIndex + groupCount);
+      }
+
+      if (groupStartTimestamp > maxTimestamp) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+    }
+
+    return [];
+  }
+
+  public reset = () => {
+    RenderEngine[Hardcode.Cache].notes.clear();
+  }
+
+  public notes = (files: λFile[]) => {
+    files.forEach(file => {
+      const { notes, groups } = this.calculateNotesGroups(file.id)
+
+      groups.forEach(async (group) => {
+        if (group[1] === 1) {
+          this.renderNote(notes[group[0]])
+        } else {
+          this.renderNote({
+            ...notes[group[0]],
+            name: `${group[1]}`,
+            color: '#e8e8e8',
+            glyph_id: Glyph.getIdByName('Status')
+          })
+        }
+      })
+    })
   }
 
   public loading = (file: λFile) => {
@@ -423,10 +620,4 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       window.innerWidth,
     )
   }
-
-  // public draw_notes() {
-  //   this.info.app.target.notes.forEach(note => {
-  //     note.
-  //   })
-  // }
 }

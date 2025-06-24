@@ -15,10 +15,9 @@ export namespace Engine {
 }
 
 export namespace Hardcode {
-  export const Scale = Symbol('Scale')
-  export interface Scale {
-    [Scale]: Hardcode.Scale
-  }
+  export const Cache = Symbol('Cache')
+
+  export const Scale = Symbol('Scale');
 
   export const Height = Symbol('Height')
   export interface Height {

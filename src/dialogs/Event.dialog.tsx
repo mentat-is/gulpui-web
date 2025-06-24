@@ -205,12 +205,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     )
   }, [json, selection, spawnBanner, event, applySelectionAsFileFilter]);
 
-  const collabList = useMemo(() => {
-    return (
-      <Collab.List notes={notes} links={links} />
-    )
-  }, [notes, links]);
-
   const handleCreateNote = useCallback(() => {
     spawnBanner(<NoteFunctionality.Create.Banner event={event} />)
   }, [spawnBanner, event]);
@@ -296,7 +290,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               </Button>
             </Stack>
           </Stack>
-          {collabList}
+          <Collab.List notes={notes} links={links} />
           {highlights}
           <Stack className={s.actionButtons}>
             <Button variant="secondary" onClick={handleCopyJson} img="Copy">Copy JSON</Button>

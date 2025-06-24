@@ -42,7 +42,7 @@
 .desc {
   position: absolute;
   font-size: 10px;
-  transform: translateY(26px);
+  transform: translateY(30px);
   font-family: var(--font-mono);
   max-width: 128px;
   min-width: 32px;

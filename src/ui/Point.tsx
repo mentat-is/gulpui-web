@@ -42,9 +42,6 @@ export function Point({
       {name && <p className={s.desc} style={{ y, x, borderColor: accent }}>
         {name}
       </p>}
-      {description && (
-        <span style={{ pointerEvents: 'none' }}>{description}</span>
-      )}
     </Button>
   )
 }

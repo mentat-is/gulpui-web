@@ -53,19 +53,9 @@ import React from "react"; export namespace Collab {
     const { app, spawnBanner } = useApplication();
     const [target, setTarget] = useState<λNote | λLink>(notes[0] || links[0])
 
-    const debouncedSetTarget = useMemo(
-      () => debounce((newTarget: λNote | λLink) => setTarget(newTarget), 16),
-      []
-    );
     useEffect(() => {
-      const updated = target ?
-        target.type === 'note' ? Note.id(app, target.id) : Link.id(app, target.id) :
-        notes[0];
-      const newTarget = updated || notes[0];
-      if (newTarget && newTarget.id !== target?.id) {
-        debouncedSetTarget(newTarget);
-      }
-    }, [notes, links, target?.id, debouncedSetTarget])
+      setTarget(notes[0] || links[0]);
+    }, [notes, links])
     if (!target) {
       return null;
     }
