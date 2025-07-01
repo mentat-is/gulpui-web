@@ -413,3 +413,20 @@ export interface RGB {
   g: number,
   b: number
 }
+
+export function getSortOrder<T>(arr: T[], compareFn: (a: T, b: T) => number): 'asc' | 'desc' | 'unsorted' {
+  let asc = true;
+  let desc = true;
+
+  for (let i = 1; i < arr.length; i++) {
+    const cmp = compareFn(arr[i - 1], arr[i]);
+    if (cmp > 0) asc = false;
+    if (cmp < 0) desc = false;
+    if (!asc && !desc) return 'unsorted';
+  }
+
+  if (asc) return 'asc';
+  if (desc) return 'desc';
+  return 'unsorted';
+}
+

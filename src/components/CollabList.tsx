@@ -62,7 +62,7 @@ import React from "react"; export namespace Collab {
 
     const handleEditClick = useCallback(() => {
       const banner = target.type === 'note'
-        ? <NoteFunctionality.Create.Banner event={Event.id(app, target.docs[0]._id)} note={target} />
+        ? <NoteFunctionality.Create.Banner event={Event.id(app, target.doc._id)} note={target} />
         : <LinkFunctionality.Create.Banner event={Event.id(app, target.doc_id_from)} link={target} />;
       spawnBanner(banner);
     }, [target, app, spawnBanner]);

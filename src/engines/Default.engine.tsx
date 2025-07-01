@@ -1,11 +1,13 @@
 import { λFile } from '@/dto/Dataset'
 import {
   Engine,
-  Hardcode
+  Hardcode,
+  λCache
 } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
 import { Refractor, λColor } from '@/ui/utils'
 import { Event, File, MinMax } from '@/class/Info'
+import { Logger } from '@/dto/Logger.class'
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   private static instance: DefaultEngine | null = null
@@ -28,7 +30,9 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
   }
 
   render(file: λFile, y: number, force?: boolean) {
-    const map = this.get(file, force)
+    const map = this.get(file, force);
+
+    const range = this.getRanges(file);
 
     const events = Array.from(map.entries())
 
@@ -37,10 +41,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
         return;
       }
 
-      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, {
-        min: map[Hardcode.MinHeight],
-        max: map[Hardcode.MaxHeight],
-      })
+      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, range ?? file.code);
 
       this.renderer.ctx.fillRect(
         this.renderer.getPixelPosition(timestamp),
@@ -147,24 +148,62 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       ])
     }
 
-    const values = map.values().map(([code, _]) => code);
-    let max = -Infinity;
-    let min = Infinity;
-    values.forEach(v => {
-      if (v > max) {
-        max = v
-      }
-      if (v < min) {
-        min = v
-      }
-    })
-
     map[Hardcode.Scale] = this.renderer.info.app.timeline.scale
-    map[Hardcode.MinHeight] = min
-    map[Hardcode.MaxHeight] = max
     this.map.set(file.id, map)
 
     return map as typeof DefaultEngine.target
+  }
+
+  /**
+   * Метод для получения MinMax значения для файла
+   */
+  getRanges(file: λFile): MinMax {
+    const events = File.events(this.renderer.info.app, file);
+    const cache = RenderEngine[λCache].range.get(file.id);
+    if (cache && cache.field === file.settings.field) {
+      const isSyncedByLength = cache[Hardcode.Length] === events.length;
+      if (isSyncedByLength) {
+        return cache;
+      } else {
+        this.computeRanges(file, cache[Hardcode.Length]);
+      }
+    }
+    // Перерасчитываем
+    this.computeRanges(file);
+    // Вызываем заново чтобы убедится в правильности расчётов
+    return this.getRanges(file);
+  }
+
+  /**
+   * Перерасчитывает MinMax значения для файла исходя с того какое таргетное поле стоит в настройках
+   */
+  computeRanges(file: λFile, skip: number = 0) {
+    const events = File.events(this.renderer.info.app, file).slice(skip);
+
+    const cache = RenderEngine[λCache].range.get(file.id)!;
+
+    const range = skip > 0 ? cache : {
+      min: Infinity,
+      max: -Infinity,
+      field: file.settings.field
+    };
+
+    events.forEach(event => {
+      const value = Refractor.any.toNumber(event[file.settings.field]);
+      if (value > range.max) {
+        range.max = value
+      }
+      if (value < range.min) {
+        range.min = value
+      }
+    })
+
+    RenderEngine[λCache].range.set(file.id, {
+      ...range,
+      [Hardcode.Length]: events.length
+    });
+
+    Logger.log(`RenderEngine cache ranges for file ${file.id} has been recalculated`, DefaultEngine.name);
   }
 
   is = (file: λFile) => Boolean(this.map.get(file.id)?.[Hardcode.Scale] === this.renderer.info.app.timeline.scale);

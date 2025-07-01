@@ -82,15 +82,9 @@ export function Navigator({
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   const focus = (note: λNote) => {
-    const events = Note.events(app, note)
+    const event = Note.event(app, note)
 
-    spawnDialog(
-      events.length > 1 ? (
-        <DisplayGroupDialog events={events} />
-      ) : (
-        <DisplayEventDialog event={events[0]} />
-      ),
-    )
+    spawnDialog(<DisplayEventDialog event={event} />);
   }
 
   const openWindow = () => {

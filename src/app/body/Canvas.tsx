@@ -146,7 +146,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     render.links()
 
     if (force) {
-      render.reset();
+      RenderEngine.reset('notes');
     }
     if (!app.timeline.hidden_notes) {
       render.notes(selectedFiles);

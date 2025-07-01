@@ -20,7 +20,7 @@ export function ExtensionProvider({ children }: Extension.Provider.Props) {
 
         const Compiled = <Component />;
         if (Compiled) {
-          Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`);
+          Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, ExtensionProvider);
         }
 
         new_extensions[plugin.filename] = {

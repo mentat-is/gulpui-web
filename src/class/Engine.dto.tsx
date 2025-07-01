@@ -15,8 +15,6 @@ export namespace Engine {
 }
 
 export namespace Hardcode {
-  export const Cache = Symbol('Cache')
-
   export const Scale = Symbol('Scale');
 
   export const Height = Symbol('Height')
@@ -46,3 +44,5 @@ export namespace Hardcode {
     [End]: number
   }
 }
+
+export const λCache = Symbol('Cache')

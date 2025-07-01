@@ -13,11 +13,13 @@ interface Options {
   icon?: Icon.Name
 }
 
+type ExecutionContext = string | { name: string };
+
 export class Logger {
   protected static messages: Console.History[] = []
 
-  static log(message: any, context?: Arrayed<string>, options?: Options) {
-    Logger.store('log', message, context)
+  static log(message: any, context: string | { name: string }, options?: Options) {
+    Logger.store('log', message, typeof context === 'string' ? context : context?.name)
     if (options?.toast) {
       toast(message, {
         icon: options.icon ? <Icon name={options.icon} /> : undefined
@@ -25,7 +27,7 @@ export class Logger {
     }
   }
 
-  static error(message: any, context?: Arrayed<string>, options?: Options) {
+  static error(message: any, context?: ExecutionContext, options?: Options) {
     Logger.store('error', message, context)
     if (options?.toast) {
       toast.error(message, {
@@ -35,26 +37,26 @@ export class Logger {
     }
   }
 
-  static warn(message: any, context?: Arrayed<string>) {
+  static warn(message: any, context?: ExecutionContext) {
     Logger.store('warn', message, context)
   }
 
-  static debug(message: any, context?: Arrayed<string>) {
+  static debug(message: any, context?: ExecutionContext) {
     Logger.store('debug', message, context)
   }
 
-  static verbose(message: any, context?: Arrayed<string>) {
+  static verbose(message: any, context?: ExecutionContext) {
     Logger.store('verbose', message, context)
   }
 
-  static fatal(message: any, context?: Arrayed<string>) {
+  static fatal(message: any, context?: ExecutionContext) {
     Logger.store('fatal', message, context)
   }
 
   public static store(
     level: Console.LogLevel,
     message: string,
-    context?: Arrayed<string>,
+    context?: ExecutionContext,
     trace?: string,
   ) {
     Logger.messages.push({
@@ -93,7 +95,7 @@ export class Logger {
   private static format(
     level: Console.LogLevel,
     message: any,
-    context?: Arrayed<string>,
+    context?: ExecutionContext,
     trace?: string,
   ) {
     const timestamp = new Date().toISOString()
@@ -119,35 +121,17 @@ export class LoggerHandler {
     events: λEvent[],
     position: number,
   ) => {
-    const loggerContext = [LoggerHandler.name, this.name]
-
-    Logger.log(
-      `Canvas has been clicked and file ${file.name}-${file.id} was trigerred. Position: ${position}`,
-      loggerContext,
-    )
+    Logger.log(`Canvas has been clicked and file ${file.name}-${file.id} was trigerred. Position: ${position}`, LoggerHandler)
 
     if (!events.length) {
-      return Logger.log(
-        `No events on click position. Skipping...`,
-        loggerContext,
-      )
+      return Logger.log(`No events on click position. Skipping...`, LoggerHandler)
     }
 
     if (events.length === 1) {
-      return Logger.log(
-        `One event on click position. Opening ${DisplayEventDialog.name} with ${events[0]._id}`,
-        loggerContext,
-      )
+      return Logger.log(`One event on click position. Opening ${DisplayEventDialog.name} with ${events[0]._id}`, LoggerHandler)
     }
 
-    Logger.log(
-      `Events amount on click position: ${events.length}. Opening ${DisplayGroupDialog.name} with events ${JSON.stringify(
-        events.map((e) => e._id),
-        null,
-        2,
-      )}`,
-      loggerContext,
-    )
+    Logger.log(`Events amount on click position: ${events.length}. Opening ${DisplayGroupDialog.name} with events ${JSON.stringify(events.map((e) => e._id), null, 2)}`, LoggerHandler)
   }
 }
 

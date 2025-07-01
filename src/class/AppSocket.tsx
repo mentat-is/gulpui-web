@@ -24,7 +24,7 @@ export class AppSocket extends WebSocket {
     this.onopen = () => {
       Logger.log(
         `WebSocket has been initialized`,
-        AppSocket.name,
+        AppSocket,
         {
           toast: true,
           icon: 'Serverless'
@@ -182,7 +182,7 @@ export class MultiSocket extends WebSocket {
     this.onopen = () => {
       Logger.log(
         `MultiSocket has been initialized with id: ${this.info.app.general.ws_id}`,
-        MultiSocket.name,
+        MultiSocket,
       )
       this.send(
         JSON.stringify({
@@ -216,8 +216,7 @@ export class MultiSocket extends WebSocket {
       }
 
       Logger.log(
-        `Recieved new client data for ${message.data.data.id} with ${message.data.data.timestamp} and ${message.data.data.y}`,
-        'MuliSocket',
+        `Recieved new client data for ${message.data.data.id} with ${message.data.data.timestamp} and ${message.data.data.y}`, MultiSocket,
       )
 
       this.info.setPointers(message.data.data)

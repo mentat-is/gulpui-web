@@ -1,11 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useEffect } from 'react'
 import s from '../Gulp.module.css'
 import { useApplication } from '@/context/Application.context'
 import { Canvas } from './Canvas'
 import { Stack } from '@impactium/components'
 import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
-import { λEvent } from '@/dto/ChunkEvent.dto'
 import { File } from '@/class/Info'
 import { λFile } from '@/dto/Dataset'
 

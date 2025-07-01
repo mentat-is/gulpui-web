@@ -31,21 +31,9 @@ export namespace NotePoint {
     const { app, spawnDialog } = useApplication()
 
     const targetNoteButtonHandler = (note: λNote) => {
-      const events = Event.ids(
-        app,
-        note.docs.map((d) => d._id),
-      )
-      if (events.length === 0) {
-        return
-      }
+      const event = Event.id(app, note.doc._id);
 
-      spawnDialog(
-        events.length > 1 ? (
-          <DisplayGroupDialog events={events} />
-        ) : (
-          <DisplayEventDialog event={events[0]} />
-        ),
-      )
+      spawnDialog(<DisplayEventDialog event={event} />);
     }
 
     return (
@@ -75,22 +63,13 @@ export namespace NotePoint {
     const { app, spawnDialog } = useApplication()
 
     const openEvent = () => {
-      const events = Note.events(app, note)
+      const event = Note.event(app, note)
 
-      if (events.length === 0) {
+      if (event) {
         return null
       }
 
-      const target = events[0]
-
-      const dialog =
-        events.length === 1 ? (
-          <DisplayEventDialog event={target} />
-        ) : (
-          <DisplayGroupDialog events={events} />
-        )
-
-      spawnDialog(dialog)
+      spawnDialog(<DisplayEventDialog event={event} />);
     }
 
     return (

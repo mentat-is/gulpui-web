@@ -25,15 +25,20 @@ import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { Delete } from '@/banners/Delete.banner'
 import { Stack } from '@impactium/components'
 import { File } from '@/class/Info'
+import { DisplayEventDialog } from '@/dialogs/Event.dialog'
+import { useEffect, useState } from 'react'
 
 interface TargetMenuProps {
-  file?: λFile
+  file: λFile
 }
 
 export function TargetMenu({ file }: TargetMenuProps) {
-  const { Info, spawnBanner, app } = useApplication()
+  const { Info, spawnBanner, spawnDialog, app } = useApplication()
+  const [events, setEvents] = useState(File.events(app, file));
 
-  if (!file) return null
+  useEffect(() => {
+    setEvents(File.events(app, file));
+  }, [file, app.target.events]);
 
   const removeFilters = (file: λFile) => {
     Info.filters_remove(file)
@@ -42,6 +47,16 @@ export function TargetMenu({ file }: TargetMenuProps) {
         ids: file.id,
       })
     }, 300)
+  }
+
+  const showEvent = (last = false) => {
+    const event = last ? events[0] : events.pop();
+
+    if (!event) {
+      return;
+    }
+
+    spawnDialog(<DisplayEventDialog event={event} />);
   }
 
   return (
@@ -131,21 +146,22 @@ export function TargetMenu({ file }: TargetMenuProps) {
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
-        <Stack gap={2}>
+        {events.length > 1 ? <Stack gap={2}>
           <ContextMenuItem
-            onClick={() => Info.setTimelineTarget(File.events(app, file)[0])}
+            onClick={() => showEvent()}
             img="ArrowLeftFromLine"
           >
             Show first event
           </ContextMenuItem>
           <ContextMenuItem
             revert
-            onClick={() => Info.setTimelineTarget(File.events(app, file).pop())}
+            onClick={() => showEvent(true)}
+
             img="ArrowRightFromLine"
           >
             Show last event
           </ContextMenuItem>
-        </Stack>
+        </Stack> : null}
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>

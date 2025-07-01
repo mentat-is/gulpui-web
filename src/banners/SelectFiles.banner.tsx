@@ -31,15 +31,14 @@ export namespace SelectFiles {
     )
 
     const save = useCallback(async () => {
-      setLoading(true)
       spawnBanner(<Frame.Banner />)
     }, [spawnBanner])
 
-    const reloadClickHandler = useCallback(async () => {
-      await Info.sync()
-      destroyBanner()
-      spawnBanner(<Banner {...props} />)
-    }, [Info, destroyBanner, spawnBanner, props])
+    const reloadClickHandler = async () => {
+      setLoading(true);
+      await Info.sync();
+      setLoading(false);
+    };
 
     const filteredContexts = useMemo(() =>
       Operation.contexts(app).filter((ctx) =>
@@ -47,7 +46,7 @@ export namespace SelectFiles {
           f.name.toLowerCase().includes(filter.toLowerCase()),
         ),
       ),
-      [app, filter, setFilter]);
+      [app.target.operations, app.target.contexts, app.target.files, filter]);
 
     const SearchInput = useMemo(() => {
       return (
@@ -68,7 +67,6 @@ export namespace SelectFiles {
         done={
           <Button
             img="Check"
-            loading={loading}
             variant="glass"
             onClick={save}
           />
@@ -134,13 +132,7 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
   const { app, Info, spawnBanner } = useApplication()
   const files = useMemo(() => Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())), [app, context, filter])
 
-  const handleContextCheck = useCallback(
-    (value: boolean) =>
-      value
-        ? Info.contexts_select([context])
-        : Info.contexts_unselect([context]),
-    [Info, context],
-  )
+  const handleContextCheck = useCallback((value: boolean) => value ? Info.contexts_select([context]) : Info.contexts_unselect([context]), [context]);
 
   return (
     <Stack

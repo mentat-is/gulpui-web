@@ -19,12 +19,12 @@ import {
   λEvent,
 } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { generateUUID, Gradients, NodeFile } from '@/ui/utils'
+import { generateUUID, getSortOrder, Gradients, NodeFile } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
 import { Logger } from '@/dto/Logger.class'
-import { Engine } from './Engine.dto'
+import { Engine, λCache } from './Engine.dto'
 import { SetState } from './API'
 import { λMapping } from '@/dto/MappingFileList.dto'
 import { Glyph } from '@/ui/Glyph'
@@ -37,6 +37,7 @@ import { XY } from '@/dto/XY.dto'
 import { Badge, Spinner } from '@impactium/components'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
+import { RenderEngine } from './RenderEngine'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -833,7 +834,7 @@ export class Info implements InfoProps {
   filters_cache = (file: λFile | μ.File) => {
     Logger.log(
       `Caching has been requested for file ${File.id(this.app, file).name}`,
-      Info.name,
+      Info,
     )
 
     const id = Parser.useUUID(file) as μ.File
@@ -891,7 +892,7 @@ export class Info implements InfoProps {
   }
 
   render = () => {
-    Logger.log(`Render requested`, Info.name)
+    Logger.log(`Render requested`, Info)
     this.setTimelineScale(this.app.timeline.scale + 0.000000001)
   }
 
@@ -1288,10 +1289,10 @@ export class Info implements InfoProps {
   notes_reload = async () => {
     const files = File.selected(this.app).map((f) => f.id);
     if (files.length === 0) {
-      Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info.name);
+      Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info);
       return;
     }
-    const notes: λNote[] = [];
+    let notes: λNote[] = [];
     const fetch = async (offset = 0) => {
       const fetched = await api<λNote[]>('/note_list', {
         method: 'POST',
@@ -1303,7 +1304,7 @@ export class Info implements InfoProps {
       });
 
       if (fetched.length) {
-        notes.push(...fetched);
+        notes = ([...notes, ...fetched]).sort((a, b) => Note.timestamp(b) - Note.timestamp(a));
         if (notes.length % 2500 === 0) {
           toast(`Fetched ${notes.length} notes`, {
             description: 'Continuing...',
@@ -1311,16 +1312,16 @@ export class Info implements InfoProps {
           })
         }
 
-        this.setInfoByKey(notes, 'target', 'notes');
+        this.setInfoByKey([...notes], 'target', 'notes');
 
         return new Promise(res => {
           setTimeout(() => {
             res(fetch(offset + 500));
-          }, 15)
+          })
         })
       } else {
         const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
-        Logger.log(message, Info.name);
+        Logger.log(message, Info);
         if (notes.length >= 2500) {
           toast.success(message, {
             icon: <Icon name='Check' />,
@@ -1331,6 +1332,8 @@ export class Info implements InfoProps {
     };
 
     await fetch();
+
+    Note[λCache].clear();
 
     return notes;
   }
@@ -1433,7 +1436,7 @@ export class Info implements InfoProps {
   }).then(note => {
     const index = this.app.target.notes.findIndex(n => n.id === note.id);
     if (index === -1) {
-      Logger.error(`Note with id: ${note.id} was not found in application data`, Info.name + this.note_edit.name);
+      Logger.error(`Note with id: ${note.id} was not found in application data`, Info + this.note_edit.name);
       return;
     }
     const updated = [...this.app.target.notes];
@@ -1653,7 +1656,7 @@ export class Info implements InfoProps {
 
     await runQueue()
 
-    Logger.log(`Glyphs has been syncronized with gulp-backend`, Info.name)
+    Logger.log(`Glyphs has been syncronized with gulp-backend`, Info)
     this.setInfoByKey(true, 'general', 'glyphs_syncronized')
   }
 
@@ -1867,21 +1870,14 @@ export class Info implements InfoProps {
       operations[0].selected = true
     }
 
-    Logger.log(
-      `${operations.length} operations has been added to application data`,
-      this.sync.name,
-    )
-    Logger.log(operations.map((c) => c.id))
-    Logger.log(
-      `${contexts.length} contexts has been added to application data`,
-      this.sync.name,
-    )
-    Logger.log(contexts.map((c) => c.id))
-    Logger.log(
-      `${files.length} files has been added to application data`,
-      this.sync.name,
-    )
-    Logger.log(files.map((f) => f.id))
+    Logger.log(`${operations.length} operations has been added to application data`, this.sync);
+    Logger.log(operations.map((c) => c.id), this.sync);
+    Logger.log(`${contexts.length} contexts has been added to application data`, this.sync);
+    Logger.log(contexts.map((c) => c.id), this.sync);
+    Logger.log(`${files.length} files has been added to application data`, this.sync);
+    Logger.log(files.map((f) => f.id), this.sync);
+
+    RenderEngine.reset('range');
 
     this.app.target.operations = operations
     this.app.target.contexts = contexts
@@ -2601,7 +2597,7 @@ export class Event {
   public static addTo = (app: λApp, file: λFile['id'], events: λEvent[]) => {
     events.forEach(e => Event.get(app, file).push(e));
 
-    Logger.log(`${events.length} events has been added to file with id ${file}`);
+    Logger.log(`${events.length} events has been added to file with id ${file}`, Info);
 
     return app.target.events;
   }
@@ -2613,7 +2609,7 @@ export class Event {
       .flat()
       .filter((e) => ids.includes(e._id))
 
-  public static notes = (app: λApp, event: λEvent) => Note.findByFile(app, event['gulp.source_id']).filter((n) => n.docs.some((doc) => doc._id === event._id))
+  public static notes = (app: λApp, event: λEvent) => Note.findByFile(app, event['gulp.source_id']).filter((n) => n.doc._id === event._id);
 
   public static links = (app: λApp, event: λEvent) =>
     app.target.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
@@ -2629,24 +2625,20 @@ export class Note {
   public static selected = (app: λApp): λNote[] => {
     const files = File.selected(app).map(file => file.id);
 
-    return app.target.notes.filter((note) => note.docs.every((doc) => files.includes(doc['gulp.source_id'])));
+    return app.target.notes.filter((note) => files.includes(note.doc['gulp.source_id']));
   }
 
-  public static events = (app: λApp, note: λNote): λEvent[] =>
-    Event.ids(
-      app,
-      note.docs.map((d) => d._id),
-    )
+  public static event = (app: λApp, note: λNote): λEvent => Event.id(app, note.doc._id)
 
-  public static mappingFileIdToNotes = new Map<λFile['id'], λNote[]>();
+  public static [λCache] = new Map<λFile['id'], λNote[]>();
 
-  public static indexSize = () => [...Note.mappingFileIdToNotes.values()].flat().length;
+  public static indexSize = () => [...Note[λCache].values()].flat().length;
 
   public static updateIndexing = (app: λApp) => {
-    Note.mappingFileIdToNotes.clear();
+    Note[λCache].clear();
 
     app.target.files.forEach(file => {
-      Note.mappingFileIdToNotes.set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
+      Note[λCache].set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
     })
 
     Logger.log(`NOTES_INDEXES_HAS_BEEN_CREATED:${Note.indexSize()}`, Note.name);
@@ -2654,7 +2646,7 @@ export class Note {
 
   public static findByFile = (app: λApp, file: λFile | λFile['id']): λNote[] => {
     const id = Parser.useUUID(file) as λFile['id'];
-    const notes = this.mappingFileIdToNotes.get(id);
+    const notes = Note[λCache].get(id);
     if (notes) {
       return notes;
     } else {
@@ -2664,13 +2656,11 @@ export class Note {
   };
 
   public static timestamp = (note: λNote): number => {
-    if (!note || !note.docs) {
+    if (!note || !note.doc) {
       return 0;
     }
 
-    let sum = 0
-    note.docs.forEach((d) => (sum += new Date(d['@timestamp']).getTime()))
-    return sum / note.docs.length || 1
+    return new Date(note.doc['@timestamp']).getTime();
   }
 }
 
