@@ -72,7 +72,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   graph!: GraphEngine
   shifted: λFile[] = []
 
-
+  // CACHE
   private static [λCache] = {
     notes: new Map() as Map<λFile['id'], Group[]> & { [Hardcode.Scale]: number },
     range: new Map() as Map<λFile['id'], MinMax & {
@@ -376,9 +376,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     if (!note.color) {
       note.color = '#e8e8e8';
     }
-
+    // Main
     this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, note.color);
-
+    // Accent
     this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, 4, note.color, note.color);
 
     try {
@@ -417,23 +417,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     if (start === -1 || end === -1 || start > end) return [];
 
-
-
     return notes.slice(start, end + 1);
-
-
-
-
-
-
   }
 
   private calculateNotesGroups(file: λFile['id']): {
     notes: λNote[],
     groups: Group[]
-
   } {
     const notes = this.getVisibleNotes(file);
+    console.log(notes);
     if (notes.length === 0) {
       RenderEngine[λCache].notes.set(file, [])
       RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale
