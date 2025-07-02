@@ -29,7 +29,7 @@ export namespace QueryExternal {
       >
         <Select.Trigger>
           <Select.Value
-            placeholder={options ? 'Select plugin to query' : 'Loading...'}
+            placeholder='Select plugin to query'
           >
             {selectedOption?.display_name ?? '????'}
           </Select.Value>
@@ -37,6 +37,7 @@ export namespace QueryExternal {
         <Select.Content>
           {options.map((option) => (
             <Select.Item key={option.filename} value={option.filename}>
+              <Icon name='Status' />
               {option.display_name}
             </Select.Item>
           ))}
@@ -122,8 +123,6 @@ export namespace QueryExternal {
     const [options, setOptions] = useState<GulpDataset.PluginList.Interface[] | null>(null)
     const [selectedOption, setSelectedOption] = useState<GulpDataset.PluginList.Interface | null>(null)
     const [loading, setLoading] = useState<boolean>(false)
-    const [url, setUrl] = useState<string>('')
-    const [isUrlValid, setIsUrlValid] = useState<boolean>(true)
     const [params, setParams] = useState<Record<string, any>>({})
 
     useEffect(() => {
@@ -137,20 +136,10 @@ export namespace QueryExternal {
       fetchOptions()
     }, [options, Info])
 
-    const handleUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
-      const value = event.target.value.trim()
-      const isValid =
-        /^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$/.test(
-          value,
-        )
-      setIsUrlValid(isValid)
-      setUrl(value)
-    }
-
     const handleQuery = async () => {
       if (!selectedOption) return
       setLoading(true)
-      await Info.query_external(selectedOption.filename, url, params)
+      await Info.query_external(selectedOption.filename, params)
       setLoading(false)
     }
 
@@ -159,7 +148,6 @@ export namespace QueryExternal {
         img="Check"
         onClick={handleQuery}
         variant="glass"
-        disabled={url.length === 0 || !isUrlValid}
       />
     )
 
@@ -172,14 +160,6 @@ export namespace QueryExternal {
             const option = options?.find((op) => op.filename === name)
             if (option) setSelectedOption(option)
           }}
-        />
-        <Input
-          variant="highlighted"
-          valid={isUrlValid}
-          img="Link"
-          value={url}
-          onChange={handleUrlChange}
-          placeholder="Link to remote server"
         />
         <DynamicRequestBuilder
           selectedOption={selectedOption}

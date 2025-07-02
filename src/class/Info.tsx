@@ -1973,25 +1973,31 @@ export class Info implements InfoProps {
 
   query_external = async (
     plugin: string,
-    uri: string,
     params: Record<string, string | number | object | null | undefined>,
   ) => {
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     return api('/query_raw', {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
+        operation_id: operation.id
       },
       body: {
-        q: {
-          query: {
-            query_string: {
-              query: '*',
+        q: [
+          {
+            query: {
+              query_string: {
+                query: '*',
+              },
             },
-          },
-        },
+          }
+        ],
         q_options: {
           plugin,
-          uri,
           external_parameters: {
             custom_parameters: params,
           },
