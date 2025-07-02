@@ -8,6 +8,7 @@ import { Button, Skeleton, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/QueryExternalBanner.module.css'
+import { Label } from '@/ui/Label'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -82,6 +83,16 @@ export namespace QueryExternal {
     const handleCheckChange = (name: string) => (bool: boolean) =>
       setParams((prev) => ({ ...prev, [name]: bool }))
 
+    const handleCheckboxChange = (name: string, value: string) => (checked: boolean) => {
+      setParams((prev) => {
+        const currentValues = new Set(prev[name] || [])
+        if (checked) currentValues.add(value)
+        else currentValues.delete(value)
+
+        return { ...prev, [name]: Array.from(currentValues) }
+      })
+    }
+
     if (!selectedOption) return null
 
     return (
@@ -92,7 +103,20 @@ export namespace QueryExternal {
               {custom.name}
               {custom.required ? '*' : ''}
             </p>
-            {custom.type === 'bool' ? (
+            {custom.values ? (
+              <Stack dir="column">
+                {custom.values.map((value) => (
+                  <Stack dir='column' gap={6} ai='flex-start' data-input>
+                    <Label value={value} />
+                    <Switch
+                      key={value}
+                      checked={params[custom.name]?.includes(value) || false}
+                      onCheckedChange={handleCheckboxChange(custom.name, value)}
+                    />
+                  </Stack>
+                ))}
+              </Stack>
+            ) : custom.type === 'bool' ? (
               <Switch
                 checked={params[custom.name]}
                 onCheckedChange={handleCheckChange(custom.name)}
@@ -111,6 +135,7 @@ export namespace QueryExternal {
       </Stack>
     )
   }
+
 
   export namespace Banner {
     export interface Props extends UIBanner.Props {

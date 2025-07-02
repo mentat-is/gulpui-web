@@ -406,77 +406,62 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.restore()
   }
 
-  private getVisibleGroups = (file: λFile['id'], groups: Group[], notes: λNote[]): Group[] => {
-    if (groups.length === 0) return [];
+  // [ ] WRONG FUNCTION
+  private getVisibleNotes = (file: λFile['id']) => {
+    const notes = Note.findByFile(this.info.app, file);
+    const min = this.getTimestamp(-128)
+    const max = this.getTimestamp(this.ctx.canvas.width + 128)
 
-    const min = this.getTimestamp(-128);
-    const max = this.getTimestamp(this.ctx.canvas.width + 128);
+    const start = this.binarySearch(notes, min, true)
+    const end = this.binarySearch(notes, max, false)
 
-    const visibleGroups: Group[] = [];
-
-    for (const [groupIndex, groupCount] of groups) {
-      const groupStartTimestamp = Note.timestamp(notes[groupIndex]);
-      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount - 1]);
+    if (start === -1 || end === -1 || start > end) return [];
 
 
-      if (groupEndTimestamp <= max && groupStartTimestamp >= min) {
-        visibleGroups.push([groupIndex, groupCount]);
-      }
-    }
 
-    return visibleGroups;
+    return notes.slice(start, end + 1);
+
+
+
+
+
+
   }
 
   private calculateNotesGroups(file: λFile['id']): {
     notes: λNote[],
-    groups: Group[],
-    visibleGroups: Group[]
+    groups: Group[]
+
   } {
-    const notes = Note.findByFile(this.info.app, file);
+    const notes = this.getVisibleNotes(file);
     if (notes.length === 0) {
       RenderEngine[λCache].notes.set(file, [])
       RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale
       return {
         notes: [],
-        groups: [],
-        visibleGroups: []
+        groups: []
       }
     }
 
-
-    let allGroups: Group[];
     if (RenderEngine[λCache].notes[Hardcode.Scale] === this.info.app.timeline.scale && RenderEngine[λCache].notes.has(file)) {
-      allGroups = RenderEngine[λCache].notes.get(file)!;
-    } else {
-
-      allGroups = this.calculateAllGroups(notes);
-      RenderEngine[λCache].notes.set(file, allGroups);
-      RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale;
+      return {
+        notes,
+        groups: RenderEngine[λCache].notes.get(file)!
+      }
     }
 
-
-    const visibleGroups = this.getVisibleGroups(file, allGroups, notes);
-
-    return {
-      notes,
-      groups: allGroups,
-      visibleGroups
-    };
-  }
-
-
-  private calculateAllGroups(notes: λNote[]): Group[] {
-    const groups: Group[] = [];
+    const groups: Group[] = []
 
     for (let i = 0; i < notes.length;) {
-      const groupEndIdx = this.findGroupEndIndexDirect(notes, i);
-      groups.push([i, groupEndIdx - i + 1]);
-      i = groupEndIdx + 1;
+      const groupEndIdx = this.findGroupEndIndexDirect(notes, i)
+      groups.push([i, groupEndIdx - i + 1])
+      i = groupEndIdx + 1
     }
 
-    return groups;
+    RenderEngine[λCache].notes.set(file, groups)
+    RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale
+    return { notes, groups };
   }
-
 
   public getTimestamp = (x: number): number => {
     const visibleWidth = this.ctx.canvas.width * this.info.app.timeline.scale;
@@ -484,27 +469,48 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return this.info.app.timeline.frame.min + (pixelOffset / visibleWidth) * (this.info.app.timeline.frame.max - this.info.app.timeline.frame.min)
   }
 
+  private binarySearch(notes: λNote[], timestamp: number, findFirst: boolean): number {
+    let left = 0, right = notes.length - 1, result = -1
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2)
+      const noteTime = Note.timestamp(notes[mid])
+
+      if (findFirst ? noteTime >= timestamp : noteTime <= timestamp) {
+        result = mid
+        if (findFirst) right = mid - 1
+        else left = mid + 1
+      } else {
+        if (findFirst) left = mid + 1
+        else right = mid - 1
+      }
+    }
+
+    return result
+  }
+
   private findGroupEndIndexDirect(notes: λNote[], startIdx: number): number {
     const startTimestamp = Note.timestamp(notes[startIdx])
     const startX = this.getPixelPosition(startTimestamp)
 
+    let left = startIdx + 1
+    let right = notes.length - 1
+    let result = startIdx
 
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2)
+      const midX = this.getPixelPosition(Note.timestamp(notes[mid]))
+      const distance = Math.abs(midX - startX);
 
-    let endIdx = startIdx
-
-
-    for (let i = startIdx + 1; i < notes.length; i++) {
-      const currentX = this.getPixelPosition(Note.timestamp(notes[i]))
-      const distance = Math.abs(currentX - startX)
-
-      if (distance <= 40) {
-        endIdx = i
+      if (distance <= 24) {
+        result = mid
+        left = mid + 1
       } else {
-        break
+        right = mid - 1
       }
     }
 
-    return endIdx
+    return result
   }
 
   public static getNotesByX = (file: λFile, x: number, padding = 16): λNote[] => {
@@ -519,13 +525,24 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const minTimestamp = RenderEngine.instance.getTimestamp(x - padding);
     const maxTimestamp = RenderEngine.instance.getTimestamp(x + padding);
 
-    for (const [groupIndex, groupCount] of groups) {
+    let left = 0;
+    let right = groups.length - 1;
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      const [groupIndex, groupCount] = groups[mid];
+
       const groupStartTimestamp = Note.timestamp(notes[groupIndex]);
-      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount - 1]);
+      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount]);
 
-
-      if (groupEndTimestamp <= maxTimestamp && groupStartTimestamp >= minTimestamp) {
+      if (groupStartTimestamp <= maxTimestamp && groupEndTimestamp >= minTimestamp) {
         return notes.slice(groupIndex, groupIndex + groupCount);
+      }
+
+      if (groupStartTimestamp > maxTimestamp) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
       }
     }
 
@@ -538,12 +555,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public notes = (files: λFile[]) => {
     files.forEach(file => {
-      const { notes, visibleGroups } = this.calculateNotesGroups(file.id);
-      if (!notes.length) {
-        return;
-      }
+      const { notes, groups } = this.calculateNotesGroups(file.id)
 
-      visibleGroups.forEach(async (group) => {
+      groups.forEach(async (group) => {
         if (group[1] === 1) {
           this.renderNote(notes[group[0]])
         } else {

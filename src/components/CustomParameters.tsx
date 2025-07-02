@@ -22,6 +22,7 @@ export namespace CustomParameters {
     location: Location;
     required: boolean;
     default_value?: any
+    values?: string[]
     // internal
     invalid?: boolean;
   }
