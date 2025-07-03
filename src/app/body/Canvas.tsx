@@ -81,6 +81,10 @@ export function Canvas({ timeline }: Canvas.Props) {
     setSelectedFiles(File.selected(app));
   }, [app.target.files]);
 
+  useEffect(() => {
+    RenderEngine.reset('notes');
+  }, [app.timeline.scale]);
+
   const renderCanvas = (
     force?: boolean,
     ctx = canvas_ref.current?.getContext('2d'),

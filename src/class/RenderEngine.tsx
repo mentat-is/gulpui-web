@@ -1,6 +1,6 @@
 import { Internal, MinMax, Note, Range } from '@/class/Info'
 import { Event, Info, File } from './Info'
-import { Color, stringToHexColor } from '@/ui/utils'
+import { Color, getSortOrder, stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
@@ -412,8 +412,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const min = this.getTimestamp(-128)
     const max = this.getTimestamp(this.ctx.canvas.width + 128)
 
-    const start = this.binarySearch(notes, min, true)
-    const end = this.binarySearch(notes, max, false)
+    // Since notes are sorted in descending order, we need to find:
+    // - first note <= max (leftmost visible note)
+    // - last note >= min (rightmost visible note)
+    const start = this.binarySearchDesc(notes, max, true)  // Find first note <= max
+    const end = this.binarySearchDesc(notes, min, false)   // Find last note >= min
 
     if (start === -1 || end === -1 || start > end) return [];
 
@@ -425,7 +428,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     groups: Group[]
   } {
     const notes = this.getVisibleNotes(file);
-    console.log(notes);
     if (notes.length === 0) {
       RenderEngine[λCache].notes.set(file, [])
       RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale
@@ -461,20 +463,30 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return this.info.app.timeline.frame.min + (pixelOffset / visibleWidth) * (this.info.app.timeline.frame.max - this.info.app.timeline.frame.min)
   }
 
-  private binarySearch(notes: λNote[], timestamp: number, findFirst: boolean): number {
+  // Fixed binary search for descending order
+  private binarySearchDesc(notes: λNote[], timestamp: number, findFirst: boolean): number {
     let left = 0, right = notes.length - 1, result = -1
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2)
       const noteTime = Note.timestamp(notes[mid])
 
-      if (findFirst ? noteTime >= timestamp : noteTime <= timestamp) {
-        result = mid
-        if (findFirst) right = mid - 1
-        else left = mid + 1
+      if (findFirst) {
+        // Finding first note <= timestamp (leftmost)
+        if (noteTime <= timestamp) {
+          result = mid
+          right = mid - 1  // Look for earlier index (smaller timestamp)
+        } else {
+          left = mid + 1   // Current note too large, go right
+        }
       } else {
-        if (findFirst) left = mid + 1
-        else right = mid - 1
+        // Finding last note >= timestamp (rightmost)
+        if (noteTime >= timestamp) {
+          result = mid
+          left = mid + 1   // Look for later index (larger timestamp)
+        } else {
+          right = mid - 1  // Current note too small, go left
+        }
       }
     }
 
@@ -485,24 +497,23 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const startTimestamp = Note.timestamp(notes[startIdx])
     const startX = this.getPixelPosition(startTimestamp)
 
-    let left = startIdx + 1
-    let right = notes.length - 1
-    let result = startIdx
+    // Since notes are in descending order, we search forward (higher indices = earlier timestamps)
+    // but we want to group notes that are close in pixel position
+    let endIdx = startIdx
 
-    while (left <= right) {
-      const mid = Math.floor((left + right) / 2)
-      const midX = this.getPixelPosition(Note.timestamp(notes[mid]))
-      const distance = Math.abs(midX - startX);
+    // Linear search forward to find all notes within 24 pixels
+    for (let i = startIdx + 1; i < notes.length; i++) {
+      const currentX = this.getPixelPosition(Note.timestamp(notes[i]))
+      const distance = Math.abs(currentX - startX)
 
       if (distance <= 24) {
-        result = mid
-        left = mid + 1
+        endIdx = i
       } else {
-        right = mid - 1
+        break  // Since we're going in timestamp order, if this one is too far, the rest will be too
       }
     }
 
-    return result
+    return endIdx
   }
 
   public static getNotesByX = (file: λFile, x: number, padding = 16): λNote[] => {
@@ -517,29 +528,24 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const minTimestamp = RenderEngine.instance.getTimestamp(x - padding);
     const maxTimestamp = RenderEngine.instance.getTimestamp(x + padding);
 
-    let left = 0;
-    let right = groups.length - 1;
-
-    while (left <= right) {
-      const mid = Math.floor((left + right) / 2);
-      const [groupIndex, groupCount] = groups[mid];
-
+    // Check each group to see if it overlaps with our timestamp range
+    for (const [groupIndex, groupCount] of groups) {
       const groupStartTimestamp = Note.timestamp(notes[groupIndex]);
-      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount]);
+      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount - 1]); // Fix: -1 since it's length, not index
 
-      if (groupStartTimestamp <= maxTimestamp && groupEndTimestamp >= minTimestamp) {
+      // Since notes are in descending order:
+      // groupStartTimestamp is the highest (latest) timestamp in the group
+      // groupEndTimestamp is the lowest (earliest) timestamp in the group
+
+      // Check if group overlaps with our range [minTimestamp, maxTimestamp]
+      if (groupEndTimestamp <= maxTimestamp && groupStartTimestamp >= minTimestamp) {
         return notes.slice(groupIndex, groupIndex + groupCount);
-      }
-
-      if (groupStartTimestamp > maxTimestamp) {
-        right = mid - 1;
-      } else {
-        left = mid + 1;
       }
     }
 
     return [];
   }
+
 
   public static reset = (key: keyof typeof RenderEngine[typeof λCache]) => {
     RenderEngine[λCache][key].clear();
@@ -547,7 +553,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public notes = (files: λFile[]) => {
     files.forEach(file => {
-      const { notes, groups } = this.calculateNotesGroups(file.id)
+      const { notes, groups } = this.calculateNotesGroups(file.id);
+      if (!notes.length) {
+        return;
+      }
 
       groups.forEach(async (group) => {
         if (group[1] === 1) {
