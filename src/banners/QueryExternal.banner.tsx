@@ -1,7 +1,6 @@
 import { GulpDataset } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Input } from '@impactium/components'
 import { Select } from '@/ui/Select'
 import { Switch } from '@/ui/Switch'
 import { Button, Skeleton, Stack } from '@impactium/components'
@@ -9,6 +8,9 @@ import { Icon } from '@impactium/icons'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/QueryExternalBanner.module.css'
 import { Label } from '@/ui/Label'
+import { Input } from '@/ui/Input'
+import { cn } from '@impactium/utils'
+import { Preview } from './Preview.banner'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -29,16 +31,13 @@ export namespace QueryExternal {
         disabled={!options}
       >
         <Select.Trigger>
-          <Select.Value
-            placeholder='Select plugin to query'
-          >
-            {selectedOption?.display_name ?? '????'}
-          </Select.Value>
+          <Icon name='Puzzle' />
+          {selectedOption ? selectedOption.display_name : 'Select plugin to query'}
         </Select.Trigger>
         <Select.Content>
           {options.map((option) => (
             <Select.Item key={option.filename} value={option.filename}>
-              <Icon name='Status' />
+              <Icon name='Puzzle' />
               {option.display_name}
             </Select.Item>
           ))}
@@ -56,14 +55,6 @@ export namespace QueryExternal {
     params: Record<string, any>
     setParams: React.Dispatch<React.SetStateAction<Record<string, any>>>
   }) => {
-    const namingIcons: Record<string, Icon.Name> = useMemo(
-      () => ({
-        timestamp_field: 'Clock',
-        offset_msec: 'Timer',
-      }),
-      [],
-    )
-
     const typesMap = useMemo(
       () => ({
         list: 'Enter a list of values, separate using coma',
@@ -96,41 +87,40 @@ export namespace QueryExternal {
     if (!selectedOption) return null
 
     return (
-      <Stack dir="column" className={s.wrapper}>
+      <Stack dir="column" className={s.wrapper} ai='stretch' gap={16}>
         {selectedOption.custom_parameters.map((custom) => (
-          <Stack key={custom.name} className={s.custom}>
-            <p>
-              {custom.name}
-              {custom.required ? '*' : ''}
-            </p>
-            {custom.values ? (
-              <Stack dir="column">
-                {custom.values.map((value) => (
-                  <Stack dir='column' gap={6} ai='flex-start' data-input>
-                    <Label value={value} />
-                    <Switch
-                      key={value}
-                      checked={params[custom.name]?.includes(value) || false}
-                      onCheckedChange={handleCheckboxChange(custom.name, value)}
-                    />
-                  </Stack>
-                ))}
-              </Stack>
-            ) : custom.type === 'bool' ? (
-              <Switch
-                checked={params[custom.name]}
-                onCheckedChange={handleCheckChange(custom.name)}
-              />
-            ) : (
+          custom.values ? (
+            <Stack dir="column">
+              {custom.values.map((value) => (
+                <Stack dir='column' gap={6} ai='flex-start' data-input>
+                  <Label value={value} />
+                  <Switch
+                    key={value}
+                    checked={params[custom.name]?.includes(value) || false}
+                    onCheckedChange={handleCheckboxChange(custom.name, value)}
+                  />
+                </Stack>
+              ))}
+            </Stack>
+          ) : custom.type === 'bool' ? (
+            <Switch
+              checked={params[custom.name]}
+              onCheckedChange={handleCheckChange(custom.name)}
+            />
+          ) : (
+            <Stack dir='column' gap={8} ai='stretch'>
               <Input
                 onChange={handleInputChange(custom.name)}
                 variant="highlighted"
+                label={custom.name}
+                className={cn(custom.required && s.required)}
                 placeholder={typesMap[custom.type]}
-                img={namingIcons[custom.name] || 'CircleDashed'}
+                img={'CircleDashed'}
                 value={params[custom.name]}
               />
-            )}
-          </Stack>
+              <span className={s.description}>{custom.desc}</span>
+            </Stack>
+          )
         ))}
       </Stack>
     )
@@ -139,45 +129,66 @@ export namespace QueryExternal {
 
   export namespace Banner {
     export interface Props extends UIBanner.Props {
-
+      preselectedOption?: GulpDataset.PluginList.Interface;
+      preparams?: Record<string, any>
     }
   }
 
-  export const Banner = ({ ...props }: QueryExternal.Banner.Props) => {
-    const { Info } = useApplication()
-    const [options, setOptions] = useState<GulpDataset.PluginList.Interface[] | null>(null)
-    const [selectedOption, setSelectedOption] = useState<GulpDataset.PluginList.Interface | null>(null)
-    const [loading, setLoading] = useState<boolean>(false)
-    const [params, setParams] = useState<Record<string, any>>({})
+  export const Banner = ({ preselectedOption, preparams, ...props }: QueryExternal.Banner.Props) => {
+    const { Info, spawnBanner, destroyBanner, app } = useApplication()
+    const [options, setOptions] = useState<GulpDataset.PluginList.Interface[] | null>(app.target.plugins.filter((i) => i.type.includes('external')))
+    const [selectedOption, setSelectedOption] = useState(preselectedOption ?? null)
+    const [loading, setLoading] = useState<number>(0)
+    const [params, setParams] = useState(preparams ?? {});
 
     useEffect(() => {
-      if (options) return
-      const fetchOptions = async () => {
-        setLoading(true)
-        const list = await Info.plugin_list()
-        setOptions(list.filter((i) => i.type.includes('external')))
-        setLoading(false)
-      }
-      fetchOptions()
-    }, [options, Info])
+      setOptions(app.target.plugins.filter((i) => i.type.includes('external')))
+    }, [app.target.plugins]);
 
-    const handleQuery = async () => {
+    const handleQuery = async (preview = false) => {
       if (!selectedOption) return
-      setLoading(true)
-      await Info.query_external(selectedOption.filename, params)
-      setLoading(false)
+      setLoading(preview ? 2 : 1)
+      const result = await Info.query_external(selectedOption.filename, params, preview)
+      setLoading(0)
+      if (result) {
+        spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} {...props} />)} />)
+      } else {
+        destroyBanner();
+      }
     }
+
+    useEffect(() => {
+      if (!selectedOption) {
+        return setParams({});
+      }
+      const params: Record<string, any> = {};
+      selectedOption.custom_parameters.forEach(param => {
+        params[param.name] = preparams ? preparams[param.name] : param.default_value
+      });
+
+      setParams(params)
+    }, [selectedOption]);
 
     const done = (
       <Button
         img="Check"
-        onClick={handleQuery}
+        loading={loading === 1}
+        onClick={() => handleQuery()}
         variant="glass"
       />
     )
 
+    const optionButton = (
+      <Button
+        img='PreviewEye'
+        variant='ghost'
+        loading={loading === 2}
+        onClick={() => handleQuery(true)}
+      />
+    )
+
     return (
-      <UIBanner title="Query external" loading={loading} done={done} {...props}>
+      <UIBanner title="Query external" done={done} option={optionButton} {...props}>
         <PluginSelection
           options={options}
           selectedOption={selectedOption}

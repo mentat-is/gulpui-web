@@ -1871,11 +1871,8 @@ export class Info implements InfoProps {
     }
 
     Logger.log(`${operations.length} operations has been added to application data`, this.sync);
-    Logger.log(operations.map((c) => c.id), this.sync);
     Logger.log(`${contexts.length} contexts has been added to application data`, this.sync);
-    Logger.log(contexts.map((c) => c.id), this.sync);
     Logger.log(`${files.length} files has been added to application data`, this.sync);
-    Logger.log(files.map((f) => f.id), this.sync);
 
     RenderEngine.reset('range');
 
@@ -1973,18 +1970,23 @@ export class Info implements InfoProps {
 
   query_external = async (
     plugin: string,
-    params: Record<string, string | number | object | null | undefined>,
-  ) => {
+    custom_parameters: Record<string, string | number | object | null | undefined>,
+    isPreviewMode = false
+  ): Promise<{
+    total_hits: number,
+    docs: λEvent[]
+  }> => {
     const operation = Operation.selected(this.app);
     if (!operation) {
-      return;
+      return { total_hits: 0, docs: [] };
     }
 
-    return api('/query_raw', {
+    return api('/query_external', {
       method: 'POST',
       query: {
         ws_id: this.app.general.ws_id,
-        operation_id: operation.id
+        operation_id: operation.id,
+        plugin
       },
       body: {
         q: [
@@ -1996,11 +1998,11 @@ export class Info implements InfoProps {
             },
           }
         ],
+        plugin_params: {
+          custom_parameters
+        },
         q_options: {
-          plugin,
-          external_parameters: {
-            custom_parameters: params,
-          },
+          preview_mode: isPreviewMode
         },
       },
     })

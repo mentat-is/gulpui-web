@@ -17,6 +17,7 @@ export namespace Debug {
           <Button style={{ width: '100%' }} variant='secondary' onClick={Info.notes_reload} img='StickyNote'>Reload notes</Button>
           <Button style={{ width: '100%' }} variant='secondary' onClick={Info.links_reload} img='GitBranch'>Reload links</Button>
           <Button style={{ width: '100%' }} variant='secondary' onClick={Info.highlights_reload} img='AlignHorizontalSpaceAround'>Reload highlights</Button>
+          <Button style={{ width: '100%' }} variant='secondary' onClick={Info.plugin_list} img='Puzzle'>Reload plugins</Button>
         </Stack>
       </UIBanner>
     )

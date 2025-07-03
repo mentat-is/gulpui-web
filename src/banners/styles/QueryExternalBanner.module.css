@@ -18,3 +18,9 @@
   font-family: var(--font-mono);
   gap: 8px;
 }
+
+.description {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--gray-600);
+}
