@@ -8,11 +8,12 @@ import { Badge, Button, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
+import { useMemo } from 'react'
 
 export namespace NotePoint {
   export interface Props
     extends Omit<UIPoint.Props, 'icon' | 'accent' | 'name'> {
-    note: λNote
+    notes: λNote[]
   }
 
   export namespace Combination {
@@ -59,25 +60,29 @@ export namespace NotePoint {
     )
   }
 
-  export function Point({ note, ...props }: NotePoint.Props) {
+  export function Point({ notes, ...props }: NotePoint.Props) {
     const { app, spawnDialog } = useApplication()
 
-    const openEvent = () => {
-      const event = Note.event(app, note)
-
-      if (event) {
-        return null
+    const handleClick = () => {
+      const ids = notes.map(n => n.doc._id);
+      const events = File.events(app, notes[0].source_id).filter(f => ids.includes(f._id));
+      if (!events.length) {
+        return;
       }
 
-      spawnDialog(<DisplayEventDialog event={event} />);
-    }
+      if (events.length === 1) {
+        return spawnDialog(<DisplayEventDialog event={events[0]} />)
+      }
+
+      return spawnDialog(<DisplayGroupDialog events={events} />);
+    };
 
     return (
       <UIPoint
-        onClick={openEvent}
-        icon={Note.icon(note)}
-        accent={note.color}
-        name={note.name}
+        onClick={handleClick}
+        icon={notes.length > 1 ? 'Status' : Note.icon(notes[0])}
+        accent={notes.length > 1 ? '#e8e8e8' : notes[0].color}
+        name={(notes.length > 1 ? notes.length : notes[0].name).toString()}
         {...props}
       />
     )

@@ -1,6 +1,8 @@
-import { Note as NoteClass, File, Note } from '@/class/Info'
+import { Note as NoteClass, File, Note, Event } from '@/class/Info'
 import { RenderEngine } from '@/class/RenderEngine'
 import { useApplication } from '@/context/Application.context'
+import { DisplayEventDialog } from '@/dialogs/Event.dialog'
+import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λNote } from '@/dto/Dataset'
 import { XY } from '@/dto/XY.dto'
 import { Glyph } from '@/ui/Glyph'
@@ -18,7 +20,7 @@ export function NotesDisplayer({
   getPixelPosition,
   self
 }: NotesDisplayerProps) {
-  const { app, scrollY } = useApplication()
+  const { app, scrollY, spawnDialog } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([]);
 
   useEffect(() => {
@@ -37,22 +39,13 @@ export function NotesDisplayer({
     setNotes(notes);
   }, [self, app.target.notes, app.target.files]);
 
-  if (!notes.length) {
-    return null;
-  }
-
-  return (
+  return notes.length > 0 ? (
     <NotePoint.Point
       type='note'
       key={notes[0].id}
-      note={notes.length > 1 ? {
-        ...notes[0],
-        color: '#e8e8e8',
-        name: `${notes.length}`,
-        glyph_id: Glyph.getIdByName('Status')
-      } : notes[0]}
+      notes={notes}
       x={getPixelPosition(Note.timestamp(notes[0]))}
       y={File.getHeight(app, notes[0].source_id, scrollY)}
     />
-  )
+  ) : null
 }
