@@ -135,8 +135,9 @@ export namespace OpenSearchQueryBuilder {
       const add = useCallback(() => {
         filters.push({
           id: `condition-${Date.now()}` as λFilter['id'],
-          type: 'term',
+          type: 'wildcard',
           field: init,
+          case_insensitive: true,
           value: '',
           operator: 'must',
           enabled: true
