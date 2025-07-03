@@ -11,6 +11,7 @@ import { Label } from '@/ui/Label'
 import { Input } from '@/ui/Input'
 import { cn } from '@impactium/utils'
 import { Preview } from './Preview.banner'
+import { SelectFiles } from './SelectFiles.banner'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -145,6 +146,8 @@ export namespace QueryExternal {
       setOptions(app.target.plugins.filter((i) => i.type.includes('external')))
     }, [app.target.plugins]);
 
+    const [isDone, setIsDone] = useState<boolean>(false);
+
     const handleQuery = async (preview = false) => {
       if (!selectedOption) return
       setLoading(preview ? 2 : 1)
@@ -153,9 +156,15 @@ export namespace QueryExternal {
       if (result) {
         spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} {...props} />)} />)
       } else {
-        destroyBanner();
+        setIsDone(true);
       }
     }
+
+    useEffect(() => {
+      if (isDone) {
+        spawnBanner(<SelectFiles.Banner />)
+      }
+    }, [app.target.files]);
 
     useEffect(() => {
       if (!selectedOption) {
@@ -188,7 +197,7 @@ export namespace QueryExternal {
     )
 
     return (
-      <UIBanner title="Query external" done={done} option={optionButton} {...props}>
+      <UIBanner title="Query external" done={done} fixed={isDone} option={optionButton} {...props}>
         <PluginSelection
           options={options}
           selectedOption={selectedOption}

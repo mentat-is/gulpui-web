@@ -97,6 +97,13 @@ export class AppSocket extends WebSocket {
           info.highlights_reload()
           return
 
+        case message.type === 'progress':
+          if (!message.data.done) {
+            return;
+          }
+          this.info.sync();
+          return;
+
         case message.type === 'enrich_done':
           toast(
             message.data.status === 'failed'
