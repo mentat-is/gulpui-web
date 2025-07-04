@@ -1394,7 +1394,7 @@ export class Info implements InfoProps {
     body: {
       text,
       tags,
-      docs: [Event.toDoc(event)],
+      doc: Event.toDoc(event),
     },
   }).then(note => {
     const updated = [...this.app.target.notes];
@@ -1431,7 +1431,7 @@ export class Info implements InfoProps {
     body: {
       text,
       tags,
-      docs: [Event.toDoc(event)],
+      doc: Event.toDoc(event),
     }
   }).then(note => {
     const index = this.app.target.notes.findIndex(n => n.id === note.id);
