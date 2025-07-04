@@ -1297,7 +1297,7 @@ export class Info implements InfoProps {
       const fetched = await api<λNote[]>('/note_list', {
         method: 'POST',
         body: {
-          source_ids: File.selected(this.app).map((f) => f.id),
+          source_ids: files,
           offset,
           limit: 500
         },
@@ -1309,7 +1309,7 @@ export class Info implements InfoProps {
           toast(`Fetched ${notes.length} notes`, {
             description: 'Continuing...',
             icon: <Spinner />
-          })
+          });
         }
 
         this.setInfoByKey([...notes], 'target', 'notes');
@@ -1317,11 +1317,12 @@ export class Info implements InfoProps {
         return new Promise(res => {
           setTimeout(() => {
             res(fetch(offset + 500));
-          })
-        })
+          });
+        });
       } else {
         const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
         Logger.log(message, Info);
+        this.setInfoByKey([...notes], 'target', 'notes'); // Сохранение данных после завершения всех запросов
         if (notes.length >= 2500) {
           toast.success(message, {
             icon: <Icon name='Check' />,
@@ -1336,7 +1337,7 @@ export class Info implements InfoProps {
     Note[λCache].clear();
 
     return notes;
-  }
+  };
 
   /**
    * 
