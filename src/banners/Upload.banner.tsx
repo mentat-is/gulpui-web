@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
-import { Input, Spinner } from '@impactium/components'
+import { Spinner } from '@impactium/components'
 import { Select } from '@/ui/Select'
 import { useEffect, useState, useCallback, useMemo, ChangeEvent, useRef } from 'react'
 import s from './styles/UploadBanner.module.css'
@@ -20,6 +20,7 @@ import { Progress as UIProgress } from '@/ui/Progress';
 import { Table } from '@/components/Table'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { CustomParameters } from '@/components/CustomParameters'
+import { Input } from '@/ui/Input'
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
   'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],
@@ -577,7 +578,7 @@ export function UploadBanner() {
         <Button variant="outline" className={s.addFiles} img="Cross" onClick={() => setFiles([])}>
           Clear selection
         </Button>
-        <input
+        <Input
           ref={fileInputRef}
           type="file"
           multiple
@@ -592,6 +593,7 @@ export function UploadBanner() {
       />
       <Components.FrameSelector setFrame={setFrame} isCustomFrame={customFrame} />
       <Input
+        label='Chunk size in megabytes'
         variant="highlighted"
         type="number"
         onChange={chunkSizeInputChangeHandler}

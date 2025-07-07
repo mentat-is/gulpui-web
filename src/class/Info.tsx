@@ -926,9 +926,9 @@ export class Info implements InfoProps {
     return sorted_parsed_shit
   }
 
-  operations_select = (operation: λOperation) => {
+  operations_select = (id: λOperation['id']) => {
     this.setInfoByKey(
-      Operation.select(this.app, operation.id),
+      Operation.select(this.app, id),
       'target',
       'operations',
     )

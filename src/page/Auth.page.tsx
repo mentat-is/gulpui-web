@@ -24,12 +24,12 @@ export namespace Auth {
   export function Page({ ...props }: Auth.Page.Props) {
     const { spawnBanner, Info, app } = useApplication()
     const loginButton = useRef<HTMLButtonElement>(null)
-    const [operations, setOperations] = useState<λOperation[] | null>(null);
     const [isKeyPressed] = useKeyHandler('Enter')
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState<string>(Info.app.general.id || 'admin')
     const [password, setPassword] = useState<string>('admin')
     const [loading, setLoading] = useState<boolean>(false)
+    const [isOperationsLoading, setIsOperationsLoading] = useState<number>(0)
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
 
     useEffect(() => {
@@ -71,9 +71,10 @@ export namespace Auth {
 
         Internal.Settings.server = validatedServer
 
+        setLoading(true);
         await api<λUser>('/login', {
           method: 'POST',
-          setLoading,
+
           raw: true,
           query: {
             ws_id: Info.app.general.ws_id,
@@ -100,7 +101,7 @@ export namespace Auth {
           variant="glass"
           revert
           ref={loginButton}
-          loading={loading}
+          loading={loading || isOperationsLoading === 1}
           tabIndex={4}
           onClick={login}
           style={{ marginLeft: 'auto' }}
@@ -110,11 +111,12 @@ export namespace Auth {
 
     const next = async (user: λUser) => {
       Info.login(user)
-      const { operations } = await Info.sync()
-      setOperations(operations);
-      Info.plugin_list()
-      Info.glyphs_reload()
+      await Info.plugin_list()
+      await Info.glyphs_reload()
+      setIsOperationsLoading(1);
       await Info.sync()
+      setIsOperationsLoading(2);
+      setLoading(false);
 
       const sessions = await Info.session_list(user.id);
       if (sessions.length) {
@@ -184,7 +186,11 @@ export namespace Auth {
     const SelectTrigger = () => {
       const selected = Operation.selected(Info.app)
 
-      if (!operations) {
+      if (isOperationsLoading === 0) {
+        return null;
+      }
+
+      if (isOperationsLoading === 1) {
         return (
           <Select.Trigger disabled>
             <Spinner />
@@ -201,8 +207,6 @@ export namespace Auth {
       )
     }
 
-    const isInputDisabled = Info.User.isAuthorized() ?? loading;
-
     return (
       <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
         <p className={s.title}>[ Login ]</p>
@@ -212,7 +216,7 @@ export namespace Auth {
           label='Server adress'
           placeholder="http://localhost:8080"
           value={server}
-          disabled={isInputDisabled}
+          disabled={isOperationsLoading === 2}
           tabIndex={1}
           onChange={(e) => setServer(e.currentTarget.value)}
         />
@@ -222,7 +226,7 @@ export namespace Auth {
           img="User"
           placeholder="admin"
           value={id}
-          disabled={isInputDisabled}
+          disabled={isOperationsLoading === 2}
           tabIndex={2}
           onChange={(e) => setId(e.currentTarget.value)}
         />
@@ -233,25 +237,21 @@ export namespace Auth {
           placeholder="admin"
           type="password"
           value={password}
-          disabled={isInputDisabled}
+          disabled={isOperationsLoading === 2}
           tabIndex={3}
           onChange={(e) => setPassword(e.currentTarget.value)}
         />
         <LoginMethods />
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, Info.User.isAuthorized() && s.visible)}>
+        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, isOperationsLoading === 2 && s.visible)}>
           <Label value='Operation' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
               defaultValue={Operation.selected(Info.app)?.id}
-              onValueChange={(id) =>
-                Info.operations_select(
-                  Operation.id(app, id as λOperation['id']),
-                )
-              }
+              onValueChange={(id) => Info.operations_select(id as λOperation['id'])}
             >
               <SelectTrigger />
               <Select.Content>
-                {(operations ?? []).map((operation) => (
+                {app.target.operations.map((operation) => (
                   <Select.Item key={operation.id} value={operation.id}>
                     <Select.Icon name={Operation.icon(operation)} />
                     {operation.name}
@@ -264,7 +264,7 @@ export namespace Auth {
             </Select.Root>
           </Stack>
         </Stack>
-        {isInputDisabled ? null : <DoneButton />}
+        {isOperationsLoading > 0 ? null : <DoneButton />}
       </Stack>
     )
   }

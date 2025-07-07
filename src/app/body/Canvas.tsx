@@ -75,12 +75,6 @@ export function Canvas({ timeline }: Canvas.Props) {
     Note.updateIndexing(app);
   }, [app.target.notes]);
 
-  const [selectedFiles, setSelectedFiles] = useState<λFile[]>([]);
-
-  useEffect(() => {
-    setSelectedFiles(File.selected(app));
-  }, [app.target.files]);
-
   useEffect(() => {
     RenderEngine.reset('notes');
   }, [app.timeline.scale]);
@@ -125,11 +119,13 @@ export function Canvas({ timeline }: Canvas.Props) {
       shifted,
     })
 
+    const files = File.selected(app)
+
     render.ruler.draw()
 
     Highlights.list().map(v => render.highlight(...v));
 
-    selectedFiles.forEach((file, i) => {
+    files.forEach((file, i) => {
       const y = File.getHeight(app, file, scrollY)
 
       if (
@@ -152,8 +148,9 @@ export function Canvas({ timeline }: Canvas.Props) {
     if (force) {
       RenderEngine.reset('notes');
     }
+
     if (!app.timeline.hidden_notes) {
-      render.notes(selectedFiles);
+      render.notes(files);
     }
 
     ctx.fillStyle = '#ff000080'

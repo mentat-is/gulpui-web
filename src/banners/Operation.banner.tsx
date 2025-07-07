@@ -87,12 +87,7 @@ export namespace Operation {
           ) : (
             <UISelect.Root
               defaultValue={GulpOperationEntity.selected(Info.app)?.id}
-              onValueChange={(id) =>
-                Info.operations_select(
-                  GulpOperationEntity.id(app, id as λOperation['id']),
-                )
-              }
-            >
+              onValueChange={(id) => Info.operations_select(id as λOperation['id'])}>
               <SelectTrigger />
               <UISelect.Content>
                 {Info.app.target.operations.length ? (
