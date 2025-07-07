@@ -1,13 +1,10 @@
 import { Note as NoteClass, File, Note, Event } from '@/class/Info'
 import { RenderEngine } from '@/class/RenderEngine'
 import { useApplication } from '@/context/Application.context'
-import { DisplayEventDialog } from '@/dialogs/Event.dialog'
-import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λNote } from '@/dto/Dataset'
 import { XY } from '@/dto/XY.dto'
-import { Glyph } from '@/ui/Glyph'
 import { NotePoint } from '@/ui/Note'
-import { useMemo, useCallback, Fragment, useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 interface NotesDisplayerProps {
   getPixelPosition: (num: number) => number;

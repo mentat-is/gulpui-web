@@ -17,7 +17,6 @@ import { Stack } from '@impactium/components'
 import { debounce } from 'lodash'
 import { useDrugs, useKeyHandler } from '@/decorator/use'
 import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu'
-import { FilesMenu } from './Files.manu'
 import { TargetMenu } from './Target.menu'
 import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
@@ -36,25 +35,24 @@ export function Canvas({ timeline }: Canvas.Props) {
   const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, Info, dialog, highlightsOverlay } = useApplication()
-  const [shifted, setShifted] = useState<λFile[]>([])
-  const [isShiftPressed] = useKeyHandler('Shift')
-  const dependencies = [
-    app.target.files,
-    app.target.events.size,
-    scrollX,
-    scrollY,
-    app.timeline.frame,
-    app.timeline.frame,
-    app.timeline.scale,
-    app.target.links,
-    dialog,
-    app.timeline.target,
-    app.timeline.filter,
-    shifted,
-    app.timeline.dialogSize
-  ]
+  const [target, setTarget] = useState<λFile | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
-    useMagnifier(canvas_ref, dependencies)
+    useMagnifier(canvas_ref, [
+      app.target.files,
+      app.target.events.size,
+      scrollX,
+      scrollY,
+      app.timeline.frame,
+      app.timeline.frame,
+      app.timeline.scale,
+      app.target.links,
+      dialog,
+      app.timeline.target,
+      app.timeline.filter,
+      app.timeline.dialogSize,
+      app.timeline.hidden_notes,
+      target
+    ]);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
 
   useEffect(() => {
@@ -116,7 +114,6 @@ export function Canvas({ timeline }: Canvas.Props) {
       getPixelPosition,
       scrollX,
       scrollY,
-      shifted,
     })
 
     const files = File.selected(app)
@@ -145,7 +142,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     render.links()
 
-    if (force) {
+    if (force || Math.random() < 0.05) {
       RenderEngine.reset('notes');
     }
 
@@ -348,53 +345,45 @@ export function Canvas({ timeline }: Canvas.Props) {
     return () => {
       clearInterval(debugInterval)
     }
-  }, dependencies)
+  }, [
+    scrollX,
+    scrollY,
+    app.target.files,
+    app.target.notes,
+    app.timeline.frame,
+    app.timeline.scale,
+    app.target.links,
+    app.timeline.target,
+    app.timeline.filter,
+    app.timeline.dialogSize,
+    app.timeline.hidden_notes,
+    app.target.events.size,
+    target
+  ])
 
   const getPixelPosition = useCallback((timestamp: number) => {
     return Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
   }, [scrollX, Info.width, app.timeline.frame])
 
-  const handleContextMenu = (event: MouseEvent) => {
+  const handleContextMenu = useCallback((event: MouseEvent) => {
     if (!timeline.current) {
       return
     }
 
-    const index = Math.floor(
-      (event.clientY + scrollY - timeline.current.getBoundingClientRect().top) /
-      48,
-    )
+    const index = Math.floor((event.clientY + scrollY - timeline.current.getBoundingClientRect().top) / 48);
 
-    const file = File.selected(app)[index]
+    const file = File.selected(app)[index] ?? null;
 
-    if (!file) {
-      if (!isShiftPressed) {
-        setShifted([])
-      }
-      return
-    }
-
-    if (!isShiftPressed) {
-      return setShifted([file])
-    }
-
-    if (shifted.find((f) => f.id === file.id)) {
-      setShifted((shifted) => shifted.filter((f) => f.id !== file.id))
-      return
-    }
-    setShifted((list) => [...list, file])
-  }
+    setTarget(file);
+  }, [setTarget, timeline]);
 
   const Menu = useCallback(() => {
-    if (shifted.length === 0) {
+    if (!target) {
       return null
     }
 
-    return shifted.length === 1 ? (
-      <TargetMenu file={shifted[0]} />
-    ) : (
-      <FilesMenu files={shifted} />
-    )
-  }, [shifted])
+    return <TargetMenu file={target} />
+  }, [target])
 
   return (
     <ContextMenu>

@@ -33,7 +33,6 @@ interface RenderEngineConstructor {
   scrollX: number
   scrollY: number
   getPixelPosition: (timestamp: number) => number
-  shifted: λFile[]
 }
 
 export interface Status {
@@ -88,7 +87,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     getPixelPosition,
     scrollY,
     scrollX,
-    shifted,
   }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
       RenderEngine.instance.ruler = new RulerDrawer({
@@ -103,7 +101,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.limits = limits
       RenderEngine.instance.info = info
       RenderEngine.instance.scrollX = scrollX
-      RenderEngine.instance.shifted = shifted
       RenderEngine.instance.scrollY = scrollY
       RenderEngine.instance.getPixelPosition = getPixelPosition
       RenderEngine.instance.default = new DefaultEngine(RenderEngine.instance)
@@ -125,7 +122,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.imageSmoothingQuality = 'high';
     this.ctx.font = '10px monospace'
     this.limits = limits
-    this.shifted = shifted
     this.info = info
     this.getPixelPosition = getPixelPosition
 
@@ -406,7 +402,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.restore()
   }
 
-  // [ ] WRONG FUNCTION
   private getVisibleNotes = (file: λFile['id']) => {
     const notes = Note.findByFile(this.info.app, file);
     const min = this.getTimestamp(-128)
@@ -506,7 +501,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const currentX = this.getPixelPosition(Note.timestamp(notes[i]))
       const distance = Math.abs(currentX - startX)
 
-      if (distance <= 24) {
+      if (distance <= 32) {
         endIdx = i
       } else {
         break  // Since we're going in timestamp order, if this one is too far, the rest will be too
@@ -520,6 +515,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     if (!RenderEngine.instance) {
       return [];
     }
+
     const { notes, groups } = RenderEngine.instance.calculateNotesGroups(file.id);
     if (groups.length === 0) {
       return [];
@@ -528,19 +524,31 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const minTimestamp = RenderEngine.instance.getTimestamp(x - padding);
     const maxTimestamp = RenderEngine.instance.getTimestamp(x + padding);
 
-    // Check each group to see if it overlaps with our timestamp range
+    let bestGroup: [number, number] | null = null;
+    let bestDistance = Infinity;
+
     for (const [groupIndex, groupCount] of groups) {
-      const groupStartTimestamp = Note.timestamp(notes[groupIndex]);
-      const groupEndTimestamp = Note.timestamp(notes[groupIndex + groupCount - 1]); // Fix: -1 since it's length, not index
+      const startNote = notes[groupIndex];
+      const endNote = notes[groupIndex + groupCount - 1];
 
-      // Since notes are in descending order:
-      // groupStartTimestamp is the highest (latest) timestamp in the group
-      // groupEndTimestamp is the lowest (earliest) timestamp in the group
+      const startX = RenderEngine.instance.getPixelPosition(Note.timestamp(startNote));
+      const endX = RenderEngine.instance.getPixelPosition(Note.timestamp(endNote));
 
-      // Check if group overlaps with our range [minTimestamp, maxTimestamp]
-      if (groupEndTimestamp <= maxTimestamp && groupStartTimestamp >= minTimestamp) {
-        return notes.slice(groupIndex, groupIndex + groupCount);
+      const avgX = (startX + endX) / 2;
+      const distance = Math.abs(avgX - x);
+
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestGroup = [groupIndex, groupCount];
+      } else {
+        // distance started increasing — stop here
+        break;
       }
+    }
+
+    if (bestGroup) {
+      const [groupIndex, groupCount] = bestGroup;
+      return notes.slice(groupIndex, groupIndex + groupCount);
     }
 
     return [];

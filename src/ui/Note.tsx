@@ -8,7 +8,6 @@ import { Badge, Button, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
-import { useMemo } from 'react'
 
 export namespace NotePoint {
   export interface Props
