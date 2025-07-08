@@ -1198,34 +1198,20 @@ export class Info implements InfoProps {
   }
 
   // ⚠️ UNTOUCHABLE
-  file_set_render_engine = (ids: λFile['id'][], engine: Engine.List) =>
-    this.setInfoByKey(
-      this.app.target.files.map((file) => ({
-        ...file,
-        settings: {
-          ...file.settings,
-          engine: ids.includes(file.id) ? engine : file.settings.engine,
-        },
-      })),
-      'target',
-      'files',
-    )
+  file_set_settings = (id: λFile['id'], settings: Partial<λFile['settings']>) => {
+    const file = File.id(this.app, id);;
+    const newSettings = {
+      ...file.settings,
+      ...settings
+    } satisfies λFile['settings'];
 
-  // ⚠️ UNTOUCHABLE
-  file_set_settings = (ids: λFile['id'][], settings: λFile['settings']) => {
-    const refetchKeys: RefetchOptions['refetchKeys'] = {};
-    ids.forEach(id => {
-      if (!File.isEventKeyFetched(this.app, id, [settings.field])) {
-        refetchKeys[id] = [settings.field]
-      }
-    });
-    const files = Object.keys(refetchKeys) as λFile['id'][];
-    if (files.length > 0) {
-      this.refetch({ ids: files, refetchKeys })
+    if (!File.isEventKeyFetched(this.app, id, [newSettings.field])) {
+      this.refetch({ ids: id, refetchKeys: { [id]: [newSettings.field] } })
     }
+
     return this.setInfoByKey(
-      this.app.target.files.map((file) => ids.includes(file.id)
-        ? { ...file, settings: { ...file.settings, ...settings } }
+      this.app.target.files.map((file) => id === file.id
+        ? { ...file, settings: newSettings }
         : file
       ),
       'target',

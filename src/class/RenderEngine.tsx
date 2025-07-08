@@ -1,6 +1,6 @@
-import { Internal, MinMax, Note, Range } from '@/class/Info'
+import { Internal, MinMax, Note } from '@/class/Info'
 import { Event, Info, File } from './Info'
-import { Color, getSortOrder, stringToHexColor } from '@/ui/utils'
+import { Color, stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
@@ -521,9 +521,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       return [];
     }
 
-    const minTimestamp = RenderEngine.instance.getTimestamp(x - padding);
-    const maxTimestamp = RenderEngine.instance.getTimestamp(x + padding);
-
     let bestGroup: [number, number] | null = null;
     let bestDistance = Infinity;
 
@@ -535,7 +532,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const endX = RenderEngine.instance.getPixelPosition(Note.timestamp(endNote));
 
       const avgX = (startX + endX) / 2;
-      const distance = Math.abs(avgX - x);
+      const distance = Math.abs(avgX - x + 16);
 
       if (distance < bestDistance) {
         bestDistance = distance;
@@ -546,7 +543,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       }
     }
 
-    if (bestGroup) {
+    if (bestGroup) { // && Math.abs(bestDistance - x) <= 16
       const [groupIndex, groupCount] = bestGroup;
       return notes.slice(groupIndex, groupIndex + groupCount);
     }

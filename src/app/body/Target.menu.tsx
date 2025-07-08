@@ -79,7 +79,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
           {enginesBase.map((i) => (
             <ContextMenuItem
               key={i.plugin}
-              onClick={() => Info.file_set_render_engine([file.id], i.plugin)}
+              onClick={() => Info.file_set_settings(file.id, { engine: i.plugin })}
               img={i.img}
             >
               {i.title}

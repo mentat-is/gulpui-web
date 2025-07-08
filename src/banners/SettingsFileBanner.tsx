@@ -34,7 +34,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     setLoading(true)
 
     setTimeout(() => {
-      Info.file_set_settings([file.id], {
+      Info.file_set_settings(file.id, {
         color,
         offset,
         engine,
