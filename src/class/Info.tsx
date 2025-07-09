@@ -1853,10 +1853,6 @@ export class Info implements InfoProps {
       operations.push(operation)
     })
 
-    if (operations.length === 1) {
-      operations[0].selected = true
-    }
-
     Logger.log(`${operations.length} operations has been added to application data`, this.sync);
     Logger.log(`${contexts.length} contexts has been added to application data`, this.sync);
     Logger.log(`${files.length} files has been added to application data`, this.sync);

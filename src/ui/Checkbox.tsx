@@ -3,17 +3,20 @@ import React from 'react'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
+import { Label } from './Label'
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,
-  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> & {
+    value?: string
+  }
+>(({ className, value, ...props }, ref) => (
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(s.root, className)}
     {...props}
   >
     <CheckboxPrimitive.Indicator className={cn(s.indicator)}>
-      <Icon name="Check" size={12} />
+      <Icon name='Check' size={11} strokeWidth={3} />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
 ))

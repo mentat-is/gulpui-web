@@ -6,10 +6,9 @@ import { ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { OpenSearchQueryBuilder } from './FilterFile.banner';
 import { Separator } from '@/ui/Separator';
 import s from './styles/GlobalQueryBanner.module.css';
-import { Icon } from '@impactium/icons';
 import { Preview } from './Preview.banner';
 import { Notification } from '@/ui/Notification';
-import { λDoc, λEvent } from '@/dto/ChunkEvent.dto';
+import { λDoc } from '@/dto/ChunkEvent.dto';
 import { λFile } from '@/dto/Dataset';
 
 export namespace GlobalQuery {

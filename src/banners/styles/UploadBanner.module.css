@@ -67,6 +67,7 @@
   min-height: 64px;
   align-items: center !important;
   justify-content: center !important;
+  cursor: pointer;
 }
 .fill div {
   color: var(--text-dimmed);
@@ -142,4 +143,11 @@
 }
 .allSettings > button {
   width: fit-content;
+}
+.sr_only {
+  height: 0px;
+  width: 0px;
+  position: absolute;
+  overflow: hidden;
+  opacity: 0;
 }

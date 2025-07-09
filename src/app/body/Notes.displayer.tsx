@@ -11,13 +11,11 @@ interface NotesDisplayerProps {
   self: XY;
 }
 
-type NoteMapping = Record<λNote['id'], XY>
-
 export function NotesDisplayer({
   getPixelPosition,
   self
 }: NotesDisplayerProps) {
-  const { app, scrollY, spawnDialog } = useApplication()
+  const { app, scrollY } = useApplication()
   const [notes, setNotes] = useState<λNote[]>([]);
 
   useEffect(() => {
@@ -34,7 +32,7 @@ export function NotesDisplayer({
 
     const notes = RenderEngine.getNotesByX(file, self.x);
     setNotes(notes);
-  }, [self, app.target.notes, app.target.files]);
+  }, [self, app.target.notes, app.target.files, app.timeline.hidden_notes]);
 
   return notes.length > 0 ? (
     <NotePoint.Point

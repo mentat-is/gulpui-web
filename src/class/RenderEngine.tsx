@@ -538,12 +538,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         bestDistance = distance;
         bestGroup = [groupIndex, groupCount];
       } else {
-        // distance started increasing — stop here
         break;
       }
     }
 
-    if (bestGroup) { // && Math.abs(bestDistance - x) <= 16
+    if (bestGroup) {
       const [groupIndex, groupCount] = bestGroup;
       return notes.slice(groupIndex, groupIndex + groupCount);
     }
