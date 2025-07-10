@@ -16,7 +16,7 @@
   overflow: hidden;
   cursor: crosshair;
   position: relative;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--gray-400);
 }
 .wrapper:hover .position {

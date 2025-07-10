@@ -2,7 +2,7 @@
   width: 100%;
   padding: 16px;
   z-index: 5;
-  border-radius: 4px;
+  border-radius: 6px;
   border: 1px solid var(--gray-400);
   background: var(--soft-black);
   height: 100%;

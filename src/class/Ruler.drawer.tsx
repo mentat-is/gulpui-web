@@ -108,7 +108,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
       { unit: 'seconds', values: [1, 2, 5, 10, 15, 30] },
       { unit: 'minutes', values: [1, 2, 5, 10, 15, 30] },
       { unit: 'hours', values: [1, 3, 6, 12] },
-      { unit: 'days', values: [1, 2, 5, 10] },
+      { unit: 'days', values: [1, 2, 3, 7, 14] },
       { unit: 'months', values: [1, 3, 6] },
       { unit: 'years', values: [1, 2, 3, 5, 10, 25, 50, 100] },
     ]

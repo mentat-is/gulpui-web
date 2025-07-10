@@ -46,9 +46,7 @@ export function Navigation({ event }: Navigation.Props) {
         onClick={changeEventTargerHandlerConstructor(true)}
         img="ArrowLeft"
         variant="outline"
-      >
-        Previous
-      </Button>
+      />
       <Stack className={s.content} jc="center">
         {events.map((e) => (
           <SymmetricSvg
@@ -64,9 +62,7 @@ export function Navigation({ event }: Navigation.Props) {
         img="ArrowRight"
         variant="outline"
         revert
-      >
-        Next
-      </Button>
+      />
     </Stack>
   )
 }

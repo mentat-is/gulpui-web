@@ -1,5 +1,6 @@
 import React from 'react'
 import s from './styles/Magnifier.module.css'
+import { Stack } from '@impactium/components'
 
 interface MagnifierProps {
   isVisible: boolean
@@ -17,15 +18,22 @@ export const Magnifier: React.FC<MagnifierProps> = ({
   if (!isVisible) return null
 
   return (
-    <canvas
-      ref={self}
-      width={size}
+    <Stack
       style={{
         top: `${mousePosition.y}px`,
         left: `${mousePosition.x}px`,
+        height: size,
+        width: size
       }}
-      height={size}
       className={s.magnifier}
-    />
+      pos='absolute'>
+      <canvas
+        ref={self}
+        width={size}
+        height={size}
+      />
+      <i className={s.glass} />
+    </Stack>
+
   )
 }

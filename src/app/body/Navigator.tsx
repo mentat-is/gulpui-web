@@ -206,100 +206,98 @@ export function Navigator({
   return (
     <Stack
       pos="relative"
-      dir="column"
-      ai="flex-start"
+      gap={5}
+      flex={0}
       className={cn(className, s.navigator)}
       {...props}
     >
-      <Stack className={s.heading} flex={0}>
-        <Button
-          variant="secondary"
-          size="sm"
-          title='Zoom in'
-          ref={size_minus}
-          onClick={() => zoom(false)}
-          img="ZoomIn"
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          title='Zoom out'
-          ref={size_plus}
-          onClick={() => zoom(true)}
-          img="ZoomOut"
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          title='Reset scale'
-          ref={size_reset}
-          onClick={resetScaleAndScroll}
-          img="AlignHorizontalSpaceBetween"
-        />
-        <Button
-          variant="secondary"
-          size="sm"
-          title='Create highlight'
-          img="ChartBarBig"
-          onClick={createHighlightButtonClickHandler}
-        />
-        <Input
-          className={s.filter}
-          value={app.timeline.filter}
-          placeholder="Filter by filenames and context"
-          onChange={handleFilterChange}
-          img="Filter"
-        />
-        <Button
-          size="sm"
-          variant="secondary"
-          title="Open notes banner in new window"
-          img="PictureInPicture2"
-          onClick={openWindow}
-        />
-        <Button
-          size="sm"
-          variant="secondary"
-          title={app.timeline.hidden_notes ? 'Show notes' : 'Hide notes'}
-          img={app.timeline.hidden_notes ? 'ToggleOffAlt' : 'ToggleOnAlt'}
-          className={cn(
-            s.notes_visibility,
-            app.timeline.hidden_notes && s.dimmed,
-          )}
-          onClick={() => Info.toggle_notes_visibility()}
-        />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button size="sm" variant="secondary" img="Crosshair" />
-          </PopoverTrigger>
-          <PopoverContent className={s.goto}>
-            <Stack dir="column" ai="flex-start">
-              <p>Go to timestamp:</p>
-              <Stack>
-                <Input
-                  variant="highlighted"
-                  img="Crosshair"
-                  value={timestamp}
-                  valid={timestampInputValid}
-                  onChange={handleTimestampChangeHandler}
-                />
-                <Button
-                  img="Undo2"
-                  variant="secondary"
-                  onClick={resetTimestampToInitialValue}
-                />
-                <Button img="Check" variant="glass" onClick={goToTimestamp} />
-              </Stack>
+      <Button
+        variant="secondary"
+        size="sm"
+        title='Zoom in'
+        ref={size_minus}
+        onClick={() => zoom(false)}
+        img="ZoomIn"
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        title='Zoom out'
+        ref={size_plus}
+        onClick={() => zoom(true)}
+        img="ZoomOut"
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        title='Reset scale'
+        ref={size_reset}
+        onClick={resetScaleAndScroll}
+        img="AlignHorizontalSpaceBetween"
+      />
+      <Button
+        variant="secondary"
+        size="sm"
+        title='Create highlight'
+        img="ChartBarBig"
+        onClick={createHighlightButtonClickHandler}
+      />
+      <Input
+        className={s.filter}
+        value={app.timeline.filter}
+        placeholder="Filter by filenames and context"
+        onChange={handleFilterChange}
+        img="Filter"
+      />
+      <Button
+        size="sm"
+        variant="secondary"
+        title="Open notes banner in new window"
+        img="PictureInPicture2"
+        onClick={openWindow}
+      />
+      <Button
+        size="sm"
+        variant="secondary"
+        title={app.timeline.hidden_notes ? 'Show notes' : 'Hide notes'}
+        img={app.timeline.hidden_notes ? 'ToggleOffAlt' : 'ToggleOnAlt'}
+        className={cn(
+          s.notes_visibility,
+          app.timeline.hidden_notes && s.dimmed,
+        )}
+        onClick={() => Info.toggle_notes_visibility()}
+      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button size="sm" variant="secondary" img="Crosshair" />
+        </PopoverTrigger>
+        <PopoverContent className={s.goto}>
+          <Stack dir="column" ai="flex-start">
+            <p>Go to timestamp:</p>
+            <Stack>
+              <Input
+                variant="highlighted"
+                img="Crosshair"
+                value={timestamp}
+                valid={timestampInputValid}
+                onChange={handleTimestampChangeHandler}
+              />
+              <Button
+                img="Undo2"
+                variant="secondary"
+                onClick={resetTimestampToInitialValue}
+              />
+              <Button img="Check" variant="glass" onClick={goToTimestamp} />
             </Stack>
-          </PopoverContent>
-        </Popover>
-        {windowRef &&
-          containerRef.current &&
-          ReactDOM.createPortal(
-            <NotesWindow focus={focus} onClose={closeWindow} />,
-            containerRef.current,
-          )}
-      </Stack>
+          </Stack>
+        </PopoverContent>
+      </Popover>
+      {windowRef &&
+        containerRef.current &&
+        ReactDOM.createPortal(
+          <NotesWindow focus={focus} onClose={closeWindow} />,
+          containerRef.current,
+        )}
     </Stack>
   )
 }

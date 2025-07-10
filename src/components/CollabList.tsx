@@ -6,13 +6,13 @@ import { λLink, λNote } from "@/dto/Dataset";
 import { Stack, Button, Badge } from "@impactium/components";
 import { cn } from "@impactium/utils";
 import { formatDistanceToNow } from "date-fns";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Markdown } from "@/ui/Markdown";
 import s from './styles/Collab.module.css';
 import { Select } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
-import { debounce } from "lodash";
-import React from "react"; export namespace Collab {
+
+export namespace Collab {
   export namespace List {
     export interface Props extends Stack.Props {
       notes: λNote[],
@@ -22,13 +22,8 @@ import React from "react"; export namespace Collab {
 
   const EDIT_BUTTON_STYLE = { height: 20, marginLeft: 'auto' } as const;
   const FLEX_WRAP_STYLE = { flexWrap: 'wrap' } as const;
-  const BADGE_STYLE = {
-    color: 'var(--gray-900)',
-    background: 'var(--gray-300)',
-    whiteSpace: 'nowrap'
-  } as const;
 
-  const SelectItem = React.memo(({ item }: { item: λNote | λLink }) => {
+  const SelectItem = memo(({ item }: { item: λNote | λLink }) => {
     const itemColorStyle = useMemo(() => ({ color: item.color }), [item.color]);
     const itemIcon = useMemo(() =>
       item.type === 'note' ? Note.icon(item) : Link.icon(item),
@@ -102,6 +97,7 @@ import React from "react"; export namespace Collab {
     const allTags = useMemo(() => {
       return notes.map(n => n.tags).flat();
     }, [notes]);
+
     const targetIcon = useMemo(() => {
       return target.type === 'note' ? Note.icon(target) : Link.icon(target);
     }, [target]);
@@ -120,7 +116,6 @@ import React from "react"; export namespace Collab {
       )
     }, [handleValueChange, targetColorStyle, target, targetIcon, List]);
 
-    const badgeVariant = target.type === 'note' ? 'teal' : 'amber';
     return (
       <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
         <Stack dir='column' ai='stretch'>
@@ -138,17 +133,15 @@ import React from "react"; export namespace Collab {
             <Badge
               variant='gray-subtle'
               icon='ClockRewind'
-              style={BADGE_STYLE}
               size='sm'
             >
               Created {formatDistanceToNow(target.time_created, { addSuffix: true })}
             </Badge>
             {allTags.map((tag, index) => (
               <Badge
-                key={`${tag}-${index}`}
-                icon='Status'
+                key={tag}
                 value={tag}
-                variant={badgeVariant}
+                variant='gray-subtle'
                 size='sm'
               />
             ))}

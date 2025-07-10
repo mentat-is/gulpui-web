@@ -1,0 +1,13 @@
+.kbd {
+  font-family: var(--font-mono);
+  padding: 6px;
+  border-radius: 4px;
+  background: var(--meta-black);
+  border: 1px solid var(--gray-400);
+  height: 24px;
+  min-width: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}

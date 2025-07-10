@@ -15,6 +15,7 @@ import { Select } from '@/ui/Select'
 import { λOperation } from '@/dto'
 import { Label } from '@/ui/Label'
 import { Operation as OperationBanners } from '@/banners/Operation.banner'
+import { Keyboard } from '@/ui/Keyboard'
 
 export namespace Auth {
   export namespace Page {

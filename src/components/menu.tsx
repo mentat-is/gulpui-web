@@ -6,7 +6,6 @@ import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { Frame } from '@/banners/Frame.banner'
 import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
-import { StorylineBanner } from '@/banners/storyline.banner'
 import { Operation } from '@/banners/Operation.banner'
 import { useWindows } from '@/ui/Windows'
 import { Enrichment } from '@/banners/Enrichment.banner'
@@ -15,11 +14,10 @@ import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
-import Drawer from '@/ui/Drawer'
 import { Debug } from '@/banners/Debug.banner'
 
 export function Menu() {
-  const { app, spawnBanner, scrollX, scrollY } = useApplication()
+  const { app, spawnBanner } = useApplication()
   const { setWindows } = useWindows()
 
   const backToOperations = () => {
@@ -93,12 +91,6 @@ export function Menu() {
       >
         {app.general.requests.filter((r) => r.status === 'pending').length}
       </Button>
-      <Button
-        variant="secondary"
-        title="Debugger"
-        img='BugOff'
-        onClick={() => spawnBanner(<Debug.Banner />)}
-      />
       <Button
         variant="secondary"
         title="Manage Permissions"
