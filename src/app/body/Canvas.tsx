@@ -375,7 +375,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     const file = File.selected(app)[index] ?? null;
 
     setTarget(file);
-  }, [setTarget, timeline, scrollY]);
+  }, [setTarget, timeline, scrollY, app.timeline.hidden_notes, ...app.target.files]);
 
   const Menu = useCallback(() => {
     if (!target) {

@@ -15,6 +15,7 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { SetState } from '@/class/API'
+import { Hint } from '@/dialogs/Hint.dialog';
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -53,7 +54,7 @@ export const useApplication = (): ApplicationContextProps =>
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [app, setInfo] = useState<λApp>(BaseInfo)
   const [banner, setBanner] = useState<ReactNode>()
-  const [dialog, setDialog] = useState<ReactNode>(<DisplayGroupDialog events={[]} />)
+  const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />)
   const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const [highlightsOverlay, setHighlightsOverlay] = useState<React.ReactNode>(null);
   const [scrollX, setScrollX] = useState<number>(0)

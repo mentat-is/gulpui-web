@@ -88,9 +88,12 @@ export namespace Auth {
           if (response.isSuccess()) {
             next(response.data);
           } else {
-            toast('Invalid server URL, or username, or password', {
+            toast.error('Invalid server URL, or username, or password', {
+              richColors: true,
               icon: <Icon name='Warning' />
             })
+            setLoading(false);
+            setIsOperationsLoading(0);
           }
         })
       }
@@ -213,7 +216,7 @@ export namespace Auth {
         <p className={s.title}>[ Login ]</p>
         <Input
           variant="highlighted"
-          img="Server"
+          img="Link"
           label='Server adress'
           placeholder="http://localhost:8080"
           value={server}
@@ -258,7 +261,7 @@ export namespace Auth {
                     {operation.name}
                   </Select.Item>
                 ))}
-                <Button img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='glass'>
+                <Button img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
                   Create new operation
                 </Button>
               </Select.Content>
