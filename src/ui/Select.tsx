@@ -1,16 +1,121 @@
 import s from './styles/Select.module.css'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { cn } from '@impactium/utils'
-import { Icon as ImpactiumIcon } from '@impactium/icons'
-import { forwardRef } from 'react'
-import { type ElementRef, ComponentPropsWithoutRef } from 'react'
+import { Icon, Icon as ImpactiumIcon } from '@impactium/icons'
+import { ComponentRef, forwardRef, createContext, useContext, useState, useCallback, useMemo } from 'react'
+import { ComponentPropsWithoutRef } from 'react'
+import { Checkbox } from './Checkbox'
+import { Arrayed } from '@/class/Info'
 
 export namespace Select {
   export const Root = SelectPrimitive.Root
   export const Group = SelectPrimitive.Group
   export const Value = SelectPrimitive.Value
+  export namespace Multi {
+    export namespace Context {
+      export interface Type {
+        isMultiSelect: boolean
+        selectedValues: string[]
+        onValueChange: (value: string) => void
+        onOpenChange?: (open: boolean) => void
+      }
+    }
+
+    export const Context = createContext<Select.Multi.Context.Type | null>(null);
+
+    export const use = () => useContext(Select.Multi.Context);
+
+    export namespace Root {
+      export interface Props extends Omit<SelectPrimitive.SelectProps, 'value' | 'onValueChange'> {
+        value?: string[]
+        onValueChange?: (value: string[]) => void
+        placeholder?: string
+        children: React.ReactNode
+        open?: boolean
+        onOpenChange?: (open: boolean) => void
+      }
+    }
+
+    export const Root = ({
+      value = [],
+      onValueChange,
+      children,
+      open,
+      onOpenChange,
+      ...props
+    }: Select.Multi.Root.Props) => {
+      const [selectedValues, setSelectedValues] = useState<string[]>(value)
+      const [isOpen, setIsOpen] = useState(open ?? false);
+
+      const handleValueChange = useCallback((newValue: string) => {
+        const updatedValues = selectedValues.includes(newValue)
+          ? selectedValues.filter(v => v !== newValue)
+          : [...selectedValues, newValue]
+
+        setSelectedValues(updatedValues)
+        onValueChange?.(updatedValues)
+      }, [selectedValues, onValueChange])
+
+      const handleOpenChange = useCallback((newOpen: boolean) => {
+        setIsOpen(open ?? newOpen)
+        onOpenChange?.(open ?? newOpen)
+      }, [onOpenChange])
+
+      const contextValue: Select.Multi.Context.Type = {
+        isMultiSelect: true,
+        selectedValues,
+        onValueChange: handleValueChange,
+        onOpenChange: handleOpenChange
+      }
+
+      return (
+        <Select.Multi.Context.Provider value={contextValue}>
+          <SelectPrimitive.Root open={isOpen} onOpenChange={handleOpenChange} {...props}>
+            {children}
+          </SelectPrimitive.Root>
+        </Select.Multi.Context.Provider>
+      )
+    }
+
+    export namespace Value {
+      export interface Props {
+        placeholder?: string;
+        text?: string | ((length: number | string) => string);
+        icon?: Arrayed<Icon.Name>;
+      }
+    }
+
+    export const Value = ({ placeholder, text, icon }: Value.Props) => {
+      const multiSelect = Select.Multi.use()
+
+      if (!multiSelect?.isMultiSelect) return null
+
+      const { selectedValues } = multiSelect
+
+      const Text = useMemo(() => {
+        if (selectedValues.length === 0) {
+          return placeholder || 'Click here to choose...';
+        }
+
+        if (selectedValues.length === 1) {
+          return typeof text === 'function' ? text(selectedValues[0]) : selectedValues[0];
+        }
+
+        return typeof text === 'function' ? text(selectedValues.length) : text ?? selectedValues.length;
+      }, [placeholder, text, selectedValues.length]);
+
+      // icon can be array of icons, icon depends on len. if len > icon.len use icon.last (in fact its simplier than sounds like)
+      return (
+        <>
+          <Icon name={(Array.isArray(icon) ? icon[Math.min(selectedValues.length, icon.length) - 1] : icon) || 'Status'} />
+          {Text}
+        </>
+      )
+    }
+  }
+
   export const Trigger = forwardRef<
-    ElementRef<typeof SelectPrimitive.Trigger>,
+    ComponentRef<typeof SelectPrimitive.Trigger>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>
   >(({ className, children, ...props }, ref) => (
     <SelectPrimitive.Trigger ref={ref} className={cn(s.trigger, className)} {...props}>
@@ -18,14 +123,16 @@ export namespace Select {
       <Select.Icon style={{ marginLeft: 'auto' }} name='ChevronDown' />
     </SelectPrimitive.Trigger>
   ))
+
   export const Icon = ({ name, className, ...props }: ImpactiumIcon.Props) => (
     <SelectPrimitive.Icon asChild>
       <ImpactiumIcon name={name} className={cn(s.icon, className)} {...props} />
     </SelectPrimitive.Icon>
   )
+
   export namespace ScrollButton {
     export const Up = forwardRef<
-      ElementRef<typeof SelectPrimitive.ScrollUpButton>,
+      ComponentRef<typeof SelectPrimitive.ScrollUpButton>,
       ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollUpButton>
     >(({ className, ...props }, ref) => (
       <SelectPrimitive.ScrollUpButton
@@ -37,7 +144,7 @@ export namespace Select {
       </SelectPrimitive.ScrollUpButton>
     ))
     export const Down = forwardRef<
-      ElementRef<typeof SelectPrimitive.ScrollDownButton>,
+      ComponentRef<typeof SelectPrimitive.ScrollDownButton>,
       ComponentPropsWithoutRef<typeof SelectPrimitive.ScrollDownButton>
     >(({ className, ...props }, ref) => (
       <SelectPrimitive.ScrollDownButton ref={ref} className={cn(s.scroll, s.down, className)} {...props}>
@@ -45,44 +152,78 @@ export namespace Select {
       </SelectPrimitive.ScrollDownButton>
     ))
   }
+
   export const Content = forwardRef<
-    ElementRef<typeof SelectPrimitive.Content>,
+    ComponentRef<typeof SelectPrimitive.Content>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
-  >(({ className, children, position = 'popper', ...props }, ref) => (
-    <SelectPrimitive.Portal>
-      <SelectPrimitive.Content
-        ref={ref}
-        className={cn(s.content, position === 'popper' && s.popper, className)}
-        position={position}
-        {...props}
-      >
-        <Select.ScrollButton.Up />
-        <SelectPrimitive.Viewport className={cn(s.primitive, position === 'popper' && s.podder)}>
-          {children}
-        </SelectPrimitive.Viewport>
-        <Select.ScrollButton.Down />
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
-  ))
+  >(({ className, children, position = 'popper', ...props }, ref) => {
+    return (
+      <SelectPrimitive.Portal>
+        <SelectPrimitive.Content
+          ref={ref}
+          className={cn(s.content, position === 'popper' && s.popper, className)}
+          position={position}
+          {...props}
+        >
+          <Select.ScrollButton.Up />
+          <SelectPrimitive.Viewport className={cn(s.primitive, position === 'popper' && s.podder)}>
+            {children}
+          </SelectPrimitive.Viewport>
+          <Select.ScrollButton.Down />
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    )
+  })
+
   export const Label = forwardRef<
-    ElementRef<typeof SelectPrimitive.Label>,
+    ComponentRef<typeof SelectPrimitive.Label>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Label>
   >(({ className, ...props }, ref) => (
     <SelectPrimitive.Label ref={ref} className={cn(s.label, className)} {...props} />
   ))
+
   export const Item = forwardRef<
-    ElementRef<typeof SelectPrimitive.Item>,
-    ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
-  >(({ className, children, ...props }, ref) => (
-    <SelectPrimitive.Item ref={ref} className={cn(s.item, className)} {...props}>
-      <SelectPrimitive.ItemIndicator>
-        <Select.Icon name='Check' />
-      </SelectPrimitive.ItemIndicator>
-      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
-    </SelectPrimitive.Item>
-  ))
+    ComponentRef<typeof SelectPrimitive.Item>,
+    ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & {
+      value: string
+    }
+  >(({ className, children, value, ...props }, ref) => {
+    const multiSelect = Select.Multi.use();
+
+    if (!multiSelect?.isMultiSelect) {
+      return (
+        <SelectPrimitive.Item ref={ref} className={cn(s.item, className)} value={value} {...props}>
+          <SelectPrimitive.ItemIndicator>
+            <Select.Icon name='Check' />
+          </SelectPrimitive.ItemIndicator>
+          <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+        </SelectPrimitive.Item>
+      )
+    }
+
+    const isSelected = multiSelect.selectedValues.includes(value)
+
+    const handleClick = (event: React.MouseEvent) => {
+      event.preventDefault()
+      multiSelect.onValueChange(value)
+    }
+
+    return (
+      <div
+        className={cn(s.item, isSelected && s.selected, className)}
+        onClick={handleClick}
+        role="option"
+        aria-selected={isSelected}
+        style={{ cursor: 'pointer' }}
+      >
+        <Checkbox checked={isSelected} />
+        <span className={s.itemText}>{children}</span>
+      </div>
+    )
+  })
+
   export const Separator = forwardRef<
-    ElementRef<typeof SelectPrimitive.Separator>,
+    ComponentRef<typeof SelectPrimitive.Separator>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Separator>
   >(({ className, ...props }, ref) => (
     <SelectPrimitive.Separator ref={ref} className={cn(s.separator, className)} {...props} />

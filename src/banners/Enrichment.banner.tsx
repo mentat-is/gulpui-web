@@ -23,6 +23,7 @@ import s from './styles/EnrichmentBanner.module.css'
 import { capitalize } from '@impactium/utils'
 import { Toggle } from '@/ui/Toggle'
 import { CustomParameters } from '@/components/CustomParameters'
+import { Checkbox } from '@/ui/Checkbox'
 
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
@@ -41,6 +42,7 @@ export namespace Enrichment {
       Record<string, any>
     >({})
     const [loading, setLoading] = useState<boolean>(false)
+    const [isShowOnlyEnriched, setIsShowOnlyEnriched] = useState<boolean>(true);
 
     useEffect(() => {
       if (!plugin) {
@@ -85,7 +87,7 @@ export namespace Enrichment {
       }
 
       setLoading(true)
-      await Info.enrichment(plugin.filename, file, frame, customParameters)
+      await Info.enrichment(plugin.filename, file, frame, customParameters, isShowOnlyEnriched)
       setLoading(false)
       destroyBanner()
     }
@@ -252,31 +254,6 @@ export namespace Enrichment {
       )
     }, [event, frame, plugins])
 
-    const Hint = () => {
-      return (
-        <Stack
-          style={{ color: 'var(--text-dimmed)', padding: '0 8px' }}
-          gap={16}
-        >
-          <Icon name="Info" />
-          <p
-            style={{
-              lineHeight: 1.1,
-              fontSize: 11,
-              color: 'var(--text-dimmed)',
-              fontFamily: 'var(--font-mono)',
-              maxWidth: 512,
-              whiteSpace: 'break-spaces',
-              textWrap: 'balance',
-            }}
-          >
-            In lists, values can be separated by comma. Dict values should be
-            represented in JSON format
-          </p>
-        </Stack>
-      )
-    }
-
     return (
       <UIBanner
         title={event ? 'Event enrichment' : 'Data enrichment'}
@@ -288,7 +265,11 @@ export namespace Enrichment {
         <FileSelection />
         <FrameSelector />
         <CustomParameters.Editor customParameters={customParameters} setCustomParameters={setCustomParameters} plugin={plugin} />
-        <Hint />
+        <Stack ai='center' gap={4}>
+          <Checkbox id='isShowOnlyEnriched' checked={isShowOnlyEnriched} onCheckedChange={v => setIsShowOnlyEnriched(!!v)} />
+          <Label htmlFor='isShowOnlyEnriched' value='Show only enriched docs' />
+        </Stack>
+
       </UIBanner>
     )
   }

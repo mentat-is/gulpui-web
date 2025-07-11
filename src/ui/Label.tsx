@@ -1,19 +1,20 @@
 import { cn } from "@impactium/utils";
-import { HTMLAttributes } from "react";
+import { CSSProperties, LabelHTMLAttributes } from "react";
 import s from './styles/Label.module.css'
 
 export namespace Label {
-  export interface Props extends HTMLAttributes<HTMLLabelElement> {
-    value?: string
+  export interface Props extends LabelHTMLAttributes<HTMLLabelElement> {
+    value?: string;
+    cursor?: CSSProperties['cursor'];
   }
 }
 
-export function Label({ value, className, ...props }: Label.Props) {
+export function Label({ value, className, style, cursor = 'text', ...props }: Label.Props) {
   if (!value) {
     return null;
   }
 
   return (
-    <label className={cn(s.label, className)} {...props}>{value}</label>
+    <label className={cn(s.label, className)} style={{ cursor, ...style }} {...props}>{value}</label>
   )
 }

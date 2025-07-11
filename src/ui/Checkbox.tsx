@@ -16,7 +16,7 @@ const Checkbox = React.forwardRef<
     {...props}
   >
     <CheckboxPrimitive.Indicator className={cn(s.indicator)}>
-      <Icon name='Check' size={11} strokeWidth={3} />
+      <Icon name='Check' size={14} />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
 ))

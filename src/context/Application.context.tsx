@@ -8,14 +8,15 @@ import React, {
   useMemo,
 } from 'react'
 import { λApp, BaseInfo } from '@/dto'
-import { AppSocket, MultiSocket } from '@/class/AppSocket'
+import { MultiSocket } from '@/class/AppSocket'
 import { File, Info } from '@/class/Info';
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'
-import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { SetState } from '@/class/API'
 import { Hint } from '@/dialogs/Hint.dialog';
+import { FuckSocket } from '@/class/FuckSocket';
+import { λLink, λNote } from '@/dto/Dataset';
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -34,9 +35,8 @@ interface ApplicationContextProps {
   scrollY: number;
   setScrollX: SetState<number>;
   setScrollY: SetState<number>;
-  ws: AppSocket | undefined
+  ws: FuckSocket.Class | undefined
   mws: MultiSocket | undefined
-  setWs: React.Dispatch<React.SetStateAction<AppSocket | undefined>>
   setInfo: (info: λApp) => void
   Info: Info
   timeline: React.RefObject<HTMLDivElement>
@@ -62,13 +62,49 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
   const instance = new Info({ app, setInfo, timeline, setScrollX, setScrollY })
 
-  const [ws, setWs] = useState<AppSocket>()
   const [mws, setMws] = useState<MultiSocket>()
 
+  const ws = useMemo(() => new FuckSocket.Class(app.general.server, app.general.token, app.general.ws_id), [app.general]);
+
   useEffect(() => {
-    if (app.general.token) setWs(new AppSocket(instance))
-    if (app.general.token) setMws(new MultiSocket(instance))
-  }, [instance, app])
+    if (!FuckSocket.Class.instance)
+      return;
+
+    const callback = (message: any) => {
+      switch (message.data.type) {
+        case 'note':
+          const notes: λNote[] = message.data.data;
+          notes.forEach(note => {
+            const exist = message.data.created ? -2 : app.target.notes.findIndex(n => n.id === note.id);
+            if (exist >= 0) {
+              app.target.notes[exist] = note;
+              app.target.notes = [...app.target.notes];
+            } else {
+              app.target.notes = [...app.target.notes, note];
+            }
+          });
+          setInfo(app);
+          return;
+        case 'link':
+          const links: λLink[] = message.data.data;
+          links.forEach(link => {
+            const exist = message.data.created === true ? -2 : app.target.links.findIndex(n => n.id === link.id);
+            if (exist >= 0) {
+              app.target.links[exist] = link;
+              app.target.links = [...app.target.links];
+            } else {
+              app.target.links = [...app.target.links, link];
+            }
+          });
+          setInfo(app);
+          return;
+      }
+      instance.highlights_reload();
+    }
+
+    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_UPDATE, callback);
+    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_DELETE, callback);
+  }, [ws, app, instance]);
 
   const spawnBanner = (banner: React.ReactNode) => {
     setBanner(banner)
@@ -97,7 +133,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     scrollY,
     setScrollX,
     setScrollY,
-    setWs,
     setInfo,
     Info: instance,
     timeline,

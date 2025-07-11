@@ -77,7 +77,6 @@ type ΞFile<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
 export type λFile = Omit<ΞFile, 'color'> & {
   pinned?: boolean
   settings: Pick<ΞSettings, 'color' | 'engine' | 'field' | 'offset'>
-  code: MinMax
   timestamp: MinMax
   nanotimestamp: MinMax<bigint>
   total: number

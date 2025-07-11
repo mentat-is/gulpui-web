@@ -67,5 +67,5 @@ function Main() {
     return <Preloader />
   }
 
-  return Info.User.isAuthorized() && Operation.selected(Info.app) ? <Windows.Provider /> : <LoginPage />
+  return Operation.selected(Info.app) ? <Windows.Provider /> : <LoginPage />
 }

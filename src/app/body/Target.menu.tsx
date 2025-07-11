@@ -166,7 +166,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner file={file} />)} img="Sigma" >
+        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner files={[file.id]} />)} img="Sigma" >
           Upload rule
         </ContextMenuItem>
       </ContextMenuGroup>

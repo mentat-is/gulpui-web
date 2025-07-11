@@ -38,6 +38,8 @@ import { Badge, Spinner } from '@impactium/components'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 import { RenderEngine } from './RenderEngine'
+import { FuckSocket } from './FuckSocket'
+import { DefaultEngine } from '@/engines/Default.engine'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -470,36 +472,16 @@ export type λDetailedUser = GulpObject<
   }
 >
 
-class User {
-  instanse!: User
-  storage!: λUser
-  constructor(general: λUser) {
-    if (this.instanse) {
-      this.instanse.storage = general
-      return this.instanse
-    }
-
-    this.storage = general
-    this.instanse = this
-    return
-  }
-
-  isAuthorized = () =>
-    Boolean(this.storage.id.length > 0 && this.storage.time_expire > Date.now())
-}
-
 export class Info implements InfoProps {
   app: λApp
   setInfo: React.Dispatch<React.SetStateAction<λApp>>
   timeline: React.RefObject<HTMLDivElement>
-  User: User
   setScrollX: SetState<number>
   setScrollY: SetState<number>
 
 
   constructor({ app, setInfo, timeline, setScrollX, setScrollY }: InfoProps) {
     this.app = app
-    this.User = new User(app.general)
     this.setInfo = setInfo
     this.timeline = timeline
     this.setScrollX = setScrollX
@@ -524,14 +506,7 @@ export class Info implements InfoProps {
     ids: _ids = File.selected(this.app).map((f) => f.id),
     refetchKeys
   }: RefetchOptions = {}) => {
-    const files: λFile[] = Parser.array(_ids).map((id) => File.id(this.app, id))
-
-    const operation = Operation.selected(this.app)
-    const contexts = Context.selected(this.app)
-
-    if (!operation || !contexts.length) {
-      return
-    }
+    const files: λFile[] = Parser.array(_ids).map((id) => File.id(this.app, id));
 
     this.notes_reload()
 
@@ -557,27 +532,60 @@ export class Info implements InfoProps {
     file: λFile,
     range: MinMax,
     custom_parameters: Record<string, any>,
+    isShowOnlyEnriched: boolean
   ) => {
-    const body = Filter.query({
-      string: Filter.base(file, range),
-      filters: [],
-    })
-
-    return api<void>('/enrich_documents', {
+    return api('/enrich_documents', {
       method: 'POST',
       query: {
         operation_id: file.operation_id,
         plugin,
         ws_id: this.app.general.ws_id,
       },
+      raw: true,
       body: {
-        ...body,
+        flt: {
+          source_ids: [file.id],
+          time_range: [
+            Internal.Transformator.toNanos(range.min).toString(),
+            Internal.Transformator.toNanos(range.max).toString()
+          ]
+        },
         external_parameters: {
           plugin_params: {
             custom_parameters,
           },
         },
       },
+    }).then(({ req_id }) => {
+      if (isShowOnlyEnriched) {
+        this.events_reset_in_file(file);
+      }
+      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
+        const events = m.data.docs.map((e: λEvent) => ({
+          ...e,
+          ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
+          timestamp: Math.round(Number(e['gulp.timestamp']) / 1_000_000)
+        })) as λEvent[];
+
+        this.events_add(events);
+
+        if (m.data.last) {
+          FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+        }
+      });
+      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.ENRICH_DONE, m => m.req_id === req_id, m => {
+        if (m.data.status !== 'done') {
+          toast.error('Enrichment failed', {
+            icon: <Icon name='Stop' />,
+            richColors: true
+          });
+        } else {
+          toast.success('Enrichment finished', {
+            description: `Total processed documents: ${m.data.total_hits ?? 0}`,
+            icon: <Icon name='Check' />
+          });
+        }
+      })
     })
   }
 
@@ -598,21 +606,43 @@ export class Info implements InfoProps {
   })
 
   query_global = async ({
-    fileName,
-    ids,
-    contextName,
+    filename,
+    context,
     query,
-    total
+    total,
+    separately
   }: {
-    contextName: string;
-    fileName: string;
-    ids: λFile['id'][];
+    context?: string;
+    filename?: string;
     query: λQuery;
     total: number;
+    separately?: boolean;
   }) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
       return;
+    }
+
+    if (!filename || !context) {
+      separately = true;
+    }
+
+    if (!separately) {
+      this.query_file(query, {
+        id: this.virtualize(filename!, total, context!),
+        preview: false
+      });
+    } else {
+      this.query_file(query, {
+        preview: false
+      });
+    }
+  }
+
+  virtualize = (fileName: string, total: number, contextName: string) => {
+    const operation = Operation.selected(this.app);
+    if (!operation) {
+      return null!
     }
 
     const context_id = `temp-${contextName}` as λContext['id'];
@@ -620,9 +650,8 @@ export class Info implements InfoProps {
     const file: λFile = File.virtualize(this.app, {
       name: fileName,
       context_id,
-      files: ids.map(id => File.id(this.app, id)),
       operation_id: operation.id,
-      total
+      total: 999999
     });
 
     const context: λContext = {
@@ -650,10 +679,7 @@ export class Info implements InfoProps {
       }
     }));
 
-    this.query_file(query, {
-      id: file.id,
-      preview: false
-    });
+    return file.id
   }
 
   query_file = async (query: λQuery, {
@@ -689,6 +715,30 @@ export class Info implements InfoProps {
       body,
       raw: true,
     }, ({ status, req_id }) => {
+      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
+        const events = m.data.docs.map((e: λEvent) => ({
+          ...e,
+          ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
+          timestamp: Math.round(Number(e['gulp.timestamp']) / 1_000_000)
+        })) as λEvent[];
+        this.events_add(events);
+        if (m.data.last) {
+          FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+        };
+      })
+      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
+        if (m.data.status !== 'done') {
+          toast.error('Query failed', {
+            icon: <Icon name='Stop' />,
+            richColors: true
+          })
+        } else {
+          toast.success('Query finished', {
+            description: `Total processed documents: ${m.data.total_hits}`,
+            icon: <Icon name='Check' />
+          })
+        }
+      });
       this.request_add({
         id: req_id,
         for: id || null,
@@ -696,8 +746,7 @@ export class Info implements InfoProps {
         type: 'query',
         on: Date.now(),
       })
-    }
-    )
+    })
 
     if (preview) {
       toast(`Total hits for this filter is ${resp.data?.total_hits || 0}`)
@@ -790,8 +839,6 @@ export class Info implements InfoProps {
       'general',
       'requests',
     )
-
-  isSigmaRequest = (id: λRequest['id']) => this.app.general.requests.find(r => r.id === id && r.type === 'sigma');
 
   request_cancel = (req_id_to_cancel: λRequest['id']) => {
     const fileId = this.request_finish(req_id_to_cancel, 'canceled')
@@ -1264,8 +1311,9 @@ export class Info implements InfoProps {
     })
   }
 
-  events_reset_in_file = (files: Arrayed<λFile>) =>
-    this.setInfoByKey(Event.delete(this.app, files), 'target', 'events')
+  events_reset_in_file = (file: λFile) => {
+    this.setInfoByKey(Event.delete(this.app, file), 'target', 'events')
+  }
 
   setDialogSize = (number: number) => {
     this.setInfoByKey(number, 'timeline', 'dialogSize')
@@ -2074,7 +2122,7 @@ export class Info implements InfoProps {
     this.render();
   }
 
-  query_sigma = (body: Record<string, any>) => {
+  query_sigma = async (src_ids: λFile['id'][], sigmas: NodeFile[], notes: boolean) => {
     const operation = Operation.selected(this.app);
     if (!operation) {
       return;
@@ -2086,22 +2134,33 @@ export class Info implements InfoProps {
         ws_id: this.app.general.ws_id,
         operation_id: operation.id
       },
-      body,
-      toast: 'Sigma rule has been successfully applied',
-    })
-  }
-
-  sigma_file = async (files: λFile[], sigmas: NodeFile[], notes: boolean) =>
-    Promise.all(files.map(async (file) => this.query_sigma({
-      sigmas: await Promise.all(sigmas.map(s => s.text())),
-      q_options: {
-        note_parameters: {
-          create_notes: notes,
+      raw: true,
+      body: {
+        sigmas: await Promise.all(sigmas.map(s => s.text())),
+        q_options: {
+          note_parameters: {
+            create_notes: notes,
+          },
         },
+        src_ids
       },
-      src_ids: [file.id],
-    }))
-    )
+      toast: 'Sigma rule has been successfully applied'
+    }).then(({ req_id }) => {
+      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
+        if (m.data.status !== 'done') {
+          toast.error('Sigma query failed', {
+            icon: <Icon name='Stop' />,
+            richColors: true
+          });
+        } else {
+          toast.success(`Sigma query finished: ${m.data.name}`, {
+            description: `Total processed documents: ${m.data.total_hits ?? 0}`,
+            icon: <Icon name='Sigma' />
+          });
+        }
+      })
+    });
+  }
 
   toggle_notes_visibility = (value?: boolean) =>
     this.setInfoByKey(
@@ -2371,27 +2430,20 @@ export class File {
     total,
     context_id,
     operation_id,
-    files
   }: {
     name: string;
     total: number;
     context_id: λContext['id'];
     operation_id: λOperation['id'];
-    files: λFile[];
   }): λFile => {
-    const codes = files.map(file => file.code).sort((a, b) => a.min - b.min);
-    const min = Math.min(...codes.map(c => c.min));
-    const max = Math.max(...codes.map(c => c.max));
-
     return ({
       name,
-      id: `temp-${files.map(f => f.id).join('-')}` as λFile['id'],
+      id: generateUUID(),
       timestamp: app.timeline.frame,
       nanotimestamp: {
         min: BigInt(Math.round(app.timeline.frame.min)),
         max: BigInt(Math.round(app.timeline.frame.max)),
       },
-      code: { min, max },
       settings: Internal.Settings.all(),
       selected: true,
       operation_id,
@@ -2518,11 +2570,11 @@ export class Filter {
 
   public static base = (file: λFile, range?: MinMax) => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
 
-  public static default = (app: λApp, file: λFile | λFile['id']): λQuery => {
+  public static default = (app: λApp, file: λFile | λFile['id'], range?: MinMax): λQuery => {
     const id = typeof file === 'object' ? file.id : file;
 
     return {
-      string: Filter.base(File.id(app, id), {
+      string: Filter.base(File.id(app, id), range ?? {
         min: Internal.Transformator.toNanos(app.timeline.frame.min).toString() as unknown as number,
         max: Internal.Transformator.toNanos(app.timeline.frame.max).toString() as unknown as number
       }),

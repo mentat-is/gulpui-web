@@ -87,7 +87,7 @@ export namespace Welcome {
     const flow: Flow.Step[] = [
       {
         name: 'Authorized',
-        cond: Info.User.isAuthorized(),
+        cond: Info.app.general.token.length > 0,
         trigger: ActionButtonConstructor('Log In', 'LogIn', <Auth.Page />),
         banner: <Auth.Page />
       },
@@ -238,16 +238,6 @@ export namespace Welcome {
   }
 
   const Flow = ({ flow }: Flow.Props) => {
-    const { Info } = useApplication()
-
-    useEffect(() => {
-      if (Info.app.general.glyphs_syncronized) return
-
-      if (Info.User.isAuthorized()) {
-        Info.glyphs_reload()
-      }
-    }, [Info.app.general])
-
     return (
       <Stack className={s.flow} dir="column" ai="flex-start">
         {flow.map(Step)}

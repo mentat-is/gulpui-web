@@ -28,6 +28,9 @@ interface DisplayEventDialogProps {
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
+  if (!event) {
+    return null;
+  }
   const { Info, app, spawnBanner } = useApplication()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
