@@ -23,8 +23,6 @@ import { CustomParameters } from '@/components/CustomParameters'
 import { Input } from '@/ui/Input'
 import { Checkbox } from '@/ui/Checkbox'
 import { Label } from '@/ui/Label'
-import { useWindows, Windows } from '@/ui/Windows'
-import { Timeline } from '@/app/body/Timeline'
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
   'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],

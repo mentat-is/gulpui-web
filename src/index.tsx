@@ -13,7 +13,7 @@ import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
 import { LoginPage } from './page/Login.page'
 import { Operation } from './class/Info'
-import s from 'App.module.css';
+import s from './App.module.css';
 import { Stack } from '@impactium/components'
 import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
