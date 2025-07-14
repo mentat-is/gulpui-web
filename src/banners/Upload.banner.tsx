@@ -23,6 +23,8 @@ import { CustomParameters } from '@/components/CustomParameters'
 import { Input } from '@/ui/Input'
 import { Checkbox } from '@/ui/Checkbox'
 import { Label } from '@/ui/Label'
+import { useWindows, Windows } from '@/ui/Windows'
+import { Timeline } from '@/app/body/Timeline'
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
   'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],
@@ -71,12 +73,15 @@ namespace Components {
         <Label value='Context' />
         <Select.Root value={context} onValueChange={setContext} disabled={!contexts.length}>
           <Select.Trigger className={s.trigger}>
-            <Icon name={Context.icon(Context.findByName(app, context) ?? {} as λContext)} />
+            <Icon name={Context.icon(Context.findByName(app, context)!)} />
             <p>{context || 'Select context'}</p>
           </Select.Trigger>
           <Select.Content>
             {contexts.map(c => (
-              <Select.Item key={c.name} value={c.name}>{c.name}</Select.Item>
+              <Select.Item key={c.name} value={c.name}>
+                <Icon name={Context.icon(c)} />
+                {c.name}
+              </Select.Item>
             ))}
           </Select.Content>
         </Select.Root>
@@ -305,7 +310,7 @@ namespace Components {
       frameInputChangeHandler(event, 'max')
 
     return (
-      <Stack>
+      <Stack className={s.frame_selector}>
         <Input
           variant="highlighted"
           type="date"
@@ -402,14 +407,17 @@ namespace Components {
 }
 
 export function UploadBanner() {
-  const { Info, app, spawnBanner } = useApplication()
+  const { Info, app, destroyBanner } = useApplication()
   const [files, setFiles] = useState<File[]>([])
   const [context, setContext] = useState<FileEntity.IngestOptions['context']>('')
   const [loading, setLoading] = useState(false)
-  const [useExistingContext, setUseExistingContext] = useState(false)
-  const [chunkSize, setChunkSize] = useState(8)
+  const [newContext, setNewContext] = useState(true)
   const [customFrame, setCustomFrame] = useState(false)
   const [frame, setFrame] = useState<FileEntity.IngestOptions['frame']>(MinMaxBase)
+
+  useEffect(() => {
+    setContext('');
+  }, [newContext])
 
   const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({})
 
@@ -474,19 +482,17 @@ export function UploadBanner() {
       Info.file_ingest({
         context,
         file,
-        size: chunkSize,
+        size: 8,
         settings: settings[file.name],
         setProgress: setFileProgressConstrustor(file),
         frame: customFrame ? frame : undefined
       })
     }
 
-    await Info.sync()
-
     setLoading(false)
 
-    spawnBanner(<SelectFiles.Banner />)
-  }, [files, settings, context, chunkSize, customFrame, frame])
+    destroyBanner()
+  }, [files, settings, context, customFrame, frame])
 
   const isValidSettings = Object.keys(settings).every(k => {
     if (k === 'all') {
@@ -509,22 +515,6 @@ export function UploadBanner() {
       />
     )
   }, [context, handleSubmit, files, isValidSettings, loading])
-
-  const chunkSizeInputChangeHandler = (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
-    const { valueAsNumber } = event.target
-
-    if (isNaN(valueAsNumber)) {
-      return toast('Chunk size should be valid integer')
-    }
-
-    if (valueAsNumber < 1 || valueAsNumber > 1024) {
-      return toast('Chunk size should be bigger than 1 and less than 1024')
-    }
-
-    setChunkSize(valueAsNumber)
-  }
 
   const updateAllSettings = async (newSettings: FileEntity.Settings) => {
     for (const setting in settings) {
@@ -554,12 +544,10 @@ export function UploadBanner() {
 
   return (
     <Banner
-      title="Upload files"
+      title="Injest files"
       done={DoneButton}>
-      <Stack dir='column' gap={6} ai='stretch'>
-        {useExistingContext ? (
-          <Components.ContextSelector app={app} context={context} setContext={setContext} />
-        ) : (
+      <Stack dir='column' ai='stretch'>
+        {newContext ? (
           <Input
             variant="highlighted"
             label='Context'
@@ -567,21 +555,15 @@ export function UploadBanner() {
             value={context}
             onChange={e => setContext(e.target.value)}
             placeholder="Context name"
+            className={s.reset_font}
           />
+        ) : (
+          <Components.ContextSelector app={app} context={context} setContext={setContext} />
         )}
-        <Stack ai='flex-end' gap={4}>
-          <Checkbox checked={useExistingContext} onCheckedChange={e => setUseExistingContext(!!e)} />
-          <Label value='Use existing context' />
+        <Stack ai='center' gap={4}>
+          <Checkbox id='newContext' checked={newContext} onCheckedChange={e => setNewContext(!!e)} />
+          <Label htmlFor='newContext' value='Create new context' cursor='pointer' />
         </Stack>
-
-      </Stack>
-      <Stack>
-        <Button img='Upload' variant='secondary' onClick={addFilesButtonClickHandler} style={{ flex: 1 }}>
-          {files.length === 1 ? 'Selected 1 file' : `Selected ${files.length} files`}
-        </Button>
-        <Button variant="outline" className={s.addFiles} img="Cross" onClick={() => setFiles([])}>
-          Clear selection
-        </Button>
       </Stack>
       <Toggle
         option={['Ingest everything', 'Use limits']}
@@ -600,7 +582,12 @@ export function UploadBanner() {
           />
         )) : <Placeholder />}
       </Stack>
-      <Components.ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
+      <Stack>
+        <Components.ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
+        <Button variant="secondary" img="Cross" onClick={() => setFiles([])}>
+          Clear selection
+        </Button>
+      </Stack>
       <Input
         className={s.sr_only}
         ref={fileInputRef}
@@ -617,7 +604,7 @@ function Placeholder({ className, ...props }: Stack.Props) {
   return (
     <Stack {...props}>
       <Icon name="FileScan" />
-      <p>Choose files to upload</p>
+      <p>Click here to select files</p>
     </Stack>
   )
 }

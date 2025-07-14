@@ -6,9 +6,9 @@ import React, {
   useRef,
   useEffect,
   useMemo,
+  useCallback,
 } from 'react'
 import { λApp, BaseInfo } from '@/dto'
-import { MultiSocket } from '@/class/AppSocket'
 import { File, Info } from '@/class/Info';
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
@@ -35,8 +35,7 @@ interface ApplicationContextProps {
   scrollY: number;
   setScrollX: SetState<number>;
   setScrollY: SetState<number>;
-  ws: FuckSocket.Class | undefined
-  mws: MultiSocket | undefined
+  ws: FuckSocket.Class,
   setInfo: (info: λApp) => void
   Info: Info
   timeline: React.RefObject<HTMLDivElement>
@@ -60,11 +59,9 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [scrollX, setScrollX] = useState<number>(0)
   const [scrollY, setScrollY] = useState<number>(-26)
 
-  const instance = new Info({ app, setInfo, timeline, setScrollX, setScrollY })
+  const instance = new Info({ app, setInfo, timeline, setScrollX, setScrollY });
 
-  const [mws, setMws] = useState<MultiSocket>()
-
-  const ws = useMemo(() => new FuckSocket.Class(app.general.server, app.general.token, app.general.ws_id), [app.general]);
+  const ws = useMemo(() => new FuckSocket.Class(app.general.server + '/ws', app.general.token, app.general.ws_id), [app.general]);
 
   useEffect(() => {
     if (!FuckSocket.Class.instance)
@@ -127,7 +124,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     spawnDialog,
     dialog,
     ws,
-    mws,
     app,
     scrollX,
     scrollY,

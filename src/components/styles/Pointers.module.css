@@ -4,6 +4,7 @@
   height: 100%;
   width: 100%;
   pointer-events: none;
+  display: none !important;
 }
 .pointer {
   transition: transform 0.125s var(--transition);

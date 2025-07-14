@@ -67,7 +67,7 @@ export const BaseInfo: λApp = {
     time_expire: Infinity,
     token: '',
     glyphs_syncronized: false,
-    requests: [],
+    requests: []
   },
   timeline: {
     scale: 1,

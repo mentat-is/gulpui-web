@@ -35,7 +35,6 @@ export namespace CustomParameters {
     }
   }
   export function Editor({ plugin, customParameters, setCustomParameters }: CustomParameters.Editor.Props) {
-    console.log(plugin, customParameters, setCustomParameters);
     if (!plugin || !customParameters) {
       return <CustomParameters.Error />
     }
@@ -81,7 +80,7 @@ export namespace CustomParameters {
     }
 
     return (
-      <Stack dir='column' gap={16} ai='flex-start'>
+      <Stack dir='column' gap={16} ai='stretch'>
         {Object.entries(customParameters).map(([k, value], i, arr) => {
           const param = plugin.custom_parameters.find(c => c.name === k)
           if (!param) return null

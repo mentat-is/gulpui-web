@@ -21,14 +21,11 @@ export namespace SelectFiles {
   }
 
   export function Banner(props: Banner.Props) {
-    const { app, Info, spawnBanner, destroyBanner } = useApplication()
+    const { app, Info, spawnBanner } = useApplication()
     const [filter, setFilter] = useState('')
     const [loading, setLoading] = useState(false)
 
-    const hasData = useMemo(
-      () => app.target.operations.length > 0 || app.target.contexts.length > 0,
-      [app.target.operations, app.target.contexts],
-    )
+    const hasData = app.target.operations.length > 0 || app.target.contexts.length > 0;
 
     const save = useCallback(async () => {
       spawnBanner(<Frame.Banner />)
@@ -40,13 +37,7 @@ export namespace SelectFiles {
       setLoading(false);
     };
 
-    const filteredContexts = useMemo(() =>
-      Operation.contexts(app).filter((ctx) =>
-        Context.files(app, ctx).some((f) =>
-          f.name.toLowerCase().includes(filter.toLowerCase()),
-        ),
-      ),
-      [app.target.operations, app.target.contexts, app.target.files, filter]);
+    const filteredContexts = Operation.contexts(app).filter((ctx) => Context.files(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
 
     const SearchInput = useMemo(() => {
       return (
@@ -94,7 +85,6 @@ export namespace SelectFiles {
             )}
           </Skeleton>
         </Stack>
-
         <Stack>
           <Button
             onClick={() => Info.selectAll(filter)}
@@ -130,7 +120,7 @@ export namespace SelectFiles {
 
 function ContextComponent({ context, filter }: { context: λContext, filter: string }) {
   const { app, Info, spawnBanner } = useApplication()
-  const files = useMemo(() => Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())), [app, context, filter])
+  const files = Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
   const handleContextCheck = useCallback((value: boolean) => value ? Info.contexts_select([context]) : Info.contexts_unselect([context]), [context]);
 

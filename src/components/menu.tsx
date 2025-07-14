@@ -7,21 +7,17 @@ import { Frame } from '@/banners/Frame.banner'
 import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
 import { Operation } from '@/banners/Operation.banner'
-import { useWindows } from '@/ui/Windows'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { Permissions } from '@/banners/Permissions.banner'
 import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
-import { Debug } from '@/banners/Debug.banner'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
-  const { setWindows } = useWindows()
 
   const backToOperations = () => {
-    setWindows([])
     spawnBanner(<Operation.Select.Banner />)
   }
 

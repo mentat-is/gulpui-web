@@ -1,17 +1,16 @@
 import { Logger } from "@/dto/Logger.class"
 import { EventEmitter } from 'events'
 
-type EventCondition<T = any> = (data: T) => boolean
-type EventHandler<T = any> = (data: T) => void
-
-interface ConditionalListener<T = any> {
-  id: string
-  condition: EventCondition<T>
-  handler: EventHandler<T>
-  once?: boolean
-}
-
 export namespace FuckSocket {
+  type Condition<T = any> = (data: T) => boolean
+  type Handler<T = any> = (data: T) => void
+
+  interface Conditional<T = any> {
+    id: string
+    condition: Condition<T>
+    handler: Handler<T>
+    once?: boolean
+  }
   export namespace Message {
     export enum Type {
       WS_ERROR = "ws_error",
@@ -36,32 +35,24 @@ export namespace FuckSocket {
   }
 
   export class Class extends EventEmitter {
-    static instance: FuckSocket.Class;
-    private token?: string;
-    private url?: string;
-    private id?: string;
-    private ws!: WebSocket;
-    private conditional: Map<string, ConditionalListener[]> = new Map()
-    private listenerIdCounter = 0
+    public static readonly instance: FuckSocket.Class;
+    private readonly ws!: WebSocket;
+    private readonly conditional: Map<string, Conditional[]> = new Map()
+    private counter = 0
 
-    constructor(url: string, token: string, id: string) {
+    constructor(url: string, token: string, ws_id: string) {
       super()
-      if (!url.length || !token.length || !id.length) {
+      if (!url.length || !token.length || !ws_id.length) {
         return;
       }
 
       if (FuckSocket.Class.instance) {
-        FuckSocket.Class.instance.url = url;
-        FuckSocket.Class.instance.token = token;
-        FuckSocket.Class.instance.id = id;
         return FuckSocket.Class.instance
       }
 
-      this.url = url;
-      this.token = token;
-      this.id = id;
-      this.ws = new WebSocket(url + '/ws');
-      this.forwarding(token, id);
+      this.ws = new WebSocket(url);
+      this.forwarding(token, ws_id);
+      // @ts-ignore
       FuckSocket.Class.instance = this;
     }
 
@@ -121,10 +112,10 @@ export namespace FuckSocket {
 
     con<T = any>(
       event: FuckSocket.Message.Type,
-      condition: EventCondition<T>,
-      handler: EventHandler<T>
+      condition: Condition<T>,
+      handler: Handler<T>
     ): string {
-      const id = `listener_${++this.listenerIdCounter}`
+      const id = `listener_${++this.counter}`
 
       const listeners = this.conditional.get(event) ?? [];
 
@@ -143,10 +134,10 @@ export namespace FuckSocket {
 
     conce<T = any>(
       event: FuckSocket.Message.Type,
-      condition: EventCondition<T>,
-      handler: EventHandler<T>
+      condition: Condition<T>,
+      handler: Handler<T>
     ): string {
-      const id = `listener_${++this.listenerIdCounter}`
+      const id = `listener_${++this.counter}`
 
       if (!this.conditional.has(event)) {
         this.conditional.set(event, [])
@@ -172,7 +163,7 @@ export namespace FuckSocket {
 
     coffWhenCondition<T = any>(
       event: FuckSocket.Message.Type,
-      condition: EventCondition<T>
+      condition: Condition<T>
     ): void {
       const listeners = this.conditional.get(event) || []
       const filtered = listeners.filter(l => l.condition !== condition)
@@ -186,7 +177,7 @@ export namespace FuckSocket {
 
     wait<T = any>(
       event: FuckSocket.Message.Type,
-      condition: EventCondition<T>,
+      condition: Condition<T>,
       timeout?: number
     ): Promise<T> {
       return new Promise((resolve, reject) => {
@@ -216,5 +207,4 @@ export namespace FuckSocket {
       this.ws.close(code, reason)
     }
   }
-
 }

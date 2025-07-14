@@ -8,6 +8,7 @@ import { cn } from '@impactium/utils'
 import { XY } from '@/dto/XY.dto'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
+import { FuckSocket } from '@/class/FuckSocket'
 
 export namespace Pointers {
   export interface Props extends Stack.Props {
@@ -44,31 +45,10 @@ export function Pointers({
     'pink',
   ]
 
-  const { mws, app, scrollY } = useApplication()
+  const { app, scrollY } = useApplication()
   const color = useRef<string>(
     `var(--${COLOR_MAPPING[Math.round(Math.random() * COLOR_MAPPING.length)]}-700, white)`,
   )
-  const [lastSyncTimestamp, setLastSyncTimestamp] = useState<number>(Date.now())
-
-  const send = () => {
-    if (!mws) {
-      return
-    }
-
-    if (lastSyncTimestamp + 250 > Date.now()) {
-      return
-    }
-
-    mws.sendPointer({
-      id: app.general.id,
-      timestamp: timestamp,
-      color: color.current,
-      y: Math.round(self.y) + scrollY,
-    })
-    setLastSyncTimestamp(Date.now())
-  }
-
-  send()
 
   const format = (date: Date, formatStr: string) => {
     const pad = (n: number, z = 2) => ('00' + n).slice(-z);

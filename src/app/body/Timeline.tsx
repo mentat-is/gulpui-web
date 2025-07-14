@@ -12,8 +12,8 @@ export function Timeline() {
   const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
 
   useEffect(() => {
-    Info.refetch()
-  }, [])
+    Info.refetch();
+  }, []);
 
   const focusEvent = (timestamp: number, onLeft = false, file_id?: λFile['id']) => {
     const instanse = getAlgothitmInstance()

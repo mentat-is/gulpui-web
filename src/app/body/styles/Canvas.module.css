@@ -27,6 +27,9 @@
   z-index: 6;
   top: -256px;
 }
+.wrapper:hover [aria-pointers] {
+  display: flex !important;
+}
 .cursor *  {
   cursor: crosshair;
 }

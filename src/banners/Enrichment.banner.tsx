@@ -233,7 +233,7 @@ export namespace Enrichment {
       }
 
       return (
-        <>
+        <Stack>
           <Input
             key="min-date"
             onChange={handleMinChange}
@@ -250,7 +250,7 @@ export namespace Enrichment {
             img="CalendarArrowDown"
             type="datetime-local"
           />
-        </>
+        </Stack>
       )
     }, [event, frame, plugins])
 
@@ -267,7 +267,7 @@ export namespace Enrichment {
         <CustomParameters.Editor customParameters={customParameters} setCustomParameters={setCustomParameters} plugin={plugin} />
         <Stack ai='center' gap={4}>
           <Checkbox id='isShowOnlyEnriched' checked={isShowOnlyEnriched} onCheckedChange={v => setIsShowOnlyEnriched(!!v)} />
-          <Label htmlFor='isShowOnlyEnriched' value='Show only enriched docs' />
+          <Label htmlFor='isShowOnlyEnriched' value='Show only enriched docs' cursor='pointer' />
         </Stack>
 
       </UIBanner>

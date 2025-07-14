@@ -11,11 +11,10 @@ import { NotesDisplayer } from './Notes.displayer'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { LoggerHandler } from '@/dto/Logger.class'
 import { λFile } from '@/dto/Dataset'
-import { File, Internal, Note } from '@/class/Info'
-import Crosshair from './Crosshair'
+import { File, Note } from '@/class/Info'
 import { Stack } from '@impactium/components'
 import { debounce } from 'lodash'
-import { useDrugs, useKeyHandler } from '@/decorator/use'
+import { useDrugs } from '@/decorator/use'
 import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { TargetMenu } from './Target.menu'
 import { cn } from '@impactium/utils'
@@ -409,12 +408,12 @@ export function Canvas({ timeline }: Canvas.Props) {
           width={wrapper_ref.current?.offsetWidth}
           height={timeline.current?.clientHeight}
         />
-        {Internal.Settings.crosshair ? <Crosshair containerRef={wrapper_ref} /> : <Pointers
+        <Pointers
           getPixelPosition={getPixelPosition}
           width={canvas_ref.current?.clientWidth || 1}
           self={mousePosition}
           timestamp={getTimestamp(scrollX + mousePosition.x, Info)}
-        />}
+        />
         <canvas className={s.resize} ref={overlay_ref} />
         <Magnifier
           self={magnifier_ref}

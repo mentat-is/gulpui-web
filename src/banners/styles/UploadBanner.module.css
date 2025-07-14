@@ -60,9 +60,6 @@
   border: 1px solid var(--gray-400);
   background: var(--meta-black);
 }
-.addFiles {
-  background-color: var(--meta-black);
-}
 .fill {
   min-height: 64px;
   align-items: center !important;
@@ -137,17 +134,16 @@
 .progress .bar {
   background: var(--soft-black);
 }
-.allSettings {
-  border-radius: 2px;
-  border: 1px solid var(--gray-400);
-}
-.allSettings > button {
-  width: fit-content;
-}
 .sr_only {
   height: 0px;
   width: 0px;
   position: absolute;
   overflow: hidden;
   opacity: 0;
+}
+.frame_selector > div {
+  flex: 1 !important;
+}
+.reset_font * {
+  font-family: var(--font-sans) !important;
 }

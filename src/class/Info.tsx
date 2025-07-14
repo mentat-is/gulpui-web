@@ -514,7 +514,7 @@ export class Info implements InfoProps {
 
     this.highlights_reload()
 
-    files.forEach((file) => {
+    files.filter(f => f.total > 0).forEach((file) => {
       const query = this.getQuery(file.id);
 
       this.query_file(query, {
@@ -561,11 +561,7 @@ export class Info implements InfoProps {
         this.events_reset_in_file(file);
       }
       const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
-        const events = m.data.docs.map((e: λEvent) => ({
-          ...e,
-          ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
-          timestamp: Math.round(Number(e['gulp.timestamp']) / 1_000_000)
-        })) as λEvent[];
+        const events = Event.normalize(m.data.docs);
 
         this.events_add(events);
 
@@ -716,11 +712,8 @@ export class Info implements InfoProps {
       raw: true,
     }, ({ status, req_id }) => {
       const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
-        const events = m.data.docs.map((e: λEvent) => ({
-          ...e,
-          ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
-          timestamp: Math.round(Number(e['gulp.timestamp']) / 1_000_000)
-        })) as λEvent[];
+        const events = Event.normalize(m.data.docs);
+
         this.events_add(events);
         if (m.data.last) {
           FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
@@ -1186,7 +1179,7 @@ export class Info implements InfoProps {
       plugin: plugin.split('.')[0],
       operation_id: operation.id,
       context_name: context,
-      ws_id: 'pashalko',
+      ws_id: this.app.general.ws_id,
     }
 
     if (preview) {
@@ -1237,11 +1230,66 @@ export class Info implements InfoProps {
       if (setProgress) setProgress(end / file.size * 100)
 
       // next
-      if (end < file.size)
+      if (end < file.size) {
         return ingest(end, response.req_id);
+      }
     }
 
-    return ingest();
+    const id = generateUUID<string>();
+
+    if (!this.app.target.contexts.find(c => c.name === context)) {
+      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
+        this.app.target.contexts.push(m.data.data);
+
+        this.setInfo(this.app);
+      })
+    }
+
+    FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
+      this.app.target.files.push({
+        ...m.data.data,
+        selected: true,
+        settings: Internal.Settings.all(),
+        total: 0,
+        timestamp: {
+          min: Date.now() - 1,
+          max: Date.now()
+        }
+      });
+
+      this.setInfo(this.app);
+    })
+
+    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === this.app.general.ws_id, m => {
+      const events = Event.normalize(m.data.docs);
+
+      const file = File.id(this.app, events[0]['gulp.source_id']);
+
+      this.events_add(events);
+      Event.sort(this.app, file.id);
+
+      const all = File.events(this.app, file.id);
+
+      this.app.target.files = [...this.app.target.files.filter(f => f.id !== file.id), {
+        ...file,
+        timestamp: {
+          min: all[all.length - 1].timestamp,
+          max: all[0].timestamp
+        },
+        total: all.length
+      }];
+
+      this.app.timeline.frame.min = Math.min(...this.app.target.files.map(f => f.timestamp.min));
+      this.app.timeline.frame.max = Math.max(...this.app.target.files.map(f => f.timestamp.max));
+
+      this.setInfo(this.app);
+
+      if (m.data.last) {
+        FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid)
+      }
+    })
+
+    return ingest(0, id);
   }
 
   // ⚠️ UNTOUCHABLE
@@ -2617,6 +2665,11 @@ export class Event {
     return app.target.events
   }
 
+  public static range = (events: λEvent[]) => ({
+    max: new Date(events[0]['@timestamp']).valueOf(),
+    min: new Date(events[events.length - 1]['@timestamp']).valueOf()
+  })
+
   public static id = (app: λApp, event: λEvent['_id']): λEvent =>
     Array.from(app.target.events.values())
       .flat()
@@ -2625,6 +2678,8 @@ export class Event {
   public static get = (app: λApp, id: μ.File): λEvent[] =>
     app.target.events.get(id) ||
     (app.target.events.set(id, []).get(id) as λEvent[])
+
+  public static sort = (app: λApp, id: μ.File) => app.target.events.set(id, app.target.events.get(id)?.sort((a, b) => b.timestamp - a.timestamp) ?? []);
 
   public static selected = (app: λApp): λEvent[] =>
     File.selected(app)
@@ -2657,6 +2712,11 @@ export class Event {
   public static links = (app: λApp, event: λEvent) =>
     app.target.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
 
+  public static normalize = (docs: λEvent[]) => docs.map((e: λEvent) => ({
+    ...e,
+    ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
+    timestamp: Math.round(Number(e['gulp.timestamp']) / 1000000)
+  })) as λEvent[];
 }
 
 export class Note {

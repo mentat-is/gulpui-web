@@ -7,13 +7,17 @@ import {
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect, useState } from 'react'
-import { λthrow } from '@impactium/utils'
-import { Windows } from './ui/Windows'
+import { cn, λthrow } from '@impactium/utils'
 import { ExtensionProvider } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
 import { LoginPage } from './page/Login.page'
 import { Operation } from './class/Info'
+import s from 'App.module.css';
+import { Stack } from '@impactium/components'
+import { Menu } from './components/menu'
+import { Timeline } from './app/body/Timeline'
+import { Resizer } from './ui/Resizer'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -51,7 +55,7 @@ function Root() {
 }
 
 function Main() {
-  const { Info } = useApplication();
+  const { Info, app, dialog } = useApplication();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
   useEffect(() => {
@@ -67,5 +71,18 @@ function Main() {
     return <Preloader />
   }
 
-  return Operation.selected(Info.app) ? <Windows.Provider /> : <LoginPage />
+  return Operation.selected(Info.app) ? (
+    <Stack gap={12} className={s.window}>
+      <Menu />
+      <Timeline />
+      <Stack
+        className={cn(s.dialog)}
+        style={{ width: app.timeline.dialogSize }}
+        pos="relative"
+      >
+        <Resizer init={app.timeline.dialogSize} set={Info.setDialogSize} />
+        {dialog}
+      </Stack>
+    </Stack>
+  ) : <LoginPage />
 }

@@ -54,10 +54,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <Skeleton show={skeleton}>
         <Stack dir='column' gap={6} ai='flex-start' data-input>
-          <Label value={label} />
+          <Label htmlFor={label} value={label} />
           <div className={classes}>
             <InputIcon />
-            <input ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
+            <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
           </div>
         </Stack>
 
