@@ -559,13 +559,15 @@ export class Info implements InfoProps {
     }).then(({ req_id }) => {
       if (isShowOnlyEnriched) {
         this.events_reset_in_file(file);
+        this.setLoading(req_id, file.id)
       }
-      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
+      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
         const events = Event.normalize(m.data.docs);
 
         this.events_add(events);
 
         if (m.data.last) {
+          this.delLoading(req_id)
           FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         }
       });
@@ -718,7 +720,7 @@ export class Info implements InfoProps {
       body,
       raw: true,
     }, ({ req_id }) => {
-      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
+      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
         const events = Event.normalize(m.data.docs);
 
         this.events_add(events);
@@ -1143,7 +1145,7 @@ export class Info implements InfoProps {
       query.preview_mode = preview
     }
 
-    const ingest = async (start = 0, id?: string): Promise<void | λEvent[]> => {
+    const ingest = async (start = 0, id?: λRequest['id']): Promise<void | λEvent[]> => {
       formData.delete('f')
 
       const end = Math.min(file.size, preview ? file.size : start + chunkSize)
@@ -1184,7 +1186,7 @@ export class Info implements InfoProps {
       }
     }
 
-    const id = generateUUID<string>();
+    const id = generateUUID<λRequest['id']>();
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
       FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
@@ -1211,7 +1213,7 @@ export class Info implements InfoProps {
       this.setInfo(this.app);
     })
 
-    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id, m => {
+    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
       const events = Event.normalize(m.data.docs);
 
       const file = File.id(this.app, events[0]['gulp.source_id']);
