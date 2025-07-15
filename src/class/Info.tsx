@@ -688,6 +688,14 @@ export class Info implements InfoProps {
       return
     }
 
+    if (id) {
+      const request = this.app.general.loadings.byFileId.get(id);
+      if (request) {
+        this.delLoading(request)
+        this.request_cancel(request);
+      }
+    }
+
     const body = Filter.body(query);
 
     if (preview) {
