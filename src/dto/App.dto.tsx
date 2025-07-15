@@ -40,6 +40,10 @@ export interface λApp {
     glyphs_syncronized: boolean
     requests: λRequest[]
     user: λUser | null
+    loadings: {
+      byRequestId: Map<λRequest['id'], λFile['id']>;
+      byFileId: Map<λFile['id'], λRequest['id']>;
+    }
   }
   timeline: {
     scale: number
@@ -66,7 +70,11 @@ export const BaseInfo: λApp = {
     ws_id: generateUUID(),
     glyphs_syncronized: false,
     requests: [],
-    user: null
+    user: null,
+    loadings: {
+      byRequestId: new Map(),
+      byFileId: new Map(),
+    }
   },
   timeline: {
     scale: 1,

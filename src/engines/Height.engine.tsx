@@ -24,11 +24,6 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
   }
 
   render(file: λFile, y: number) {
-    const hasPendingRequest = this.renderer.info.app.general.requests.some(r => r.for === file.id && r.status === 'pending');
-    if (hasPendingRequest) {
-      return;
-    }
-
     const samples = this.get(file)
     const height = samples[Hardcode.MaxHeight];
 

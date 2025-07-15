@@ -22,10 +22,10 @@
 .combination {
   height: 28px;
   width: 100%;
-  padding: 8px 4px;
+  padding: 0 10px 0 4px;
 }
 .list .combination:not(:last-child) {
-  border-bottom: var(--geist-border);
+  border-bottom: 1px solid var(--gray-400);
 }
 .combination * {
   white-space: nowrap;

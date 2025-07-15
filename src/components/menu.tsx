@@ -85,7 +85,7 @@ export function Menu() {
         size="icon"
         onClick={() => spawnBanner(<Requests.Banner />)}
       >
-        {app.general.requests.filter((r) => r.status === 'pending').length}
+        {app.general.requests.filter((r) => r.status === 'ongoing').length}
       </Button>
       <Button
         variant="secondary"

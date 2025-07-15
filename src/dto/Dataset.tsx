@@ -125,26 +125,19 @@ export type λHighlight = GulpObject<μ.Highlight, {
   color: string
 }>
 
-export type λRequest = {
-  id: μ.Request
-  type: 'query' | 'sigma' | 'ingest' | 'unknown'
-  for: λFile['id'] | null
-  status:
-  | 'done'
-  | 'failed'
-  | 'canceled'
-  | 'ongoing'
-  | 'pending'
-  | 'error'
-  | 'success'
-  on: number
+export enum RequestStatus {
+  ONGOING = 'ongoing',
+  DONE = 'done',
+  FAILED = 'failed',
+  CANCELED = 'canceled',
+  PENDING = 'pending',
 }
 
-export interface ΞRequest {
+export interface λRequest {
   completed: string
   granted_user_group_ids: λUser['id'][]
   granted_user_ids: λUser['id'][]
-  id: λRequest['id']
+  id: μ.Request
   name: string
   owner_user_id: λUser['id']
   records_failed: number
@@ -154,7 +147,7 @@ export interface ΞRequest {
   source_failed: number
   source_processed: number
   source_total: number
-  status: λRequest['status']
+  status: RequestStatus
   time_created: number
   time_expire: number
   time_finished: number

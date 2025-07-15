@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Checkbox } from '@/ui/Checkbox'
 import s from './styles/SelectFilesBanner.module.css'
-import { Badge } from '@/ui/Badge'
+import { Badge } from '@impactium/components'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
 import { Context, Filter, Operation } from '@/class/Info'
@@ -42,9 +42,9 @@ export namespace SelectFiles {
     const SearchInput = useMemo(() => {
       return (
         <Input
-          img="Search"
-          placeholder="Search by context name and file name"
-          variant="highlighted"
+          img='Search'
+          placeholder='Search by context name and file name'
+          variant='highlighted'
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
@@ -53,19 +53,19 @@ export namespace SelectFiles {
 
     return (
       <UIBanner
-        title="Select sources"
+        title='Select sources'
         className={s.banner}
         done={
           <Button
-            img="Check"
-            variant="glass"
+            img='Check'
+            variant='glass'
             onClick={save}
           />
         }
         option={
           <Button
-            img="Upload"
-            variant="ghost"
+            img='Upload'
+            variant='ghost'
             onClick={() => spawnBanner(<UploadBanner />)}
           />
         }
@@ -73,7 +73,7 @@ export namespace SelectFiles {
       >
         {SearchInput}
         <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
-          <Skeleton show={!hasData} width="full">
+          <Skeleton show={!hasData} width='full'>
             {filteredContexts.length > 0 ? (
               filteredContexts.map((context) => (
                 <ContextComponent key={context.id} context={context} filter={filter} />
@@ -88,25 +88,25 @@ export namespace SelectFiles {
         <Stack>
           <Button
             onClick={() => Info.selectAll(filter)}
-            variant="secondary"
+            variant='secondary'
             style={{ flex: 1 }}
-            img="FilePlus"
+            img='FilePlus'
           >
             Select all
           </Button>
           <Button
             onClick={() => Info.unselectAll(filter)}
-            variant="secondary"
+            variant='secondary'
             style={{ flex: 1 }}
-            img="FileMinus"
+            img='FileMinus'
           >
             Unselect all
           </Button>
           <Button
             onClick={reloadClickHandler}
-            variant="secondary"
+            variant='secondary'
             style={{ flex: 1 }}
-            img="RefreshClockwise"
+            img='RefreshClockwise'
             loading={loading}
           >
             Reload
@@ -125,9 +125,9 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
 
   return (
     <Stack
-      dir="column"
-      ai="stretch"
-      jc="flex-start"
+      dir='column'
+      ai='stretch'
+      jc='flex-start'
       className={s.branch}
       key={context.id}
     >
@@ -145,11 +145,10 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
         <Label value={context.name} />
         <hr style={{ flex: 1 }} />
         <Badge
-          border
-          value="Delete"
-          variant="destructive"
-          radius={2}
-          icon="Trash2"
+          size='sm'
+          value='Delete'
+          variant='red-subtle'
+          icon='Trash2'
           onClick={() =>
             spawnBanner(
               <Delete.Context.Banner
@@ -189,7 +188,7 @@ function FileComponent({ file }: { file: λFile }) {
     }
 
     return (
-      <Badge radius={2} border variant="warning" icon="Warning" value="This file is too big" />
+      <Badge size='sm' variant='amber-subtle' icon='Warning' value='This file is too big' />
     )
   }, [])
 
@@ -202,13 +201,18 @@ function FileComponent({ file }: { file: λFile }) {
       />
       <Label value={file.name} />
       {FileIsTooBig}
-      <Badge radius={2} variant={Filter.hasFilter(app, file) ? 'outline' : "secondary"} icon='Filter' onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)} />
-      <Badge radius={2} variant="outline" value={file.total} />
+      <Badge size='sm' variant='gray-subtle' value={file.total.toString()} />
       <Button
-        img="PreviewEye"
-        variant="secondary"
+        img='Filter'
+        variant='secondary'
+        className={s.smallButton}
+        onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)}
+      />
+      <Button
+        img='PreviewEye'
+        variant='secondary'
         loading={loading}
-        className={s.previewButton}
+        className={s.smallButton}
         onClick={previewButtonClickHandler}
       />
     </Stack>

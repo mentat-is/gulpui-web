@@ -6,7 +6,6 @@ import React, {
   useRef,
   useEffect,
   useMemo,
-  useCallback,
 } from 'react'
 import { λApp, BaseInfo } from '@/dto'
 import { File, Info } from '@/class/Info';
@@ -72,7 +71,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     if (!FuckSocket.Class.instance)
       return;
 
-    const callback = (message: any) => {
+    const collabCallback = (message: any) => {
       switch (message.data.type) {
         case 'note':
           const notes: λNote[] = message.data.data;
@@ -104,8 +103,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       instance.highlights_reload();
     }
 
-    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_UPDATE, callback);
-    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_DELETE, callback);
+    const reqeustStatsCallback = (message: any) => instance.request_add(message.data.data);
+
+    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_UPDATE, collabCallback);
+    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_DELETE, collabCallback);
+    FuckSocket.Class.instance.con(FuckSocket.Message.Type.STATS_UPDATE, m => m.data.data.type === 'request_stats', reqeustStatsCallback);
   }, [ws, app, instance]);
 
   const spawnBanner = (banner: React.ReactNode) => {

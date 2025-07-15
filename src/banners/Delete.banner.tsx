@@ -67,7 +67,7 @@ export namespace Delete {
       }
     }
     export function Banner({ file, ...props }: Delete.File.Banner.Props) {
-      const { Info } = useApplication()
+      const { Info, destroyBanner } = useApplication()
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
       const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)
@@ -88,6 +88,8 @@ export namespace Delete {
         setLoading(false)
         if (props.back) {
           props.back()
+        } else {
+          destroyBanner()
         }
         toast(`File ${file.name} deleted successfully`)
       }

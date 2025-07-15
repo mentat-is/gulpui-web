@@ -170,7 +170,6 @@ export function TargetMenu({ file }: TargetMenuProps) {
           Upload rule
         </ContextMenuItem>
       </ContextMenuGroup>
-      <ContextMenuItem onClick={() => Info.request_cancel_for_file(file.id)} img="X">Cancel all requests</ContextMenuItem>
       <ContextMenuItem
         className={s.delete}
         img="Trash2"

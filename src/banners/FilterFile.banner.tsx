@@ -374,15 +374,7 @@ export function FilterFileBanner({ file, ...props }: FilterFileBannerProps) {
       {AddCondition}
       <Separator />
       {QueryConditions}
-      <Stack>
-        <Button
-          variant='secondary'
-          style={{ width: '100%' }}
-          onClick={() => Info.request_cancel_for_file(file.id)}
-          img='FileX'
-        >Cancel all requests for this file</Button>
-        <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} img='PreviewDocument'>Preview result of current filter</Button>
-      </Stack>
+      <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} img='PreviewDocument'>Preview result of current filter</Button>
     </Banner>
   )
 }

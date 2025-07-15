@@ -312,11 +312,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = '#0372ef'
     this.ctx.fillText(events, left, line.three)
 
-    if (
-      this.info.app.general.requests.filter(
-        (r) => r.for === file.id && r.status === 'pending',
-      ).length
-    ) {
+    if (this.info.app.general.loadings.byFileId.has(file.id)) {
       this.loading(file)
     }
   }

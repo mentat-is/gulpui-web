@@ -11,7 +11,6 @@ import {
   GulpObject,
   λGroup,
   λRequest,
-  ΞRequest,
   λHighlight,
 } from '@/dto/Dataset'
 import { λEvent } from '@/dto/ChunkEvent.dto'
@@ -36,7 +35,6 @@ import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 import { RenderEngine } from './RenderEngine'
 import { FuckSocket } from './FuckSocket'
-import { DefaultEngine } from '@/engines/Default.engine'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -165,9 +163,6 @@ export namespace GulpDataset {
       continue_offset: number
       done: boolean
     }
-  }
-  export namespace RequestList {
-    export type Summary = ΞRequest[]
   }
 }
 
@@ -501,7 +496,7 @@ export class Info implements InfoProps {
     )
 
   refetch = async ({
-    ids: _ids = File.selected(this.app).filter(f => f.total > 0).map((f) => f.id),
+    ids: _ids = File.selected(this.app).map((f) => f.id),
     refetchKeys
   }: RefetchOptions = {}) => {
     const files: λFile[] = Parser.array(_ids).map((id) => File.id(this.app, id));
@@ -698,7 +693,6 @@ export class Info implements InfoProps {
     }
 
     if (id) {
-      request_query.req_id = id;
       body.q_options.fields = refetchKeys ?? [File.id(this.app, id).settings.field];
     }
 
@@ -708,7 +702,7 @@ export class Info implements InfoProps {
       query: request_query,
       body,
       raw: true,
-    }, ({ status, req_id }) => {
+    }, ({ req_id }) => {
       const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id, m => {
         const events = Event.normalize(m.data.docs);
 
@@ -718,6 +712,8 @@ export class Info implements InfoProps {
         };
       })
       FuckSocket.Class.instance.conce(FuckSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
+        this.delLoading(req_id);
+
         if (m.data.status !== 'done') {
           toast.error('Query failed', {
             icon: <Icon name='Stop' />,
@@ -730,14 +726,11 @@ export class Info implements InfoProps {
           })
         }
       });
-      this.request_add({
-        id: req_id,
-        for: id || null,
-        status: status,
-        type: 'query',
-        on: Date.now(),
-      })
-    })
+
+      if (id) {
+        this.setLoading(req_id, id);
+      }
+    });
 
     if (preview) {
       toast(`Total hits for this filter is ${resp.data?.total_hits || 0}`)
@@ -818,56 +811,20 @@ export class Info implements InfoProps {
   }
 
   request_add = (req: λRequest) => {
-    if (this.app.general.requests.every(r => r.id !== req.id)) {
-      this.request_replace(...this.app.general.requests, req)
+    const exist = this.app.general.requests.findIndex(r => r.id === req.id);
+    if (exist >= 0) {
+      this.app.general.requests[exist] = req;
+    } else {
+      this.app.general.requests = [...this.app.general.requests, req];
     }
+
+    this.setInfoByKey(this.app.general.requests.sort((a, b) => b.time_created - a.time_created), 'general', 'requests');
   }
 
-
-  request_replace = (...req: λRequest[]) =>
-    this.setInfoByKey(
-      req.sort((a, b) => b.on - a.on),
-      'general',
-      'requests',
-    )
-
-  request_cancel = (req_id_to_cancel: λRequest['id']) => {
-    const fileId = this.request_finish(req_id_to_cancel, 'canceled')
-    toast(
-      `Request ${req_id_to_cancel} for ${fileId ? File.id(this.app, fileId).name : 'some file'} has been canceled`,
-    )
-
-    api('/request_cancel', {
-      method: 'PATCH',
-      query: { req_id_to_cancel },
-    })
-  }
-
-  request_cancel_for_file = (file: λFile['id']) => Promise.all(this.app.general.requests.filter((r) => r.for === file && r.status === 'pending').map((r) => this.request_cancel(r.id)));
-
-  request_finish = (
-    id: λRequest['id'],
-    status: λRequest['status'],
-  ): λFile['id'] | null => {
-    const exist = this.app.general.requests.find((r) => r.id === id)
-    if (exist) {
-      exist.status = status
-      this.request_replace(...this.app.general.requests)
-      return exist.for
-    }
-    return null
-  }
-
-  request_list = (): Promise<λRequest[]> =>
-    api<GulpDataset.RequestList.Summary>('/request_list').then((reqs) =>
-      reqs.map((r) => ({
-        id: r.id,
-        for: null,
-        on: r.time_created,
-        status: r.status,
-        type: 'unknown',
-      })),
-    )
+  request_cancel = (req_id_to_cancel: λRequest['id']) => api('/request_cancel', {
+    method: 'PATCH',
+    query: { req_id_to_cancel },
+  });
 
   filters_cache = (file: λFile | μ.File) => {
     Logger.log(
@@ -1208,14 +1165,6 @@ export class Info implements InfoProps {
         },
       })
 
-      this.request_add({
-        for: null,
-        id: response.req_id,
-        status: response.status,
-        type: 'ingest',
-        on: response.timestamp.valueOf(),
-      })
-
       if (preview) {
         return response.data as unknown as λEvent[]
       }
@@ -1244,6 +1193,8 @@ export class Info implements InfoProps {
     }
 
     FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
+      this.setLoading(m.req_id, m.data.data.id);
+
       this.app.target.files.push({
         ...m.data.data,
         selected: true,
@@ -1258,7 +1209,7 @@ export class Info implements InfoProps {
       this.setInfo(this.app);
     })
 
-    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === this.app.general.ws_id, m => {
+    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id, m => {
       const events = Event.normalize(m.data.docs);
 
       const file = File.id(this.app, events[0]['gulp.source_id']);
@@ -1268,14 +1219,19 @@ export class Info implements InfoProps {
 
       const all = File.events(this.app, file.id);
 
-      this.app.target.files = [...this.app.target.files.filter(f => f.id !== file.id), {
+
+      const exist = this.app.target.files.findIndex(f => f.id === file.id);
+
+      this.app.target.files[exist] = {
         ...file,
         timestamp: {
           min: all[all.length - 1].timestamp,
           max: all[0].timestamp
         },
         total: all.length
-      }];
+      }
+
+      this.app.target.files = [...this.app.target.files];
 
       this.app.timeline.frame.min = Math.min(...this.app.target.files.map(f => f.timestamp.min));
       this.app.timeline.frame.max = Math.max(...this.app.target.files.map(f => f.timestamp.max));
@@ -1283,6 +1239,7 @@ export class Info implements InfoProps {
       this.setInfo(this.app);
 
       if (m.data.last) {
+        this.delLoading(m.req_id);
         FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid)
       }
     })
@@ -1425,6 +1382,21 @@ export class Info implements InfoProps {
    * @param value Value to save. Be carreful, it can save any shit
    */
   setSettings = (key: string, value: any) => this.setInfoByKey(value, 'settings', key);
+
+  setLoading(req_id: λRequest['id'], file_id: λFile['id']) {
+    this.app.general.loadings.byRequestId.set(req_id, file_id);
+    this.app.general.loadings.byFileId.set(file_id, req_id);
+    this.setInfo(this.app);
+  }
+
+  delLoading(req_id: λRequest['id']) {
+    this.app.general.loadings.byRequestId.delete(req_id);
+    const file_id = [...this.app.general.loadings.byFileId.entries()].find(e => e[1] === req_id)?.[0];
+    if (file_id) {
+      this.app.general.loadings.byFileId.delete(file_id);
+    }
+    this.setInfo(this.app);
+  }
 
   // ⚠️ UNTOUCHABLE
   note_delete = (note: λNote) =>
