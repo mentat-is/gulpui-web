@@ -1039,19 +1039,6 @@ export class Info implements InfoProps {
         .filter((f) => f.name.toLowerCase().includes(filter)),
     )
 
-    if (select) {
-      const ids: λFile['id'][] = [];
-      files.forEach(file => {
-        const events = File.events(this.app, file)
-        if (!events.length) {
-          return ids.push(file.id);
-        }
-      })
-      if (ids.length) {
-        this.refetch({ ids });
-      }
-    }
-
     this.setInfo((i) => ({
       ...i,
       target: {
