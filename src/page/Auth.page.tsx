@@ -183,7 +183,7 @@ export namespace Auth {
     const onLoginAndOperationSelection = () => {
       switch (true) {
         case app.target.files.length > 0:
-          spawnBanner(<SelectFiles.Banner />);
+          spawnBanner(<SelectFiles.Banner fixed />);
           break;
 
         default:

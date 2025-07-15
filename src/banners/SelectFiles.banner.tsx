@@ -28,7 +28,7 @@ export namespace SelectFiles {
     const hasData = app.target.operations.length > 0 || app.target.contexts.length > 0;
 
     const save = useCallback(async () => {
-      spawnBanner(<Frame.Banner />)
+      spawnBanner(<Frame.Banner fixed />)
     }, [spawnBanner])
 
     const reloadClickHandler = async () => {

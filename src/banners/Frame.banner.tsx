@@ -38,6 +38,7 @@ export namespace Frame {
         return callback({ min, max });
       }
       Info.setTimelineFrame({ min, max });
+      Info.refetch();
       destroyBanner()
     }
 
