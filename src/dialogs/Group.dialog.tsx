@@ -59,7 +59,6 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     <Dialog
       title={`Choose event${events[0]?.timestamp ? ` for ${new Date(events[0].timestamp).toLocaleTimeString()} ${new Date(events[0].timestamp).toLocaleDateString()}` : ''}`}
       description={`List includes ${events.length} events`}
-      className={s.dialog}
     >
       <div
         ref={parentRef}

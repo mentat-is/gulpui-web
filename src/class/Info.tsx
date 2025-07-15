@@ -501,6 +501,13 @@ export class Info implements InfoProps {
   }: RefetchOptions = {}) => {
     const files: λFile[] = Parser.array(_ids).map((id) => File.id(this.app, id));
 
+    if (this.app.timeline.frame.min === 0) {
+      this.setTimelineFrame({
+        min: Math.min(...files.map(f => f.timestamp.min)),
+        max: Math.max(...files.map(f => f.timestamp.max)),
+      })
+    }
+
     this.notes_reload()
 
     this.links_reload()
