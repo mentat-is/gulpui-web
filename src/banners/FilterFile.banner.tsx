@@ -234,7 +234,7 @@ export namespace OpenSearchQueryBuilder {
                   >
                     <Select.Trigger className={s.trigger} />
                     <Select.Content>
-                      {[...keys].sort().map((k) => (
+                      {keys.sort((a, b) => a.localeCompare(b)).map((k) => (
                         <Select.Item key={k} value={k}>
                           {k}
                         </Select.Item>
