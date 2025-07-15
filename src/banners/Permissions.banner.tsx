@@ -174,7 +174,7 @@ export namespace Permissions {
           >
             <p>
               {user.name}
-              {user.id === app.general.id ? <span>(you)</span> : null}
+              {user.id === app.general.user?.id ? <span>(you)</span> : null}
             </p>
             <span>{user.id}</span>
           </Stack>

@@ -35,7 +35,6 @@ interface ApplicationContextProps {
   scrollY: number;
   setScrollX: SetState<number>;
   setScrollY: SetState<number>;
-  ws: FuckSocket.Class,
   setInfo: (info: λApp) => void
   Info: Info
   timeline: React.RefObject<HTMLDivElement>
@@ -61,7 +60,13 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
   const instance = new Info({ app, setInfo, timeline, setScrollX, setScrollY });
 
-  const ws = useMemo(() => new FuckSocket.Class(app.general.server + '/ws', app.general.token, app.general.ws_id), [app.general]);
+  const ws = useMemo(() => {
+    if (!app.general.user) {
+      return;
+    }
+
+    return new FuckSocket.Class(app.general.server + '/ws', app.general.user.token, app.general.ws_id);
+  }, [app.general]);
 
   useEffect(() => {
     if (!FuckSocket.Class.instance)
@@ -123,7 +128,6 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     banner,
     spawnDialog,
     dialog,
-    ws,
     app,
     scrollX,
     scrollY,

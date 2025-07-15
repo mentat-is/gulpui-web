@@ -60,7 +60,6 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
   }, []);
 
-
   const [isRescaleBlocked, setIsRescaleBlokced] = useState<boolean>(true);
   useEffect(() => {
     setTimeout(() => {

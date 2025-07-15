@@ -466,7 +466,7 @@ interface ASCIITextProps {
 }
 
 export function ASCII({
-  text = 'David!',
+  text = '',
   asciiFontSize = 16,
   textFontSize = 200,
   textColor = '#fdf9f3',

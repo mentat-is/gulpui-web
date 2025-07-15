@@ -11,13 +11,13 @@ import { cn, λthrow } from '@impactium/utils'
 import { ExtensionProvider } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
-import { LoginPage } from './page/Login.page'
-import { Operation } from './class/Info'
+import { File } from './class/Info'
 import s from './App.module.css';
 import { Stack } from '@impactium/components'
 import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
+import { Auth } from './page/Auth.page'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -71,8 +71,8 @@ function Main() {
     return <Preloader />
   }
 
-  return Operation.selected(Info.app) ? (
-    <Stack gap={12} className={s.window}>
+  return File.selected(Info.app).length ? (
+    <Stack gap={12} className={s.window} ai='stretch'>
       <Menu />
       <Timeline />
       <Stack
@@ -84,5 +84,5 @@ function Main() {
         {dialog}
       </Stack>
     </Stack>
-  ) : <LoginPage />
+  ) : <Auth.Page />
 }

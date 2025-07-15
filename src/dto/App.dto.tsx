@@ -34,11 +34,12 @@ export interface λApp {
     mappings: λMapping.Plugin[]
     plugins: GulpDataset.PluginList.Interface[]
   }
-  general: λUser & {
+  general: {
     server: string
     ws_id: string
     glyphs_syncronized: boolean
     requests: λRequest[]
+    user: λUser | null
   }
   timeline: {
     scale: number
@@ -63,11 +64,9 @@ export const BaseInfo: λApp = {
   general: {
     server: Internal.Settings.server,
     ws_id: generateUUID(),
-    id: '' as λUser['id'],
-    time_expire: Infinity,
-    token: '',
     glyphs_syncronized: false,
-    requests: []
+    requests: [],
+    user: null
   },
   timeline: {
     scale: 1,

@@ -7,12 +7,13 @@ import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
 import { File } from '@/class/Info'
 import { λFile } from '@/dto/Dataset'
+import { SelectFiles } from '@/banners/SelectFiles.banner'
 
 export function Timeline() {
-  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
+  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = useApplication()
 
   useEffect(() => {
-    Info.refetch();
+    Info.refetch().then(() => spawnBanner(<SelectFiles.Banner />));
   }, []);
 
   const focusEvent = (timestamp: number, onLeft = false, file_id?: λFile['id']) => {

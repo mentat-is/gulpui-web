@@ -16,6 +16,8 @@ import { λOperation } from '@/dto'
 import { Label } from '@/ui/Label'
 import { Operation as OperationBanners } from '@/banners/Operation.banner'
 import { Keyboard } from '@/ui/Keyboard'
+import { SelectFiles } from '@/banners/SelectFiles.banner'
+import { UploadBanner } from '@/banners/Upload.banner'
 
 export namespace Auth {
   export namespace Page {
@@ -24,13 +26,10 @@ export namespace Auth {
   }
   export function Page({ ...props }: Auth.Page.Props) {
     const { spawnBanner, Info, app } = useApplication()
-    const loginButton = useRef<HTMLButtonElement>(null)
-    const [isKeyPressed] = useKeyHandler('Enter')
     const [server, setServer] = useState<string>(Info.app.general.server)
-    const [id, setId] = useState<string>(Info.app.general.id || 'admin')
+    const [id, setId] = useState('admin' as λUser['id']);
     const [password, setPassword] = useState<string>('admin')
     const [loading, setLoading] = useState<boolean>(false)
-    const [isOperationsLoading, setIsOperationsLoading] = useState<number>(0)
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
 
     useEffect(() => {
@@ -46,100 +45,79 @@ export namespace Auth {
       }
     }, [methods, server])
 
-    useEffect(() => {
-      if (isKeyPressed && loginButton.current) {
-        loginButton.current.click()
-      }
-    }, [isKeyPressed])
+    const login = async () => {
+      const removeOverload = (str: string): string =>
+        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str
 
-    const DoneButton = () => {
-      const login = async () => {
-        const removeOverload = (str: string): string =>
-          str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str
-
-        const validate = (str: string): string | void =>
-          !Pattern.Server.test(str)
-            ? (() => {
-              toast('Incorrect server URL', {
-                icon: <Icon name='Warning' />
-              })
-            })()
-            : removeOverload(str)
-
-        const validatedServer = validate(server)
-
-        if (!validatedServer) return
-
-        Internal.Settings.server = validatedServer
-
-        setLoading(true);
-        await api<λUser>('/login', {
-          method: 'POST',
-
-          raw: true,
-          query: {
-            ws_id: Info.app.general.ws_id,
-          },
-          body: {
-            user_id: id,
-            password,
-          },
-        }).then(response => {
-          if (response.isSuccess()) {
-            next(response.data);
-          } else {
-            toast.error('Invalid server URL, or username, or password', {
-              richColors: true,
+      const validate = (str: string): string | void =>
+        !Pattern.Server.test(str)
+          ? (() => {
+            toast('Incorrect server URL', {
               icon: <Icon name='Warning' />
             })
-            setLoading(false);
-            setIsOperationsLoading(0);
-          }
-        })
-      }
+          })()
+          : removeOverload(str)
 
-      return (
-        <Button
-          img="LogIn"
-          disabled={!id || !password}
-          variant="glass"
-          revert
-          ref={loginButton}
-          loading={loading || isOperationsLoading === 1}
-          tabIndex={4}
-          onClick={login}
-          style={{ marginLeft: 'auto' }}
-        >Login</Button>
-      )
-    }
+      const validatedServer = validate(server)
 
-    const next = async (user: λUser) => {
-      Info.login(user)
-      await Info.plugin_list()
-      await Info.glyphs_reload()
-      setIsOperationsLoading(1);
-      await Info.sync()
-      setIsOperationsLoading(2);
+      if (!validatedServer) return
+
+      Internal.Settings.server = validatedServer
+
+      // Wrap into loading state
+      setLoading(true);
+      const user = await Info.login({ id, password });
       setLoading(false);
 
-      const sessions = await Info.session_list(user.id);
-      if (sessions.length) {
-        spawnBanner(<Session.Load.Banner sessions={sessions} />)
-        return;
+      if (!user) {
+        const sessions = await Info.session_list();
+        if (sessions.length > 0) {
+          spawnBanner(<Session.Load.Banner sessions={sessions} />)
+        }
       }
+    };
+
+    const NextButton = () => {
+      if (!app.general.user) {
+        return (
+          <Button
+            img='LogIn'
+            disabled={!id || !password}
+            variant='glass'
+            revert
+            loading={loading}
+            tabIndex={4}
+            onClick={login}
+            style={{ marginLeft: 'auto' }}
+          >Login</Button>
+        )
+      }
+
+      if (Operation.selected(app)) {
+        return (
+          <Button
+            img='Check'
+            variant='glass'
+            revert
+            loading={loading}
+            tabIndex={6}
+            onClick={onLoginAndOperationSelection}
+            style={{ marginLeft: 'auto' }}
+          >Done</Button>
+        );
+      }
+
+      return null;
     }
 
     useEffect(() => {
       const query = new URLSearchParams(window.location.search)
       const token = query.get('token')
-      const id = (query.get('id') || 'guest') as λUser['id']
-      const time_expire =
-        Number(query.get('time_expire')) || addDays(Date.now(), 7).valueOf()
-      if (!token) return
+
+      if (!token) return;
 
       history.replaceState(null, '', window.location.origin)
 
-      next({ token, id, time_expire })
       setLoading(true)
     }, [])
 
@@ -181,8 +159,8 @@ export namespace Auth {
 
       return (
         <Stack>
-          <LoginMethod name="microsoft" icon="LogoMicrosoft" />
-          <LoginMethod name="google" icon="LogoGoogle" />
+          <LoginMethod name='microsoft' icon='LogoMicrosoft' />
+          <LoginMethod name='google' icon='LogoGoogle' />
         </Stack>
       )
     }
@@ -190,63 +168,66 @@ export namespace Auth {
     const SelectTrigger = () => {
       const selected = Operation.selected(Info.app)
 
-      if (isOperationsLoading === 0) {
+      if (!app.general.user) {
         return null;
       }
 
-      if (isOperationsLoading === 1) {
-        return (
-          <Select.Trigger disabled>
-            <Spinner />
-            Loading operations list
-          </Select.Trigger>
-        )
-      }
-
       return (
-        <Select.Trigger>
+        <Select.Trigger tabIndex={5}>
           <Select.Icon name={Operation.icon((selected || {}) as λOperation)} />
           {selected ? selected.name : 'Select operation or create new one'}
         </Select.Trigger>
       )
     }
 
+    const onLoginAndOperationSelection = () => {
+      switch (true) {
+        case app.target.files.length > 0:
+          spawnBanner(<SelectFiles.Banner />);
+          break;
+
+        default:
+          spawnBanner(<UploadBanner />);
+          break;
+      }
+    };
+
     return (
       <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
         <p className={s.title}>[ Login ]</p>
         <Input
-          variant="highlighted"
-          img="Link"
+          variant='highlighted'
+          img='Link'
           label='Server adress'
-          placeholder="http://localhost:8080"
+          placeholder='http://localhost:8080'
           value={server}
-          disabled={isOperationsLoading === 2}
+          disabled={!!app.general.user}
           tabIndex={1}
           onChange={(e) => setServer(e.currentTarget.value)}
         />
         <Input
-          variant="highlighted"
+          variant='highlighted'
           label='Username'
-          img="User"
-          placeholder="admin"
+          img='User'
+          placeholder='admin'
           value={id}
-          disabled={isOperationsLoading === 2}
+          disabled={!!app.general.user}
           tabIndex={2}
-          onChange={(e) => setId(e.currentTarget.value)}
+          onChange={(e) => setId(e.currentTarget.value as typeof id)}
         />
         <Input
-          variant="highlighted"
-          img="KeyRound"
+          variant='highlighted'
+          img='KeyRound'
           label='Password'
-          placeholder="admin"
-          type="password"
+          placeholder='admin'
+          type='password'
           value={password}
-          disabled={isOperationsLoading === 2}
+          disabled={!!app.general.user}
           tabIndex={3}
           onChange={(e) => setPassword(e.currentTarget.value)}
         />
         <LoginMethods />
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, isOperationsLoading === 2 && s.visible)}>
+        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && s.visible)}>
           <Label value='Operation' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
@@ -268,7 +249,7 @@ export namespace Auth {
             </Select.Root>
           </Stack>
         </Stack>
-        {isOperationsLoading > 0 ? null : <DoneButton />}
+        <NextButton />
       </Stack>
     )
   }

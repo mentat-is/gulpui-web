@@ -14,10 +14,7 @@ import {
   ΞRequest,
   λHighlight,
 } from '@/dto/Dataset'
-import {
-  λDoc,
-  λEvent,
-} from '@/dto/ChunkEvent.dto'
+import { λEvent } from '@/dto/ChunkEvent.dto'
 import React from 'react'
 import { generateUUID, getSortOrder, Gradients, NodeFile } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
@@ -454,9 +451,10 @@ export namespace Internal {
 }
 
 export interface λUser {
-  token: string
-  id: μ.User
-  time_expire: number
+  token: string;
+  id: μ.User;
+  password: string;
+  time_expire: number;
 }
 
 export type λDetailedUser = GulpObject<
@@ -503,7 +501,7 @@ export class Info implements InfoProps {
     )
 
   refetch = async ({
-    ids: _ids = File.selected(this.app).map((f) => f.id),
+    ids: _ids = File.selected(this.app).filter(f => f.total > 0).map((f) => f.id),
     refetchKeys
   }: RefetchOptions = {}) => {
     const files: λFile[] = Parser.array(_ids).map((id) => File.id(this.app, id));
@@ -514,7 +512,7 @@ export class Info implements InfoProps {
 
     this.highlights_reload()
 
-    files.filter(f => f.total > 0).forEach((file) => {
+    files.forEach((file) => {
       const query = this.getQuery(file.id);
 
       this.query_file(query, {
@@ -1800,10 +1798,15 @@ export class Info implements InfoProps {
       filters: this.app.target.filters,
     })
 
+    if (!this.app.general.user) {
+      Logger.warn('Tried to create session before user has been defined');
+      return;
+    }
+
     return api<undefined>('/user_update', {
       method: 'PATCH',
       query: {
-        user_id: this.app.general.id,
+        user_id: this.app.general.user?.id,
       },
       toast: `Session ${name} has been saved successfully`,
       raw: true,
@@ -1816,16 +1819,17 @@ export class Info implements InfoProps {
   }
 
   session_delete = async (name: string) => {
-    if (!name) {
-      Logger.error(`Name is not acceptable in this context. Expected valid string, but got ${name}`, 'Info.session_delete');
-      return
+    if (!this.app.general.user) {
+      Logger.error('Tried to delete session but there is no user', this.session_delete);
+      return;
     }
+
     const sessions = await this.session_list();
 
     return api<undefined>('/user_update', {
       method: 'PATCH',
       query: {
-        user_id: this.app.general.id,
+        user_id: this.app.general.user.id,
       },
       toast: `Session ${name} has been deleted successfully`,
       raw: true,
@@ -1860,10 +1864,17 @@ export class Info implements InfoProps {
     }));
   }
 
-  session_list = (user_id = this.app.general.id): Promise<Internal.Session.Data[]> => api<any>('/user_get_by_id', {
-    method: 'GET',
-    query: { user_id }
-  }).then(data => data.user_data.sessions || []);
+  async session_list(): Promise<Internal.Session.Data[]> {
+    if (!this.app.general.user) {
+      Logger.warn('Tried to load sessions list before authorization');
+      return Internal.Transformator.toAsync([]);
+    }
+
+    return api<any>('/user_get_by_id', {
+      method: 'GET',
+      query: { user_id: this.app.general.user.id }
+    }).then(data => data.user_data.sessions || [])
+  };
 
   sync = async () => {
     const operations: λOperation[] = []
@@ -2003,16 +2014,40 @@ export class Info implements InfoProps {
 
   setTimelineFrame = (frame: MinMax) => this.setInfoByKey(frame, 'timeline', 'frame')
 
-  login = (obj: λUser) => {
-    Internal.Settings.token = obj.token
-
-    this.setInfo((info) => ({
-      ...info,
-      general: {
-        ...info.general,
-        ...obj,
+  login = async (credentials: Pick<λUser, 'id' | 'password'>) => {
+    const user = await api<λUser>('/login', {
+      method: 'POST',
+      query: {
+        ws_id: this.app.general.ws_id,
       },
-    }))
+      body: {
+        user_id: credentials.id,
+        password: credentials.password
+      },
+    }).then(user => {
+      if (user) {
+        return user;
+      }
+
+      toast.error('Invalid server URL, or username, or password', {
+        richColors: true,
+        icon: <Icon name='Warning' />
+      });
+    })
+
+    if (!user) {
+      return null;
+    }
+
+    Internal.Settings.token = user.token
+
+    await this.plugin_list();
+    await this.glyphs_reload();
+    await this.sync();
+
+    this.setInfoByKey(Object.assign(credentials, user), 'general', 'user');
+
+    return user;
   }
 
   setTimelineScale = (scale: number) =>

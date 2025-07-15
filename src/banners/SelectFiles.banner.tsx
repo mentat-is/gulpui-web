@@ -43,7 +43,7 @@ export namespace SelectFiles {
       return (
         <Input
           img="Search"
-          placeholder="Filter files by name"
+          placeholder="Search by context name and file name"
           variant="highlighted"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
@@ -89,24 +89,23 @@ export namespace SelectFiles {
           <Button
             onClick={() => Info.selectAll(filter)}
             variant="secondary"
-            style={{ width: '100%', background: 'var(--meta-black)' }}
+            style={{ flex: 1 }}
             img="FilePlus"
-            disabled={app.target.files.length === 0}
           >
             Select all
           </Button>
           <Button
             onClick={() => Info.unselectAll(filter)}
             variant="secondary"
-            style={{ width: '100%', background: 'var(--meta-black)' }}
+            style={{ flex: 1 }}
             img="FileMinus"
-            disabled={app.target.files.length === 0}
           >
             Unselect all
           </Button>
           <Button
             onClick={reloadClickHandler}
             variant="secondary"
+            style={{ flex: 1 }}
             img="RefreshClockwise"
             loading={loading}
           >
