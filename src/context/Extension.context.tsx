@@ -7,32 +7,38 @@ import { Version } from "@/dto/Dataset";
 const __component = Symbol('λ_extension_component');
 
 export function ExtensionProvider({ children }: Extension.Provider.Props) {
-  const { Info, app } = useApplication();
+  const { app } = useApplication();
   const { banner } = useApplication();
   const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
 
   useEffect(() => {
-    api<Extension.Interface[]>('/ui_plugin_list').then(plugins => {
+    api<Extension.Interface[]>('/ui_plugin_list').then(async (plugins) => {
       const new_extensions: typeof extensions = {};
 
-      for (const plugin of plugins) {
-        const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
+      await Promise.all(
+        plugins.map(async (plugin) => {
+          try {
+            const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
+            const component = await Component();
+            if (component.default) {
+              Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, ExtensionProvider);
+            }
 
-        const Compiled = <Component />;
-        if (Compiled) {
-          Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, ExtensionProvider);
-        }
-
-        new_extensions[plugin.filename] = {
-          ...plugin,
-          type: plugin.type ?? [],
-          [__component]: Component
-        }
-      }
+            new_extensions[plugin.filename] = {
+              ...plugin,
+              type: plugin.type ?? [],
+              [__component]: component.default,
+            };
+          } catch (err) {
+            Logger.error(`Failed to load component ${plugin.filename}`, ExtensionProvider);
+          }
+        })
+      );
 
       setExtensions(new_extensions);
-    })
+    });
   }, [app.target.plugins]);
+
 
   const extensionProps: Extension.Export = {
     extensions
@@ -58,7 +64,7 @@ export namespace Extension {
     path: string,
     filename: string
     type: Type[]
-    [__component]: React.LazyExoticComponent<React.ComponentType<any>> | ((props: any) => React.JSX.Element);
+    [__component]: React.ComponentType<any> | ((props: any) => React.JSX.Element);
   }
 
   export const Context = createContext<Extension.Export | undefined>(undefined);
@@ -79,14 +85,14 @@ export namespace Extension {
     }
   }
 
-  export const safe = (func: () => Promise<{ default: React.ComponentType<any> }>) => lazy(async () => {
+  export const safe = (func: () => Promise<{ default: React.ComponentType<any> }>) => async () => {
     try {
       return await func();
     } catch (error) {
       Logger.log('Component not found or failed to load:', String(error));
       return { default: () => null };
     }
-  })
+  }
 
   export namespace Component {
     export interface Props {

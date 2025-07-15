@@ -107,7 +107,13 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
     FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_UPDATE, collabCallback);
     FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_DELETE, collabCallback);
-    FuckSocket.Class.instance.con(FuckSocket.Message.Type.STATS_UPDATE, m => m.data.data.type === 'request_stats', reqeustStatsCallback);
+    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.STATS_UPDATE, m => m.data.data.type === 'request_stats', reqeustStatsCallback);
+
+    return () => {
+      FuckSocket.Class.instance.off(FuckSocket.Message.Type.COLLAB_UPDATE, collabCallback);
+      FuckSocket.Class.instance.off(FuckSocket.Message.Type.COLLAB_DELETE, collabCallback);
+      FuckSocket.Class.instance.coff(FuckSocket.Message.Type.STATS_UPDATE, sid);
+    }
   }, [ws, app, instance]);
 
   const spawnBanner = (banner: React.ReactNode) => {
