@@ -2,13 +2,13 @@ import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Banner as UIBanner } from '../ui/Banner'
 import { Button, Stack } from '@impactium/components'
 import { useApplication } from '../context/Application.context'
-import { Input } from '@impactium/components'
 import { Toggle } from '@/ui/Toggle'
 import s from './styles/LimitsBanner.module.css'
 import { Context, MinMax } from '@/class/Info'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
 import { Icon } from '@impactium/icons'
+import { Input } from '@/ui/Input'
 
 export namespace Frame {
   export namespace Banner {
@@ -86,6 +86,7 @@ export namespace Frame {
       return (
         <Input
           ref={inputRef}
+          label={type === 'min' ? 'From' : 'To'}
           type="datetime-local"
           valid={type === 'min' ? isMinValid : isMaxValid}
           variant="highlighted"
@@ -102,6 +103,7 @@ export namespace Frame {
       return (
         <Input
           type="text"
+          label={type === 'min' ? 'From' : 'To'}
           valid={type === 'min' ? isMinValid : isMaxValid}
           value={new Date(frame[type]).toISOString()}
           img="CalendarCog"
@@ -131,23 +133,13 @@ export namespace Frame {
           onCheckedChange={setManual}
           option={['Select dates', 'ISO String']}
         />
-        <Stack className={s.wrapper}>
-          <Icon name="CalendarArrowUp" />
-          <span>From:</span>
-          <DateSelection type="min" />
-        </Stack>
-        <Stack className={s.wrapper}>
-          <Icon name="CalendarArrowDown" />
-          <span>To:</span>
-          <DateSelection type="max" />
-        </Stack>
-        <div className={s.button_group}>
+        <DateSelection type="min" />
+        <DateSelection type="max" />
+        <Stack>
           {map.map((option, index) => (
-            <Button variant="outline" onClick={option.do} key={index}>
-              {option.text}
-            </Button>
+            <Button className={s.button} variant="outline" onClick={option.do} key={index}>{option.text}</Button>
           ))}
-        </div>
+        </Stack>
       </UIBanner>
     )
   }

@@ -1,7 +1,5 @@
-.button_group {
-  display: flex;
-  flex-direction: row;
-  gap: 8px;
+.button {
+  flex: 1;
 }
 .wrapper {
   display: flex;
@@ -20,14 +18,6 @@
   display: flex;
   flex: 1;
   flex-direction: row;
-  gap: 8px;
-}
-.button {
-  width: 100%;
-  justify-content: center;
-  font-weight: 400;
-}
-.banner {
   gap: 8px;
 }
 .calendar {
