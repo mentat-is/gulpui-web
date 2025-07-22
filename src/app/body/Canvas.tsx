@@ -60,13 +60,6 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
   }, []);
 
-  const [isRescaleBlocked, setIsRescaleBlokced] = useState<boolean>(true);
-  useEffect(() => {
-    setTimeout(() => {
-      setIsRescaleBlokced(false);
-    }, 250);
-  }, []);
-
   useEffect(() => {
     Note.updateIndexing(app);
   }, [app.target.notes]);
@@ -79,11 +72,12 @@ export function Canvas({ timeline }: Canvas.Props) {
     force?: boolean,
     ctx = canvas_ref.current?.getContext('2d'),
   ) => {
-    if (!ctx || !canvas_ref.current) {
+    if (!wrapper_ref.current || !ctx || !canvas_ref.current) {
       return
     }
 
-    if (wrapper_ref.current && canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
+    // Function to handle window resize (especially dialog resize)
+    if (canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
       const oldWidth = canvas_ref.current.width
       const newWidth = wrapper_ref.current.clientWidth
 
@@ -91,10 +85,6 @@ export function Canvas({ timeline }: Canvas.Props) {
       canvas_ref.current.height = wrapper_ref.current.clientHeight
 
       const delta = oldWidth / newWidth
-
-      if (isRescaleBlocked) {
-        return;
-      }
 
       Info.setTimelineScale(app.timeline.scale * delta)
       setScrollX((s) => s - newWidth + oldWidth)
@@ -270,39 +260,36 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   const [bounding, setBounding] = useState<DOMRect | null>(null)
 
-  const handleWheel = useCallback(
-    (event: WheelEvent) => {
-      if (!wrapper_ref.current || banner) return
+  const handleWheel = (event: WheelEvent) => {
+    if (!wrapper_ref.current || banner) return
 
-      if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-        setScrollX((prev) => prev + event.deltaX)
-        return
-      }
+    if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+      setScrollX((prev) => prev + event.deltaX)
+      return
+    }
 
-      const rect = bounding || wrapper_ref.current.getBoundingClientRect()
-      if (!bounding) setBounding(rect)
+    const rect = bounding || wrapper_ref.current.getBoundingClientRect()
+    if (!bounding) setBounding(rect)
 
-      const oldScale = app.timeline.scale
-      const cursorX = event.clientX - rect.left
-      const contentX = scrollX + cursorX
+    const oldScale = app.timeline.scale
+    const cursorX = event.clientX - rect.left
+    const contentX = scrollX + cursorX
 
-      let newScale = app.timeline.isScrollReversed
-        ? event.deltaY < 0
-          ? Info.decreasedTimelineScale()
-          : Info.increasedTimelineScale()
-        : event.deltaY > 0
-          ? Info.decreasedTimelineScale()
-          : Info.increasedTimelineScale()
+    let newScale = app.timeline.isScrollReversed
+      ? event.deltaY < 0
+        ? Info.decreasedTimelineScale()
+        : Info.increasedTimelineScale()
+      : event.deltaY > 0
+        ? Info.decreasedTimelineScale()
+        : Info.increasedTimelineScale()
 
-      newScale = Math.max(0.01, Math.min(9999999, newScale))
+    newScale = Math.max(0.01, Math.min(9999999, newScale))
 
-      if (newScale === oldScale) return
+    if (newScale === oldScale) return
 
-      Info.setTimelineScale(newScale)
-      setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX))
-    },
-    [wrapper_ref, banner, Info, bounding, app.timeline.scale, scrollX],
-  )
+    Info.setTimelineScale(newScale)
+    setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX))
+  };
 
   const debouncedHandleWheel = useMemo(
     () => debounce(handleWheel, 5),

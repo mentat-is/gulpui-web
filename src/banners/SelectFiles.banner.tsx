@@ -5,7 +5,7 @@ import s from './styles/SelectFilesBanner.module.css'
 import { Badge } from '@impactium/components'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
-import { Context, Filter, Operation } from '@/class/Info'
+import { Context, Operation } from '@/class/Info'
 import { useState, useMemo, useCallback } from 'react'
 import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
@@ -28,7 +28,7 @@ export namespace SelectFiles {
     const hasData = app.target.operations.length > 0 || app.target.contexts.length > 0;
 
     const save = useCallback(async () => {
-      spawnBanner(<Frame.Banner fixed />)
+      spawnBanner(<Frame.Banner fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)
     }, [spawnBanner])
 
     const reloadClickHandler = async () => {
