@@ -8,6 +8,7 @@ import { Badge, Button, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
+import { formatTimestampToReadableString, stringToHexColor } from './utils'
 
 export namespace NotePoint {
   export interface Props
@@ -39,7 +40,7 @@ export namespace NotePoint {
     return (
       <Stack
         className={cn(s.combination, note.tags.includes('auto') && s.hidden, className)}
-        style={{ ...style, color: note.color }}
+        style={{ ...style, color: note.color, background: stringToHexColor(note.context_id) + '80' }}
         {...props}
       >
         <Icon name={Note.icon(note)} />
@@ -47,7 +48,8 @@ export namespace NotePoint {
         <span>{note.text}</span>
         <Stack className={s.badge_wrapper}>
           <Badge size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />
-          {note.tags.map(t => <Badge size='sm' value={t} variant='gray-subtle' />)}
+          <Badge size='sm' value={formatTimestampToReadableString(note.doc['@timestamp'])} variant='inverted' />
+          {note.tags.map(t => <Badge size='sm' value={t} icon={isTagAreSeverityIndicator(t) ? NotePoint.getIconFromNoteSeverity(note) : undefined} variant={isTagAreSeverityIndicator(t) ? NotePoint.getColorFromNoteSeverity(note) as Badge.Variant : 'gray-subtle'} />)}
         </Stack>
 
         <Button
@@ -87,27 +89,52 @@ export namespace NotePoint {
     )
   }
 
-  export namespace Group {
-    export interface Props extends Omit<UIPoint.Props, 'name' | 'accent' | 'icon'> {
-      notes: λNote[]
+  export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'informational';
+
+  export const SeverityToColorMap: Record<Severity, string> = {
+    critical: 'red',
+    high: 'amber',
+    medium: 'blue',
+    low: 'green',
+    informational: 'gray'
+  } as const;
+
+  export type SeverityToColorMap = typeof SeverityToColorMap
+
+  export const SeverityToIconMap: Record<Severity, Icon.Name> = {
+    critical: 'Warning',
+    high: 'DataPoint',
+    medium: 'DataPointMedium',
+    low: 'DataPointLow',
+    informational: 'Information'
+  } as const;
+
+  export type SeverityToIconMap = typeof SeverityToIconMap
+
+  /**
+   * O(1) complexity
+   */
+  export const getSeverityFromNote = (note: λNote): Severity => {
+    const target = note.tags.find(tag => isTagAreSeverityIndicator(tag));
+    if (!target) {
+      return 'informational';
     }
+
+    const splited = target.split('_');
+    if (splited.length !== 2) {
+      return 'informational';
+    }
+
+    const key: Severity = splited[1] in SeverityToColorMap
+      ? splited[1] as Severity
+      : 'informational';
+
+    return key;
   }
 
-  export function Group({ notes, ...props }: Group.Props) {
-    const { scrollY } = useApplication();
-    if (notes.length === 0) {
-      return null
-    }
+  export const getIconFromNoteSeverity = (note: λNote) => SeverityToIconMap[getSeverityFromNote(note)];
 
-    return (
-      <Stack className={s.wrapper} pos='absolute' style={{ top: props.y - scrollY, left: props.x }} dir='column-reverse' gap={0}>
-        <UIPoint type='note' icon='Dot' accent='var(--gray-1000)' name='' y={0} x={0}>
-          {notes.length}
-        </UIPoint>
-        <Stack className={s.content} dir='column'>
-          {notes.map(note => <NotePoint.Combination key={note.id} note={note} />)}
-        </Stack>
-      </Stack>
-    )
-  }
+  export const getColorFromNoteSeverity = (note: λNote) => SeverityToColorMap[getSeverityFromNote(note)];
+
+  export const isTagAreSeverityIndicator = (tag: string): boolean => tag.startsWith('severity_');
 }

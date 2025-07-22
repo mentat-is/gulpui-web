@@ -9,6 +9,7 @@ import { XY } from '@/dto/XY.dto'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
 import { FuckSocket } from '@/class/FuckSocket'
+import { formatTimestampToReadableString } from '@/ui/utils'
 
 export namespace Pointers {
   export interface Props extends Stack.Props {
@@ -46,46 +47,6 @@ export function Pointers({
   ]
 
   const { app, scrollY } = useApplication()
-  const color = useRef<string>(
-    `var(--${COLOR_MAPPING[Math.round(Math.random() * COLOR_MAPPING.length)]}-700, white)`,
-  )
-
-  const format = (date: Date, formatStr: string) => {
-    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
-
-    const getters = {
-      year: Internal.Settings.isUTCTimestamps ? date.getUTCFullYear() : date.getFullYear(),
-      month: Internal.Settings.isUTCTimestamps ? date.getUTCMonth() + 1 : date.getMonth() + 1,
-      day: Internal.Settings.isUTCTimestamps ? date.getUTCDate() : date.getDate(),
-      hour: Internal.Settings.isUTCTimestamps ? date.getUTCHours() : date.getHours(),
-      minute: Internal.Settings.isUTCTimestamps ? date.getUTCMinutes() : date.getMinutes(),
-      second: Internal.Settings.isUTCTimestamps ? date.getUTCSeconds() : date.getSeconds(),
-      ms: Internal.Settings.isUTCTimestamps ? date.getUTCMilliseconds() : date.getMilliseconds(),
-    }
-
-    return formatStr
-      .replace('yyyy', getters.year.toString())
-      .replace('MM', pad(getters.month))
-      .replace('dd', pad(getters.day))
-      .replace('HH', pad(getters.hour))
-      .replace('mm', pad(getters.minute))
-      .replace('ss', pad(getters.second))
-      .replace('SSS', pad(getters.ms, 3))
-  };
-
-  const getDate = (value: number) => {
-    Internal.Settings.isUTCTimestamps
-    try {
-      const date = new Date(value)
-      return format(date, 'yyyy.MM.dd HH:mm:ss SSS')
-    } catch (error) {
-      Logger.error(
-        `Invalid time value. Expected number | string | Date, got ${value}`,
-        'Timestamp',
-      )
-      return ''
-    }
-  }
 
   const you: Pointers.Pointer = {
     ...self,
@@ -110,7 +71,7 @@ export function Pointers({
           >
             <Icon name="Gps" color={p.color} fill={p.color} />
             <p style={{ background: p.color }}>
-              {p.id} {isYours ? `on ${getDate(timestamp)}ms` : null}
+              {p.id} {isYours ? `on ${formatTimestampToReadableString(timestamp)}ms` : null}
             </p>
           </Stack>
         )
