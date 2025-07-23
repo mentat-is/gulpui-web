@@ -43,12 +43,12 @@ export namespace NotePoint {
         style={{ ...style, color: note.color, background: stringToHexColor(note.context_id) + '80' }}
         {...props}
       >
+        <p>{formatTimestampToReadableString(note.doc['@timestamp'])}</p>
         <Icon name={Note.icon(note)} />
         <p>{note.name}</p>
         <span>{note.text}</span>
         <Stack className={s.badge_wrapper}>
           <Badge size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />
-          <Badge size='sm' value={formatTimestampToReadableString(note.doc['@timestamp'])} variant='inverted' />
           {note.tags.map(t => <Badge size='sm' value={t} icon={isTagAreSeverityIndicator(t) ? NotePoint.getIconFromNoteSeverity(note) : undefined} variant={isTagAreSeverityIndicator(t) ? NotePoint.getColorFromNoteSeverity(note) as Badge.Variant : 'gray-subtle'} />)}
         </Stack>
 

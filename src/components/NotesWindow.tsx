@@ -27,7 +27,8 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
         n.name.toLowerCase().includes(searchLower) ||
         n.text.toLowerCase().includes(searchLower) ||
         File.id(app, n.source_id).name.toLowerCase().includes(searchLower) ||
-        Context.id(app, n.context_id).name.toLowerCase().includes(searchLower)
+        Context.id(app, n.context_id).name.toLowerCase().includes(searchLower) ||
+        n.tags.some(t => t.toLowerCase() === searchLower)
       )
     }) : app.target.notes;
 
