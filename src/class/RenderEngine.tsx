@@ -133,8 +133,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public lines = (file: λFile) => {
-    this.ctx.textRendering = 'optimizeLegibility';
-
     const color = stringToHexColor(file.context_id)
     const y = File.getHeight(this.info.app, file, this.scrollY)
 
