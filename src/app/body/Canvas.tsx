@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context'
 import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { UIEventHandler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import s from './styles/Canvas.module.css'
 import { useMagnifier } from '@/dto/useMagnifier'
 import { Magnifier } from '@/ui/Magnifier'
@@ -33,7 +33,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const canvas_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
-  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, Info, dialog, highlightsOverlay } = useApplication()
+  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, setScrollY, Info, dialog, highlightsOverlay } = useApplication()
   const [target, setTarget] = useState<λFile | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, [
@@ -368,7 +368,45 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
 
     return <TargetMenu file={target} />
-  }, [target])
+  }, [target]);
+
+  const totalHeight = useMemo(() => {
+    if (!canvas_ref.current) {
+      return 1920;
+    }
+    const files = File.selected(app);
+    const amount = files.length;
+
+    return (canvas_ref.current.height * 2) + (amount * 48) - 80;
+  }, [app.target.files, app.timeline.filter, canvas_ref]);
+
+  const scrollbar = useRef<HTMLDivElement>(null);
+  const isManualScroll = useRef(false);
+  const isProgramScroll = useRef(false);
+
+  const scrollBarEventHandler = useCallback((a: React.UIEvent<HTMLDivElement>) => {
+    if (isProgramScroll.current) {
+      isProgramScroll.current = false;
+      return;
+    }
+    setScrollY(a.currentTarget.scrollTop - (canvas_ref.current?.height ?? 0));
+    isManualScroll.current = true;
+  }, [canvas_ref, setScrollY]);
+
+  useLayoutEffect(() => {
+    if (isManualScroll.current || !scrollbar.current || !canvas_ref.current) {
+      isManualScroll.current = false;
+      return;
+    };
+
+    const newScrollTop = scrollY + (canvas_ref.current.height ?? 0);
+
+    scrollbar.current.scroll({
+      behavior: 'instant',
+      top: newScrollTop,
+    });
+    isProgramScroll.current = true;
+  }, [scrollY, canvas_ref]);
 
   return (
     <ContextMenu>
@@ -406,6 +444,9 @@ export function Canvas({ timeline }: Canvas.Props) {
           mousePosition={mousePosition}
           isVisible={isAltPressed}
         />
+        <Stack ref={scrollbar} className={s.scrollbar} pos='absolute' ai='flex-start' jc='flex-start' onScroll={scrollBarEventHandler}>
+          <Stack style={{ height: totalHeight }} pos='relative' />
+        </Stack>
         {highlightsOverlay}
       </ContextMenuTrigger>
       <Menu />

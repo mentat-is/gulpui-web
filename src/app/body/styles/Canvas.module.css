@@ -40,3 +40,22 @@
 .no_cursor aria-pointers {
   display: none !important;
 }
+.scrollbar {
+  opacity: 0;
+  cursor: pointer;
+  overflow: scroll;
+  top: 32px;
+  right: 8px;
+  border-radius: 8px;
+  height: calc(100% - 42px);
+  background: var(--geist-background);
+  border: var(--geist-border);
+  backdrop-filter: blur(2px) brightness(0.5);
+  transition: all 0.125s var(--transition);
+}
+.scrollbar:hover {
+  opacity: 1;
+}
+.scrollbar > div {
+  width: 1px;
+}

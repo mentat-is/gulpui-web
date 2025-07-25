@@ -2215,7 +2215,7 @@ export class Info implements InfoProps {
           });
         } else {
           toast.success(`Sigma query finished: ${m.data.name}`, {
-            description: `Total processed documents: ${m.data.total_hits ?? 0}`,
+            description: `Total matches: ${m.data.total_hits ?? 0}`,
             icon: <Icon name='Sigma' />
           });
         }
