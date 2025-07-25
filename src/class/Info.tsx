@@ -1284,9 +1284,7 @@ export class Info implements InfoProps {
   events_add = (newEvents: λEvent[], addTo?: λFile['id']) => {
     const events = addTo ? Event.addTo(this.app, addTo, newEvents) : Event.add(this.app, newEvents)
 
-    this.app.target.events = events
-
-    this.setInfo(this.app)
+    this.setInfoByKey(events, 'target', 'events');
   }
 
   event_keys = async (file: λFile): Promise<FilterOptions> => {
@@ -2028,12 +2026,13 @@ export class Info implements InfoProps {
     return user;
   }
 
-  setTimelineScale = (scale: number) =>
-    this.setInfoByKey(
+  setTimelineScale = (scale: number) => {
+    return this.setInfoByKey(
       Math.max(0.01, Math.min(9999999, scale)),
       'timeline',
-      'scale',
+      'scale'
     )
+  }
 
   setTimelineTarget = (event?: λEvent | null | 1 | -1): λEvent => {
     const { target } = this.app.timeline

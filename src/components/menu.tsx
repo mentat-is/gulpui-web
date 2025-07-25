@@ -14,6 +14,7 @@ import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
 import { File } from '@/class/Info'
+import { Debug } from '@/banners/Debug.banner'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -82,6 +83,12 @@ export function Menu() {
         onClick={enrichment}
       />
       <Stack flex />
+      <Button
+        variant="secondary"
+        title="Manage Permissions"
+        img="UserSettings"
+        onClick={() => spawnBanner(<Debug.Banner />)}
+      />
       <Button
         className={s.requests}
         variant="secondary"

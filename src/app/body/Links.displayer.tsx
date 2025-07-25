@@ -8,8 +8,6 @@ interface LinksDisplayerProps {
   getPixelPosition: (num: number) => number
 }
 
-type LinkMapping = Record<λLink['id'], { left: number; top: number }>
-
 export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
   const { app, scrollY } = useApplication()
 
