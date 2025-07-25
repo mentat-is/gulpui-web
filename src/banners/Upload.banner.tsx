@@ -542,7 +542,7 @@ export function UploadBanner() {
 
   return (
     <Banner
-      title="Injest files"
+      title="Ingest files"
       done={DoneButton}>
       <Stack dir='column' ai='stretch'>
         {newContext ? (

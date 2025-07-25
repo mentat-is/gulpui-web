@@ -11,3 +11,20 @@
   height: 18px;
   width: 18px;
 }
+.relative {
+  position: relative;
+}
+.file_counter {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translate(33.3%, 33.3%);
+  min-width: 20px;
+  max-width: 20px;
+  min-height: 20px;
+  max-height: 20px;
+  padding: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  pointer-events: none;
+}

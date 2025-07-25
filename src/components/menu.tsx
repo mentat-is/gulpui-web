@@ -13,6 +13,7 @@ import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
+import { File } from '@/class/Info'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -54,10 +55,13 @@ export function Menu() {
       />
       <Button
         variant="secondary"
+        className={s.relative}
         title="Select files and contexts"
         img="FileStack"
         onClick={() => spawnBanner(<SelectFiles.Banner />)}
-      />
+      >
+        <Button className={s.file_counter} size='sm' variant='secondary'>{File.selected(app).length}</Button>
+      </Button>
       <Button
         variant="secondary"
         title="Change workflow frame"

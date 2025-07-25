@@ -1223,7 +1223,6 @@ export class Info implements InfoProps {
 
       const all = File.events(this.app, file.id);
 
-
       const exist = this.app.target.files.findIndex(f => f.id === file.id);
 
       this.app.target.files[exist] = {
@@ -1244,7 +1243,10 @@ export class Info implements InfoProps {
 
       if (m.data.last) {
         this.delLoading(m.req_id);
-        FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid)
+        FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+        toast.success(`Source ${file.name} has been ingested successfully`, {
+          description: `Total amount of documents is: ${File.events(this.app, file.id).length}`
+        });
       }
     })
 
