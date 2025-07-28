@@ -65,7 +65,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
 
   const option = (
     <Button
-      onClick={() => spawnBanner(<FilterFileBanner file={file} />)}
+      onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)}
       variant="secondary"
       img="Filter"
     />

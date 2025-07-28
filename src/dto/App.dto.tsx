@@ -52,9 +52,8 @@ export interface λApp {
     filter: string
     cache: {
       data: Map<μ.File, λEvent[]>
-      filters: Record<λFile['id'], λFilter[]>
+      filters: Record<λFile['id'], λQuery>
     }
-    filtering_options: Record<μ.File, FilterOptions>
     isScrollReversed: boolean
     dialogSize: number
     hidden_notes: boolean
@@ -88,7 +87,6 @@ export const BaseInfo: λApp = {
       min: 0,
       max: Date.now(),
     },
-    filtering_options: {},
     isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
     hidden_notes: false,

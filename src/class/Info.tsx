@@ -15,7 +15,7 @@ import {
 } from '@/dto/Dataset'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { generateUUID, getSortOrder, Gradients, NodeFile } from '@/ui/utils'
+import { generateUUID, getSortOrder, Gradients, NodeFile, Refractor } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
@@ -27,7 +27,6 @@ import { Glyph } from '@/ui/Glyph'
 import { Icon } from '@impactium/icons'
 import { Permissions } from '@/banners/Permissions.banner'
 import { toast } from 'sonner'
-import { OpenSearchQueryBuilder } from '@/banners/FilterFile.banner'
 import { Pointers } from '@/components/Pointers'
 import { XY } from '@/dto/XY.dto'
 import { Badge, Spinner } from '@impactium/components'
@@ -35,6 +34,7 @@ import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 import { RenderEngine } from './RenderEngine'
 import { FuckSocket } from './FuckSocket'
+import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -482,19 +482,6 @@ export class Info implements InfoProps {
 
   }
 
-  setTimelineFilteringoptions = (
-    file: λFile | λFile['id'],
-    options: FilterOptions,
-  ) =>
-    this.setInfoByKey(
-      {
-        ...this.app.timeline.filtering_options,
-        [Parser.useUUID(file)]: options,
-      },
-      'timeline',
-      'filtering_options',
-    )
-
   refetch = async ({
     ids: _ids = File.selected(this.app).map((f) => f.id),
     refetchKeys
@@ -515,7 +502,7 @@ export class Info implements InfoProps {
     this.highlights_reload()
 
     files.forEach((file) => {
-      const query = this.getQuery(file.id);
+      const query = this.getQuery(file);
 
       this.query_file(query, {
         id: file.id,
@@ -820,12 +807,9 @@ export class Info implements InfoProps {
     return queries;
   });
 
-  preview_file = (file: λFile) => {
-    const query = this.getQuery(file.id);
-    return this.query_file(query, {
-      preview: true
-    });
-  }
+  preview_file = (file: λFile, query = this.getQuery(file)) => this.query_file(query, { preview: true });
+
+  preview_query = (query: λQuery) => this.query_file(query, { preview: true });
 
   request_add = (req: λRequest) => {
     const exist = this.app.general.requests.findIndex(r => r.id === req.id);
@@ -843,48 +827,38 @@ export class Info implements InfoProps {
     query: { req_id_to_cancel },
   });
 
-  filters_cache = (file: λFile | μ.File) => {
-    Logger.log(
-      `Caching has been requested for file ${File.id(this.app, file).name}`,
-      Info,
-    )
+  filters_cache = (files: Array<λFile | μ.File>) => {
+    files.forEach(file => {
+      const id = Parser.useUUID(file) as μ.File
 
-    const id = Parser.useUUID(file) as μ.File
-    this.setInfoByKey(
-      {
-        data: this.app.timeline.cache.data.set(
-          id,
-          this.app.target.events.get(id) || [],
-        ),
-        filters: {
-          ...this.app.timeline.cache.filters,
-          [id]: this.app.target.filters[id],
-        },
-      },
-      'timeline',
-      'cache',
-    )
+      Logger.log(`Caching has been requested for files ${File.id(this.app, file).name}`, Info);
 
-    this.render()
+      this.app.timeline.cache.data.set(id, this.app.target.events.get(id) || []);
+      this.app.timeline.cache.filters[id] = this.app.target.filters[id];
+    })
+
+
+    this.setInfoByKey(this.app.timeline.cache, 'timeline', 'cache');
+    this.render();
   }
 
-  filters_undo = (file: λFile | μ.File) => {
-    const id = Parser.useUUID(file) as μ.File
+  filters_undo = (files: Array<λFile | μ.File>) => {
+    files.forEach(file => {
+      const id = Parser.useUUID(file) as μ.File;
 
-    this.setInfoByKey(
-      {
+      this.app.target.filters = {
         ...this.app.target.filters,
         [id]: this.app.timeline.cache.filters[id],
-      },
-      'target',
-      'filters',
-    )
+      }
 
-    this.app.target.events.delete(id)
-    this.app.target.events.set(id, this.app.timeline.cache.data.get(id) || [])
+      this.app.target.events.delete(id);
+      this.app.target.events.set(id, this.app.timeline.cache.data.get(id) || []);
 
-    this.setInfoByKey(this.app.target.events, 'target', 'events')
-    this.filters_delete_cache(file)
+      this.filters_delete_cache(file);
+    })
+
+    this.setInfoByKey(this.app.target.filters, 'target', 'filters');
+    this.setInfoByKey(this.app.target.events, 'target', 'events');
     this.render()
   }
 
@@ -2099,50 +2073,32 @@ export class Info implements InfoProps {
     })
   }
 
-  setQuery = (id: λFile['id'], query: λQuery): void =>
-    this.setInfoByKey(
-      { ...this.app.target.filters, [id]: query },
-      'target',
-      'filters',
-    )
-  setFilters = (id: λFile['id'], filters: λFilter[]): void =>
-    this.setInfoByKey(
-      {
-        ...this.app.target.filters,
-        [id]: {
-          string: this.app.target.filters[id].string,
-          filters,
-        },
-      },
-      'target',
-      'filters',
-    )
-  setQueryString = (id: λFile['id'], string: string): void =>
-    this.setInfoByKey(
-      {
-        ...this.app.target.filters,
-        [id]: {
-          filters: this.app.target.filters[id].filters,
-          string,
-        },
-      },
-      'target',
-      'filters',
-    )
-  getQuery = (id: λFile['id']): λQuery => {
-    const query = this.app.target.filters[id]
+  setQuery = (file: Arrayed<λFile>, query: λQuery): void => {
+    const files = Parser.array(file);
+
+    files.forEach(file => {
+      this.app.target.filters[file.id] = {
+        string: query.string || Filter.base(file),
+        filters: query.filters
+      };
+    });
+
+    this.setInfoByKey(Refractor.object(this.app.target.filters), 'target', 'filters');
+  }
+
+  getQuery = (file: λFile): λQuery => {
+    const query = this.app.target.filters[file.id];
 
     if (!query) {
-      const q = Filter.default(this.app, id)
+      const q = Filter.default(this.app, file.id)
 
-      this.setQuery(id, q)
+      this.setQuery(file, q);
 
       return q
     }
 
     return query
   }
-
 
   filters_remove = (file: λFile | λFile['id']) => {
     this.app.target.filters[Parser.useUUID(file) as λFile['id']] = Filter.default(this.app, file);
@@ -2246,7 +2202,7 @@ export class Info implements InfoProps {
     )
   }
 
-  private setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(
+  setInfoByKey = <K extends keyof λApp, S extends keyof λApp[K]>(
     value: λApp[K][S],
     section: K,
     key: S,
@@ -2628,7 +2584,11 @@ export class Filter {
   private static quotes = (str: string) =>
     str.includes(' ') ? `"${str}"` : str
 
-  public static base = (file: λFile, range?: MinMax) => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
+  public static base = (files: Arrayed<λFile>, range?: MinMax) => Parser.array(files)
+    .map(file => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
+    )
+    .reduce((acc, clause) => acc ? `(${acc} OR ${clause})` : clause, '');
+
 
   public static default = (app: λApp, file: λFile | λFile['id'], range?: MinMax): λQuery => {
     const id = typeof file === 'object' ? file.id : file;

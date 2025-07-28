@@ -407,6 +407,13 @@ export class Refractor {
       }
     }
   }
+
+  /**
+   * Use this function to trigger react dependents rendering that uses this object
+   * @param obj Object
+   * @returns Object
+   */
+  public static object = <T extends object>(obj: T) => JSON.parse(JSON.stringify(obj)) as T;
 }
 
 export interface RGB {

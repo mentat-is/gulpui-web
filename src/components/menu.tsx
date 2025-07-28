@@ -15,6 +15,7 @@ import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
 import { File } from '@/class/Info'
 import { Debug } from '@/banners/Debug.banner'
+import { FilterFileBanner } from '@/banners/FilterFile.banner'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -74,6 +75,12 @@ export function Menu() {
         title="Global query"
         img="Globe"
         onClick={() => spawnBanner(<GlobalQuery.Banner />)}
+      />
+      <Button
+        variant="secondary"
+        title="Apply filters"
+        img="Filter"
+        onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
       />
       <Extension.Components type='menu' />
       <Button

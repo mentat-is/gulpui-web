@@ -106,7 +106,7 @@ export namespace Frame {
           label={type === 'min' ? 'From' : 'To'}
           valid={type === 'min' ? isMinValid : isMaxValid}
           value={new Date(frame[type]).toISOString()}
-          img="CalendarCog"
+          img="Calendar"
           variant="highlighted"
           onChange={(e) => handleDateChange(type, e.target.value)}
           placeholder="Enter date in ISO format"

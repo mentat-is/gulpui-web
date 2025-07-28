@@ -102,14 +102,14 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner file={file} />)} img='Filter'>
+        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)} img='Filter'>
           Manage filters
         </ContextMenuItem>
         <ContextMenuItem onClick={() => removeFilters(file)} img="X">
           Reset filters
         </ContextMenuItem>
         {app.timeline.cache.data.has(file.id) && (
-          <ContextMenuItem onClick={() => Info.filters_undo(file)} img="Undo">
+          <ContextMenuItem onClick={() => Info.filters_undo([file])} img="Undo">
             Undo last filters change
           </ContextMenuItem>
         )}

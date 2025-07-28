@@ -21,7 +21,7 @@
   font-size: 12px;
 }
 .branch {
-  padding: 16px;
+  padding: 8px;
   background: var(--meta-black);
   border: 1px solid var(--gray-400);
   border-radius: 6px;
@@ -46,10 +46,8 @@
   flex: 1;
 }
 .separator {
-  width: calc(100% + 32px);
-  left: -16px;
-  margin-top: 8px;
-  margin-bottom: 8px;
+  width: calc(100% + 16px);
+  left: -8px;
   position: relative;
 }
 .smallButton {
@@ -62,4 +60,9 @@
 .smallButton svg {
   height: 10px;
   width: 10px;
+}
+.amount {
+  border-radius: 4px !important;
+  background-color: var(--soft-black);
+  border: 1px solid var(--gray-400);
 }

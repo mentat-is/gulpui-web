@@ -108,7 +108,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return;
     }
 
-    const { filters } = Info.getQuery(event['gulp.source_id']);
+    const file = File.id(app, event['gulp.source_id']);
+
+    const { filters } = Info.getQuery(file);
 
     const object = toKeyValue(selection);
 
@@ -126,11 +128,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       enabled: true
     }));
 
-    Info.setFilters(event['gulp.source_id'], [...filters, ...newFilters]);
+    Info.setQuery(file, {
+      ...Info.getQuery(file),
+      filters: [...filters, ...newFilters]
+    });
 
     toast(`Has been added ${newFilters.length} new filters`)
 
-    spawnBanner(<FilterFileBanner file={file} />);
+    spawnBanner(<FilterFileBanner files={[file]} />);
   }, [selection, Info, event, toKeyValue, spawnBanner, file]);
 
   const highlights = useMemo(() => {

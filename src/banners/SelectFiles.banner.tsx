@@ -201,12 +201,12 @@ function FileComponent({ file }: { file: λFile }) {
       />
       <Label value={file.name} />
       {FileIsTooBig}
-      <Badge size='sm' variant='gray-subtle' value={file.total.toString()} />
+      <Badge size='sm' className={s.amount} variant='gray-subtle' value={file.total.toString()} />
       <Button
         img='Filter'
         variant='secondary'
         className={s.smallButton}
-        onClick={() => spawnBanner(<FilterFileBanner file={file} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)}
+        onClick={() => spawnBanner(<FilterFileBanner files={[file]} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)}
       />
       <Button
         img='PreviewEye'

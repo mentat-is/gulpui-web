@@ -1,0 +1,18 @@
+.list {
+  list-style: auto;
+  list-style-position: inside;
+  font-family: var(--font-mono); 
+}
+.list li {
+  line-height: 20px;
+}
+.list li kbd {
+  margin: 0 2px;
+}
+.list li::marker {
+  font-family: var(--font-mono);
+  width: 12px;
+}
+.list li:not(:first-child) {
+  margin-top: 8px;
+}

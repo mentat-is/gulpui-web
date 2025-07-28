@@ -2,8 +2,13 @@ import { HTMLAttributes } from 'react';
 import s from './styles/Keyboard.module.css';
 import { cn } from '@impactium/utils';
 
-export function Keyboard({ meta, shift, alt, ctrl, plus, command, className, ...props }: Keyboard.Props) {
+export function Keyboard({ meta, shift, alt, ctrl, plus, command, className, children, ...props }: Keyboard.Props) {
   const keys = Keyboard.get({ meta, shift, alt, ctrl, command });
+
+  if (children) {
+    keys.push(children.toString() as typeof Keyboard.Keys[Keyboard.Key]);
+  }
+
   return (
     <kbd className={cn(className, s.kbd)} {...props}>
       {keys.map((key, i) => (

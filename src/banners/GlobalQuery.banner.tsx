@@ -3,15 +3,14 @@ import { useApplication } from '@/context/Application.context';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Button, Input, Stack } from '@impactium/components';
 import { ChangeEvent, useCallback, useMemo, useState } from 'react';
-import { OpenSearchQueryBuilder } from './FilterFile.banner';
 import { Separator } from '@/ui/Separator';
-import s from './styles/GlobalQueryBanner.module.css';
 import { Preview } from './Preview.banner';
 import { Notification } from '@/ui/Notification';
 import { λDoc } from '@/dto/ChunkEvent.dto';
 import { λFile } from '@/dto/Dataset';
 import { Checkbox } from '@/ui/Checkbox';
 import { Label } from '@/ui/Label';
+import { OpenSearchQueryBuilder } from '@/components/QueryBuilder';
 
 export namespace GlobalQuery {
   export namespace Banner {
