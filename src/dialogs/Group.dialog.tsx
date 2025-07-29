@@ -21,12 +21,12 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const virtualizer = useVirtualizer({
     count: events.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 32 + 8,
+    estimateSize: () => 32 + 12,
     overscan: 5,
   });
 
   const renderEvent = (event: λEvent) => (
-    <Stack className={s.event} key={event._id} style={{ flexShrink: 0, height: 32 }}>
+    <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
       <EventIndicator event={event} />
       <Stack
         dir="column"
@@ -41,14 +41,6 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
           {`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}
         </span>
       </Stack>
-      <Button
-        variant="secondary"
-        onClick={() => spawnDialog(<DisplayEventDialog event={event} />)}
-        revert
-        size='sm'
-      >
-        View
-      </Button>
     </Stack>
   )
 

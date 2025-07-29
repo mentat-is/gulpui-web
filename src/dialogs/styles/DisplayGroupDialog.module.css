@@ -1,5 +1,13 @@
 .event {
   width: 100%;
+  padding: 3px;
+  border: 1px solid var(--meta-black);
+  border-radius: 4px;
+  transition: all 0.125s var(--transition);
+}
+.event:hover {
+  background: var(--gray-200);
+  border-color: var(--gray-400);
 }
 .info {
   overflow: hidden;
