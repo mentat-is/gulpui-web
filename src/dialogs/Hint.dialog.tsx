@@ -20,6 +20,7 @@ export namespace Hint {
           <li>Press <Keyboard meta /> to toggle timeline magnifier</li>
           <li>Hold <Keyboard>Alt</Keyboard> or <Keyboard alt /> and select frame on timeline using mouse</li>
           <li>Press <Keyboard>Esc</Keyboard> when banner is open to close it</li>
+          <li>Press <Keyboard>A</Keyboard> or <Keyboard>D</Keyboard> when event is open to go forward or backward</li>
         </ul>
       </UIDialog>
 

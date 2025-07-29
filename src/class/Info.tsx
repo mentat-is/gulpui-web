@@ -1211,6 +1211,10 @@ export class Info implements InfoProps {
           min: all[all.length - 1].timestamp,
           max: all[0].timestamp
         },
+        nanotimestamp: {
+          min: Internal.Transformator.toNanos(all[all.length - 1].timestamp),
+          max: Internal.Transformator.toNanos(all[0].timestamp)
+        },
         total: all.length
       }
 

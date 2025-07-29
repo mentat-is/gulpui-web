@@ -161,7 +161,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       if (target) {
         spawnDialog(<DisplayEventDialog event={target} />)
       } else {
-        toast(`Cannot open ${delta > 0 ? 'next' : 'previous'} event`)
+        toast(`Cannot open ${delta > 0 ? 'previous' : 'next'} event`)
       }
     } else if (key === 'end') {
       event.preventDefault()

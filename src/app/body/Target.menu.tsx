@@ -50,7 +50,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
   }
 
   const showEvent = (last = false) => {
-    const event = last ? events[0] : events.pop();
+    const event = last ? events[0] : events[events.length - 1];
 
     if (!event) {
       return;
