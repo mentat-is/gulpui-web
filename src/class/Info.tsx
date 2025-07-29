@@ -3,7 +3,6 @@ import {
   λOperation,
   λContext,
   λFile,
-  OperationTree,
   ΞSettings,
   λLink,
   λNote,
@@ -87,14 +86,14 @@ export namespace GulpDataset {
       sources: Source[]
     }
 
-    interface Source {
+    export interface Source {
       name: string
       id: λFile['id']
       doc_count: number
       'max_event.code': number
       'min_event.code': number
-      'min_gulp.timestamp': number
-      'max_gulp.timestamp': number
+      'min_gulp.timestamp': bigint
+      'max_gulp.timestamp': bigint
     }
 
     export type Summary = Operation[]
@@ -641,9 +640,7 @@ export class Info implements InfoProps {
 
     const context: λContext = {
       id: context_id,
-      files: [file.id],
       color: '#00ff00',
-      description: '',
       glyph_id: null as unknown as λGlyph['id'],
       granted_user_group_ids: [],
       granted_user_ids: [],
@@ -652,7 +649,8 @@ export class Info implements InfoProps {
       time_created: Date.now(),
       time_updated: Date.now(),
       type: 'context',
-      selected: true
+      selected: true,
+      owner_user_id: this.app.general.user?.id!
     }
 
     this.setInfo(info => ({
@@ -1173,24 +1171,9 @@ export class Info implements InfoProps {
     FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
       this.setLoading(m.req_id, m.data.data.id);
 
-      const timestamp = {
-        min: Date.now() - 1,
-        max: Date.now()
-      };
+      this.app.target.files = [...this.app.target.files, File.normalize(this.app, m.data.data)]
 
-      this.app.target.files.push({
-        ...m.data.data,
-        selected: true,
-        settings: Internal.Settings.all(),
-        total: 0,
-        timestamp,
-        nanotimestamp: {
-          min: Internal.Transformator.toNanos(timestamp.min),
-          max: Internal.Transformator.toNanos(timestamp.max)
-        }
-      });
-
-      this.setInfo(this.app);
+      this.setInfoByKey(this.app.target.files, 'target', 'files');
     })
 
     const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
@@ -1230,6 +1213,7 @@ export class Info implements InfoProps {
 
       if (m.data.last) {
         this.delLoading(m.req_id);
+        this.syncFile(file.id);
         FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         toast.success(`Source ${file.name} has been ingested successfully`, {
           description: `Total amount of documents is: ${File.events(this.app, file.id).length}`
@@ -1560,23 +1544,21 @@ export class Info implements InfoProps {
     color: string,
     events: λEvent['_id'][],
     description: string
-  }) => {
-    return api('/link_update', {
-      method: 'PATCH',
-      query: {
-        obj_id,
-        name,
-        color,
-        glyph_id,
-        ws_id: this.app.general.ws_id,
-        description
-      },
-      toast: `Link ${name} has been updated successfully`,
-      body: {
-        doc_ids: events
-      },
-    }).then(this.links_reload);
-  }
+  }) => api('/link_update', {
+    method: 'PATCH',
+    query: {
+      obj_id,
+      name,
+      color,
+      glyph_id,
+      ws_id: this.app.general.ws_id,
+      description
+    },
+    toast: `Link ${name} has been updated successfully`,
+    body: {
+      doc_ids: events
+    },
+  }).then(this.links_reload)
 
   links_connect = (link: λLink, event: λEvent) => {
     return api<λLink>('/link_update', {
@@ -1840,88 +1822,65 @@ export class Info implements InfoProps {
   };
 
   sync = async () => {
-    const operations: λOperation[] = []
-    const contexts: λContext[] = []
-    const files: λFile[] = []
-
     await this.mapping_file_list()
 
-    const details = await api<GulpDataset.QueryOperations.Summary>(
-      '/query_operations',
-    )
-      .then((raw) =>
-        raw
-          .map((o) => o.contexts.map((c) => c.plugins.map((p) => p.sources)))
-          .flat(3),
-      )
-      .then((sources) =>
-        sources.map((source) => ({
-          id: source.id,
-          name: source.name,
-          total: source.doc_count,
-          code: {
-            min: source['min_event.code'],
-            max: source['max_event.code'],
-          },
-          timestamp: {
-            min: source['min_gulp.timestamp'] / 1000000,
-            max: Math.max(
-              source['max_gulp.timestamp'] / 1000000,
-              source['min_gulp.timestamp'] / 1000000 + 1
-            ),
-          },
-          nanotimestamp: {
-            min: BigInt(source['min_gulp.timestamp']),
-            max: BigInt(source['max_gulp.timestamp']),
-          },
-        })),
-      )
+    const operations = await api<λOperation[]>('/operation_list', {
+      method: 'POST'
+    }).then(operations => operations.map(operation => {
+      // @ts-ignore
+      delete operation.contexts;
+      // @ts-ignore
+      delete operation.operation_data;
 
-    const rawOperations = await api<OperationTree[]>('/operation_list', {
-      method: 'POST',
-      query: {},
-    })
+      operation.selected = false;
 
-    rawOperations.forEach((rawOperation: OperationTree) => {
-      const exist = Operation.id(this.app, rawOperation.id)
+      return operation;
+    }));
 
-      const operation: λOperation = {
-        ...rawOperation,
-        selected: exist?.selected ?? false,
-        contexts: rawOperation.contexts.map((rawContext) => {
-          const context: λContext = {
-            ...rawContext,
-            selected: Context.id(this.app, rawContext.id)?.selected ?? false,
-            files: rawContext.sources.map((rawFile) => {
-              const file: λFile = {
-                ...rawFile,
-                // @ts-ignore
-                color: Internal.Settings.color,
-                // @ts-ignore
-                settings: Internal.Settings.all(),
-                ...{
-                  total: 0,
-                  code: MinMaxBase,
-                  timestamp: MinMaxBase,
-                  nanotimestamp: {
-                    min: BigInt(0),
-                    max: BigInt(0),
-                  },
-                },
-                ...File.id(this.app, rawFile.id),
-                ...details.find((f) => f.id === rawFile.id),
-                selected: File.id(this.app, rawFile.id)?.selected ?? false,
-              }
-              files.push(file)
-              return file.id
-            }),
-          }
-          contexts.push(context)
-          return context.id
-        }),
+    const contexts = await Promise.all(operations.map(operation => api<λContext[]>('/context_list', { query: { operation_id: operation.id } }))).then(contexts => contexts.flat().map(context => {
+      // @ts-ignore
+      delete context.sources;
+
+      context.selected = false;
+
+      return context;
+    }));
+
+    const detailedFileInformation = await this.getDetails()
+
+    const files = await Promise.all(contexts.map(context => api<λFile[]>('/source_list', { query: { operation_id: context.operation_id, context_id: context.id } }))).then(files => files.flat().map(file => {
+      // @ts-ignore
+      delete file.mapping_parameters;
+      // @ts-ignore
+      delete file.color;
+
+      const exist = File.id(this.app, file.id);
+
+      const defaultFileSettings = Internal.Settings.all();
+
+      file.selected = false;
+      file.pinned = false;
+      file.settings = exist ? exist.settings ?? defaultFileSettings : defaultFileSettings;
+
+      const details = detailedFileInformation.find(details => details.id === file.id);
+      if (!details) {
+        Logger.fatal('No detailed information for file has been provided');
       }
-      operations.push(operation)
-    })
+
+      file.nanotimestamp = {
+        min: details['min_gulp.timestamp'],
+        max: details['max_gulp.timestamp']
+      }
+
+      file.timestamp = {
+        min: Math.floor((file.nanotimestamp.min as unknown as number) / 1_000_000),
+        max: Math.round((file.nanotimestamp.max as unknown as number) / 1_000_000)
+      }
+
+      file.total = details.doc_count;
+
+      return file;
+    }));
 
     Logger.log(`${operations.length} operations has been added to application data`, this.sync);
     Logger.log(`${contexts.length} contexts has been added to application data`, this.sync);
@@ -1929,13 +1888,34 @@ export class Info implements InfoProps {
 
     RenderEngine.reset('range');
 
-    this.app.target.operations = operations
-    this.app.target.contexts = contexts
-    this.app.target.files = files
-    this.setInfo(this.app)
+    this.setInfoByKey(operations, 'target', 'operations');
+    this.setInfoByKey(contexts, 'target', 'contexts');
+    this.setInfoByKey(files, 'target', 'files');
 
     return { operations, contexts, files };
   }
+
+  syncFile = (id: λFile['id']) => api<λFile>('/source_get_by_id', {
+    query: { obj_id: id }
+  }).then(async (file) => {
+    const details = await this.getDetails().then(d => d.find(f => f.id === id));
+    if (!details) {
+      Logger.fatal('No detailed information for file has been provided');
+    }
+
+    const normalized = File.normalize(this.app, file, details);
+
+    const exist = this.app.target.files.findIndex(f => f.id === file.id);
+    if (exist >= 0) {
+      this.app.target.files[exist] = normalized;
+    } else {
+      this.app.target.files = [...this.app.target.files, normalized];
+    }
+
+    this.setInfoByKey(this.app.target.files, 'target', 'files');
+  })
+
+  getDetails = () => api<GulpDataset.QueryOperations.Summary>('/query_operations').then(operations => operations.map(operation => operation.contexts.map(context => context.plugins.map(plugin => plugin.sources))).flat(3));
 
   query_single_id = (doc_id: λEvent['_id'], operation_id: λOperation['id']) => {
     return api<λEvent>('/query_single_id', {
@@ -2314,14 +2294,6 @@ export class Context {
   public static findByName = (app: λApp, name: λContext['name']) =>
     Context.selected(app).find((c) => c.name === name)
 
-  public static findByFile = (
-    use: λApp | λContext[],
-    file: λFile | λFile['id'],
-  ): λContext | undefined =>
-    Parser.use(use, 'contexts').find((c) =>
-      c.files.some((p) => p === Parser.useUUID(file)),
-    )
-
   public static select = (
     use: λApp | λContext[],
     selected: Arrayed<λContext | λContext['id']>,
@@ -2464,32 +2436,62 @@ export class File {
     total: number;
     context_id: λContext['id'];
     operation_id: λOperation['id'];
-  }): λFile => {
-    return ({
-      name,
-      id: generateUUID(),
-      timestamp: app.timeline.frame,
-      nanotimestamp: {
-        min: BigInt(Math.round(app.timeline.frame.min)),
-        max: BigInt(Math.round(app.timeline.frame.max)),
-      },
-      settings: Internal.Settings.all(),
-      selected: true,
-      operation_id,
-      context_id,
-      total,
-      type: 'file',
-      color: Internal.Settings.color,
-      description: '',
-      glyph_id: null as unknown as λGlyph['id'],
-      granted_user_group_ids: [],
-      granted_user_ids: [],
-      time_created: Date.now(),
-      time_updated: Date.now(),
-    })
-  }
+  }): λFile => ({
+    name,
+    id: generateUUID(),
+    timestamp: app.timeline.frame,
+    nanotimestamp: {
+      min: BigInt(Math.round(app.timeline.frame.min)),
+      max: BigInt(Math.round(app.timeline.frame.max)),
+    },
+    settings: Internal.Settings.all(),
+    selected: true,
+    operation_id,
+    context_id,
+    total,
+    type: 'source',
+    glyph_id: null as unknown as λGlyph['id'],
+    granted_user_group_ids: [],
+    granted_user_ids: [],
+    time_created: Date.now(),
+    time_updated: Date.now(),
+    plugin: '',
+    owner_user_id: app.general.user?.id!,
+    pinned: false
+  })
 
   public static devirtualize = (app: λApp, file: λFile): λFile[] => file.id.split('-').slice(1).map(id => File.id(app, id as λFile['id'])).filter(f => f);
+
+  public static normalize = (app: λApp, file: λFile, details?: GulpDataset.QueryOperations.Source): λFile => {
+    // @ts-ignore
+    delete file.mapping_parameters;
+    // @ts-ignore
+    delete file.color;
+
+    const exist = File.id(app, file.id);
+
+    const defaultFileSettings = Internal.Settings.all();
+
+    file.selected = exist.selected ?? false;
+    file.pinned = exist.pinned ?? false;
+    file.settings = exist ? exist.settings ?? defaultFileSettings : defaultFileSettings;
+
+    file.nanotimestamp = {
+      // @ts-ignore
+      min: details?.['min_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now() - 1),
+      // @ts-ignore
+      max: details?.['max_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now())
+    }
+
+    file.timestamp = {
+      min: Math.floor((file.nanotimestamp.min as unknown as number) / 1_000_000),
+      max: Math.round((file.nanotimestamp.max as unknown as number) / 1_000_000)
+    }
+
+    file.total = details?.doc_count ?? 0;
+
+    return file;
+  }
 
   public static events = (app: λApp, file: λFile | μ.File): λEvent[] =>
     Event.get(app, Parser.useUUID(file) as μ.File)

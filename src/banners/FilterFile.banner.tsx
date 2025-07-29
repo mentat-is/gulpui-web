@@ -119,26 +119,20 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
 
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
 
-  const previewCurrentFilterButtonClickHandler = async () => {
+  const previewCurrentFilterButtonClickHandler = useCallback(() => {
     setIsPreviewLoading(true);
-    const { docs, total_hits } = await Info.preview_query({
+    Info.preview_query({
       ...query,
       string: Filter.base(files)
+    }).then(({ docs, total_hits }) => {
+      spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner files={files} query={query} keys={[...keys.current]} {...props} />)} />)
+      setIsPreviewLoading(false);
     });
-
-    spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner files={files} query={query} keys={[...keys.current]} {...props} />)} />)
-    setIsPreviewLoading(false);
-  }
+  }, [query, files, keys, setIsPreviewLoading]);
 
   const [lastQueriesList, setLastQueriesList] = useState<λQuery[]>([]);
 
-  const refetchLastQueriesList = () => Info.getLastQueries().then(setLastQueriesList);
-
-  useEffect(() => {
-    if (!lastQueriesList.length) {
-      refetchLastQueriesList();
-    }
-  }, [lastQueriesList]);
+  const refetchLastQueriesList = useCallback(() => Info.getLastQueries().then(setLastQueriesList), [setLastQueriesList]);
 
   const LastQueries = useMemo(() => {
     return (

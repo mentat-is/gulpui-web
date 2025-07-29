@@ -38,7 +38,7 @@ export namespace NoteFunctionality {
       const [color, setColor] = useState<string>(note?.color || '#ffffff')
       const [name, setName] = useState<string>(note?.name || '')
       const [text, setText] = useState<string>(note?.text || '')
-      const [rawTags, setRawTags] = useState<string>(note?.tags.join(', ') ?? '');
+      const [rawTags, setRawTags] = useState<string>(note?.tags ? note.tags.join(', ') : '');
       const [isPrivate, setIsPrivate] = useState<boolean>(false);
       const [icon, setIcon] = useState<λGlyph['id'] | null>(note?.glyph_id || Glyph.List.keys().next().value || null)
       const [loading, setLoading] = useState<boolean>(false)

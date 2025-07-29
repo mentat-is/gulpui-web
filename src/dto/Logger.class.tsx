@@ -49,8 +49,9 @@ export class Logger {
     Logger.store('verbose', message, context)
   }
 
-  static fatal(message: any, context?: ExecutionContext) {
+  static fatal(message: any, context?: ExecutionContext): never {
     Logger.store('fatal', message, context)
+    throw new Error(message);
   }
 
   public static store(

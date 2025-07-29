@@ -423,7 +423,7 @@ export function UploadBanner() {
     (filename: string, update: Partial<FileEntity.Settings>) => {
       setSettings(prev => ({
         ...prev,
-        [filename]: { ...prev[filename], ...update }
+        [filename]: { ...prev[filename], ...update, ...{} }
       }))
     },
     []

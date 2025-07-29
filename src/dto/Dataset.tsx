@@ -38,49 +38,57 @@ export type GulpObject<
   granted_user_group_ids: Array<λGroup['']>
 } & E
 
-type ΞOperation<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
-  μ.Operation,
-  T
-> & {}
-
-export type λOperation = ΞOperation<{
-  contexts: ΞContext['id'][]
-}>
-
-export type OperationTree = ΞOperation<{
-  contexts: ΞContext<{
-    sources: ΞFile[]
-  }>[]
-}>
-
-type ΞContext<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
-  μ.Context,
-  T
-> & {
-  operation_id: λOperation['id']
-  description: string | null
+export interface Selectable {
+  selected: boolean;
 }
 
-export type λContext = ΞContext<{
-  files: λFile['id'][]
-}>
-
-type ΞFile<T extends Extendable = typeof DEFAULT_OBJECT> = GulpObject<
-  μ.File,
-  T
-> & {
-  operation_id: λOperation['id']
-  context_id: ΞContext['id']
-  description: string | null
+export interface λOperation extends Selectable {
+  glyph_id: λGlyph['id']
+  granted_user_group_ids: λUser['id'][]
+  granted_user_ids: string[]
+  id: μ.Operation
+  index: string
+  name: string
+  owner_user_id: λUser['id']
+  time_created: number
+  time_updated: number
+  type: 'operation'
 }
 
-export type λFile = Omit<ΞFile, 'color'> & {
-  pinned?: boolean
+export interface λContext extends Selectable {
+  operation_id: λOperation['id'],
+  color: string,
+  id: μ.Context,
+  type: 'context',
+  owner_user_id: λUser['id'],
+  granted_user_ids: λUser['id'][],
+  granted_user_group_ids: string[],
+  time_created: number,
+  time_updated: number,
+  glyph_id: λGlyph['id'],
+  name: string
+}
+
+export interface λFile extends Selectable {
+  operation_id: λOperation['id'],
+  context_id: λContext['id'],
+  plugin: string,
+  id: μ.File,
+  type: 'source',
+  owner_user_id: λUser['id'],
+  granted_user_ids: string[],
+  granted_user_group_ids: λUser['id'][],
+  time_created: number,
+  time_updated: number,
+  glyph_id: λGlyph['id'],
+  name: string
+  // Client-only params
   settings: Pick<ΞSettings, 'color' | 'engine' | 'field' | 'offset'>
+  pinned: boolean // (false)
+  // Enriched  using /query_operation
   timestamp: MinMax
   nanotimestamp: MinMax<bigint>
   total: number
-  color: Gradients
 }
 
 export interface ΞSettings {

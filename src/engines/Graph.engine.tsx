@@ -33,7 +33,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
       const x = this.renderer.getPixelPosition(timestamp)
       if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue;
       const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
-      const color = λColor.gradient(file.color as Gradients, height, {
+      const color = λColor.gradient(file.settings.color as Gradients, height, {
         min: 0,
         max: maxHeight
       })

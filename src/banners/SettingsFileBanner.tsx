@@ -25,7 +25,7 @@ interface SettingsFileBannerProps {
 
 export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const { Info, app, spawnBanner, destroyBanner } = useApplication()
-  const [color, setColor] = useState<any>(file.color)
+  const [color, setColor] = useState<any>(file.settings.color)
   const [offset, setOffset] = useState<number>(file.settings.offset)
   const [engine, setEngine] = useState<Engine.List>(file.settings.engine)
   const [loading, setLoading] = useState<boolean>(false)
