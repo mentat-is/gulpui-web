@@ -1,8 +1,8 @@
-import { File, Link, Event, Internal } from '@/class/Info'
+import { File, Event } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { λLink } from '@/dto/Dataset'
 import { LinkPoint } from '@/ui/Link'
-import { useMemo, useCallback, Fragment } from 'react'
+import { useMemo, Fragment } from 'react'
 
 interface LinksDisplayerProps {
   getPixelPosition: (num: number) => number

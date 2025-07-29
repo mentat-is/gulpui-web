@@ -80,3 +80,25 @@
 .triggers button svg {
   margin-right: 6px;
 }
+.indicator {
+  border-radius: var(--round);
+  border: 1px solid var(--gray-alpha-500);
+  padding: 0px;
+  overflow: hidden;
+}
+.indicator div {
+  width: 27px;
+  height: 27px;
+  position: absolute;
+  background: var(--geist-background);
+  border: var(--geist-border);
+  border-radius: var(--round);
+  backdrop-filter: brightness(0.75);
+  z-index: 0;
+}
+.indicator p {
+  z-index: 1;
+  font-size: 8px;
+  font-family: var(--font-mono);
+  text-shadow: 0 0 1px var(--gray-400);
+}

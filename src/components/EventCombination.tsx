@@ -1,8 +1,8 @@
-import { SymmetricSvg } from '@/ui/SymmetricSvg'
 import s from './styles/Combination.module.css'
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes, useMemo } from 'react'
 import { cn } from '@impactium/utils'
 import { λEvent } from '@/dto/ChunkEvent.dto'
+import { EventIndicator } from '@/dialogs/Event.dialog'
 
 interface EventCombinationProps extends HTMLAttributes<HTMLDivElement> {
   event: λEvent
@@ -14,9 +14,10 @@ export function EventCombination({
   className,
   ...props
 }: EventCombinationProps) {
+  const icon = useMemo(() => <EventIndicator event={event} />, [event]);
   return (
     <div className={cn(s.unit, className)} {...props}>
-      <SymmetricSvg text={event._id} />
+      {icon}
       <div className={s.text}>
         <p className={s.top}>{event._id}</p>
         <p className={s.bottom}>{event['gulp.source_id']}</p>

@@ -1,12 +1,11 @@
 import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Dialog } from '@/ui/Dialog'
-import { SymmetricSvg } from '@/ui/SymmetricSvg'
 import { Fragment, useEffect, useMemo, useState, useRef, useCallback, memo } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
-import { copy, download, generateUUID } from '@/ui/utils'
+import { copy, download, generateUUID, Refractor, λColor } from '@/ui/utils'
 import { Button, Skeleton, Stack } from '@impactium/components'
-import { Event, File, λFilter } from '@/class/Info'
+import { Event, File, MinMaxBase, λFilter } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
@@ -22,6 +21,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Table } from '@/components/Table'
 import { Markdown } from '@/ui/Markdown'
 import { Icon } from '@impactium/icons'
+import { cn } from '@impactium/utils'
+import { λCache } from '@/class/Engine.dto'
+import { RenderEngine } from '@/class/RenderEngine'
 
 interface DisplayEventDialogProps {
   event: λEvent
@@ -255,9 +257,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
   }, [event]);
 
+  const icon = useMemo(() => <EventIndicator event={event} />, [event]);
+
   return (
     <Dialog
-      icon={<SymmetricSvg text={event._id} />}
+      icon={icon}
       title='Event'
       description={`From ${file.name}`}
     >
@@ -341,4 +345,34 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       )}
     </Dialog>
   )
+}
+
+export namespace EventIndicator {
+  export interface Props extends Button.Props {
+    event: λEvent;
+  }
+}
+
+
+export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
+  const { app } = useApplication();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const background = useMemo(() => {
+    const file = File.id(app, event['gulp.source_id']);
+    const range = RenderEngine[λCache].range.get(event['gulp.source_id']) ?? MinMaxBase;
+    const code = Refractor.any.toNumber(event[file.settings.field]);
+
+    return λColor.gradient(file.settings.color, code, range);
+  }, [event, app.target.files]);
+
+  return (
+    <Button
+      size='icon'
+      className={cn(className, s.indicator)}
+      style={{ ...style, background }} {...props}>
+      <div />
+      <p>{event['gulp.event_code']}</p>
+    </Button>
+  );
 }

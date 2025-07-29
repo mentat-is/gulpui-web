@@ -1,7 +1,6 @@
 import { λDetailedUser, λUser } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { SymmetricSvg } from '@/ui/SymmetricSvg'
 import { Button, Input, Skeleton, Stack } from '@impactium/components'
 import { ChangeEvent, useCallback, useEffect, useState } from 'react'
 import s from './styles/PermissaionsBanner.module.css'
@@ -164,7 +163,7 @@ export namespace Permissions {
 
       return (
         <Stack className={s.combination}>
-          <SymmetricSvg text={user.pwd_hash} />
+          <Icon name={Glyph.List.get(user.glyph_id ?? Glyph.getIdByName('User'))!} />
           <Stack
             className={s.general}
             ai="flex-start"

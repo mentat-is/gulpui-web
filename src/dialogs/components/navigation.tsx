@@ -4,8 +4,7 @@ import { Button, Stack } from '@impactium/components'
 import s from './navigation.module.css'
 import { useEffect, useState } from 'react'
 import { Event, File } from '@/class/Info'
-import { SymmetricSvg } from '@/ui/SymmetricSvg'
-import { DisplayEventDialog } from '../Event.dialog'
+import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
 import { cn } from '@impactium/utils'
 
 export namespace Navigation {
@@ -49,11 +48,11 @@ export function Navigation({ event }: Navigation.Props) {
       />
       <Stack className={s.content} jc="center">
         {events.map((e) => (
-          <SymmetricSvg
+          <EventIndicator
             key={e._id}
             className={cn(e._id === event._id && s.focus)}
             onClick={navigatorEventClickHandlerConstructor(e)}
-            text={e._id}
+            event={e}
           />
         ))}
       </Stack>

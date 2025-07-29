@@ -1,14 +1,11 @@
 import { Button } from '@impactium/components'
 import { Dialog } from '@/ui/Dialog'
 import s from './styles/DisplayGroupDialog.module.css'
-import { SymmetricSvg } from '@/ui/SymmetricSvg'
-import { DisplayEventDialog } from './Event.dialog'
+import { DisplayEventDialog, EventIndicator } from './Event.dialog'
 import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Stack } from '@impactium/components'
 import { format } from 'date-fns'
-import { Internal } from '@/class/Info'
-import { Separator } from '@/ui/Separator'
 import React, { useMemo, useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
@@ -26,11 +23,11 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 32 + 8,
     overscan: 5,
-  })
+  });
 
   const renderEvent = (event: λEvent) => (
     <Stack className={s.event} key={event._id} style={{ flexShrink: 0, height: 32 }}>
-      <SymmetricSvg text={event._id} />
+      <EventIndicator event={event} />
       <Stack
         dir="column"
         jc="space-evenly"
