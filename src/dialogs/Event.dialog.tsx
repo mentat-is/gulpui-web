@@ -387,7 +387,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
       className={cn(className, s.indicator)}
       style={{ ...style, background }} {...props}>
       <hr />
-      <p>{event['gulp.event_code']}</p>
+      <p>{String(event['gulp.event_code']).slice(0, 6)}</p>
       {Collab}
     </Button>
   );

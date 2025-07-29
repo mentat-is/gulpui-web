@@ -1199,21 +1199,24 @@ export class Info implements InfoProps {
       const file = File.id(this.app, events[0]['gulp.source_id']);
 
       this.events_add(events);
-      Event.sort(this.app, file.id);
 
       const all = File.events(this.app, file.id);
 
+      const sorted = Event.sort(all);
+
       const exist = this.app.target.files.findIndex(f => f.id === file.id);
+
+      const timestamp = {
+        min: sorted[sorted.length - 1].timestamp,
+        max: sorted[0].timestamp
+      };
 
       this.app.target.files[exist] = {
         ...file,
-        timestamp: {
-          min: all[all.length - 1].timestamp,
-          max: all[0].timestamp
-        },
+        timestamp,
         nanotimestamp: {
-          min: Internal.Transformator.toNanos(all[all.length - 1].timestamp),
-          max: Internal.Transformator.toNanos(all[0].timestamp)
+          min: Internal.Transformator.toNanos(timestamp.min),
+          max: Internal.Transformator.toNanos(timestamp.max)
         },
         total: all.length
       }
@@ -2661,7 +2664,7 @@ export class Event {
     app.target.events.get(id) ||
     (app.target.events.set(id, []).get(id) as λEvent[])
 
-  public static sort = (app: λApp, id: μ.File) => app.target.events.set(id, app.target.events.get(id)?.sort((a, b) => b.timestamp - a.timestamp) ?? []);
+  public static sort = (events: λEvent[]) => events.sort((a, b) => b.timestamp - a.timestamp);
 
   public static selected = (app: λApp): λEvent[] =>
     File.selected(app)
