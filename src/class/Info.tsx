@@ -1173,14 +1173,20 @@ export class Info implements InfoProps {
     FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
       this.setLoading(m.req_id, m.data.data.id);
 
+      const timestamp = {
+        min: Date.now() - 1,
+        max: Date.now()
+      };
+
       this.app.target.files.push({
         ...m.data.data,
         selected: true,
         settings: Internal.Settings.all(),
         total: 0,
-        timestamp: {
-          min: Date.now() - 1,
-          max: Date.now()
+        timestamp,
+        nanotimestamp: {
+          min: Internal.Transformator.toNanos(timestamp.min),
+          max: Internal.Transformator.toNanos(timestamp.max)
         }
       });
 
@@ -2585,7 +2591,7 @@ export class Filter {
     str.includes(' ') ? `"${str}"` : str
 
   public static base = (files: Arrayed<λFile>, range?: MinMax) => Parser.array(files)
-    .map(file => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp.min} TO ${range?.max ?? file.nanotimestamp.max}])`
+    .map(file => `(gulp.operation_id: ${Filter.quotes(file.operation_id)} AND gulp.context_id: "${Filter.quotes(file.context_id)}" AND gulp.source_id: "${Filter.quotes(file.id)}" AND gulp.timestamp: [${range?.min ?? file.nanotimestamp?.min ?? Internal.Transformator.toNanos(file.timestamp.min)} TO ${range?.max ?? file.nanotimestamp?.max ?? Internal.Transformator.toNanos(file.timestamp.max)}])`
     )
     .reduce((acc, clause) => acc ? `(${acc} OR ${clause})` : clause, '');
 
