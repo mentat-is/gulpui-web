@@ -91,12 +91,6 @@ export function Menu() {
       />
       <Stack flex />
       <Button
-        variant="secondary"
-        title="Manage Permissions"
-        img="UserSettings"
-        onClick={() => spawnBanner(<Debug.Banner />)}
-      />
-      <Button
         className={s.requests}
         variant="secondary"
         title="Requests"
