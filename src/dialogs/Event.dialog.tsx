@@ -366,13 +366,29 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     return λColor.gradient(file.settings.color, code, range);
   }, [event, app.target.files]);
 
+  const Collab = useMemo(() => {
+    const notes = Event.notes(app, event);
+    const links = Event.links(app, event);
+
+    if (notes.length === 0 && links.length === 0) {
+      return null;
+    }
+
+    return (
+      <Stack ai='center' jc='center' className={s.collab} pos='absolute'>
+        <Icon size={8} name={notes.length > 0 ? 'StickyNote' : 'Link'} />
+      </Stack>
+    )
+  }, [app.target.notes, app.target.links, event]);
+
   return (
     <Button
       size='icon'
       className={cn(className, s.indicator)}
       style={{ ...style, background }} {...props}>
-      <div />
+      <hr />
       <p>{event['gulp.event_code']}</p>
+      {Collab}
     </Button>
   );
 }

@@ -84,11 +84,11 @@
   border-radius: var(--round);
   border: 1px solid var(--gray-alpha-500);
   padding: 0px;
-  overflow: hidden;
+  position: relative;
 }
-.indicator div {
-  width: 27px;
-  height: 27px;
+.indicator hr {
+  width: 26px;
+  height: 26px;
   position: absolute;
   background: var(--geist-background);
   border: var(--geist-border);
@@ -101,4 +101,16 @@
   font-size: 8px;
   font-family: var(--font-mono);
   text-shadow: 0 0 1px var(--gray-400);
+}
+.indicator .collab {
+  border: 1px solid var(--gray-400);
+  width: 14px;
+  height: 14px;
+  background: var(--soft-black);
+  bottom: 0;
+  right: 0;
+  border-radius: var(--round);
+  transform: translate(16.5%, 16.5%);
+  z-index: 2;
+  color: var(--white);
 }
