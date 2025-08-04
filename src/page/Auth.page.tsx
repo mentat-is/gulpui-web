@@ -69,7 +69,7 @@ export namespace Auth {
       const user = await Info.login({ id, password });
       setLoading(false);
 
-      if (!user) {
+      if (user) {
         const sessions = await Info.session_list();
         if (sessions.length > 0) {
           spawnBanner(<Session.Load.Banner sessions={sessions} />)

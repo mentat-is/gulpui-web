@@ -62,3 +62,7 @@
 .result > button {
   max-width: 100%;
 }
+.portalContainer {
+  position: relative;
+  z-index: 9999;
+}

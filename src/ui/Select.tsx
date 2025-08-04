@@ -155,25 +155,23 @@ export namespace Select {
 
   export const Content = forwardRef<
     ComponentRef<typeof SelectPrimitive.Content>,
-    ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
-  >(({ className, children, position = 'popper', ...props }, ref) => {
-    return (
-      <SelectPrimitive.Portal>
-        <SelectPrimitive.Content
-          ref={ref}
-          className={cn(s.content, position === 'popper' && s.popper, className)}
-          position={position}
-          {...props}
-        >
-          <Select.ScrollButton.Up />
-          <SelectPrimitive.Viewport className={cn(s.primitive, position === 'popper' && s.podder)}>
-            {children}
-          </SelectPrimitive.Viewport>
-          <Select.ScrollButton.Down />
-        </SelectPrimitive.Content>
-      </SelectPrimitive.Portal>
-    )
-  })
+    ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { container?: HTMLElement | null }
+  >(({ className, children, position = 'popper', container, ...props }, ref) => (
+    <SelectPrimitive.Portal container={container}>
+      <SelectPrimitive.Content
+        ref={ref}
+        className={cn(s.content, position === 'popper' && s.popper, className)}
+        position={position}
+        {...props}
+      >
+        <Select.ScrollButton.Up />
+        <SelectPrimitive.Viewport className={cn(s.primitive, position === 'popper' && s.podder)}>
+          {children}
+        </SelectPrimitive.Viewport>
+        <Select.ScrollButton.Down />
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  ));
 
   export const Label = forwardRef<
     ComponentRef<typeof SelectPrimitive.Label>,

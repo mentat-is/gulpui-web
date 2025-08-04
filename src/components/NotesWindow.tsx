@@ -21,16 +21,9 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const getAvailableTags = useCallback(() => {
     const tags = new Set<string>();
-
     app.target.notes.forEach(note => {
-      note.tags.forEach(tag => {
-        const lowerTag = tag.toLowerCase();
-        if (!tags.has(lowerTag)) {
-          tags.add(lowerTag);
-        }
-      })
+      note.tags.forEach(tag => tags.add(tag.toLowerCase()));
     })
-
     return [...tags.values()];
   }, [app.target.notes]);
 
@@ -41,33 +34,34 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     setAvailableTags(getAvailableTags());
   }, [app.target.notes]);
 
-  const parentRef = useRef<HTMLDivElement>(null)
+  const parentRef = useRef<HTMLDivElement>(null);
+  const windowRef = useRef<HTMLDivElement>(null);
 
   const sortedNotes = useMemo(() => {
-    const prefiltered = search.length ? app.target.notes.filter(n => {
-      const searchLower = search.toLowerCase()
-      return (
-        n.name.toLowerCase().includes(searchLower) ||
-        n.text.toLowerCase().includes(searchLower) ||
-        File.id(app, n.source_id).name.toLowerCase().includes(searchLower) ||
-        Context.id(app, n.context_id).name.toLowerCase().includes(searchLower) ||
-        n.tags.some(t => t.toLowerCase() === searchLower)
-      )
-    }) : app.target.notes;
-
-    const filtered = selectedTags.size ? prefiltered.filter(n => [...selectedTags].every(selectedTag => n.tags.some(tag => tag.toLowerCase() === selectedTag))) : prefiltered;
+    const filtered = app.target.notes.filter(n => {
+      const lowerSearch = search.toLowerCase();
+      return !search || (
+        n.name.toLowerCase().includes(lowerSearch) ||
+        n.text.toLowerCase().includes(lowerSearch) ||
+        File.id(app, n.source_id).name.toLowerCase().includes(lowerSearch) ||
+        Context.id(app, n.context_id).name.toLowerCase().includes(lowerSearch) ||
+        n.tags.some(t => t.toLowerCase() === lowerSearch)
+      );
+    }).filter(n =>
+      !selectedTags.size || [...selectedTags].every(tag => n.tags.map(t => t.toLowerCase()).includes(tag))
+    );
 
     return filtered
       .sort((a, b) => a.context_id.localeCompare(b.context_id))
-      .sort((a, b) => a.source_id.localeCompare(b.source_id))
+      .sort((a, b) => a.source_id.localeCompare(b.source_id));
   }, [app.target.notes, search, app, selectedTags]);
 
   const virtualizer = useVirtualizer({
     count: sortedNotes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 32 + 8,
+    estimateSize: () => 40,
     overscan: 5,
-  })
+  });
 
   return (
     <Banner title="Notes" onClose={onClose} className={s.main}>
@@ -79,13 +73,20 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
-        <Select.Multi.Root value={[...selectedTags.values()]} onValueChange={values => setSelectedTags(new Set(values))}>
+        <Select.Multi.Root
+          value={[...selectedTags]}
+          onValueChange={values => setSelectedTags(new Set(values))}
+        >
           <Select.Trigger>
-            <Select.Multi.Value icon={['DataPointMedium', 'DataPoint']} placeholder='Select tags to be shown' text={len => typeof len === 'number' ? `Selected ${len} tags` : len} />
+            <Select.Multi.Value
+              icon={['DataPointMedium', 'DataPoint']}
+              placeholder='Select tags to be shown'
+              text={len => typeof len === 'number' ? `Selected ${len} tags` : len}
+            />
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content container={windowRef.current}>
             {availableTags.map(tag => (
-              <Select.Item value={tag}>
+              <Select.Item key={tag} value={tag}>
                 {tag}
               </Select.Item>
             ))}
@@ -95,36 +96,26 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       <div
         ref={parentRef}
         className={s.result}
-        style={{
-          height: '100%',
-          overflow: 'auto',
-        }}
+        style={{ height: '100%', overflow: 'auto' }}
       >
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualItem) => (
+        <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+          {virtualizer.getVirtualItems().map(item => (
             <div
-              key={virtualItem.key}
+              key={item.key}
               style={{
                 position: 'absolute',
-                top: 0,
-                left: 0,
                 width: '100%',
-                height: `${virtualItem.size}px`,
-                transform: `translateY(${virtualItem.start}px)`,
+                height: `${item.size}px`,
+                transform: `translateY(${item.start}px)`,
               }}
             >
-              <NotePoint.Combination note={sortedNotes[virtualItem.index]} />
+              <NotePoint.Combination note={sortedNotes[item.index]} />
             </div>
           ))}
         </div>
       </div>
       <Notification value='You can scroll tags list horizontally' variant='informational' icon='Information' />
+      <div ref={windowRef} className={s.portalContainer} />
     </Banner>
   )
 }
