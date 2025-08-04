@@ -1864,7 +1864,8 @@ export class Info implements InfoProps {
 
       const details = detailedFileInformation.find(details => details.id === file.id);
       if (!details) {
-        Logger.fatal('No detailed information for file has been provided');
+        Logger.error('No detailed information for file has been provided');
+        return null;
       }
 
       file.nanotimestamp = {
@@ -1880,7 +1881,7 @@ export class Info implements InfoProps {
       file.total = details.doc_count;
 
       return file;
-    }));
+    })).then(files => files.filter(file => file !== null));
 
     Logger.log(`${operations.length} operations has been added to application data`, this.sync);
     Logger.log(`${contexts.length} contexts has been added to application data`, this.sync);
