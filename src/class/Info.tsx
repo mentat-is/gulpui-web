@@ -375,7 +375,8 @@ export namespace Internal {
   export class Transformator {
     public static toTimestamp = (
       timestamp: string | number | Date | bigint,
-    ): number => new Date(Number(this.toNanos(timestamp)) / 1_000_000).valueOf()
+      roundTo: keyof Pick<Math, 'ceil' | 'floor' | 'round'> = 'round'
+    ): number => new Date(Math[roundTo](Number(this.toNanos(timestamp)) / 1_000_000)).valueOf()
 
     public static toNanos = (
       timestamp: string | number | Date | bigint,
@@ -1171,7 +1172,7 @@ export class Info implements InfoProps {
     FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
       this.setLoading(m.req_id, m.data.data.id);
 
-      this.app.target.files = [...this.app.target.files, File.normalize(this.app, m.data.data)]
+      this.app.target.files = Refractor.array(...this.app.target.files, File.normalize(this.app, m.data.data));
 
       this.setInfoByKey(this.app.target.files, 'target', 'files');
     })
@@ -1194,7 +1195,7 @@ export class Info implements InfoProps {
         max: sorted[0].timestamp
       };
 
-      this.app.target.files[exist] = {
+      this.app.target.files[exist] = File.normalize(this.app, {
         ...file,
         timestamp,
         nanotimestamp: {
@@ -1202,9 +1203,9 @@ export class Info implements InfoProps {
           max: Internal.Transformator.toNanos(timestamp.max)
         },
         total: all.length
-      }
+      });
 
-      this.app.target.files = [...this.app.target.files];
+      this.app.target.files = Refractor.array(...this.app.target.files);
 
       this.app.timeline.frame.min = Math.min(...this.app.target.files.map(f => f.timestamp.min));
       this.app.timeline.frame.max = Math.max(...this.app.target.files.map(f => f.timestamp.max));
@@ -1213,7 +1214,6 @@ export class Info implements InfoProps {
 
       if (m.data.last) {
         this.delLoading(m.req_id);
-        this.syncFile(file.id);
         FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         toast.success(`Source ${file.name} has been ingested successfully`, {
           description: `Total amount of documents is: ${File.events(this.app, file.id).length}`
@@ -2238,13 +2238,7 @@ export class Operation {
   ): λOperation | undefined =>
     app.target.operations.find((o) => o.name === name)
 
-  public static select = (
-    use: λApp | λOperation[],
-    operation: λOperation['id'] | undefined,
-  ): λOperation[] =>
-    Parser.use(use, 'operations').map((o) =>
-      o.id === operation ? Operation._select(o) : Operation._unselect(o),
-    )
+  public static select = (use: λApp | λOperation[], operation: λOperation['id'] | undefined): λOperation[] => Refractor.array(...Parser.use(use, 'operations').map((o) => o.id === operation ? Operation._select(o) : Operation._unselect(o)));
 
   public static contexts = (app: λApp): λContext[] =>
     app.target.contexts.filter(
@@ -2469,29 +2463,22 @@ export class File {
     // @ts-ignore
     delete file.color;
 
-    const exist = File.id(app, file.id);
+    const exist = File.id(app, file.id) ?? {};
+    const min = details?.['min_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now() - 1);
+    const max = details?.['max_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now());
 
-    const defaultFileSettings = Internal.Settings.all();
-
-    file.selected = exist.selected ?? false;
-    file.pinned = exist.pinned ?? false;
-    file.settings = exist ? exist.settings ?? defaultFileSettings : defaultFileSettings;
-
-    file.nanotimestamp = {
+    return Object.assign(file, {
+      selected: file.selected ?? exist.selected ?? false,
+      pinned: file.pinned ?? exist.pinned ?? false,
+      settings: file.settings ?? exist.settings ?? Internal.Settings.all(),
+      total: file.total ?? details?.doc_count ?? 0,
       // @ts-ignore
-      min: details?.['min_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now() - 1),
-      // @ts-ignore
-      max: details?.['max_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now())
-    }
-
-    file.timestamp = {
-      min: Math.floor((file.nanotimestamp.min as unknown as number) / 1_000_000),
-      max: Math.round((file.nanotimestamp.max as unknown as number) / 1_000_000)
-    }
-
-    file.total = details?.doc_count ?? 0;
-
-    return file;
+      nanotimestamp: { min, max, ...file.nanotimestamp },
+      timestamp: {
+        min: Internal.Transformator.toTimestamp(file.nanotimestamp?.min ?? min, 'floor'),
+        max: Internal.Transformator.toTimestamp(file.nanotimestamp?.max ?? max, 'ceil')
+      }
+    });
   }
 
   public static events = (app: λApp, file: λFile | μ.File): λEvent[] =>
@@ -2535,8 +2522,6 @@ export interface λQuery {
 }
 
 export class Filter {
-  public static hasFilter = (app: λApp, file: λFile): false => false
-
   static query = ({ filters, string }: λQuery) => {
     const query: Record<string, any> = structuredClone(
       OpenSearchQueryBuilder.INITIAL,

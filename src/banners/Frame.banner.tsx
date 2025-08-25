@@ -4,7 +4,7 @@ import { Button, Stack } from '@impactium/components'
 import { useApplication } from '../context/Application.context'
 import { Toggle } from '@/ui/Toggle'
 import s from './styles/LimitsBanner.module.css'
-import { Context, MinMax } from '@/class/Info'
+import { Context, File, MinMax } from '@/class/Info'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
 import { Icon } from '@impactium/icons'
@@ -38,7 +38,9 @@ export namespace Frame {
         return callback({ min, max });
       }
       Info.setTimelineFrame({ min, max });
-      Info.refetch();
+      Info.refetch({
+        ids: File.selected(app).map(file => file.id).filter(id => !app.general.loadings.byFileId.has(id))
+      });
       destroyBanner()
     }
 

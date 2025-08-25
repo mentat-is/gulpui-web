@@ -1,30 +1,27 @@
 import { Banner } from '@/ui/Banner'
-import { Button, Spinner, Stack } from '@impactium/components'
-import { useEffect, useRef, useState } from 'react'
+import { Button, Stack } from '@impactium/components'
+import { useEffect, useState } from 'react'
 import { Session } from '../banners/Session.banner'
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner'
 import { GulpDataset, Internal, Operation, Pattern, λUser } from '@/class/Info'
-import { useKeyHandler } from '@/decorator/use'
 import { Icon } from '@impactium/icons'
 import { capitalize, cn } from '@impactium/utils'
-import { addDays } from 'date-fns'
 import s from './styles/AuthPage.module.css'
 import { Select } from '@/ui/Select'
 import { λOperation } from '@/dto'
 import { Label } from '@/ui/Label'
 import { Operation as OperationBanners } from '@/banners/Operation.banner'
-import { Keyboard } from '@/ui/Keyboard'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { UploadBanner } from '@/banners/Upload.banner'
 
 export namespace Auth {
   export namespace Page {
-    export type Props = Banner.Props
-
+    export interface Props { }
   }
-  export function Page({ ...props }: Auth.Page.Props) {
+
+  export function Page(_: Auth.Page.Props) {
     const { spawnBanner, Info, app } = useApplication()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as λUser['id']);
@@ -35,13 +32,9 @@ export namespace Auth {
     useEffect(() => {
       if (methods.length === 0) {
         Internal.Settings.server = server
-        api<GulpDataset.GetAvailableLoginApi.Response>(
-          '/get_available_login_api',
-          {
-            toast: false,
-          },
-          setMethods,
-        )
+        api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+          toast: false,
+        }, setMethods)
       }
     }, [methods, server])
 

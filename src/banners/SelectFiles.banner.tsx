@@ -6,7 +6,7 @@ import { Badge } from '@impactium/components'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
 import { Context, Operation } from '@/class/Info'
-import { useState, useMemo, useCallback } from 'react'
+import { useState } from 'react'
 import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
 import { λContext, λFile } from '@/dto/Dataset'
@@ -27,9 +27,7 @@ export namespace SelectFiles {
 
     const hasData = app.target.operations.length > 0 || app.target.contexts.length > 0;
 
-    const save = useCallback(async () => {
-      spawnBanner(<Frame.Banner fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)
-    }, [spawnBanner])
+    const save = () => spawnBanner(<Frame.Banner fixed back={() => spawnBanner(<SelectFiles.Banner />)} />);
 
     const reloadClickHandler = async () => {
       setLoading(true);
@@ -39,7 +37,7 @@ export namespace SelectFiles {
 
     const filteredContexts = Operation.contexts(app).filter((ctx) => Context.files(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
 
-    const SearchInput = useMemo(() => {
+    const SearchInput = () => {
       return (
         <Input
           img='Search'
@@ -49,7 +47,7 @@ export namespace SelectFiles {
           onChange={(e) => setFilter(e.target.value)}
         />
       )
-    }, [filter, setFilter])
+    };
 
     return (
       <UIBanner
@@ -71,7 +69,7 @@ export namespace SelectFiles {
         }
         {...props}
       >
-        {SearchInput}
+        <SearchInput />
         <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
           <Skeleton show={!hasData} width='full'>
             {filteredContexts.length > 0 ? (
@@ -121,7 +119,7 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
   const { app, Info, spawnBanner } = useApplication()
   const files = Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
-  const handleContextCheck = useCallback((value: boolean) => value ? Info.contexts_select([context]) : Info.contexts_unselect([context]), [context]);
+  const handleContextCheck = (value: boolean) => value ? Info.contexts_select([context]) : Info.contexts_unselect([context]);
 
   return (
     <Stack
@@ -176,13 +174,9 @@ function FileComponent({ file }: { file: λFile }) {
     Info.preview_file(file).then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button img='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
   }
 
-  const handleFileCheck = useCallback(
-    (value: boolean) =>
-      value ? Info.files_select([file]) : Info.files_unselect([file]),
-    [Info, file],
-  )
+  const handleFileCheck = (value: boolean) => value ? Info.files_select([file]) : Info.files_unselect([file]);
 
-  const FileIsTooBig = useMemo(() => {
+  const FileIsTooBig = () => {
     if (file.total < 500_000) {
       return null
     }
@@ -190,7 +184,7 @@ function FileComponent({ file }: { file: λFile }) {
     return (
       <Badge size='sm' variant='amber-subtle' icon='Warning' value='This file is too big' />
     )
-  }, [])
+  };
 
   return (
     <Stack className={s.pluginHeading} key={file.id}>
@@ -200,7 +194,7 @@ function FileComponent({ file }: { file: λFile }) {
         onCheckedChange={handleFileCheck}
       />
       <Label value={file.name} />
-      {FileIsTooBig}
+      <FileIsTooBig />
       <Badge size='sm' className={s.amount} variant='gray-subtle' value={file.total.toString()} />
       <Button
         img='Filter'

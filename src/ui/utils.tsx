@@ -413,7 +413,14 @@ export class Refractor {
    * @param obj Object
    * @returns Object
    */
-  public static object = <T extends object>(obj: T) => JSON.parse(JSON.stringify(obj)) as T;
+  public static object = <T extends object>(obj: T) => ({ ...obj }) as T;
+
+  /**
+   * Use this function to trigger react dependents rendering that uses this array
+   * @param obj Object
+   * @returns Object
+   */
+  public static array = <T extends object>(...obj: T[]) => ([...obj]) as T[];
 }
 
 export interface RGB {
