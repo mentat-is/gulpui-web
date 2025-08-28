@@ -164,7 +164,7 @@ export interface λRequest {
 }
 
 export namespace Default {
-  type Object =
+  export type Object =
     | 'OPERATION'
     | 'CREATE_OPERATION'
     | 'CONTEXT'

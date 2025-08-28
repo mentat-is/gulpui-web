@@ -61,7 +61,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     const detailed = await Info.query_single_id(event._id, event['gulp.operation_id'])
     const parsedEvent = cutEventOriginal(detailed);
     setJSON(parsedEvent);
-  }, [Info, event._id, event['gulp.operation_id'], cutEventOriginal]);
+  }, [event, cutEventOriginal]);
 
   useEffect(() => {
     if (!json || json._id !== event._id) {

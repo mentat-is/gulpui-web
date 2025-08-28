@@ -1,4 +1,4 @@
-import { File, GulpDataset, MinMax, MinMaxBase } from '@/class/Info'
+import { File, GulpDataset, Internal, MinMax, MinMaxBase } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Default, λFile } from '@/dto/Dataset'
@@ -113,6 +113,7 @@ export namespace Enrichment {
           <Skeleton show={!plugins} width="full" className={s.skeleton}>
             <Input
               img={File.icon(file)}
+              readOnly
               value={file.name}
               variant="highlighted"
               style={disabledStyle}
@@ -193,8 +194,8 @@ export namespace Enrichment {
       }
 
       setFrame({
-        min: Number(file.nanotimestamp.min / 1_000_000n),
-        max: Number(file.nanotimestamp.max / 1_000_000n),
+        min: Internal.Transformator.toTimestamp(file.nanotimestamp.min, 'floor'),
+        max: Internal.Transformator.toTimestamp(file.nanotimestamp.max, 'ceil'),
       })
     }, [file])
 
@@ -204,6 +205,7 @@ export namespace Enrichment {
           <Skeleton width="full" className={s.skeleton} show={!plugins}>
             <Input
               value={event._id}
+              readOnly
               variant="highlighted"
               style={disabledStyle}
               img={Default.Icon.EVENT}

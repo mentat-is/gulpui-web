@@ -25,6 +25,7 @@
     "@vis.gl/react-google-maps": "^1.5.2",
     "canvas2svg": "^1.0.16",
     "class-variance-authority": "^0.7.1",
+    "cmdk": "^1.1.1",
     "customize-cra": "^1.0.0",
     "date-fns": "^4.1.0",
     "events": "^3.3.0",

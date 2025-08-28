@@ -16,7 +16,8 @@ export namespace Requests {
   }
 
   export function Banner({ className, ...props }: Requests.Banner.Props) {
-    const { Info, app } = useApplication()
+    const { Info, app, spawnBanner } = useApplication();
+    const [loading, setLoading] = useState<boolean>(false);
 
     const timeAgo = (timestamp: number): string => {
       return formatDistanceToNow(timestamp, {
@@ -26,6 +27,13 @@ export namespace Requests {
     }
 
     const cancelRequestButtonClickHandler = (id: λRequest['id']) => Info.request_cancel(id);
+
+    const detailedViewRequestButtonClickHandler = async (id: λRequest['id']) => {
+      setLoading(true);
+      const detailedRequest = await Info.request_get_by_id(id);
+      setLoading(false);
+      spawnBanner(<Requests.Detailed.Banner request={detailedRequest} />)
+    };
 
     return (
       <UIBanner className={cn(className, s.banner)} title="Requests list" {...props}>
@@ -104,5 +112,21 @@ export namespace Requests {
       'success',
       'failed',
     ]
+  }
+
+  export namespace Detailed {
+    export namespace Banner {
+      export interface Props extends UIBanner.Props {
+        request: λRequest;
+      }
+    }
+
+    export function Banner({ request, className, ...props }: Requests.Detailed.Banner.Props) {
+      return (
+        <UIBanner title='Request details' className={cn(className, s.detailedRequestBanner)} {...props}>
+
+        </UIBanner>
+      )
+    }
   }
 }

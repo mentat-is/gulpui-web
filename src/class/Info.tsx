@@ -826,6 +826,11 @@ export class Info implements InfoProps {
     query: { req_id_to_cancel },
   });
 
+  request_get_by_id = (obj_id: λRequest['id']): Promise<λRequest> => api<λRequest>('/request_cancel', {
+    method: 'DELETE',
+    query: { obj_id },
+  });
+
   filters_cache = (files: Array<λFile | μ.File>) => {
     files.forEach(file => {
       const id = Parser.useUUID(file) as μ.File
