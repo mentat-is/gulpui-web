@@ -405,7 +405,7 @@ namespace Components {
 }
 
 export function UploadBanner() {
-  const { Info, app, destroyBanner } = useApplication()
+  const { Info, app, spawnBanner } = useApplication()
   const [files, setFiles] = useState<File[]>([])
   const [context, setContext] = useState<FileEntity.IngestOptions['context']>('')
   const [loading, setLoading] = useState(false)
@@ -489,7 +489,7 @@ export function UploadBanner() {
 
     setLoading(false)
 
-    destroyBanner()
+    spawnBanner(<SelectFiles.Banner />)
   }, [files, settings, context, customFrame, frame])
 
   const isValidSettings = Object.keys(settings).every(k => {

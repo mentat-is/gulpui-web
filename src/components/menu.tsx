@@ -16,6 +16,7 @@ import { Extension } from '@/context/Extension.context'
 import { File } from '@/class/Info'
 import { Debug } from '@/banners/Debug.banner'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
+import { Commands } from '@/banners/Commands.banner'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -88,6 +89,12 @@ export function Menu() {
         title="Data enrichment"
         img="PrismColor"
         onClick={enrichment}
+      />
+      <Button
+        variant="glass"
+        title="Commands"
+        img="Command"
+        onClick={() => spawnBanner(<Commands.Banner />)}
       />
       <Stack flex />
       <Button

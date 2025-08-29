@@ -467,15 +467,22 @@ export type λDetailedUser = GulpObject<
 
 export class Info implements InfoProps {
   app: λApp
-  setInfo: React.Dispatch<React.SetStateAction<λApp>>
-  timeline: React.RefObject<HTMLDivElement>
+  setInfo: SetState<λApp>;
+  timeline: React.RefObject<HTMLDivElement>;
   setScrollX: SetState<number>
   setScrollY: SetState<number>
 
 
   constructor({ app, setInfo, timeline, setScrollX, setScrollY }: InfoProps) {
     this.app = app
-    this.setInfo = setInfo
+    this.setInfo = (value: React.SetStateAction<λApp>) => {
+      const next = typeof value === 'function'
+        ? value(this.app)
+        : value;
+
+      this.app = Refractor.object(next);
+      setInfo(this.app);
+    };
     this.timeline = timeline
     this.setScrollX = setScrollX
     this.setScrollY = setScrollY
@@ -972,20 +979,14 @@ export class Info implements InfoProps {
   }
 
   // ⚠️ UNTOUCHABLE
-  context_delete = (context: λContext, wipe: boolean) => {
-    return api<any>(
-      '/context_delete',
-      {
-        method: 'DELETE',
-        query: {
-          operation_id: context.operation_id,
-          context_id: context.id,
-          delete_data: wipe,
-        },
-      },
-      this.sync,
-    )
-  }
+  context_delete = (context: λContext, wipe: boolean) => api<any>('/context_delete', {
+    method: 'DELETE',
+    query: {
+      operation_id: context.operation_id,
+      context_id: context.id,
+      delete_data: wipe,
+    },
+  }, this.sync);
 
   contexts_checkout = () => {
     const contexts: λContext[] = this.app.target.contexts.map((c) => {
@@ -1019,14 +1020,8 @@ export class Info implements InfoProps {
         .filter((f) => f.name.toLowerCase().includes(filter)),
     )
 
-    this.setInfo((i) => ({
-      ...i,
-      target: {
-        ...i.target,
-        contexts,
-        files,
-      },
-    }))
+    this.setInfoByKey(contexts, 'target', 'contexts');
+    this.setInfoByKey(files, 'target', 'files');
   }
 
   selectAll = (filter: string) => this.fileActionSelectable(filter, true)
@@ -1168,9 +1163,9 @@ export class Info implements InfoProps {
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
       FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
-        this.app.target.contexts.push(m.data.data);
+        const contexts = Refractor.array(...this.app.target.contexts, m.data.data);
 
-        this.setInfo(this.app);
+        this.setInfoByKey(contexts, 'target', 'contexts');
       })
     }
 
@@ -1185,7 +1180,8 @@ export class Info implements InfoProps {
     const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
       const events = Event.normalize(m.data.docs);
 
-      const file = File.id(this.app, events[0]['gulp.source_id']);
+      const files = Refractor.array(...this.app.target.files);
+      const file = File.id(files, events[0]['gulp.source_id']);
 
       this.events_add(events);
 
@@ -1193,29 +1189,31 @@ export class Info implements InfoProps {
 
       const sorted = Event.sort(all);
 
-      const exist = this.app.target.files.findIndex(f => f.id === file.id);
+      const exist = files.findIndex(f => f.id === file.id);
 
       const timestamp = {
         min: sorted[sorted.length - 1].timestamp,
         max: sorted[0].timestamp
       };
 
-      this.app.target.files[exist] = File.normalize(this.app, {
+      files[exist] = File.normalize(this.app, {
         ...file,
         timestamp,
         nanotimestamp: {
           min: Internal.Transformator.toNanos(timestamp.min),
           max: Internal.Transformator.toNanos(timestamp.max)
         },
-        total: all.length
+        total: all.length,
+        selected: true
       });
 
-      this.app.target.files = Refractor.array(...this.app.target.files);
+      const frame: MinMax = {
+        min: Math.min(...files.map(f => f.timestamp.min)),
+        max: Math.max(...files.map(f => f.timestamp.max))
+      }
 
-      this.app.timeline.frame.min = Math.min(...this.app.target.files.map(f => f.timestamp.min));
-      this.app.timeline.frame.max = Math.max(...this.app.target.files.map(f => f.timestamp.max));
-
-      this.setInfo(this.app);
+      this.setInfoByKey(files, 'target', 'files');
+      this.setInfoByKey(frame, 'timeline', 'frame');
 
       if (m.data.last) {
         this.delLoading(m.req_id);
@@ -1364,18 +1362,20 @@ export class Info implements InfoProps {
   setSettings = (key: string, value: any) => this.setInfoByKey(value, 'settings', key);
 
   setLoading(req_id: λRequest['id'], file_id: λFile['id']) {
-    this.app.general.loadings.byRequestId.set(req_id, file_id);
-    this.app.general.loadings.byFileId.set(file_id, req_id);
-    this.setInfo(this.app);
+    const loadings = this.app.general.loadings;
+    loadings.byRequestId.set(req_id, file_id);
+    loadings.byFileId.set(file_id, req_id);
+    this.setInfoByKey(loadings, 'general', 'loadings');
   }
 
   delLoading(req_id: λRequest['id']) {
-    this.app.general.loadings.byRequestId.delete(req_id);
-    const file_id = [...this.app.general.loadings.byFileId.entries()].find(e => e[1] === req_id)?.[0];
+    const loadings = this.app.general.loadings;
+    loadings.byRequestId.delete(req_id);
+    const file_id = [...loadings.byFileId.entries()].find(e => e[1] === req_id)?.[0];
     if (file_id) {
-      this.app.general.loadings.byFileId.delete(file_id);
+      loadings.byFileId.delete(file_id);
     }
-    this.setInfo(this.app);
+    this.setInfoByKey(loadings, 'general', 'loadings');
   }
 
   // ⚠️ UNTOUCHABLE
@@ -2100,8 +2100,13 @@ export class Info implements InfoProps {
   }
 
   filters_remove = (file: λFile | λFile['id']) => {
-    this.app.target.filters[Parser.useUUID(file) as λFile['id']] = Filter.default(this.app, file);
-    return this.setInfo(this.app);
+    const id = Parser.useUUID(file) as λFile['id'];
+    const filters = Refractor.object({
+      ...this.app.target.filters,
+      [id]: Filter.default(this.app, file)
+    });
+
+    return this.setInfoByKey(filters, 'target', 'filters');
   }
 
   useReverseScroll = (bool: boolean) => {

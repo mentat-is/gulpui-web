@@ -41,8 +41,12 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const file = useMemo(() => File.id(app, event['gulp.source_id']), [app.target.files, event]);
 
   useEffect(() => {
-    Info.setTimelineTarget(event)
-  }, [event])
+    if (!file) {
+      Info.setTimelineTarget(null);
+      return;
+    }
+    Info.setTimelineTarget(event);
+  }, [event, file]);
 
   const cutEventOriginal = useCallback((obj: Record<string, any>): Record<string, string> => {
     const entries = Object.entries(obj).filter(([k]) => k !== 'event.original')
