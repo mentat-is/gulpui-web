@@ -5,8 +5,8 @@ import s from './styles/SelectFilesBanner.module.css'
 import { Badge } from '@impactium/components'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
-import { Context, Operation } from '@/class/Info'
-import { useState } from 'react'
+import { Context, File, Operation } from '@/class/Info'
+import { useEffect, useMemo, useState } from 'react'
 import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
 import { λContext, λFile } from '@/dto/Dataset'
@@ -14,6 +14,9 @@ import { Separator } from '@/ui/Separator'
 import { Delete } from './Delete.banner'
 import { Preview } from './Preview.banner'
 import { FilterFileBanner } from './FilterFile.banner'
+import { cn } from '@impactium/utils'
+import { Refractor } from '@/ui/utils'
+import { SetState } from '@/class/API'
 
 export namespace SelectFiles {
   export namespace Banner {
@@ -24,10 +27,82 @@ export namespace SelectFiles {
     const { app, Info, spawnBanner } = useApplication()
     const [filter, setFilter] = useState('')
     const [loading, setLoading] = useState(false)
+    const [selectedContexts, setSelectedContexts] = useState<Set<λContext['id']>>(new Set());
+    const [selectedFiles, setSelectedFiles] = useState<Set<λFile['id']>>(new Set());
+
+    // @ts-ignore
+    const update = <T extends Set<λFile['id'] | λContext['id']>>(values: T, vault: SetState<T>) => vault(new Set<T>([...values.values()]));
+
+    function all(select: boolean) {
+      const method = select ? 'add' : 'delete';
+
+      app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => {
+        selectedFiles[method](file.id);
+      });
+
+      app.target.contexts.forEach(context => {
+        const files = Context.files(app, context);
+
+        if (files.some(file => selectedFiles.has(file.id))) {
+          selectedContexts.add(context.id);
+        } else {
+          selectedContexts.delete(context.id);
+        }
+      })
+
+      update(selectedFiles, setSelectedFiles);
+      update(selectedContexts, setSelectedContexts);
+    }
+
+    function setContext(context: λContext['id'], select: boolean) {
+      const method = select ? 'add' : 'delete';
+
+      selectedContexts[method](context);
+
+      Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => selectedFiles[method](file.id));
+
+      update(selectedFiles, setSelectedFiles);
+      update(selectedContexts, setSelectedContexts);
+    }
+
+    function setFile(target: λFile['id'], select: boolean) {
+      const method = select ? 'add' : 'delete';
+
+      selectedFiles[method](target);
+
+      const file = File.id(app, target);
+
+      const files = Context.files(app, file.context_id);
+
+      if (files.some(file => selectedFiles.has(file.id))) {
+        selectedContexts.add(file.context_id);
+      } else {
+        selectedContexts.delete(file.context_id);
+      }
+
+      update(selectedContexts, setSelectedContexts);
+      update(selectedFiles, setSelectedFiles);
+    }
 
     const hasData = app.target.operations.length > 0 || app.target.contexts.length > 0;
 
-    const save = () => spawnBanner(<Frame.Banner fixed back={() => spawnBanner(<SelectFiles.Banner />)} />);
+    const save = () => {
+      const contexts = Refractor.array(...app.target.contexts.map(context => ({
+        ...context,
+        selected: selectedContexts.has(context.id)
+      })));
+      const files = Refractor.array(...app.target.files.map(file => ({
+        ...file,
+        selected: selectedFiles.has(file.id)
+      })));
+
+      Info.setInfoByKey(contexts, 'target', 'contexts')
+      Info.setInfoByKey(files, 'target', 'files')
+
+      setTimeout(() => {
+        spawnBanner(<Frame.Banner fixed back={() => spawnBanner(<SelectFiles.Banner />)} />);
+      }, 10);
+    };
 
     const reloadClickHandler = async () => {
       setLoading(true);
@@ -37,7 +112,7 @@ export namespace SelectFiles {
 
     const filteredContexts = Operation.contexts(app).filter((ctx) => Context.files(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
 
-    const SearchInput = () => {
+    const SearchInput = useMemo(() => {
       return (
         <Input
           img='Search'
@@ -47,7 +122,7 @@ export namespace SelectFiles {
           onChange={(e) => setFilter(e.target.value)}
         />
       )
-    };
+    }, [setFilter, filter]);
 
     return (
       <UIBanner
@@ -69,12 +144,12 @@ export namespace SelectFiles {
         }
         {...props}
       >
-        <SearchInput />
+        {SearchInput}
         <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
           <Skeleton show={!hasData} width='full'>
             {filteredContexts.length > 0 ? (
               filteredContexts.map((context) => (
-                <ContextComponent key={context.id} context={context} filter={filter} />
+                <ContextComponent key={context.id} context={context} filter={filter} setFile={setFile} setContext={setContext} selectedFiles={selectedFiles} selectedContexts={selectedContexts} />
               ))
             ) : (
               <p className={s.noData}>
@@ -85,7 +160,7 @@ export namespace SelectFiles {
         </Stack>
         <Stack>
           <Button
-            onClick={() => Info.selectAll(filter)}
+            onClick={() => all(true)}
             variant='secondary'
             style={{ flex: 1 }}
             img='FilePlus'
@@ -93,7 +168,7 @@ export namespace SelectFiles {
             Select all
           </Button>
           <Button
-            onClick={() => Info.unselectAll(filter)}
+            onClick={() => all(false)}
             variant='secondary'
             style={{ flex: 1 }}
             img='FileMinus'
@@ -115,11 +190,18 @@ export namespace SelectFiles {
   }
 }
 
-function ContextComponent({ context, filter }: { context: λContext, filter: string }) {
-  const { app, Info, spawnBanner } = useApplication()
-  const files = Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
+interface ContextComponentProps {
+  context: λContext;
+  filter: string;
+  selectedFiles: Set<λFile['id']>;
+  setFile: (file: λFile['id'], select: boolean) => void;
+  selectedContexts: Set<λContext['id']>;
+  setContext: (context: λContext['id'], select: boolean) => void;
+};
 
-  const handleContextCheck = (value: boolean) => value ? Info.contexts_select([context]) : Info.contexts_unselect([context]);
+function ContextComponent({ context, filter, selectedFiles, selectedContexts, setFile, setContext }: ContextComponentProps) {
+  const { app, spawnBanner } = useApplication()
+  const files = Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <Stack
@@ -132,12 +214,8 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
       <Stack className={s.contextHeading}>
         <Checkbox
           style={{ height: 20, width: 20 }}
-          checked={
-            context.selected && files.every((f) => f.selected)
-              ? true
-              : 'indeterminate'
-          }
-          onCheckedChange={handleContextCheck}
+          checked={selectedContexts.has(context.id)}
+          onCheckedChange={checked => setContext(context.id, !!checked)}
           id={context.name}
         />
         <Label value={context.name} />
@@ -159,22 +237,27 @@ function ContextComponent({ context, filter }: { context: λContext, filter: str
       </Stack>
       <Separator className={s.separator} />
       {files.map((file) => (
-        <FileComponent key={file.id} file={file} />
+        <FileComponent key={file.id} file={file} selectedFiles={selectedFiles} setFile={setFile} />
       ))}
     </Stack>
   )
 }
 
-function FileComponent({ file }: { file: λFile }) {
-  const { app, Info, spawnBanner } = useApplication()
+interface FileComponentProps {
+  file: λFile;
+  selectedFiles: Set<λFile['id']>;
+  setFile: (file: λFile['id'], select: boolean) => void;
+}
+
+function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
+  const { Info, spawnBanner } = useApplication()
   const [loading, setLoading] = useState<boolean>(false);
 
   const previewButtonClickHandler = () => {
     setLoading(true)
-    Info.preview_file(file).then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button img='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
+    Info.preview_file(file)
+      .then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button img='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
   }
-
-  const handleFileCheck = (value: boolean) => value ? Info.files_select([file]) : Info.files_unselect([file]);
 
   const FileIsTooBig = () => {
     if (file.total < 500_000) {
@@ -187,11 +270,11 @@ function FileComponent({ file }: { file: λFile }) {
   };
 
   return (
-    <Stack className={s.pluginHeading} key={file.id}>
+    <Stack className={cn(s.pluginHeading, !file.total && s.disabled)} key={file.id}>
       <Checkbox
         id={file.name}
-        checked={file.selected}
-        onCheckedChange={handleFileCheck}
+        checked={selectedFiles.has(file.id)}
+        onCheckedChange={checked => setFile(file.id, !!checked)}
       />
       <Label value={file.name} />
       <FileIsTooBig />

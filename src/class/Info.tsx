@@ -381,16 +381,17 @@ export namespace Internal {
     public static toNanos = (
       timestamp: string | number | Date | bigint,
     ): bigint => {
-      if (typeof timestamp === 'bigint') {
-        return timestamp
+      const length = timestamp.toString().length;
+      if (length === 19) {
+        return BigInt(timestamp.toString());
       }
       if (timestamp instanceof Date) {
-        return BigInt(Math.floor(timestamp.getTime() * 1_000_000))
+        return BigInt(timestamp.getTime() * 1_000_000)
       }
-      if (typeof timestamp === 'number') {
-        return BigInt(Math.floor(timestamp * 1_000_000))
+      if (length === 13) {
+        return BigInt(Math.floor(Number(timestamp) * 1_000_000))
       }
-      const parsed = Date.parse(timestamp)
+      const parsed = Date.parse(timestamp.toString())
       if (isNaN(parsed)) {
         Logger.error(
           `Invalid transformation to NANOS from ${timestamp}`,
@@ -475,14 +476,7 @@ export class Info implements InfoProps {
 
   constructor({ app, setInfo, timeline, setScrollX, setScrollY }: InfoProps) {
     this.app = app
-    this.setInfo = (value: React.SetStateAction<λApp>) => {
-      const next = typeof value === 'function'
-        ? value(this.app)
-        : value;
-
-      this.app = Refractor.object(next);
-      setInfo(this.app);
-    };
+    this.setInfo = setInfo;
     this.timeline = timeline
     this.setScrollX = setScrollX
     this.setScrollY = setScrollY
@@ -929,7 +923,15 @@ export class Info implements InfoProps {
       'target',
       'operations',
     )
-    this.contexts_unselect(this.app.target.contexts)
+    this.setInfoByKey(this.app.target.contexts.map(context => ({
+      ...context,
+      selected: false
+    })), 'target', 'contexts');
+
+    this.setInfoByKey(this.app.target.files.map(file => ({
+      ...file,
+      selected: false
+    })), 'target', 'files');
   }
 
   operations_set = (operations: λOperation[]) =>
@@ -951,102 +953,6 @@ export class Info implements InfoProps {
       },
       this.sync,
     )
-  }
-
-  contexts_select = (contexts: λContext[]) => {
-    const files = contexts
-      .map((context) => Context.files(this.app, context))
-      .flat()
-
-    const c = Context.select(this.app, contexts)
-
-    this.setInfoByKey(c, 'target', 'contexts')
-    setTimeout(() => {
-      this.files_select(files)
-    }, 0)
-  }
-  contexts_unselect = (contexts: λContext[]) => {
-    const files = contexts
-      .map((context) => Context.files(this.app, context))
-      .flat()
-
-    const c = Context.unselect(this.app, contexts)
-
-    this.setInfoByKey(c, 'target', 'contexts')
-    setTimeout(() => {
-      this.files_unselect(files)
-    }, 0)
-  }
-
-  // ⚠️ UNTOUCHABLE
-  context_delete = (context: λContext, wipe: boolean) => api<any>('/context_delete', {
-    method: 'DELETE',
-    query: {
-      operation_id: context.operation_id,
-      context_id: context.id,
-      delete_data: wipe,
-    },
-  }, this.sync);
-
-  contexts_checkout = () => {
-    const contexts: λContext[] = this.app.target.contexts.map((c) => {
-      const files = Context.files(this.app, c)
-
-      if (files.every((file) => !file.selected)) {
-        c.selected = false
-      } else {
-        c.selected = files.some((file) => file.selected)
-      }
-
-      return c
-    })
-    this.setInfoByKey(contexts, 'target', 'contexts')
-  }
-
-  fileActionSelectable = (filter: string, select: boolean) => {
-    const operation = Operation.selected(this.app)
-
-    if (!operation) {
-      return
-    }
-
-    const contexts = Context.select(this.app, Operation.contexts(this.app))
-
-    const files = File[select ? 'select' : 'unselect'](
-      this.app,
-      Context.selected(contexts)
-        .map((c) => Context.files(this.app, c))
-        .flat()
-        .filter((f) => f.name.toLowerCase().includes(filter)),
-    )
-
-    this.setInfoByKey(contexts, 'target', 'contexts');
-    this.setInfoByKey(files, 'target', 'files');
-  }
-
-  selectAll = (filter: string) => this.fileActionSelectable(filter, true)
-
-  unselectAll = (filter: string) => this.fileActionSelectable(filter, false)
-
-  files_select = (files: λFile[]) => {
-    this.setInfoByKey(File.select(this.app, files), 'target', 'files')
-    setTimeout(() => {
-      this.contexts_checkout()
-    }, 0)
-  }
-  files_unselect = (files: λFile[]) => {
-    if (
-      this.app.timeline.target &&
-      Parser.array(files)
-        .map((file) => file.id)
-        .includes(this.app.timeline.target['gulp.source_id'])
-    ) {
-      this.setTimelineTarget(null)
-    }
-    this.setInfoByKey(File.unselect(this.app, files), 'target', 'files')
-    setTimeout(() => {
-      this.contexts_checkout()
-    }, 0)
   }
 
   // ⚠️ UNTOUCHABLE
@@ -1255,11 +1161,17 @@ export class Info implements InfoProps {
       'target', 'files'
     )
 
-  events_add = (newEvents: λEvent[], addTo?: λFile['id']) => {
-    const events = addTo ? Event.addTo(this.app, addTo, newEvents) : Event.add(this.app, newEvents)
+  // ⚠️ UNTOUCHABLE
+  context_delete = (context: λContext, wipe: boolean) => api<any>('/context_delete', {
+    method: 'DELETE',
+    query: {
+      operation_id: context.operation_id,
+      context_id: context.id,
+      delete_data: wipe,
+    },
+  }, this.sync);
 
-    this.setInfoByKey(events, 'target', 'events');
-  }
+  events_add = (newEvents: λEvent[]) => this.setInfoByKey(Event.add(this.app, newEvents), 'target', 'events');
 
   event_keys = async (file: λFile): Promise<FilterOptions> => {
     if (!file) {
@@ -1837,7 +1749,9 @@ export class Info implements InfoProps {
       // @ts-ignore
       delete operation.operation_data;
 
-      operation.selected = false;
+      const exist = Operation.id(this.app, operation.id) ?? {};
+
+      operation.selected = exist.selected ?? false;
 
       return operation;
     }));
@@ -1846,47 +1760,28 @@ export class Info implements InfoProps {
       // @ts-ignore
       delete context.sources;
 
-      context.selected = false;
+      const exist = Context.id(this.app, context.id) ?? {};
+
+      context.selected = exist.selected ?? false;
 
       return context;
     }));
 
     const detailedFileInformation = await this.getDetails()
 
-    const files = await Promise.all(contexts.map(context => api<λFile[]>('/source_list', { query: { operation_id: context.operation_id, context_id: context.id } }))).then(files => files.flat().map(file => {
-      // @ts-ignore
-      delete file.mapping_parameters;
-      // @ts-ignore
-      delete file.color;
-
-      const exist = File.id(this.app, file.id);
-
-      const defaultFileSettings = Internal.Settings.all();
-
-      file.selected = false;
-      file.pinned = false;
-      file.settings = exist ? exist.settings ?? defaultFileSettings : defaultFileSettings;
-
-      const details = detailedFileInformation.find(details => details.id === file.id);
-      if (!details) {
-        Logger.error('No detailed information for file has been provided');
-        return null;
-      }
-
-      file.nanotimestamp = {
-        min: details['min_gulp.timestamp'],
-        max: details['max_gulp.timestamp']
-      }
-
-      file.timestamp = {
-        min: Math.floor((file.nanotimestamp.min as unknown as number) / 1_000_000),
-        max: Math.round((file.nanotimestamp.max as unknown as number) / 1_000_000)
-      }
-
-      file.total = details.doc_count;
-
-      return file;
-    })).then(files => files.filter(file => file !== null));
+    const files = await Promise.all(contexts
+      .map(context => api<λFile[]>('/source_list', {
+        query: {
+          operation_id: context.operation_id,
+          context_id: context.id
+        }
+      })))
+      .then(files => files
+        .flat()
+        .map(file => File.normalize(this.app, file, detailedFileInformation
+          .find(details => details.id === file.id)
+        )))
+      .then(files => files.filter(file => file !== null));
 
     Logger.log(`${operations.length} operations has been added to application data`, this.sync);
     Logger.log(`${contexts.length} contexts has been added to application data`, this.sync);
@@ -2274,18 +2169,14 @@ export class Context {
   public static reload = (newContexts: λContext[], app: λApp): λContext[] =>
     Context.select(newContexts, Context.selected(app))
 
-  public static frame = (app: λApp): MinMax =>
-    File.selected(app)
-      .map((f) => f.timestamp)
-      .reduce(
-        (acc, cur) => {
-          acc.min = Math.min(cur.min, acc.min || cur.min)
-          acc.max = Math.max(cur.max, acc.max)
+  public static frame = (app: λApp): MinMax => {
+    const files = File.selected(app);
 
-          return acc
-        },
-        { min: 0, max: 0 },
-      )
+    return {
+      min: Math.min(...files.map(file => file.timestamp.min)),
+      max: Math.max(...files.map(file => file.timestamp.max)),
+    }
+  };
 
   public static selected = (use: λApp | λContext[]): λContext[] =>
     Parser.use(use, 'contexts').filter(
@@ -2675,14 +2566,6 @@ export class Event {
     return app.target.events
   }
 
-  public static addTo = (app: λApp, file: λFile['id'], events: λEvent[]) => {
-    events.forEach(e => Event.get(app, file).push(e));
-
-    Logger.log(`${events.length} events has been added to file with id ${file}`, Info);
-
-    return app.target.events;
-  }
-
   public static timestamp = (event: λEvent) => Internal.Transformator.toTimestamp(event['@timestamp']);
 
   public static ids = (app: λApp, ids: λEvent['_id'][]) =>
@@ -2698,7 +2581,7 @@ export class Event {
   public static normalize = (docs: λEvent[]) => docs.map((e: λEvent) => ({
     ...e,
     ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
-    timestamp: Math.round(Number(e['gulp.timestamp']) / 1000000)
+    timestamp: Internal.Transformator.toTimestamp(e['gulp.timestamp'], 'round')
   })) as λEvent[];
 }
 

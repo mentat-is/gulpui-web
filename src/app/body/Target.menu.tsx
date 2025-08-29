@@ -27,6 +27,7 @@ import { Stack } from '@impactium/components'
 import { File } from '@/class/Info'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { useEffect, useState } from 'react'
+import { Refractor } from '@/ui/utils'
 
 interface TargetMenuProps {
   file: λFile
@@ -34,11 +35,7 @@ interface TargetMenuProps {
 
 export function TargetMenu({ file }: TargetMenuProps) {
   const { Info, spawnBanner, spawnDialog, app } = useApplication()
-  const [events, setEvents] = useState(File.events(app, file));
-
-  useEffect(() => {
-    setEvents(File.events(app, file));
-  }, [file, app.target.events]);
+  const events = File.events(app, file);
 
   const removeFilters = (file: λFile) => {
     Info.filters_remove(file)
@@ -50,6 +47,8 @@ export function TargetMenu({ file }: TargetMenuProps) {
   }
 
   const showEvent = (last = false) => {
+    const events = File.events(app, file);
+
     const event = last ? events[0] : events[events.length - 1];
 
     if (!event) {
@@ -118,7 +117,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuGroup>
         <ContextMenuLabel>Actions</ContextMenuLabel>
         <ContextMenuItem
-          onClick={() => Info.files_unselect([file])}
+          onClick={() => Info.setInfoByKey(Refractor.array(...app.target.files.map(f => ({ ...f, selected: f.id === file.id ? false : f.selected }))), 'target', 'files')}
           img="EyeOff"
         >
           Hide

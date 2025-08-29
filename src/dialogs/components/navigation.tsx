@@ -14,13 +14,13 @@ export namespace Navigation {
 }
 
 export function Navigation({ event }: Navigation.Props) {
-  const { Info, spawnDialog } = useApplication()
+  const { app, Info, spawnDialog } = useApplication()
   const [events, setEvents] = useState<λEvent[]>([])
 
   useEffect(() => {
-    const file = File.id(Info.app, event['gulp.source_id'])
+    const file = File.id(app, event['gulp.source_id'])
 
-    const events = Event.get(Info.app, file.id)
+    const events = Event.get(app, file.id)
 
     const index = events.findIndex((ev) => ev._id === event._id)
 
@@ -36,12 +36,17 @@ export function Navigation({ event }: Navigation.Props) {
   const changeEventTargerHandlerConstructor = (forvard: boolean) => () => {
     const event = Info.setTimelineTarget(forvard ? 1 : -1)
 
-    spawnDialog(<DisplayEventDialog event={event} />)
+    if (event) {
+      spawnDialog(<DisplayEventDialog event={event} />)
+    }
   }
+
+  const all = Event.get(app, event['gulp.source_id']);
 
   return (
     <Stack className={s.navigation} jc="space-between">
       <Button
+        disabled={all[all.length - 1]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(true)}
         img="ArrowLeft"
         variant="outline"
@@ -57,6 +62,7 @@ export function Navigation({ event }: Navigation.Props) {
         ))}
       </Stack>
       <Button
+        disabled={all[0]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(false)}
         img="ArrowRight"
         variant="outline"

@@ -66,3 +66,7 @@
   background-color: var(--soft-black);
   border: 1px solid var(--gray-400);
 }
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
