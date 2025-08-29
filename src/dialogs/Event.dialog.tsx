@@ -385,6 +385,8 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     )
   }, [app.target.notes, app.target.links, event]);
 
+  console.log(background);
+
   return (
     <Button
       size='icon'

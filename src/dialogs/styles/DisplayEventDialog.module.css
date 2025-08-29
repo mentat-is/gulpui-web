@@ -93,14 +93,15 @@
   background: var(--geist-background);
   border: var(--geist-border);
   border-radius: var(--round);
-  backdrop-filter: brightness(0.75);
+  backdrop-filter: brightness(0.4);
   z-index: 0;
 }
 .indicator p {
   z-index: 1;
   font-size: 8px;
+  color: white;
   font-family: var(--font-mono);
-  text-shadow: 0 0 1px var(--gray-400);
+  text-shadow: 0 0 1px black;
 }
 .indicator .collab {
   border: 1px solid var(--gray-400);
