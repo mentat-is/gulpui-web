@@ -774,7 +774,7 @@ export class Info implements InfoProps {
         arr.forEach((obj) => {
           Object.entries(obj).forEach(([type, v]) => {
             if (type === 'query_string') {
-              string = v
+              string = v.query
               return;
             }
 
@@ -813,8 +813,6 @@ export class Info implements InfoProps {
         filters
       })
     })
-
-    console.log(queries);
 
     return queries;
   });

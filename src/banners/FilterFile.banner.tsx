@@ -2,7 +2,7 @@ import s from './styles/FilterFileBanner.module.css'
 import { Banner } from '@/ui/Banner'
 import { useApplication } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
-import { Button, } from '@impactium/components'
+import { Button, Stack, } from '@impactium/components'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { File, Filter, Parser, λFilter, λQuery } from '@/class/Info'
 import { fws, Refractor } from '@/ui/utils'
@@ -12,6 +12,7 @@ import { Separator } from '@/ui/Separator'
 import { Preview } from './Preview.banner'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 
 interface FilterFileBannerProps extends Banner.Props {
   files: λFile[],
@@ -139,15 +140,33 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
   const LastQueries = useMemo(() => {
     return (
       <Popover onOpenChange={v => v && refetchLastQueriesList()}>
-        <PopoverTrigger>
+        <PopoverTrigger asChild>
           <Button img='ClockFading' variant='secondary'>
             Last filters
           </Button>
         </PopoverTrigger>
-        <PopoverContent>
-          {lastQueriesList.map(q => (
-            <p>{typeof q}</p>
-          ))}
+        <PopoverContent className={s.lastFilters}>
+          <Stack dir='column'>
+            {lastQueriesList.map((q, i) => (
+              <>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Stack>
+                        <p>{q.string}</p>
+                        <Button img='Check' variant='glass' onClick={() => Info.setQuery(files, q)} />
+                      </Stack>
+                    </TooltipTrigger>
+                    <TooltipContent className={s.tooltip}>
+                      <p>{q.string}</p>
+                      <p>{JSON.stringify(q.filters, null, 2)}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                {lastQueriesList.length - 1 > i && <Separator />}
+              </>
+            ))}
+          </Stack>
         </PopoverContent>
       </Popover>
     )

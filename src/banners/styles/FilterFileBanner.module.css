@@ -55,4 +55,17 @@
 .skeleton::after {
   z-index: 2;
 }
-
+.lastFilters,
+.tooltip {
+  max-width: 512px;
+  max-height: 30vh;
+  min-height: 10vh;
+  overflow: auto;
+}
+.lastFilters * {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  text-align: left;
+  text-transform: unset !important;
+  color: var(--text-white);
+}
