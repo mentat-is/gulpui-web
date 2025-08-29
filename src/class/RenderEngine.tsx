@@ -592,10 +592,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const x = 10;
     const lineHeight = 14;
 
+    const suffix = this.info.app.general.loadings.byFileId.has(file.id) ? ' | Ingesting...' : ''
+
     const lines: Array<{ text: string; dy: number; color: string }> = [
-      { text: file.name, dy: 0, color: '#e8e8e8' },
+      { text: file.name + suffix, dy: 0, color: '#e8e8e8' },
       { text: File.events(this.info.app, file).length.toString(), dy: lineHeight, color: '#e8e8e8' },
-      { text: `${file.total.toString()} | ${File.context(this.info.app, file).name}`, dy: -lineHeight, color: '#a1a1a1' },
+      { text: `${file.total.toString()} | ${File.context(this.info.app, file).name}` + suffix, dy: -lineHeight, color: '#a1a1a1' },
     ];
 
     this.ctx.font = '12px sans-serif';

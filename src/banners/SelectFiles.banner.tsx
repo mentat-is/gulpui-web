@@ -2,7 +2,7 @@ import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Checkbox } from '@/ui/Checkbox'
 import s from './styles/SelectFilesBanner.module.css'
-import { Badge } from '@impactium/components'
+import { Badge, Spinner } from '@impactium/components'
 import { Label } from '@/ui/Label'
 import { Button, Skeleton, Stack, Input } from '@impactium/components'
 import { Context, File, Operation } from '@/class/Info'
@@ -17,6 +17,7 @@ import { FilterFileBanner } from './FilterFile.banner'
 import { cn } from '@impactium/utils'
 import { Refractor } from '@/ui/utils'
 import { SetState } from '@/class/API'
+import { Icon } from '@impactium/icons'
 
 export namespace SelectFiles {
   export namespace Banner {
@@ -250,7 +251,7 @@ interface FileComponentProps {
 }
 
 function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
-  const { Info, spawnBanner } = useApplication()
+  const { app, Info, spawnBanner } = useApplication()
   const [loading, setLoading] = useState<boolean>(false);
 
   const previewButtonClickHandler = () => {
@@ -276,6 +277,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         checked={selectedFiles.has(file.id)}
         onCheckedChange={checked => setFile(file.id, !!checked)}
       />
+      {app.general.loadings.byFileId.has(file.id) && <Spinner size={16} />}
       <Label value={file.name} />
       <FileIsTooBig />
       <Badge size='sm' className={s.amount} variant='gray-subtle' value={file.total.toString()} />

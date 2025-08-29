@@ -706,7 +706,12 @@ export class Info implements InfoProps {
       query: request_query,
       body,
       raw: true,
-    }, ({ req_id }) => {
+      toast: false,
+    }, ({ req_id, status }) => {
+      if (status !== 'pending') {
+        return;
+      }
+
       const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
         const events = Event.normalize(m.data.docs);
 
@@ -737,7 +742,14 @@ export class Info implements InfoProps {
     });
 
     if (preview) {
-      toast(`Total hits for this filter is ${resp.data?.total_hits || 0}`)
+      if (!resp.data?.total_hits) {
+        toast.error('This filter returned no results. No matching documents were found', {
+          icon: <Icon name='FaceUnhappy' />,
+          richColors: true
+        })
+      } else {
+        toast(`Total hits for this filter is ${resp.data?.total_hits}`)
+      }
     }
 
 

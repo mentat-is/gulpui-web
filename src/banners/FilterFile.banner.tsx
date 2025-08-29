@@ -125,8 +125,10 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
       ...query,
       string: Filter.base(files)
     }).then(({ docs, total_hits }) => {
-      spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner files={files} query={query} keys={[...keys.current]} {...props} />)} />)
       setIsPreviewLoading(false);
+      if (total_hits > 0) {
+        spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner files={files} query={query} keys={[...keys.current]} {...props} />)} />)
+      }
     });
   }, [query, files, keys, setIsPreviewLoading]);
 
