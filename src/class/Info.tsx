@@ -2138,11 +2138,7 @@ export class Operation {
   public static reload = (newOperations: λOperation[], app: λApp) => Operation.select(newOperations, Operation.selected(app)?.id)
 
   public static selected = (app: λApp): λOperation | undefined =>
-    Logger.assert(
-      app.target.operations.find((o) => o.selected),
-      'No operation selected',
-      'Operation.selected',
-    )
+    Logger.assert(app.target.operations.find((o) => o.selected), 'No operation selected', 'Operation.selected')
 
   public static id = (use: λApp, id: λOperation['id']): λOperation =>
     Parser.use(use, 'operations').find((o) => o.id === id) as λOperation

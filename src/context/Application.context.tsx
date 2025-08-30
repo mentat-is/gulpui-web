@@ -121,6 +121,9 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     document.querySelector('body')?.classList.add('no-scroll')
   }
 
+  // @ts-ignore
+  window.spawnBanner = spawnBanner;
+
   const destroyBanner = () => {
     setBanner(() => null)
     document.querySelector('body')?.classList.remove('no-scroll')

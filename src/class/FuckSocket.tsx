@@ -1,4 +1,5 @@
 import { Logger } from "@/dto/Logger.class"
+import { Icon } from "@impactium/icons"
 import { EventEmitter } from 'events'
 
 export namespace FuckSocket {
@@ -60,8 +61,7 @@ export namespace FuckSocket {
       this.ws.onopen = (event) => {
         this.send({ token, ws_id });
         this.once(FuckSocket.Message.Type.WS_CONNECTED, () => Logger.log(`WebSocket has been initialized`, FuckSocket.Class, {
-          toast: true,
-          icon: 'Rss'
+          icon: <Icon name='Rss' />
         }));
         this.emit('open', event)
       }

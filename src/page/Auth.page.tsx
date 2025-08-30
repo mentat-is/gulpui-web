@@ -1,5 +1,4 @@
-import { Banner } from '@/ui/Banner'
-import { Button, Stack } from '@impactium/components'
+import { Button as UIButton, Stack } from '@impactium/components'
 import { useEffect, useState } from 'react'
 import { Session } from '../banners/Session.banner'
 import { useApplication } from '@/context/Application.context'
@@ -15,6 +14,7 @@ import { Label } from '@/ui/Label'
 import { Operation as OperationBanners } from '@/banners/Operation.banner'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { UploadBanner } from '@/banners/Upload.banner'
+import { Banner as UIBanner } from '@/ui/Banner';
 
 export namespace Auth {
   export namespace Page {
@@ -73,7 +73,7 @@ export namespace Auth {
     const NextButton = () => {
       if (!app.general.user) {
         return (
-          <Button
+          <UIButton
             img='LogIn'
             disabled={!id || !password}
             variant='glass'
@@ -82,13 +82,13 @@ export namespace Auth {
             tabIndex={4}
             onClick={login}
             style={{ marginLeft: 'auto' }}
-          >Login</Button>
+          >Login</UIButton>
         )
       }
 
       if (Operation.selected(app)) {
         return (
-          <Button
+          <UIButton
             img='Check'
             variant='glass'
             revert
@@ -96,7 +96,7 @@ export namespace Auth {
             tabIndex={6}
             onClick={onLoginAndOperationSelection}
             style={{ marginLeft: 'auto' }}
-          >Done</Button>
+          >Done</UIButton>
         );
       }
 
@@ -139,14 +139,14 @@ export namespace Auth {
         }
 
         return (
-          <Button
+          <UIButton
             onClick={customLoginConstructor(method.login.url)}
             loading={customLoading === method.login.url}
             style={{ flex: 1 }}
             img={icon}
           >
             Login with {capitalize(name)}
-          </Button>
+          </UIButton>
         )
       }
 
@@ -235,15 +235,157 @@ export namespace Auth {
                     {operation.name}
                   </Select.Item>
                 ))}
-                <Button img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
+                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
                   Create new operation
-                </Button>
+                </UIButton>
               </Select.Content>
             </Select.Root>
           </Stack>
         </Stack>
         <NextButton />
       </Stack>
+    )
+  }
+
+  export namespace Banner {
+    export interface Props extends UIBanner.Props { }
+  }
+
+  export function Banner({ className, ...props }: Banner.Props) {
+    const { spawnBanner, Info, app, destroyBanner } = useApplication()
+    const [server, setServer] = useState<string>(Info.app.general.server)
+    const [id, setId] = useState('admin' as λUser['id']);
+    const [password, setPassword] = useState<string>('admin')
+    const [loading, setLoading] = useState<boolean>(false)
+    const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
+
+    useEffect(() => {
+      if (methods.length === 0) {
+        Internal.Settings.server = server
+        api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+          toast: false,
+        }, setMethods)
+      }
+    }, [methods, server])
+
+    const login = async () => {
+      const removeOverload = (str: string): string =>
+        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str
+
+      const validate = (str: string): string | void =>
+        !Pattern.Server.test(str)
+          ? (() => {
+            toast('Incorrect server URL', {
+              icon: <Icon name='Warning' />
+            })
+          })()
+          : removeOverload(str)
+
+      const validatedServer = validate(server)
+
+      if (!validatedServer) return
+
+      Internal.Settings.server = validatedServer
+
+      // Wrap into loading state
+      setLoading(true);
+      const user = await Info.login({ id, password });
+      setLoading(false);
+
+      if (user) {
+        const sessions = await Info.session_list();
+        if (sessions.length > 0) {
+          spawnBanner(<Session.Load.Banner sessions={sessions} />)
+        } else {
+          destroyBanner()
+        }
+      }
+    };
+
+    const NextButton = () => <UIButton img='LogIn' disabled={!id || !password} variant='glass' loading={loading} tabIndex={4} onClick={login} />;
+
+    const [customLoading, setCustomLoading] = useState<string | null>(null)
+
+    const customLoginConstructor = (url: string) => () => {
+      const x = new URLSearchParams()
+      x.append('client', window.location.origin)
+      x.append('ws_id', Info.app.general.ws_id)
+      setCustomLoading(url)
+      window.location.replace(`${Internal.Settings.server}${url}?${x}`)
+    }
+
+    const LoginMethods = () => {
+      if (
+        methods.length === 0 ||
+        (methods.length === 1 && methods[0].name === 'gulp')
+      ) {
+        return null
+      }
+
+      function LoginMethod({ name, icon }: LoginMethod.Props) {
+        const method = methods.find((method) => method.name === name)
+        if (!method) {
+          return null
+        }
+
+        return (
+          <UIButton
+            onClick={customLoginConstructor(method.login.url)}
+            loading={customLoading === method.login.url}
+            style={{ flex: 1 }}
+            img={icon}
+          >
+            Login with {capitalize(name)}
+          </UIButton>
+        )
+      }
+
+      return (
+        <Stack>
+          <LoginMethod name='microsoft' icon='LogoMicrosoft' />
+          <LoginMethod name='google' icon='LogoGoogle' />
+        </Stack>
+      )
+    }
+
+    return (
+      <UIBanner done={<NextButton />} className={cn(className, s.banner)} {...props}>
+        <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
+          <p className={s.title}>[ Login ]</p>
+          <Input
+            variant='highlighted'
+            img='Link'
+            label='Server adress'
+            placeholder='http://localhost:8080'
+            value={server}
+            disabled={!!app.general.user}
+            tabIndex={1}
+            onChange={(e) => setServer(e.currentTarget.value)}
+          />
+          <Input
+            variant='highlighted'
+            label='Username'
+            img='User'
+            placeholder='admin'
+            value={id}
+            disabled={!!app.general.user}
+            tabIndex={2}
+            onChange={(e) => setId(e.currentTarget.value as typeof id)}
+          />
+          <Input
+            variant='highlighted'
+            img='KeyRound'
+            label='Password'
+            placeholder='admin'
+            type='password'
+            value={password}
+            disabled={!!app.general.user}
+            tabIndex={3}
+            onChange={(e) => setPassword(e.currentTarget.value)}
+          />
+          <LoginMethods />
+        </Stack>
+      </UIBanner>
     )
   }
 }

@@ -224,6 +224,7 @@ function ContextComponent({ context, filter, selectedFiles, selectedContexts, se
         <Badge
           size='sm'
           value='Delete'
+          style={{ border: '1px solid var(--red-400)', borderRadius: '2px' }}
           variant='red-subtle'
           icon='Trash2'
           onClick={() =>

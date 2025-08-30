@@ -18,6 +18,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
+import { Banner } from './ui/Banner'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {

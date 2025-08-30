@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import { Internal } from './Info'
 import { Logger } from '@/dto/Logger.class'
 import { λRequest } from '@/dto/Dataset'
+import { Icon } from '@impactium/icons'
+import { Auth } from '@/page/Auth.page'
 
 interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending'
@@ -220,11 +222,13 @@ const api: Api = async function <T>(
   }
   if (res.data?.__error?.name === 'MissingPermission') {
     const message = 'Session expired, reloading window'
-    Logger.warn(message, 'API')
+    Logger.warn(message, 'API', {
+      icon: <Icon name='Warning' />,
+      richColors: true
+    });
     Internal.Settings.token = ''
-    toast.error(message, {
-      richColors: true,
-    })
+    // @ts-ignore
+    window.spawnBanner(<Auth.Banner />);
   }
 
   soft(false, options.setLoading)

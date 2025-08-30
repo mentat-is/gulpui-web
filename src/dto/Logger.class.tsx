@@ -1,16 +1,14 @@
 // @ts-ignore
 import { Console } from '@impactium/console'
 import { λEvent } from './ChunkEvent.dto'
-import { Arrayed, Parser } from '@/class/Info'
+import { Parser } from '@/class/Info'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { λFile } from './Dataset'
-import { toast } from 'sonner'
-import { Icon } from '@impactium/icons'
+import { toast, ToastT } from 'sonner'
 
-interface Options {
-  toast?: boolean
-  icon?: Icon.Name
+interface Options extends Omit<ToastT, 'id'> {
+  toast?: 'success' | 'warning' | 'error'
 }
 
 type ExecutionContext = string | { name: string };
@@ -19,30 +17,25 @@ export class Logger {
   protected static messages: Console.History[] = []
 
   static log(message: any, context: string | { name: string }, options?: Options) {
-    Logger.store('log', message, typeof context === 'string' ? context : context?.name)
-    if (options?.toast) {
-      toast(message, {
-        icon: options.icon ? <Icon name={options.icon} /> : undefined
-      })
-    }
+    Logger.store('log', message, typeof context === 'string' ? context : context?.name, options)
   }
 
   static error(message: any, context?: ExecutionContext, options?: Options) {
-    Logger.store('error', message, context)
-    if (options?.toast) {
-      toast.error(message, {
-        richColors: true,
-        icon: options.icon ? <Icon name={options.icon} /> : undefined
-      })
-    }
+    Logger.store('error', message, context, options ? {
+      ...options,
+      toast: 'error'
+    } : undefined);
   }
 
-  static warn(message: any, context?: ExecutionContext) {
-    Logger.store('warn', message, context)
+  static warn(message: any, context?: ExecutionContext, options?: Options) {
+    Logger.store('debug', message, context, options ? {
+      ...options,
+      toast: 'warning'
+    } : undefined);
   }
 
-  static debug(message: any, context?: ExecutionContext) {
-    Logger.store('debug', message, context)
+  static debug(message: any, context?: ExecutionContext, options?: Options) {
+    Logger.store('debug', message, context, options)
   }
 
   static verbose(message: any, context?: ExecutionContext) {
@@ -58,12 +51,21 @@ export class Logger {
     level: Console.LogLevel,
     message: string,
     context?: ExecutionContext,
-    trace?: string,
+    options?: Options
   ) {
     Logger.messages.push({
       level,
-      message: Logger.format(level, message, context, trace),
+      message: Logger.format(level, message, context),
     })
+
+    if (!options)
+      return;
+
+    if (options.toast) {
+      toast[options.toast](message, options);
+    } else {
+      toast(message, options);
+    }
   }
 
   public static history = () => Logger.messages
