@@ -9,7 +9,7 @@ import { Context, File, Operation } from '@/class/Info'
 import { useEffect, useMemo, useState } from 'react'
 import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
-import { λContext, λFile } from '@/dto/Dataset'
+import { RequestPrefix, λContext, λFile } from '@/dto/Dataset'
 import { Separator } from '@/ui/Separator'
 import { Delete } from './Delete.banner'
 import { Preview } from './Preview.banner'
@@ -278,7 +278,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         checked={selectedFiles.has(file.id)}
         onCheckedChange={checked => setFile(file.id, !!checked)}
       />
-      {app.general.loadings.byFileId.has(file.id) && <Spinner size={16} />}
+      {File.getRequestType(app, file) === RequestPrefix.INGESTION && <Spinner size={16} />}
       <Label value={file.name} />
       <FileIsTooBig />
       <Badge size='sm' className={s.amount} variant='gray-subtle' value={file.total.toString()} />

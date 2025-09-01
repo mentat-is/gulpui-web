@@ -27,6 +27,7 @@ export namespace Auth {
     const [id, setId] = useState('admin' as λUser['id']);
     const [password, setPassword] = useState<string>('admin')
     const [loading, setLoading] = useState<boolean>(false)
+    const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
 
     useEffect(() => {
@@ -62,12 +63,7 @@ export namespace Auth {
       const user = await Info.login({ id, password });
       setLoading(false);
 
-      if (user) {
-        const sessions = await Info.session_list();
-        if (sessions.length > 0) {
-          spawnBanner(<Session.Load.Banner sessions={sessions} />)
-        }
-      }
+      setTimeout(() => Info.session_list(user).then(setSessions), 0);
     };
 
     const NextButton = () => {
@@ -158,7 +154,7 @@ export namespace Auth {
       )
     }
 
-    const SelectTrigger = () => {
+    const SelectOperationTrigger = () => {
       const selected = Operation.selected(Info.app)
 
       if (!app.general.user) {
@@ -227,12 +223,34 @@ export namespace Auth {
               defaultValue={Operation.selected(Info.app)?.id}
               onValueChange={(id) => Info.operations_select(id as λOperation['id'])}
             >
-              <SelectTrigger />
+              <SelectOperationTrigger />
               <Select.Content>
                 {app.target.operations.map((operation) => (
                   <Select.Item key={operation.id} value={operation.id}>
                     <Select.Icon name={Operation.icon(operation)} />
                     {operation.name}
+                  </Select.Item>
+                ))}
+                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
+                  Create new operation
+                </UIButton>
+              </Select.Content>
+            </Select.Root>
+          </Stack>
+        </Stack>
+        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.selected(app) && sessions.length && s.visible)}>
+          <Label value='Session' />
+          <Stack style={{ width: '100%' }}>
+            <Select.Root onValueChange={name => Info.session_load(sessions.find(session => session.name === name)!)}>
+              <Select.Trigger tabIndex={5}>
+                <Select.Icon name='Status' />
+                Select session
+              </Select.Trigger>
+              <Select.Content>
+                {sessions.filter(session => session.selected.operations && session.selected.operations === Operation.selected(app)?.id).map(session => (
+                  <Select.Item key={session.name} value={session.name} style={{ color: session.color }}>
+                    <Select.Icon name={session.icon} />
+                    {session.name}
                   </Select.Item>
                 ))}
                 <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
@@ -252,7 +270,7 @@ export namespace Auth {
   }
 
   export function Banner({ className, ...props }: Banner.Props) {
-    const { spawnBanner, Info, app, destroyBanner } = useApplication()
+    const { spawnBanner, Info, app } = useApplication()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as λUser['id']);
     const [password, setPassword] = useState<string>('admin')
@@ -291,15 +309,6 @@ export namespace Auth {
       setLoading(true);
       const user = await Info.login({ id, password });
       setLoading(false);
-
-      if (user) {
-        const sessions = await Info.session_list();
-        if (sessions.length > 0) {
-          spawnBanner(<Session.Load.Banner sessions={sessions} />)
-        } else {
-          destroyBanner()
-        }
-      }
     };
 
     const NextButton = () => <UIButton img='LogIn' disabled={!id || !password} variant='glass' loading={loading} tabIndex={4} onClick={login} />;

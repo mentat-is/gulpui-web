@@ -23,6 +23,11 @@ export function Timeline() {
     }
   }
 
+  useEffect(() => {
+    // INITIALIZE AUTOSAVER
+    Info.session_autosaver()
+  }, []);
+
   const getAlgothitmInstance = () => {
     return new Algorhithm({
       frame: app.timeline.frame,

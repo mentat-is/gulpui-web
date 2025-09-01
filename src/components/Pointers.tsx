@@ -35,17 +35,6 @@ export function Pointers({
   timestamp,
   ...props
 }: Pointers.Props) {
-  const COLOR_MAPPING: string[] = [
-    'gray',
-    'blue',
-    'red',
-    'amber',
-    'green',
-    'teal',
-    'purple',
-    'pink',
-  ]
-
   const { app, scrollY } = useApplication()
 
   const you: Pointers.Pointer = {

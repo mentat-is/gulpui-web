@@ -141,11 +141,17 @@ export enum RequestStatus {
   PENDING = 'pending',
 }
 
+export enum RequestPrefix {
+  INGESTION = 'ingestion',
+  QUERY = 'query',
+  ENRICHMENT = 'enrichment'
+}
+
 export interface λRequest {
   completed: string
   granted_user_group_ids: λUser['id'][]
   granted_user_ids: λUser['id'][]
-  id: μ.Request
+  id: μ.Request;
   name: string
   owner_user_id: λUser['id']
   records_failed: number

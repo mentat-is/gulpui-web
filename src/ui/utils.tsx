@@ -4,7 +4,7 @@ import { λApp } from '@/dto'
 import { Info, Internal, MinMax, MinMaxBase } from '@/class/Info'
 import { ChangeEvent, RefObject } from 'react'
 import { λEvent } from '@/dto/ChunkEvent.dto'
-import { λFile } from '@/dto/Dataset'
+import { RequestPrefix, λFile, λRequest } from '@/dto/Dataset'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { SetState } from '@/class/API'
 import { Logger } from '@/dto/Logger.class'
@@ -82,13 +82,21 @@ export const throwableByTimestamp = (
     time.min > (app.timeline.frame.max || Infinity)
 }
 
-export function generateUUID<T>(): T {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+
+export function generateUUID<T>(prefix?: RequestPrefix): T {
+  const base = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
     const v = c === 'x' ? r : (r & 0x3) | 0x8
     return v.toString(16) as UUID
-  }) as T
+  });
+
+  if (prefix) {
+    return `${prefix}-${base}` as T;
+  }
+
+  return base as T;
 }
+
 export const getLimits = (
   app: λApp,
   Info: Info,

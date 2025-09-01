@@ -57,7 +57,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [scrollX, setScrollX] = useState<number>(0)
   const [scrollY, setScrollY] = useState<number>(-26)
 
-  const instance = new Info({ app, setInfo, timeline, setScrollX, setScrollY });
+  const instance = new Info({ app, setInfo, timeline, scrollX, scrollY, setScrollX, setScrollY });
 
   const ws = useMemo(() => {
     if (!app.general.user) {

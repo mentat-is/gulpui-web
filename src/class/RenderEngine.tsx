@@ -7,7 +7,7 @@ import { DefaultEngine } from '../engines/Default.engine'
 import { Engine, Hardcode, λCache } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
-import { λFile, λLink, λNote } from '@/dto/Dataset'
+import { RequestPrefix, λFile, λLink, λNote } from '@/dto/Dataset'
 import { getCanvasIcon } from '@/ui/CanvasIcon'
 import { Logger } from '@/dto/Logger.class'
 import { Glyph } from '@/ui/Glyph'
@@ -592,7 +592,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const x = 10;
     const lineHeight = 14;
 
-    const suffix = this.info.app.general.loadings.byFileId.has(file.id) ? ' | Ingesting...' : ''
+    const requestType = File.getRequestType(this.info.app, file);
+    const suffix = !requestType ? '' : requestType === RequestPrefix.INGESTION
+      ? ' | Ingesting...'
+      : ' | Loading...';
 
     const lines: Array<{ text: string; dy: number; color: string }> = [
       { text: file.name + suffix, dy: 0, color: '#e8e8e8' },

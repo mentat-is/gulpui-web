@@ -1,4 +1,4 @@
-import { type λApp } from '@/dto'
+import { MINUTE, type λApp } from '@/dto'
 import {
   λOperation,
   λContext,
@@ -11,6 +11,7 @@ import {
   λGroup,
   λRequest,
   λHighlight,
+  RequestPrefix,
 } from '@/dto/Dataset'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import React from 'react'
@@ -174,6 +175,8 @@ interface InfoProps {
   app: λApp
   setInfo: React.Dispatch<React.SetStateAction<λApp>>
   timeline: React.RefObject<HTMLDivElement>
+  scrollX: number;
+  scrollY: number;
   setScrollX: SetState<number>;
   setScrollY: SetState<number>;
 }
@@ -470,14 +473,18 @@ export class Info implements InfoProps {
   app: λApp
   setInfo: SetState<λApp>;
   timeline: React.RefObject<HTMLDivElement>;
+  scrollX: number;
+  scrollY: number;
   setScrollX: SetState<number>
   setScrollY: SetState<number>
 
 
-  constructor({ app, setInfo, timeline, setScrollX, setScrollY }: InfoProps) {
+  constructor({ app, setInfo, timeline, setScrollX, setScrollY, scrollX, scrollY }: InfoProps) {
     this.app = app
     this.setInfo = setInfo;
     this.timeline = timeline
+    this.scrollX = scrollX;
+    this.scrollY = scrollY;
     this.setScrollX = setScrollX
     this.setScrollY = setScrollY
 
@@ -694,6 +701,7 @@ export class Info implements InfoProps {
     const request_query: Record<string, string> = {
       ws_id: this.app.general.ws_id,
       operation_id: operation.id,
+      req_id: generateUUID(RequestPrefix.QUERY)
     }
 
     if (id) {
@@ -1075,7 +1083,7 @@ export class Info implements InfoProps {
       }
     }
 
-    const id = generateUUID<λRequest['id']>();
+    const id = generateUUID<λRequest['id']>(RequestPrefix.INGESTION);
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
       FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
@@ -1680,7 +1688,6 @@ export class Info implements InfoProps {
       query: {
         user_id: this.app.general.user?.id,
       },
-      toast: `Session ${name} has been saved successfully`,
       raw: true,
       body: {
         user_data: {
@@ -1688,6 +1695,26 @@ export class Info implements InfoProps {
         }
       }
     })
+  }
+
+  session_autosaver = async () => {
+    const prefix = 'autosaved-session-'
+    const sessions = await this.session_list();
+    const prev = sessions.find(session => session.name.startsWith(prefix));
+    if (prev) {
+      await this.session_delete(prev.name);
+    }
+
+    await this.session_create({
+      name: prefix + new Date().toISOString(),
+      color: 'var(--green-800)',
+      icon: 'RefreshClockwise',
+      scroll: { x: this.scrollX, y: this.scrollY }
+    });
+
+    setTimeout(() => {
+      this.session_autosaver();
+    }, MINUTE);
   }
 
   session_delete = async (name: string) => {
@@ -1703,7 +1730,6 @@ export class Info implements InfoProps {
       query: {
         user_id: this.app.general.user.id,
       },
-      toast: `Session ${name} has been deleted successfully`,
       raw: true,
       body: {
         user_data: {
@@ -1717,34 +1743,30 @@ export class Info implements InfoProps {
     this.setScrollX(session.timeline.scroll.x);
     this.setScrollY(session.timeline.scroll.y);
 
-    this.setInfo(info => ({
-      ...info,
-      timeline: {
-        ...info.timeline,
-        scale: session.timeline.scale,
-        target: session.timeline.target,
-        frame: session.timeline.frame,
-        filter: session.timeline.filter,
-      },
-      target: {
-        ...info.target,
-        operations: Operation.select(this.app, session.selected.operations),
-        contexts: Context.select(this.app, session.selected.contexts),
-        files: File.select(this.app, session.selected.files),
-        filters: session.filters
-      }
-    }));
+    this.setInfoByKey(session.timeline.scale, 'timeline', 'scale');
+    this.setInfoByKey(session.timeline.target, 'timeline', 'target');
+    this.setInfoByKey(session.timeline.frame, 'timeline', 'frame');
+    this.setInfoByKey(session.timeline.filter, 'timeline', 'filter');
+    this.setInfoByKey(Operation.select(this.app, session.selected.operations), 'target', 'operations');
+    this.setInfoByKey(Context.select(this.app, session.selected.contexts), 'target', 'contexts');
+    this.setInfoByKey(File.select(this.app, session.selected.files), 'target', 'files');
+    this.setInfoByKey(session.filters, 'target', 'filters');
+
+    setTimeout(() => {
+      this.refetch();
+    }, 0);
   }
 
-  async session_list(): Promise<Internal.Session.Data[]> {
-    if (!this.app.general.user) {
+  async session_list(user = this.app.general.user): Promise<Internal.Session.Data[]> {
+    console.log(user);
+    if (!user) {
       Logger.warn('Tried to load sessions list before authorization');
       return Internal.Transformator.toAsync([]);
     }
 
     return api<any>('/user_get_by_id', {
       method: 'GET',
-      query: { user_id: this.app.general.user.id }
+      query: { user_id: user.id }
     }).then(data => data.user_data.sessions || [])
   };
 
@@ -2310,6 +2332,30 @@ export class File {
       ) as λFile)
       : file
 
+  public static getRequestType = (app: λApp, file: λFile | λFile['id']): RequestPrefix | null | undefined => {
+    const id = Parser.useUUID(file) as λFile['id'];
+
+    const request = app.general.loadings.byFileId.get(id);
+    if (!request) {
+      // File is not requesting
+      return null;
+    }
+
+    const parts = request.split('-');
+    if (parts.length === 1) {
+      // Type not defined
+      return void 0;
+    }
+
+    const type = parts[0];
+    if (Object.values(RequestPrefix).includes(type as RequestPrefix)) {
+      return type as RequestPrefix;
+    }
+
+    // Type defined, but unknown
+    return null;
+  }
+
   public static unselect = (app: λApp, unselected: λFile[]): λFile[] =>
     app.target.files.map((f) =>
       unselected.find((u) => u.id === f.id) ? File._unselect(f) : f,
@@ -2805,7 +2851,7 @@ export namespace μ {
   }
 
   const Request = Symbol('Request')
-  export type Request = UUID & {
+  export type Request = `${RequestPrefix}-${UUID}` & {
     readonly [Request]: unique symbol
   }
 }
