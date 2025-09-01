@@ -62,7 +62,7 @@ export function Navigation({ event }: Navigation.Props) {
         ))}
       </Stack>
       <Button
-        disabled={all[0]._id === event._id}
+        disabled={all.length > 0 && all[0]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(false)}
         img="ArrowRight"
         variant="outline"
