@@ -46,7 +46,7 @@ export function Navigation({ event }: Navigation.Props) {
   return (
     <Stack className={s.navigation} jc="space-between">
       <Button
-        disabled={all[all.length - 1]._id === event._id}
+        disabled={all.length > 0 && all[all.length - 1]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(true)}
         img="ArrowLeft"
         variant="outline"
