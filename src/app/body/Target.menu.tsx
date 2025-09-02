@@ -28,6 +28,8 @@ import { File } from '@/class/Info'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { useEffect, useState } from 'react'
 import { Refractor } from '@/ui/utils'
+import { toast } from 'sonner'
+import { Icon } from '@impactium/icons'
 
 interface TargetMenuProps {
   file: λFile
@@ -48,6 +50,13 @@ export function TargetMenu({ file }: TargetMenuProps) {
 
   const showEvent = (last = false) => {
     const events = File.events(app, file);
+    if (!events.length) {
+      toast.error('There are no events in this source', {
+        icon: <Icon name='FileQuestion' />,
+        richColors: true
+      })
+      return;
+    }
 
     const event = last ? events[0] : events[events.length - 1];
 
@@ -145,7 +154,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
             </ContextMenuItem>
           </ContextMenuSubContent>
         </ContextMenuSub>
-        {events.length > 1 ? <Stack gap={2}>
+        <Stack gap={2}>
           <ContextMenuItem
             onClick={() => showEvent()}
             img="ArrowLeftFromLine"
@@ -160,7 +169,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
           >
             Show last event
           </ContextMenuItem>
-        </Stack> : null}
+        </Stack>
       </ContextMenuGroup>
       <ContextMenuSeparator />
       <ContextMenuGroup>

@@ -51,7 +51,7 @@ export function Navigation({ event }: Navigation.Props) {
         img="ArrowLeft"
         variant="outline"
       />
-      <Stack className={s.content} jc="center">
+      <Stack className={s.content} jc="center" flex>
         {events.map((e) => (
           <EventIndicator
             key={e._id}
