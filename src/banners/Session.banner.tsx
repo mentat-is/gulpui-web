@@ -23,30 +23,19 @@ export namespace Session {
       const [icon, setIcon] = useState<λGlyph['id'] | null>(null);
       const { Info, app, scrollX, scrollY } = useApplication();
       const [loading, setLoading] = useState<boolean>(false)
-      const [isNameValid, setIsNameValid] = useState<boolean>(true)
 
       const changenameHandler = (
         event: ChangeEvent<HTMLInputElement>,
       ) => {
         const { value } = event.target
 
-        setIsNameValid(value.length > 0)
-
-        setName(value)
+        setName(value);
       }
 
       const saveSession = async () => {
         const operation = Operation.selected(app)
         if (!operation) {
           return
-        }
-
-        if (name.length > 3) {
-          setIsNameValid(false);
-          toast.error('Session name should be little bit longer', {
-            richColors: true
-          })
-          return;
         }
 
         if (!icon) {
@@ -86,7 +75,7 @@ export namespace Session {
         <UIBanner title='Save session' {...props}>
           <Stack className={s.param} dir='column' ai='stretch' gap={12}>
             <Input
-              valid={isNameValid}
+              valid={name.length > 0}
               img='TextTitle'
               label='Session name'
               placeholder='Enter session name'
@@ -103,7 +92,7 @@ export namespace Session {
             </Stack>
           </Stack>
           <Stack className={s.buttons}>
-            <Button loading={loading} onClick={saveSession} variant='glass' disabled={name.length < 4 || !icon} img='Check'>Save current session</Button>
+            <Button loading={loading} onClick={saveSession} variant='glass' disabled={!name.length || !icon} img='Check'>Save current session</Button>
             <Button variant='destructive' img='LogOut' onClick={reloadWindow}>Dont save my session</Button>
           </Stack>
         </UIBanner>

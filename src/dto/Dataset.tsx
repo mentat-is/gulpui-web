@@ -1,10 +1,11 @@
 import { Color } from '@impactium/types'
 import { Range, λUser, μ } from '@/class/Info'
-import { Gradients } from '@/ui/utils'
-import { Engine } from '@/class/Engine.dto'
+import { Gradient } from '@/ui/utils'
 import { MinMax } from '@/class/Info'
 import { λDoc, λEvent } from './ChunkEvent.dto'
 import { Icon } from '@impactium/icons'
+import { RenderEngine } from '@/class/RenderEngine'
+import { Engine } from '@/class/Engine.dto'
 
 export type GulpDataType =
   | 'operation'
@@ -83,20 +84,17 @@ export interface λFile extends Selectable {
   glyph_id: λGlyph['id'],
   name: string
   // Client-only params
-  settings: Pick<ΞSettings, 'color' | 'engine' | 'field' | 'offset'>
+  settings: {
+    offset: number;
+    field: keyof λEvent;
+    render_color_palette: Gradient;
+    render_engine: Engine.List;
+  }
   pinned: boolean // (false)
   // Enriched  using /query_operation
   timestamp: MinMax
   nanotimestamp: MinMax<bigint>
   total: number
-}
-
-export interface ΞSettings {
-  color: Gradients
-  engine: Engine.List
-  offset: number
-  field: keyof λEvent
-  crosshair: boolean
 }
 
 export type λLink = GulpObject<μ.Link, {

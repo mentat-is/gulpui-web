@@ -1,6 +1,6 @@
 import { Engine, Hardcode } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
-import { Gradients, throwableByTimestamp, λColor } from '@/ui/utils'
+import { Gradient, throwableByTimestamp, λColor } from '@/ui/utils'
 import { Event, File } from '../class/Info'
 import { λFile } from '@/dto/Dataset'
 
@@ -37,7 +37,7 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
         amount <= 0) continue
 
       this.renderer.ctx.fillStyle = λColor.gradient(
-        file.settings.color as Gradients,
+        file.settings.render_color_palette,
         amount,
         { min: 0, max: height }
       )

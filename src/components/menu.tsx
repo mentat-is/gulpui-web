@@ -17,6 +17,7 @@ import { File } from '@/class/Info'
 import { Debug } from '@/banners/Debug.banner'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { Commands } from '@/banners/Commands.banner'
+import { Settings } from '@/banners/Settings.banner'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -117,6 +118,12 @@ export function Menu() {
         title="Back to operations"
         img="Undo2"
         onClick={backToOperations}
+      />
+      <Button
+        variant="secondary"
+        title="Settings"
+        img="SettingsGear"
+        onClick={() => spawnBanner(<Settings.Banner />)}
       />
       <Button
         variant="secondary"

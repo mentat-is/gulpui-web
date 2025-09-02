@@ -105,7 +105,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       if (
         !throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)
       ) {
-        render[file.settings.engine].render(file, y - 24, force)
+        render[file.settings.render_engine].render(file, y - 24, force)
       }
 
       if (!i) render.primary(file)
@@ -182,7 +182,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     for (const event of File.events(app, file)) {
       const pos = getPixelPosition(event.timestamp + file.settings.offset)
 
-      if (file.settings.engine === 'graph') {
+      if (file.settings.render_engine === 'graph') {
         if (x >= pos - 16 && x <= pos) {
           events.push(event)
         }

@@ -263,13 +263,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public locals = (file: λFile) => {
-    if (!file.timestamp || !file.timestamp.min) {
-      return
-    }
     const y = File.getHeight(this.info.app, file, this.scrollY)
 
-    const right = this.getPixelPosition(file.timestamp.max) + 12
-    const left = this.getPixelPosition(file.timestamp.min) - 12
+    const right = this.getPixelPosition(file.timestamp.max + file.settings.offset) + 12
+    const left = this.getPixelPosition(file.timestamp.min + file.settings.offset) - 12
     const line = {
       one: y - 6,
       two: y + 4,
@@ -298,7 +295,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = '#e8e8e8'
     this.ctx.fillText(file.total.toString(), right, line.one)
     this.ctx.fillStyle = '#a1a1a1'
-    this.ctx.fillText(format(file.timestamp.max, 'dd.MM.yyyy'), right, line.two)
+    this.ctx.fillText(format(file.timestamp.max + file.settings.offset, 'dd.MM.yyyy'), right, line.two)
     this.ctx.fillStyle = '#0372ef'
     this.ctx.fillText(events, right, line.three)
 
@@ -306,7 +303,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillStyle = '#e8e8e8'
     this.ctx.fillText(file.total.toString(), left, line.one)
     this.ctx.fillStyle = '#a1a1a1'
-    this.ctx.fillText(format(file.timestamp.min, 'dd.MM.yyyy'), left, line.two)
+    this.ctx.fillText(format(file.timestamp.min + file.settings.offset, 'dd.MM.yyyy'), left, line.two)
     this.ctx.fillStyle = '#0372ef'
     this.ctx.fillText(events, left, line.three)
 

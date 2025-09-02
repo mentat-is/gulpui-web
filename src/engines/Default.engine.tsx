@@ -37,11 +37,12 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     const events = Array.from(map.entries())
 
     events.forEach(([_, [code, timestamp]]) => {
+      timestamp += file.settings.offset;
       if (timestamp > this.renderer.info.app.timeline.frame.max || timestamp < this.renderer.info.app.timeline.frame.min) {
         return;
       }
 
-      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.color, code, range);
+      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.render_color_palette, code, range);
 
       this.renderer.ctx.fillRect(
         this.renderer.getPixelPosition(timestamp),
@@ -66,16 +67,21 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     const firstEvent = events[0]
     const lastEvent = events[events.length - 1]
 
-    const visiblePixelRange: MinMax = {
+    const canvas: MinMax = {
+      min: -128,
+      max: this.renderer.ctx.canvas.width + 128
+    }
+
+    const visiblePixelRange: MinMax = file.settings.offset > 0 ? canvas : {
       min: Math.max(
-        this.renderer.getPixelPosition(file.timestamp.min),
-        this.renderer.getPixelPosition(lastEvent.timestamp),
-        -128,
+        this.renderer.getPixelPosition(file.timestamp.min + file.settings.offset),
+        this.renderer.getPixelPosition(lastEvent.timestamp + file.settings.offset),
+        canvas.min,
       ),
       max: Math.min(
-        this.renderer.getPixelPosition(file.timestamp.max),
-        this.renderer.getPixelPosition(firstEvent.timestamp),
-        this.renderer.ctx.canvas.width + 128,
+        this.renderer.getPixelPosition(file.timestamp.max + file.settings.offset),
+        this.renderer.getPixelPosition(firstEvent.timestamp + file.settings.offset),
+        canvas.max,
       ),
     }
 
@@ -100,7 +106,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
 
       while (low <= high) {
         const mid = Math.floor((low + high) / 2)
-        const currentTimestamp = events[mid].timestamp
+        const currentTimestamp = events[mid].timestamp + file.settings.offset
         const diff = Math.abs(currentTimestamp - targetTimestamp)
 
         if (

@@ -3,7 +3,6 @@ import {
   λOperation,
   λContext,
   λFile,
-  ΞSettings,
   λLink,
   λNote,
   Default,
@@ -15,7 +14,7 @@ import {
 } from '@/dto/Dataset'
 import { λEvent } from '@/dto/ChunkEvent.dto'
 import React from 'react'
-import { generateUUID, getSortOrder, Gradients, NodeFile, Refractor } from '@/ui/utils'
+import { generateUUID, getSortOrder, Gradient, GradientMap, NodeFile, Refractor } from '@/ui/utils'
 import { Acceptable } from '@/dto/ElasticGetMapping.dto'
 import { UUID } from 'crypto'
 import { λGlyph } from '@/dto/Dataset'
@@ -183,10 +182,6 @@ interface InfoProps {
 
 export namespace Internal {
   export enum LocalStorageItemsList {
-    TIMELINE_RENDER_ENGINE = 'settings.__engine',
-    TIMELINE_RENDER_COLOR = 'settings.__color',
-    TIMELINE_PRETTY_CROSSHAIR = 'settings.__crosshair',
-    TIMELINE_FOCUS_FIELD = 'settings.__field',
     GENERAL_SERVER_VALUE = '__server',
     GENERAL_TOKEN_VALUE = '__token',
     IS_UTC_TIMESTAMPS = '__is_utc_timestamps',
@@ -200,85 +195,11 @@ export namespace Internal {
   }
 
   export class Settings {
-    static default: ΞSettings = {
-      engine: 'default',
-      color: 'thermal',
-      field: 'gulp.event_code',
+    static default: λFile['settings'] = {
       offset: 0,
-      crosshair: true,
-    }
-
-    public static get engine(): Engine.List {
-      const engine = localStorage.getItem(
-        Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE,
-      ) as Engine.List
-
-      if (engine) {
-        return engine
-      }
-
-      Internal.Settings.engine = Internal.Settings.default.engine
-
-      return Internal.Settings.engine
-    }
-
-    public static set engine(engine: Engine.List) {
-      localStorage.setItem(
-        Internal.LocalStorageItemsList.TIMELINE_RENDER_ENGINE,
-        engine,
-      )
-    }
-
-    public static get color(): Gradients {
-      const color = localStorage.getItem(
-        Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR,
-      ) as Gradients
-
-      if (color) {
-        return color
-      }
-
-      Internal.Settings.color = Internal.Settings.default.color
-
-      return Internal.Settings.color
-    }
-
-    public static set color(color: Gradients) {
-      localStorage.setItem(
-        Internal.LocalStorageItemsList.TIMELINE_RENDER_COLOR,
-        color,
-      )
-    }
-
-    public static get field(): keyof λEvent {
-      const field = localStorage.getItem(
-        Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD,
-      ) as keyof λEvent
-
-      if (field) {
-        return field
-      }
-
-      Internal.Settings.field = Internal.Settings.default.field
-
-      return Internal.Settings.field
-    }
-
-    public static set field(field: keyof λEvent) {
-      localStorage.setItem(
-        Internal.LocalStorageItemsList.TIMELINE_FOCUS_FIELD,
-        field.toString(),
-      )
-    }
-
-    public static all(): ΞSettings {
-      return {
-        engine: Settings.engine,
-        color: Settings.color,
-        field: Settings.field,
-        offset: 0,
-        crosshair: Settings.crosshair,
-      }
+      field: 'gulp.event_code',
+      render_color_palette: 'thermal',
+      render_engine: 'default'
     }
 
     public static get server(): string {
@@ -323,20 +244,6 @@ export namespace Internal {
       )
     }
 
-    public static get crosshair(): boolean {
-      const value = localStorage.getItem(
-        Internal.LocalStorageItemsList.TIMELINE_PRETTY_CROSSHAIR,
-      )
-
-      if (value) {
-        return value === 'true'
-      }
-
-      Internal.Settings.crosshair = true
-
-      return Internal.Settings.crosshair
-    }
-
     public static set isUTCTimestamps(is: boolean) {
       localStorage.setItem(Internal.LocalStorageItemsList.IS_UTC_TIMESTAMPS, String(is))
     }
@@ -350,14 +257,7 @@ export namespace Internal {
 
       Internal.Settings.isUTCTimestamps = false;
 
-      return Internal.Settings.crosshair
-    }
-
-    public static set crosshair(crosshair: boolean) {
-      localStorage.setItem(
-        Internal.LocalStorageItemsList.TIMELINE_PRETTY_CROSSHAIR,
-        String(crosshair),
-      )
+      return Internal.Settings.isUTCTimestamps
     }
   }
 
@@ -2387,7 +2287,7 @@ export class File {
       min: BigInt(Math.round(app.timeline.frame.min)),
       max: BigInt(Math.round(app.timeline.frame.max)),
     },
-    settings: Internal.Settings.all(),
+    settings: Internal.Settings.default,
     selected: true,
     operation_id,
     context_id,
@@ -2418,7 +2318,7 @@ export class File {
     return Object.assign(file, {
       selected: file.selected ?? exist.selected ?? false,
       pinned: file.pinned ?? exist.pinned ?? false,
-      settings: file.settings ?? exist.settings ?? Internal.Settings.all(),
+      settings: file.settings ?? exist.settings ?? Internal.Settings.default,
       total: file.total ?? details?.doc_count ?? 0,
       // @ts-ignore
       nanotimestamp: { min, max, ...file.nanotimestamp },

@@ -5,9 +5,8 @@ import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/SettingsFileBanner.module.css'
 import { FilterFileBanner } from './FilterFile.banner'
-import { Card } from '@/ui/Card'
 import { Select } from '@/ui/Select'
-import { Gradients, GradientsMap } from '@/ui/utils'
+import { Gradient, GradientMap } from '@/ui/utils'
 import { Input } from '@impactium/components'
 import { Separator } from '@/ui/Separator'
 import { enginesBase } from '@/dto/Engine.dto'
@@ -25,9 +24,9 @@ interface SettingsFileBannerProps {
 
 export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const { Info, app, spawnBanner, destroyBanner } = useApplication()
-  const [color, setColor] = useState<any>(file.settings.color)
+  const [render_color_palette, setRenderColorPalette] = useState<any>(file.settings.render_color_palette)
   const [offset, setOffset] = useState<number>(file.settings.offset)
-  const [engine, setEngine] = useState<Engine.List>(file.settings.engine)
+  const [render_engine, setEngine] = useState<Engine.List>(file.settings.render_engine)
   const [loading, setLoading] = useState<boolean>(false)
 
   const save = () => {
@@ -35,9 +34,9 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
 
     setTimeout(() => {
       Info.file_set_settings(file.id, {
-        color,
+        render_color_palette,
+        render_engine,
         offset,
-        engine,
         field,
       })
 
@@ -80,7 +79,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
 
     return (
       <Select.Root onValueChange={(field: keyof λEvent) => setField(field)} defaultValue={field.toString()}>
-        <Select.Trigger className={s.trigger} value={engine}>
+        <Select.Trigger className={s.trigger} value={field}>
           <Icon name='Dot' />
           {field}
         </Select.Trigger>
@@ -126,15 +125,10 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         />
       </Stack>
       <Separator />
-      <Select.Root onValueChange={(v: Engine.List) => setEngine(v)} value={engine}>
+      <Select.Root onValueChange={(v: Engine.List) => setEngine(v)} value={render_engine}>
         <Select.Trigger className={s.trigger}>
-          <Icon
-            name={
-              enginesBase.find((e) => e.plugin === engine)?.img ??
-              'CircleDashed'
-            }
-          />
-          {enginesBase.find((e) => e.plugin === engine)?.title ?? engine}
+          <Icon name={enginesBase.find((e) => e.plugin === render_engine)?.img ?? 'CircleDashed'} />
+          {enginesBase.find((e) => e.plugin === render_engine)?.title ?? render_engine}
         </Select.Trigger>
         <Select.Content>
           {enginesBase.map((i) => (
@@ -150,9 +144,9 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Separator />
       <Stack jc="space-between">
         <p className={s.text}>Color palette:</p>
-        <ColorPicker color={color} setColor={(c) => setColor(c as Gradients)}>
+        <ColorPicker color={render_color_palette} setColor={(c) => setRenderColorPalette(c as Gradient)}>
           <ColorPickerTrigger />
-          <ColorPickerPopover gradients={GradientsMap} solids={[]} />
+          <ColorPickerPopover gradients={GradientMap} solids={[]} />
         </ColorPicker>
       </Stack>
       <Stack jc="space-between">

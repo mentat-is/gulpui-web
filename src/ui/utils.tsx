@@ -119,7 +119,7 @@ export const getLimits = (
   return { min, max }
 }
 
-export const GradientsMap = {
+export const GradientMap = {
   thermal: [
     '0000c1',
     '8600d0',
@@ -145,7 +145,7 @@ export const GradientsMap = {
   saga: ['9d80cb', 'f7c2e6'],
 }
 
-export type Gradients = keyof typeof GradientsMap
+export type Gradient = keyof typeof GradientMap
 
 export const arrayToLinearGradientCSS = (gradient: string[]): string =>
   `linear-gradient(to right, ${gradient.map((g) => '#' + g).join(', ')})`
@@ -180,22 +180,22 @@ export const COLORS: string[] = ['#a1a1a1', '#3399ff', '#ff4d4d', '#c99900', '#6
 
 const ERROR_COLOR = 0xff0000
 
-const NumericGradientsMap: Record<Gradients, number[]> = (() => {
+const NumericGradientMap: Record<Gradient, number[]> = (() => {
   const cache: Record<string, number[]> = {}
-  for (const [key, gradient] of Object.entries(GradientsMap)) {
+  for (const [key, gradient] of Object.entries(GradientMap)) {
     cache[key] = gradient.map((color) => parseInt(color, 16) || ERROR_COLOR)
   }
-  return cache as Record<Gradients, number[]>
+  return cache as Record<Gradient, number[]>
 })()
 
 export class λColor {
   private static gradientCache = new Map<
-    Gradients,
+    Gradient,
     Map<number, Map<number, Map<number, string>>>
   >()
 
   public static gradient = (
-    target: Gradients,
+    target: Gradient,
     diff: number,
     delta: MinMax,
   ): string => {
@@ -222,7 +222,7 @@ export class λColor {
       return value
     }
 
-    const gradient = NumericGradientsMap[target]
+    const gradient = NumericGradientMap[target]
     const numColors = gradient.length
 
     const deltaRange = delta.max - delta.min
