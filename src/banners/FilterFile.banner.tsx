@@ -135,11 +135,13 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
 
   const [lastQueriesList, setLastQueriesList] = useState<λQuery[]>([]);
 
-  const refetchLastQueriesList = useCallback(() => Info.getLastQueries().then(setLastQueriesList), [setLastQueriesList]);
+  useEffect(() => {
+    Info.getLastQueries().then(setLastQueriesList);
+  }, [setLastQueriesList]);
 
   const LastQueries = useMemo(() => {
     return (
-      <Popover onOpenChange={v => v && refetchLastQueriesList()}>
+      <Popover>
         <PopoverTrigger asChild>
           <Button img='ClockFading' variant='secondary'>
             Last filters
@@ -170,7 +172,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
         </PopoverContent>
       </Popover>
     )
-  }, [lastQueriesList, refetchLastQueriesList]);
+  }, [lastQueriesList]);
 
   return (
     <Banner
