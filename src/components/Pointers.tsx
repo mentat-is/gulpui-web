@@ -8,7 +8,7 @@ import { cn } from '@impactium/utils'
 import { XY } from '@/dto/XY.dto'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
-import { FuckSocket } from '@/class/FuckSocket'
+import { SmartSocket } from '@/class/SmartSocket'
 import { formatTimestampToReadableString } from '@/ui/utils'
 
 export namespace Pointers {

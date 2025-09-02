@@ -2,7 +2,7 @@ import { Logger } from "@/dto/Logger.class"
 import { Icon } from "@impactium/icons"
 import { EventEmitter } from 'events'
 
-export namespace FuckSocket {
+export namespace SmartSocket {
   type Condition<T = any> = (data: T) => boolean
   type Handler<T = any> = (data: T) => void
 
@@ -36,7 +36,7 @@ export namespace FuckSocket {
   }
 
   export class Class extends EventEmitter {
-    public static readonly instance: FuckSocket.Class;
+    public static readonly instance: SmartSocket.Class;
     private readonly ws!: WebSocket;
     private readonly conditional: Map<string, Conditional[]> = new Map()
     private counter = 0
@@ -47,20 +47,20 @@ export namespace FuckSocket {
         return;
       }
 
-      if (FuckSocket.Class.instance) {
-        return FuckSocket.Class.instance
+      if (SmartSocket.Class.instance) {
+        return SmartSocket.Class.instance
       }
 
       this.ws = new WebSocket(url);
       this.forwarding(token, ws_id);
       // @ts-ignore
-      FuckSocket.Class.instance = this;
+      SmartSocket.Class.instance = this;
     }
 
     private forwarding(token: string, ws_id: string) {
       this.ws.onopen = (event) => {
         this.send({ token, ws_id });
-        this.once(FuckSocket.Message.Type.WS_CONNECTED, () => Logger.log(`WebSocket has been initialized`, FuckSocket.Class, {
+        this.once(SmartSocket.Message.Type.WS_CONNECTED, () => Logger.log(`WebSocket has been initialized`, SmartSocket.Class, {
           icon: <Icon name='Rss' />
         }));
         this.emit('open', event)
@@ -82,7 +82,7 @@ export namespace FuckSocket {
       }
     }
 
-    private handle(event: FuckSocket.Message.Type, data: any) {
+    private handle(event: SmartSocket.Message.Type, data: any) {
       const listeners = this.conditional.get(event) || [];
       const remove: string[] = []
 
@@ -99,7 +99,7 @@ export namespace FuckSocket {
       remove.forEach(id => this.remove(event, id));
     }
 
-    private remove(event: FuckSocket.Message.Type, id: string) {
+    private remove(event: SmartSocket.Message.Type, id: string) {
       const listeners = this.conditional.get(event) || []
       const filtered = listeners.filter(l => l.id !== id)
 
@@ -111,7 +111,7 @@ export namespace FuckSocket {
     }
 
     con<T = any>(
-      event: FuckSocket.Message.Type,
+      event: SmartSocket.Message.Type,
       condition: Condition<T>,
       handler: Handler<T>
     ): string {
@@ -133,7 +133,7 @@ export namespace FuckSocket {
     }
 
     conce<T = any>(
-      event: FuckSocket.Message.Type,
+      event: SmartSocket.Message.Type,
       condition: Condition<T>,
       handler: Handler<T>
     ): string {
@@ -153,16 +153,16 @@ export namespace FuckSocket {
       return id
     }
 
-    coff(event: FuckSocket.Message.Type, listenerId: string): void {
+    coff(event: SmartSocket.Message.Type, listenerId: string): void {
       this.remove(event, listenerId)
     }
 
-    coffAll(event: FuckSocket.Message.Type): void {
+    coffAll(event: SmartSocket.Message.Type): void {
       this.conditional.delete(event)
     }
 
     coffWhenCondition<T = any>(
-      event: FuckSocket.Message.Type,
+      event: SmartSocket.Message.Type,
       condition: Condition<T>
     ): void {
       const listeners = this.conditional.get(event) || []
@@ -176,7 +176,7 @@ export namespace FuckSocket {
     }
 
     wait<T = any>(
-      event: FuckSocket.Message.Type,
+      event: SmartSocket.Message.Type,
       condition: Condition<T>,
       timeout?: number
     ): Promise<T> {

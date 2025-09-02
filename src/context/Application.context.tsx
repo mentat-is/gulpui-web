@@ -14,7 +14,7 @@ import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'
 import { SetState } from '@/class/API'
 import { Hint } from '@/dialogs/Hint.dialog';
-import { FuckSocket } from '@/class/FuckSocket';
+import { SmartSocket } from '@/class/SmartSocket';
 import { λLink, λNote } from '@/dto/Dataset';
 
 export class ApplicationError extends Error {
@@ -64,11 +64,11 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    return new FuckSocket.Class(app.general.server + '/ws', app.general.user.token, app.general.ws_id);
+    return new SmartSocket.Class(app.general.server + '/ws', app.general.user.token, app.general.ws_id);
   }, [app.general]);
 
   useEffect(() => {
-    if (!FuckSocket.Class.instance)
+    if (!SmartSocket.Class.instance)
       return;
 
     const collabCallback = (message: any) => {
@@ -105,14 +105,14 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
     const reqeustStatsCallback = (message: any) => instance.request_add(message.data.data);
 
-    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_UPDATE, collabCallback);
-    FuckSocket.Class.instance.on(FuckSocket.Message.Type.COLLAB_DELETE, collabCallback);
-    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.STATS_UPDATE, m => m.data.data.type === 'request_stats', reqeustStatsCallback);
+    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabCallback);
+    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabCallback);
+    const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.STATS_UPDATE, m => m.data.data.type === 'request_stats', reqeustStatsCallback);
 
     return () => {
-      FuckSocket.Class.instance.off(FuckSocket.Message.Type.COLLAB_UPDATE, collabCallback);
-      FuckSocket.Class.instance.off(FuckSocket.Message.Type.COLLAB_DELETE, collabCallback);
-      FuckSocket.Class.instance.coff(FuckSocket.Message.Type.STATS_UPDATE, sid);
+      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_UPDATE, collabCallback);
+      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_DELETE, collabCallback);
+      SmartSocket.Class.instance.coff(SmartSocket.Message.Type.STATS_UPDATE, sid);
     }
   }, [ws, app, instance]);
 

@@ -33,7 +33,7 @@ import { Badge, Spinner } from '@impactium/components'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 import { RenderEngine } from './RenderEngine'
-import { FuckSocket } from './FuckSocket'
+import { SmartSocket } from './SmartSocket'
 import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
 
 export namespace GulpDataset {
@@ -556,17 +556,17 @@ export class Info implements InfoProps {
         this.events_reset_in_file(file);
         this.setLoading(req_id, file.id)
       }
-      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
+      const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
         const events = Event.normalize(m.data.docs);
 
         this.events_add(events);
 
         if (m.data.last) {
           this.delLoading(req_id)
-          FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         }
       });
-      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.ENRICH_DONE, m => m.req_id === req_id, m => {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.ENRICH_DONE, m => m.req_id === req_id, m => {
         if (m.data.status !== 'done') {
           toast.error('Enrichment failed', {
             icon: <Icon name='Stop' />,
@@ -720,15 +720,15 @@ export class Info implements InfoProps {
         return;
       }
 
-      const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
+      const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
         const events = Event.normalize(m.data.docs);
 
         this.events_add(events);
         if (m.data.last) {
-          FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         };
       })
-      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
         this.delLoading(req_id);
 
         if (m.data.status !== 'done') {
@@ -1086,14 +1086,14 @@ export class Info implements InfoProps {
     const id = generateUUID<λRequest['id']>(RequestPrefix.INGESTION);
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
-      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
         const contexts = Refractor.array(...this.app.target.contexts, m.data.data);
 
         this.setInfoByKey(contexts, 'target', 'contexts');
       })
     }
 
-    FuckSocket.Class.instance.conce(FuckSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
+    SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
       this.setLoading(m.req_id, m.data.data.id);
 
       this.app.target.files = Refractor.array(...this.app.target.files, File.normalize(this.app, m.data.data));
@@ -1101,7 +1101,7 @@ export class Info implements InfoProps {
       this.setInfoByKey(this.app.target.files, 'target', 'files');
     })
 
-    const sid = FuckSocket.Class.instance.con(FuckSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
+    const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
       const events = Event.normalize(m.data.docs);
 
       const files = Refractor.array(...this.app.target.files);
@@ -1141,7 +1141,7 @@ export class Info implements InfoProps {
 
       if (m.data.last) {
         this.delLoading(m.req_id);
-        FuckSocket.Class.instance.coff(FuckSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+        SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         toast.success(`Source ${file.name} has been ingested successfully`, {
           description: `Total amount of documents is: ${File.events(this.app, file.id).length}`
         });
@@ -2093,7 +2093,7 @@ export class Info implements InfoProps {
       },
       toast: 'Sigma rule has been successfully applied'
     }).then(({ req_id }) => {
-      FuckSocket.Class.instance.conce(FuckSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
         if (m.data.status !== 'done') {
           toast.error('Sigma query failed', {
             icon: <Icon name='Stop' />,
