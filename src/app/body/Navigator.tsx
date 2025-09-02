@@ -15,6 +15,9 @@ import { SetState } from '@/class/API'
 import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
 import { Logger } from '@/dto/Logger.class'
 import { Highlights } from '@/overlays/Highlights'
+import { Switch } from '@/ui/Switch'
+import { Label } from '@/ui/Label'
+import { λApp } from '@/dto/App.dto'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -260,17 +263,29 @@ export function Navigator({
         img="PictureInPicture2"
         onClick={openWindow}
       />
-      <Button
-        size="sm"
-        variant="secondary"
-        title={app.timeline.hidden_notes ? 'Show notes' : 'Hide notes'}
-        img={app.timeline.hidden_notes ? 'ToggleOffAlt' : 'ToggleOnAlt'}
-        className={cn(
-          s.notes_visibility,
-          app.timeline.hidden_notes && s.dimmed,
-        )}
-        onClick={() => Info.toggle_notes_visibility()}
-      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            size="sm"
+            variant="secondary"
+            title='Toggle visibility of notes or links'
+            img={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
+            className={cn(s.notes_visibility)}
+          />
+        </PopoverTrigger>
+        <PopoverContent>
+          <Stack dir='column' gap={4}>
+            {(Object.keys(app.hidden) as unknown as Array<keyof λApp['hidden']>).map((key) => {
+              return (
+                <Stack jc='space-between'>
+                  <Label value={`Show ${key}`} />
+                  <Switch checked={!app.hidden[key]} onCheckedChange={() => Info.toggle_visibility(key)} />
+                </Stack>
+              )
+            })}
+          </Stack>
+        </PopoverContent>
+      </Popover>
       <Popover>
         <PopoverTrigger asChild>
           <Button size="sm" variant="secondary" img="Crosshair" />

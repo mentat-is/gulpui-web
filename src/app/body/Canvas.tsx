@@ -49,7 +49,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       app.timeline.target,
       app.timeline.filter,
       app.timeline.dialogSize,
-      app.timeline.hidden_notes,
+      app.hidden,
       target
     ]);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
@@ -117,14 +117,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     render.target()
 
-    render.links()
-
     if (force || Math.random() < 0.05) {
       RenderEngine.reset('notes');
     }
 
-    if (!app.timeline.hidden_notes) {
+    if (!app.hidden.notes) {
       render.notes(files);
+    }
+
+    if (!app.hidden.links) {
+      render.links();
     }
 
     ctx.fillStyle = '#ff000080'
@@ -334,7 +336,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     app.timeline.target,
     app.timeline.filter,
     app.timeline.dialogSize,
-    app.timeline.hidden_notes,
+    app.hidden,
     app.target.events.size,
     target
   ])

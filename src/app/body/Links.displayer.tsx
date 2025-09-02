@@ -11,7 +11,7 @@ interface LinksDisplayerProps {
 export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
   const { app, scrollY } = useApplication()
 
-  if (!app.target.links.length) return null
+  if (!app.target.links.length || app.hidden.links) return null
 
   const selectedFiles = useMemo(
     () => new Set(app.target.files.filter((f) => f.selected).map((f) => f.id)),

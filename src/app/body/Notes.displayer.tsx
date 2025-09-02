@@ -19,7 +19,7 @@ export function NotesDisplayer({
   const [notes, setNotes] = useState<λNote[]>([]);
 
   useEffect(() => {
-    if (app.timeline.hidden_notes) {
+    if (app.hidden.notes) {
       return setNotes([]);
     }
     const files = File.selected(app);
@@ -32,7 +32,7 @@ export function NotesDisplayer({
 
     const notes = RenderEngine.getNotesByX(file, self.x);
     setNotes(notes);
-  }, [self, app.target.notes, app.target.files, app.timeline.hidden_notes]);
+  }, [self, app.target.notes, app.target.files, app.hidden.notes]);
 
   return notes.length > 0 ? (
     <NotePoint.Point

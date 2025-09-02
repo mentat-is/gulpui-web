@@ -2109,12 +2109,7 @@ export class Info implements InfoProps {
     });
   }
 
-  toggle_notes_visibility = (value?: boolean) =>
-    this.setInfoByKey(
-      value ?? !this.app.timeline.hidden_notes,
-      'timeline',
-      'hidden_notes',
-    )
+  toggle_visibility = (key: keyof λApp['hidden']) => this.setInfoByKey(!this.app.hidden[key], 'hidden', key);
 
   files_repin = (id: λFile['id']) => {
     const files = this.app.target.files

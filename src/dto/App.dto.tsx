@@ -56,11 +56,14 @@ export interface λApp {
     }
     isScrollReversed: boolean
     dialogSize: number
-    hidden_notes: boolean
     pointers: Pointers.Pointer[]
   },
   settings: {
     [key: string]: any;
+  },
+  hidden: {
+    notes: boolean;
+    links: boolean;
   }
 }
 export const BaseInfo: λApp = {
@@ -89,7 +92,6 @@ export const BaseInfo: λApp = {
     },
     isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
     dialogSize: window.innerWidth / 3,
-    hidden_notes: false,
     pointers: [],
   },
   target: {
@@ -105,6 +107,10 @@ export const BaseInfo: λApp = {
     mappings: [],
     plugins: [],
   },
-  settings: {}
+  settings: {},
+  hidden: {
+    notes: false,
+    links: false
+  }
 }
 
