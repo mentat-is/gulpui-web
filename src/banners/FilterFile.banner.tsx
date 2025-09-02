@@ -3,7 +3,7 @@ import { Banner } from '@/ui/Banner'
 import { useApplication } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
 import { Button, Stack, } from '@impactium/components'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { File, Filter, Parser, λFilter, λQuery } from '@/class/Info'
 import { fws, Refractor } from '@/ui/utils'
 import { λFile } from '@/dto/Dataset'
@@ -24,7 +24,6 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
   const { app, Info, spawnBanner, destroyBanner } = useApplication()
   const [loading, setLoading] = useState<boolean>(false)
   const [files, setFiles] = useState(initFiles);
-  const keys = useRef<Set<string>>(new Set(initKeys));
 
   const base = useMemo(() => ({
     string: '',
@@ -58,23 +57,13 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     setQuery(query);
   }, [files]);
 
-  const reloadKeys = useCallback(() => {
-    const newKeys = new Set<string>();
+  const keys = useMemo(() => {
+    const keys = new Set<string>();
 
-    Promise.all(files.map(file => Info.event_keys(file).then(fileKeys => Object.keys(fileKeys).forEach(k => newKeys.add(k)))));
+    Promise.all(files.map(file => Info.event_keys(file).then(fileKeys => Object.keys(fileKeys).forEach(k => keys.add(k)))));
 
-    keys.current.clear();
-
-    keys.current = newKeys;
+    return keys
   }, [files]);
-
-  useEffect(() => {
-    if (keys.current.size) {
-      return;
-    }
-
-    reloadKeys();
-  }, [files, keys]);
 
   const submit = async () => {
     setLoading(true);
@@ -110,13 +99,23 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
 
   const setFilters = useCallback((filters: λFilter[]) => setQuery(q => ({ ...q, filters })), [setQuery]);
 
+  const [dubugger, reload] = useReducer(v => v++, 0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      reload();
+    }, 100);
+
+    return () => clearInterval(id);
+  }, []);
+
   const AddCondition = useMemo(() => (
-    <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} init={[...keys.current][0]} />
-  ), [query, setFilters]);
+    <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} init={[...keys][0]} />
+  ), [query, setFilters, keys.size, dubugger]);
 
   const QueryConditions = useMemo(() => (
-    <OpenSearchQueryBuilder.Query.Filter filters={query.filters} setFilters={setFilters} keys={[...keys.current]} />
-  ), [query, setFilters])
+    <OpenSearchQueryBuilder.Query.Filter filters={query.filters} setFilters={setFilters} keys={[...keys]} />
+  ), [query, setFilters, keys.size, dubugger])
 
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
 
@@ -128,7 +127,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     }).then(({ docs, total_hits }) => {
       setIsPreviewLoading(false);
       if (total_hits > 0) {
-        spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner files={files} query={query} keys={[...keys.current]} {...props} />)} />)
+        spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<FilterFileBanner files={files} query={query} keys={[...keys]} {...props} />)} />)
       }
     });
   }, [query, files, keys, setIsPreviewLoading]);
