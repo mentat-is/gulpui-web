@@ -133,6 +133,7 @@ export namespace SelectFiles {
           <Button
             img='Check'
             variant='glass'
+            disabled={!selectedContexts.size || !selectedFiles.size}
             onClick={save}
           />
         }
