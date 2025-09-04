@@ -307,7 +307,7 @@ export namespace Auth {
 
       // Wrap into loading state
       setLoading(true);
-      const user = await Info.login({ id, password });
+      await Info.login({ id, password });
       setLoading(false);
     };
 
