@@ -72,7 +72,7 @@ function Main() {
     return <Preloader />
   }
 
-  return File.selected(Info.app).length ? (
+  return Info.app.target.files.filter(file => file.selected).length ? (
     <Stack gap={12} className={s.window} ai='stretch'>
       <Menu />
       <Timeline />
