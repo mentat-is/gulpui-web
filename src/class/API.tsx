@@ -27,31 +27,22 @@ export class λ<T extends ResponseBase<any>> {
   timestamp: Date
   data: T['data']
 
-  constructor(data?: T) {
-    this.status = data?.status || 'error'
-    this.req_id = data?.req_id || ('' as λRequest['id'])
-    this.timestamp = data?.timestamp || new Date()
-    this.data = data
-      ? data.data
-      : ({
-        message: 'internal_server_error',
-        statusCode: 500,
-      } as ResponseError['data'])
+  constructor(data: T = {} as T) {
+    this.status = data.status ?? 'error';
+    this.req_id = data.req_id ?? '' as λRequest['id'];
+    this.timestamp = data.timestamp ?? Date.now();
+    this.data = data.data ?? { message: 'internal_server_error', statusCode: 500 };
   }
 
   isError = (): this is ResponseError => this.status === 'error'
-
-  isSuccess = (): this is λ<ResponseSuccess<T['data']>> =>
-    this.status === 'success' || this.status === 'pending'
 }
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>
 
 export interface RequestOptions {
-  useNumericHost?: boolean
   toast?: string | boolean
   setLoading?: SetState<boolean>
-  query?: Record<string, string | number | boolean | null> | string | URLSearchParams
+  query?: Record<string, any>;
   body?: Record<string, any> | RequestInit['body']
   deassign?: boolean
 }
@@ -120,7 +111,7 @@ export function parseApiOptions<T>(
   _path: string,
 ) {
   const options: RequestInit & RequestOptions & { raw?: boolean } = {}
-  let callback: Callback<T> | Callback<Promise<T>> | undefined
+  let callback: Callback<T> | undefined
 
   if (typeof a === 'function') {
     callback = a
@@ -168,13 +159,16 @@ export function parseApiOptions<T>(
     options,
     callback,
     query,
-    path,
-    endpoint: Internal.Settings.server,
+    path
   }
 }
 
-export function soft<T>(value: T, func?: SetState<T>) {
-  if (func) func((_: T) => value as T)
+export function soft<T>(value: T, func?: Callback<T>) {
+  if (!func) {
+    return;
+  }
+
+  return func(value);
 }
 
 const api: Api = async function <T>(
@@ -182,16 +176,16 @@ const api: Api = async function <T>(
   arg2?: any,
   arg3?: any,
 ): Promise<λ<ResponseBase<T>> | T> {
-  const { options, callback, query, path, endpoint } = parseApiOptions<T>(
+  const { options, callback, query, path } = parseApiOptions<T>(
     arg2,
     arg3,
     _path,
   )
 
-  soft(true, options.setLoading)
+  soft(() => true, options.setLoading)
 
   const response = await fetch(
-    `${endpoint}${path}${query ? `?${query}` : ''}`,
+    `${Internal.Settings.server}${path}${query ? `?${query}` : ''}`,
     {
       ...options,
     },
@@ -199,7 +193,7 @@ const api: Api = async function <T>(
 
   const res = new λ(await response?.json())
 
-  const isSuccess = res.isSuccess()
+  const isSuccess = res.status === 'success' || res.status === 'pending';
 
   const result = options.raw ? res : isSuccess ? res.data : null
 
@@ -207,45 +201,33 @@ const api: Api = async function <T>(
     if (typeof options.toast === 'string') {
       toast(options.toast)
     }
-    if (callback) {
-      await callback(result)
-    }
+    soft(result, callback);
   } else if (options.toast !== false) {
-    toast.error(
-      toSeparatedCase(res.data?.__error?.name),
-      {
-        description: res.data?.__error?.msg
-          ? capitalize(res.data.__error.msg)
-          : 'Check console for further information',
-      },
-    )
+    toast.error(toSeparatedCase(res.data?.__error?.name), {
+      description: capitalize(res.data.__error.msg) ?? 'Check console for further information',
+    });
   }
   if (res.data?.__error?.name === 'MissingPermission') {
-    const message = 'Session expired, reloading window'
-    Logger.warn(message, 'API', {
+    Internal.Settings.token = ''
+    Logger.warn('Session has been expired', api, {
       icon: <Icon name='Warning' />,
       richColors: true
     });
-    Internal.Settings.token = ''
     // @ts-ignore
     window.spawnBanner(<Auth.Banner />);
   }
 
-  soft(false, options.setLoading)
+  soft(() => false, options.setLoading)
 
-  return result
+  return result;
 }
 
-const toSeparatedCase = (str: string): string => {
-  if (!str) return 'Unknown Error'
-
-  const withSpaces = str.replace(/([a-z])([A-Z])/g, '$1 $2')
-
-  const words = withSpaces.split(/[\s_]+/)
-
-  return words
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-}
+const toSeparatedCase = (str: string): string => str
+  ?.replace(/([a-z])([A-Z])/g, '$1 $2')
+  .split(/[\s_]+/)
+  .map((word) => word
+    .charAt(0)
+    .toUpperCase() + word.slice(1))
+  .join(' ') ?? 'Unknown Error';
 
 globalThis.api = api

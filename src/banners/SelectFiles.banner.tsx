@@ -18,6 +18,7 @@ import { cn } from '@impactium/utils'
 import { Refractor } from '@/ui/utils'
 import { SetState } from '@/class/API'
 import { Icon } from '@impactium/icons'
+import { toast } from 'sonner'
 
 export namespace SelectFiles {
   export namespace Banner {
@@ -35,13 +36,21 @@ export namespace SelectFiles {
     const update = <T extends Set<λFile['id'] | λContext['id']>>(values: T, vault: SetState<T>) => vault(new Set<T>([...values.values()]));
 
     function all(select: boolean) {
+      const operation = Operation.selected(app);
+      if (!operation) {
+        toast.error('Operation not selected', {
+          richColors: true
+        })
+        return;
+      }
+
       const method = select ? 'add' : 'delete';
 
-      app.target.files.filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => {
+      app.target.files.filter(file => file.operation_id === operation.id).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => {
         selectedFiles[method](file.id);
       });
 
-      app.target.contexts.forEach(context => {
+      app.target.contexts.filter(context => context.operation_id === operation.id).forEach(context => {
         const files = Context.files(app, context);
 
         if (files.some(file => selectedFiles.has(file.id))) {
