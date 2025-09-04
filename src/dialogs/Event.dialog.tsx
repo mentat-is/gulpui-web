@@ -361,8 +361,16 @@ export namespace EventIndicator {
 export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
   const { app } = useApplication();
 
+  if (!event) {
+    return null;
+  }
+
+  const file = File.id(app, event['gulp.source_id']);
+  if (!file) {
+    return null;
+  }
+
   const background = useMemo(() => {
-    const file = File.id(app, event['gulp.source_id']);
     const range = RenderEngine[λCache].range.get(event['gulp.source_id']) ?? MinMaxBase;
     const code = Refractor.any.toNumber(event[file.settings.field]);
 
