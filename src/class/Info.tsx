@@ -287,7 +287,9 @@ export namespace Internal {
       try {
         const length = timestamp.toString().length;
         if (length === 19) {
-          return BigInt(timestamp.toString());
+          const date = Number.isNaN(parseInt(timestamp.toString())) ? new Date(timestamp as string).getTime() : timestamp;
+          // @ts-ignore
+          return BigInt(date);
         }
         if (timestamp instanceof Date) {
           return BigInt(timestamp.getTime() * 1_000_000)
