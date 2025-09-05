@@ -253,7 +253,7 @@ export namespace Auth {
                     {session.name}
                   </Select.Item>
                 ))}
-                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
+                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)}>
                   Create new operation
                 </UIButton>
               </Select.Content>
@@ -270,7 +270,7 @@ export namespace Auth {
   }
 
   export function Banner({ className, ...props }: Banner.Props) {
-    const { spawnBanner, Info, app } = useApplication()
+    const { Info, app } = useApplication()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as λUser['id']);
     const [password, setPassword] = useState<string>('admin')

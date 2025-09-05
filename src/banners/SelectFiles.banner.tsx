@@ -173,7 +173,7 @@ export namespace SelectFiles {
           <Button
             onClick={() => all(true)}
             variant='secondary'
-            style={{ flex: 1 }}
+            className={s.actionButton}
             img='FilePlus'
           >
             Select all
@@ -181,7 +181,7 @@ export namespace SelectFiles {
           <Button
             onClick={() => all(false)}
             variant='secondary'
-            style={{ flex: 1 }}
+            className={s.actionButton}
             img='FileMinus'
           >
             Unselect all
@@ -189,7 +189,7 @@ export namespace SelectFiles {
           <Button
             onClick={reloadClickHandler}
             variant='secondary'
-            style={{ flex: 1 }}
+            className={s.actionButton}
             img='RefreshClockwise'
             loading={loading}
           >
@@ -282,7 +282,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
   };
 
   return (
-    <Stack className={cn(s.pluginHeading, !file.total && s.disabled)} key={file.id}>
+    <Stack className={cn(s.file, !file.total && s.disabled)} key={file.id}>
       <Checkbox
         id={file.name}
         checked={selectedFiles.has(file.id)}
@@ -291,7 +291,12 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
       {File.getRequestType(app, file) === RequestPrefix.INGESTION && <Spinner size={16} />}
       <Label value={file.name} />
       <FileIsTooBig />
-      <Badge size='sm' className={s.amount} variant='gray-subtle' value={file.total.toString()} />
+      <Badge
+        size='sm'
+        className={s.amount}
+        variant='gray-subtle'
+        value={file.total.toString()}
+      />
       <Button
         img='Filter'
         variant='secondary'
@@ -304,6 +309,13 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         loading={loading}
         className={s.smallButton}
         onClick={previewButtonClickHandler}
+      />
+      <Badge
+        size='sm'
+        style={{ border: '1px solid var(--red-400)', borderRadius: '2px', padding: 4 }}
+        variant='red-subtle'
+        icon='Trash2'
+        onClick={() => spawnBanner(<Delete.File.Banner file={file} back={() => spawnBanner(<SelectFiles.Banner />)} />)}
       />
     </Stack>
   )

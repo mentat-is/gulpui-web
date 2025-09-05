@@ -284,25 +284,24 @@ export namespace Internal {
     public static toNanos = (
       timestamp: string | number | Date | bigint,
     ): bigint => {
-      const length = timestamp.toString().length;
-      if (length === 19) {
-        return BigInt(timestamp.toString());
-      }
-      if (timestamp instanceof Date) {
-        return BigInt(timestamp.getTime() * 1_000_000)
-      }
-      if (length === 13) {
-        return BigInt(Math.floor(Number(timestamp) * 1_000_000))
-      }
-      const parsed = Date.parse(timestamp.toString())
-      if (isNaN(parsed)) {
-        Logger.error(
-          `Invalid transformation to NANOS from ${timestamp}`,
-          Transformator.name,
-        )
+      try {
+        const length = timestamp.toString().length;
+        if (length === 19) {
+          return BigInt(timestamp.toString());
+        }
+        if (timestamp instanceof Date) {
+          return BigInt(timestamp.getTime() * 1_000_000)
+        }
+        if (length === 13) {
+          return BigInt(Math.floor(Number(timestamp) * 1_000_000))
+        }
+        const parsed = Date.parse(timestamp.toString())
+        return BigInt(parsed) * 1_000_000n
+      } catch (error) {
+        Logger.error(`Failed to transform timestamp into NANOS. Value: ${timestamp}`, Transformator);
+        Logger.error(error, Transformator);
         return 0n
       }
-      return BigInt(parsed) * 1_000_000n
     }
 
     public static toISO = (
@@ -1796,6 +1795,7 @@ export class Info implements InfoProps {
       query: {
         ws_id: this.app.general.ws_id,
       },
+      toast: false,
       body: {
         user_id: credentials.id,
         password: credentials.password

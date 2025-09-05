@@ -195,19 +195,21 @@ const api: Api = async function <T>(
 
   const isSuccess = res.status === 'success' || res.status === 'pending';
 
+  const error = res.data?.__error ?? {};
+
   const result = options.raw ? res : isSuccess ? res.data : null
 
+  // [ OK ] Status
+  // [ OK ] Data
   if (isSuccess) {
     if (typeof options.toast === 'string') {
       toast(options.toast)
     }
     soft(result, callback);
-  } else if (options.toast !== false) {
-    toast.error(toSeparatedCase(res.data?.__error?.name), {
-      description: capitalize(res.data.__error.msg) ?? 'Check console for further information',
-    });
-  }
-  if (res.data?.__error?.name === 'MissingPermission') {
+
+    // [FAIL] Status
+    // [ OK ] Data
+  } else if (error.name === 'MissingPermission') {
     Internal.Settings.token = ''
     Logger.warn('Session has been expired', api, {
       icon: <Icon name='Warning' />,
@@ -215,6 +217,12 @@ const api: Api = async function <T>(
     });
     // @ts-ignore
     window.spawnBanner(<Auth.Banner />);
+    // [FAIL] Status
+    // [ ?? ] Data
+  } else if ((options.toast !== false)) {
+    toast.error(toSeparatedCase(error.name), {
+      description: capitalize(error.msg) ?? 'Check console for further information',
+    });
   }
 
   soft(() => false, options.setLoading)
