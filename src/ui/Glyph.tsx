@@ -22,14 +22,11 @@ export namespace Glyph {
     glyph: λGlyph['id']
   }
 
-  export const Raw = (() => {
-    console.log(Object.keys(Icon.icons));
-    return Object.keys(Icon.icons)
-  })();
+  export const Raw = (() => Object.keys(Icon.icons))();
 
   export const List: Map<λGlyph['id'], Icon.Name> = new Map()
 
-  export const getIdByName = (name: Icon.Name): λGlyph['id'] => Glyph.List.entries().find(([id, n]) => name === n)?.[0]!;
+  export const getIdByName = (name: Icon.Name): λGlyph['id'] => Glyph.List.entries().find(([_, n]) => name === n)?.[0]!;
 
   export namespace Chooser {
     export interface Props {

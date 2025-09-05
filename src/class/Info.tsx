@@ -281,27 +281,31 @@ export namespace Internal {
       roundTo: keyof Pick<Math, 'ceil' | 'floor' | 'round'> = 'round'
     ): number => new Date(Math[roundTo](Number(this.toNanos(timestamp)) / 1_000_000)).valueOf()
 
-    public static toNanos = (
-      timestamp: string | number | Date | bigint,
-    ): bigint => {
+    public static toNanos(value: string | number | Date | bigint): bigint {
       try {
-        const length = timestamp.toString().length;
-        if (length === 19) {
-          const isStringDate = timestamp.toString().includes('T');
-          return BigInt(isStringDate ? new Date(timestamp as string).getTime() : Number(timestamp) as number);
+        if (typeof value === 'bigint') return value;
+
+        if (value instanceof Date) return BigInt(value.getTime()) * 1_000_000n;
+
+        if (typeof value === 'number') {
+          const str = String(Math.floor(value));
+          if (str.length === 19) return BigInt(str);                  // already nanos
+          if (str.length === 16) return BigInt(str) * 1_000n;         // micros
+          if (str.length === 13) return BigInt(str) * 1_000_000n;     // millis
+          if (str.length <= 10) return BigInt(str) * 1_000_000_000n;  // seconds
+          return BigInt(value);
         }
-        if (timestamp instanceof Date) {
-          return BigInt(timestamp.getTime() * 1_000_000)
+
+        if (typeof value === 'string') {
+          if (/^\d+$/.test(value)) return this.toNanos(Number(value));
+          const parsed = Date.parse(value);
+          if (!isNaN(parsed)) return BigInt(parsed) * 1_000_000n;
+          return 0n;
         }
-        if (length === 13) {
-          return BigInt(Math.floor(Number(timestamp) * 1_000_000))
-        }
-        const parsed = Date.parse(timestamp.toString())
-        return BigInt(parsed) * 1_000_000n
-      } catch (error) {
-        Logger.error(`Failed to transform timestamp into NANOS. Value: ${timestamp}`, Transformator);
-        Logger.error(error, Transformator);
-        return 0n
+
+        return 0n;
+      } catch {
+        return 0n;
       }
     }
 
