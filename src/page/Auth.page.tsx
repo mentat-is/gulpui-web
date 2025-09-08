@@ -1,5 +1,5 @@
 import { Button as UIButton, Stack } from '@impactium/components'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import { Session } from '../banners/Session.banner'
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
@@ -29,6 +29,7 @@ export namespace Auth {
     const [loading, setLoading] = useState<boolean>(false)
     const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
+    const [isOperetionSelectOpen, setIsOperetionSelectOpen] = useState(false);
 
     useEffect(() => {
       if (methods.length === 0) {
@@ -38,6 +39,8 @@ export namespace Auth {
         }, setMethods)
       }
     }, [methods, server])
+
+    const createNewOperationButtonHandler = () => {spawnBanner(<OperationBanners.Create.Banner />), setIsOperetionSelectOpen(false)}
 
     const login = async () => {
       const removeOverload = (str: string): string =>
@@ -220,6 +223,8 @@ export namespace Auth {
           <Label value='Operation' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
+              open={isOperetionSelectOpen}
+              onOpenChange={() => setIsOperetionSelectOpen(true)}
               defaultValue={Operation.selected(Info.app)?.id}
               onValueChange={(id) => Info.operations_select(id as λOperation['id'])}
             >
@@ -231,7 +236,7 @@ export namespace Auth {
                     {operation.name}
                   </Select.Item>
                 ))}
-                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)} variant='ghost'>
+                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='ghost'>
                   Create new operation
                 </UIButton>
               </Select.Content>
