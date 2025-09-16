@@ -1,16 +1,15 @@
-import { Button } from '@impactium/components'
 import { Dialog } from '@/ui/Dialog'
 import s from './styles/DisplayGroupDialog.module.css'
 import { DisplayEventDialog, EventIndicator } from './Event.dialog'
 import { useApplication } from '@/context/Application.context'
-import { λEvent } from '@/dto/ChunkEvent.dto'
-import { Stack } from '@impactium/components'
+import { Stack } from '@/ui/Stack'
 import { format } from 'date-fns'
-import React, { useMemo, useRef } from 'react'
+import { useRef } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { Doc } from '@/entities/Doc'
 
 interface DisplayGroupDialogProps {
-  events: λEvent[]
+  events: Doc.Type[]
 }
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
@@ -25,7 +24,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     overscan: 5,
   });
 
-  const renderEvent = (event: λEvent) => (
+  const renderEvent = (event: Doc.Type) => (
     <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
       <EventIndicator event={event} />
       <Stack

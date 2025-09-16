@@ -1,25 +1,26 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button, Skeleton } from '@impactium/components'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/SettingsFileBanner.module.css'
 import { FilterFileBanner } from './FilterFile.banner'
 import { Select } from '@/ui/Select'
-import { Gradient, GradientMap } from '@/ui/utils'
-import { Input } from '@impactium/components'
 import { Separator } from '@/ui/Separator'
 import { enginesBase } from '@/dto/Engine.dto'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Icon } from '@impactium/icons'
-import { Context, Event, File } from '@/class/Info'
 import { Engine } from '@/class/Engine.dto'
-import { Stack } from '@impactium/components'
-import { λEvent } from '@/dto/ChunkEvent.dto'
-import { λFile } from '@/dto/Dataset'
+import { Button } from '@/ui/Button'
+import { Skeleton } from '@/ui/Skeleton'
+import { Stack } from '@/ui/Stack'
+import { Input } from '@/ui/Input'
+import { Source } from '@/entities/Source'
+import { Doc } from '@/entities/Doc'
+import { Context } from '@/entities/Context'
+import { Color } from '@/entities/Color'
 
 interface SettingsFileBannerProps {
-  file: λFile
+  file: Source.Type
 }
 
 export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
@@ -50,7 +51,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     Info.event_keys(file).then(Object.keys).then(setEventKeys);
   }, []);
 
-  const [field, setField] = useState<keyof λEvent>(file.settings.field);
+  const [field, setField] = useState<keyof Doc.Type>(file.settings.field);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { value } = event.target
@@ -78,7 +79,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
     }
 
     return (
-      <Select.Root onValueChange={(field: keyof λEvent) => setField(field)} defaultValue={field.toString()}>
+      <Select.Root onValueChange={(field: keyof Doc.Type) => setField(field)} defaultValue={field.toString()}>
         <Select.Trigger className={s.trigger} value={field}>
           <Icon name='Dot' />
           {field}
@@ -100,9 +101,9 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   }
 
   return (
-    <UIBanner title="File settings" done={done} option={option}>
+    <UIBanner title="Source.Entity settings" done={done} option={option}>
       <h4>
-        {file.name} in {Context.id(app, file.context_id)?.name}
+        {file.name} in {Context.Entity.id(app, file.context_id)?.name}
       </h4>
       <Stack dir='column' gap={8} ai='flex-start'>
         <p>
@@ -117,7 +118,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
         </p>
         <Input
           variant='highlighted'
-          img="AlarmClockPlus"
+          icon="AlarmClockPlus"
           accept="number"
           value={offset}
           placeholder="Offset time in ms"
@@ -144,16 +145,15 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
       <Separator />
       <Stack jc="space-between">
         <p className={s.text}>Color palette:</p>
-        <ColorPicker color={render_color_palette} setColor={(c) => setRenderColorPalette(c as Gradient)}>
+        <ColorPicker color={render_color_palette} setColor={(c) => setRenderColorPalette(c as Color.Gradient)}>
           <ColorPickerTrigger />
-          <ColorPickerPopover gradients={GradientMap} solids={[]} />
+          <ColorPickerPopover gradients={Color.GRADIENT} solids={[]} />
         </ColorPicker>
       </Stack>
       <Stack jc="space-between">
         <p className={s.text}>Target field:</p>
         {EventFieldsSelection}
       </Stack>
-      {/* <Button onClick={manageRenderRulesButtonClickHandler} img='BarChart'>Manage render rules</Button> */}
     </UIBanner>
   )
 }

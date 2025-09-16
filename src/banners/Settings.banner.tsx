@@ -1,5 +1,5 @@
-import { Internal } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
+import { Internal } from '@/entities/addon/Internal'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
 import { useState } from 'react'

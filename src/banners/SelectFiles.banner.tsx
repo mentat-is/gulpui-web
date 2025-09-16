@@ -2,23 +2,27 @@ import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Checkbox } from '@/ui/Checkbox'
 import s from './styles/SelectFilesBanner.module.css'
-import { Badge, Spinner } from '@impactium/components'
 import { Label } from '@/ui/Label'
-import { Button, Skeleton, Stack, Input } from '@impactium/components'
-import { Context, File, Operation } from '@/class/Info'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
-import { RequestPrefix, λContext, λFile } from '@/dto/Dataset'
 import { Separator } from '@/ui/Separator'
-import { Delete } from './Delete.banner'
 import { Preview } from './Preview.banner'
 import { FilterFileBanner } from './FilterFile.banner'
 import { cn } from '@impactium/utils'
 import { Refractor } from '@/ui/utils'
 import { SetState } from '@/class/API'
-import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
+import { Stack } from '@/ui/Stack'
+import { Badge } from '@/ui/Badge'
+import { Button } from '@/ui/Button'
+import { Input } from '@/ui/Input'
+import { Spinner } from '@/ui/Spinner'
+import { Skeleton } from '@/ui/Skeleton'
+import { Context } from '@/entities/Context'
+import { Source } from '@/entities/Source'
+import { Operation } from '@/entities/Operation'
+import { Request } from '@/entities/Request'
 
 export namespace SelectFiles {
   export namespace Banner {
@@ -29,14 +33,14 @@ export namespace SelectFiles {
     const { app, Info, spawnBanner } = useApplication()
     const [filter, setFilter] = useState('')
     const [loading, setLoading] = useState(false)
-    const [selectedContexts, setSelectedContexts] = useState<Set<λContext['id']>>(new Set());
-    const [selectedFiles, setSelectedFiles] = useState<Set<λFile['id']>>(new Set());
+    const [selectedContexts, setSelectedContexts] = useState<Set<Context.Id>>(new Set(Context.Entity.selected(app).map(c => c.id)));
+    const [selectedFiles, setSelectedFiles] = useState<Set<Source.Id>>(new Set(Source.Entity.selected(app).map(c => c.id)));
 
     // @ts-ignore
-    const update = <T extends Set<λFile['id'] | λContext['id']>>(values: T, vault: SetState<T>) => vault(new Set<T>([...values.values()]));
+    const update = <T extends Set<Source.Id | Context.Id>>(values: T, vault: SetState<T>) => vault(new Set<T>([...values.values()]));
 
     function all(select: boolean) {
-      const operation = Operation.selected(app);
+      const operation = Operation.Entity.selected(app);
       if (!operation) {
         toast.error('Operation not selected', {
           richColors: true
@@ -51,7 +55,7 @@ export namespace SelectFiles {
       });
 
       app.target.contexts.filter(context => context.operation_id === operation.id).forEach(context => {
-        const files = Context.files(app, context);
+        const files = Context.Entity.files(app, context);
 
         if (files.some(file => selectedFiles.has(file.id))) {
           selectedContexts.add(context.id);
@@ -64,25 +68,25 @@ export namespace SelectFiles {
       update(selectedContexts, setSelectedContexts);
     }
 
-    function setContext(context: λContext['id'], select: boolean) {
+    function setContext(context: Context.Id, select: boolean) {
       const method = select ? 'add' : 'delete';
 
       selectedContexts[method](context);
 
-      Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => selectedFiles[method](file.id));
+      Context.Entity.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => selectedFiles[method](file.id));
 
       update(selectedFiles, setSelectedFiles);
       update(selectedContexts, setSelectedContexts);
     }
 
-    function setFile(target: λFile['id'], select: boolean) {
+    function setFile(target: Source.Id, select: boolean) {
       const method = select ? 'add' : 'delete';
 
       selectedFiles[method](target);
 
-      const file = File.id(app, target);
+      const file = Source.Entity.id(app, target);
 
-      const files = Context.files(app, file.context_id);
+      const files = Context.Entity.files(app, file.context_id);
 
       if (files.some(file => selectedFiles.has(file.id))) {
         selectedContexts.add(file.context_id);
@@ -120,12 +124,12 @@ export namespace SelectFiles {
       setLoading(false);
     };
 
-    const filteredContexts = Operation.contexts(app).filter((ctx) => Context.files(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
+    const filteredContexts = Operation.Entity.contexts(app).filter((ctx) => Context.Entity.files(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
 
     const SearchInput = useMemo(() => {
       return (
         <Input
-          img='Search'
+          icon='Search'
           placeholder='Search by context name and file name'
           variant='highlighted'
           value={filter}
@@ -149,7 +153,7 @@ export namespace SelectFiles {
         option={
           <Button
             img='Upload'
-            variant='ghost'
+            variant='tertiary'
             onClick={() => spawnBanner(<UploadBanner />)}
           />
         }
@@ -202,17 +206,17 @@ export namespace SelectFiles {
 }
 
 interface ContextComponentProps {
-  context: λContext;
+  context: Context.Type;
   filter: string;
-  selectedFiles: Set<λFile['id']>;
-  setFile: (file: λFile['id'], select: boolean) => void;
-  selectedContexts: Set<λContext['id']>;
-  setContext: (context: λContext['id'], select: boolean) => void;
+  selectedFiles: Set<Source.Id>;
+  setFile: (file: Source.Id, select: boolean) => void;
+  selectedContexts: Set<Context.Id>;
+  setContext: (context: Context.Id, select: boolean) => void;
 };
 
 function ContextComponent({ context, filter, selectedFiles, selectedContexts, setFile, setContext }: ContextComponentProps) {
   const { app, spawnBanner } = useApplication()
-  const files = Context.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
+  const files = Context.Entity.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <Stack
@@ -239,7 +243,7 @@ function ContextComponent({ context, filter, selectedFiles, selectedContexts, se
           icon='Trash2'
           onClick={() =>
             spawnBanner(
-              <Delete.Context.Banner
+              <Context.Delete.Banner
                 context={context}
                 back={() => spawnBanner(<SelectFiles.Banner />)}
               />,
@@ -256,9 +260,9 @@ function ContextComponent({ context, filter, selectedFiles, selectedContexts, se
 }
 
 interface FileComponentProps {
-  file: λFile;
-  selectedFiles: Set<λFile['id']>;
-  setFile: (file: λFile['id'], select: boolean) => void;
+  file: Source.Type;
+  selectedFiles: Set<Source.Id>;
+  setFile: (file: Source.Id, select: boolean) => void;
 }
 
 function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
@@ -288,7 +292,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         checked={selectedFiles.has(file.id)}
         onCheckedChange={checked => setFile(file.id, !!checked)}
       />
-      {File.getRequestType(app, file) === RequestPrefix.INGESTION && <Spinner size={16} />}
+      {Source.Entity.getRequestType(app, file) === Request.Prefix.INGESTION && <Spinner size={16} />}
       <Label value={file.name} />
       <FileIsTooBig />
       <Badge
@@ -315,7 +319,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         style={{ border: '1px solid var(--red-400)', borderRadius: '2px', padding: 4 }}
         variant='red-subtle'
         icon='Trash2'
-        onClick={() => spawnBanner(<Delete.File.Banner file={file} back={() => spawnBanner(<SelectFiles.Banner />)} />)}
+        onClick={() => spawnBanner(<Source.Delete.Banner file={file} back={() => spawnBanner(<SelectFiles.Banner />)} />)}
       />
     </Stack>
   )

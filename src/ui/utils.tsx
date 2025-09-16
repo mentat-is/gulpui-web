@@ -1,15 +1,16 @@
 import { toast } from 'sonner'
 import { UUID } from 'crypto'
-import { λApp } from '@/dto'
-import { Info, Internal, MinMax, MinMaxBase } from '@/class/Info'
+import { Info, MinMax, MinMaxBase } from '@/class/Info'
 import { ChangeEvent, RefObject } from 'react'
-import { λEvent } from '@/dto/ChunkEvent.dto'
-import { RequestPrefix, λFile, λRequest } from '@/dto/Dataset'
 import { XY, XYBase } from '@/dto/XY.dto'
 import { SetState } from '@/class/API'
 import { Logger } from '@/dto/Logger.class'
-
-export type Color = `#${string}`
+import { Request } from '@/entities/Request'
+import { Source } from '@/entities/Source'
+import { Doc } from '@/entities/Doc'
+import { App } from '@/entities/App'
+import { Color } from '@/entities/Color'
+import { Internal } from '@/entities/addon/Internal'
 
 export const parseTokensFromCookies = (tokens: string) => {
   try {
@@ -19,9 +20,9 @@ export const parseTokensFromCookies = (tokens: string) => {
   }
 }
 
-const colorCache = new Map<string, Color>()
+const colorCache = new Map<string, Color.Type>()
 
-export const stringToHexColor = (str: string): Color => {
+export const stringToHexColor = (str: string): Color.Type => {
   if (colorCache.has(str)) return colorCache.get(str)!
 
   let hash = 0
@@ -32,7 +33,7 @@ export const stringToHexColor = (str: string): Color => {
 
   const color = `#${[0, 1, 2]
     .map(i => ((hash >> (i * 8)) & 0xff).toString(16).padStart(2, '0'))
-    .join('')}` as Color
+    .join('')}` as Color.Type
 
   colorCache.set(str, color)
   return color
@@ -60,7 +61,7 @@ export const ui = (path: string): string =>
 export const throwableByTimestamp = (
   timestamp: MinMax | number,
   limits: MinMax,
-  app: λApp,
+  app: App.Type,
   offset = 0,
 ): boolean => {
   const time: number | MinMax =
@@ -83,7 +84,7 @@ export const throwableByTimestamp = (
 }
 
 
-export function generateUUID<T>(prefix?: RequestPrefix): T {
+export function generateUUID<T>(prefix?: Request.Prefix): T {
   const base = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
     const v = c === 'x' ? r : (r & 0x3) | 0x8
@@ -98,7 +99,7 @@ export function generateUUID<T>(prefix?: RequestPrefix): T {
 }
 
 export const getLimits = (
-  app: λApp,
+  app: App.Type,
   Info: Info,
   timeline: RefObject<HTMLDivElement>,
   scrollX: number,
@@ -118,34 +119,6 @@ export const getLimits = (
 
   return { min, max }
 }
-
-export const GradientMap = {
-  thermal: [
-    '0000c1',
-    '8600d0',
-    'd00086',
-    'ff014f',
-    'ff7800',
-    'ffbe00',
-    'ffff01',
-  ],
-  rainbow: [
-    "9400d3",
-    "4b0082",
-    "0000ff",
-    "00ff00",
-    "ffff00",
-    "ff7f00",
-    "ff0000"
-  ],
-  sepal: ['fe2400', 'fcfafd', '7e51fe'],
-  deep: ['54aef3', '142f48'],
-  sunset: ['432371', 'faae7b'],
-  eclipse: ['f5c900', '183182'],
-  saga: ['9d80cb', 'f7c2e6'],
-}
-
-export type Gradient = keyof typeof GradientMap
 
 export const arrayToLinearGradientCSS = (gradient: string[]): string =>
   `linear-gradient(to right, ${gradient.map((g) => '#' + g).join(', ')})`
@@ -176,99 +149,6 @@ export const formatBytes = (bytes: number): string => {
   }
 }
 
-export const COLORS: string[] = ['#a1a1a1', '#3399ff', '#ff4d4d', '#c99900', '#65b58b', '#009999', '#c266ff', '#ff408c']
-
-const ERROR_COLOR = 0xff0000
-
-const NumericGradientMap: Record<Gradient, number[]> = (() => {
-  const cache: Record<string, number[]> = {}
-  for (const [key, gradient] of Object.entries(GradientMap)) {
-    cache[key] = gradient.map((color) => parseInt(color, 16) || ERROR_COLOR)
-  }
-  return cache as Record<Gradient, number[]>
-})()
-
-export class λColor {
-  private static gradientCache = new Map<
-    Gradient,
-    Map<number, Map<number, Map<number, string>>>
-  >()
-
-  public static gradient = (
-    target: Gradient,
-    diff: number,
-    delta: MinMax,
-  ): string => {
-    let targetCache = this.gradientCache.get(target)
-    if (!targetCache) {
-      targetCache = new Map()
-      this.gradientCache.set(target, targetCache)
-    }
-
-    let deltaCache = targetCache.get(delta.min)
-    if (!deltaCache) {
-      deltaCache = new Map()
-      targetCache.set(delta.min, deltaCache)
-    }
-
-    let maxCache = deltaCache.get(delta.max)
-    if (!maxCache) {
-      maxCache = new Map()
-      deltaCache.set(delta.max, maxCache)
-    }
-
-    const value = maxCache.get(diff)
-    if (value) {
-      return value
-    }
-
-    const gradient = NumericGradientMap[target]
-    const numColors = gradient.length
-
-    const deltaRange = delta.max - delta.min
-    if (deltaRange <= 0) {
-      const color = `#${gradient[0].toString(16).padStart(6, '0')}`
-      maxCache.set(diff, color)
-      return color
-    }
-
-    const percentage = (diff - delta.min) / deltaRange
-    const scaledIndex = percentage * (numColors - 1)
-
-    const lowerIndex = scaledIndex | 0
-    const upperIndex = Math.min(lowerIndex + 1, numColors - 1)
-    const factor = scaledIndex - lowerIndex
-
-    const color1 = gradient[lowerIndex]
-    const color2 = gradient[upperIndex]
-
-    const result =
-      (λColor.interpolateChannel(
-        (color1 >> 16) & 0xff,
-        (color2 >> 16) & 0xff,
-        factor,
-      ) <<
-        16) |
-      (λColor.interpolateChannel(
-        (color1 >> 8) & 0xff,
-        (color2 >> 8) & 0xff,
-        factor,
-      ) <<
-        8) |
-      λColor.interpolateChannel(color1 & 0xff, color2 & 0xff, factor)
-
-    const finalColor = `#${result.toString(16).padStart(6, '0')}`
-    maxCache.set(diff, finalColor)
-    return finalColor
-  }
-
-  public static interpolateChannel = (
-    c1: number,
-    c2: number,
-    factor: number,
-  ): number => ((c1 + factor * (c2 - c1)) & 0xff) | 0
-}
-
 export const between = (num: number, min: number, max: number) =>
   num >= min && num <= max
 
@@ -282,8 +162,8 @@ export function numericRepresentationOfAnyString(input: string): number {
 }
 
 export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(
-  file: λFile,
-  event: λEvent,
+  file: Source.Type,
+  event: Doc.Type,
 ): number {
   let key: unknown = event[file.settings.field]
 

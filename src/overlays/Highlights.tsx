@@ -1,26 +1,18 @@
-import { Badge, Button, Input, Stack } from '@impactium/components';
 import s from './Highlights.module.css';
 import { Icon } from '@impactium/icons';
 import { useMemo, useRef, useState } from 'react';
-import { MinMax, Operation, Range } from '@/class/Info';
+import { MinMax, Range } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
-import { Glyph } from '@/ui/Glyph';
-import { Default, λGlyph, λHighlight } from '@/dto/Dataset';
+import { Default } from '@/dto/Dataset';
 import { Algorhithm } from '@/ui/utils';
 import { capitalize, cn } from '@impactium/utils';
 import { Select } from '@/ui/Select';
-import { λApp } from '@/dto';
-
-export class Highlight {
-  static selected = (app: λApp): λHighlight[] => {
-    const operation = Operation.selected(app);
-    if (!operation) {
-      return [];
-    }
-
-    return app.target.highlights.filter(h => h.operation_id === operation.id);
-  }
-}
+import { Stack } from '@/ui/Stack';
+import { Badge } from '@/ui/Badge';
+import { Input } from '@/ui/Input';
+import { Button } from '@/ui/Button';
+import { Glyph } from '@/entities/Glyph';
+import { Highlight } from '@/entities/Highlight';
 
 export namespace Highlights {
   export namespace Create {
@@ -32,7 +24,7 @@ export namespace Highlights {
 
     export function Overlay({ className, ...props }: Highlights.Create.Overlay.Props) {
       const { Info, setHighlightsOverlay, scrollX, scrollY } = useApplication();
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(Glyph.List.keys().next().value!);
+      const [icon, setIcon] = useState<Glyph.Id | null>(Glyph.List.keys().next().value!);
       const [name, setName] = useState<string>('');
       const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
       const [range, setSelection] = useState<[number, number] | null>(null);
@@ -77,7 +69,7 @@ export namespace Highlights {
         if (range) {
           return (
             <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
-              <Input className={s.name} variant='highlighted' img={Glyph.List.get(icon!) ?? Default.Icon.HIGHLIGHT} placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
+              <Input className={s.name} variant='highlighted' icon={Glyph.List.get(icon!) ?? Default.Icon.HIGHLIGHT} placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
               <Glyph.Chooser rootClassName={s.icon} asButton icon={icon} setIcon={setIcon} />
               <Select.Root onValueChange={color => setColor(color as NonNullable<Badge.Variant>)}>
                 <Select.Trigger value={color} className={s.select}>
@@ -150,7 +142,7 @@ export namespace Highlights {
             name,
             glyph_id: icon!,
             range,
-          } as unknown as λHighlight} native />
+          } as unknown as Highlight.Type} native />
         )
       }, [color, name, icon, range]);
 
@@ -185,7 +177,7 @@ export namespace Highlights {
     export function Overlay({ frame, fixed, layoutWidth, ...props }: Highlights.List.Overlay.Props) {
       const { app } = useApplication();
 
-      const highlights = useMemo(() => Highlight.selected(app), [app.target.highlights, app.target.operations]);
+      const highlights = useMemo(() => Highlight.Entity.selected(app), [app.target.highlights, app.target.operations]);
 
       const computedDepths = useMemo(() => computeDepths(highlights), [highlights]);
 
@@ -200,7 +192,7 @@ export namespace Highlights {
       )
     }
 
-    function computeDepths(highlights: λHighlight[]): number[] {
+    function computeDepths(highlights: Highlight.Type[]): number[] {
       const depths: number[] = [];
 
       for (let i = 0; i < highlights.length; i++) {
@@ -229,7 +221,7 @@ export namespace Highlights {
 
   export namespace Component {
     export interface Props extends Stack.Props {
-      highlight: λHighlight;
+      highlight: Highlight.Type;
       index?: number;
       native?: boolean;
       frame?: Partial<MinMax>;
@@ -288,13 +280,13 @@ export namespace Highlights {
     return Object.values(window.highlights);
   }
 
-  export function set(id: λHighlight['id'], left: number, width: number, index: number, color: string) {
+  export function set(id: Highlight.Id, left: number, width: number, index: number, color: string) {
     init();
     // @ts-ignore
     window.highlights[id] = [left, width, index, color];
   }
 
-  export function remove(id: λHighlight['id']) {
+  export function remove(id: Highlight.Id) {
     // @ts-ignore
     delete window.highlights[id]
   }

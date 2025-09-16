@@ -1,7 +1,8 @@
+import { Source } from '@/entities/Source'
 import { Engine, Hardcode } from '../class/Engine.dto'
 import { Dot, RenderEngine } from '../class/RenderEngine'
-import { Gradient, throwableByTimestamp, λColor } from '@/ui/utils'
-import { λFile } from '@/dto/Dataset'
+import { throwableByTimestamp } from '@/ui/utils'
+import { Color } from '@/entities/Color'
 
 export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> {
   private renderer!: RenderEngine
@@ -12,7 +13,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     [Hardcode.Start]: number
     [Hardcode.End]: number
   }
-  map = new Map<λFile['id'], typeof GraphEngine.target>()
+  map = new Map<Source.Id, typeof GraphEngine.target>()
 
   constructor(renderer: Engine.Constructor) {
     if (GraphEngine.instance) {
@@ -23,7 +24,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     GraphEngine.instance = this
   }
 
-  render(file: λFile, y: number) {
+  render(file: Source.Type, y: number, force?: boolean) {
     const graphs = this.getCachedOrGenerate(file)
     const maxHeight = graphs[Hardcode.MaxHeight]
 
@@ -33,7 +34,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
       const x = this.renderer.getPixelPosition(timestamp)
       if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue;
       const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
-      const color = λColor.gradient(file.settings.render_color_palette, height, {
+      const color = Color.Entity.gradient(file.settings.render_color_palette, height, {
         min: 0,
         max: maxHeight
       })
@@ -53,7 +54,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     }
   }
 
-  private getCachedOrGenerate(file: λFile): typeof GraphEngine.target {
+  private getCachedOrGenerate(file: Source.Type): typeof GraphEngine.target {
     const cached = this.map.get(file.id)
     const currentScale = this.renderer.info.app.timeline.scale
     const { min: limitMin, max: limitMax } = this.renderer.limits
@@ -68,7 +69,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     return this.get(file)
   }
 
-  get(file: λFile): typeof GraphEngine.target {
+  get(file: Source.Type): typeof GraphEngine.target {
     const heightData = this.renderer.height.get(file)
     const result = new Map() as typeof GraphEngine.target
 
@@ -128,7 +129,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     return result
   }
 
-  is(file: λFile): boolean {
+  is(file: Source.Type): boolean {
     return this.map.has(file.id)
   }
 }

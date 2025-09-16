@@ -1,9 +1,9 @@
-import { Note as NoteClass, File, Note, Event } from '@/class/Info'
 import { RenderEngine } from '@/class/RenderEngine'
 import { useApplication } from '@/context/Application.context'
-import { λNote } from '@/dto/Dataset'
 import { XY } from '@/dto/XY.dto'
-import { NotePoint } from '@/ui/Note'
+import { Note } from '@/entities/Note';
+import { Source } from '@/entities/Source';
+import { NotePoint } from '@/ui/Note';
 import { useState, useEffect } from 'react'
 
 interface NotesDisplayerProps {
@@ -16,13 +16,13 @@ export function NotesDisplayer({
   self
 }: NotesDisplayerProps) {
   const { app, scrollY } = useApplication()
-  const [notes, setNotes] = useState<λNote[]>([]);
+  const [notes, setNotes] = useState<Note.Type[]>([]);
 
   useEffect(() => {
     if (app.hidden.notes) {
       return setNotes([]);
     }
-    const files = File.selected(app);
+    const files = Source.Entity.selected(app);
     const index = Math.floor((self.y + scrollY) / 48);
     const file = files[index];
 
@@ -39,8 +39,8 @@ export function NotesDisplayer({
       type='note'
       key={notes[0].id}
       notes={notes}
-      x={getPixelPosition(Note.timestamp(notes[0]))}
-      y={File.getHeight(app, notes[0].source_id, scrollY)}
+      x={getPixelPosition(Note.Entity.timestamp(notes[0]))}
+      y={Source.Entity.getHeight(app, notes[0].source_id, scrollY)}
     />
   ) : null
 }

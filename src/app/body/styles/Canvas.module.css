@@ -1,3 +1,6 @@
+.canvas {
+  z-index: 1;
+}
 .resize {
   position: absolute;
   top: 0;
@@ -46,6 +49,7 @@
   overflow: scroll;
   top: 32px;
   right: 8px;
+  z-index: 1;
   border-radius: 8px;
   height: calc(100% - 42px);
   background: var(--geist-background);
@@ -58,4 +62,11 @@
 }
 .scrollbar > div {
   width: 1px;
+}
+.loading_background {
+  position: absolute;
+  z-index: 0;
+  align-self: center;
+  top: 50%;
+  transform: translateY(-50%);
 }

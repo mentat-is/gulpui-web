@@ -1,14 +1,14 @@
 import { SetState } from "@/class/API";
 import { GulpDataset } from "@/class/Info";
-
 import s from './styles/CustomParameters.module.css'
 import { Separator } from "@/ui/Separator";
 import { Toggle } from "@/ui/Toggle";
-import { Input, Stack } from "@impactium/components";
 import { Icon } from "@impactium/icons";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
 import { capitalize } from "lodash";
 import { ChangeEvent, Fragment, useEffect } from "react";
+import { Stack } from "@/ui/Stack";
+import { Input } from "@/ui/Input";
 
 export namespace CustomParameters {
   export type Location = 'query';
@@ -113,7 +113,7 @@ export namespace CustomParameters {
                     onChange={customParameterInputChangeHandlerConstructor(k)}
                     value={Array.isArray(value) ? value.join(', ') : value}
                     variant="highlighted"
-                    img={mapping[k] || 'Status'}
+                    icon={mapping[k] || 'Status'}
                   />
                   <span>{capitalize(param.desc)}</span>
                 </>

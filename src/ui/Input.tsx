@@ -3,8 +3,9 @@ import s from './styles/Input.module.css'
 import { cn } from '@impactium/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@impactium/icons';
-import { Skeleton, Stack } from '@impactium/components';
 import { Label } from './Label';
+import { Skeleton } from './Skeleton';
+import { Stack } from './Stack';
 
 const inputVariants = cva(s.button, {
   variants: {
@@ -15,7 +16,8 @@ const inputVariants = cva(s.button, {
     },
     size: {
       default: s.defaultSize,
-      sm: s.sm
+      sm: s.sm,
+      lg: s.lg
     },
   },
   defaultVariants: {
@@ -25,7 +27,7 @@ const inputVariants = cva(s.button, {
 });
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
-  img?: Icon.Name | null;
+  icon?: Icon.Name | null;
   label?: string;
   revert?: boolean;
   skeleton?: boolean;
@@ -33,22 +35,22 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, img, ...props }, ref) => {
+  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, ...props }, ref) => {
     const classes = cn(
       inputVariants({ variant, size, className }),
-      s.input,
-      img || type === 'file' ? s.image : null,
+      s.wrapper,
+      icon || type === 'file' ? s.image : null,
       revert && s.revert,
       !valid && s.invalid,
       disabled && s.disabled
     );
 
     const InputIcon = () => {
-      if (!img && (type !== 'file' || img === null)) {
+      if (!icon && (type !== 'file' || icon === null)) {
         return null;
       }
 
-      return <Icon variant='dimmed' name={img ?? 'Upload'} />;
+      return <Icon variant='dimmed' name={icon ?? 'Upload'} />;
     }
 
     return (

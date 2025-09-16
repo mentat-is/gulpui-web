@@ -1,20 +1,21 @@
-import { Button as UIButton, Stack } from '@impactium/components'
 import { useEffect, useState } from 'react'
-import { Session } from '../banners/Session.banner'
+import { Button as UIButton } from '@/ui/Button';
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner'
-import { GulpDataset, Internal, Operation, Pattern, λUser } from '@/class/Info'
+import { GulpDataset, Pattern } from '@/class/Info'
 import { Icon } from '@impactium/icons'
 import { capitalize, cn } from '@impactium/utils'
 import s from './styles/AuthPage.module.css'
 import { Select } from '@/ui/Select'
-import { λOperation } from '@/dto'
 import { Label } from '@/ui/Label'
-import { Operation as OperationBanners } from '@/banners/Operation.banner'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { UploadBanner } from '@/banners/Upload.banner'
 import { Banner as UIBanner } from '@/ui/Banner';
+import { Stack } from '@/ui/Stack';
+import { User } from '@/entities/User';
+import { Operation } from '@/entities/Operation';
+import { Internal } from '@/entities/addon/Internal';
 
 export namespace Auth {
   export namespace Page {
@@ -24,7 +25,7 @@ export namespace Auth {
   export function Page(_: Auth.Page.Props) {
     const { spawnBanner, Info, app } = useApplication()
     const [server, setServer] = useState<string>(Info.app.general.server)
-    const [id, setId] = useState('admin' as λUser['id']);
+    const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('admin')
     const [loading, setLoading] = useState<boolean>(false)
     const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
@@ -40,7 +41,7 @@ export namespace Auth {
       }
     }, [methods, server])
 
-    const createNewOperationButtonHandler = () => { spawnBanner(<OperationBanners.Create.Banner />), setIsOperetionSelectOpen(false) }
+    const createNewOperationButtonHandler = () => { spawnBanner(<Operation.Create.Banner />), setIsOperetionSelectOpen(false) }
 
     const login = async () => {
       const removeOverload = (str: string): string =>
@@ -85,7 +86,7 @@ export namespace Auth {
         )
       }
 
-      if (Operation.selected(app)) {
+      if (Operation.Entity.selected(app)) {
         return (
           <UIButton
             img='Check'
@@ -158,7 +159,7 @@ export namespace Auth {
     }
 
     const SelectOperationTrigger = () => {
-      const selected = Operation.selected(Info.app)
+      const selected = Operation.Entity.selected(Info.app)
 
       if (!app.general.user) {
         return null;
@@ -166,7 +167,7 @@ export namespace Auth {
 
       return (
         <Select.Trigger tabIndex={5}>
-          <Select.Icon name={Operation.icon((selected || {}) as λOperation)} />
+          <Select.Icon name={Operation.Entity.icon((selected || {}) as Operation.Type)} />
           {selected ? selected.name : 'Select operation or create new one'}
         </Select.Trigger>
       )
@@ -189,7 +190,7 @@ export namespace Auth {
         <p className={s.title}>[ Login ]</p>
         <Input
           variant='highlighted'
-          img='Link'
+          icon='Link'
           label='Server adress'
           placeholder='http://localhost:8080'
           value={server}
@@ -200,7 +201,7 @@ export namespace Auth {
         <Input
           variant='highlighted'
           label='Username'
-          img='User'
+          icon='User'
           placeholder='admin'
           value={id}
           disabled={!!app.general.user}
@@ -209,7 +210,7 @@ export namespace Auth {
         />
         <Input
           variant='highlighted'
-          img='KeyRound'
+          icon='KeyRound'
           label='Password'
           placeholder='admin'
           type='password'
@@ -225,25 +226,25 @@ export namespace Auth {
             <Select.Root
               open={isOperetionSelectOpen}
               onOpenChange={setIsOperetionSelectOpen}
-              defaultValue={Operation.selected(Info.app)?.id}
-              onValueChange={(id) => Info.operations_select(id as λOperation['id'])}
+              defaultValue={Operation.Entity.selected(Info.app)?.id}
+              onValueChange={(id) => Info.operations_select(id as Operation.Id)}
             >
               <SelectOperationTrigger />
               <Select.Content>
                 {app.target.operations.map((operation) => (
                   <Select.Item key={operation.id} value={operation.id}>
-                    <Select.Icon name={Operation.icon(operation)} />
+                    <Select.Icon name={Operation.Entity.icon(operation)} />
                     {operation.name}
                   </Select.Item>
                 ))}
-                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='ghost'>
+                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='tertiary'>
                   Create new operation
                 </UIButton>
               </Select.Content>
             </Select.Root>
           </Stack>
         </Stack>
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.selected(app) && sessions.length && s.visible)}>
+        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).length && s.visible)}>
           <Label value='Session' />
           <Stack style={{ width: '100%' }}>
             <Select.Root onValueChange={name => Info.session_load(sessions.find(session => session.name === name)!)}>
@@ -252,15 +253,12 @@ export namespace Auth {
                 Select session
               </Select.Trigger>
               <Select.Content>
-                {sessions.filter(session => session.selected.operations && session.selected.operations === Operation.selected(app)?.id).map(session => (
+                {sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).map(session => (
                   <Select.Item key={session.name} value={session.name} style={{ color: session.color }}>
                     <Select.Icon name={session.icon} />
                     {session.name}
                   </Select.Item>
                 ))}
-                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={() => spawnBanner(<OperationBanners.Create.Banner />)}>
-                  Create new operation
-                </UIButton>
               </Select.Content>
             </Select.Root>
           </Stack>
@@ -277,7 +275,7 @@ export namespace Auth {
   export function Banner({ className, ...props }: Banner.Props) {
     const { Info, app } = useApplication()
     const [server, setServer] = useState<string>(Info.app.general.server)
-    const [id, setId] = useState('admin' as λUser['id']);
+    const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('admin')
     const [loading, setLoading] = useState<boolean>(false)
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
@@ -368,7 +366,7 @@ export namespace Auth {
           <p className={s.title}>[ Login ]</p>
           <Input
             variant='highlighted'
-            img='Link'
+            icon='Link'
             label='Server adress'
             placeholder='http://localhost:8080'
             value={server}
@@ -379,7 +377,7 @@ export namespace Auth {
           <Input
             variant='highlighted'
             label='Username'
-            img='User'
+            icon='User'
             placeholder='admin'
             value={id}
             disabled={!!app.general.user}
@@ -388,7 +386,7 @@ export namespace Auth {
           />
           <Input
             variant='highlighted'
-            img='KeyRound'
+            icon='KeyRound'
             label='Password'
             placeholder='admin'
             type='password'

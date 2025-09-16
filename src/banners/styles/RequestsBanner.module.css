@@ -23,6 +23,7 @@
   height: 28px;
   width: 100%;
   padding: 0 10px 0 4px;
+  background: var(--background-100);
 }
 .list .combination:not(:last-child) {
   border-bottom: 1px solid var(--gray-400);

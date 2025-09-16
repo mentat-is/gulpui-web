@@ -1,6 +1,7 @@
 import { useApplication } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
-import { Button, Stack } from "@impactium/components";
+import { Button } from "@/ui/Button";
+import { Stack } from "@/ui/Stack";
 import { useCallback } from "react";
 
 export default function () {
@@ -27,7 +28,7 @@ namespace Example {
     return (
       <Banner title='This is example plugin' {...props}>
         <Stack style={{ width: '100%' }} ai='center' jc='center'>
-          <Button variant='ghost' img='X' onClick={destroyBanner}>Close</Button>
+          <Button variant='tertiary' img='X' onClick={destroyBanner}>Close</Button>
         </Stack>
       </Banner>
     )

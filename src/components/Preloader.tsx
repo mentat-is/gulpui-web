@@ -1,6 +1,7 @@
-import { Spinner, Stack } from '@impactium/components'
+import { Stack } from '@/ui/Stack'
 import s from './styles/Preloader.module.css'
 import { Shimmer } from '@/ui/Shimmer'
+import { Spinner } from '@/ui/Spinner'
 
 export function Preloader() {
   return (

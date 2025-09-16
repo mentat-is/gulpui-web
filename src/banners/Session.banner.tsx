@@ -1,16 +1,17 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button, Stack } from '@impactium/components'
 import { ChangeEvent, useState } from 'react'
-import { Operation } from '@/class/Info'
 import s from './styles/Session.module.css'
 import { toast } from 'sonner'
-import { Default, λGlyph } from '@/dto/Dataset'
+import { Default } from '@/dto/Dataset'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
-import { Glyph } from '@/ui/Glyph'
 import { Input } from '@/ui/Input'
 import { Logger } from '@/dto/Logger.class'
 import { Icon } from '@impactium/icons'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Glyph } from '@/entities/Glyph'
+import { Operation } from '@/entities/Operation'
 
 export namespace Session {
   export namespace Save {
@@ -20,7 +21,7 @@ export namespace Session {
     export function Banner({ ...props }: Session.Save.Banner.Props) {
       const [name, setName] = useState<string>('')
       const [color, setColor] = useState<string>(Default.Color.OPERATION)
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(null);
+      const [icon, setIcon] = useState<Glyph.Id | null>(null);
       const { Info, app, scrollX, scrollY } = useApplication();
       const [loading, setLoading] = useState<boolean>(false)
 
@@ -33,7 +34,7 @@ export namespace Session {
       }
 
       const saveSession = async () => {
-        const operation = Operation.selected(app)
+        const operation = Operation.Entity.selected(app)
         if (!operation) {
           return
         }
@@ -76,7 +77,7 @@ export namespace Session {
           <Stack className={s.param} dir='column' ai='stretch' gap={12}>
             <Input
               valid={name.length > 0}
-              img='TextTitle'
+              icon='TextTitle'
               label='Session name'
               placeholder='Enter session name'
               variant='highlighted'

@@ -11,14 +11,12 @@ import { cn, λthrow } from '@impactium/utils'
 import { ExtensionProvider } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
-import { File } from './class/Info'
 import s from './App.module.css';
-import { Stack } from '@impactium/components'
+import { Stack } from '@/ui/Stack'
 import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
-import { Banner } from './ui/Banner'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {

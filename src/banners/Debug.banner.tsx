@@ -1,6 +1,7 @@
 import { useApplication } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
-import { Button, Stack } from "@impactium/components";
+import { Button } from "@/ui/Button";
+import { Stack } from "@/ui/Stack";
 
 export namespace Debug {
   export namespace Banner {

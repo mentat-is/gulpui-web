@@ -1,9 +1,5 @@
 import { LinkFunctionality, NoteFunctionality } from "@/banners/Collab.functionality";
-import { Delete } from "@/banners/Delete.banner";
-import { Event, Link, Note } from "@/class/Info";
 import { useApplication } from "@/context/Application.context";
-import { λLink, λNote } from "@/dto/Dataset";
-import { Stack, Button, Badge } from "@impactium/components";
 import { cn } from "@impactium/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
@@ -11,22 +7,29 @@ import { Markdown } from "@/ui/Markdown";
 import s from './styles/Collab.module.css';
 import { Select } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
+import { Extension } from "@/context/Extension.context";
+import { Stack } from "@/ui/Stack";
+import { Button } from "@/ui/Button";
+import { Badge } from "@/ui/Badge";
+import { Note } from "@/entities/Note";
+import { Link } from "@/entities/Link";
+import { Doc } from "@/entities/Doc";
 
 export namespace Collab {
   export namespace List {
     export interface Props extends Stack.Props {
-      notes: λNote[],
-      links: λLink[]
+      notes: Note.Type[],
+      links: Link.Type[]
     }
   }
 
   const EDIT_BUTTON_STYLE = { height: 20, marginLeft: 'auto' } as const;
   const FLEX_WRAP_STYLE = { flexWrap: 'wrap' } as const;
 
-  const SelectItem = memo(({ item }: { item: λNote | λLink }) => {
+  const SelectItem = memo(({ item }: { item: Note.Type | Link.Type }) => {
     const itemColorStyle = useMemo(() => ({ color: item.color }), [item.color]);
     const itemIcon = useMemo(() =>
-      item.type === 'note' ? Note.icon(item) : Link.icon(item),
+      item.type === 'note' ? Note.Entity.icon(item) : Link.Entity.icon(item),
       [item.type, item]
     );
     return (
@@ -46,7 +49,7 @@ export namespace Collab {
       return null
     }
     const { app, spawnBanner } = useApplication();
-    const [target, setTarget] = useState<λNote | λLink>(notes[0] || links[0])
+    const [target, setTarget] = useState<Note.Type | Link.Type>(notes[0] || links[0])
 
     useEffect(() => {
       setTarget(notes[0] || links[0]);
@@ -57,18 +60,18 @@ export namespace Collab {
 
     const handleEditClick = useCallback(() => {
       const banner = target.type === 'note'
-        ? <NoteFunctionality.Create.Banner event={Event.id(app, target.doc._id)} note={target} />
-        : <LinkFunctionality.Create.Banner event={Event.id(app, target.doc_id_from)} link={target} />;
+        ? <NoteFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc._id)} note={target} />
+        : <LinkFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc_id_from)} link={target} />;
       spawnBanner(banner);
     }, [target, app, spawnBanner]);
     const handleDeleteClick = useCallback(() => {
       const banner = target.type === 'note'
-        ? <Delete.Note.Banner note={target} />
-        : <Delete.Link.Banner link={target} />;
+        ? <Note.Delete.Banner note={target} />
+        : <Link.Delete.Banner link={target} />;
       spawnBanner(banner);
     }, [target, spawnBanner]);
     const handleValueChange = useCallback((v: string) => {
-      const newTarget = Note.id(app, v as λNote['id']) || Link.id(app, v as λLink['id']);
+      const newTarget = Note.Entity.id(app, v as Note.Id) || Link.Entity.id(app, v as Link.Id);
       setTarget(newTarget);
     }, [app]);
 
@@ -99,7 +102,7 @@ export namespace Collab {
     }, [notes]);
 
     const targetIcon = useMemo(() => {
-      return target.type === 'note' ? Note.icon(target) : Link.icon(target);
+      return target.type === 'note' ? Note.Entity.icon(target) : Link.Entity.icon(target);
     }, [target]);
 
     const MemoizedSelect = useMemo(() => {
@@ -121,9 +124,10 @@ export namespace Collab {
         <Stack dir='column' ai='stretch'>
           <Stack>
             {MemoizedSelect}
+            <Extension.Component name='Storyline.popover.tsx' />
             <Button
               onClick={handleDeleteClick}
-              variant='ghost'
+              variant='tertiary'
               img='Trash2'
             >
               Delete

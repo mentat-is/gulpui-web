@@ -1,8 +1,9 @@
+import { Source } from '@/entities/Source';
 import { Engine, Hardcode } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
-import { Gradient, throwableByTimestamp, λColor } from '@/ui/utils'
-import { Event, File } from '../class/Info'
-import { λFile } from '@/dto/Dataset'
+import { throwableByTimestamp } from '@/ui/utils'
+import { Color } from '@/entities/Color';
+import { Doc } from '@/entities/Doc';
 
 const SAMPLE_SIZE = 60000;
 
@@ -12,7 +13,7 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     [Hardcode.MaxHeight]: number;
   };
   private renderer!: RenderEngine
-  map = new Map<λFile['id'], typeof HeightEngine.target>();
+  map = new Map<Source.Id, typeof HeightEngine.target>();
 
   constructor(renderer: Engine.Constructor) {
     if (HeightEngine.instance) {
@@ -23,7 +24,7 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     HeightEngine.instance = this
   }
 
-  render(file: λFile, y: number) {
+  render(file: Source.Type, y: number) {
     const samples = this.get(file)
     const height = samples[Hardcode.MaxHeight];
 
@@ -36,7 +37,7 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
         throwableByTimestamp(adjustedTime, this.renderer.limits, this.renderer.info.app) ||
         amount <= 0) continue
 
-      this.renderer.ctx.fillStyle = λColor.gradient(
+      this.renderer.ctx.fillStyle = Color.Entity.gradient(
         file.settings.render_color_palette,
         amount,
         { min: 0, max: height }
@@ -51,8 +52,8 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     }
   }
 
-  get(file: λFile) {
-    const events = File.events(this.renderer.info.app, file)
+  get(file: Source.Type) {
+    const events = Source.Entity.events(this.renderer.info.app, file)
     const [minTime, maxTime] = [Math.min(file.timestamp.min, file.timestamp.max), Math.max(file.timestamp.min, file.timestamp.max)]
 
     const bucketCount = Math.ceil((maxTime - minTime) / SAMPLE_SIZE)
@@ -67,7 +68,7 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
 
     let maxHeight = 0
     events.forEach(event => {
-      const eventTime = Event.timestamp(event)
+      const eventTime = Doc.Entity.timestamp(event)
       if (eventTime < minTime || eventTime > maxTime) return
 
       const bucketStart = minTime + Math.floor((eventTime - minTime) / SAMPLE_SIZE) * SAMPLE_SIZE

@@ -4,7 +4,7 @@
   z-index: 5;
   border-radius: 6px;
   border: 1px solid var(--gray-400);
-  background: var(--soft-black);
+  background: var(--background-100);
   height: 100%;
 }
 .wrapper > img,

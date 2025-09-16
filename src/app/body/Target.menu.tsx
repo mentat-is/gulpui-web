@@ -3,7 +3,6 @@ import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner'
 import { useApplication } from '@/context/Application.context'
 import { enginesBase } from '@/dto/Engine.dto'
-import { λFile } from '@/dto/Dataset'
 import {
   ContextMenuContent,
   ContextMenuGroup,
@@ -22,24 +21,22 @@ import {
 } from '@/ui/Tooltip'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { Sigma } from '@/banners/UploadSigmaRule.banner'
-import { Delete } from '@/banners/Delete.banner'
-import { Stack } from '@impactium/components'
-import { File } from '@/class/Info'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
-import { useEffect, useState } from 'react'
 import { Refractor } from '@/ui/utils'
 import { toast } from 'sonner'
 import { Icon } from '@impactium/icons'
+import { Stack } from '@/ui/Stack'
+import { Source } from '@/entities/Source'
 
 interface TargetMenuProps {
-  file: λFile
+  file: Source.Type
 }
 
 export function TargetMenu({ file }: TargetMenuProps) {
   const { Info, spawnBanner, spawnDialog, app } = useApplication()
-  const events = File.events(app, file);
+  const events = Source.Entity.events(app, file);
 
-  const removeFilters = (file: λFile) => {
+  const removeFilters = (file: Source.Type) => {
     Info.filters_remove(file)
     setTimeout(() => {
       Info.refetch({
@@ -49,7 +46,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
   }
 
   const showEvent = (last = false) => {
-    const events = File.events(app, file);
+    const events = Source.Entity.events(app, file);
     if (!events.length) {
       toast.error('There are no events in this source', {
         icon: <Icon name='FileQuestion' />,
@@ -102,6 +99,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         Settings
       </ContextMenuItem>
       <ContextMenuItem
+        className={s.glass}
         onClick={() => spawnBanner(<Enrichment.Banner />)}
         img="PrismColor"
       >
@@ -181,7 +179,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuItem
         className={s.delete}
         img="Trash2"
-        onClick={() => spawnBanner(<Delete.File.Banner file={file} />)}
+        onClick={() => spawnBanner(<Source.Delete.Banner file={file} />)}
       >
         Delete!
       </ContextMenuItem>

@@ -9,11 +9,7 @@
 .upload {
   width: calc(32px * 3 + 8px * 2);
 }
-.trigger {
-  display: flex;
-  gap: 8px;
-}
-.input input {
+.input {
   max-width: calc(100% - 16px);
   overflow: hidden !important;
   text-overflow: ellipsis;

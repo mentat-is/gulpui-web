@@ -1,7 +1,7 @@
 import { cn } from '@impactium/utils'
 import { Switch, SwitchProps } from './Switch'
 import s from './styles/Toggle.module.css'
-import { Stack } from '@impactium/components'
+import { Stack } from './Stack'
 
 interface ToggleProps extends SwitchProps {
   option: [string, string]

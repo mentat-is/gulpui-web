@@ -1,12 +1,11 @@
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Table } from '@/components/Table'
-import { Button, Stack } from '@impactium/components'
-import { Badge } from '@/ui/Badge';
 import { useMemo, useState } from 'react';
 import { cn } from '@impactium/utils';
 import s from './styles/PreviewBanner.module.css'
 import { Notification } from '@/ui/Notification';
 import { Icon } from '@impactium/icons';
+import { Button } from '@/ui/Button';
 
 export namespace Preview {
   export namespace Banner {
@@ -21,7 +20,7 @@ export namespace Preview {
 
     const OptionButton = useMemo(() => {
       return (
-        <Button variant='ghost' onClick={() => setIsFullscreen(v => !v)} img={isFullscreen ? 'FullscreenClose' : 'Fullscreen'} />
+        <Button variant='tertiary' onClick={() => setIsFullscreen(v => !v)} img={isFullscreen ? 'FullscreenClose' : 'Fullscreen'} />
       )
     }, [isFullscreen, setIsFullscreen]);
 

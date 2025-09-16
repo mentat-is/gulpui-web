@@ -1,6 +1,7 @@
 .overlay {
   top: 0;
   left: 0;
+  z-index: 2;
   height: 100%;
   width: 100%;
   border-radius: 5px;
@@ -47,7 +48,8 @@
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   left: 8px;
-  background: var(--meta-black);
+  background: var(--background-200);
+  border: 1px solid var(--gray-400);
   width: 34px;
   z-index: 2;
 }

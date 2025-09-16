@@ -1,15 +1,15 @@
 import { useApplication } from '@/context/Application.context'
-import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Dialog } from '@/ui/Dialog'
-import { Fragment, useEffect, useMemo, useState, useRef, useCallback, memo } from 'react'
+import { Fragment, useEffect, useMemo, useState, useCallback } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
-import { copy, download, generateUUID, Refractor, λColor } from '@/ui/utils'
-import { Button, Skeleton, Stack } from '@impactium/components'
-import { Event, File, MinMaxBase, λFilter } from '@/class/Info'
+import { copy, download, generateUUID, Refractor } from '@/ui/utils'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Skeleton } from '@/ui/Skeleton'
+import { MinMaxBase } from '@/class/Info'
 import { Navigation } from './components/navigation'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functionality'
-import { λNote } from '@/dto/Dataset'
 import { Collab } from '@/components/CollabList'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
@@ -24,9 +24,14 @@ import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
 import { λCache } from '@/class/Engine.dto'
 import { RenderEngine } from '@/class/RenderEngine'
+import { Doc } from '@/entities/Doc'
+import { Source } from '@/entities/Source'
+import { Filter } from '@/entities/Filter'
+import { Note } from '@/entities/Note'
+import { Color } from '@/entities/Color'
 
 interface DisplayEventDialogProps {
-  event: λEvent
+  event: Doc.Type
 }
 
 export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
@@ -36,9 +41,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = useApplication()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
-  const notes = useMemo(() => Event.notes(app, event), [app.target.notes, event]);
-  const links = useMemo(() => Event.links(app, event), [app.target.links, event]);
-  const file = useMemo(() => File.id(app, event['gulp.source_id']), [app.target.files, event]);
+  const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event]);
+  const links = useMemo(() => Doc.Entity.links(app, event), [app.target.links, event]);
+  const file = useMemo(() => Source.Entity.id(app, event['gulp.source_id']), [app.target.files, event]);
 
   useEffect(() => {
     if (!file) {
@@ -114,7 +119,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return;
     }
 
-    const file = File.id(app, event['gulp.source_id']);
+    const file = Source.Entity.id(app, event['gulp.source_id']);
 
     const { filters } = Info.getQuery(file);
 
@@ -125,8 +130,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       return;
     }
 
-    const newFilters: λFilter[] = Object.keys(object).map(k => ({
-      id: generateUUID<λFilter['id']>(),
+    const newFilters: Filter.Type[] = Object.keys(object).map(k => ({
+      id: generateUUID<Filter.Id>(),
       type: (object[k].includes('*') || k.includes('*')) ? 'regexp' : 'match',
       operator: 'must',
       field: k,
@@ -207,7 +212,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             disabled={!selection}
             onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
               text: selection
-            } as λNote} />)}
+            } as Note.Type} />)}
             img='StickyNote'
           >
             Create new note
@@ -353,7 +358,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 export namespace EventIndicator {
   export interface Props extends Button.Props {
-    event: λEvent;
+    event: Doc.Type;
   }
 }
 
@@ -365,7 +370,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     return null;
   }
 
-  const file = File.id(app, event['gulp.source_id']);
+  const file = Source.Entity.id(app, event['gulp.source_id']);
   if (!file) {
     return null;
   }
@@ -374,12 +379,12 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     const range = RenderEngine[λCache].range.get(event['gulp.source_id']) ?? MinMaxBase;
     const code = Refractor.any.toNumber(event[file.settings.field]);
 
-    return λColor.gradient(file.settings.render_color_palette, code, range);
+    return Color.Entity.gradient(file.settings.render_color_palette, code, range);
   }, [event, app.target.files]);
 
   const Collab = useMemo(() => {
-    const notes = Event.notes(app, event);
-    const links = Event.links(app, event);
+    const notes = Doc.Entity.notes(app, event);
+    const links = Doc.Entity.links(app, event);
 
     if (notes.length === 0 && links.length === 0) {
       return null;
@@ -396,6 +401,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     <Button
       size='icon'
       className={cn(className, s.indicator)}
+      rounded
       style={{ ...style, background }} {...props}>
       <hr />
       <p>{String(event['gulp.event_code']).slice(0, 6)}</p>

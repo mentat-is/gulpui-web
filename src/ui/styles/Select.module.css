@@ -6,19 +6,26 @@
   align-items: center;
   justify-content: flex-start;
   border-radius: 6px;
-  border: 1px solid var(--gray-400);
-  background-color: var(--meta-black);
+  border: 1px solid var(--gray-alpha-400);
+  background: var(--background-100);
+  outline-offset: var(--white);
   gap: 16px;
   overflow: hidden;
   padding: 8px;
   color: var(--white);
-  outline: none;
   text-align: left;
   transition: box-shadow 0.2s;
   position: relative;
   cursor: pointer;
   text-overflow: ellipsis;
   text-wrap: nowrap;
+}
+.trigger:hover {
+  border-color: var(--gray-alpha-500);
+}
+.trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
 }
 .trigger * {
   z-index: 1;
@@ -35,17 +42,20 @@
   height: 100%;
   width: 32px;
   z-index: 0;
-  border-right: 1px solid var(--gray-400);
-  background: var(--soft-black);
+  border-right: 1px solid var(--gray-alpha-400);
+  background: var(--background-200);
 }
-
+.trigger:hover::before {
+  border-right: 1px solid var(--gray-alpha-500);
+}
 .trigger:focus {
   outline: none;
-  box-shadow: var(--ring)
+  box-shadow: var(--ring);
 }
 
 .trigger:disabled {
   cursor: not-allowed;
+  pointer-events: none;
   opacity: 0.5;
 }
 
@@ -58,10 +68,10 @@
   white-space: nowrap;
 }
 .trigger svg:not(:first-of-type) {
-  color: var(--white);
+  color: var(--gray-1000);
 }
 .scroll {
-  background: var(--meta-black);
+  background: var(--background-200);
   display: flex;
   width: 100%;
   z-index: 5;
@@ -85,15 +95,19 @@
   max-height: 312px;
   min-width: 128px;
   overflow: hidden;
-  border-radius: 6px;
-  border: 1px solid var(--gray-400);
-  background-color: var(--soft-black);
+  border-radius: 8px;
+  background: var(--background-100);
   color: var(--white);
   display: flex;
+  transition: all 0.25s var(--transition);
   flex-direction: column;
   padding: 2px;
-  box-shadow: var(--border);
-  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+  border: 1px solid var(--gray-alpha-400);
+}
+
+.content:hover {
+  box-shadow: var(--ring);
 }
 
 .content[data-state="open"] {
@@ -211,7 +225,7 @@
   transition: background-color 0.2s, color 0.2s;
   transition-duration: 150ms;
   transition-timing-function: var(--transition);
-  color: var(--text-dimmed);
+  color: var(--gray-900);
 }
 .item p {
   color: currentColor;
@@ -227,15 +241,15 @@
   text-align: left;
 }
 .item[data-state="checked"] {
-  color: var(--white);
+  color: var(--gray-1000);
 }
 .item[data-state="checked"] span {
   color: currentColor;
 }
 .item:focus,
 .item:hover {
-  background-color: var(--gray16);
-  color: var(--white);
+  background-color: var(--gray-alpha-200);
+  color: var(--gray-1000);
 }
 
 .item[data-disabled] {

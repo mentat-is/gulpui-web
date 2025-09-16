@@ -3,7 +3,6 @@ import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
 import { Switch } from '@/ui/Switch'
-import { Button, Skeleton, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/QueryExternalBanner.module.css'
@@ -12,6 +11,9 @@ import { Input } from '@/ui/Input'
 import { cn } from '@impactium/utils'
 import { Preview } from './Preview.banner'
 import { SelectFiles } from './SelectFiles.banner'
+import { Skeleton } from '@/ui/Skeleton'
+import { Button } from '@/ui/Button'
+import { Stack } from '@/ui/Stack'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -116,7 +118,7 @@ export namespace QueryExternal {
                 label={custom.name}
                 className={cn(custom.required && s.required)}
                 placeholder={typesMap[custom.type]}
-                img={'CircleDashed'}
+                icon='CircleDashed'
                 value={params[custom.name]}
               />
               <span className={s.description}>{custom.desc}</span>
@@ -190,7 +192,7 @@ export namespace QueryExternal {
     const optionButton = (
       <Button
         img='PreviewEye'
-        variant='ghost'
+        variant='tertiary'
         loading={loading === 2}
         onClick={() => handleQuery(true)}
       />

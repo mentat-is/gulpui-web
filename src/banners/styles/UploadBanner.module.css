@@ -1,3 +1,6 @@
+.banner [data-banner-content] {
+  gap: 12px !important;
+}
 .selection {
   display: flex;
   flex-direction: row;
@@ -22,9 +25,6 @@
 .context p.available {
   color: var(--text-white);
   font-weight: 500;
-}
-.trigger {
-  background-color: var(--meta-black);
 }
 .done {
   align-self: flex-end;
@@ -79,12 +79,14 @@
   max-width: 60vw;
   height: 28px;
   padding-right: 1px;
-  background: var(--meta-black);
+  background: var(--background-100);
 }
 .filePreview > svg {
-  margin-left: 8px;
+  padding: 6px;
+  background: var(--background-200);
+  border-right: 1px solid var(--gray-400);
 }
-.files .filePreview:not(:last-child) {
+.files .filePreview:not(:nth-last-child(2)) {
   border-bottom: 1px solid var(--gray-400);
 }
 .filePreview *:not(path) {
@@ -105,6 +107,9 @@
 }
 .select::before {
   content: none !important;
+}
+.frame_selector [data-input] {
+  flex: 1;
 }
 .select > button {
   border-radius: 0;

@@ -2,21 +2,23 @@ import s from './styles/FilterFileBanner.module.css'
 import { Banner } from '@/ui/Banner'
 import { useApplication } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
-import { Button, Stack, } from '@impactium/components'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { File, Filter, Parser, λFilter, λQuery } from '@/class/Info'
-import { fws, Refractor } from '@/ui/utils'
-import { λFile } from '@/dto/Dataset'
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { fws } from '@/ui/utils'
 import { Icon } from '@impactium/icons'
 import { Separator } from '@/ui/Separator'
 import { Preview } from './Preview.banner'
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
+import { Popover } from '@/ui/Popover'
 import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
+import { Button } from '@/ui/Button'
+import { Stack } from '@/ui/Stack'
+import { Query } from '@/entities/Query'
+import { Source } from '@/entities/Source'
+import { Filter } from '@/entities/Filter'
 
 interface FilterFileBannerProps extends Banner.Props {
-  files: λFile[],
-  query?: λQuery,
+  files: Source.Type[],
+  query?: Query.Type,
   keys?: string[]
 }
 
@@ -85,7 +87,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
   }
 
   const Done = useCallback(() => <Button img='Check' variant='glass' loading={loading} onClick={submit} />, [loading, submit]);
-  const Undo = useCallback(() => <Button img='Undo' variant='ghost' onClick={() => Info.filters_undo(files)} />, [files]);
+  const Undo = useCallback(() => <Button img='Undo' variant='tertiary' onClick={() => Info.filters_undo(files)} />, [files]);
 
   const QueryStringPart = useMemo(() => {
     if (files.length > 1) {
@@ -97,7 +99,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     )
   }, [files, Info]);
 
-  const setFilters = useCallback((filters: λFilter[]) => setQuery(q => ({ ...q, filters })), [setQuery]);
+  const setFilters = useCallback((filters: Filter.Type[]) => setQuery(q => ({ ...q, filters })), [setQuery]);
 
   const [dubugger, reload] = useReducer(v => v++, 0);
 
@@ -114,7 +116,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
   ), [query, setFilters, keys.size, dubugger]);
 
   const QueryConditions = useMemo(() => (
-    <OpenSearchQueryBuilder.Query.Filter filters={query.filters} setFilters={setFilters} keys={[...keys]} />
+    <OpenSearchQueryBuilder.Query.Filters filters={query.filters} setFilters={setFilters} keys={[...keys]} />
   ), [query, setFilters, keys.size, dubugger])
 
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
@@ -123,7 +125,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     setIsPreviewLoading(true);
     Info.preview_query({
       ...query,
-      string: Filter.base(files)
+      string: Filter.Entity.base(files)
     }).then(({ docs, total_hits }) => {
       setIsPreviewLoading(false);
       if (total_hits > 0) {
@@ -132,7 +134,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     });
   }, [query, files, keys, setIsPreviewLoading]);
 
-  const [lastQueriesList, setLastQueriesList] = useState<λQuery[]>([]);
+  const [lastQueriesList, setLastQueriesList] = useState<Query.Type[]>([]);
 
   useEffect(() => {
     Info.getLastQueries().then(setLastQueriesList);
@@ -140,13 +142,13 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
 
   const LastQueries = useMemo(() => {
     return (
-      <Popover>
-        <PopoverTrigger asChild>
+      <Popover.Root>
+        <Popover.Trigger asChild>
           <Button img='ClockFading' variant='secondary'>
             Last filters
           </Button>
-        </PopoverTrigger>
-        <PopoverContent className={s.lastFilters}>
+        </Popover.Trigger>
+        <Popover.Content className={s.lastFilters}>
           <Stack dir='column'>
             {lastQueriesList.map((q, i) => (
               <>
@@ -168,8 +170,8 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
               </>
             ))}
           </Stack>
-        </PopoverContent>
-      </Popover>
+        </Popover.Content>
+      </Popover.Root>
     )
   }, [lastQueriesList]);
 
@@ -177,20 +179,20 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     <Banner
       title='Choose filtering options'
       done={<Done />}
-      side={<OpenSearchQueryBuilder.Preview query={Filter.query(query)} />}
+      side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />}
       subtitle={LastQueries}
       className={s.banner}
       option={<Undo />}
       {...props}
     >
-      <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => File.id(app, file as λFile['id'])))}>
+      <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => Source.Entity.id(app, file as Source.Id)))}>
         <Select.Trigger>
-          <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : File.id(app, len as λFile['id']).name} />
+          <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
         </Select.Trigger>
         <Select.Content>
-          {File.selected(app).map(file => (
+          {Source.Entity.selected(app).map(file => (
             <Select.Item value={file.id}>
-              <Icon name={File.icon(file)} />
+              <Icon name={Source.Entity.icon(file)} />
               {file.name}
             </Select.Item>
           ))}

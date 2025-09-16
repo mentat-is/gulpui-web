@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context'
 import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils'
-import { UIEventHandler, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import s from './styles/Canvas.module.css'
 import { useMagnifier } from '@/dto/useMagnifier'
 import { Magnifier } from '@/ui/Magnifier'
@@ -10,18 +10,19 @@ import { LinksDisplayer } from './Links.displayer'
 import { NotesDisplayer } from './Notes.displayer'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { LoggerHandler } from '@/dto/Logger.class'
-import { λFile } from '@/dto/Dataset'
-import { File, Note } from '@/class/Info'
-import { Stack } from '@impactium/components'
 import { debounce } from 'lodash'
 import { useDrugs } from '@/decorator/use'
 import { ContextMenu, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { TargetMenu } from './Target.menu'
 import { cn } from '@impactium/utils'
-import { λEvent } from '@/dto/ChunkEvent.dto'
 import { Pointers } from '@/components/Pointers'
 import { XY } from '@/dto/XY.dto'
 import { Highlights } from '@/overlays/Highlights'
+import { Stack } from '@/ui/Stack'
+import { Spinner } from '@/ui/Spinner'
+import { Source } from '@/entities/Source'
+import { Note } from '@/entities/Note'
+import { Doc } from '@/entities/Doc'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -34,7 +35,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, setScrollY, Info, dialog, highlightsOverlay } = useApplication()
-  const [target, setTarget] = useState<λFile | null>(null)
+  const [target, setTarget] = useState<Source.Type | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, [
       app.target.files,
@@ -55,7 +56,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
 
   useEffect(() => {
-    Note.updateIndexing(app);
+    Note.Entity.updateIndexing(app);
   }, [app.target.notes]);
 
   const renderCanvas = (
@@ -93,14 +94,14 @@ export function Canvas({ timeline }: Canvas.Props) {
       scrollY,
     })
 
-    const files = File.selected(app)
+    const files = Source.Entity.selected(app)
 
     render.ruler.draw()
 
     Highlights.list().map(v => render.highlight(...v));
 
     files.forEach((file, i) => {
-      const y = File.getHeight(app, file, scrollY)
+      const y = Source.Entity.getHeight(app, file, scrollY)
 
       if (
         !throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)
@@ -176,10 +177,10 @@ export function Canvas({ timeline }: Canvas.Props) {
   }, [overlay_ref, canvas_ref, resize]);
 
   // [ ] TODO: Move to Info.tsx;
-  const getEventsListFromFileByClickX = (x: number, file: λFile) => {
-    const events: λEvent[] = [];
+  const getEventsListFromFileByClickX = (x: number, file: Source.Type) => {
+    const events: Doc.Type[] = [];
 
-    for (const event of File.events(app, file)) {
+    for (const event of Source.Entity.events(app, file)) {
       const pos = getPixelPosition(event.timestamp + file.settings.offset)
 
       if (file.settings.render_engine === 'graph') {
@@ -219,7 +220,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     const index = Math.floor(click.y / 48)
 
-    const file = File.selected(app)[index]
+    const file = Source.Entity.selected(app)[index]
 
     if (!file) return
 
@@ -352,7 +353,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     const index = Math.floor((event.clientY + scrollY - timeline.current.getBoundingClientRect().top) / 48);
 
-    const file = File.selected(app)[index] ?? null;
+    const file = Source.Entity.selected(app)[index] ?? null;
 
     setTarget(file);
   }, [setTarget, timeline, scrollY, app.timeline.filter, ...app.target.files]);
@@ -369,7 +370,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     if (!canvas_ref.current) {
       return 1920;
     }
-    const files = File.selected(app);
+    const files = Source.Entity.selected(app);
     const amount = files.length;
 
     return (canvas_ref.current.height * 2) + (amount * 48) - 80;
@@ -422,11 +423,13 @@ export function Canvas({ timeline }: Canvas.Props) {
         <LinksDisplayer getPixelPosition={getPixelPosition} />
         <Highlights.List.Overlay />
         <canvas
+          className={s.canvas}
           ref={canvas_ref}
           id="canvas"
           width={wrapper_ref.current?.offsetWidth}
           height={timeline.current?.clientHeight}
         />
+        <Spinner size={48} className={s.loading_background} />
         <Pointers
           getPixelPosition={getPixelPosition}
           width={canvas_ref.current?.clientWidth || 1}

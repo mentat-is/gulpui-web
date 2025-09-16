@@ -1,7 +1,5 @@
-import { λFilter } from "@/class/Info"
 import { Toggle } from "@/ui/Toggle"
 import { copy, fws } from "@/ui/utils"
-import { Stack, Button, Input } from "@impactium/components"
 import { Icon } from "@impactium/icons"
 import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
@@ -10,6 +8,10 @@ import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
 import { useMemo, useCallback, ChangeEvent } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
+import { Stack } from "@/ui/Stack"
+import { Button } from "@/ui/Button"
+import { Input } from "@/ui/Input"
+import { Filter } from "@/entities/Filter"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
@@ -101,8 +103,9 @@ export namespace OpenSearchQueryBuilder {
           <p>Query String</p>
           <Stack>
             <Input
+              style={{ flex: 1 }}
               variant='highlighted'
-              img='Code'
+              icon='Code'
               placeholder='Enter query_string part...'
               value={string}
               onChange={queryStringInputChangeHandler}
@@ -119,15 +122,15 @@ export namespace OpenSearchQueryBuilder {
     export namespace Add {
       export interface Props extends Stack.Props {
         init: string;
-        filters: λFilter[];
-        setFilters: (filters: λFilter[]) => void;
+        filters: Filter.Type[];
+        setFilters: (filters: Filter.Type[]) => void;
       }
     }
 
     export const Add = ({ filters, init, setFilters, ...props }: Query.Add.Props) => {
       const add = useCallback(() => {
         filters.push({
-          id: `condition-${Date.now()}` as λFilter['id'],
+          id: `condition-${Date.now()}` as Filter.Id,
           type: 'wildcard',
           field: init,
           case_insensitive: true,
@@ -148,22 +151,22 @@ export namespace OpenSearchQueryBuilder {
       )
     }
 
-    export namespace Filter {
+    export namespace Filters {
       export interface Props extends Stack.Props {
-        filters: λFilter[];
-        setFilters: (filters: λFilter[]) => void;
+        filters: Filter.Type[];
+        setFilters: (filters: Filter.Type[]) => void;
         keys: string[]
       }
     }
 
-    export const Filter = ({ filters, setFilters, keys }: Query.Filter.Props) => {
-      const update = useCallback((id: λFilter['id'], key: string, value: any) => {
+    export const Filters = ({ filters, setFilters, keys }: Query.Filters.Props) => {
+      const update = useCallback((id: Filter.Id, key: string, value: any) => {
         setFilters(filters.map((condition) =>
           condition.id === id ? { ...condition, [key]: value } : condition,
         ))
       }, [filters, setFilters]);
 
-      const remove = useCallback((id: λFilter['id']) => {
+      const remove = useCallback((id: Filter.Id) => {
         setFilters(filters.filter((condition) => condition.id !== id))
       }, [filters, setFilters]);
 
@@ -213,14 +216,14 @@ export namespace OpenSearchQueryBuilder {
                 </Select.Root>
                 <Switch checked={filter.enabled} onCheckedChange={value => update(filter.id, 'enabled', value)} />
                 <Button
-                  variant='outline'
+                  variant='tertiary'
                   onClick={() => remove(filter.id)}
                   img='Trash2'
                 />
               </Stack>
               <Stack style={fws}>
                 <Stack pos='relative'>
-                  <Input className={s.key_input} img='Dot' variant='highlighted' placeholder='Field name' value={filter.field} onChange={(e) => update(filter.id, 'field', e.target.value)} />
+                  <Input className={s.key_input} icon='Dot' variant='highlighted' placeholder='Field name' value={filter.field} onChange={(e) => update(filter.id, 'field', e.target.value)} />
                   <Select.Root
                     value={filter.field}
                     onValueChange={(e) => update(filter.id, 'field', e)}
@@ -237,7 +240,7 @@ export namespace OpenSearchQueryBuilder {
                 </Stack>
                 <Input
                   variant='highlighted'
-                  img='ChevronRightSmall'
+                  icon='ChevronRightSmall'
                   placeholder={filter.type === 'range' ? 'min,max' : 'Value'}
                   value={filter.value}
                   onChange={(e) => update(filter.id, 'value', e.target.value)}

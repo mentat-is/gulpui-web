@@ -1,14 +1,14 @@
 import { useApplication } from '@/context/Application.context';
-import { λRequest } from '@/dto/Dataset';
 import { Badge } from '@/ui/Badge';
 import { Banner as UIBanner } from '@/ui/Banner';
-import { Skeleton, Stack } from '@impactium/components';
 import { Icon } from '@impactium/icons';
 import { cn } from '@impactium/utils';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import s from './styles/RequestsBanner.module.css';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import { Stack } from '@/ui/Stack';
+import { Request } from '@/entities/Request';
 
 export namespace Requests {
   export namespace Banner {
@@ -26,9 +26,9 @@ export namespace Requests {
       })
     }
 
-    const cancelRequestButtonClickHandler = (id: λRequest['id']) => Info.request_cancel(id);
+    const cancelRequestButtonClickHandler = (id: Request.Type['id']) => Info.request_cancel(id);
 
-    const detailedViewRequestButtonClickHandler = async (id: λRequest['id']) => {
+    const detailedViewRequestButtonClickHandler = async (id: Request.Type['id']) => {
       setLoading(true);
       const detailedRequest = await Info.request_get_by_id(id);
       setLoading(false);
@@ -47,7 +47,7 @@ export namespace Requests {
               {!Requests.Status.FinishedStatuses.includes(request.status) && (
                 <Badge
                   className={s.close}
-                  variant="destructive"
+                  variant='red'
                   onClick={() => cancelRequestButtonClickHandler(request.id)}
                 >
                   <Icon name="X" />
@@ -78,10 +78,10 @@ export namespace Requests {
 
   export namespace Status {
     export interface Props extends Stack.Props {
-      status: λRequest['status']
+      status: Request.Status
     }
 
-    export const IconsMap: Record<λRequest['status'], Icon.Name> = {
+    export const IconsMap: Record<Request.Status, Icon.Name> = {
       done: 'Check',
       canceled: 'X',
       failed: 'X',
@@ -89,7 +89,7 @@ export namespace Requests {
       ongoing: 'StatusSmall',
     }
 
-    export const ColorsMap: Record<λRequest['status'], string> = {
+    export const ColorsMap: Record<Request.Status, string> = {
       done: 'var(--green-900)',
       canceled: 'var(--amber-900)',
       failed: 'var(--red-900)',
@@ -105,7 +105,7 @@ export namespace Requests {
       ongoing: 'var(--blue-200)'
     }
 
-    export const FinishedStatuses: λRequest['status'][number][] = [
+    export const FinishedStatuses: Request.Status[number][] = [
       'canceled',
       'done',
       'error',
@@ -117,7 +117,7 @@ export namespace Requests {
   export namespace Detailed {
     export namespace Banner {
       export interface Props extends UIBanner.Props {
-        request: λRequest;
+        request: Request.Type;
       }
     }
 

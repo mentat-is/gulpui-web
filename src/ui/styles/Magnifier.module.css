@@ -1,11 +1,12 @@
 .magnifier {
   position: absolute;
-  border: var(--geist-border);
-  border-radius: var(--border-l);
+  border: 1px solid var(--gray-1000);
+  border-radius: 6px;
   transform: translate(-50%, calc(-50% + 24px));
   pointer-events: none;
-  backdrop-filter: blur(8px) brightness(0.7);
+  opacity: 0.9;
   overflow: hidden;
+  z-index: 2;
 }
 .glass {
   background: var(--geist-background);

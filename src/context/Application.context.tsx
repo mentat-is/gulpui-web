@@ -7,15 +7,17 @@ import React, {
   useEffect,
   useMemo,
 } from 'react'
-import { λApp, BaseInfo } from '@/dto'
-import { File, Info } from '@/class/Info';
+import { Info } from '@/class/Info';
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { toast } from 'sonner'
 import { SetState } from '@/class/API'
 import { Hint } from '@/dialogs/Hint.dialog';
 import { SmartSocket } from '@/class/SmartSocket';
-import { λLink, λNote } from '@/dto/Dataset';
+import { Note } from '@/entities/Note';
+import { Link } from '@/entities/Link';
+import { Source } from '@/entities/Source';
+import { App } from '@/entities/App';
 
 export class ApplicationError extends Error {
   constructor(message: string) {
@@ -29,12 +31,12 @@ interface ApplicationContextProps {
   banner: React.ReactNode
   spawnDialog: (dialog: React.ReactNode) => void
   dialog: React.ReactNode
-  app: λApp
+  app: App.Type
   scrollX: number;
   scrollY: number;
   setScrollX: SetState<number>;
   setScrollY: SetState<number>;
-  setInfo: (info: λApp) => void
+  setInfo: (info: App.Type) => void
   Info: Info
   timeline: React.RefObject<HTMLDivElement>
   highlightsOverlay: React.ReactNode,
@@ -49,7 +51,7 @@ export const useApplication = (): ApplicationContextProps =>
   useContext(ApplicationContext)!
 
 export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
-  const [app, setInfo] = useState<λApp>(BaseInfo)
+  const [app, setInfo] = useState<App.Type>(App.Base);
   const [banner, setBanner] = useState<ReactNode>()
   const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />)
   const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
@@ -74,7 +76,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     const collabCallback = (message: any) => {
       switch (message.data.type) {
         case 'note':
-          const notes: λNote[] = message.data.data;
+          const notes: Note.Type[] = message.data.data;
           notes.forEach(note => {
             const exist = message.data.created ? -2 : app.target.notes.findIndex(n => n.id === note.id);
             if (exist >= 0) {
@@ -87,7 +89,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
           setInfo(app);
           return;
         case 'link':
-          const links: λLink[] = message.data.data;
+          const links: Link.Type[] = message.data.data;
           links.forEach(link => {
             const exist = message.data.created === true ? -2 : app.target.links.findIndex(n => n.id === link.id);
             if (exist >= 0) {
@@ -156,7 +158,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
 
     const key = event.key.toLowerCase()
 
-    const events = File.events(app, app.timeline.target['gulp.source_id'])
+    const events = Source.Entity.events(app, app.timeline.target['gulp.source_id'])
 
     if (key === 'd' || key === 'a') {
       const delta = Number(key === 'a') ? 1 : -1

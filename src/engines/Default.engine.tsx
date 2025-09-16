@@ -1,13 +1,15 @@
-import { λFile } from '@/dto/Dataset'
 import {
   Engine,
   Hardcode,
   λCache
 } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
-import { Refractor, λColor } from '@/ui/utils'
-import { Event, File, MinMax } from '@/class/Info'
+import { Refractor } from '@/ui/utils'
+import { MinMax } from '@/class/Info'
 import { Logger } from '@/dto/Logger.class'
+import { Source } from '@/entities/Source'
+import { Color } from '@/entities/Color'
+import { Doc } from '@/entities/Doc'
 
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
   static instance: DefaultEngine | null = null
@@ -17,7 +19,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     [Hardcode.Scale]: number,
   }
   private renderer!: RenderEngine
-  map = new Map<λFile['id'], typeof DefaultEngine.target>()
+  map = new Map<Source.Id, typeof DefaultEngine.target>()
 
   constructor(renderer: Engine.Constructor) {
     if (DefaultEngine.instance) {
@@ -29,7 +31,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     DefaultEngine.instance = this
   }
 
-  render(file: λFile, y: number, force?: boolean) {
+  render(file: Source.Type, y: number, force?: boolean) {
     const map = this.get(file, force);
 
     const range = this.getRanges(file);
@@ -42,7 +44,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
         return;
       }
 
-      this.renderer.ctx.fillStyle = λColor.gradient(file.settings.render_color_palette, code, range);
+      this.renderer.ctx.fillStyle = Color.Entity.gradient(file.settings.render_color_palette, code, range);
 
       this.renderer.ctx.fillRect(
         this.renderer.getPixelPosition(timestamp),
@@ -53,12 +55,12 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     })
   }
 
-  get(file: λFile, force?: boolean): typeof DefaultEngine.target {
+  get(file: Source.Type, force?: boolean): typeof DefaultEngine.target {
     if (this.is(file) && !force)
       return this.map.get(file.id) as typeof DefaultEngine.target
 
     const map = new Map() as typeof DefaultEngine.target
-    const events = File.events(this.renderer.info.app, file)
+    const events = Source.Entity.events(this.renderer.info.app, file)
 
     if (events.length === 0) {
       return map
@@ -150,7 +152,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       const event = events[closestIndex]
       map.set(x, [
         Refractor.any.toNumber(event[file.settings.field]),
-        Event.timestamp(event),
+        Doc.Entity.timestamp(event),
       ])
     }
 
@@ -160,8 +162,8 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     return map as typeof DefaultEngine.target
   }
 
-  getRanges(file: λFile): MinMax {
-    const events = File.events(this.renderer.info.app, file);
+  getRanges(file: Source.Type): MinMax {
+    const events = Source.Entity.events(this.renderer.info.app, file);
     const cache = RenderEngine[λCache].range.get(file.id);
     if (cache && cache.field === file.settings.field) {
       const isSyncedByLength = cache[Hardcode.Length] === events.length;
@@ -176,8 +178,8 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     return this.getRanges(file);
   }
 
-  computeRanges(file: λFile, skip: number = 0) {
-    const events = File.events(this.renderer.info.app, file).slice(skip);
+  computeRanges(file: Source.Type, skip: number = 0) {
+    const events = Source.Entity.events(this.renderer.info.app, file).slice(skip);
 
     const cache = RenderEngine[λCache].range.get(file.id)!;
 
@@ -205,5 +207,5 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     Logger.log(`RenderEngine cache ranges for file ${file.id} has been recalculated`, DefaultEngine.name);
   }
 
-  is = (file: λFile) => Boolean(this.map.get(file.id)?.[Hardcode.Scale] === this.renderer.info.app.timeline.scale);
+  is = (file: Source.Type) => Boolean(this.map.get(file.id)?.[Hardcode.Scale] === this.renderer.info.app.timeline.scale);
 }

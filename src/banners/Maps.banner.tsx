@@ -1,5 +1,4 @@
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button } from '@impactium/components'
 import { cn } from '@impactium/utils'
 import {
   APIProvider,
@@ -17,6 +16,7 @@ import {
 } from 'react'
 import s from './styles/MapsBanner.module.css'
 import type { Ref } from 'react'
+import { Button } from '@/ui/Button'
 
 export namespace Maps {
   export interface Props {

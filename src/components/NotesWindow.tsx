@@ -1,18 +1,20 @@
 import { useApplication } from '@/context/Application.context'
 import s from './styles/NotesWindow.module.css'
 import { Banner } from '@/ui/Banner'
-import { λNote } from '@/dto/Dataset'
-import { NotePoint } from '@/ui/Note'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
-import { Input, Stack } from '@impactium/components'
-import { Context, File } from '@/class/Info'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Notification } from '@/ui/Notification'
 import { Select } from '@/ui/Select'
+import { Stack } from '@/ui/Stack'
+import { Input } from '@/ui/Input'
+import { Note } from '@/entities/Note'
+import { Source } from '@/entities/Source'
+import { Context } from '@/entities/Context'
+import { NotePoint } from '@/ui/Note'
 
 interface FloatingWindowProps {
   onClose: () => void
-  focus: (note: λNote) => void
+  focus: (note: Note.Type) => void
 }
 
 export function NotesWindow({ onClose }: FloatingWindowProps) {
@@ -43,8 +45,8 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       return !search || (
         n.name.toLowerCase().includes(lowerSearch) ||
         n.text.toLowerCase().includes(lowerSearch) ||
-        File.id(app, n.source_id).name.toLowerCase().includes(lowerSearch) ||
-        Context.id(app, n.context_id).name.toLowerCase().includes(lowerSearch) ||
+        Source.Entity.id(app, n.source_id).name.toLowerCase().includes(lowerSearch) ||
+        Context.Entity.id(app, n.context_id).name.toLowerCase().includes(lowerSearch) ||
         n.tags.some(t => t.toLowerCase() === lowerSearch)
       );
     }).filter(n =>
@@ -68,7 +70,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       <Stack>
         <Input
           placeholder='Context name, source name, note title or note description'
-          img='MagnifyingGlass'
+          icon='MagnifyingGlass'
           variant='highlighted'
           value={search}
           onChange={e => setSearch(e.target.value)}

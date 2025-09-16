@@ -1,31 +1,32 @@
-import { Context, Event, File, Link, Operation } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button, Stack } from '@impactium/components'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
-import { TextareaHTMLAttributes, useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import s from './styles/CreateNoteBanner.module.css'
-import { Input } from '@impactium/components'
-import { Badge } from '@/ui/Badge'
-import { Card } from '@/ui/Card'
 import { Separator } from '@/ui/Separator'
-import { λEvent } from '@/dto/ChunkEvent.dto'
-import { Default, λGlyph, λLink, λNote } from '@/dto/Dataset'
+import { Default } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import { Textarea } from '@/ui/Textarea'
-import { Glyph } from '@/ui/Glyph'
-import { cn } from '@impactium/utils'
 import { Markdown } from '@/ui/Markdown'
-import { toast } from 'sonner'
-import { Description } from '@radix-ui/react-dialog'
 import { Toggle } from '@/ui/Toggle'
+import { Input } from '@/ui/Input'
+import { Label } from '@/ui/Label'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Doc } from '@/entities/Doc'
+import { Note } from '@/entities/Note'
+import { Glyph } from '@/entities/Glyph'
+import { Operation } from '@/entities/Operation'
+import { Context } from '@/entities/Context'
+import { Source } from '@/entities/Source'
+import { Link } from '@/entities/Link'
 
 export namespace NoteFunctionality {
   export namespace Create {
     export namespace Banner {
       export interface Props extends UIBanner.Props {
-        note?: λNote
-        event: λEvent
+        note?: Note.Type
+        event: Doc.Type
       }
     }
 
@@ -40,7 +41,7 @@ export namespace NoteFunctionality {
       const [text, setText] = useState<string>(note?.text || '')
       const [rawTags, setRawTags] = useState<string>(note?.tags ? note.tags.join(', ') : '');
       const [isPrivate, setIsPrivate] = useState<boolean>(false);
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(note?.glyph_id || Glyph.List.keys().next().value || null)
+      const [icon, setIcon] = useState<Glyph.Id | null>(note?.glyph_id || Glyph.List.keys().next().value || null)
       const [loading, setLoading] = useState<boolean>(false)
 
       const Sidebar = useMemo(() => {
@@ -53,13 +54,13 @@ export namespace NoteFunctionality {
       }, [text]);
 
       const send = async () => {
-        const operation = Operation.selected(app)
+        const operation = Operation.Entity.selected(app)
 
         if (!operation) {
           return
         }
 
-        const glyph_id = icon as λGlyph['id']
+        const glyph_id = icon as Glyph.Id
 
         const tags = rawTags.split(',').map(tag => tag.trim()).filter(t => t.length);
 
@@ -100,36 +101,51 @@ export namespace NoteFunctionality {
               className={s.save}
               onClick={send}
               variant={name && text ? 'glass' : 'disabled'}
-              img="Check"
+              img='Check'
             />
           }
           side={Sidebar}
           {...props}
         >
-          <Stack className={s.general} ai="stretch" dir="column" gap={8}>
-            <Selection
-              name="Context"
-              value={Context.id(app, event['gulp.context_id']).name}
-              icon="Box"
+          <Stack className={s.general} ai='stretch' dir='column' gap={8}>
+            <Input
+              label='Context'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={Context.Entity.id(app, event['gulp.context_id']).name}
+              icon='Box'
             />
-            <Selection
-              name="File"
-              value={File.id(app, event['gulp.source_id']).name}
-              icon="File"
+            <Input
+              label='Source.Entity'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={Source.Entity.id(app, event['gulp.source_id']).name}
+              icon={Default.Icon.SOURCE}
             />
-            <Selection name="Event" value={event._id} icon="Triangle" />
+            <Input
+              label='Event'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={event._id}
+              icon='Triangle'
+            />
           </Stack>
           <Separator />
-          <Editable
-            name="Title"
+          <Input
+            name='Title'
             value={name}
-            icon="TextTitle"
+            icon='TextTitle'
             onChange={(e) => setName(String(e.currentTarget.value))}
-            placeholder="Note title"
+            placeholder='Note.Entity title'
+            variant='highlighted'
+            className={s.inp_input}
           />
           <Stack>
-            <Stack jc="space-between" flex className={s.inp}>
-              <p>Glyph:</p>
+            <Stack dir='column' gap={6} ai='flex-start' data-input>
+              <Label htmlFor='Glyph' value='Glyph' />
               <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
             </Stack>
             <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
@@ -143,7 +159,7 @@ export namespace NoteFunctionality {
             className={s.textarea}
             value={text}
             onChange={(e) => setText(String(e.currentTarget.value))}
-            placeholder="Description"
+            placeholder='Description'
           />
           <Stack gap={4} style={{ color: 'var(--gray-900)', marginLeft: 'auto', fontSize: 13 }}>
             <Icon name='AcronymMarkdown' size={20} />
@@ -159,31 +175,31 @@ export namespace LinkFunctionality {
   export namespace Create {
     export namespace Banner {
       export interface Props extends UIBanner.Props {
-        event: λEvent
-        link?: λLink
+        event: Doc.Type
+        link?: Link.Type
       }
     }
 
     export function Banner({ link, event, ...props }: LinkFunctionality.Create.Banner.Props) {
       const { app, spawnBanner, destroyBanner, Info } = useApplication()
       const [color, setColor] = useState<string>(link?.color || Default.Color.LINK)
-      const [icon, setIcon] = useState<λGlyph['id'] | null>(link?.glyph_id || Glyph.List.keys().next().value || null)
+      const [icon, setIcon] = useState<Glyph.Id | null>(link?.glyph_id || Glyph.List.keys().next().value || null)
       const [name, setName] = useState<string>(link?.name || '')
       const [description, setDescription] = useState<string>(link?.description || '');
       const [loading, setLoading] = useState<boolean>(false)
 
       const context = useMemo(() => {
-        return Context.id(app, event['gulp.context_id'])
+        return Context.Entity.id(app, event['gulp.context_id'])
       }, [event])
 
       const file = useMemo(() => {
-        return File.id(app, event['gulp.source_id'])
+        return Source.Entity.id(app, event['gulp.source_id'])
       }, [event])
 
       const send = async () => {
         setLoading(true);
 
-        const glyph_id = icon as λGlyph['id'];
+        const glyph_id = icon as Glyph.Id;
 
         if (link) {
           await Info.link_edit({
@@ -220,8 +236,8 @@ export namespace LinkFunctionality {
         () => (
           <Button
             onClick={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)}
-            variant="ghost"
-            img="GitPullRequestCreateArrow"
+            variant='tertiary'
+            img='GitPullRequestCreateArrow'
           />
         ),
         [event],
@@ -232,29 +248,29 @@ export namespace LinkFunctionality {
           <Button
             loading={loading}
             onClick={send}
-            variant="glass"
+            variant='glass'
             disabled={!name || !icon}
-            img="Check"
+            img='Check'
           />
         )
       }, [loading, name, send])
 
       return (
-        <UIBanner title="Create link" done={<Done />} option={<Option />}>
-          <Stack className={s.general} ai="stretch" dir="column" gap={8}>
-            <Selection name="Context" value={context.name} icon="Box" />
-            <Selection name="File" value={file.name} icon="File" />
-            <Selection name="Event" value={event._id} icon="Triangle" />
+        <UIBanner title='Create link' done={<Done />} option={<Option />}>
+          <Stack className={s.general} ai='stretch' dir='column' gap={8}>
+            {/* <Selection name='Context' value={context.name} icon='Box' />
+            <Selection name='Source.Entity' value={file.name} icon='Source.Entity' />
+            <Selection name='Event' value={event._id} icon='Triangle' /> */}
             <Separator />
-            <Editable
-              name="Title"
+            {/* <Editable
+              name='Title'
               value={name}
-              icon="TextTitle"
+              icon='TextTitle'
               onChange={(e) => setName(String(e.currentTarget.value))}
-              placeholder="Link title"
-            />
+              placeholder='Link title'
+            /> */}
             <Stack>
-              <Stack jc="space-between" flex className={s.inp}>
+              <Stack jc='space-between' flex className={s.inp}>
                 <p>Glyph:</p>
                 <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
               </Stack>
@@ -267,7 +283,7 @@ export namespace LinkFunctionality {
               className={s.textarea}
               value={description}
               onChange={(e) => setDescription(String(e.currentTarget.value))}
-              placeholder="Link description"
+              placeholder='Link description'
             />
             <Stack gap={4} style={{ color: 'var(--gray-900)', marginLeft: 'auto', fontSize: 13 }}>
               <Icon name='AcronymMarkdown' size={20} />
@@ -281,15 +297,15 @@ export namespace LinkFunctionality {
 
   export namespace Connect {
     export interface Props {
-      event: λEvent
+      event: Doc.Type
     }
     export function Banner({ event }: LinkFunctionality.Connect.Props) {
       const { app, Info, spawnBanner } = useApplication()
 
-      const connect = (link: λLink) => () => Info.links_connect(link, event)
+      const connect = (link: Link.Type) => () => Info.links_connect(link, event)
 
       const links = useMemo(() => {
-        return Link.selected(app).filter((l) => !l.doc_ids.some((e) => e === event._id))
+        return Link.Entity.selected(app).filter((l) => !l.doc_ids.some((e) => e === event._id))
       }, [app.target.links])
 
       const NoLinks = useMemo(() => {
@@ -302,14 +318,14 @@ export namespace LinkFunctionality {
       }, [spawnBanner])
 
       return (
-        <UIBanner title="Connect link">
+        <UIBanner title='Connect link'>
           {links.length ? links.map((link) => (
             <Button
               key={link.id}
-              variant="secondary"
+              variant='secondary'
               style={{ color: link.color }}
               onClick={connect(link)}
-              img={Link.icon(link)}
+              img={Link.Entity.icon(link)}
             >
               {link.name}
             </Button>
@@ -318,41 +334,4 @@ export namespace LinkFunctionality {
       )
     }
   }
-}
-
-interface SelectionProps {
-  icon: Icon.Name
-  name: string
-  value: string
-}
-
-type EditableProps = SelectionProps & TextareaHTMLAttributes<HTMLInputElement>
-
-function Editable({ icon, name, ...props }: EditableProps) {
-  return (
-    <Stack className={cn(s.inp, s.editable)}>
-      <p>{name}:</p>
-      {props.children || <Input
-        variant="highlighted"
-        className={s.inp_input}
-        img={icon}
-        {...props}
-      />}
-    </Stack>
-  )
-}
-
-function Selection({ icon, name, value }: SelectionProps) {
-  return (
-    <Stack className={cn(s.inp, s.selection)}>
-      <p>{name}:</p>
-      <Input
-        variant="highlighted"
-        className={s.inp_input}
-        img={icon}
-        disabled
-        value={value}
-      />
-    </Stack>
-  )
 }

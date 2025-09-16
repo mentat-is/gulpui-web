@@ -44,3 +44,7 @@
 .delete:hover {
   background: var(--red-200);
 }
+.glass {
+  background: var(--geist-background);
+  border: var(--geist-border);
+}

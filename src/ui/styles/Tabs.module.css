@@ -1,5 +1,7 @@
 .content {
-  margin-top: 0.5rem;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 6px;
 }
 
 .content:focus-visible {
@@ -11,12 +13,12 @@
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  border-radius: 0.125rem;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  border-radius: 6px;
+  height: 100%;
+  padding: 0px 8px;
+  color: var(--gray-800);
   cursor: pointer;
-  transition: all 0.3s ease-in-out;
+  transition: all 0.25s var(--transition);
 }
 
 .trigger:focus-visible {
@@ -29,18 +31,18 @@
 }
 
 .trigger[data-state="active"] {
-  background-color: var(--white);
-  color: var(--black);
+  background: var(--geist-background);
+  color: var(--gray-1000);
+  border: var(--geist-border);
 }
 .list {
   display: inline-flex;
   height: 32px;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  background-color: var(--soft-black);
-  border: 1px solid var(--gray-400);
+  border-radius: 6px;
+  background: var(--background-100);
   position: relative;
-  padding: 0.25rem;
-  color: var(--text-dimmed);
+  box-shadow: inset 0px 0px 0px 1px var(--gray-400);
+  color: var(--gray-900);
 }

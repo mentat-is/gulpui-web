@@ -1,14 +1,14 @@
 import s from './styles/Link.module.css'
 import { useApplication } from '@/context/Application.context'
-import { Event, Link } from '@/class/Info'
-import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
-import { λLink } from '@/dto/Dataset'
 import { Point } from './Point'
+import { Link } from '@/entities/Link'
+import { Doc } from '@/entities/Doc'
+import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 
 export namespace LinkPoint {
   export interface Props extends Omit<Point.Props, 'icon' | 'name' | 'accent'> {
-    link: λLink
+    link: Link.Type
   }
 }
 
@@ -22,10 +22,10 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
 
     const dialog =
       link.doc_ids.length === 1 ? (
-        <DisplayEventDialog event={Event.id(app, link.doc_id_from)} />
+        <DisplayEventDialog event={Doc.Entity.id(app, link.doc_id_from)} />
       ) : (
         <DisplayGroupDialog
-          events={link.doc_ids.map(id => Event.id(app, id))}
+          events={link.doc_ids.map(id => Doc.Entity.id(app, id))}
         />
       )
     s
@@ -37,7 +37,7 @@ export function LinkPoint({ link, ...props }: LinkPoint.Props) {
     // @ts-ignore
     <Point
       onClick={openEvent}
-      icon={Link.icon(link)}
+      icon={Link.Entity.icon(link)}
       name={link.name}
       accent={link.color}
       {...props}

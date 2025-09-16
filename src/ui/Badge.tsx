@@ -2,40 +2,69 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@impactium/utils'
 import s from './styles/Badge.module.css'
 import { Icon } from '@impactium/icons'
-import { Stack } from '@impactium/components'
+import { HTMLAttributes } from 'react';
 
 const badgeVariants = cva(s.badge, {
   variants: {
     variant: {
       default: s.default,
-      secondary: s.secondary,
-      destructive: s.destructive,
-      warning: s.warning,
-      outline: s.outline,
+      gray: s.gray,
+      'gray-subtle': s.gray_subtle,
+      blue: s.blue,
+      'blue-subtle': s.blue_subtle,
+      purple: s.purple,
+      'purple-subtle': s.purple_subtle,
+      amber: s.amber,
+      'amber-subtle': s.amber_subtle,
+      red: s.red,
+      'red-subtle': s.red_subtle,
+      pink: s.pink,
+      'pink-subtle': s.pink_subtle,
+      green: s.green,
+      'green-subtle': s.green_subtle,
+      teal: s.teal,
+      'teal-subtle': s.teal_subtle,
+      inverted: s.inverted
+
     },
+    size: {
+      lg: s.lg,
+      md: s.md,
+      sm: s.sm
+    }
   },
   defaultVariants: {
     variant: 'default',
+    size: 'md'
   },
 })
 
 export namespace Badge {
   export interface Props
-    extends Stack.Props,
+    extends HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-    icon?: Icon.Name
-    border?: boolean
-    radius?: number | string
+    value?: string;
+    icon?: Icon.Name;
+    border?: boolean;
+    radius?: number | string;
   }
+
+  export type Variant = Badge.Props['variant'];
+
+  export type Size = Badge.Props['size'];
 }
 
-function Badge({ className, variant, value, icon, border, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
+export function Badge({ className, variant, size, value, icon, border, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
   return (
-    <Stack className={cn(badgeVariants({ variant }), className, border && s.bordered)} style={{ borderRadius }} {...props}>
-      {icon ? <Icon name={icon} size={12} /> : null}
+    <div className={cn(badgeVariants({ variant, size, className }), border && s.bordered)} style={{ borderRadius }} {...props}>
+      {icon ? <Icon name={icon} size={convertButtonVariantToIconSize(size)} /> : null}
       {value || props.children}
-    </Stack>
+    </div>
   )
 }
 
-export { Badge, badgeVariants }
+const convertButtonVariantToIconSize = (size: Badge.Size): Icon.Size => ({
+  lg: 16,
+  md: 14,
+  sm: 11,
+} as Record<NonNullable<Badge.Size>, Icon.Size>)[size || 'md'];

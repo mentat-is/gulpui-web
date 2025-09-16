@@ -1,6 +1,6 @@
 import React from 'react'
 import s from './styles/Magnifier.module.css'
-import { Stack } from '@impactium/components'
+import { Stack } from './Stack'
 
 interface MagnifierProps {
   isVisible: boolean

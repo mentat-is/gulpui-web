@@ -11,61 +11,22 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
 }
 
 :root {
-  --text-white: #e8e8e8;
   --font-mono: "GeistMono", sans-serif !important;
   --font-sans: "GeistSans", sans-serif !important;
 
-  --p1: 4px;
-  --p2: 8px;
-  --p3: 12px;
-  --p4: 16px;
-  --p5: 24px;
-  --p6: 32px;
-
-  --black: #000;
   --white: #e8e8e8;
-  --white: #e8e8e8;
-  --soft-black: #0d0d0d;
-  --meta-black: #0a0a0a;
-  --dimmed: #a1a1a1;
-
-  --semi-hd: 1366px;
-
-  --gray16: #161616;
-  --gray24: #242424;
-  --gray32: #323232;
-  --gray48: #484848;
-  --gray64: #646464;
-  --gray80: #808080;
-  --gray96: #929292;
-
-  --width-limit: 1488px;
 
   --text-dimmed: #a1a1a1;
   --text-white: #e8e8e8;
-  --text-medium: .875rem;
-  --text-large: 24px;
-  --text-larger: 32px;
-  --text-small: 14px;
-  --text-medium-height: 1.25rem;
-
-  --header-height: 64px;
 
   --transition: cubic-bezier(.21, .29, 0, .94);
 
-  --border: 1px solid hsla(0, 0%, 100%, .07);
-  --border-s: 6px;
-  --border-m: 12px;
-  --border-l: 18px;
   --round: 100px;
-  --border-max: var(--round);
 
   --geist-border: 1px solid hsla(0, 0%, 100%, .07);
-  --geist-background: radial-gradient(100% 100% at 50% 0, hsla(0, 0%, 100%, .07) 0, hsla(0, 0%, 100%, 0) 100%), linear-gradient(103.94deg, hsla(0, 0%, 100%, .05) 7.66%, hsla(0, 0%, 100%, .02) 32.57%, hsla(0, 0%, 100%, .008) 72.45%, hsla(0, 0%, 100%, .05) 96.25%);
+  --geist-background: radial-gradient(100% 100% at 50% 0, hsla(0, 0%, 100%, .16) 0, hsla(0, 0%, 100%, 0) 100%), linear-gradient(103.94deg, hsla(0, 0%, 100%, .07) 7.66%, hsla(0, 0%, 100%, .01) 32.57%, hsla(0, 0%, 100%, .01) 72.45%, hsla(0, 0%, 100%, .08) 96.25%);
   --shadow-border: 0 0 0 1px hsla(0, 0%, 100%, .145);
-  --weak-shadow: 0 0 0 1px hsla(0, 0%, 100%, .145), 0px 1px 1px rgba(0, 0, 0, .02), 0px 4px 8px -4px rgba(0, 0, 0, .04), 0px 16px 24px -8px rgba(0, 0, 0, .06);
-  --right-radial-gradient: radial-gradient(50% 50% at 50% 50%, #121212 0, #000 100%);
-
+  --ring: 0 0 0 1px var(--white), 0 0 0 4px hsla(0, 0%, 100%, .24);
   --shadow-menu: var(--shadow-border), 0px 1px 1px rgba(0, 0, 0, .02), 0px 4px 8px -4px rgba(0, 0, 0, .04), 0px 16px 24px -8px rgba(0, 0, 0, .06);
 
   --gray-100-value: 0, 0%, 10%;
@@ -158,7 +119,7 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
   --gray-alpha-800: hsla(0, 0%, 100%, .47);
   --gray-alpha-900: hsla(0, 0%, 100%, .61);
   --gray-alpha-1000: hsla(0, 0%, 100%, .92);
-  --background-100: #0a0a0a;
+  --background-100: #0e0e0e;
   --background-200: #000;
   --focus-border: 0 0 0 1px var(--gray-alpha-600), 0px 0px 0px 4px hsla(0, 0%, 100%, .24);
   --focus-color: var(--blue-900);
@@ -271,7 +232,7 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
 
 html,
 body {
-  background: var(--meta-black) !important;
+  background: var(--background-200) !important;
   overscroll-behavior-x: none;
 }
 

@@ -1,17 +1,20 @@
-import { λDetailedUser, λUser } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { Button, Input, Skeleton, Stack } from '@impactium/components'
 import { ChangeEvent, useCallback, useEffect, useState } from 'react'
 import s from './styles/PermissaionsBanner.module.css'
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
+import { Popover } from '@/ui/Popover'
 import { capitalize } from 'lodash'
 import { Switch } from '@/ui/Switch'
 import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
-import { Glyph } from '@/ui/Glyph'
-import { λGlyph, λGroup } from '@/dto/Dataset'
 import { SetState } from '@/class/API'
+import { Skeleton } from '@/ui/Skeleton'
+import { Button } from '@/ui/Button'
+import { Input } from '@/ui/Input'
+import { Stack } from '@/ui/Stack'
+import { User } from '@/entities/User'
+import { Group } from '@/entities/Group'
+import { Glyph } from '@/entities/Glyph'
 
 export namespace Permissions {
   export type Role = 'admin' | 'read' | 'edit' | 'ingest' | 'delete'
@@ -26,12 +29,12 @@ export namespace Permissions {
 
   export const Banner = () => {
     const { destroyBanner } = useApplication()
-    const [users, setUsers] = useState<λDetailedUser[]>([])
-    const [_groups, setGroups] = useState<λGroup[]>([])
+    const [users, setUsers] = useState<User.Type[]>([])
+    const [_groups, setGroups] = useState<Group.Type[]>([])
     const [loading, setLoading] = useState<boolean>(false)
 
     const reload = useCallback(() => {
-      api<λDetailedUser[]>(
+      api<User.Type[]>(
         '/user_list',
         {
           setLoading,
@@ -39,7 +42,7 @@ export namespace Permissions {
         setUsers,
       )
 
-      api<λGroup[]>(
+      api<Group.Type[]>(
         '/user_group_list',
         {
           method: 'POST',
@@ -54,7 +57,7 @@ export namespace Permissions {
     }, [])
 
     const update = (
-      user: Pick<λDetailedUser, 'id'> & Partial<λDetailedUser>,
+      user: Pick<User.Type, 'id'> & Partial<User.Type>,
     ) => {
       const { glyph_id = user.glyph_id, id: user_id } = user
 
@@ -64,7 +67,7 @@ export namespace Permissions {
 
       if (glyph_id) query.glyph_id = glyph_id
 
-      api<λDetailedUser>(
+      api<User.Type>(
         '/user_update',
         {
           method: 'PATCH',
@@ -85,7 +88,7 @@ export namespace Permissions {
         >
           {users.length
             ? users.map((user) => (
-              <User.Combination
+              <Users.Combination
                 key={user.id}
                 user={user}
                 update={update}
@@ -105,7 +108,7 @@ export namespace Permissions {
     return (
       <UIBanner
         title="Permissions"
-        option={<User.Create.Trigger loading={loading} />}
+        option={<Users.Create.Trigger loading={loading} />}
         loading={!users.length}
         done={done}
       >
@@ -117,25 +120,25 @@ export namespace Permissions {
     )
   }
 
-  export namespace User {
+  export namespace Users {
     export const UsernameRule = /^[a-zA-Z0-9_.@-]{4,16}$/
     export const PasswordRule =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-])[A-Za-z0-9!@#$%^&*()_+\-]{8,64}$/
 
     export namespace Combination {
       export interface Props {
-        user: λDetailedUser
+        user: User.Type
         update: (
-          user: Pick<λDetailedUser, 'id'> & Partial<λDetailedUser>,
+          user: Pick<User.Type, 'id'> & Partial<User.Type>,
         ) => void
-        users: λDetailedUser[]
+        users: User.Type[]
       }
     }
     export const Combination = ({ user, update, users }: Combination.Props) => {
       const { app, spawnBanner } = useApplication()
 
       const changeRoles = (
-        id: λUser['id'],
+        id: User.Id,
         role: Permissions.Role,
         add?: boolean,
       ) => {
@@ -178,8 +181,8 @@ export namespace Permissions {
             <span>{user.id}</span>
           </Stack>
           <Stack flex />
-          <Popover>
-            <PopoverTrigger>
+          <Popover.Root>
+            <Popover.Trigger>
               <Button img="Gavel" variant="secondary">
                 Roles /{' '}
                 {user.permission
@@ -187,8 +190,8 @@ export namespace Permissions {
                   .join('')
                   .toUpperCase() || '0'}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent>
+            </Popover.Trigger>
+            <Popover.Content>
               <Stack dir="column" ai="flex-start" gap={4}>
                 {RolesList.map((r) => {
                   const has = user.permission.includes(r)
@@ -204,15 +207,15 @@ export namespace Permissions {
                   )
                 })}
               </Stack>
-            </PopoverContent>
-          </Popover>
-          <Popover>
-            <PopoverTrigger>
+            </Popover.Content>
+          </Popover.Root>
+          <Popover.Root>
+            <Popover.Trigger>
               <Button img="Users" variant="secondary">
                 Groups
               </Button>
-            </PopoverTrigger>
-            <PopoverContent>
+            </Popover.Trigger>
+            <Popover.Content>
               <Stack dir="column" ai="flex-start" gap={4}>
                 {RolesList.map((r) => {
                   const has = user.permission.includes(r)
@@ -228,12 +231,12 @@ export namespace Permissions {
                   )
                 })}
               </Stack>
-            </PopoverContent>
-          </Popover>
+            </Popover.Content>
+          </Popover.Root>
           <Button
             img="PenLine"
             onClick={() =>
-              spawnBanner(<Permissions.User.Edit.Banner user={user} />)
+              spawnBanner(<Permissions.Users.Edit.Banner user={user} />)
             }
             variant="secondary"
           />
@@ -250,8 +253,8 @@ export namespace Permissions {
         return (
           <Button
             img="UserPlus"
-            variant="ghost"
-            onClick={() => spawnBanner(<User.Create.Banner />)}
+            variant='tertiary'
+            onClick={() => spawnBanner(<Users.Create.Banner />)}
             {...props}
           />
         )
@@ -259,7 +262,7 @@ export namespace Permissions {
       export const Banner = () => {
         const { spawnBanner } = useApplication()
         const [loading, setLoading] = useState<boolean>(false)
-        const [icon, setIcon] = useState<λGlyph['id'] | null>(null)
+        const [icon, setIcon] = useState<Glyph.Id | null>(null)
         const [id, setId] = useState<string>('')
         const [isIdValid, setIsIdValid] = useState<boolean>(true)
         const [password, setPassword] = useState<string>('')
@@ -336,7 +339,7 @@ export namespace Permissions {
             done={<Done />}
           >
             <Input
-              img="User"
+              icon="User"
               placeholder="User idendificator"
               variant="highlighted"
               value={id}
@@ -344,11 +347,11 @@ export namespace Permissions {
               onChange={inputConstructor(
                 setId,
                 setIsIdValid,
-                new RegExp(Permissions.User.UsernameRule),
+                new RegExp(Permissions.Users.UsernameRule),
               )}
             />
             <Input
-              img="Key"
+              icon="Key"
               placeholder="Password"
               variant="highlighted"
               value={password}
@@ -356,11 +359,11 @@ export namespace Permissions {
               onChange={inputConstructor(
                 setPassword,
                 setIsPasswordValid,
-                new RegExp(Permissions.User.PasswordRule),
+                new RegExp(Permissions.Users.PasswordRule),
               )}
             />
             <Input
-              img="Gavel"
+              icon="Gavel"
               placeholder="read, ingest, edit, delete, admin"
               variant="highlighted"
               value={permissions}
@@ -372,10 +375,10 @@ export namespace Permissions {
         )
       }
     }
-    export namespace Group {
+    export namespace Groups {
       export namespace Combination {
         export interface Props {
-          group: λGroup
+          group: Group.Type
         }
       }
       export function Combination({
@@ -388,13 +391,13 @@ export namespace Permissions {
     export namespace Edit {
       export namespace Banner {
         export interface Props extends UIBanner.Props {
-          user: λDetailedUser
+          user: User.Type
         }
       }
       export function Banner({ user, ...props }: Banner.Props) {
         const { spawnBanner } = useApplication()
         const [loading, setLoading] = useState<boolean>(false)
-        const [icon, setIcon] = useState<λGlyph['id'] | null>(user.glyph_id)
+        const [icon, setIcon] = useState<Glyph.Id | null>(user.glyph_id)
         const [id, setId] = useState<string>(user.id)
         const [isIdValid, setIsIdValid] = useState<boolean>(true)
         const [password, setPassword] = useState<string>('')
@@ -478,7 +481,7 @@ export namespace Permissions {
             {...props}
           >
             <Input
-              img="User"
+              icon="User"
               placeholder="User idendificator"
               variant="highlighted"
               value={id}
@@ -486,11 +489,11 @@ export namespace Permissions {
               onChange={inputConstructor(
                 setId,
                 setIsIdValid,
-                new RegExp(Permissions.User.UsernameRule),
+                new RegExp(Permissions.Users.UsernameRule),
               )}
             />
             <Input
-              img="Key"
+              icon="Key"
               placeholder="Password"
               variant="highlighted"
               value={password}
@@ -498,11 +501,11 @@ export namespace Permissions {
               onChange={inputConstructor(
                 setPassword,
                 setIsPasswordValid,
-                new RegExp(Permissions.User.PasswordRule),
+                new RegExp(Permissions.Users.PasswordRule),
               )}
             />
             <Input
-              img="Gavel"
+              icon="Gavel"
               placeholder="read, ingest, edit, delete, admin"
               variant="highlighted"
               value={permissions}

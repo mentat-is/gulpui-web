@@ -3,12 +3,12 @@
   height: 32px;
   display: flex;
   justify-content: center;
+  z-index: 2;
   width: 32px;
   border: 1px solid;
-  background: var(--meta-black);
+  background: var(--background-100);
   border-radius: 4px;
   transform: translate(-50%, -50%);
-  z-index: 0;
   box-shadow: none;
   transition: box-shadow 0.125s var(--transition) !important;
 }
@@ -51,9 +51,9 @@
   text-overflow: ellipsis;
   height: 20px;
   line-height: 12px;
-  background: var(--meta-black);
+  background: var(--background-100);
   padding: 3px 5px;
-  border: 1px solid var(--white);
+  border: 1px solid var(--gray-alpha-400);
   border-radius: 4px;
   text-align: center;
 }
@@ -93,7 +93,7 @@
   min-height: 24px;
   min-width: 24px;
   padding: 4px;
-  background: var(--soft-black);
+  background: var(--background-100);
   border-radius: 4px;
   box-shadow: var(--shadow-menu);
 }
@@ -116,9 +116,6 @@
 .content {
   display: flex;
   flex-direction: column;
-  gap: var(--card-gap);
-  background: var(--geist-background);
-  backdrop-filter: brightness(0.25) blur(5px);
   border: var(--geist-border);
 }
 .buttons {

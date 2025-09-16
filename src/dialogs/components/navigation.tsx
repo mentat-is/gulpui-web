@@ -1,26 +1,27 @@
 import { useApplication } from '@/context/Application.context'
-import { λEvent } from '@/dto/ChunkEvent.dto'
-import { Button, Stack } from '@impactium/components'
 import s from './navigation.module.css'
 import { useEffect, useState } from 'react'
-import { Event, File } from '@/class/Info'
-import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
 import { cn } from '@impactium/utils'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Doc } from '@/entities/Doc'
+import { Source } from '@/entities/Source'
+import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
 
 export namespace Navigation {
   export interface Props {
-    event: λEvent
+    event: Doc.Type
   }
 }
 
 export function Navigation({ event }: Navigation.Props) {
   const { app, Info, spawnDialog } = useApplication()
-  const [events, setEvents] = useState<λEvent[]>([])
+  const [events, setEvents] = useState<Doc.Type[]>([])
 
   useEffect(() => {
-    const file = File.id(app, event['gulp.source_id'])
+    const file = Source.Entity.id(app, event['gulp.source_id'])
 
-    const events = Event.get(app, file.id)
+    const events = Doc.Entity.get(app, file.id)
 
     const index = events.findIndex((ev) => ev._id === event._id)
 
@@ -29,7 +30,7 @@ export function Navigation({ event }: Navigation.Props) {
     setEvents(nears.reverse())
   }, [event])
 
-  const navigatorEventClickHandlerConstructor = (e: λEvent) => {
+  const navigatorEventClickHandlerConstructor = (e: Doc.Type) => {
     return () => spawnDialog(<DisplayEventDialog event={e} />)
   }
 
@@ -41,7 +42,7 @@ export function Navigation({ event }: Navigation.Props) {
     }
   }
 
-  const all = Event.get(app, event['gulp.source_id']);
+  const all = Doc.Entity.get(app, event['gulp.source_id']);
 
   return (
     <Stack className={s.navigation} jc="space-between">
@@ -49,7 +50,7 @@ export function Navigation({ event }: Navigation.Props) {
         disabled={all.length > 0 && all[all.length - 1]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(true)}
         img="ArrowLeft"
-        variant="outline"
+        variant='secondary'
       />
       <Stack className={s.content} jc="center" flex>
         {events.map((e) => (
@@ -65,7 +66,7 @@ export function Navigation({ event }: Navigation.Props) {
         disabled={all.length > 0 && all[0]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(false)}
         img="ArrowRight"
-        variant="outline"
+        variant='secondary'
         revert
       />
     </Stack>

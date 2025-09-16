@@ -1,24 +1,28 @@
 import { useApplication } from '@/context/Application.context'
-import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
-import { λNote } from '@/dto/Dataset'
-import { Context, Event, File, Note } from '@/class/Info'
 import { Point as UIPoint } from './Point'
-import { Badge, Button, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import s from './styles/Note.module.css'
 import { cn } from '@impactium/utils'
 import { formatTimestampToReadableString, stringToHexColor } from './utils'
+import { Stack } from './Stack'
+import { Badge } from './Badge'
+import { Button } from './Button'
+import { Doc } from '@/entities/Doc'
+import { Context } from '@/entities/Context'
+import { Source } from '@/entities/Source'
+import { DisplayEventDialog } from '@/dialogs/Event.dialog'
+import { Note } from '@/entities/Note'
 
 export namespace NotePoint {
   export interface Props
     extends Omit<UIPoint.Props, 'icon' | 'accent' | 'name'> {
-    notes: λNote[]
+    notes: Note.Type[]
   }
 
   export namespace Combination {
     export interface Props extends Omit<Stack.Props, 'onClick'> {
-      note: λNote
+      note: Note.Type
       withSource?: boolean
     }
   }
@@ -31,8 +35,8 @@ export namespace NotePoint {
   }: Combination.Props) {
     const { app, spawnDialog } = useApplication()
 
-    const targetNoteButtonHandler = (note: λNote) => {
-      const event = Event.id(app, note.doc._id);
+    const targetNoteButtonHandler = (note: Note.Type) => {
+      const event = Doc.Entity.id(app, note.doc._id);
 
       spawnDialog(<DisplayEventDialog event={event} />);
     }
@@ -44,18 +48,18 @@ export namespace NotePoint {
         {...props}
       >
         <p>{formatTimestampToReadableString(note.doc['@timestamp'])}</p>
-        <Icon name={Note.icon(note)} />
+        <Icon name={Note.Entity.icon(note)} />
         <p>{note.name}</p>
         <span>{note.text}</span>
         <Stack className={s.badge_wrapper}>
-          <Badge size='sm' value={`${Context.id(app, note.context_id).name} / ${File.id(app, note.source_id).name}`} variant='inverted' />
-          {note.tags.map(t => <Badge size='sm' value={t} icon={isTagAreSeverityIndicator(t) ? NotePoint.getIconFromNoteSeverity(note) : undefined} variant={isTagAreSeverityIndicator(t) ? NotePoint.getColorFromNoteSeverity(note) as Badge.Variant : 'gray-subtle'} />)}
+          <Badge value={`${Context.Entity.id(app, note.context_id).name} / ${Source.Entity.id(app, note.source_id).name}`} />
+          {note.tags.map(t => <Badge value={t} icon={isTagAreSeverityIndicator(t) ? NotePoint.getIconFromNoteSeverity(note) : undefined} variant={(isTagAreSeverityIndicator(t) ? NotePoint.getColorFromNoteSeverity(note) : 'gray-subtle') as any} />)}
         </Stack>
 
         <Button
           img="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}
-          variant="ghost"
+          variant='tertiary'
         />
       </Stack>
     )
@@ -66,7 +70,7 @@ export namespace NotePoint {
 
     const handleClick = () => {
       const ids = notes.map(n => n.doc._id);
-      const events = File.events(app, notes[0].source_id).filter(f => ids.includes(f._id));
+      const events = Source.Entity.events(app, notes[0].source_id).filter(f => ids.includes(f._id));
       if (!events.length) {
         return;
       }
@@ -81,7 +85,7 @@ export namespace NotePoint {
     return (
       <UIPoint
         onClick={handleClick}
-        icon={notes.length > 1 ? 'Status' : Note.icon(notes[0])}
+        icon={notes.length > 1 ? 'Status' : Note.Entity.icon(notes[0])}
         accent={notes.length > 1 ? '#e8e8e8' : notes[0].color}
         name={(notes.length > 1 ? notes.length : notes[0].name).toString()}
         {...props}
@@ -114,7 +118,7 @@ export namespace NotePoint {
   /**
    * O(1) complexity
    */
-  export const getSeverityFromNote = (note: λNote): Severity => {
+  export const getSeverityFromNote = (note: Note.Type): Severity => {
     const target = note.tags.find(tag => isTagAreSeverityIndicator(tag));
     if (!target) {
       return 'informational';
@@ -132,9 +136,9 @@ export namespace NotePoint {
     return key;
   }
 
-  export const getIconFromNoteSeverity = (note: λNote) => SeverityToIconMap[getSeverityFromNote(note)];
+  export const getIconFromNoteSeverity = (note: Note.Type) => SeverityToIconMap[getSeverityFromNote(note)];
 
-  export const getColorFromNoteSeverity = (note: λNote) => SeverityToColorMap[getSeverityFromNote(note)];
+  export const getColorFromNoteSeverity = (note: Note.Type) => SeverityToColorMap[getSeverityFromNote(note)];
 
   export const isTagAreSeverityIndicator = (tag: string): boolean => tag.startsWith('severity_');
 }

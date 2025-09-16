@@ -1,6 +1,7 @@
-import { File, Event } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
-import { λLink } from '@/dto/Dataset'
+import { Doc } from '@/entities/Doc'
+import { Link } from '@/entities/Link'
+import { Source } from '@/entities/Source'
 import { LinkPoint } from '@/ui/Link'
 import { useMemo, Fragment } from 'react'
 
@@ -19,14 +20,14 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
   )
 
   const points = useMemo(() => {
-    const result: Array<{ link: λLink; x: number; y: number }> = [];
+    const result: Array<{ link: Link.Type; x: number; y: number }> = [];
 
     for (const link of app.target.links) {
-      const ev = Event.id(app, link.doc_id_from);
+      const ev = Doc.Entity.id(app, link.doc_id_from);
       if (!ev || !selectedFiles.has(ev['gulp.source_id'])) continue;
 
-      const ys = link.doc_ids.map(d => File.getHeight(app, Event.id(app, d)?.['gulp.source_id'], 0));
-      const xs = link.doc_ids.map(d => getPixelPosition(Event.id(app, d)?.timestamp ?? 0));
+      const ys = link.doc_ids.map(d => Source.Entity.getHeight(app, Doc.Entity.id(app, d)?.['gulp.source_id'], 0));
+      const xs = link.doc_ids.map(d => getPixelPosition(Doc.Entity.id(app, d)?.timestamp ?? 0));
       if (ys.length < 2 || xs.length < 2) continue;
 
       for (let i = 0; i < ys.length - 1; i++) {

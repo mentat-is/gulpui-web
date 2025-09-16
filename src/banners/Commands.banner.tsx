@@ -4,7 +4,6 @@ import s from './styles/CommandsBanner.module.css';
 import { useApplication } from '@/context/Application.context';
 import { Input } from '@/ui/Input';
 import { ChangeEvent, useMemo, useState } from 'react';
-import { Button, Stack } from '@impactium/components';
 import { Icon } from '@impactium/icons';
 import { Default } from '@/dto/Dataset';
 import { SetState } from '@/class/API';
@@ -13,13 +12,15 @@ import { Enrichment } from './Enrichment.banner';
 import { FilterFileBanner } from './FilterFile.banner';
 import { Frame } from './Frame.banner';
 import { GlobalQuery } from './GlobalQuery.banner';
-import { Operation } from './Operation.banner';
 import { QueryExternal } from './QueryExternal.banner';
 import { Requests } from './Requests.banner';
 import { UploadBanner } from './Upload.banner';
 import { Sigma } from './UploadSigmaRule.banner';
 import { Session } from './Session.banner';
 import { Permissions } from './Permissions.banner';
+import { Stack } from '@/ui/Stack';
+import { Button } from '@/ui/Button';
+import { Operation } from '@/entities/Operation';
 
 export namespace Commands {
   export type Prefix = 'direct' | 'banner';
@@ -106,7 +107,7 @@ export namespace Commands {
       <UIBanner title="Commands" className={cn(className, s.banner)} {...props}>
         <Input
           variant="highlighted"
-          img="MagnifyingGlass"
+          icon="MagnifyingGlass"
           placeholder='searchInput'
           onChange={(e: ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
           value={search}
@@ -137,7 +138,7 @@ export namespace Commands {
     const { spawnBanner } = useApplication();
 
     return (
-      <Button className={s.command} img={command.icon} variant="ghost" onClick={command.onClick}>
+      <Button className={s.command} img={command.icon} variant="tertiary" onClick={command.onClick}>
         {command.name}
       </Button>
     );

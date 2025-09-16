@@ -26,7 +26,6 @@
   background: red;
 }
 .container {
-  background-color: var(--soft-black);
   border: 1px solid var(--gray-400);
   border-radius: 4px;
   padding: 6px;
@@ -81,9 +80,7 @@
   margin-right: 6px;
 }
 .indicator {
-  border-radius: var(--round);
-  border: 1px solid var(--gray-alpha-500);
-  padding: 0px;
+  padding: 0px !important;
   position: relative;
 }
 .indicator hr {
@@ -107,7 +104,7 @@
   border: 1px solid var(--gray-400);
   width: 14px;
   height: 14px;
-  background: var(--soft-black);
+  background: var(--background-100);
   bottom: 0;
   right: 0;
   border-radius: var(--round);

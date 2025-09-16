@@ -1,11 +1,11 @@
 // @ts-ignore
 import { Console } from '@impactium/console'
-import { λEvent } from './ChunkEvent.dto'
-import { Parser } from '@/class/Info'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
-import { λFile } from './Dataset'
 import { toast, ToastT } from 'sonner'
+import { Source } from '@/entities/Source'
+import { Doc } from '@/entities/Doc'
+import { Parser } from '@/entities/addon/Parser'
 
 interface Options extends Omit<ToastT, 'id'> {
   toast?: 'success' | 'warning' | 'error'
@@ -120,8 +120,8 @@ export class Logger {
 
 export class LoggerHandler {
   public static canvasClick = (
-    file: λFile,
-    events: λEvent[],
+    file: Source.Type,
+    events: Doc.Type[],
     position: number,
   ) => {
     Logger.log(`Canvas has been clicked and file ${file.name}-${file.id} was trigerred. Position: ${position}`, LoggerHandler)

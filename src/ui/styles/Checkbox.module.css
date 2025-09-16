@@ -3,13 +3,13 @@
   height: 20px;
   width: 20px;
   flex-shrink: 0;
-  border-radius: 6px;
+  border-radius: 2px;
   border: 1px solid var(--gray-400);
-  background-color: transparent;
+  background-color: var(--background-200);
 }
 
 .root:focus-visible {
-  box-shadow: 0 0 0 1px var(--white), 0 0 0 4px hsla(0, 0%, 100%, .24);
+  box-shadow: var(--ring);
 }
 
 .root:disabled {
@@ -18,7 +18,7 @@
 }
 .root svg {
   transform: translateY(2px);
-  color: var(--black);
+  color: var(--background-200);
 }
 .root[data-state="checked"] {
   background-color: var(--white);

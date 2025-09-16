@@ -1,15 +1,11 @@
 import { useApplication } from '@/context/Application.context'
-import { Stack } from '@impactium/components'
 import s from './styles/Pointers.module.css'
-import { Internal, λUser } from '@/class/Info'
-import { useCallback, useRef, useState } from 'react'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
 import { XY } from '@/dto/XY.dto'
-import { format } from 'date-fns'
-import { Logger } from '@/dto/Logger.class'
-import { SmartSocket } from '@/class/SmartSocket'
 import { formatTimestampToReadableString } from '@/ui/utils'
+import { Stack } from '@/ui/Stack'
+import { User } from '@/entities/User'
 
 export namespace Pointers {
   export interface Props extends Stack.Props {
@@ -23,7 +19,7 @@ export namespace Pointers {
     timestamp: number
     y: number
     x?: number
-    id: λUser['id']
+    id: User.Id
     color: string
   }
 }
@@ -40,14 +36,14 @@ export function Pointers({
   const you: Pointers.Pointer = {
     ...self,
     color: 'var(--green-700)',
-    id: 'You' as λUser['id'],
+    id: 'You' as User.Id,
     timestamp,
   }
 
   return (
     <Stack aria-pointers pos="absolute" className={s.pointers} {...props}>
       {[you, ...app.timeline.pointers].map((p) => {
-        const isYours = p.id === ('You' as λUser['id'])
+        const isYours = p.id === ('You' as User.Id)
         const x = p.x || getPixelPosition(p.timestamp)
         const isRightSide = x > width / 2
 

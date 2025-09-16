@@ -1,11 +1,20 @@
 .skeleton {
-  background-color: var(--accent-5);
-  animation: pulse 2s cubic-bezier(.4,0,.6,1) infinite;
-  flex-shrink: 0;
+  position: relative;
   pointer-events: none;
+  display: block;
 }
-.skeleton * {
-  opacity: 0;
+.skeleton::after {
+  content: "";
+  position: absolute;
+  border-radius: 6px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(270deg, var(--gray-100), var(--gray-400), var(--gray-400), var(--gray-100));
+  background-size: 400% 100%;
+  animation: pulse 6s cubic-bezier(.4,0,.6,1) infinite var(--delay, 0s);
+  flex-shrink: 0;
 }
 .defaultWidth {
   width: 128px;
@@ -41,6 +50,9 @@
 .long {
   width: 256px;
 }
+.w_unset {
+  width: unset;
+}
 .w_full {
   width: 100%;
 }
@@ -49,6 +61,9 @@
 }
 .high {
   min-height: 48px;
+}
+.h_unset {
+  height: unset;
 }
 .h_full {
   height: 100%;
@@ -69,7 +84,11 @@
 }
 
 @keyframes pulse {
-  50% {
-    background-color: var(--gray-400);
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
   }
 }

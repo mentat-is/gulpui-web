@@ -1,16 +1,16 @@
 import { capitalize } from '@impactium/utils'
 import { type Callback } from '@impactium/types'
 import { toast } from 'sonner'
-import { Internal } from './Info'
 import { Logger } from '@/dto/Logger.class'
-import { λRequest } from '@/dto/Dataset'
 import { Icon } from '@impactium/icons'
 import { Auth } from '@/page/Auth.page'
+import { Request } from '@/entities/Request'
+import { Internal } from '@/entities/addon/Internal'
 
 interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending'
   timestamp: Date
-  req_id: λRequest['id']
+  req_id: Request.Id
   data: T
 }
 
@@ -23,13 +23,13 @@ type ResponseError = ResponseBase<{
 
 export class λ<T extends ResponseBase<any>> {
   status: 'success' | 'error' | 'pending'
-  req_id: λRequest['id']
+  req_id: Request.Id;
   timestamp: Date
   data: T['data']
 
   constructor(data: T = {} as T) {
     this.status = data.status ?? 'error';
-    this.req_id = data.req_id ?? '' as λRequest['id'];
+    this.req_id = data.req_id ?? '' as Request.Id;
     this.timestamp = data.timestamp ?? Date.now();
     this.data = data.data ?? { message: 'internal_server_error', statusCode: 500 };
   }

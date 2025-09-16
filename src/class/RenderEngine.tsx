@@ -1,17 +1,21 @@
-import { Internal, MinMax, Note } from '@/class/Info'
-import { Event, Info, File } from './Info'
-import { Color, stringToHexColor } from '@/ui/utils'
+import { MinMax } from '@/class/Info'
+import { Info } from './Info'
+import { stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
 import { Engine, Hardcode, λCache } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
-import { RequestPrefix, λFile, λLink, λNote } from '@/dto/Dataset'
 import { getCanvasIcon } from '@/ui/CanvasIcon'
 import { Logger } from '@/dto/Logger.class'
-import { Glyph } from '@/ui/Glyph'
-import { λEvent } from '@/dto/ChunkEvent.dto'
+import { Source } from '@/entities/Source'
+import { Doc } from '@/entities/Doc'
+import { Link } from '@/entities/Link'
+import { Note } from '@/entities/Note'
+import { Glyph } from '@/entities/Glyph'
+import { Request } from '@/entities/Request'
+import { Internal } from '@/entities/addon/Internal'
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = NOTE_SIZE / 2 * -1;
@@ -69,14 +73,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   default!: DefaultEngine
   height!: HeightEngine
   graph!: GraphEngine
-  shifted: λFile[] = []
+  shifted: Source.Type[] = []
 
   // CACHE
   private static [λCache] = {
-    notes: new Map() as Map<λFile['id'], Group[]> & { [Hardcode.Scale]: number },
-    range: new Map() as Map<λFile['id'], MinMax & {
+    notes: new Map() as Map<Source.Id, Group[]> & { [Hardcode.Scale]: number },
+    range: new Map() as Map<Source.Id, MinMax & {
       [Hardcode.Length]: number,
-      field: keyof λEvent
+      field: keyof Doc.Type
     }>
   };
 
@@ -132,9 +136,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return this
   }
 
-  public lines = (file: λFile) => {
+  public lines = (file: Source.Type) => {
     const color = stringToHexColor(file.context_id)
-    const y = File.getHeight(this.info.app, file, this.scrollY)
+    const y = Source.Entity.getHeight(this.info.app, file, this.scrollY)
 
     this.ctx.fillStyle = color
     this.ctx.fillRect(0, y + 23, window.innerWidth, 1)
@@ -142,27 +146,27 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.fill(
       color,
       y,
-      !this.shifted.find((shiftedFile) => shiftedFile.id === file.id),
+      !this.shifted.find((shiftedSource) => shiftedSource.id === file.id),
     )
   }
 
-  public primary = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY)
+  public primary = (file: Source.Type) => {
+    const y = Source.Entity.getHeight(this.info.app, file, this.scrollY)
 
     this.ctx.fillStyle = stringToHexColor(
-      File.context(this.info.app, file).name,
+      Source.Entity.context(this.info.app, file).name,
     )
     this.ctx.fillRect(0, y - 25, window.innerWidth, 1)
   }
 
-  public fill = (color: Color, y: number, isShifted: boolean) => {
+  public fill = (color: string, y: number, isShifted: boolean) => {
     this.ctx.fillStyle = color + (isShifted ? 12 : 32)
     this.ctx.fillRect(0, y - 24, window.innerWidth, 48)
   }
 
   public links = () => {
     this.info.app.target.links.forEach((link) => {
-      if (link.doc_ids.some(id => !File.id(this.info.app, Event.id(this.info.app, id)?.['gulp.source_id'])?.selected))
+      if (link.doc_ids.some(id => !Source.Entity.id(this.info.app, Doc.Entity.id(this.info.app, id)?.['gulp.source_id'])?.selected))
         return
 
       const { dots } = this.calcDots(link)
@@ -228,29 +232,27 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public calcDots = (
-    link: λLink,
+    link: Link.Type,
   ): {
     dots: Dot[]
   } => {
     const dots: Dot[] = []
 
     link.doc_ids.forEach((id) => {
-      const e = Event.id(this.info.app, id);
+      const e = Doc.Entity.id(this.info.app, id);
       if (!e) {
         return;
       }
-      const index = File.selected(this.info.app).findIndex(
-        (f) => f.id === e['gulp.source_id'],
-      )
+      const index = Source.Entity.selected(this.info.app).findIndex(f => f.id === e['gulp.source_id']);
 
       const x = this.getPixelPosition(
         Internal.Transformator.toTimestamp(e['@timestamp']) +
-        (File.selected(this.info.app)[index]?.settings.offset || 0),
+        (Source.Entity.selected(this.info.app)[index]?.settings.offset || 0),
       )
       const y = index * 48 + 20 - this.scrollY || 0
       const color =
         link.color ||
-        stringToHexColor(link.doc_ids.map((id) => File.id(this.info.app, Event.id(this.info.app, id)['gulp.source_id'])).toString())
+        stringToHexColor(link.doc_ids.map((id) => Source.Entity.id(this.info.app, Doc.Entity.id(this.info.app, id)['gulp.source_id'])).toString())
 
       dots.push({
         x,
@@ -262,8 +264,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return { dots }
   }
 
-  public locals = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY)
+  public locals = (file: Source.Type) => {
+    const y = Source.Entity.getHeight(this.info.app, file, this.scrollY)
 
     const right = this.getPixelPosition(file.timestamp.max + file.settings.offset) + 12
     const left = this.getPixelPosition(file.timestamp.min + file.settings.offset) - 12
@@ -287,7 +289,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       48 - 1,
     )
 
-    const events = Event.get(this.info.app, file.id).length.toString()
+    const events = Doc.Entity.get(this.info.app, file.id).length.toString()
 
     this.ctx.fillStyle = '#e8e8e8'
 
@@ -353,10 +355,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(displayText, x, y + NOTE_SIZE - labelHeight / 2 - 2)
   }
 
-  public renderNote = async (note: λNote) => {
-    const timestamp = Note.timestamp(note)
+  public renderNote = async (note: Note.Type) => {
+    const timestamp = Note.Entity.timestamp(note)
     const x = this.getPixelPosition(timestamp) + NOTE_OFFSET
-    const y = File.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
+    const y = Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
 
     this.ctx.save()
 
@@ -370,7 +372,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     try {
       const icon = getCanvasIcon({
-        name: Note.icon(note),
+        name: Note.Entity.icon(note),
         color: note.color
       })
 
@@ -393,8 +395,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.restore()
   }
 
-  private getVisibleNotes = (file: λFile['id']) => {
-    const notes = Note.findByFile(this.info.app, file);
+  private getVisibleNotes = (file: Source.Id) => {
+    const notes = Note.Entity.findByFile(this.info.app, file);
     const min = this.getTimestamp(-128)
     const max = this.getTimestamp(this.ctx.canvas.width + 128)
 
@@ -409,8 +411,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return notes.slice(start, end + 1);
   }
 
-  private calculateNotesGroups(file: λFile['id']): {
-    notes: λNote[],
+  private calculateNotesGroups(file: Source.Id): {
+    notes: Note.Type[],
     groups: Group[]
   } {
     const notes = this.getVisibleNotes(file);
@@ -450,12 +452,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   // Fixed binary search for descending order
-  private binarySearchDesc(notes: λNote[], timestamp: number, findFirst: boolean): number {
+  private binarySearchDesc(notes: Note.Type[], timestamp: number, findFirst: boolean): number {
     let left = 0, right = notes.length - 1, result = -1
 
     while (left <= right) {
       const mid = Math.floor((left + right) / 2)
-      const noteTime = Note.timestamp(notes[mid])
+      const noteTime = Note.Entity.timestamp(notes[mid])
 
       if (findFirst) {
         // Finding first note <= timestamp (leftmost)
@@ -479,8 +481,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return result
   }
 
-  private findGroupEndIndexDirect(notes: λNote[], startIdx: number): number {
-    const startTimestamp = Note.timestamp(notes[startIdx])
+  private findGroupEndIndexDirect(notes: Note.Type[], startIdx: number): number {
+    const startTimestamp = Note.Entity.timestamp(notes[startIdx])
     const startX = this.getPixelPosition(startTimestamp)
 
     // Since notes are in descending order, we search forward (higher indices = earlier timestamps)
@@ -489,7 +491,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     // Linear search forward to find all notes within 24 pixels
     for (let i = startIdx + 1; i < notes.length; i++) {
-      const currentX = this.getPixelPosition(Note.timestamp(notes[i]))
+      const currentX = this.getPixelPosition(Note.Entity.timestamp(notes[i]))
       const distance = Math.abs(currentX - startX)
 
       if (distance <= 32) {
@@ -502,7 +504,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return endIdx
   }
 
-  public static getNotesByX = (file: λFile, x: number, padding = 16): λNote[] => {
+  public static getNotesByX = (file: Source.Type, x: number, padding = 16): Note.Type[] => {
     if (!RenderEngine.instance) {
       return [];
     }
@@ -519,8 +521,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const startNote = notes[groupIndex];
       const endNote = notes[groupIndex + groupCount - 1];
 
-      const startX = RenderEngine.instance.getPixelPosition(Note.timestamp(startNote));
-      const endX = RenderEngine.instance.getPixelPosition(Note.timestamp(endNote));
+      const startX = RenderEngine.instance.getPixelPosition(Note.Entity.timestamp(startNote));
+      const endX = RenderEngine.instance.getPixelPosition(Note.Entity.timestamp(endNote));
 
       const avgX = (startX + endX) / 2;
       const distance = Math.abs(avgX - x + 16);
@@ -546,7 +548,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine[λCache][key].clear();
   }
 
-  public notes = (files: λFile[]) => {
+  public notes = (files: Source.Type[]) => {
     files.forEach(file => {
       const { notes, groups } = this.calculateNotesGroups(file.id);
       if (!notes.length) {
@@ -568,14 +570,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     })
   }
 
-  public loading = (file: λFile) => {
+  public loading = (file: Source.Type) => {
     this.ctx.beginPath()
     this.ctx.strokeStyle = '#e8e8e8'
     if (this.ctx.setLineDash) {
       this.ctx.setLineDash([5, 5])
     }
 
-    const height = File.getHeight(this.info.app, file, this.scrollY)
+    const height = Source.Entity.getHeight(this.info.app, file, this.scrollY)
     this.ctx.moveTo(0, height)
     this.ctx.lineTo(2000, height)
     this.ctx.stroke()
@@ -584,20 +586,20 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
   }
 
-  public draw_info = (file: λFile) => {
-    const y = File.getHeight(this.info.app, file, this.scrollY) + 4;
+  public draw_info = (file: Source.Type) => {
+    const y = Source.Entity.getHeight(this.info.app, file, this.scrollY) + 4;
     const x = 10;
     const lineHeight = 14;
 
-    const requestType = File.getRequestType(this.info.app, file);
-    const suffix = !requestType ? '' : requestType === RequestPrefix.INGESTION
+    const requestType = Source.Entity.getRequestType(this.info.app, file);
+    const suffix = !requestType ? '' : requestType === Request.Prefix.INGESTION
       ? ' | Ingesting...'
       : ' | Loading...';
 
     const lines: Array<{ text: string; dy: number; color: string }> = [
       { text: file.name + suffix, dy: 0, color: '#e8e8e8' },
-      { text: File.events(this.info.app, file).length.toString(), dy: lineHeight, color: '#e8e8e8' },
-      { text: `${file.total.toString()} | ${File.context(this.info.app, file).name}` + suffix, dy: -lineHeight, color: '#a1a1a1' },
+      { text: Source.Entity.events(this.info.app, file).length.toString(), dy: lineHeight, color: '#e8e8e8' },
+      { text: `${file.total.toString()} | ${Source.Entity.context(this.info.app, file).name}` + suffix, dy: -lineHeight, color: '#a1a1a1' },
     ];
 
     this.ctx.font = '12px sans-serif';
@@ -612,14 +614,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public target = () => {
     if (!this.info.app.timeline.target) return
 
-    const file = File.id(this.info.app, this.info.app.timeline.target['gulp.source_id'])
+    const file = Source.Entity.id(this.info.app, this.info.app.timeline.target['gulp.source_id'])
 
     if (!file) return
 
     this.ctx.fillStyle = '#e8e8e8'
     this.ctx.fillRect(
       0,
-      File.selected(this.info.app).findIndex((f) => f.id === file.id) * 48 +
+      Source.Entity.selected(this.info.app).findIndex((f) => f.id === file.id) * 48 +
       23 -
       this.scrollY,
       window.innerWidth,

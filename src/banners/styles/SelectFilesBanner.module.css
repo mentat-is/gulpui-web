@@ -3,11 +3,11 @@
   height: 64vh;
 }
 .banner > div {
-  overflow: visible;
+  overflow-y: hidden;
+  overflow-x: auto;
 }
 .wrapper {
   height: 100%;
-  width: calc(100% + 16px);
   overflow: auto;
   padding-right: 8px;
 }
@@ -22,7 +22,7 @@
 }
 .branch {
   padding: 8px;
-  background: var(--meta-black);
+  background: var(--background-100);
   border: 1px solid var(--gray-400);
   border-radius: 6px;
   width: 100%;
@@ -73,4 +73,7 @@
 .actionButton {
   background: var(--background-100);
   flex: 1;
+}
+.smallButton > div {
+  --spinner-size: 14px !important;
 }

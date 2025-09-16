@@ -1,11 +1,11 @@
 import s from './styles/Combination.module.css'
 import { HTMLAttributes, useMemo } from 'react'
 import { cn } from '@impactium/utils'
-import { λEvent } from '@/dto/ChunkEvent.dto'
 import { EventIndicator } from '@/dialogs/Event.dialog'
+import { Doc } from '@/entities/Doc'
 
 interface EventCombinationProps extends HTMLAttributes<HTMLDivElement> {
-  event: λEvent
+  event: Doc.Type
 }
 
 export function EventCombination({

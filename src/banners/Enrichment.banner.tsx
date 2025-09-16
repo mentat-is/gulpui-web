@@ -1,13 +1,9 @@
-import { File, GulpDataset, Internal, MinMax, MinMaxBase } from '@/class/Info'
+import { GulpDataset, MinMax, MinMaxBase } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
-import { λEvent } from '@/dto/ChunkEvent.dto'
-import { Default, λFile } from '@/dto/Dataset'
+import { Default } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
-import { Switch } from '@/ui/Switch'
 import { Label } from '@/ui/Label'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
-import { Button, Input, Skeleton, Stack } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { format } from 'date-fns'
 import {
@@ -24,17 +20,24 @@ import { capitalize } from '@impactium/utils'
 import { Toggle } from '@/ui/Toggle'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Checkbox } from '@/ui/Checkbox'
+import { Button } from '@/ui/Button'
+import { Skeleton } from '@/ui/Skeleton'
+import { Input } from '@/ui/Input'
+import { Stack } from '@/ui/Stack'
+import { Doc } from '@/entities/Doc'
+import { Source } from '@/entities/Source'
+import { Internal } from '@/entities/addon/Internal'
 
 export namespace Enrichment {
   export interface Props extends UIBanner.Props {
-    event?: λEvent
-    onEnrichment?: (event: λEvent) => void
+    event?: Doc.Type
+    onEnrichment?: (event: Doc.Type) => void
   }
 
   export function Banner({ event, onEnrichment, ...props }: Enrichment.Props) {
     const { Info, app, destroyBanner } = useApplication()
-    const [file, setFile] = useState<λFile | null>(
-      event ? File.id(app, event['gulp.source_id']) : null,
+    const [file, setFile] = useState<Source.Type | null>(
+      event ? Source.Entity.id(app, event['gulp.source_id']) : null,
     )
     const [plugins, setPlugins] = useState<GulpDataset.PluginList.Interface[]>()
     const [plugin, setPlugin] = useState<GulpDataset.PluginList.Interface>()
@@ -100,8 +103,8 @@ export namespace Enrichment {
     const done = (
       <Button
         disabled={!file || !plugin}
-        variant="glass"
-        img="Check"
+        variant='glass'
+        img='Check'
         onClick={submit}
         loading={loading}
       />
@@ -110,12 +113,12 @@ export namespace Enrichment {
     const FileSelection = () => {
       if (event && file) {
         return (
-          <Skeleton show={!plugins} width="full" className={s.skeleton}>
+          <Skeleton show={!plugins} width='full' className={s.skeleton}>
             <Input
-              img={File.icon(file)}
+              icon={Source.Entity.icon(file)}
               readOnly
               value={file.name}
-              variant="highlighted"
+              variant='highlighted'
               style={disabledStyle}
             />
           </Skeleton>
@@ -127,8 +130,8 @@ export namespace Enrichment {
           <Select.Trigger>
             <Stack style={{ pointerEvents: event ? 'none' : 'all' }} gap={16}>
               <Icon
-                variant="dimmed"
-                name={file ? File.icon(file) : Default.Icon.FILE}
+                variant='dimmed'
+                name={file ? Source.Entity.icon(file) : Default.Icon.SESSION}
               />
               {file ? file.name : 'Select source you want to enrich'}
             </Stack>
@@ -137,10 +140,10 @@ export namespace Enrichment {
       }
 
       return (
-        <Select.Root onValueChange={(fileId) => setFile(File.id(app, fileId as unknown as λFile['id']))}>
+        <Select.Root onValueChange={(fileId) => setFile(Source.Entity.id(app, fileId as unknown as Source.Id))}>
           <Trigger />
           <Select.Content>
-            {File.selected(app).map((file) => {
+            {Source.Entity.selected(app).map((file) => {
               return (
                 <Select.Item key={file.id} value={file.id}>
                   {file.name}
@@ -154,14 +157,14 @@ export namespace Enrichment {
 
     const PluginSelection = () => {
       if (!plugins) {
-        return <Skeleton className={s.skeleton} width="full" />
+        return <Skeleton className={s.skeleton} width='full' />
       }
 
       const Trigger = () => {
         return (
           <Select.Trigger>
             <Stack gap={16}>
-              <Icon variant="dimmed" name="Puzzle" />
+              <Icon variant='dimmed' name='Puzzle' />
               {plugin
                 ? plugin.filename
                 : 'Select plugin you want to use for enrichment'}
@@ -202,13 +205,13 @@ export namespace Enrichment {
     const FrameSelector = useCallback(() => {
       if (event) {
         return (
-          <Skeleton width="full" className={s.skeleton} show={!plugins}>
+          <Skeleton width='full' className={s.skeleton} show={!plugins}>
             <Input
               value={event._id}
               readOnly
-              variant="highlighted"
+              variant='highlighted'
               style={disabledStyle}
-              img={Default.Icon.EVENT}
+              icon={Default.Icon.EVENT}
             />
           </Skeleton>
         )
@@ -237,20 +240,20 @@ export namespace Enrichment {
       return (
         <Stack>
           <Input
-            key="min-date"
+            key='min-date'
             onChange={handleMinChange}
             value={formatDate(frame.min)}
-            variant="highlighted"
-            img="CalendarArrowUp"
-            type="datetime-local"
+            variant='highlighted'
+            icon='CalendarArrowUp'
+            type='datetime-local'
           />
           <Input
-            key="max-date"
+            key='max-date'
             onChange={handleMaxChange}
             value={formatDate(frame.max)}
-            variant="highlighted"
-            img="CalendarArrowDown"
-            type="datetime-local"
+            variant='highlighted'
+            icon='CalendarArrowDown'
+            type='datetime-local'
           />
         </Stack>
       )

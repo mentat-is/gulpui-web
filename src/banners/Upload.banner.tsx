@@ -1,28 +1,53 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
-import { Spinner } from '@impactium/components'
 import { Select } from '@/ui/Select'
 import { useEffect, useState, useCallback, useMemo, ChangeEvent, useRef } from 'react'
 import s from './styles/UploadBanner.module.css'
-import { Context, FileEntity, GulpDataset, Mapping, MinMax, MinMaxBase, Operation } from '@/class/Info'
+import { MinMax, MinMaxBase } from '@/class/Info'
 import { formatBytes } from '@/ui/utils'
 import { SelectFiles } from './SelectFiles.banner'
-import { Popover, PopoverContent, PopoverTrigger } from '@/ui/Popover'
-import { Button, Stack } from '@impactium/components'
+import { Popover } from '@/ui/Popover'
 import { Icon } from '@impactium/icons'
 import { Toggle } from '@/ui/Toggle'
 import { Separator } from '@/ui/Separator'
 import { cn } from '@impactium/utils'
-import { Default, λContext } from '@/dto/Dataset'
+import { Default } from '@/dto/Dataset'
 import { toast } from 'sonner'
 import { SetState } from '@/class/API'
 import { Progress as UIProgress } from '@/ui/Progress';
 import { Table } from '@/components/Table'
-import { λEvent } from '@/dto/ChunkEvent.dto'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Input } from '@/ui/Input'
 import { Checkbox } from '@/ui/Checkbox'
 import { Label } from '@/ui/Label'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Spinner } from '@/ui/Spinner'
+import { Context } from '@/entities/Context'
+import { Operation } from '@/entities/Operation'
+import { Doc } from '@/entities/Doc'
+import { Source } from '@/entities/Source'
+import { Mapping } from '@/entities/Mapping'
+
+export namespace FileEntity {
+  export interface IngestOptions {
+    context: Context.Id | string
+    file: any;
+    // Chunk size / bit numeric representation
+    size: number;
+    frame?: MinMax;
+    settings: FileEntity.Settings;
+    setProgress?: (num: number) => void;
+    preview?: boolean;
+  }
+
+  export interface Settings {
+    plugin?: string;
+    method?: string;
+    mapping?: string;
+    custom_parameters: Record<string, any>;
+  }
+}
 
 const FILE_SIGNATURES: Record<string, Uint8Array[]> = {
   'win_evtx.py': [new Uint8Array([0x45, 0x6c, 0x66, 0x46, 0x69, 0x6c, 0x65])],
@@ -64,20 +89,20 @@ namespace Components {
     context: string
     setContext: (value: string) => void
   }) => {
-    const contexts = Operation.contexts(app)
+    const contexts = Operation.Entity.contexts(app)
 
     return (
       <Stack dir='column' gap={6} ai='flex-start'>
         <Label value='Context' />
         <Select.Root value={context} onValueChange={setContext} disabled={!contexts.length}>
-          <Select.Trigger className={s.trigger}>
-            <Icon name={Context.icon(Context.findByName(app, context)!)} />
+          <Select.Trigger>
+            <Icon name={Context.Entity.icon(Context.Entity.findByName(app, context)!)} />
             <p>{context || 'Select context'}</p>
           </Select.Trigger>
           <Select.Content>
             {contexts.map(c => (
               <Select.Item key={c.name} value={c.name}>
-                <Icon name={Context.icon(c)} />
+                <Icon name={Context.Entity.icon(c)} />
                 {c.name}
               </Select.Item>
             ))}
@@ -94,10 +119,10 @@ namespace Components {
     progress: number | undefined
   }) => {
     const { Info, app } = useApplication();
-    const [preview, setPreview] = useState<λEvent[] | null>(null);
+    const [preview, setPreview] = useState<Doc.Type[] | null>(null);
 
-    const methods = Mapping.methods(app, settings.plugin)
-    const mappings = Mapping.mappings(app, settings.plugin, settings.method)
+    const methods = Mapping.Entity.methods(app, settings.plugin)
+    const mappings = Mapping.Entity.mappings(app, settings.plugin, settings.method)
 
     useEffect(() => {
       if (!settings.plugin) {
@@ -158,14 +183,14 @@ namespace Components {
     return (
       <Stack className={s.filePreview} gap={0} pos='relative'>
         {progress && <Progress value={progress} />}
-        <Icon name="File" size={14} fromGeist />
+        <Icon name={Default.Icon.SOURCE} size={14} fromGeist />
         <p className={s.weight}>{formatBytes(file.size)}</p>
-        <Popover>
-          <PopoverTrigger asChild>
+        <Popover.Root>
+          <Popover.Trigger asChild>
             <p className={s.filename}>{file.name}</p>
-          </PopoverTrigger>
-          <PopoverContent className={s.popover}>{file.name}</PopoverContent>
-        </Popover>
+          </Popover.Trigger>
+          <Popover.Content className={s.popover}>{file.name}</Popover.Content>
+        </Popover.Root>
         <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
         <PluginSelector settings={settings} updateSettings={updateSettings} />
         <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
@@ -173,23 +198,23 @@ namespace Components {
         <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
         <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
         {(app.target.plugins.find(p => p.filename === settings.plugin)?.custom_parameters.length ?? 0) > 0 &&
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button img='Settings' size='sm' style={{ width: 24 }} variant='ghost' />
-            </PopoverTrigger>
-            <PopoverContent>
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <Button img='Settings' size='sm' style={{ width: 24 }} variant='tertiary' />
+            </Popover.Trigger>
+            <Popover.Content>
               <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters} />
-            </PopoverContent>
-          </Popover>
+            </Popover.Content>
+          </Popover.Root>
         }
-        <Popover onOpenChange={o => o && loadPreview()}>
-          <PopoverTrigger asChild>
-            <Button img='PreviewDocument' size='sm' style={{ width: 24 }} variant='ghost' />
-          </PopoverTrigger>
-          <PopoverContent style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
+        <Popover.Root onOpenChange={o => o && loadPreview()}>
+          <Popover.Trigger asChild>
+            <Button img='PreviewDocument' size='sm' style={{ width: 24 }} variant='tertiary' />
+          </Popover.Trigger>
+          <Popover.Content style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
             {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
-          </PopoverContent>
-        </Popover>
+          </Popover.Content>
+        </Popover.Root>
       </Stack>
     )
   }
@@ -210,7 +235,7 @@ namespace Components {
   }) => {
     const { app } = useApplication();
 
-    const plugins = Mapping.plugins(app);
+    const plugins = Mapping.Entity.plugins(app);
 
     const cutExtension = useCallback((str: string) => {
       return str.split('.').slice(0, -1).join('')
@@ -308,17 +333,17 @@ namespace Components {
       frameInputChangeHandler(event, 'max')
 
     return (
-      <Stack className={s.frame_selector}>
+      <Stack gap={12} className={s.frame_selector}>
         <Input
           variant="highlighted"
           type="date"
-          img="CalendarArrowUp"
+          icon="CalendarArrowUp"
           onChange={frameMinInputChangeHandler}
         />
         <Input
           variant="highlighted"
           type="date"
-          img="CalendarArrowDown"
+          icon="CalendarArrowDown"
           onChange={frameMaxInputChangeHandler}
         />
       </Stack>
@@ -340,8 +365,8 @@ namespace Components {
       }
     }, [settings]);
 
-    const methods = Mapping.methods(app, settings.all?.plugin)
-    const mappings = Mapping.mappings(app, settings.all?.plugin, settings.all?.method)
+    const methods = Mapping.Entity.methods(app, settings.all?.plugin)
+    const mappings = Mapping.Entity.mappings(app, settings.all?.plugin, settings.all?.method)
 
     useEffect(() => {
       if (!settings.all?.plugin) {
@@ -384,11 +409,11 @@ namespace Components {
     }, [settings.all?.method])
 
     return (
-      <Popover>
-        <PopoverTrigger asChild>
+      <Popover.Root>
+        <Popover.Trigger asChild>
           <Button style={{ width: '100%' }} variant='secondary' img='SettingsGear'>Select settings for all files</Button>
-        </PopoverTrigger>
-        <PopoverContent>
+        </Popover.Trigger>
+        <Popover.Content>
           <Stack className={s.allSettings} gap={0}>
             <PluginSelector settings={settings.all} updateSettings={(s) => updateSettings('all', s)} />
             <Separator orientation='vertical' style={{ height: 32 }} />
@@ -396,10 +421,10 @@ namespace Components {
             <Separator orientation='vertical' style={{ height: 32 }} />
             <MappingSelector settings={settings.all} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
             <Separator orientation='vertical' style={{ height: 32 }} />
-            <Button variant='hardline' style={{ borderRadius: 2 }} img='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
+            <Button variant='tertiary' style={{ borderRadius: 2 }} img='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
           </Stack>
-        </PopoverContent>
-      </Popover>
+        </Popover.Content>
+      </Popover.Root>
     )
   }
 }
@@ -498,7 +523,7 @@ export function UploadBanner() {
     }
     const s = settings[k];
 
-    return s.plugin && (!Mapping.methods(app, s.plugin).length || s.method) && (!Mapping.mappings(app, s.plugin, s.method!).length || s.mapping);
+    return s.plugin && (!Mapping.Entity.methods(app, s.plugin).length || s.method) && (!Mapping.Entity.mappings(app, s.plugin, s.method!).length || s.mapping);
   })
 
   const DoneButton = useMemo(() => {
@@ -542,27 +567,9 @@ export function UploadBanner() {
 
   return (
     <Banner
+      className={s.banner}
       title="Ingest files"
       done={DoneButton}>
-      <Stack dir='column' ai='stretch'>
-        {newContext ? (
-          <Input
-            variant="highlighted"
-            label='Context'
-            img={Default.Icon.CONTEXT}
-            value={context}
-            onChange={e => setContext(e.target.value)}
-            placeholder="Context name"
-            className={s.reset_font}
-          />
-        ) : (
-          <Components.ContextSelector app={app} context={context} setContext={setContext} />
-        )}
-        <Stack ai='center' gap={4}>
-          <Checkbox id='newContext' checked={newContext} onCheckedChange={e => setNewContext(!!e)} />
-          <Label htmlFor='newContext' value='Create new context' cursor='pointer' />
-        </Stack>
-      </Stack>
       <Toggle
         option={['Ingest everything', 'Use limits']}
         checked={customFrame}
@@ -579,6 +586,14 @@ export function UploadBanner() {
             updateSettings={(update) => updateSettings(file.name, update)}
           />
         )) : <Placeholder />}
+        <Input
+          className={s.sr_only}
+          ref={fileInputRef}
+          type="file"
+          multiple
+          style={{ display: 'none' }}
+          onChange={handleFileChange}
+        />
       </Stack>
       <Stack>
         <Components.ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
@@ -586,14 +601,25 @@ export function UploadBanner() {
           Clear selection
         </Button>
       </Stack>
-      <Input
-        className={s.sr_only}
-        ref={fileInputRef}
-        type="file"
-        multiple
-        style={{ display: 'none' }}
-        onChange={handleFileChange}
-      />
+      <Stack dir='column' ai='stretch'>
+        {newContext ? (
+          <Input
+            variant="highlighted"
+            label='Context'
+            icon={Default.Icon.CONTEXT}
+            value={context}
+            onChange={e => setContext(e.target.value)}
+            placeholder="Context name"
+            className={s.reset_font}
+          />
+        ) : (
+          <Components.ContextSelector app={app} context={context} setContext={setContext} />
+        )}
+        <Stack ai='center' gap={4}>
+          <Checkbox id='newContext' checked={newContext} onCheckedChange={e => setNewContext(!!e)} />
+          <Label htmlFor='newContext' value='Create new context' cursor='pointer' />
+        </Stack>
+      </Stack>
     </Banner>
   )
 }

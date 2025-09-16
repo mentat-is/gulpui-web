@@ -1,4 +1,4 @@
-import { Stack } from '@impactium/components'
+import { Stack } from './Stack'
 import s from './styles/Resizer.module.css'
 import { useApplication } from '@/context/Application.context'
 import { Icon } from '@impactium/icons'
@@ -35,11 +35,11 @@ export function Resizer({
       const delta = pos.current - (horizontal ? e.clientY : e.clientX)
       const end = Math.max(
         (horizontal ? window.innerHeight : window.innerWidth) *
-          (limits ? limits.min : 0.2),
+        (limits ? limits.min : 0.2),
         Math.min(
           start.current + delta,
           (horizontal ? window.innerHeight : window.innerWidth) *
-            (limits ? limits.max : 0.5),
+          (limits ? limits.max : 0.5),
         ),
       )
 

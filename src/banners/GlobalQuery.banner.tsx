@@ -1,27 +1,29 @@
-import { Event, File, Filter, λFilter, λQuery } from '@/class/Info';
 import { useApplication } from '@/context/Application.context';
 import { Banner as UIBanner } from '@/ui/Banner';
-import { Button, Input, Stack } from '@impactium/components';
 import { ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { Separator } from '@/ui/Separator';
 import { Preview } from './Preview.banner';
 import { Notification } from '@/ui/Notification';
-import { λDoc } from '@/dto/ChunkEvent.dto';
-import { λFile } from '@/dto/Dataset';
 import { Checkbox } from '@/ui/Checkbox';
 import { Label } from '@/ui/Label';
 import { OpenSearchQueryBuilder } from '@/components/QueryBuilder';
+import { Button } from '@/ui/Button';
+import { Input } from '@/ui/Input';
+import { Stack } from '@/ui/Stack';
+import { Query } from '@/entities/Query';
+import { Filter } from '@/entities/Filter';
+import { Doc } from '@/entities/Doc';
 
 export namespace GlobalQuery {
   export namespace Banner {
     export interface Props extends UIBanner.Props {
-      query?: λQuery;
+      query?: Query.Type;
     }
   }
 
   export function Banner({ query: initQuery, ...props }: GlobalQuery.Banner.Props) {
     const { Info, spawnBanner, destroyBanner } = useApplication();
-    const [query, setQuery] = useState<λQuery>(initQuery ?? {
+    const [query, setQuery] = useState<Query.Type>(initQuery ?? {
       string: '',
       filters: []
     });
@@ -40,7 +42,7 @@ export namespace GlobalQuery {
       )
     }, [query.string, setQuery]);
 
-    const setFilters = useCallback((filters: λFilter[]) => {
+    const setFilters = useCallback((filters: Filter.Type[]) => {
       setQuery(q => ({
         ...q,
         filters
@@ -49,7 +51,7 @@ export namespace GlobalQuery {
 
     const QueryFilterBuilder = useMemo(() => {
       return (
-        <OpenSearchQueryBuilder.Query.Filter filters={query.filters} setFilters={setFilters} keys={[]} />
+        <OpenSearchQueryBuilder.Query.Filters filters={query.filters} setFilters={setFilters} keys={[]} />
       )
     }, [query, setFilters]);
 
@@ -113,15 +115,15 @@ export namespace GlobalQuery {
 
       return (
         <>
-          <Input value={filename} valid={isFilenameValid} onChange={filenameInputChangeHandler} variant='highlighted' img='TextTitle' placeholder='File name' />
-          <Input value={context} valid={isContextValid} onChange={contextInputChangeHandler} variant='highlighted' img='TextTitle' placeholder='Context name' />
+          <Input value={filename} valid={isFilenameValid} onChange={filenameInputChangeHandler} variant='highlighted' icon='TextTitle' placeholder='Source.Entity name' />
+          <Input value={context} valid={isContextValid} onChange={contextInputChangeHandler} variant='highlighted' icon='TextTitle' placeholder='Context name' />
         </>
       )
 
     }, [separately, filename, setFilename, isFilenameValid, setIsFilenameValid, context, setContext, isContextValid, setIsContextValid]);
 
     return (
-      <UIBanner done={<DoneButton />} title='Global query' side={<OpenSearchQueryBuilder.Preview query={Filter.query(query)} />} {...props}>
+      <UIBanner done={<DoneButton />} title='Global query' side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />} {...props}>
         {QueryStringBuilder}
         {AddFilter}
         <Separator />
@@ -144,9 +146,9 @@ export namespace GlobalQuery {
 
   export namespace Apply {
     export interface Props extends UIBanner.Props {
-      query: λQuery;
+      query: Query.Type;
       total: number;
-      docs: λDoc[];
+      docs: Doc.Minified[];
       separately: boolean;
     }
   }

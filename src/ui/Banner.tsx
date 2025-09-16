@@ -2,7 +2,10 @@ import { ReactNode, useEffect, useMemo, useState } from 'react'
 import { useApplication } from '../context/Application.context'
 import s from './styles/Banner.module.css'
 import { cn } from '@impactium/utils'
-import { Cell, Stack, Skeleton, Button } from '@impactium/components'
+import { Stack } from './Stack'
+import { Cell } from './Cell'
+import { Skeleton } from './Skeleton'
+import { Button } from './Button'
 
 export namespace Banner {
   export interface Props extends Stack.Props {
@@ -77,12 +80,12 @@ export function Banner({
       <div
         className={cn(s.banner, s.loading, className)}>
         <Cell key="cell-1" className={s.cell} top left>
-          {back && <Button variant="ghost" img="CornerUpLeft" onClick={back} />}
+          {back && <Button variant='tertiary' img="CornerUpLeft" onClick={back} />}
         </Cell>
         <Cell key="cell-2" className={s.cell} top right>
           {fixed ? null : (
             <Button
-              variant="ghost"
+              variant='tertiary'
               onClick={close}
               img="X"
               loading={loading}
@@ -95,7 +98,7 @@ export function Banner({
             <Button
               img={isExpanded ? 'Eye' : 'EyeOff'}
               onClick={() => setIsExpanded((isExpanded) => !isExpanded)}
-              variant={isExpanded ? 'secondary' : 'ghost'}
+              variant={isExpanded ? 'secondary' : 'tertiary'}
             />
           ) : (
             option
@@ -109,7 +112,7 @@ export function Banner({
           {loading ? <Skeleton width="long" height={24} /> : title}
           {subtitle ? loading ? <Skeleton height={24} /> : subtitle : null}
         </h6>}
-        <Stack dir="column" ai="unset" gap={16} className={s.content}>
+        <Stack dir="column" ai="unset" gap={16} className={s.content} data-banner-content>
           {children}
         </Stack>
       </div>

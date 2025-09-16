@@ -1,15 +1,15 @@
-import { Button } from '@impactium/components'
 import { Icon } from '@impactium/icons'
 import { Color } from '@impactium/types'
 import { cn } from '@impactium/utils'
 import s from './styles/Point.module.css'
+import { Button } from './Button'
 
 export namespace Point {
   export interface Props extends Omit<Button.Props, 'type'> {
     x: number
     y: number
     icon: Icon.Name
-    accent: Color
+    accent: string
     name: string
     description?: string
     type: 'link' | 'note'
@@ -31,7 +31,7 @@ export function Point({
     <Button
       size="icon"
       tabIndex={-1}
-      variant="glass"
+      variant="secondary"
       aria-exportable
       className={cn(type === 'link' && s.round, className, s.target)}
       style={{ ...props.style, left: x, top: y, borderColor: accent }}

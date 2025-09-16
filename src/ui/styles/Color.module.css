@@ -104,7 +104,7 @@
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   min-height: unset;
-  padding: 9px;
+  padding: 8px;
 }
 .picker .select input::-webkit-color-swatch-wrapper {
   padding: 0;

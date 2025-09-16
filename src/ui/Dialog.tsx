@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import s from './styles/Dialog.module.css'
 import { cn } from '@impactium/utils'
-import { Spinner, Stack } from '@impactium/components'
 import { useApplication } from '@/context/Application.context'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
+import { Stack } from './Stack'
+import { Spinner } from './Spinner'
 
 export namespace Dialog {
   export interface Props extends Stack.Props {

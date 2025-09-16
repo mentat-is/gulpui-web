@@ -1,10 +1,6 @@
-import { File as GulpFileEntity, Context, File } from '@/class/Info'
 import { useApplication } from '@/context/Application.context'
-import { λFile } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { NodeFile } from '@/ui/utils'
-import { Badge, Button, Stack } from '@impactium/components'
-import { Input } from '@impactium/components'
 import { ChangeEvent, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Extension } from '@/context/Extension.context'
@@ -12,11 +8,17 @@ import { Checkbox } from '@/ui/Checkbox'
 import { Label } from '@/ui/Label'
 import { Select } from '@/ui/Select'
 import { Icon } from '@impactium/icons'
+import { Input } from '@/ui/Input'
+import { Badge } from '@/ui/Badge'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Source } from '@/entities/Source'
+import { Context } from '@/entities/Context'
 
 export namespace Sigma {
   export namespace Banner {
     export interface Props extends UIBanner.Props {
-      files?: λFile['id'][]
+      files?: Source.Id[]
     }
   }
 
@@ -67,27 +69,27 @@ export namespace Sigma {
       setRules(fileData);
     }
 
-    const allFiles = useMemo(() => File.selected(app), [app.timeline.filter, ...app.target.files]);
+    const allFiles = useMemo(() => Source.Entity.selected(app), [app.timeline.filter, ...app.target.files]);
 
     return (
       <UIBanner title="Apply sigma rules" done={<DoneButton />} {...props}>
         <Select.Multi.Root value={files} onValueChange={values => setFiles(values as typeof files)}>
           <Select.Trigger>
-            <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply sigma rules' text={len => typeof len === 'number' ? `Selected ${len} files` : File.id(app, len as λFile['id']).name} />
+            <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply sigma rules' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
           </Select.Trigger>
           <Select.Content>
             {allFiles.map(file => (
               <Select.Item value={file.id}>
-                <Icon name={File.icon(file)} />
+                <Icon name={Source.Entity.icon(file)} />
                 {file.name}
-                <Badge variant='gray-subtle' value={Context.id(app, file.context_id).name} />
+                <Badge variant='gray-subtle' value={Context.Entity.id(app, file.context_id).name} />
               </Select.Item>
             ))}
           </Select.Content>
         </Select.Multi.Root>
         <Input
           type="file"
-          img="Sigma"
+          icon="Sigma"
           multiple
           variant="highlighted"
           onChange={rulesInputChangeHandler}

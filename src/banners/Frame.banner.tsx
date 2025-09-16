@@ -1,14 +1,16 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Banner as UIBanner } from '../ui/Banner'
-import { Button, Stack } from '@impactium/components'
 import { useApplication } from '../context/Application.context'
 import { Toggle } from '@/ui/Toggle'
 import s from './styles/LimitsBanner.module.css'
-import { Context, File, MinMax } from '@/class/Info'
+import { MinMax } from '@/class/Info'
 import { format } from 'date-fns'
 import { Logger } from '@/dto/Logger.class'
-import { Icon } from '@impactium/icons'
 import { Input } from '@/ui/Input'
+import { Button } from '@/ui/Button'
+import { Stack } from '@/ui/Stack'
+import { Context } from '@/entities/Context'
+import { Source } from '@/entities/Source'
 
 export namespace Frame {
   export namespace Banner {
@@ -19,7 +21,7 @@ export namespace Frame {
   }
   export function Banner({ frame: initFrame, callback, ...props }: Frame.Banner.Props) {
     const { Info, destroyBanner, app } = useApplication()
-    const [frame, setFrame] = useState<MinMax>(initFrame ?? Context.frame(app))
+    const [frame, setFrame] = useState<MinMax>(initFrame ?? Context.Entity.frame(app))
     const [isMinValid, setIsMinValid] = useState<boolean>(true)
     const [isMaxValid, setIsMaxValid] = useState<boolean>(true)
     const [manual, setManual] = useState<boolean>(false)
@@ -39,7 +41,7 @@ export namespace Frame {
       }
       Info.setTimelineFrame({ min, max });
       Info.refetch({
-        ids: File.selected(app).map(file => file.id).filter(id => !app.general.loadings.byFileId.has(id))
+        ids: Source.Entity.selected(app).map(file => file.id).filter(id => !app.general.loadings.byFileId.has(id))
       });
       destroyBanner()
     }
@@ -92,7 +94,7 @@ export namespace Frame {
           type="datetime-local"
           valid={type === 'min' ? isMinValid : isMaxValid}
           variant="highlighted"
-          img="Calendar"
+          icon="Calendar"
           value={localValue}
           onChange={(e) => setLocalValue(e.target.value)}
           onBlur={() => handleDateChange(type, localValue)}
@@ -108,7 +110,7 @@ export namespace Frame {
           label={type === 'min' ? 'From' : 'To'}
           valid={type === 'min' ? isMinValid : isMaxValid}
           value={new Date(frame[type]).toISOString()}
-          img="Calendar"
+          icon="Calendar"
           variant="highlighted"
           onChange={(e) => handleDateChange(type, e.target.value)}
           placeholder="Enter date in ISO format"
@@ -139,7 +141,7 @@ export namespace Frame {
         <DateSelection type="max" />
         <Stack>
           {map.map((option, index) => (
-            <Button className={s.button} variant="outline" onClick={option.do} key={index}>{option.text}</Button>
+            <Button className={s.button} variant='secondary' onClick={option.do} key={index}>{option.text}</Button>
           ))}
         </Stack>
       </UIBanner>

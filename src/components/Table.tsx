@@ -1,10 +1,9 @@
-import { Stack } from '@impactium/components'
 import { useMemo } from 'react'
 import s from './styles/Table.module.css'
 import { cn } from '@impactium/utils'
 import { Icon } from '@impactium/icons'
-import { Glyph } from '@/ui/Glyph'
-import { λGlyph } from '@/dto/Dataset'
+import { Stack } from '@/ui/Stack'
+import { Glyph } from '@/entities/Glyph'
 
 export type Object = Record<string, any>
 
@@ -118,7 +117,7 @@ function Value({ k, v, ...props }: Value.Props) {
     }
   }
 
-  const glyph = Glyph.List.get(v as λGlyph['id'])
+  const glyph = Glyph.List.get(v as Glyph.Id)
   const icon =
     k === 'glyph_id' && glyph ? <Icon size={12} name={glyph} /> : null
 

@@ -8,7 +8,7 @@
   box-shadow: var(--shadow-border);
   flex-shrink: 0;
   transition-property: all 0.125s var(--transition);
-  background: var(--meta-black);
+  background: var(--background-100);
   align-items: center;
 }
 
@@ -23,17 +23,18 @@
 
 .switch[data-state="checked"] {
   background: var(--geist-background);
+  box-shadow: var(--ring);
 }
 
 .switch[data-state="unchecked"] {
-  background-color: var(--soft-black);
+  background-color: var(--background-100);
 }
 
 .thumb {
   height: 20px;
   width: 20px;
   border-radius: var(--round);
-  background-color: var(--white);
+  background: var(--white);
   transition: all 0.125s var(--transition);
 }
 

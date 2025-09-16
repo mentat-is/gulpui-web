@@ -1,4 +1,3 @@
-import { Button, Stack } from '@impactium/components'
 import s from './styles/menu.module.css'
 import { UploadBanner } from '@/banners/Upload.banner'
 import { useApplication } from '@/context/Application.context'
@@ -6,18 +5,19 @@ import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { Frame } from '@/banners/Frame.banner'
 import { Sigma } from '@/banners/UploadSigmaRule.banner'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
-import { Operation } from '@/banners/Operation.banner'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { Permissions } from '@/banners/Permissions.banner'
 import { Requests } from '@/banners/Requests.banner'
 import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
-import { File } from '@/class/Info'
-import { Debug } from '@/banners/Debug.banner'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { Commands } from '@/banners/Commands.banner'
 import { Settings } from '@/banners/Settings.banner'
+import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Source } from '@/entities/Source'
+import { Operation } from '@/entities/Operation'
 
 export function Menu() {
   const { app, spawnBanner } = useApplication()
@@ -64,7 +64,7 @@ export function Menu() {
         img="FileStack"
         onClick={() => spawnBanner(<SelectFiles.Banner />)}
       >
-        <Button className={s.file_counter} size='sm' variant='secondary'>{File.selected(app).length}</Button>
+        <Button className={s.file_counter} size='sm' variant='glass'>{Source.Entity.selected(app).length}</Button>
       </Button>
       <Button
         variant="secondary"

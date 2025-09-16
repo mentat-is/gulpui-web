@@ -1,18 +1,18 @@
 import { createContext, HTMLAttributes, useContext, useState } from 'react'
-import { Popover, PopoverContent, PopoverTrigger } from './Popover'
-import { Button, Input, Stack } from '@impactium/components'
-import {
-  arrayToLinearGradientCSS,
-  COLORS,
-} from './utils'
+import { Popover } from './Popover'
+import { arrayToLinearGradientCSS } from './utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs'
 import s from './styles/Color.module.css'
 import { cn } from '@impactium/utils'
+import { Button } from './Button'
+import { Stack } from './Stack'
+import { Input } from './Input'
+import { Color } from '@/entities/Color'
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[]
   gradients?: Record<string, string[]>
-  solids?: string[]
+  solids?: number[]
   color?: string
   setColor?: React.Dispatch<React.SetStateAction<string>>
 }
@@ -48,7 +48,7 @@ export function ColorPicker(props: ColorPickerProps) {
 
   return (
     <ColorContext.Provider value={context}>
-      <Popover>{props.children}</Popover>
+      <Popover.Root>{props.children}</Popover.Root>
     </ColorContext.Provider>
   )
 }
@@ -62,7 +62,7 @@ export function ColorPickerTrigger({
   const { color } = useColor()
 
   return (
-    <PopoverTrigger asChild>
+    <Popover.Trigger asChild>
       <Stack pos='relative' className={cn(s.picker, s.trigger)}>
         <Input
           className={s.select}
@@ -73,12 +73,12 @@ export function ColorPickerTrigger({
         <Input
           className={s.manual}
           variant='highlighted'
-          img='Dot'
+          icon='Dot'
           id="custom"
           value={color}
         />
       </Stack>
-    </PopoverTrigger>
+    </Popover.Trigger>
   )
 }
 
@@ -88,7 +88,7 @@ export function ColorPickerPopover({
   color: _color,
   setColor: _setColor,
   gradients = {},
-  solids = Object.values(COLORS),
+  solids = Object.values(Color.GEIST),
 }: ColorProps) {
   const { color: λcolor, setColor: λsetColor } = useColor() || {}
 
@@ -100,7 +100,7 @@ export function ColorPickerPopover({
   )
 
   return (
-    <PopoverContent className={s.popover}>
+    <Popover.Content className={s.popover}>
       <Tabs
         onValueChange={(v) => setTab(v as Tab)}
         defaultValue={tab}
@@ -125,7 +125,7 @@ export function ColorPickerPopover({
                 key={solid}
                 style={{ background: solid }}
                 className={s.color}
-                onClick={() => setColor(solid)}
+                onClick={() => setColor(solid.toString())}
               />
             ))}
           </TabsContent>
@@ -156,13 +156,13 @@ export function ColorPickerPopover({
           <Input
             className={s.manual}
             variant='highlighted'
-            img='Dot'
+            icon='Dot'
             id="custom"
             value={color}
             onChange={(e) => setColor(e.currentTarget.value)}
           />
         </Stack>
       )}
-    </PopoverContent>
+    </Popover.Content>
   )
 }
