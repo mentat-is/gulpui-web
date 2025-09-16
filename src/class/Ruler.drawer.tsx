@@ -179,17 +179,21 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.fillRect(props.position, 0, this.ctx.canvas.width, 25)
     const timeUnit = props.format || 'MMM yyyy'
     const label = formatDate(props.timestamp, timeUnit)
-    this.ctx.font = '10px Arial'
+    this.ctx.font = '12px Arial'
     this.ctx.fillStyle = '#ffffff'
-    this.ctx.textAlign = 'center'
     this.ctx.textAlign = 'left';
-    this.ctx.fillText(label, props.position + 4, 14)
-    this.ctx.fillStyle = '#ffffff'
+    this.ctx.fillText(label, props.position + 6, 16)
+    this.ctx.fillStyle = '#e8e8e880'
     this.ctx.textAlign = 'right';
     this.ctx.fillText(
       `${props.value} ${props.unit}`,
-      this.getPixelPosition(props.timestamp + props.step) - 4,
-      14,
+      this.getPixelPosition(props.timestamp + props.step) - 6,
+      16,
     )
+    this.ctx.beginPath()
+    this.ctx.moveTo(props.position, 0)
+    this.ctx.lineTo(props.position, 26)
+    this.ctx.strokeStyle = '#303030'
+    this.ctx.stroke()
   }
 }
