@@ -37,8 +37,8 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 
-  const increaseScrollY = (λy: number) => {
-    setScrollY((y) => Math.round(y + λy))
+  const increaseScrollY = (newY: number) => {
+    setScrollY((y) => Math.round(y + newY))
   }
 
   const dragState = useRef(

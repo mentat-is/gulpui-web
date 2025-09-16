@@ -22,7 +22,7 @@ import { Table } from '@/components/Table'
 import { Markdown } from '@/ui/Markdown'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
-import { λCache } from '@/class/Engine.dto'
+import { CacheKey } from '@/class/Engine.dto'
 import { RenderEngine } from '@/class/RenderEngine'
 import { Doc } from '@/entities/Doc'
 import { Source } from '@/entities/Source'
@@ -376,7 +376,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
   }
 
   const background = useMemo(() => {
-    const range = RenderEngine[λCache].range.get(event['gulp.source_id']) ?? MinMaxBase;
+    const range = RenderEngine[CacheKey].range.get(event['gulp.source_id']) ?? MinMaxBase;
     const code = Refractor.any.toNumber(event[file.settings.field]);
 
     return Color.Entity.gradient(file.settings.render_color_palette, code, range);

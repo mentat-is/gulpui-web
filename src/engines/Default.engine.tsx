@@ -1,7 +1,7 @@
 import {
   Engine,
   Hardcode,
-  λCache
+  CacheKey
 } from '../class/Engine.dto'
 import { RenderEngine } from '../class/RenderEngine'
 import { Refractor } from '@/ui/utils'
@@ -164,7 +164,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
 
   getRanges(file: Source.Type): MinMax {
     const events = Source.Entity.events(this.renderer.info.app, file);
-    const cache = RenderEngine[λCache].range.get(file.id);
+    const cache = RenderEngine[CacheKey].range.get(file.id);
     if (cache && cache.field === file.settings.field) {
       const isSyncedByLength = cache[Hardcode.Length] === events.length;
       if (isSyncedByLength) {
@@ -181,7 +181,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
   computeRanges(file: Source.Type, skip: number = 0) {
     const events = Source.Entity.events(this.renderer.info.app, file).slice(skip);
 
-    const cache = RenderEngine[λCache].range.get(file.id)!;
+    const cache = RenderEngine[CacheKey].range.get(file.id)!;
 
     const range = skip > 0 ? cache : {
       min: Infinity,
@@ -199,7 +199,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       }
     })
 
-    RenderEngine[λCache].range.set(file.id, {
+    RenderEngine[CacheKey].range.set(file.id, {
       ...range,
       [Hardcode.Length]: events.length
     });

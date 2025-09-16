@@ -7,7 +7,7 @@ import {
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect, useState } from 'react'
-import { cn, λthrow } from '@impactium/utils'
+import { cn } from '@impactium/utils'
 import { ExtensionProvider } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
@@ -26,11 +26,7 @@ class NoRootDefinitionInHTMLDocument extends Error {
 
 const root = document.getElementById('root')
 
-if (!root) {
-  λthrow(NoRootDefinitionInHTMLDocument)
-}
-
-ReactDOM.createRoot(root).render(Root())
+ReactDOM.createRoot(root!).render(Root())
 
 declare global {
   var api: Api

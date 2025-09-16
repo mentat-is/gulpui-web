@@ -4,7 +4,7 @@ import { stringToHexColor } from '@/ui/utils'
 import { format } from 'date-fns'
 import { RulerDrawer } from './Ruler.drawer'
 import { DefaultEngine } from '../engines/Default.engine'
-import { Engine, Hardcode, λCache } from './Engine.dto'
+import { Engine, Hardcode, CacheKey } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
 import { getCanvasIcon } from '@/ui/CanvasIcon'
@@ -76,7 +76,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   shifted: Source.Type[] = []
 
   // CACHE
-  private static [λCache] = {
+  private static [CacheKey] = {
     notes: new Map() as Map<Source.Id, Group[]> & { [Hardcode.Scale]: number },
     range: new Map() as Map<Source.Id, MinMax & {
       [Hardcode.Length]: number,
@@ -417,18 +417,18 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   } {
     const notes = this.getVisibleNotes(file);
     if (notes.length === 0) {
-      RenderEngine[λCache].notes.set(file, [])
-      RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale
+      RenderEngine[CacheKey].notes.set(file, [])
+      RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale
       return {
         notes: [],
         groups: []
       }
     }
 
-    if (RenderEngine[λCache].notes[Hardcode.Scale] === this.info.app.timeline.scale && RenderEngine[λCache].notes.has(file)) {
+    if (RenderEngine[CacheKey].notes[Hardcode.Scale] === this.info.app.timeline.scale && RenderEngine[CacheKey].notes.has(file)) {
       return {
         notes,
-        groups: RenderEngine[λCache].notes.get(file)!
+        groups: RenderEngine[CacheKey].notes.get(file)!
       }
     }
 
@@ -440,8 +440,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       i = groupEndIdx + 1
     }
 
-    RenderEngine[λCache].notes.set(file, groups)
-    RenderEngine[λCache].notes[Hardcode.Scale] = this.info.app.timeline.scale
+    RenderEngine[CacheKey].notes.set(file, groups)
+    RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale
     return { notes, groups };
   }
 
@@ -544,8 +544,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
 
-  public static reset = (key: keyof typeof RenderEngine[typeof λCache]) => {
-    RenderEngine[λCache][key].clear();
+  public static reset = (key: keyof typeof RenderEngine[typeof CacheKey]) => {
+    RenderEngine[CacheKey][key].clear();
   }
 
   public notes = (files: Source.Type[]) => {

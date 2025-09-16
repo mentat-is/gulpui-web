@@ -19,7 +19,6 @@
 }
 
 .button:focus-visible {
-  /* [λ] */
   box-shadow: var(--ring);
 }
 

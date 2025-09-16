@@ -45,4 +45,4 @@ export namespace Hardcode {
   }
 }
 
-export const λCache = Symbol('Cache')
+export const CacheKey = Symbol('Cache')

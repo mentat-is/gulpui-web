@@ -16,7 +16,7 @@ export class DragDealer implements DragDealerProps {
   dragging: boolean
   timeline: React.RefObject<HTMLCanvasElement>
   setScrollX: React.Dispatch<React.SetStateAction<number>>
-  increaseScrollY: (λy: number) => void
+  increaseScrollY: (newY: number) => void
 
   constructor({
     info,
@@ -48,13 +48,13 @@ export class DragDealer implements DragDealerProps {
 
     this.dragging = true
 
-    const λy = this.y - ev.clientY
-    const λx = this.x - ev.clientX
+    const newY = this.y - ev.clientY
+    const newX = this.x - ev.clientX
 
     this.y = ev.clientY
     this.x = ev.clientX
 
-    this.setScrollX((scrollX) => Math.round(scrollX + λx))
-    this.increaseScrollY(λy)
+    this.setScrollX((scrollX) => Math.round(scrollX + newX))
+    this.increaseScrollY(newY)
   }
 }

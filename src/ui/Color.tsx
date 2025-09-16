@@ -90,10 +90,10 @@ export function ColorPickerPopover({
   gradients = {},
   solids = Object.values(Color.GEIST),
 }: ColorProps) {
-  const { color: λcolor, setColor: λsetColor } = useColor() || {}
+  const { color: newColor, setColor: setNewColor } = useColor() || {}
 
-  const color = _color ?? λcolor
-  const setColor = _setColor ?? λsetColor
+  const color = _color ?? newColor
+  const setColor = _setColor ?? setNewColor
 
   const [tab, setTab] = useState<Tab>(
     Object.keys(gradients).length ? 'gradient' : 'solid',

@@ -21,7 +21,7 @@ type ResponseError = ResponseBase<{
   message: string
 }>
 
-export class λ<T extends ResponseBase<any>> {
+export class ResponseHandler<T extends ResponseBase<any>> {
   status: 'success' | 'error' | 'pending'
   req_id: Request.Id;
   timestamp: Date
@@ -63,15 +63,15 @@ export type Api = {
    *
    * @param toast: keyof Locale | boolean
    */
-  <T>(path: string, options: RawTrueOptions): Promise<λ<ResponseBase<T>>>
+  <T>(path: string, options: RawTrueOptions): Promise<ResponseHandler<ResponseBase<T>>>
   <T>(path: string, options?: RawFalseOptions): Promise<T>
-  <T>(path: string, options?: AnyOptions): Promise<λ<ResponseBase<T>> | T>
+  <T>(path: string, options?: AnyOptions): Promise<ResponseHandler<ResponseBase<T>> | T>
 
   <T>(
     path: string,
     options: RawTrueOptions,
-    callback: Callback<λ<ResponseBase<T>>>,
-  ): Promise<λ<ResponseBase<T>>>
+    callback: Callback<ResponseHandler<ResponseBase<T>>>,
+  ): Promise<ResponseHandler<ResponseBase<T>>>
   <T>(
     path: string,
     options?: RawFalseOptions,
@@ -80,14 +80,14 @@ export type Api = {
   <T>(
     path: string,
     options?: AnyOptions,
-    callback?: Callback<λ<ResponseBase<T>> | T>,
-  ): Promise<λ<ResponseBase<T>> | T>
+    callback?: Callback<ResponseHandler<ResponseBase<T>> | T>,
+  ): Promise<ResponseHandler<ResponseBase<T>> | T>
 
   <T>(
     path: string,
-    callback: Callback<λ<ResponseBase<T>>>,
+    callback: Callback<ResponseHandler<ResponseBase<T>>>,
     options: RawTrueOptions,
-  ): Promise<λ<ResponseBase<T>>>
+  ): Promise<ResponseHandler<ResponseBase<T>>>
   <T>(
     path: string,
     callback: Callback<T>,
@@ -95,9 +95,9 @@ export type Api = {
   ): Promise<T>
   <T>(
     path: string,
-    callback: Callback<λ<ResponseBase<T>> | T>,
+    callback: Callback<ResponseHandler<ResponseBase<T>> | T>,
     options?: AnyOptions,
-  ): Promise<λ<ResponseBase<T>> | T>
+  ): Promise<ResponseHandler<ResponseBase<T>> | T>
 }
 
 type unresolwedArgument<T> =
@@ -175,7 +175,7 @@ const api: Api = async function <T>(
   _path: string,
   arg2?: any,
   arg3?: any,
-): Promise<λ<ResponseBase<T>> | T> {
+): Promise<ResponseHandler<ResponseBase<T>> | T> {
   const { options, callback, query, path } = parseApiOptions<T>(
     arg2,
     arg3,
@@ -191,7 +191,7 @@ const api: Api = async function <T>(
     },
   ).catch(() => { });
 
-  const res = new λ(await response?.json())
+  const res = new ResponseHandler(await response?.json())
 
   const isSuccess = res.status === 'success' || res.status === 'pending';
 

@@ -86,7 +86,7 @@ export class Logger {
     return condition
   }
 
-  private static preformat: Record<Console.LogLevel, keyof typeof λLogger> = {
+  private static preformat: Record<Console.LogLevel, keyof typeof _Logger> = {
     log: 'green',
     warn: 'yellow',
     error: 'red',
@@ -107,9 +107,9 @@ export class Logger {
     const traceInfo = trace ? ` ${trace}` : ''
 
     const log = (
-      λLogger[Logger.preformat[level]] as (text?: string | null) => string
+      _Logger[Logger.preformat[level]] as (text?: string | null) => string
     )(
-      `[Gulp]${pid} - ${λLogger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${λLogger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2) : message}${traceInfo}`,
+      `[Gulp]${pid} - ${_Logger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${_Logger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2) : message}${traceInfo}`,
     )
 
     console.log(log);
@@ -138,7 +138,7 @@ export class LoggerHandler {
   }
 }
 
-export class λLogger {
+export class _Logger {
   public static red = (text?: string | null) => `\x1b[31m${text}\x1b[0m`
   public static green = (text?: string | null) => `\x1b[32m${text}\x1b[0m`
   public static yellow = (text?: string | null) => `\x1b[33m${text}\x1b[0m`

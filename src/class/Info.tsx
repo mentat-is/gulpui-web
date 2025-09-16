@@ -27,7 +27,7 @@ import { Request } from '@/entities/Request'
 import { FileEntity } from '@/banners/Upload.banner'
 import { Note } from '@/entities/Note'
 import { Link } from '@/entities/Link'
-import { λCache } from './Engine.dto'
+import { CacheKey } from './Engine.dto'
 import { Filter } from '@/entities/Filter'
 import { Query } from '@/entities/Query'
 import { Highlight } from '@/entities/Highlight'
@@ -983,7 +983,7 @@ export class Info implements InfoProps {
 
     await fetch();
 
-    Note.Entity[λCache].clear();
+    Note.Entity[CacheKey].clear();
 
     return notes;
   };

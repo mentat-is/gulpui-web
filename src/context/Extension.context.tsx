@@ -4,7 +4,7 @@ import React from "react";
 import { Logger } from "@/dto/Logger.class";
 import { Version } from "@/dto/Dataset";
 
-const __component = Symbol('λ_extension_component');
+const __component = Symbol('__extension_component');
 
 export function ExtensionProvider({ children }: Extension.Provider.Props) {
   const { app } = useApplication();

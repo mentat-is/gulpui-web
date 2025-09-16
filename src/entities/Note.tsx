@@ -1,4 +1,4 @@
-import { λCache } from '@/class/Engine.dto'
+import { CacheKey } from '@/class/Engine.dto'
 import { Default } from '@/dto/Dataset'
 import { Logger } from '@/dto/Logger.class'
 import { UUID } from 'crypto'
@@ -57,15 +57,15 @@ export namespace Note {
 
     public static event = (app: App.Type, note: Note.Type): Doc.Type => Doc.Entity.id(app, note.doc._id)
 
-    public static [λCache] = new Map<Source.Id, Note.Type[]>();
+    public static [CacheKey] = new Map<Source.Id, Note.Type[]>();
 
-    public static indexSize = () => [...Note.Entity[λCache].values()].flat().length;
+    public static indexSize = () => [...Note.Entity[CacheKey].values()].flat().length;
 
     public static updateIndexing = (app: App.Type) => {
-      Note.Entity[λCache].clear();
+      Note.Entity[CacheKey].clear();
 
       app.target.files.forEach(file => {
-        Note.Entity[λCache].set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
+        Note.Entity[CacheKey].set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
       })
 
       Logger.log(`NOTES_INDEXES_HAS_BEEN_CREATED:${Note.Entity.indexSize()}`, Note);
@@ -73,7 +73,7 @@ export namespace Note {
 
     public static findByFile = (app: App.Type, file: Source.Type | Source.Id): Note.Type[] => {
       const id = Parser.useUUID(file) as Source.Id;
-      const notes = Note.Entity[λCache].get(id);
+      const notes = Note.Entity[CacheKey].get(id);
       if (notes) {
         return notes;
       } else {
