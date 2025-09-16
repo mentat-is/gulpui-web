@@ -11,7 +11,7 @@ To set up the production version of `gulpui-web`, follow these steps:
 ### Requirements:
 - **Node.js**: 22.14.1 // https://nodejs.org/en
 - **pnpm**: 10.8.1 // https://pnpm.io/
-- **gulp**: latest // https://github.com/mentat-is/gulp
+- **gulp**: latest (compatible with Node.js 22+) // https://github.com/mentat-is/gulp
 
 ### Installation:
 1. Open a terminal and run the following commands:
