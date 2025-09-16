@@ -76,20 +76,7 @@ export namespace Collab {
     }, [app]);
 
     const targetColorStyle = useMemo(() => ({ color: target.color }), [target.color]);
-    const Edit = useMemo(() => {
-      return (
-        <Button
-          rounded
-          variant='glass'
-          img='PencilEdit'
-          size='sm'
-          style={EDIT_BUTTON_STYLE}
-          onClick={handleEditClick}
-        >
-          Edit
-        </Button>
-      );
-    }, [handleEditClick]);
+    const Edit = useMemo(() => <Button variant='secondary' img='PencilEdit' onClick={handleEditClick} />, [handleEditClick]);
 
     const List = useMemo(() => {
       return [...notes, ...links].map(c => (
@@ -125,13 +112,8 @@ export namespace Collab {
           <Stack>
             {MemoizedSelect}
             <Extension.Component name='Storyline.popover.tsx' />
-            <Button
-              onClick={handleDeleteClick}
-              variant='tertiary'
-              img='Trash2'
-            >
-              Delete
-            </Button>
+            {Edit}
+            <Button onClick={handleDeleteClick} variant='tertiary' img='Trash2' />
           </Stack>
           <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
             <Badge
@@ -149,7 +131,6 @@ export namespace Collab {
                 size='sm'
               />
             ))}
-            {Edit}
           </Stack>
         </Stack>
         <Separator />

@@ -1,18 +1,9 @@
 .menu {
   height: 100%;
 }
-
-.menu button {
-  height: 36px;
-  width: 36px;
-}
-
-.menu button svg {
-  height: 18px;
-  width: 18px;
-}
 .relative {
   position: relative;
+  width: 36px;
 }
 .file_counter {
   position: absolute;

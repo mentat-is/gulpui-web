@@ -1,33 +1,22 @@
 .navigator {
-  max-height: 36px;
   width: 100%;
-  padding: 5px;
-  border-radius: 6px;
-  border: 1px solid var(--gray-400);
-  background-color: var(--soft-black);
   flex-basis: unset !important;
 }
-.navigator button,
-.ws_edit {
-  width: 24px;
-  padding: 2px;
-  border-radius: 3px;
-  flex-shrink: 0;
+.navigator [data-input] {
+  flex: 1 !important;
 }
 .filter {
-  height: 24px;
-  min-height: unset;
-  padding: 5px;
-  border-radius: 3px;
-  gap: 4px;
+  height: 36px;
 }
 .filter svg {
-  height: 12px;
-  width: 12px;
+  height: 18px;
+  width: 36px;
+}
+.filter::before {
+  width: 36px;
 }
 .filter input {
-  font-size: 12px;
-  color: var(--white);
+  font-size: 14px;
 }
 .goto p {
   font-family: var(--font-mono);

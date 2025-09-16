@@ -18,6 +18,8 @@
 }
 .actionButtons button {
   flex: 1;
+  height: 36px;
+  min-width: 36px;
 }
 .basic ul div span {
   margin-left: 6px;
@@ -52,20 +54,20 @@
   color: grey
 }
 .tabs_wrapper {
+  display: flex;
+  gap: 12px;
   max-height: 100%;
-  overflow: hidden;
+  flex: 1;
+  overflow: hidden !important;
+  flex-direction: column;
 }
 .tabs_wrapper > span {
   max-height: calc(100% - 36px);
   display: flex;
+  padding-bottom: 8px;
 }
 .scrollable {
   overflow: scroll;
-}
-.tabs_wrapper div[role='tabpanel'] {
-  margin-top: 0.5rem;
-  width: 100%;
-  padding-right: 0px;
 }
 .triggers {
   width: 100%;

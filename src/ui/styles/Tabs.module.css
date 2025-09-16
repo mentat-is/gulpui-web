@@ -1,7 +1,5 @@
 .content {
-  margin-top: 8px;
   overflow: hidden;
-  border-radius: 6px;
 }
 
 .content:focus-visible {
@@ -37,6 +35,7 @@
 }
 .list {
   display: inline-flex;
+  flex-shrink: 0;
   height: 32px;
   align-items: center;
   justify-content: center;

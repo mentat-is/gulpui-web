@@ -150,12 +150,12 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath()
     this.ctx.moveTo(0, 25)
     this.ctx.lineTo(this.ctx.canvas.width, 25)
-    this.ctx.strokeStyle = '#ffffff25'
+    this.ctx.strokeStyle = '#303030'
     this.ctx.stroke()
   }
 
   private wall(props: Pick<RulerSectionProps, 'even' | 'position'>) {
-    this.ctx.fillStyle = props.even ? '#161616' : '#202020'
+    this.ctx.fillStyle = props.even ? '#000000' : '#0e0e0e'
     this.ctx.fillRect(
       props.position,
       25,
@@ -165,7 +165,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath()
     this.ctx.moveTo(props.position, 0)
     this.ctx.lineTo(props.position, this.ctx.canvas.height)
-    this.ctx.strokeStyle = '#ffffff12'
+    this.ctx.strokeStyle = '#303030'
     this.ctx.stroke()
   }
 
@@ -175,18 +175,20 @@ export class RulerDrawer implements RulerDrawerConstructor {
   }
 
   section(props: RulerSectionProps) {
-    this.ctx.fillStyle = props.even ? '#121212' : '#161616'
+    this.ctx.fillStyle = props.even ? '#000000' : '#0e0e0e'
     this.ctx.fillRect(props.position, 0, this.ctx.canvas.width, 25)
     const timeUnit = props.format || 'MMM yyyy'
     const label = formatDate(props.timestamp, timeUnit)
     this.ctx.font = '10px Arial'
     this.ctx.fillStyle = '#ffffff'
     this.ctx.textAlign = 'center'
-    this.ctx.fillText(label, props.position, 14)
-    this.ctx.fillStyle = '#e8e8e880'
+    this.ctx.textAlign = 'left';
+    this.ctx.fillText(label, props.position + 4, 14)
+    this.ctx.fillStyle = '#ffffff'
+    this.ctx.textAlign = 'right';
     this.ctx.fillText(
       `${props.value} ${props.unit}`,
-      this.getPixelPosition(props.timestamp + props.step / 2),
+      this.getPixelPosition(props.timestamp + props.step) - 4,
       14,
     )
   }

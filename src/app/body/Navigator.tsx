@@ -218,54 +218,54 @@ export function Navigator({
     >
       <Button
         variant="secondary"
-        size="sm"
         title='Zoom in'
         ref={size_minus}
         onClick={() => zoom(false)}
         img="ZoomIn"
+        size='md'
       />
       <Button
         variant="secondary"
-        size="sm"
         title='Zoom out'
         ref={size_plus}
         onClick={() => zoom(true)}
         img="ZoomOut"
+        size='md'
       />
       <Button
         variant="secondary"
-        size="sm"
         title='Reset scale'
         ref={size_reset}
         onClick={resetScaleAndScroll}
         img="AlignHorizontalSpaceBetween"
+        size='md'
       />
       <Button
         variant="secondary"
-        size="sm"
         title='Create highlight'
         img="ChartBarBig"
         onClick={createHighlightButtonClickHandler}
+        size='md'
       />
       <Input
         className={s.filter}
-        style={{ width: '100%' }}
+        variant='highlighted'
         value={app.timeline.filter}
-        placeholder="Filter by filenames and context"
+        placeholder='Filter by filenames and context'
         onChange={handleFilterChange}
         icon="Filter"
       />
       <Button
-        size="sm"
         variant="secondary"
         title="Open notes banner in new window"
         img="PictureInPicture2"
         onClick={openWindow}
+        size='md'
       />
       <Popover.Root>
         <Popover.Trigger asChild>
           <Button
-            size="sm"
+            size='md'
             variant="secondary"
             title='Toggle visibility of notes or links'
             img={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
@@ -287,7 +287,7 @@ export function Navigator({
       </Popover.Root>
       <Popover.Root>
         <Popover.Trigger asChild>
-          <Button size="sm" variant="secondary" img="Crosshair" />
+          <Button size='md' variant="secondary" img="Crosshair" />
         </Popover.Trigger>
         <Popover.Content className={s.goto}>
           <Stack dir="column" ai="flex-start">

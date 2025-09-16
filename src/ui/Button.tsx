@@ -19,6 +19,7 @@ const buttonVariants = cva(s.button, {
     size: {
       default: s.defaultSize,
       sm: s.sm,
+      md: s.md,
       lg: s.lg,
       icon: s.icon,
     },
@@ -91,11 +92,10 @@ const spinner_colors = {
   glass: 'var(--gray-700)',
   destructive: 'white',
   disabled: 'var(--gray-700)',
-  link: 'white',
 };
 const convertButtonVariantToSpinnerColor = (variant: Button.Variant): string => spinner_colors[variant || 'default'];
 
-const icon_sizes = { default: 16, sm: 12, lg: 20, icon: 16 };
+const icon_sizes = { default: 16, sm: 12, md: 18, lg: 20, icon: 16 };
 const convertButtonVariantToIconSize = (size: Button.Size): NonNullable<Icon.Size> => icon_sizes[size || 'default'];
 
 

@@ -266,19 +266,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
   }, [event]);
 
-  const icon = useMemo(() => <EventIndicator event={event} />, [event]);
-
   return (
-    <Dialog
-      icon={icon}
-      title='Event'
-      description={`From ${file.name}`}
-    >
+    <Dialog>
       <Navigation event={event} />
       {json ? (
         <Fragment>
-          <Stack className={s.group}>
-            <Stack dir="column" flex>
+          <Stack className={s.group} gap={12}>
+            <Stack dir="column" gap={12} flex>
               <Button
                 onClick={handleCreateNote}
                 variant="secondary"
@@ -294,7 +288,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 Create link
               </Button>
             </Stack>
-            <Stack dir="column" flex>
+            <Stack dir="column" gap={12} flex>
               <Button
                 onClick={handleEnrich}
                 variant="glass"
@@ -313,7 +307,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Stack>
           <Collab.List notes={notes} links={links} />
           {highlights}
-          <Stack className={s.actionButtons}>
+          <Stack className={s.actionButtons} gap={12}>
             <Button variant="secondary" onClick={handleCopyJson} img="Copy">Copy JSON</Button>
             <Button variant="secondary" onClick={handleDownloadJson} img="Download">
               Download JSON

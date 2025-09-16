@@ -119,7 +119,10 @@
   font-weight: 400;
   border-radius: 4px;
 }
-
+.md {
+  height: 36px;
+  min-width: 36px;
+}
 .lg {
   height: 48px;
   border-radius: 0.5rem;

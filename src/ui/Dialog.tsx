@@ -8,10 +8,7 @@ import { Spinner } from './Spinner'
 
 export namespace Dialog {
   export interface Props extends Stack.Props {
-    title: string
-    description?: React.ReactNode
     loading?: boolean
-    icon?: string | React.ReactElement
     callback?: () => void
   }
 }
@@ -19,9 +16,6 @@ export namespace Dialog {
 export function Dialog({
   className,
   callback,
-  icon,
-  description,
-  title,
   loading,
   children,
   ...props
@@ -56,14 +50,7 @@ export function Dialog({
 
   return (
     <Stack className={cn(s.dialog, className)} dir="column" ai='stretch' {...props}>
-      <Stack className={s.wrapper} gap={12}>
-        {icon}
-        <Stack className={s.header} dir='column' ai='flex-start' gap={0} flex>
-          <h2>{title}</h2>
-          {description && <p>{description}</p>}
-        </Stack>
-      </Stack>
-      <Stack dir='column' ai='stretch' className={cn(s.content, loading && s.loading)} data-content>
+      <Stack dir='column' gap={12} ai='stretch' className={cn(s.content, loading && s.loading)} data-content>
         {loading ? <Spinner size={24} /> : children}
       </Stack>
     </Stack>

@@ -43,18 +43,21 @@ export function Menu() {
         variant="secondary"
         title="Upload files"
         img="Upload"
+        size='md'
         onClick={() => spawnBanner(<UploadBanner />)}
       />
       <Button
         variant="secondary"
         title="Query external source"
         img="ServerCrash"
+        size='md'
         onClick={() => spawnBanner(<QueryExternal.Banner />)}
       />
       <Button
         variant="secondary"
         title="Upload sigma rule"
         img="Sigma"
+        size='md'
         onClick={() => spawnBanner(<Sigma.Banner />)}
       />
       <Button
@@ -62,6 +65,7 @@ export function Menu() {
         className={s.relative}
         title="Select files and contexts"
         img="FileStack"
+        size='md'
         onClick={() => spawnBanner(<SelectFiles.Banner />)}
       >
         <Button className={s.file_counter} size='sm' variant='glass'>{Source.Entity.selected(app).length}</Button>
@@ -70,18 +74,21 @@ export function Menu() {
         variant="secondary"
         title="Change workflow frame"
         img="AlignHorizontalSpaceAround"
+        size='md'
         onClick={() => spawnBanner(<Frame.Banner />)}
       />
       <Button
         variant="secondary"
         title="Global query"
         img="Globe"
+        size='md'
         onClick={() => spawnBanner(<GlobalQuery.Banner />)}
       />
       <Button
         variant="secondary"
         title="Apply filters"
         img="Filter"
+        size='md'
         onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
       />
       <Extension.Components type='menu' />
@@ -89,12 +96,14 @@ export function Menu() {
         variant="glass"
         title="Data enrichment"
         img="PrismColor"
+        size='md'
         onClick={enrichment}
       />
       <Button
         variant="glass"
         title="Commands"
         img="Command"
+        size='md'
         onClick={() => spawnBanner(<Commands.Banner />)}
       />
       <Stack flex />
@@ -102,7 +111,7 @@ export function Menu() {
         className={s.requests}
         variant="secondary"
         title="Requests"
-        size="icon"
+        size='md'
         onClick={() => spawnBanner(<Requests.Banner />)}
       >
         {app.general.requests.filter((r) => r.status === 'ongoing').length}
@@ -111,22 +120,26 @@ export function Menu() {
         variant="secondary"
         title="Manage Permissions"
         img="UserSettings"
+        size='md'
         onClick={() => spawnBanner(<Permissions.Banner />)}
       />
       <Button
         variant="secondary"
         title="Back to operations"
         img="Undo2"
+        size='md'
         onClick={backToOperations}
       />
       <Button
         variant="secondary"
         title="Settings"
+        size='md'
         img="SettingsGear"
         onClick={() => spawnBanner(<Settings.Banner />)}
       />
       <Button
         variant="secondary"
+        size='md'
         img="LogOut"
         title="Logout"
         onClick={logoutButtonClickHandler}

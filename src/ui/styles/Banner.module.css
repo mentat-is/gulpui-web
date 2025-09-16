@@ -89,7 +89,7 @@
   flex-shrink: 0;
   left: 1px;
   display: flex;
-  background: var(--soft-black);
+  background: var(--background-200);
   height: 100%;
 }
 

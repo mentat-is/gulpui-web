@@ -50,7 +50,8 @@ export function Navigation({ event }: Navigation.Props) {
         disabled={all.length > 0 && all[all.length - 1]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(true)}
         img="ArrowLeft"
-        variant='secondary'
+        variant='default'
+        rounded
       />
       <Stack className={s.content} jc="center" flex>
         {events.map((e) => (
@@ -66,8 +67,8 @@ export function Navigation({ event }: Navigation.Props) {
         disabled={all.length > 0 && all[0]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(false)}
         img="ArrowRight"
-        variant='secondary'
-        revert
+        variant='default'
+        rounded
       />
     </Stack>
   )
