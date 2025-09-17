@@ -17,6 +17,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
+import { AppErrorBoundary } from './components/AppErrorBoundary'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -39,19 +40,45 @@ function Root() {
     };
   }
 
+  window.onerror = function (msg: any, src, line, col, err) {
+    Logger.error("[Global Error]", msg);
+    if (err && AppErrorBoundary.instance) {
+      AppErrorBoundary.instance.showError(err);
+    }
+  };
+
+  window.onunhandledrejection = function (event) {
+    Logger.error("[Unhandled Rejection]", event.reason);
+    if (event.reason && AppErrorBoundary.instance) {
+      const error = event.reason instanceof Error
+        ? event.reason
+        : new Error(String(event.reason));
+      AppErrorBoundary.instance.showError(error);
+    }
+  };
+
   return (
-    <ApplicationProvider>
-      <ExtensionProvider>
-        <Main />
-        <Toaster />
-      </ExtensionProvider>
-    </ApplicationProvider>
+    <AppErrorBoundary>
+      <ApplicationProvider>
+        <ExtensionProvider>
+          <Main />
+          <Toaster />
+        </ExtensionProvider>
+      </ApplicationProvider>
+    </AppErrorBoundary>
   )
 }
 
 function Main() {
   const { Info, app, dialog } = useApplication();
   const [isPreloaded, setIsPreloaded] = useState(false);
+
+  // castom error
+  useEffect(() => {
+    setTimeout(() => {
+    throw new Error("error in useEffect");
+    }, 6000)
+  }, []);
 
   useEffect(() => {
     if (isPreloaded)
