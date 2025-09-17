@@ -32,10 +32,6 @@ export namespace Theme {
       Color.Themer.setTheme(theme);
     }, [setTheme]);
 
-    useEffect(() => {
-      Color.Themer.setTheme(theme ?? 'dark');
-    }, []);
-
     return (
       <Switch onCheckedChange={themeSwitchHandler} checked={theme === 'light'} icons={['Sun', 'Moon']} {...props} />
     )

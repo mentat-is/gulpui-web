@@ -18,6 +18,8 @@ import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
 import { ThemeProviders } from './context/Theme.context'
+import { Color } from './entities/Color'
+import { useTheme } from 'next-themes'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -53,6 +55,7 @@ function Root() {
 }
 
 function Main() {
+  const { theme } = useTheme();
   const { Info, app, dialog } = useApplication();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
@@ -68,6 +71,10 @@ function Main() {
   if (!isPreloaded) {
     return <Preloader />
   }
+
+  useEffect(() => {
+    Color.Themer.setTheme(theme ?? 'dark');
+  }, []);
 
   return Info.app.target.files.filter(file => file.selected).length ? (
     <Stack gap={12} className={s.window} ai='stretch'>
