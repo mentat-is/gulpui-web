@@ -16,7 +16,8 @@ import { Input } from '@/ui/Input'
 import { Context } from '@/entities/Context'
 import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
-import { Theme } from '@/context/Theme.context'
+import { Theme } from '@/context/Theme.context' 
+import { useTheme } from 'next-themes'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -34,6 +35,7 @@ export function Navigator({
   const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = useApplication()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
+  const { theme } = useTheme()
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -42,6 +44,23 @@ export function Navigator({
   const resetTimestamp = () => {
     setTimestampInputValid(false)
     setTimestamp(0)
+  }
+
+  function applyThemeToWindow(sourceDoc: Document, targetDoc: Document, theme: string | undefined) {
+  const sourceRoot = sourceDoc.documentElement
+  const targetRoot = targetDoc.documentElement
+
+  // use data-theme
+  targetRoot.setAttribute('data-theme', theme ?? 'dark')
+
+  // copy css style
+  const styles = getComputedStyle(sourceRoot)
+    for (let i = 0; i < styles.length; i++) {
+      const key = styles[i]
+      if (key.startsWith('--')) {
+        targetRoot.style.setProperty(key, styles.getPropertyValue(key))
+      }
+    }
   }
 
   const handleTimestampChangeHandler = (ev: ChangeEvent<HTMLInputElement>) => {
@@ -103,18 +122,25 @@ export function Navigator({
     newWindow.document.body.appendChild(container)
     containerRef.current = container
 
+    applyThemeToWindow(document, newWindow.document, theme)
+
+    // copy style from css
     Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
-      if (styleSheet.href) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = styleSheet.href
-        newWindow.document.head.appendChild(link)
-      } else if (styleSheet.cssRules) {
-        const style = document.createElement('style')
-        Array.from(styleSheet.cssRules).forEach((rule) => {
-          style.appendChild(document.createTextNode(rule.cssText))
-        })
-        newWindow.document.head.appendChild(style)
+      try {
+        if (styleSheet.href) {
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = styleSheet.href
+          newWindow.document.head.appendChild(link)
+        } else if (styleSheet.cssRules) {
+          const style = document.createElement('style')
+          Array.from(styleSheet.cssRules).forEach((rule) => {
+            style.appendChild(document.createTextNode(rule.cssText))
+          })
+          newWindow.document.head.appendChild(style)
+        }
+      } catch (err) {
+        console.warn('error copyng style', err)
       }
     })
 
@@ -134,6 +160,12 @@ export function Navigator({
       }
     }
   }, [windowRef])
+
+  // sync thems for window
+  useEffect(() => {
+    if (!windowRef) return
+    applyThemeToWindow(document, windowRef.document, theme)
+  }, [theme, windowRef])
 
   const closeWindow = () => {
     if (windowRef) {
