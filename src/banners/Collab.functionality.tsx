@@ -114,7 +114,7 @@ export namespace NoteFunctionality {
               className={s.inp_input}
               disabled
               value={Context.Entity.id(app, event['gulp.context_id']).name}
-              icon='Box'
+              icon={Default.Icon.CONTEXT}
             />
             <Input
               label='Source.Entity'
@@ -258,17 +258,38 @@ export namespace LinkFunctionality {
       return (
         <UIBanner title='Create link' done={<Done />} option={<Option />}>
           <Stack className={s.general} ai='stretch' dir='column' gap={8}>
-            {/* <Selection name='Context' value={context.name} icon='Box' />
-            <Selection name='Source.Entity' value={file.name} icon='Source.Entity' />
-            <Selection name='Event' value={event._id} icon='Triangle' /> */}
+            <Input
+              label='Context'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={context.name}
+              icon={Default.Icon.CONTEXT}
+            />
+            <Input
+              label='Source.Entity'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={file.name}
+              icon={Default.Icon.SOURCE}
+            />
+            <Input
+              label='Event'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={event._id}
+              icon='Triangle'
+            />
             <Separator />
-            {/* <Editable
-              name='Title'
+            <Input
+              label='Title'
               value={name}
               icon='TextTitle'
               onChange={(e) => setName(String(e.currentTarget.value))}
               placeholder='Link title'
-            /> */}
+            />
             <Stack>
               <Stack jc='space-between' flex className={s.inp}>
                 <p>Glyph:</p>
