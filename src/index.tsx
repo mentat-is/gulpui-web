@@ -68,13 +68,13 @@ function Main() {
     }, 2500);
   }, [isPreloaded]);
 
-  if (!isPreloaded) {
-    return <Preloader />
-  }
-
   useEffect(() => {
     Color.Themer.setTheme(theme ?? 'dark');
   }, []);
+
+  if (!isPreloaded) {
+    return <Preloader />
+  }
 
   return Info.app.target.files.filter(file => file.selected).length ? (
     <Stack gap={12} className={s.window} ai='stretch'>
