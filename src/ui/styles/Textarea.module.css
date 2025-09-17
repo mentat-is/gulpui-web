@@ -1,11 +1,11 @@
 .textarea {
-  background: var(--meta-black);
+  background: var(--background-100);
   border: 1px solid var(--gray-400);
-  border-radius: var(--border-s);
+  border-radius: 6px;
   padding: 12px;
 }
 .textarea::placeholder {
-  color: var(--second);
+  color: var(--gray-700) !important;
 }
 .fixed {
   resize: none;

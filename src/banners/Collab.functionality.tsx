@@ -117,7 +117,7 @@ export namespace NoteFunctionality {
               icon={Default.Icon.CONTEXT}
             />
             <Input
-              label='Source.Entity'
+              label='Source'
               variant='highlighted'
               className={s.inp_input}
               disabled
@@ -143,15 +143,15 @@ export namespace NoteFunctionality {
             variant='highlighted'
             className={s.inp_input}
           />
-          <Stack>
+          <Stack className={s.chooser_wrapper}>
+            <Glyph.Chooser label='Glyph' icon={icon} setIcon={setIcon} />
             <Stack dir='column' gap={6} ai='flex-start' data-input>
-              <Label htmlFor='Glyph' value='Glyph' />
-              <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
+              <Label value='Pick a color' />
+              <ColorPicker color={color} setColor={setColor}>
+                <ColorPickerTrigger />
+                <ColorPickerPopover />
+              </ColorPicker>
             </Stack>
-            <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
-              <ColorPickerTrigger />
-              <ColorPickerPopover />
-            </ColorPicker>
           </Stack>
           <Input placeholder='Tags separated by comma' value={rawTags} onChange={e => setRawTags(e.target.value)} />
           {note?.id ? null : <Toggle option={['Public', 'Private']} checked={isPrivate} onCheckedChange={setIsPrivate} />}
@@ -267,7 +267,7 @@ export namespace LinkFunctionality {
               icon={Default.Icon.CONTEXT}
             />
             <Input
-              label='Source.Entity'
+              label='Source'
               variant='highlighted'
               className={s.inp_input}
               disabled
@@ -286,19 +286,20 @@ export namespace LinkFunctionality {
             <Input
               label='Title'
               value={name}
+              variant='highlighted'
               icon='TextTitle'
               onChange={(e) => setName(String(e.currentTarget.value))}
               placeholder='Link title'
             />
-            <Stack>
-              <Stack jc='space-between' flex className={s.inp}>
-                <p>Glyph:</p>
-                <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
+            <Stack className={s.chooser_wrapper}>
+              <Glyph.Chooser label='Glyph' icon={icon} setIcon={setIcon} />
+              <Stack dir='column' gap={6} ai='flex-start' data-input>
+                <Label value='Pick a color' />
+                <ColorPicker color={color} setColor={setColor}>
+                  <ColorPickerTrigger />
+                  <ColorPickerPopover />
+                </ColorPicker>
               </Stack>
-              <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
-                <ColorPickerTrigger />
-                <ColorPickerPopover />
-              </ColorPicker>
             </Stack>
             <Textarea
               className={s.textarea}

@@ -71,9 +71,8 @@
   font-size: 14px;
   min-width: 88px;
 }
-.chooser {
-  max-width: 164px;
-  flex-shrink: 0;
+.chooser_wrapper > div:first-child {
+  flex: 1 !important;
 }
 .selection input {
   pointer-events: none;
