@@ -16,6 +16,7 @@ import { Input } from '@/ui/Input'
 import { Context } from '@/entities/Context'
 import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
+import { Theme } from '@/context/Theme.context'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -273,7 +274,7 @@ export function Navigator({
           />
         </Popover.Trigger>
         <Popover.Content>
-          <Stack dir='column' gap={4}>
+          <Stack dir='column' gap={4} ai='stretch'>
             {(Object.keys(app.hidden) as unknown as Array<keyof App.Type['hidden']>).map((key) => {
               return (
                 <Stack jc='space-between'>
@@ -282,6 +283,10 @@ export function Navigator({
                 </Stack>
               )
             })}
+            <Stack jc='space-between'>
+              <Label value='Theme' />
+              <Theme.Switcher />
+            </Stack>
           </Stack>
         </Popover.Content>
       </Popover.Root>

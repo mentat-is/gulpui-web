@@ -14,7 +14,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--white);
+  color: var(--accent);
 }
 
 .header > p {
@@ -23,7 +23,7 @@
   white-space: nowrap;
   max-width: calc(100% - 32px - 8px);
   font-size: 14px;
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 
 .close {

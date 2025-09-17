@@ -16,6 +16,7 @@ import { Stack } from '@/ui/Stack';
 import { User } from '@/entities/User';
 import { Operation } from '@/entities/Operation';
 import { Internal } from '@/entities/addon/Internal';
+import { Shimmer } from '@/ui/Shimmer';
 
 export namespace Auth {
   export namespace Page {
@@ -187,7 +188,7 @@ export namespace Auth {
 
     return (
       <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
-        <p className={s.title}>[ Login ]</p>
+        <Shimmer duration={2} className={s.title} as='p' color='var(--gray-800)'>[ Login ]</Shimmer>
         <Input
           variant='highlighted'
           icon='Link'
@@ -363,7 +364,7 @@ export namespace Auth {
     return (
       <UIBanner done={<NextButton />} className={cn(className, s.banner)} {...props}>
         <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
-          <p className={s.title}>[ Login ]</p>
+          <Shimmer duration={2} className={s.title} as='p' color='var(--gray-800)'>[ Login ]</Shimmer>
           <Input
             variant='highlighted'
             icon='Link'

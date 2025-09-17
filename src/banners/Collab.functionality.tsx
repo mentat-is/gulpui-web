@@ -311,7 +311,7 @@ export namespace LinkFunctionality {
       const NoLinks = useMemo(() => {
         return (
           <Stack dir='column' gap={16}>
-            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--text-dimmed)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
+            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--second)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
             <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} img='GitPullRequestArrow'>Create link</Button>
           </Stack>
         )

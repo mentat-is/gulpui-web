@@ -18,7 +18,7 @@ export function Shimmer<T extends ElementType = "p">({
   children,
   className,
   duration = 4,
-  color = 'var(--text-dimmed)',
+  color = 'var(--second)',
   ...props
 }: Shimmer.Props<T>) {
   const Component = as || 'p';

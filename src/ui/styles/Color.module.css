@@ -6,7 +6,7 @@
   justify-content: start;
   text-align: left;
   font-weight: normal;
-  color: var(--white);
+  color: var(--accent);
 }
 
 .muted {

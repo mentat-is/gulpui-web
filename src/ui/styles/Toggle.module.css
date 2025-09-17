@@ -1,7 +1,7 @@
 .toggle p {
   font-size: 14px;
   flex: 1;
-  color: var(--text-dimmed);
+  color: var(--second);
   transition: all 0.125s var(--transition);
 }
 .toggle p:first-child {
@@ -12,5 +12,5 @@
 }
 .toggle p.selected {
   font-weight: 500;
-  color: var(--text-white);
+  color: var(--accent);
 }

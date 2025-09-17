@@ -7,11 +7,11 @@
   align-items: center;
   width: 100%;
   justify-content: space-between;
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 .wrapper span {
   font-size: 14px;
-  color: var(--text-dimmed);
+  color: var(--second);
   width: 64px;
 }
 .input_group {

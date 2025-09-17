@@ -60,7 +60,7 @@
 .outline {
   border: 1px solid var(--gray-alpha-400);
   background: none;
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 
 .outline:hover {
@@ -70,7 +70,7 @@
 
 .ghost {
   background: none;
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 
 .ghost:hover {
@@ -88,7 +88,7 @@
 }
 
 .disabled {
-  filter: brightness(0.5);
+  filter: var(--disabled);
   cursor: default;
   pointer-events: none;
 }
@@ -96,7 +96,7 @@
 .glass {
   background: var(--geist-background);
   border: var(--geist-border);
-  color: var(--text-dimmed);
+  color: var(--second);
   backdrop-filter: blur(8px);
 }
 

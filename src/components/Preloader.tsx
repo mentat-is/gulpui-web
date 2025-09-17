@@ -15,7 +15,7 @@ export function Preloader() {
         id="svg114362"
         xmlSpace="preserve"
         xmlns="http://www.w3.org/2000/svg"
-        fill='#e8e8e8'>
+        fill='var(--accent)'>
         <g id="layer1">
           <g transform="translate(-0.82564433,1.7128157)">
             <g transform="translate(-22.01498,-318.59558)">
@@ -31,7 +31,7 @@ export function Preloader() {
         <Shimmer duration={2} as='h1' color='var(--gray-800)'>[ gULP ]</Shimmer>
         <Shimmer color='var(--gray-500)'>generic universal log processor</Shimmer>
       </Stack>
-      <Spinner color='var(--text-white)' size={32} />
+      <Spinner color='var(--accent)' size={32} />
     </Stack>
   )
 }

@@ -22,13 +22,13 @@
 .description {
   font-size: 14px;
   font-family: var(--font-mono);
-  color: var(--text-dimmed);
+  color: var(--second);
   width: calc(100% - 13px);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
 .pagination {
-  color: var(--text-dimmed);
+  color: var(--second);
   pointer-events: none;
 }

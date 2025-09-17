@@ -23,6 +23,7 @@ import { Spinner } from '@/ui/Spinner'
 import { Source } from '@/entities/Source'
 import { Note } from '@/entities/Note'
 import { Doc } from '@/entities/Doc'
+import { useTheme } from 'next-themes'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -31,6 +32,7 @@ export namespace Canvas {
 }
 
 export function Canvas({ timeline }: Canvas.Props) {
+  const { theme } = useTheme();
   const canvas_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
@@ -91,7 +93,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       info: Info,
       getPixelPosition,
       scrollX,
-      scrollY,
+      scrollY
     })
 
     const files = Source.Entity.selected(app)
@@ -339,7 +341,8 @@ export function Canvas({ timeline }: Canvas.Props) {
     app.timeline.dialogSize,
     app.hidden,
     app.target.events.size,
-    target
+    target,
+    theme
   ])
 
   const getPixelPosition = useCallback((timestamp: number) => {

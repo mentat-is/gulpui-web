@@ -137,7 +137,7 @@
   background-color: var(--soft-black);
   border-radius: 4px;
   font-size: 11px;
-  color: var(--text-dimmed);
+  color: var(--second);
   font-family: var(--font-mono);
   top: calc(100% + 21px);
   position: absolute;

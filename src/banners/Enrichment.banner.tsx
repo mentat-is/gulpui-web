@@ -97,7 +97,7 @@ export namespace Enrichment {
 
     const disabledStyle: CSSProperties = {
       pointerEvents: 'none',
-      color: 'var(--text-dimmed)',
+      color: 'var(--second)',
     }
 
     const done = (

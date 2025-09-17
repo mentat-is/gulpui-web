@@ -8,11 +8,11 @@
   border-radius: 6px;
   border: 1px solid var(--gray-alpha-400);
   background: var(--background-100);
-  outline-offset: var(--white);
+  outline-offset: var(--accent);
   gap: 16px;
   overflow: hidden;
   padding: 8px;
-  color: var(--white);
+  color: var(--accent);
   text-align: left;
   transition: box-shadow 0.2s;
   position: relative;
@@ -97,7 +97,7 @@
   overflow: hidden;
   border-radius: 8px;
   background: var(--background-100);
-  color: var(--white);
+  color: var(--accent);
   display: flex;
   transition: all 0.25s var(--transition);
   flex-direction: column;

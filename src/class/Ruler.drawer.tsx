@@ -1,4 +1,6 @@
 import { MinMax } from '@/class/Info'
+import { Theme } from '@/context/Theme.context'
+import { Color } from '@/entities/Color'
 import { getDateFormat } from '@/ui/utils'
 import { addMilliseconds, differenceInMilliseconds, formatDate } from 'date-fns'
 
@@ -150,12 +152,12 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath()
     this.ctx.moveTo(0, 25)
     this.ctx.lineTo(this.ctx.canvas.width, 25)
-    this.ctx.strokeStyle = '#303030'
+    this.ctx.strokeStyle = Color.Themer.theme.BORDER
     this.ctx.stroke()
   }
 
   private wall(props: Pick<RulerSectionProps, 'even' | 'position'>) {
-    this.ctx.fillStyle = props.even ? '#000000' : '#0e0e0e'
+    this.ctx.fillStyle = props.even ? Color.Themer.theme.BACKGROUND_ACCENT : Color.Themer.theme.BACKGROUND_SECOND
     this.ctx.fillRect(
       props.position,
       25,
@@ -165,7 +167,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath()
     this.ctx.moveTo(props.position, 0)
     this.ctx.lineTo(props.position, this.ctx.canvas.height)
-    this.ctx.strokeStyle = '#303030'
+    this.ctx.strokeStyle = Color.Themer.theme.BORDER
     this.ctx.stroke()
   }
 
@@ -175,15 +177,15 @@ export class RulerDrawer implements RulerDrawerConstructor {
   }
 
   section(props: RulerSectionProps) {
-    this.ctx.fillStyle = props.even ? '#000000' : '#0e0e0e'
+    this.ctx.fillStyle = props.even ? Color.Themer.theme.BACKGROUND_ACCENT : Color.Themer.theme.BACKGROUND_SECOND
     this.ctx.fillRect(props.position, 0, this.ctx.canvas.width, 25)
     const timeUnit = props.format || 'MMM yyyy'
     const label = formatDate(props.timestamp, timeUnit)
     this.ctx.font = '12px Arial'
-    this.ctx.fillStyle = '#ffffff'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.textAlign = 'left';
     this.ctx.fillText(label, props.position + 6, 16)
-    this.ctx.fillStyle = '#e8e8e880'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND
     this.ctx.textAlign = 'right';
     this.ctx.fillText(
       `${props.value} ${props.unit}`,
@@ -193,7 +195,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
     this.ctx.beginPath()
     this.ctx.moveTo(props.position, 0)
     this.ctx.lineTo(props.position, 26)
-    this.ctx.strokeStyle = '#303030'
+    this.ctx.strokeStyle = Color.Themer.theme.BORDER
     this.ctx.stroke()
   }
 }

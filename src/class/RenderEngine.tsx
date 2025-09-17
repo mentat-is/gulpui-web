@@ -16,6 +16,7 @@ import { Note } from '@/entities/Note'
 import { Glyph } from '@/entities/Glyph'
 import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
+import { Color } from '@/entities/Color'
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = NOTE_SIZE / 2 * -1;
@@ -90,7 +91,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     info,
     getPixelPosition,
     scrollY,
-    scrollX,
+    scrollX
   }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
       RenderEngine.instance.ruler = new RulerDrawer({
@@ -99,7 +100,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         scrollX,
         scale: info.app.timeline.scale,
         selected: info.app.timeline.frame,
-        width: info.width,
+        width: info.width
       })
       RenderEngine.instance.ctx = ctx
       RenderEngine.instance.limits = limits
@@ -119,7 +120,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       scrollX,
       scale: info.app.timeline.scale,
       selected: info.app.timeline.frame,
-      width: info.width,
+      width: info.width
     })
     this.ctx = ctx
     this.ctx.imageSmoothingEnabled = false;
@@ -215,7 +216,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public dot = ({ x, y, color }: Dot) => {
-    this.ctx.fillStyle = '#e8e8e8'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.beginPath()
     if (typeof this.ctx.roundRect == 'function') {
       this.ctx.roundRect(x - 4, y - 4, 8, 8, [999])
@@ -275,7 +276,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       three: y + 14,
     }
 
-    this.ctx.fillStyle = '#e8e8e8'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.fillRect(
       this.getPixelPosition(file.timestamp.max + file.settings.offset) + 1,
       y - 24,
@@ -291,20 +292,20 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     const events = Doc.Entity.get(this.info.app, file.id).length.toString()
 
-    this.ctx.fillStyle = '#e8e8e8'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
 
     this.ctx.textAlign = 'left'
-    this.ctx.fillStyle = '#e8e8e8'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.fillText(file.total.toString(), right, line.one)
-    this.ctx.fillStyle = '#a1a1a1'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND
     this.ctx.fillText(format(file.timestamp.max + file.settings.offset, 'dd.MM.yyyy'), right, line.two)
     this.ctx.fillStyle = '#0372ef'
     this.ctx.fillText(events, right, line.three)
 
     this.ctx.textAlign = 'right'
-    this.ctx.fillStyle = '#e8e8e8'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.fillText(file.total.toString(), left, line.one)
-    this.ctx.fillStyle = '#a1a1a1'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND
     this.ctx.fillText(format(file.timestamp.min + file.settings.offset, 'dd.MM.yyyy'), left, line.two)
     this.ctx.fillStyle = '#0372ef'
     this.ctx.fillText(events, left, line.three)
@@ -314,7 +315,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
   }
 
-  private drawRect(x: number, y: number, w: number, h: number, r: number, accent: string, color = '#000000') {
+  private drawRect(x: number, y: number, w: number, h: number, r: number, accent: string, color = Color.Themer.theme.BACKGROUND_SECOND) {
     this.ctx.fillStyle = color;
     this.ctx.strokeStyle = accent;
     this.ctx.lineWidth = 1
@@ -340,7 +341,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     this.drawRect(labelX, y + NOTE_SIZE - labelHeight - 2, labelWidth, labelHeight, 5, accent)
 
-    this.ctx.fillStyle = '#ffffff'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.textAlign = 'center'
     this.ctx.textBaseline = 'middle'
 
@@ -363,7 +364,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.save()
 
     if (!note.color) {
-      note.color = '#e8e8e8';
+      note.color = Color.Themer.theme.FONT_ACCENT;
     }
     // Main
     this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, note.color);
@@ -562,7 +563,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
           this.renderNote({
             ...notes[group[0]],
             name: `${group[1]}`,
-            color: '#e8e8e8',
+            color: Color.Themer.theme.FONT_ACCENT,
             glyph_id: Glyph.getIdByName('Status')
           })
         }
@@ -572,7 +573,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
   public loading = (file: Source.Type) => {
     this.ctx.beginPath()
-    this.ctx.strokeStyle = '#e8e8e8'
+    this.ctx.strokeStyle = Color.Themer.theme.FONT_ACCENT
     if (this.ctx.setLineDash) {
       this.ctx.setLineDash([5, 5])
     }
@@ -597,9 +598,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       : ' | Loading...';
 
     const lines: Array<{ text: string; dy: number; color: string }> = [
-      { text: file.name + suffix, dy: 0, color: '#e8e8e8' },
-      { text: Source.Entity.events(this.info.app, file).length.toString(), dy: lineHeight, color: '#e8e8e8' },
-      { text: `${file.total.toString()} | ${Source.Entity.context(this.info.app, file).name}` + suffix, dy: -lineHeight, color: '#a1a1a1' },
+      { text: file.name + suffix, dy: 0, color: Color.Themer.theme.FONT_ACCENT },
+      { text: Source.Entity.events(this.info.app, file).length.toString(), dy: lineHeight, color: Color.Themer.theme.FONT_ACCENT },
+      { text: `${file.total.toString()} | ${Source.Entity.context(this.info.app, file).name}` + suffix, dy: -lineHeight, color: Color.Themer.theme.FONT_SECOND },
     ];
 
     this.ctx.font = '12px sans-serif';
@@ -618,7 +619,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     if (!file) return
 
-    this.ctx.fillStyle = '#e8e8e8'
+    this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.fillRect(
       0,
       Source.Entity.selected(this.info.app).findIndex((f) => f.id === file.id) * 48 +

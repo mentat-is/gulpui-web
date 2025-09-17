@@ -17,6 +17,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
+import { ThemeProviders } from './context/Theme.context'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -40,12 +41,14 @@ function Root() {
   }
 
   return (
-    <ApplicationProvider>
-      <ExtensionProvider>
-        <Main />
-        <Toaster />
-      </ExtensionProvider>
-    </ApplicationProvider>
+    <ThemeProviders>
+      <ApplicationProvider>
+        <ExtensionProvider>
+          <Main />
+          <Toaster />
+        </ExtensionProvider>
+      </ApplicationProvider>
+    </ThemeProviders>
   )
 }
 

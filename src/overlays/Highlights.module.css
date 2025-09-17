@@ -8,7 +8,7 @@
 }
 .overlay.focus {
   box-shadow: inset 0 0 32px 24px var(--gray-alpha-100);
-  border: 1px solid var(--text-dimmed);
+  border: 1px solid var(--second);
 }
 .ignore {
   pointer-events: none;
@@ -23,7 +23,7 @@
   border-radius: 10px;
   border: 1px dashed var(--gray-800);
   background: var(--soft-black);
-  color: var(--text-dimmed);
+  color: var(--second);
   position: relative;
   z-index: 4;
 }
@@ -88,7 +88,7 @@
   backdrop-filter: none;
   pointer-events: all;
   width: 24px;
-  color: var(--text-white) !important;
+  color: var(--accent) !important;
   background: none !important;
   border: none;
 }

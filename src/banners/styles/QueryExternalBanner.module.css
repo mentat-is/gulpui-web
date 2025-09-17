@@ -14,7 +14,7 @@
   align-items: flex-end;
   height: 24px;
   font-size: 14px;
-  color: var(--text-dimmed);
+  color: var(--second);
   font-family: var(--font-mono);
   gap: 8px;
 }

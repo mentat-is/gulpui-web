@@ -31,7 +31,7 @@
   height: 32px;
 }
 .trigger:hover {
-  border: 1px solid var(--white);
+  border: 1px solid var(--accent);
 }
 .level > div {
   padding: var(--p3) var(--p4);
@@ -41,7 +41,7 @@
 .focus {
   border: 1px solid var(--gray-400);
   background: var(--soft-black);
-  color: var(--white);
+  color: var(--accent);
 }
 .focus img {
   filter: var(--filter-to-white);
@@ -77,7 +77,7 @@
 }
 .selection input {
   pointer-events: none;
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 .textarea {
   width: 100%;
@@ -87,7 +87,7 @@
   font-family: var(--font-mono);
 }
 .textarea::placeholder {
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 .sidebar {
   height: 100%;

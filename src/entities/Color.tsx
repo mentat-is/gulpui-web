@@ -1,4 +1,5 @@
 import { MinMax } from "@/class/Info"
+import { th } from "date-fns/locale";
 
 export namespace Color {
   export type Type = `#${string}`;
@@ -28,6 +29,57 @@ export namespace Color {
     sunset: ['432371', 'faae7b'],
     eclipse: ['f5c900', '183182'],
     saga: ['9d80cb', 'f7c2e6'],
+  }
+
+  export const FROM_CSS = {
+
+  } as const;
+
+  export interface Theme {
+    FONT_ACCENT: string;
+    FONT_SECOND: string;
+    BACKGROUND_ACCENT: string;
+    BACKGROUND_SECOND: string;
+    BORDER: string;
+  }
+
+  export class Themer {
+    public static readonly PALETTE = {
+      BLACK_ACCENT: '#000',
+      BLACK_SECOND: '#0e0e0e',
+      BLACK_BORDER: '#303030',
+      WHITE_ACCENT: '#fff',
+      WHITE_SECOND: '#f0f0f0',
+      WHITE_BORDER: '#ddd',
+    } as const;
+
+    public static theme: Theme = Themer.getTheme('dark');
+
+    public static setTheme(theme: string) {
+      if (!['light', 'dark'].includes(theme)) {
+        theme = 'dark';
+      }
+
+      Themer.theme = Themer.getTheme(theme as 'light' | 'dark');
+    }
+    public static getTheme(theme: 'light' | 'dark'): Theme {
+      if (theme === 'light') {
+        return {
+          FONT_ACCENT: this.PALETTE.BLACK_ACCENT,
+          FONT_SECOND: this.PALETTE.BLACK_BORDER,
+          BACKGROUND_ACCENT: this.PALETTE.WHITE_ACCENT,
+          BACKGROUND_SECOND: this.PALETTE.WHITE_SECOND,
+          BORDER: this.PALETTE.WHITE_BORDER
+        }
+      }
+      return {
+        FONT_ACCENT: this.PALETTE.WHITE_ACCENT,
+        FONT_SECOND: this.PALETTE.WHITE_BORDER,
+        BACKGROUND_ACCENT: this.PALETTE.BLACK_ACCENT,
+        BACKGROUND_SECOND: this.PALETTE.BLACK_SECOND,
+        BORDER: this.PALETTE.BLACK_BORDER
+      }
+    }
   }
 
   export type Gradient = keyof typeof GRADIENT

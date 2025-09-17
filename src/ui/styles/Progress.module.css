@@ -21,7 +21,7 @@
   width: 100%;
   text-align: center;
   color: var(--meta-black);
-  background: var(--white);
+  background: var(--accent);
   border: var(--geist-border);
   font-family: var(--font-mono);
   font-weight: 700;

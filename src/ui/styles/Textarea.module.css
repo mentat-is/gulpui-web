@@ -5,7 +5,7 @@
   padding: 12px;
 }
 .textarea::placeholder {
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 .fixed {
   resize: none;

@@ -7,7 +7,7 @@
   border-radius: 6px;
   border: 1px solid var(--gray-alpha-400);
   background-color: var(--background-100);
-  outline-offset: var(--white);
+  outline-offset: var(--accent);
   transition: all 0.125s var(--transition);
 }
 .wrapper input {
@@ -38,7 +38,7 @@
 
 .wrapper.disabled {
   pointer-events: none;
-  filter: brightness(0.7);
+  filter: var(--disabled);
 }
 
 .wrapper[type='color'] {
@@ -76,7 +76,7 @@
   background: transparent;
   outline: none;
   border: none;
-  color: var(--text-dimmed);
+  color: var(--second);
   margin-right: 8px;
   cursor: pointer;
 }

@@ -641,8 +641,8 @@ export function UploadDoneBanner() {
       <Stack style={{ padding: 32 }} dir='column' flex gap={12}>
         <Icon name='CheckCircle' size={64} style={{ marginBottom: 12 }} strokeWidth='2px !important' fromGeist />
         <p style={{ fontSize: 24 }}>Upload done, gULP is still processing the data</p>
-        <span style={{ color: 'var(--text-dimmed)' }}>It can take up to 10 minutes, depending on CPU speed.</span>
-        <span style={{ color: 'var(--text-dimmed)' }}>You will see a notification when it would be done.</span>
+        <span style={{ color: 'var(--second)' }}>It can take up to 10 minutes, depending on CPU speed.</span>
+        <span style={{ color: 'var(--second)' }}>You will see a notification when it would be done.</span>
         <Button style={{ gap: 12, marginTop: 24 }} size='lg' rounded revert img='ChevronCircleRightFill' onClick={destroyBanner}>Got it!</Button>
       </Stack>
     </Banner>

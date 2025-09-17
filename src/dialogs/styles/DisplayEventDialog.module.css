@@ -36,7 +36,7 @@
 }
 
 .label {
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 
 .numeric {
@@ -112,5 +112,5 @@
   border-radius: var(--round);
   transform: translate(16.5%, 16.5%);
   z-index: 2;
-  color: var(--white);
+  color: var(--accent);
 }

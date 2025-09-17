@@ -1322,6 +1322,10 @@ export class Info implements InfoProps {
     await runQueue()
 
     Logger.log(`Glyphs has been syncronized with gulp-backend`, Info)
+
+    while (Glyph.Entries.length) { Glyph.Entries.pop(); }
+    Glyph.Entries.push(...Array.from(Glyph.List.entries()));
+
     this.setInfoByKey(true, 'general', 'glyphs_syncronized')
   }
 
@@ -1462,7 +1466,6 @@ export class Info implements InfoProps {
   }
 
   async session_list(user = this.app.general.user): Promise<Internal.Session.Data[]> {
-    console.log(user);
     if (!user) {
       Logger.warn('Tried to load sessions list before authorization');
       return Internal.Transformator.toAsync([]);

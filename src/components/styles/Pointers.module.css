@@ -12,7 +12,7 @@
   transform: translate(-15px, -2px) !important;
 }
 .pointer p {
-  color: var(--text-white);
+  color: var(--accent);
   text-shadow: 0 0 1px black;
   border-radius: 4px;
   padding: 0 4px;
