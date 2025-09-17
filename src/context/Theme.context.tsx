@@ -16,7 +16,7 @@ export function ThemeProviders({ children }: any) {
   }
 
   return (
-    <ThemeProvider enableSystem defaultTheme='system'>
+    <ThemeProvider defaultTheme='dark'>
       {children}
     </ThemeProvider>
   )
