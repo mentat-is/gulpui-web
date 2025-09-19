@@ -77,7 +77,7 @@ function Main() {
   useEffect(() => {
     setTimeout(() => {
     throw new Error("error in useEffect");
-    }, 6000)
+    }, 0)
   }, []);
 
   useEffect(() => {
