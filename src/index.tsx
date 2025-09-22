@@ -17,7 +17,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
-import { AppErrorBoundary } from './components/AppErrorBoundary'
+import { AppErrorBoundary } from './components/ErrorBoundary/AppErrorBoundary'
 
 class NoRootDefinitionInHTMLDocument extends Error {
   constructor() {
@@ -73,11 +73,27 @@ function Main() {
   const { Info, app, dialog } = useApplication();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
-  // castom error
+    // custom errors
+
+  function Component() {
+    const obj: any = null;
+    return <div>{obj.prop}</div>;
+  }
+
   useEffect(() => {
     setTimeout(() => {
-    throw new Error("error in useEffect");
-    }, 0)
+      throw new Error("This is a long error message for testing layout.")
+    }, 0);
+
+    setTimeout(() => {
+      throw new Error("Detailed explanation of what went wrong, including stack traces and suggestions.")
+    }, 0);
+
+    setTimeout(() => {
+      throw new Error("Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:")
+    }, 0);
+
+    Component();
   }, []);
 
   useEffect(() => {
