@@ -54,11 +54,7 @@ export namespace Session {
         const session = await Info.session_create({
           name,
           color,
-          icon: Glyph.List.get(icon)!,
-          scroll: {
-            x: scrollX,
-            y: scrollY
-          }
+          icon: Glyph.List.get(icon)!
         });
         setLoading(false);
         if (session) {

@@ -105,9 +105,6 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
   --background-100: #0e0e0e;
   --background-200: #000;
 
-  --accent: #fff;
-  --second: #e0e0e0;
-
   --disabled: brightness(0.75);
   --geist-background: radial-gradient(100% 100% at 50% 0, hsla(0, 0%, 100%, .16) 0, hsla(0, 0%, 100%, 0) 100%), linear-gradient(103.94deg, hsla(0, 0%, 100%, .07) 7.66%, hsla(0, 0%, 100%, .01) 32.57%, hsla(0, 0%, 100%, .01) 72.45%, hsla(0, 0%, 100%, .08) 96.25%);
 
@@ -212,9 +209,6 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
   --background-100: #f0f0f0;
   --background-200: #fff;
 
-  --accent: #000;
-  --second: #444;
-
   --disabled: opacity(0.5);
   --geist-background: radial-gradient(100% 100% at 50% 0, #ffffff47 0, #ffffff61 100%), linear-gradient(103.94deg, #0000004f 7.66%, #00000029 32.57%, #0000004d 72.45%, #00000029 96.25%);
 }
@@ -225,6 +219,9 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
   --transition: cubic-bezier(.21, .29, 0, .94);
 
   --round: 100px;
+
+  --accent: var(--gray-1000);
+  --second: var(--gray-900);
 
   --geist-border: 1px solid hsla(0, 0%, 100%, .07);
   --shadow-border: 0 0 0 1px hsla(0, 0%, 100%, .145);

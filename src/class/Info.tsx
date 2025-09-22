@@ -1348,13 +1348,11 @@ export class Info implements InfoProps {
   session_create = async ({
     name,
     icon = Default.Icon.SESSION,
-    color = Default.Color.SESSION,
-    scroll
+    color = Default.Color.SESSION
   }: {
     name: string,
     icon: Icon.Name,
-    color: string,
-    scroll: XY
+    color: string
   }) => {
     const operation = Operation.Entity.selected(this.app);
     if (!operation) {
@@ -1383,10 +1381,15 @@ export class Info implements InfoProps {
         frame: this.app.timeline.frame,
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
-        scroll,
+        scroll: {
+          x: this.scrollX,
+          y: this.scrollY
+        },
       },
       filters: this.app.target.filters,
     })
+
+    console.log(sessions[sessions.length - 1]);
 
     if (!this.app.general.user) {
       Logger.warn('Tried to create session before user has been defined');
@@ -1418,8 +1421,7 @@ export class Info implements InfoProps {
     await this.session_create({
       name: prefix + new Date().toISOString(),
       color: 'var(--green-800)',
-      icon: 'RefreshClockwise',
-      scroll: { x: this.scrollX, y: this.scrollY }
+      icon: 'RefreshClockwise'
     });
 
     setTimeout(() => {
@@ -1450,6 +1452,7 @@ export class Info implements InfoProps {
   }
 
   session_load = async (session: Internal.Session.Data) => {
+    console.log(session);
     this.setScrollX(session.timeline.scroll.x);
     this.setScrollY(session.timeline.scroll.y);
 

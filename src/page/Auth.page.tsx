@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button, Button as UIButton } from '@/ui/Button';
+import { Button as UIButton } from '@/ui/Button';
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner'
@@ -43,7 +43,7 @@ export namespace Auth {
       }
     }, [methods, server])
 
-    const createNewOperationButtonHandler = () => { spawnBanner(<Operation.Create.Banner />), setIsOperetionSelectOpen(false) }
+    const createNewOperationButtonHandler = () => { spawnBanner(<Operation.CreateOrUpdate.Banner />), setIsOperetionSelectOpen(false) }
 
     const login = async () => {
       const removeOverload = (str: string): string =>
@@ -180,8 +180,13 @@ export namespace Auth {
     }
 
     const onLoginAndOperationSelection = () => {
+      const operation = Operation.Entity.selected(app);
+      if (!operation) {
+        return;
+      }
+
       switch (true) {
-        case app.target.files.length > 0:
+        case app.target.files.filter(file => file.operation_id === operation.id).length > 0:
           spawnBanner(<SelectFiles.Banner fixed />);
           break;
 
@@ -238,10 +243,14 @@ export namespace Auth {
               <SelectOperationTrigger />
               <Select.Content>
                 {app.target.operations.map((operation) => (
-                  <Select.Item key={operation.id} value={operation.id}>
-                    <Select.Icon name={Operation.Entity.icon(operation)} />
-                    {operation.name}
-                  </Select.Item>
+                  <Stack gap={2}>
+                    <Select.Item key={operation.id} value={operation.id}>
+                      <Select.Icon name={Operation.Entity.icon(operation)} />
+                      {operation.name}
+                      <span className={s.operation_description}>{operation.description}</span>
+                    </Select.Item>
+                    <UIButton icon='PencilEdit' style={{ color: 'var(--second) !important' }} variant='tertiary' onClickCapture={(event) => spawnBanner(<Operation.CreateOrUpdate.Banner operation={operation} />)} />
+                  </Stack>
                 ))}
                 <UIButton icon='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='tertiary'>
                   Create new operation
@@ -265,7 +274,7 @@ export namespace Auth {
                     {session.name}
                   </Select.Item>
                 ))}
-                <Button variant='tertiary' style={{ width: '100%' }} onClick={() => spawnBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(null)} />)} icon='Trash2'>Open session managment dialog</Button>
+                <UIButton variant='tertiary' style={{ width: '100%' }} onClick={() => spawnBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(null)} />)} icon='Trash2'>Open session managment dialog</UIButton>
               </Select.Content>
             </Select.Root>
           </Stack>
