@@ -48,7 +48,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [eventKeys, setEventKeys] = useState<string[] | null>(null);
 
   useEffect(() => {
-    Info.event_keys(file).then(Object.keys).then(setEventKeys);
+    Info.event_keys(file).then(Object.keys).then(keys => keys.sort((a, b) => a.localeCompare(b))).then(setEventKeys);
   }, []);
 
   const [field, setField] = useState<keyof Doc.Type>(file.settings.field);

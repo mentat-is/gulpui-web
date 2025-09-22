@@ -402,6 +402,8 @@ export class Info implements InfoProps {
       body.q_options.preview_mode = preview
     }
 
+    body.q_options.limit = 10000;
+
     const request_query: Record<string, string> = {
       ws_id: this.app.general.ws_id,
       operation_id: operation.id,
