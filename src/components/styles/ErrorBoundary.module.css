@@ -1,5 +1,4 @@
 .wrapper {
-  position: relative;
   width: 100%;
   height: 100vh;
   display: flex;
@@ -7,17 +6,73 @@
   justify-content: center;
 }
 
-.panel {
+.block {
   position: relative;
-  width: 50%;
-  height: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
+  width: 55%;
+  min-width: 900px;
+  height: 80%;
   background-color: black;
-  box-sizing: border-box;
   border-radius: 1rem;
   border: 1px solid #262626;
+}
+
+.panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
   gap: 1rem;
+}
+
+.header,
+.action {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.3rem;
+  z-index: 1;
+}
+
+.action {
+  padding: 0 1rem;
+}
+
+.pagination,
+.gulp {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dimmed);
+  font-family: var(--font-mono);
+  gap: 0.5rem;
+}
+
+.pagination > div {
+  width: 24px;
+}
+
+.message {
+  width: 100%;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  white-space: pre-wrap;
+  gap: 1rem;
+}
+
+.message span {
+  color: var(--red-900);
+  font-size: 16px;
+}
+
+.message p{
+  color: var(--red-900);
+  font-family: var(--font-mono);
 }
