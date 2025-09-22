@@ -4,9 +4,9 @@ import { Popover } from '@/ui/Popover';
 import { Icon } from '@impactium/icons';
 import { cn } from '@impactium/utils';
 import { UUID } from 'crypto';
-import { CSSProperties, useMemo } from 'react';
-import { toast } from 'sonner';
+import { ChangeEvent, CSSProperties, useCallback, useMemo, useState } from 'react';
 import s from './styles/Glyph.module.css';
+import { Stack } from '@/ui/Stack';
 
 export namespace Glyph {
   const _ = Symbol('Glyph')
@@ -45,22 +45,47 @@ export namespace Glyph {
   }
 
   export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton }: Chooser.Props) => {
+    const [search, setSearch] = useState<string>('');
+
+    const entities = useMemo(() => {
+      return Glyph.Entries.filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
+    }, [search]);
+
+    const handleGlyphSearchInput = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+      setSearch(event.target.value);
+    }, [setSearch]);
+
+    const SearchInput = useMemo(() => {
+      return <Input variant='highlighted' icon='MagnifyingGlass' placeholder='Glyph name or association' value={search} onChange={handleGlyphSearchInput} />
+    }, [search, handleGlyphSearchInput]);
+
+    const GlyphList = useMemo(() => {
+      return (
+        entities.map(([k, n]) =>
+          k ? (
+            <Button
+              key={n}
+              variant={k === icon ? 'glass' : 'tertiary'}
+              img={n}
+              onClick={() => setIcon(k)}
+            />
+          ) : null,
+        )
+      )
+    }, [entities])
+
     return (
       <Popover.Root>
         <Popover.Trigger asChild>
           {asButton ? <Button className={rootClassName} img={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} label={label} />}
         </Popover.Trigger>
-        <Popover.Content align='end' className={s.map}>
-          {Glyph.Entries.map(([k, n]) =>
-            k ? (
-              <Button
-                key={n}
-                variant={k === icon ? 'glass' : 'tertiary'}
-                img={n}
-                onClick={() => setIcon(k)}
-              />
-            ) : null,
-          )}
+        <Popover.Content align='end'>
+          <Stack dir='column' className={s.wrapper} ai='stretch'>
+            {SearchInput}
+            <Stack className={s.list}>
+              {GlyphList}
+            </Stack>
+          </Stack>
         </Popover.Content>
       </Popover.Root>
     )
