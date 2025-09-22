@@ -21,7 +21,7 @@ export function MiddleLine () {
         y1="41"
         x2="100"
         y2="41"
-        stroke="#262626"
+        stroke="#2e2e2e"
         strokeWidth="1"
       />
     </svg>

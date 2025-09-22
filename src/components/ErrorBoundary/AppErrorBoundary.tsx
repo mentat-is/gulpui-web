@@ -1,13 +1,18 @@
 import React from "react";
-import { MiddleLine } from "./svgs/MiddleLine";
-import { RightCap } from "./svgs/RightCap";
 import { LeftCap } from "./svgs/LeftCap";
 import { ErrorPanel } from "./ErrorPanel";
+import { RightCap } from "./svgs/RightCap";
+import { MiddleLine } from "./svgs/MiddleLine";
 
 import s from '../styles/ErrorBoundary.module.css'
 
 type Props = { children: React.ReactNode };
-type ErrorWithDescription = { message: string; stack?: string };
+type ErrorWithDescription = { 
+  name?: string;
+  message: string; 
+  stack?: string;
+  timestamp: string;
+};
 type State = { errors: ErrorWithDescription[]; componentStack: string | any };
 
 export class AppErrorBoundary extends React.Component<Props, State> {
@@ -19,7 +24,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error) {
-    return { errors: [{ message: error.message, stack: error.stack }] };
+    return { errors: [{ name: error.name, message: error.message, stack: error.stack, timestamp: new Date().toISOString() }] };
   }
 
 
@@ -38,7 +43,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
 
   showError(error: Error) {
     this.setState((prev) => ({
-      errors: [...prev.errors, { message: error.message, stack: error.stack }],
+      errors: [...prev.errors, { name: error.name, message: error.message, stack: error.stack, timestamp: new Date().toISOString() }],
     }));
   }
 
@@ -55,7 +60,6 @@ export class AppErrorBoundary extends React.Component<Props, State> {
         </div>
       );
     }
-
     return this.props.children;
   }
 }

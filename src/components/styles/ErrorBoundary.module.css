@@ -10,10 +10,10 @@
   position: relative;
   width: 55%;
   min-width: 900px;
-  height: 80%;
-  background-color: black;
+  height: 75%;
+  background-color: #0A0A0A;
   border-radius: 1rem;
-  border: 1px solid #262626;
+  border: 1px solid #2e2e2e;
 }
 
 .panel {
@@ -26,8 +26,7 @@
   gap: 1rem;
 }
 
-.header,
-.action {
+.header, .action, .stack {
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -41,15 +40,31 @@
   padding: 0 1rem;
 }
 
-.pagination,
-.gulp {
+.action_block, .pagination, .gulp, .meta {
   display: flex;
-  flex-direction: row;
   align-items: center;
   justify-content: center;
+  flex-direction: row;
+  gap: 6px;
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px solid #2e2e2e;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.iconWrapper:hover {
+  background-color: #1A1A1A;
+}
+
+.pagination, .gulp {
   color: var(--text-dimmed);
   font-family: var(--font-mono);
-  gap: 0.5rem;
 }
 
 .pagination > div {
@@ -67,12 +82,44 @@
   gap: 1rem;
 }
 
-.message span {
+.message span{
   color: var(--red-900);
   font-size: 16px;
 }
 
-.message p{
+.stackContainer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 200px;
+  background-color: black;
+  border: 1px solid #2e2e2e;
+  border-radius: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+}
+
+.stack {
+  border-bottom: 1px solid #2e2e2e;
+  padding: 1rem;
+}
+
+.stack span{
+  color: var(--red-900);
+}
+
+ .meta span {
+  color: var(--red-900);
+ }
+
+.stackContainer p {
+  line-height: 1.5;
+  padding: 1rem;
   color: var(--red-900);
   font-family: var(--font-mono);
+}
+
+.message > p {
+  color: var(--red-900); 
 }

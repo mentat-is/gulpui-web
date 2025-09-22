@@ -58,14 +58,16 @@ function Root() {
   };
 
   return (
-    <AppErrorBoundary>
-      <ApplicationProvider>
-        <ExtensionProvider>
-          <Main />
-          <Toaster />
-        </ExtensionProvider>
-      </ApplicationProvider>
-    </AppErrorBoundary>
+    <>
+      <Toaster />
+      <AppErrorBoundary>
+        <ApplicationProvider>
+          <ExtensionProvider>
+            <Main />
+          </ExtensionProvider>
+        </ApplicationProvider>
+      </AppErrorBoundary>
+    </>
   )
 }
 

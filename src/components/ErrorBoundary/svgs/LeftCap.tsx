@@ -23,7 +23,7 @@ export function LeftCap () {
       <path
         d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
         fill="transparent"
-        stroke="#262626"
+        stroke="#2e2e2e"
         strokeWidth="1"
         shapeRendering="crispEdges"
       />
@@ -33,7 +33,7 @@ export function LeftCap () {
         y={0}           
         width={10}
         height={1}
-        fill="#262626"
+        fill="#2e2e2e"
         shapeRendering="crispEdges"
       />
     </svg>
