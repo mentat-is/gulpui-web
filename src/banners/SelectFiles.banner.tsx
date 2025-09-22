@@ -144,7 +144,7 @@ export namespace SelectFiles {
         className={s.banner}
         done={
           <Button
-            img='Check'
+            icon='Check'
             variant='glass'
             disabled={!selectedContexts.size || !selectedFiles.size}
             onClick={save}
@@ -152,7 +152,7 @@ export namespace SelectFiles {
         }
         option={
           <Button
-            img='Upload'
+            icon='Upload'
             variant='tertiary'
             onClick={() => spawnBanner(<UploadBanner />)}
           />
@@ -178,7 +178,7 @@ export namespace SelectFiles {
             onClick={() => all(true)}
             variant='secondary'
             className={s.actionButton}
-            img='FilePlus'
+            icon='FilePlus'
           >
             Select all
           </Button>
@@ -186,7 +186,7 @@ export namespace SelectFiles {
             onClick={() => all(false)}
             variant='secondary'
             className={s.actionButton}
-            img='FileMinus'
+            icon='FileMinus'
           >
             Unselect all
           </Button>
@@ -194,7 +194,7 @@ export namespace SelectFiles {
             onClick={reloadClickHandler}
             variant='secondary'
             className={s.actionButton}
-            img='RefreshClockwise'
+            icon='RefreshClockwise'
             loading={loading}
           >
             Reload
@@ -272,7 +272,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
   const previewButtonClickHandler = () => {
     setLoading(true)
     Info.preview_file(file)
-      .then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button img='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
+      .then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button icon='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
   }
 
   const FileIsTooBig = () => {
@@ -302,13 +302,13 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         value={file.total.toString()}
       />
       <Button
-        img='Filter'
+        icon='Filter'
         variant='secondary'
         className={s.smallButton}
         onClick={() => spawnBanner(<FilterFileBanner files={[file]} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)}
       />
       <Button
-        img='PreviewEye'
+        icon='PreviewEye'
         variant='secondary'
         loading={loading}
         className={s.smallButton}

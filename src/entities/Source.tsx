@@ -224,7 +224,7 @@ export namespace Source {
       const DeleteButton = () => (
         <Button
           loading={loading}
-          img='Trash2'
+          icon='Trash2'
           variant='glass'
           onClick={deleteFile}
           disabled={!isSubmited}

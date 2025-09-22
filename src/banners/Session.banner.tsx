@@ -1,6 +1,6 @@
 import { useApplication } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/Session.module.css'
 import { toast } from 'sonner'
 import { Default } from '@/dto/Dataset'
@@ -12,6 +12,10 @@ import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { Glyph } from '@/entities/Glyph'
 import { Operation } from '@/entities/Operation'
+import { Internal } from '@/entities/addon/Internal'
+import { Label } from '@/ui/Label'
+import { Select } from '@/ui/Select'
+import { cn } from '@impactium/utils'
 
 export namespace Session {
   export namespace Save {
@@ -93,8 +97,74 @@ export namespace Session {
             </Stack>
           </Stack>
           <Stack className={s.buttons}>
-            <Button loading={loading} onClick={saveSession} variant='glass' disabled={!name.length || !icon} img='Check'>Save current session</Button>
-            <Button variant='destructive' img='LogOut' onClick={reloadWindow}>Dont save my session</Button>
+            <Button loading={loading} onClick={saveSession} variant='glass' disabled={!name.length || !icon} icon='Check'>Save current session</Button>
+            <Button variant='destructive' icon='LogOut' onClick={reloadWindow}>Dont save my session</Button>
+          </Stack>
+        </UIBanner>
+      )
+    }
+  }
+
+  export namespace Delete {
+    export namespace Banner {
+      export interface Props extends UIBanner.Props { }
+    }
+
+
+    export function Banner({ ...props }: Session.Delete.Banner.Props) {
+      const { Info, app } = useApplication();
+      const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
+      const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
+      const [isDataDeleating, setIsDataDeleating] = useState<boolean>(false);
+      const [selected, setSelected] = useState<Set<string>>(new Set());
+
+
+      const reload = async () => {
+        setIsDataLoading(true);
+        await Info.session_list().then(setSessions);
+        setSelected(() => new Set());
+        setIsDataLoading(false);
+      };
+
+      useEffect(() => {
+        reload();
+      }, []);
+
+      const deleteSessionButtonClickHandler = async () => {
+        setIsDataDeleating(true);
+        await Promise.all([...selected.values()].map(name => {
+          return Info.session_delete(name).then(() => {
+            Logger.log(`Session ${name} has been deleted successfully`, 'Session.Delete.Banner.deleteSessionButtonClickHandler', {
+              richColors: true,
+              icon: <Icon name='Check' />
+            });
+          });
+        }));
+        setIsDataDeleating(false);
+        await reload();
+      };
+
+      const DeleteButton = useMemo(() => <Button onClick={deleteSessionButtonClickHandler} loading={isDataDeleating || isDataLoading} disabled={!selected.size} icon='Trash' variant='glass' />, [selected, isDataDeleating, isDataLoading, deleteSessionButtonClickHandler]);
+
+      return (
+        <UIBanner title='Delete sessions' done={DeleteButton} {...props}>
+          <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).length && s.visible)}>
+            <Label value='Session' />
+            <Stack style={{ width: '100%' }}>
+              <Select.Multi.Root value={[...selected.values()]} onValueChange={names => setSelected(() => new Set<string>(names))}>
+                <Select.Trigger>
+                  <Select.Multi.Value icon='Status' placeholder='Select sessions to be deleted' text={len => typeof len === 'number' ? `Selected ${len} sessions` : len} />
+                </Select.Trigger>
+                <Select.Content>
+                  {sessions.map(session => (
+                    <Select.Item key={session.name} value={session.name} style={{ color: session.color }}>
+                      <Select.Icon name={session.icon} />
+                      {session.name}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Multi.Root>
+            </Stack>
           </Stack>
         </UIBanner>
       )

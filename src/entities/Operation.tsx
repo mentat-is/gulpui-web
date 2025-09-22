@@ -95,7 +95,7 @@ export namespace Operation {
               />,
             )
           }
-          img='BookPlus'
+          icon='BookPlus'
         />
       )
 
@@ -111,7 +111,7 @@ export namespace Operation {
           }
           size='icon'
           variant='glass'
-          img='Check'
+          icon='Check'
         />
       )
 
@@ -204,7 +204,7 @@ export namespace Operation {
           variant='glass'
           disabled={!name || !description}
           loading={loading}
-          img='Check'
+          icon='Check'
           onClick={createOperation}
         />
       )

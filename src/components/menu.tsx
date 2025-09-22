@@ -42,21 +42,21 @@ export function Menu() {
       <Button
         variant="secondary"
         title="Upload files"
-        img="Upload"
+        icon="Upload"
         size='md'
         onClick={() => spawnBanner(<UploadBanner />)}
       />
       <Button
         variant="secondary"
         title="Query external source"
-        img="ServerCrash"
+        icon="ServerCrash"
         size='md'
         onClick={() => spawnBanner(<QueryExternal.Banner />)}
       />
       <Button
         variant="secondary"
         title="Upload sigma rule"
-        img="Sigma"
+        icon="Sigma"
         size='md'
         onClick={() => spawnBanner(<Sigma.Banner />)}
       />
@@ -64,7 +64,7 @@ export function Menu() {
         variant="secondary"
         className={s.relative}
         title="Select files and contexts"
-        img="FileStack"
+        icon="FileStack"
         size='md'
         onClick={() => spawnBanner(<SelectFiles.Banner />)}
       >
@@ -73,21 +73,21 @@ export function Menu() {
       <Button
         variant="secondary"
         title="Change workflow frame"
-        img="AlignHorizontalSpaceAround"
+        icon="AlignHorizontalSpaceAround"
         size='md'
         onClick={() => spawnBanner(<Frame.Banner />)}
       />
       <Button
         variant="secondary"
         title="Global query"
-        img="Globe"
+        icon="Globe"
         size='md'
         onClick={() => spawnBanner(<GlobalQuery.Banner />)}
       />
       <Button
         variant="secondary"
         title="Apply filters"
-        img="Filter"
+        icon="Filter"
         size='md'
         onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
       />
@@ -95,14 +95,14 @@ export function Menu() {
       <Button
         variant="glass"
         title="Data enrichment"
-        img="PrismColor"
+        icon="PrismColor"
         size='md'
         onClick={enrichment}
       />
       <Button
         variant="glass"
         title="Commands"
-        img="Command"
+        icon="Command"
         size='md'
         onClick={() => spawnBanner(<Commands.Banner />)}
       />
@@ -119,14 +119,14 @@ export function Menu() {
       <Button
         variant="secondary"
         title="Manage Permissions"
-        img="UserSettings"
+        icon="UserSettings"
         size='md'
         onClick={() => spawnBanner(<Permissions.Banner />)}
       />
       <Button
         variant="secondary"
         title="Back to operations"
-        img="Undo2"
+        icon="Undo2"
         size='md'
         onClick={backToOperations}
       />
@@ -134,13 +134,13 @@ export function Menu() {
         variant="secondary"
         title="Settings"
         size='md'
-        img="SettingsGear"
+        icon="SettingsGear"
         onClick={() => spawnBanner(<Settings.Banner />)}
       />
       <Button
         variant="secondary"
         size='md'
-        img="LogOut"
+        icon="LogOut"
         title="Logout"
         onClick={logoutButtonClickHandler}
       />

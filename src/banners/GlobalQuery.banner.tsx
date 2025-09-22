@@ -85,7 +85,7 @@ export namespace GlobalQuery {
       spawnBanner(<Preview.Banner total={total_hits} values={docs} back={() => spawnBanner(<GlobalQuery.Banner query={query} {...props} />)} />)
     }
 
-    const DoneButton = () => <Button onClick={doneButtonClickHandler} img='Check' loading={isQueryLoading} disabled={separately ? filename.length < 3 || context.length < 3 || !isFilenameValid || !isContextValid : false} variant='glass' />
+    const DoneButton = () => <Button onClick={doneButtonClickHandler} icon='Check' loading={isQueryLoading} disabled={separately ? filename.length < 3 || context.length < 3 || !isFilenameValid || !isContextValid : false} variant='glass' />
 
     const [filename, setFilename] = useState<string>('');
     const [isFilenameValid, setIsFilenameValid] = useState<boolean>(true);
@@ -129,8 +129,8 @@ export namespace GlobalQuery {
         <Separator />
         {QueryFilterBuilder}
         <Stack ai='stretch' style={{ width: '100%' }}>
-          <Button style={{ flex: 1 }} variant='secondary' img='Undo2' onClick={resetQueryButtonClickHandler}>Reset query</Button>
-          <Button style={{ flex: 1 }} variant='secondary' img='Table' loading={isPreviewLoading} onClick={tabularPreviewButtonClickHandler}>Tabular preview</Button>
+          <Button style={{ flex: 1 }} variant='secondary' icon='Undo2' onClick={resetQueryButtonClickHandler}>Reset query</Button>
+          <Button style={{ flex: 1 }} variant='secondary' icon='Table' loading={isPreviewLoading} onClick={tabularPreviewButtonClickHandler}>Tabular preview</Button>
         </Stack>
         <Stack ai='center' gap={4}>
           <Checkbox id='isNewLine' checked={separately} onCheckedChange={v => setSeparately(!!v)} />

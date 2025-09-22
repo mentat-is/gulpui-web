@@ -87,8 +87,8 @@ export namespace Highlights {
                   })}
                 </Select.Content>
               </Select.Root>
-              <Button variant='glass' disabled={!name} img='Check' onMouseDown={submit}>Create</Button>
-              <Button className={s.x} variant='secondary' img='X' onMouseDown={unselect} />
+              <Button variant='glass' disabled={!name} icon='Check' onMouseDown={submit}>Create</Button>
+              <Button className={s.x} variant='secondary' icon='X' onMouseDown={unselect} />
             </Stack>
           )
         }
@@ -97,7 +97,7 @@ export namespace Highlights {
           <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
             <Icon name='ChartBarBig' />
             <code>Select area highlighted</code>
-            <Button className={s.close} variant='secondary' size='sm' img='Logout' onMouseDown={destroyOverlay}>Exit</Button>
+            <Button className={s.close} variant='secondary' size='sm' icon='Logout' onMouseDown={destroyOverlay}>Exit</Button>
           </Stack>
         )
       }, [destroyOverlay, unselect, icon, name, setName, range, submit])
@@ -261,8 +261,8 @@ export namespace Highlights {
         <Stack style={{ background: `var(--${highlight.color}-700)` }}>
           <Badge className={s.title} data-type='badge' variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
           <Stack gap={0} className={s.buttons}>
-            <Button tabIndex={-1} size='sm' variant='glass' img='PencilEdit' onClick={() => { }} />
-            <Button tabIndex={-1} size='sm' variant='glass' img='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />
+            <Button tabIndex={-1} size='sm' variant='glass' icon='PencilEdit' onClick={() => { }} />
+            <Button tabIndex={-1} size='sm' variant='glass' icon='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />
           </Stack>
         </Stack>
       </Stack>

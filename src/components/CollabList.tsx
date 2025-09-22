@@ -76,7 +76,7 @@ export namespace Collab {
     }, [app]);
 
     const targetColorStyle = useMemo(() => ({ color: target.color }), [target.color]);
-    const Edit = useMemo(() => <Button variant='secondary' img='PencilEdit' onClick={handleEditClick} />, [handleEditClick]);
+    const Edit = useMemo(() => <Button variant='secondary' icon='PencilEdit' onClick={handleEditClick} />, [handleEditClick]);
 
     const List = useMemo(() => {
       return [...notes, ...links].map(c => (
@@ -113,7 +113,7 @@ export namespace Collab {
             {MemoizedSelect}
             <Extension.Component name='Storyline.popover.tsx' />
             {Edit}
-            <Button onClick={handleDeleteClick} variant='tertiary' img='Trash2' />
+            <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
           </Stack>
           <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
             <Badge
@@ -149,7 +149,7 @@ export namespace Collab {
     return (
       <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
         <Markdown className={cn(s.description, inOpen && s.revealed)} value={value} />
-        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} img='AcronymMarkdown'>{inOpen ? 'Hide' : 'Reveal'} description</Button>
+        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} icon='AcronymMarkdown'>{inOpen ? 'Hide' : 'Reveal'} description</Button>
       </Stack>
     )
   }

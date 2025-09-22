@@ -1,10 +1,12 @@
 .list {
-  display: flex;
-  width: 410px;
   gap: 8px;
   max-height: calc(128px* 3);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   overflow: auto;
+}
+.list button {
+  width: calc(100% - 8px);
+  justify-content: flex-start !important;
 }
 .input {
   overflow: hidden !important;

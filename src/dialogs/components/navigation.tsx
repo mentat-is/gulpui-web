@@ -49,7 +49,7 @@ export function Navigation({ event }: Navigation.Props) {
       <Button
         disabled={all.length > 0 && all[all.length - 1]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(true)}
-        img="ArrowLeft"
+        icon="ArrowLeft"
         variant='default'
         rounded
       />
@@ -66,7 +66,7 @@ export function Navigation({ event }: Navigation.Props) {
       <Button
         disabled={all.length > 0 && all[0]._id === event._id}
         onClick={changeEventTargerHandlerConstructor(false)}
-        img="ArrowRight"
+        icon="ArrowRight"
         variant='default'
         rounded
       />

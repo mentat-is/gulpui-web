@@ -57,7 +57,7 @@ export namespace NotePoint {
         </Stack>
 
         <Button
-          img="MagnifyingGlassSmall"
+          icon="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}
           variant='tertiary'
         />

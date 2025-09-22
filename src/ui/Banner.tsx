@@ -80,14 +80,14 @@ export function Banner({
       <div
         className={cn(s.banner, s.loading, className)}>
         <Cell key="cell-1" className={s.cell} top left>
-          {back && <Button variant='tertiary' img="CornerUpLeft" onClick={back} />}
+          {back && <Button variant='tertiary' icon="CornerUpLeft" onClick={back} />}
         </Cell>
         <Cell key="cell-2" className={s.cell} top right>
           {fixed ? null : (
             <Button
               variant='tertiary'
               onClick={close}
-              img="X"
+              icon="X"
               loading={loading}
               size="icon"
             />
@@ -96,7 +96,7 @@ export function Banner({
         <Cell key="cell-3" className={s.cell} bottom left>
           {side ? (
             <Button
-              img={isExpanded ? 'Eye' : 'EyeOff'}
+              icon={isExpanded ? 'Eye' : 'EyeOff'}
               onClick={() => setIsExpanded((isExpanded) => !isExpanded)}
               variant={isExpanded ? 'secondary' : 'tertiary'}
             />

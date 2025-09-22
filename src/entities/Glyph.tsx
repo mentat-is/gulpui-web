@@ -66,9 +66,9 @@ export namespace Glyph {
             <Button
               key={n}
               variant={k === icon ? 'glass' : 'tertiary'}
-              img={n}
+              icon={n}
               onClick={() => setIcon(k)}
-            />
+            >{n}</Button>
           ) : null,
         )
       )
@@ -77,12 +77,12 @@ export namespace Glyph {
     return (
       <Popover.Root>
         <Popover.Trigger asChild>
-          {asButton ? <Button className={rootClassName} img={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} label={label} />}
+          {asButton ? <Button className={rootClassName} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} label={label} />}
         </Popover.Trigger>
         <Popover.Content align='end'>
           <Stack dir='column' className={s.wrapper} ai='stretch'>
             {SearchInput}
-            <Stack className={s.list}>
+            <Stack className={s.list} ai='stretch' dir='column'>
               {GlyphList}
             </Stack>
           </Stack>

@@ -77,15 +77,15 @@ export function TargetMenu({ file }: TargetMenuProps) {
         </Tooltip>
       </TooltipProvider>
       <ContextMenuSeparator />
-      <ContextMenuItem onClick={() => Info.refetch({ ids: file.id })} img="RefreshClockwise">Refetch</ContextMenuItem>
+      <ContextMenuItem onClick={() => Info.refetch({ ids: file.id })} icon="RefreshClockwise">Refetch</ContextMenuItem>
       <ContextMenuSub>
-        <ContextMenuSubTrigger img="Cpu">Render method</ContextMenuSubTrigger>
+        <ContextMenuSubTrigger icon="Cpu">Render method</ContextMenuSubTrigger>
         <ContextMenuSubContent>
           {enginesBase.map((i) => (
             <ContextMenuItem
               key={i.plugin}
               onClick={() => Info.file_set_settings(file.id, { render_engine: i.plugin })}
-              img={i.img}
+              icon={i.img}
             >
               {i.title}
             </ContextMenuItem>
@@ -94,28 +94,28 @@ export function TargetMenu({ file }: TargetMenuProps) {
       </ContextMenuSub>
       <ContextMenuItem
         onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
-        img="Settings"
+        icon="Settings"
       >
         Settings
       </ContextMenuItem>
       <ContextMenuItem
         className={s.glass}
         onClick={() => spawnBanner(<Enrichment.Banner />)}
-        img="PrismColor"
+        icon="PrismColor"
       >
         Enrich
       </ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)} img='Filter'>
+        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)} icon='Filter'>
           Manage filters
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => removeFilters(file)} img="X">
+        <ContextMenuItem onClick={() => removeFilters(file)} icon="X">
           Reset filters
         </ContextMenuItem>
         {app.timeline.cache.data.has(file.id) && (
-          <ContextMenuItem onClick={() => Info.filters_undo([file])} img="Undo">
+          <ContextMenuItem onClick={() => Info.filters_undo([file])} icon="Undo">
             Undo last filters change
           </ContextMenuItem>
         )}
@@ -125,28 +125,28 @@ export function TargetMenu({ file }: TargetMenuProps) {
         <ContextMenuLabel>Actions</ContextMenuLabel>
         <ContextMenuItem
           onClick={() => Info.setInfoByKey(Refractor.array(...app.target.files.map(f => ({ ...f, selected: f.id === file.id ? false : f.selected }))), 'target', 'files')}
-          img="EyeOff"
+          icon="EyeOff"
         >
           Hide
         </ContextMenuItem>
         <ContextMenuSub>
-          <ContextMenuSubTrigger img="Move">Reorder</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger icon="Move">Reorder</ContextMenuSubTrigger>
           <ContextMenuSubContent>
             <ContextMenuItem
               onClick={() => Info.files_repin(file.id)}
-              img={file.pinned ? 'PinOff' : 'Pin'}
+              icon={file.pinned ? 'PinOff' : 'Pin'}
             >
               {file ? (file.pinned ? 'Unpin' : 'Pin') : '...'}
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => Info.files_reorder_upper(file.id)}
-              img="ArrowBigUp"
+              icon="ArrowBigUp"
             >
               Move upper
             </ContextMenuItem>
             <ContextMenuItem
               onClick={() => Info.files_reorder_lower(file.id)}
-              img="ArrowBigDown"
+              icon="ArrowBigDown"
             >
               Move lower
             </ContextMenuItem>
@@ -155,7 +155,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         <Stack gap={2}>
           <ContextMenuItem
             onClick={() => showEvent()}
-            img="ArrowLeftFromLine"
+            icon="ArrowLeftFromLine"
           >
             Show first event
           </ContextMenuItem>
@@ -163,7 +163,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
             revert
             onClick={() => showEvent(true)}
 
-            img="ArrowRightFromLine"
+            icon="ArrowRightFromLine"
           >
             Show last event
           </ContextMenuItem>
@@ -172,13 +172,13 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner files={[file.id]} />)} img="Sigma" >
+        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner files={[file.id]} />)} icon="Sigma" >
           Upload rule
         </ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuItem
         className={s.delete}
-        img="Trash2"
+        icon="Trash2"
         onClick={() => spawnBanner(<Source.Delete.Banner file={file} />)}
       >
         Delete!

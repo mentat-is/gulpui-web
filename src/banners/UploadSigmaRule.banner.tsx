@@ -44,7 +44,7 @@ export namespace Sigma {
 
       return (
         <Button
-          img="Check"
+          icon="Check"
           onClick={submit}
           variant="glass"
           disabled={!rules}

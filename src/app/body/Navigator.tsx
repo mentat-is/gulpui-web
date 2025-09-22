@@ -16,7 +16,7 @@ import { Input } from '@/ui/Input'
 import { Context } from '@/entities/Context'
 import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
-import { Theme } from '@/context/Theme.context' 
+import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
 
 export namespace Navigator {
@@ -47,14 +47,14 @@ export function Navigator({
   }
 
   function applyThemeToWindow(sourceDoc: Document, targetDoc: Document, theme: string | undefined) {
-  const sourceRoot = sourceDoc.documentElement
-  const targetRoot = targetDoc.documentElement
+    const sourceRoot = sourceDoc.documentElement
+    const targetRoot = targetDoc.documentElement
 
-  // use data-theme
-  targetRoot.setAttribute('data-theme', theme ?? 'dark')
+    // use data-theme
+    targetRoot.setAttribute('data-theme', theme ?? 'dark')
 
-  // copy css style
-  const styles = getComputedStyle(sourceRoot)
+    // copy css style
+    const styles = getComputedStyle(sourceRoot)
     for (let i = 0; i < styles.length; i++) {
       const key = styles[i]
       if (key.startsWith('--')) {
@@ -67,12 +67,9 @@ export function Navigator({
     const { value } = ev.target
     const limits = Context.Entity.frame(app)
     if (!value) {
-      Logger.error(
-        `Expected number, got ${value}`,
-        'Navigator.handleTimestampChangeHandler',
-      )
-      resetTimestamp()
-      return
+      Logger.error(`Expected number, got ${value}`, 'Navigator.handleTimestampChangeHandler');
+      resetTimestamp();
+      return;
     }
 
     const num = parseInt(value)
@@ -254,7 +251,7 @@ export function Navigator({
         title='Zoom in'
         ref={size_minus}
         onClick={() => zoom(false)}
-        img="ZoomIn"
+        icon="ZoomIn"
         size='md'
       />
       <Button
@@ -262,7 +259,7 @@ export function Navigator({
         title='Zoom out'
         ref={size_plus}
         onClick={() => zoom(true)}
-        img="ZoomOut"
+        icon="ZoomOut"
         size='md'
       />
       <Button
@@ -270,13 +267,13 @@ export function Navigator({
         title='Reset scale'
         ref={size_reset}
         onClick={resetScaleAndScroll}
-        img="AlignHorizontalSpaceBetween"
+        icon="AlignHorizontalSpaceBetween"
         size='md'
       />
       <Button
         variant="secondary"
         title='Create highlight'
-        img="ChartBarBig"
+        icon="ChartBarBig"
         onClick={createHighlightButtonClickHandler}
         size='md'
       />
@@ -291,7 +288,7 @@ export function Navigator({
       <Button
         variant="secondary"
         title="Open notes banner in new window"
-        img="PictureInPicture2"
+        icon="PictureInPicture2"
         onClick={openWindow}
         size='md'
       />
@@ -301,7 +298,7 @@ export function Navigator({
             size='md'
             variant="secondary"
             title='Toggle visibility of notes or links'
-            img={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
+            icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
             className={cn(s.notes_visibility)}
           />
         </Popover.Trigger>
@@ -324,7 +321,7 @@ export function Navigator({
       </Popover.Root>
       <Popover.Root>
         <Popover.Trigger asChild>
-          <Button size='md' variant="secondary" img="Crosshair" />
+          <Button size='md' variant="secondary" icon="Crosshair" />
         </Popover.Trigger>
         <Popover.Content className={s.goto}>
           <Stack dir="column" ai="flex-start">
@@ -338,11 +335,11 @@ export function Navigator({
                 onChange={handleTimestampChangeHandler}
               />
               <Button
-                img="Undo2"
+                icon="Undo2"
                 variant="secondary"
                 onClick={resetTimestampToInitialValue}
               />
-              <Button img="Check" variant="glass" onClick={goToTimestamp} />
+              <Button icon="Check" variant="glass" onClick={goToTimestamp} />
             </Stack>
           </Stack>
         </Popover.Content>

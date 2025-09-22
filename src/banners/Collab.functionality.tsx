@@ -101,7 +101,7 @@ export namespace NoteFunctionality {
               className={s.save}
               onClick={send}
               variant={name && text ? 'glass' : 'disabled'}
-              img='Check'
+              icon='Check'
             />
           }
           side={Sidebar}
@@ -237,7 +237,7 @@ export namespace LinkFunctionality {
           <Button
             onClick={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)}
             variant='tertiary'
-            img='GitPullRequestCreateArrow'
+            icon='GitPullRequestCreateArrow'
           />
         ),
         [event],
@@ -250,7 +250,7 @@ export namespace LinkFunctionality {
             onClick={send}
             variant='glass'
             disabled={!name || !icon}
-            img='Check'
+            icon='Check'
           />
         )
       }, [loading, name, send])
@@ -334,7 +334,7 @@ export namespace LinkFunctionality {
         return (
           <Stack dir='column' gap={16}>
             <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--second)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
-            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} img='GitPullRequestArrow'>Create link</Button>
+            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} icon='GitPullRequestArrow'>Create link</Button>
           </Stack>
         )
       }, [spawnBanner])
@@ -347,7 +347,7 @@ export namespace LinkFunctionality {
               variant='secondary'
               style={{ color: link.color }}
               onClick={connect(link)}
-              img={Link.Entity.icon(link)}
+              icon={Link.Entity.icon(link)}
             >
               {link.name}
             </Button>

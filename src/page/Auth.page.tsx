@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Button as UIButton } from '@/ui/Button';
+import { Button, Button as UIButton } from '@/ui/Button';
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner'
@@ -17,6 +17,7 @@ import { User } from '@/entities/User';
 import { Operation } from '@/entities/Operation';
 import { Internal } from '@/entities/addon/Internal';
 import { Shimmer } from '@/ui/Shimmer';
+import { Session } from '@/banners/Session.banner';
 
 export namespace Auth {
   export namespace Page {
@@ -68,14 +69,18 @@ export namespace Auth {
       const user = await Info.login({ id, password });
       setLoading(false);
 
-      setTimeout(() => Info.session_list(user).then(setSessions), 0);
+      reloadSessionsList(user);
     };
+
+    const reloadSessionsList = (user: User.Type | null) => {
+      setTimeout(() => Info.session_list(user).then(setSessions), 0);
+    }
 
     const NextButton = () => {
       if (!app.general.user) {
         return (
           <UIButton
-            img='LogIn'
+            icon='LogIn'
             disabled={!id || !password}
             variant='glass'
             revert
@@ -90,7 +95,7 @@ export namespace Auth {
       if (Operation.Entity.selected(app)) {
         return (
           <UIButton
-            img='Check'
+            icon='Check'
             variant='glass'
             revert
             loading={loading}
@@ -144,7 +149,7 @@ export namespace Auth {
             onClick={customLoginConstructor(method.login.url)}
             loading={customLoading === method.login.url}
             style={{ flex: 1 }}
-            img={icon}
+            icon={icon}
           >
             Login with {capitalize(name)}
           </UIButton>
@@ -238,7 +243,7 @@ export namespace Auth {
                     {operation.name}
                   </Select.Item>
                 ))}
-                <UIButton img='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='tertiary'>
+                <UIButton icon='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='tertiary'>
                   Create new operation
                 </UIButton>
               </Select.Content>
@@ -260,6 +265,7 @@ export namespace Auth {
                     {session.name}
                   </Select.Item>
                 ))}
+                <Button variant='tertiary' style={{ width: '100%' }} onClick={() => spawnBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(null)} />)} icon='Trash2'>Open session managment dialog</Button>
               </Select.Content>
             </Select.Root>
           </Stack>
@@ -315,7 +321,7 @@ export namespace Auth {
       setLoading(false);
     };
 
-    const NextButton = () => <UIButton img='LogIn' disabled={!id || !password} variant='glass' loading={loading} tabIndex={4} onClick={login} />;
+    const NextButton = () => <UIButton icon='LogIn' disabled={!id || !password} variant='glass' loading={loading} tabIndex={4} onClick={login} />;
 
     const [customLoading, setCustomLoading] = useState<string | null>(null)
 
@@ -346,7 +352,7 @@ export namespace Auth {
             onClick={customLoginConstructor(method.login.url)}
             loading={customLoading === method.login.url}
             style={{ flex: 1 }}
-            img={icon}
+            icon={icon}
           >
             Login with {capitalize(name)}
           </UIButton>

@@ -104,7 +104,7 @@ export namespace Enrichment {
       <Button
         disabled={!file || !plugin}
         variant='glass'
-        img='Check'
+        icon='Check'
         onClick={submit}
         loading={loading}
       />

@@ -19,15 +19,15 @@ const contextMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.SubTrigger>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.SubTrigger> & {
     inset?: boolean
-    img?: Icon.Name
+    icon?: Icon.Name
   }
->(({ className, inset, img, children, ...props }, ref) => (
+>(({ className, inset, icon, children, ...props }, ref) => (
   <ContextMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(s.subTrigger, inset && s.subTriggerInset, className)}
     {...props}
   >
-    {img && <Icon name={img} className={s.icon} />}
+    {icon && <Icon name={icon} className={s.icon} />}
     {children}
     <Icon
       name="ChevronRight"
@@ -69,16 +69,16 @@ const contextMenuItem = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Item> & {
     inset?: boolean
-    img?: Icon.Name
+    icon?: Icon.Name
     revert?: boolean
   }
->(({ className, img, children, inset, revert, ...props }, ref) => (
+>(({ className, icon, children, inset, revert, ...props }, ref) => (
   <ContextMenuPrimitive.Item
     ref={ref}
     className={cn(s.item, inset && s.itemInset, className, revert && s.revert)}
     {...props}
   >
-    {img && <Icon name={img} className={s.icon} />}
+    {icon && <Icon name={icon} className={s.icon} />}
     {children}
   </ContextMenuPrimitive.Item>
 ))

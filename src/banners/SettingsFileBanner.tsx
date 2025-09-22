@@ -60,14 +60,14 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   }
 
   const done = (
-    <Button variant="glass" onClick={save} loading={loading} img="Check" />
+    <Button variant="glass" onClick={save} loading={loading} icon="Check" />
   )
 
   const option = (
     <Button
       onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)}
       variant="secondary"
-      img="Filter"
+      icon="Filter"
     />
   )
 

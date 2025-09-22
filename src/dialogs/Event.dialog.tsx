@@ -213,12 +213,12 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{
               text: selection
             } as Note.Type} />)}
-            img='StickyNote'
+            icon='StickyNote'
           >
             Create new note
           </ContextMenuItem>
-          <ContextMenuItem disabled={!selection} img='GitPullRequestCreate'>Create new link</ContextMenuItem>
-          <ContextMenuItem onClick={applySelectionAsFileFilter} img='Filter'>New filter</ContextMenuItem>
+          <ContextMenuItem disabled={!selection} icon='GitPullRequestCreate'>Create new link</ContextMenuItem>
+          <ContextMenuItem onClick={applySelectionAsFileFilter} icon='Filter'>New filter</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
     )
@@ -276,14 +276,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <Button
                 onClick={handleCreateNote}
                 variant="secondary"
-                img="StickyNote"
+                icon="StickyNote"
               >
                 New note
               </Button>
               <Button
                 onClick={handleCreateLink}
                 variant="secondary"
-                img="GitPullRequestCreate"
+                icon="GitPullRequestCreate"
               >
                 Create link
               </Button>
@@ -292,14 +292,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <Button
                 onClick={handleEnrich}
                 variant="glass"
-                img="PrismColor"
+                icon="PrismColor"
               >
                 Enrich
               </Button>
               <Button
                 onClick={handleConnectLink}
                 variant="secondary"
-                img="GitPullRequestCreateArrow"
+                icon="GitPullRequestCreateArrow"
               >
                 Connect link
               </Button>
@@ -308,14 +308,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Collab.List notes={notes} links={links} />
           {highlights}
           <Stack className={s.actionButtons} gap={12}>
-            <Button variant="secondary" onClick={handleCopyJson} img="Copy">Copy JSON</Button>
-            <Button variant="secondary" onClick={handleDownloadJson} img="Download">
+            <Button variant="secondary" onClick={handleCopyJson} icon="Copy">Copy JSON</Button>
+            <Button variant="secondary" onClick={handleDownloadJson} icon="Download">
               Download JSON
             </Button>
             <Button
               onClick={handleFocusTimeline}
               variant="secondary"
-              img="Crosshair"
+              icon="Crosshair"
               style={{ flex: 0 }}
               title="Focus timeline on this event"
             />
