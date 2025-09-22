@@ -139,7 +139,7 @@ export namespace NoteFunctionality {
             value={name}
             icon='TextTitle'
             onChange={(e) => setName(String(e.currentTarget.value))}
-            placeholder='Note.Entity title'
+            placeholder='Note title'
             variant='highlighted'
             className={s.inp_input}
           />

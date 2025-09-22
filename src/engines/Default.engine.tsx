@@ -74,29 +74,33 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       max: this.renderer.ctx.canvas.width + 128
     }
 
-    const visiblePixelRange: MinMax = file.settings.offset > 0 ? canvas : {
-      min: Math.max(
-        this.renderer.getPixelPosition(file.timestamp.min + file.settings.offset),
-        this.renderer.getPixelPosition(lastEvent.timestamp + file.settings.offset),
-        canvas.min,
-      ),
-      max: Math.min(
-        this.renderer.getPixelPosition(file.timestamp.max + file.settings.offset),
-        this.renderer.getPixelPosition(firstEvent.timestamp + file.settings.offset),
-        canvas.max,
-      ),
-    }
+    // нормализованный диапазон пикселей
+    const calcMin = Math.max(
+      this.renderer.getPixelPosition(file.timestamp.min + file.settings.offset),
+      this.renderer.getPixelPosition(lastEvent.timestamp + file.settings.offset),
+      canvas.min,
+    )
+    const calcMax = Math.min(
+      this.renderer.getPixelPosition(file.timestamp.max + file.settings.offset),
+      this.renderer.getPixelPosition(firstEvent.timestamp + file.settings.offset),
+      canvas.max,
+    )
+
+    let start = file.settings.offset > 0 ? canvas.min : Math.min(calcMin, calcMax)
+    let end = file.settings.offset > 0 ? canvas.max : Math.max(calcMin, calcMax)
+
+    // гарантировать хотя бы 1 пиксель для одиночного события
+    if (end - start < 1) end = start + 1
+
+    const visiblePixelRange: MinMax = { min: Math.floor(start), max: Math.ceil(end) }
 
     const getTimestampForPixel = (x: number): number => {
-      const visibleWidth =
-        this.renderer.ctx.canvas.width * this.renderer.info.app.timeline.scale
+      const visibleWidth = this.renderer.ctx.canvas.width * this.renderer.info.app.timeline.scale
       const pixelOffset = x + this.renderer.scrollX
-
       return (
         this.renderer.info.app.timeline.frame.min +
         (pixelOffset / visibleWidth) *
-        (this.renderer.info.app.timeline.frame.max -
-          this.renderer.info.app.timeline.frame.min)
+        (this.renderer.info.app.timeline.frame.max - this.renderer.info.app.timeline.frame.min)
       )
     }
 
@@ -111,31 +115,27 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
         const currentTimestamp = events[mid].timestamp + file.settings.offset
         const diff = Math.abs(currentTimestamp - targetTimestamp)
 
-        if (
-          diff < closestDiff ||
-          (diff === closestDiff && mid < closestIndex)
-        ) {
+        if (diff < closestDiff || (diff === closestDiff && mid < closestIndex)) {
           closestDiff = diff
           closestIndex = mid
         }
 
-        if (currentTimestamp > targetTimestamp) {
+        // если события отсортированы по возрастанию времени
+        if (currentTimestamp < targetTimestamp) {
           low = mid + 1
-        } else if (currentTimestamp < targetTimestamp) {
+        } else if (currentTimestamp > targetTimestamp) {
           high = mid - 1
         } else {
           return mid
         }
       }
 
+      // локальная проверка соседей с учётом offset
       for (let offset = -1; offset <= 1; offset++) {
         const idx = closestIndex + offset
         if (idx >= 0 && idx < events.length) {
-          const diff = Math.abs(events[idx].timestamp - targetTimestamp)
-          if (
-            diff < closestDiff ||
-            (diff === closestDiff && idx < closestIndex)
-          ) {
+          const diff = Math.abs((events[idx].timestamp + file.settings.offset) - targetTimestamp)
+          if (diff < closestDiff || (diff === closestDiff && idx < closestIndex)) {
             closestDiff = diff
             closestIndex = idx
           }
@@ -145,10 +145,9 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       return closestIndex
     }
 
-    for (let x = visiblePixelRange.min; x < visiblePixelRange.max; x++) {
+    for (let x = visiblePixelRange.min; x <= visiblePixelRange.max; x++) {
       const targetTimestamp = getTimestampForPixel(x)
       const closestIndex = findClosestEventIndex(targetTimestamp)
-
       const event = events[closestIndex]
       map.set(x, [
         Refractor.any.toNumber(event[file.settings.field]),
