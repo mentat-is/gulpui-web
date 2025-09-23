@@ -26,7 +26,7 @@
   height: 100%;
 }
 .operation_description {
-  max-width: 256px;
+  max-width: 500px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

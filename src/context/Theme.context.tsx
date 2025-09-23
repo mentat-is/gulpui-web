@@ -24,7 +24,7 @@ export function ThemeProviders({ children }: any) {
 
 export namespace Theme {
   export function Switcher({ ...props }: Theme.Switcher.Props) {
-    const { theme, setTheme, ...p } = useTheme();
+    const { theme, setTheme } = useTheme();
 
     const themeSwitchHandler = useCallback((isDark: boolean) => {
       const theme = isDark ? 'light' : 'dark';
