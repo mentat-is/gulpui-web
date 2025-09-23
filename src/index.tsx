@@ -21,12 +21,6 @@ import { ThemeProviders } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
 
-class NoRootDefinitionInHTMLDocument extends Error {
-  constructor() {
-    super('There is to element with `root` id in index.html document')
-  }
-}
-
 const root = document.getElementById('root')
 
 ReactDOM.createRoot(root!).render(Root())

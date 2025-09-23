@@ -7,7 +7,6 @@ import { SetState } from './API'
 import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
 import { Pointers } from '@/components/Pointers'
-import { XY } from '@/dto/XY.dto'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 import { RenderEngine } from './RenderEngine'
@@ -181,7 +180,6 @@ export class Info implements InfoProps {
   scrollY: number;
   setScrollX: SetState<number>
   setScrollY: SetState<number>
-
 
   constructor({ app, setInfo, timeline, setScrollX, setScrollY, scrollX, scrollY }: InfoProps) {
     this.app = app
@@ -1389,8 +1387,6 @@ export class Info implements InfoProps {
       filters: this.app.target.filters,
     })
 
-    console.log(sessions[sessions.length - 1]);
-
     if (!this.app.general.user) {
       Logger.warn('Tried to create session before user has been defined');
       return;
@@ -1452,14 +1448,15 @@ export class Info implements InfoProps {
   }
 
   session_load = async (session: Internal.Session.Data) => {
-    console.log(session);
-    this.setScrollX(session.timeline.scroll.x);
-    this.setScrollY(session.timeline.scroll.y);
 
-    this.setInfoByKey(session.timeline.scale, 'timeline', 'scale');
     this.setInfoByKey(session.timeline.target, 'timeline', 'target');
     this.setInfoByKey(session.timeline.frame, 'timeline', 'frame');
     this.setInfoByKey(session.timeline.filter, 'timeline', 'filter');
+    setTimeout(() => {
+      this.setScrollX(session.timeline.scroll.x);
+      this.setScrollY(session.timeline.scroll.y);
+      this.setInfoByKey(session.timeline.scale, 'timeline', 'scale');
+    }, 100);
     this.setInfoByKey(Operation.Entity.select(this.app, session.selected.operations), 'target', 'operations');
     this.setInfoByKey(Context.Entity.select(this.app, session.selected.contexts), 'target', 'contexts');
     this.setInfoByKey(Source.Entity.select(this.app, session.selected.files), 'target', 'files');

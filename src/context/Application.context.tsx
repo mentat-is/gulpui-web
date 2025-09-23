@@ -56,8 +56,8 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />)
   const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const [highlightsOverlay, setHighlightsOverlay] = useState<React.ReactNode>(null);
-  const [scrollX, setScrollX] = useState<number>(0)
-  const [scrollY, setScrollY] = useState<number>(-26)
+  const [scrollX, setScrollX] = useState<number>(0);
+  const [scrollY, setScrollY] = useState<number>(-26);
 
   const instance = new Info({ app, setInfo, timeline, scrollX, scrollY, setScrollX, setScrollY });
 

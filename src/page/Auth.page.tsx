@@ -18,6 +18,7 @@ import { Operation } from '@/entities/Operation';
 import { Internal } from '@/entities/addon/Internal';
 import { Shimmer } from '@/ui/Shimmer';
 import { Session } from '@/banners/Session.banner';
+import { DisplayEventDialog } from '@/dialogs/Event.dialog';
 
 export namespace Auth {
   export namespace Page {
@@ -25,7 +26,7 @@ export namespace Auth {
   }
 
   export function Page(_: Auth.Page.Props) {
-    const { spawnBanner, Info, app } = useApplication()
+    const { spawnBanner, Info, app, spawnDialog } = useApplication()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('admin')
@@ -46,7 +47,7 @@ export namespace Auth {
 
     const openAuthBanner = (banner: JSX.Element) => {
       if (currentBannerRef.current) {
-        spawnBanner(null); 
+        spawnBanner(null);
       }
       currentBannerRef.current = banner;
       spawnBanner(banner);
@@ -204,6 +205,18 @@ export namespace Auth {
       }
     };
 
+    const load_session = (name: string) => {
+      const session = sessions.find(session => session.name === name);
+      if (!session) {
+        return;
+      }
+
+      Info.session_load(session);
+      if (session.timeline.target) {
+        spawnDialog(<DisplayEventDialog event={session.timeline.target} />)
+      }
+    }
+
     return (
       <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
         <Shimmer duration={2} className={s.title} as='p' color='var(--gray-800)'>[ Login ]</Shimmer>
@@ -270,13 +283,13 @@ export namespace Auth {
         <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id) && s.visible)}>
           <Label value='Session' />
           <Stack style={{ width: '100%' }}>
-            <Select.Root 
+            <Select.Root
               open={openSelectAuth === "session"}
-              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? "session" : null)} 
-              onValueChange={name => Info.session_load(sessions.find(session => session.name === name)!)}
-              >
+              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? "session" : null)}
+              onValueChange={name => load_session(name)}
+            >
               <Select.Trigger tabIndex={5}>
-              <Select.Icon name='Status' />
+                <Select.Icon name='Status' />
                 Select session
               </Select.Trigger>
               <Select.Content>

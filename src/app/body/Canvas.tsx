@@ -40,21 +40,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const [target, setTarget] = useState<Source.Type | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, [
-      app.target.files,
-      app.target.events.size,
-      scrollX,
-      scrollY,
-      app.timeline.frame,
-      app.timeline.frame,
-      app.timeline.scale,
-      app.target.links,
-      dialog,
-      app.timeline.target,
-      app.timeline.filter,
-      app.timeline.dialogSize,
-      app.hidden,
-      target
-    ]);
+      app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.filter, app.timeline.dialogSize, app.hidden, target]);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
 
   useEffect(() => {
