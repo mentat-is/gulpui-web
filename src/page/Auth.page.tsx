@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, JSX } from 'react'
 import { Button as UIButton } from '@/ui/Button';
 import { useApplication } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
@@ -32,7 +32,8 @@ export namespace Auth {
     const [loading, setLoading] = useState<boolean>(false)
     const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
-    const [isOperetionSelectOpen, setIsOperetionSelectOpen] = useState(false);
+    const [openSelectAuth, setOpenSelectAuth] = useState<"operation" | "session" | null>(null);
+    const currentBannerRef = useRef<JSX.Element | null>(null);
 
     useEffect(() => {
       if (methods.length === 0) {
@@ -43,7 +44,14 @@ export namespace Auth {
       }
     }, [methods, server])
 
-    const createNewOperationButtonHandler = () => { spawnBanner(<Operation.CreateOrUpdate.Banner />), setIsOperetionSelectOpen(false) }
+    const openAuthBanner = (banner: JSX.Element) => {
+      if (currentBannerRef.current) {
+        spawnBanner(null); 
+      }
+      currentBannerRef.current = banner;
+      spawnBanner(banner);
+      setOpenSelectAuth(null);
+    };
 
     const login = async () => {
       const removeOverload = (str: string): string =>
@@ -235,8 +243,8 @@ export namespace Auth {
           <Label value='Operation' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
-              open={isOperetionSelectOpen}
-              onOpenChange={setIsOperetionSelectOpen}
+              open={openSelectAuth === 'operation'}
+              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? "operation" : null)}
               defaultValue={Operation.Entity.selected(Info.app)?.id}
               onValueChange={(id) => Info.operations_select(id as Operation.Id)}
             >
@@ -249,10 +257,10 @@ export namespace Auth {
                       {operation.name}
                       <span className={s.operation_description}>{operation.description}</span>
                     </Select.Item>
-                    <UIButton icon='PencilEdit' style={{ color: 'var(--second) !important' }} variant='tertiary' onClickCapture={(event) => spawnBanner(<Operation.CreateOrUpdate.Banner operation={operation} />)} />
+                    <UIButton icon='PencilEdit' style={{ color: 'var(--second) !important' }} variant='tertiary' onClickCapture={() => openAuthBanner(<Operation.CreateOrUpdate.Banner operation={operation} />)} />
                   </Stack>
                 ))}
-                <UIButton icon='BookPlus' style={{ width: '100%' }} onClick={createNewOperationButtonHandler} variant='tertiary'>
+                <UIButton icon='BookPlus' style={{ width: '100%' }} onClick={() => openAuthBanner(<Operation.CreateOrUpdate.Banner />)} variant='tertiary'>
                   Create new operation
                 </UIButton>
               </Select.Content>
@@ -262,9 +270,13 @@ export namespace Auth {
         <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).length && s.visible)}>
           <Label value='Session' />
           <Stack style={{ width: '100%' }}>
-            <Select.Root onValueChange={name => Info.session_load(sessions.find(session => session.name === name)!)}>
+            <Select.Root 
+              open={openSelectAuth === "session"}
+              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? "session" : null)} 
+              onValueChange={name => Info.session_load(sessions.find(session => session.name === name)!)}
+              >
               <Select.Trigger tabIndex={5}>
-                <Select.Icon name='Status' />
+              <Select.Icon name='Status' />
                 Select session
               </Select.Trigger>
               <Select.Content>
@@ -274,7 +286,7 @@ export namespace Auth {
                     {session.name}
                   </Select.Item>
                 ))}
-                <UIButton variant='tertiary' style={{ width: '100%' }} onClick={() => spawnBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(null)} />)} icon='Trash2'>Open session managment dialog</UIButton>
+                <UIButton variant='tertiary' style={{ width: '100%' }} onClick={() => openAuthBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(null)} />)} icon='Trash2'>Open session managment dialog</UIButton>
               </Select.Content>
             </Select.Root>
           </Stack>
