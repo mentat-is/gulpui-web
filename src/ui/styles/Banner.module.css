@@ -9,7 +9,7 @@
   justify-content: center;
   height: 100vh;
   overflow: hidden;
-  background: #000000d8;
+  background: var(--background-100);
 }
 
 @keyframes InitialAnimation {
