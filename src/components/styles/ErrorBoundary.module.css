@@ -1,16 +1,12 @@
 .wrapper {
   width: 100%;
   height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .block {
-  position: relative;
   width: 55%;
-  min-width: 900px;
-  height: 75%;
+  max-width: 900px;
+  height: 70%;
   background-color: #0A0A0A;
   border-radius: 1rem;
   border: 1px solid #2e2e2e;
@@ -19,39 +15,22 @@
 .panel {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
-  gap: 1rem;
 }
 
-.header, .action, .stack {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
+.header {
+  width: 100%;  
+  border-radius: 1rem;
+  background-color: #0A0A0A;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   padding: 1rem 1.3rem;
-  z-index: 1;
 }
 
 .action {
+  width: 100%;  
   padding: 0 1rem;
 }
 
-.action_block, .pagination, .gulp, .meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  gap: 6px;
-}
-
 .iconWrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   border-radius: 1rem;
   border: 1px solid #2e2e2e;
   padding: 5px;
@@ -62,11 +41,6 @@
   background-color: #1A1A1A;
 }
 
-.pagination, .gulp {
-  color: var(--text-dimmed);
-  font-family: var(--font-mono);
-}
-
 .pagination > div {
   width: 24px;
 }
@@ -74,52 +48,36 @@
 .message {
   width: 100%;
   padding: 0 1rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
   white-space: pre-wrap;
-  gap: 1rem;
 }
 
-.message span{
+.stack, .stackContainer, .footer {
+  width: 100%;
+}
+
+.footer {
+  padding: 1rem 0;
+}
+
+.stack > span {
+  font-size: 16px;
+}
+
+.message > span{
   color: var(--red-900);
   font-size: 16px;
 }
 
-.stackContainer {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 200px;
-  background-color: black;
-  border: 1px solid #2e2e2e;
-  border-radius: 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  white-space: pre-wrap;
-}
-
-.stack {
-  border-bottom: 1px solid #2e2e2e;
-  padding: 1rem;
-}
-
-.stack span{
-  color: var(--red-900);
-}
-
- .meta span {
-  color: var(--red-900);
- }
-
-.stackContainer p {
-  line-height: 1.5;
-  padding: 1rem;
-  color: var(--red-900);
-  font-family: var(--font-mono);
-}
-
 .message > p {
   color: var(--red-900); 
+}
+
+.stackText {
+  width: 100%;
+  height: 250px;
+  padding: 8px;
+  overflow: hidden;
+  overflow-y: auto;
+  border: 1px solid #2e2e2e;
+  border-radius: 6px;
 }

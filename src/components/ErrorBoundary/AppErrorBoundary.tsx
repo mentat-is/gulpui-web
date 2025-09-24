@@ -5,13 +5,13 @@ import { RightCap } from "./svgs/RightCap";
 import { MiddleLine } from "./svgs/MiddleLine";
 
 import s from '../styles/ErrorBoundary.module.css'
+import { Stack } from "@/ui/Stack";
 
 type Props = { children: React.ReactNode };
 type ErrorWithDescription = { 
   name?: string;
   message: string; 
   stack?: string;
-  timestamp: string;
 };
 type State = { errors: ErrorWithDescription[]; componentStack: string | any };
 
@@ -24,7 +24,7 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error) {
-    return { errors: [{ name: error.name, message: error.message, stack: error.stack, timestamp: new Date().toISOString() }] };
+    return { errors: [{ name: error.name, message: error.message, stack: error.stack }] };
   }
 
 
@@ -50,14 +50,14 @@ export class AppErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.errors.length > 0) {
       return (
-        <div className={s.wrapper}>
-          <div className={s.block}>
+        <Stack ai='center' jc='center' className={s.wrapper}>
+          <Stack pos='relative' className={s.block}>
             <LeftCap />
             <MiddleLine/>
             <RightCap/>
             <ErrorPanel errors={this.state.errors} />
-          </div>
-        </div>
+          </Stack>
+        </Stack>
       );
     }
     return this.props.children;
