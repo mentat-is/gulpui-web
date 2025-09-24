@@ -207,13 +207,7 @@ export namespace Select {
     }
 
     return (
-      <div
-        className={cn(s.item, isSelected && s.selected, className)}
-        onClick={handleClick}
-        role="option"
-        aria-selected={isSelected}
-        style={{ cursor: 'pointer' }}
-      >
+      <div className={cn(s.item, isSelected && s.selected, className)} onClick={handleClick} role="option" aria-selected={isSelected} {...props}>
         <Checkbox checked={isSelected} />
         <span className={s.itemText}>{children}</span>
       </div>

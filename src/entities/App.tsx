@@ -60,6 +60,7 @@ export namespace App {
     hidden: {
       notes: boolean;
       links: boolean;
+      filesWithNoEvents: boolean;
     }
   }
 
@@ -107,7 +108,8 @@ export namespace App {
     settings: {},
     hidden: {
       notes: false,
-      links: false
+      links: false,
+      filesWithNoEvents: false
     }
   }
 }
