@@ -135,7 +135,7 @@ export namespace Context {
       const DeleteButton = () => (
         <Button
           loading={loading}
-          img='Trash2'
+          icon='Trash2'
           variant='glass'
           onClick={deleteContext}
           disabled={!isSubmited}

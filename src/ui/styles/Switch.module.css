@@ -7,6 +7,7 @@
   padding: 2px;
   box-shadow: var(--shadow-border);
   flex-shrink: 0;
+  position: relative;
   transition-property: all 0.125s var(--transition);
   background: var(--background-100);
   align-items: center;
@@ -34,7 +35,7 @@
   height: 20px;
   width: 20px;
   border-radius: var(--round);
-  background: var(--white);
+  background: var(--accent);
   transition: all 0.125s var(--transition);
 }
 
@@ -44,4 +45,14 @@
 
 .thumb[data-state="unchecked"] {
   transform: translateX(0);
+}
+.icon {
+  position: absolute;
+  z-index: 0;
+}
+.icon.left {
+  left: 6px;
+}
+.icon.right {
+  right: 6px;
 }

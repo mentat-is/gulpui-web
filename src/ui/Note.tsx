@@ -44,7 +44,7 @@ export namespace NotePoint {
     return (
       <Stack
         className={cn(s.combination, note.tags.includes('auto') && s.hidden, className)}
-        style={{ ...style, color: note.color, background: stringToHexColor(note.context_id) + '80' }}
+        style={{ ...style, background: stringToHexColor(note.context_id) + '80' }}
         {...props}
       >
         <p>{formatTimestampToReadableString(note.doc['@timestamp'])}</p>
@@ -57,7 +57,7 @@ export namespace NotePoint {
         </Stack>
 
         <Button
-          img="MagnifyingGlassSmall"
+          icon="MagnifyingGlassSmall"
           onClick={() => targetNoteButtonHandler(note)}
           variant='tertiary'
         />

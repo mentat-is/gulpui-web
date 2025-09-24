@@ -18,12 +18,9 @@ import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
 import { AppErrorBoundary } from './components/ErrorBoundary/AppErrorBoundary'
-
-class NoRootDefinitionInHTMLDocument extends Error {
-  constructor() {
-    super('There is to element with `root` id in index.html document')
-  }
-}
+import { ThemeProviders } from './context/Theme.context'
+import { Color } from './entities/Color'
+import { useTheme } from 'next-themes'
 
 const root = document.getElementById('root')
 
@@ -59,6 +56,7 @@ function Root() {
 
   return (
     <>
+    <ThemeProviders>
       <Toaster />
       <AppErrorBoundary>
         <ApplicationProvider>
@@ -67,36 +65,38 @@ function Root() {
           </ExtensionProvider>
         </ApplicationProvider>
       </AppErrorBoundary>
+    </ThemeProviders>
     </>
   )
 }
 
 function Main() {
+  const { theme } = useTheme();
   const { Info, app, dialog } = useApplication();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
-    // custom errors
+  //   // custom errors
 
-  function Component() {
-    const obj: any = null;
-    return <div>{obj.prop}</div>;
-  }
+  // function Component() {
+  //   const obj: any = null;
+  //   return <div>{obj.prop}</div>;
+  // }
 
-  useEffect(() => {
-    setTimeout(() => {
-      throw new Error("This is a long error message for testing layout.")
-    }, 0);
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     throw new Error("This is a long error message for testing layout.")
+  //   }, 0);
 
-    setTimeout(() => {
-      throw new Error("Detailed explanation of what went wrong, including stack traces and suggestions.")
-    }, 0);
+  //   setTimeout(() => {
+  //     throw new Error("Detailed explanation of what went wrong, including stack traces and suggestions.")
+  //   }, 0);
 
-    setTimeout(() => {
-      throw new Error("Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:")
-    }, 0);
+  //   setTimeout(() => {
+  //     throw new Error("Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:")
+  //   }, 0);
 
-    Component();
-  }, []);
+  //   Component();
+  // }, []);
 
   useEffect(() => {
     if (isPreloaded)
@@ -106,6 +106,10 @@ function Main() {
       setIsPreloaded(true);
     }, 2500);
   }, [isPreloaded]);
+
+  useEffect(() => {
+    Color.Themer.setTheme(theme ?? 'dark');
+  }, []);
 
   if (!isPreloaded) {
     return <Preloader />

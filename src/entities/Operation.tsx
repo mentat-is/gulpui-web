@@ -19,6 +19,8 @@ import { Skeleton } from '@/ui/Skeleton'
 import { Stack } from '@/ui/Stack'
 import { useState, useEffect } from 'react'
 import { Label } from '@/ui/Label'
+import { toast } from 'sonner'
+import { Icon } from '@impactium/icons'
 
 export namespace Operation {
   export const name = 'Operation'
@@ -28,16 +30,17 @@ export namespace Operation {
   }
 
   export interface Type extends Selectable {
-    glyph_id: Glyph.Id
-    granted_user_group_ids: User.Id[]
-    granted_user_ids: string[]
-    id: Id
-    index: string
-    name: string
-    owner_user_id: User.Id
-    time_created: number
-    time_updated: number
-    type: 'operation'
+    glyph_id: Glyph.Id;
+    granted_user_group_ids: User.Id[];
+    granted_user_ids: string[];
+    id: Id;
+    index: string;
+    name: string;
+    description: string;
+    owner_user_id: User.Id;
+    time_created: number;
+    time_updated: number;
+    type: 'operation';
   }
 
   export class Entity {
@@ -90,12 +93,12 @@ export namespace Operation {
           variant='tertiary'
           onClick={() =>
             spawnBanner(
-              <Operation.Create.Banner
+              <Operation.CreateOrUpdate.Banner
                 back={() => spawnBanner(<Operation.Select.Banner />)}
               />,
             )
           }
-          img='BookPlus'
+          icon='BookPlus'
         />
       )
 
@@ -111,7 +114,7 @@ export namespace Operation {
           }
           size='icon'
           variant='glass'
-          img='Check'
+          icon='Check'
         />
       )
 
@@ -172,53 +175,76 @@ export namespace Operation {
     }
   }
 
-  export namespace Create {
+  export namespace CreateOrUpdate {
     export namespace Banner {
-      export interface Props extends UIBanner.Props { }
+      export interface Props extends UIBanner.Props {
+        operation?: Operation.Type;
+      }
     }
 
-    export function Banner({ ...props }: Operation.Create.Banner.Props) {
-      const { Info, spawnBanner } = useApplication()
-      const [name, setName] = useState<string>('')
-      const [icon, setIcon] = useState<Glyph.Id | null>(Glyph.getIdByName(Default.Icon.OPERATION));
-      const [description, setDescription] = useState<string>('')
-      const [loading, setLoading] = useState<boolean>(false)
+    export function Banner({ operation = {} as Operation.Type, ...props }: Operation.CreateOrUpdate.Banner.Props) {
+      const { Info, spawnBanner } = useApplication();
+      const [name, setName] = useState<string>(operation.name ?? '');
+      const [icon, setIcon] = useState<Glyph.Id | null>(operation.glyph_id ?? Glyph.getIdByName(Default.Icon.OPERATION));
+      const [description, setDescription] = useState<string>(operation.description ?? '');
+      const [loading, setLoading] = useState<boolean>(false);
 
       const createOperation = () => {
-        api<any>(
-          '/operation_create',
-          {
-            method: 'POST',
-            setLoading,
-            query: { name },
-            body: { description },
-          },
-          Info.sync,
-        ).then(() => {
+        api<Operation.Type>('/operation_create', {
+          method: 'POST',
+          setLoading,
+          query: { name },
+          body: { description },
+        }, operation => updateOperation(operation.id).then(Info.sync)).then(() => {
           spawnBanner(<Operation.Select.Banner />)
-        })
+        });
       }
 
-      const DoneButton = () => (
-        <Button
-          variant='glass'
-          disabled={!name || !description}
-          loading={loading}
-          img='Check'
-          onClick={createOperation}
-        />
-      )
+      const updateOperation = (id?: Operation.Id) => api<any>('/operation_update', {
+        method: 'PATCH',
+        setLoading,
+        query: {
+          operation_id: id ?? operation.id,
+          glyph_id: icon,
+        },
+        body: { description, glyph_id: icon },
+      }, Info.sync)
+        .then(() => {
+          Logger.log(`Operation ${operation.name} has been successfully updated`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
+            icon: <Icon name='Check' />,
+            richColors: true
+          })
+          spawnBanner(<Operation.Select.Banner />)
+        });
+
+      const DoneButton = () => {
+        const doneButtonClickHandler = () => {
+          if (operation.id) {
+            updateOperation();
+          } else {
+            createOperation();
+          }
+        };
+        return (
+          <Button
+            variant='glass'
+            disabled={!name || !description}
+            loading={loading}
+            icon='Check'
+            onClick={doneButtonClickHandler} />
+        )
+      }
 
       return (
-        <UIBanner title='Create new operation' done={<DoneButton />} className={s.wrapper} {...props}>
-          <Input
+        <UIBanner title={operation.id ? 'Update operation' : 'Create new operation'} done={<DoneButton />} className={s.wrapper} {...props}>
+          {operation.id ? null : <Input
             label='Name'
             value={name}
             variant='highlighted'
             icon='TextTitle'
             onChange={(e) => setName(e.currentTarget.value)}
             placeholder='Name of operation'
-          />
+          />}
           <Input
             label='Description'
             value={description}

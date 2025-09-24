@@ -14,7 +14,7 @@
 }
 .context p {
   flex: 1;
-  color: var(--text-dimmed);
+  color: var(--second);
   font-weight: 300;
   font-size: 14px;
   transition: all 0.3s var(--transition);
@@ -23,7 +23,7 @@
   text-align: right;
 }
 .context p.available {
-  color: var(--text-white);
+  color: var(--accent);
   font-weight: 500;
 }
 .done {
@@ -67,10 +67,10 @@
   cursor: pointer;
 }
 .fill div {
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 .fill p {
-  color: var(--text-dimmed);
+  color: var(--second);
   font-family: var(--font-mono);
   font-size: 12px;
 }
@@ -92,7 +92,7 @@
 .filePreview *:not(path) {
   font-size: 11px;
   font-family: var(--font-mono);
-  color: var(--text-white);
+  color: var(--accent);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -120,7 +120,7 @@
   max-width: 64px;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text-dimmed);
+  color: var(--second);
   margin-left: 8px;
 }
 .filename {

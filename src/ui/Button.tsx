@@ -36,7 +36,7 @@ const buttonVariants = cva(s.button, {
 export namespace Button {
   export interface Props extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'disabled'>, VariantProps<typeof buttonVariants> {
     asChild?: boolean;
-    img?: Icon.Name;
+    icon?: Icon.Name;
     revert?: boolean;
     loading?: boolean;
     placeholder?: string;
@@ -49,13 +49,13 @@ export namespace Button {
 }
 
 const Button = React.forwardRef<HTMLButtonElement, Button.Props>(
-  ({ className, variant, rounded, size, img, revert, disabled, loading, asChild = false, placeholder, ...props }, ref) => {
+  ({ className, variant, rounded, size, icon, revert, disabled, loading, asChild = false, placeholder, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
-    const paddingClass = img ? (props.children ? (revert ? s.revert : s.withImage) : s.onlyImage) : null;
+    const paddingClass = icon ? (props.children ? (revert ? s.revert : s.withImage) : s.onlyImage) : null;
 
     const children = !asChild && props.children;
 
-    if (!size && img && !children) {
+    if (!size && icon && !children) {
       size = 'icon'
     }
 
@@ -75,7 +75,7 @@ const Button = React.forwardRef<HTMLButtonElement, Button.Props>(
             </>
           )
           : <>
-            {img && <Icon name={img} size={iconSize} />}
+            {icon && <Icon name={icon} size={iconSize} />}
             {children}
           </>
         )}

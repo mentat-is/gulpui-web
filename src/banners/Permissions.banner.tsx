@@ -103,7 +103,7 @@ export namespace Permissions {
       [users],
     )
 
-    const done = <Button img="Check" variant="glass" onClick={destroyBanner} />
+    const done = <Button icon="Check" variant="glass" onClick={destroyBanner} />
 
     return (
       <UIBanner
@@ -113,7 +113,7 @@ export namespace Permissions {
         done={done}
       >
         <UsersList />
-        <Button style={{ width: '100%' }} variant="glass" img="Users">
+        <Button style={{ width: '100%' }} variant="glass" icon="Users">
           Manage groups
         </Button>
       </UIBanner>
@@ -183,7 +183,7 @@ export namespace Permissions {
           <Stack flex />
           <Popover.Root>
             <Popover.Trigger>
-              <Button img="Gavel" variant="secondary">
+              <Button icon="Gavel" variant="secondary">
                 Roles /{' '}
                 {user.permission
                   .map((p) => p[0])
@@ -211,7 +211,7 @@ export namespace Permissions {
           </Popover.Root>
           <Popover.Root>
             <Popover.Trigger>
-              <Button img="Users" variant="secondary">
+              <Button icon="Users" variant="secondary">
                 Groups
               </Button>
             </Popover.Trigger>
@@ -234,7 +234,7 @@ export namespace Permissions {
             </Popover.Content>
           </Popover.Root>
           <Button
-            img="PenLine"
+            icon="PenLine"
             onClick={() =>
               spawnBanner(<Permissions.Users.Edit.Banner user={user} />)
             }
@@ -252,7 +252,7 @@ export namespace Permissions {
 
         return (
           <Button
-            img="UserPlus"
+            icon="UserPlus"
             variant='tertiary'
             onClick={() => spawnBanner(<Users.Create.Banner />)}
             {...props}
@@ -317,7 +317,7 @@ export namespace Permissions {
 
         const Done = () => (
           <Button
-            img="Check"
+            icon="Check"
             loading={loading}
             onClick={submit}
             disabled={
@@ -458,7 +458,7 @@ export namespace Permissions {
 
         const Done = () => (
           <Button
-            img="Check"
+            icon="Check"
             loading={loading}
             onClick={submit}
             disabled={

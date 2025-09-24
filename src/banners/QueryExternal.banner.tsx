@@ -182,7 +182,7 @@ export namespace QueryExternal {
 
     const done = (
       <Button
-        img="Check"
+        icon="Check"
         loading={loading === 1}
         onClick={() => handleQuery()}
         variant="glass"
@@ -191,7 +191,7 @@ export namespace QueryExternal {
 
     const optionButton = (
       <Button
-        img='PreviewEye'
+        icon='PreviewEye'
         variant='tertiary'
         loading={loading === 2}
         onClick={() => handleQuery(true)}

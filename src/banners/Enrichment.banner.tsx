@@ -97,14 +97,14 @@ export namespace Enrichment {
 
     const disabledStyle: CSSProperties = {
       pointerEvents: 'none',
-      color: 'var(--text-dimmed)',
+      color: 'var(--second)',
     }
 
     const done = (
       <Button
         disabled={!file || !plugin}
         variant='glass'
-        img='Check'
+        icon='Check'
         onClick={submit}
         loading={loading}
       />

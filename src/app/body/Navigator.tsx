@@ -16,6 +16,8 @@ import { Input } from '@/ui/Input'
 import { Context } from '@/entities/Context'
 import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
+import { Theme } from '@/context/Theme.context'
+import { useTheme } from 'next-themes'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -33,6 +35,7 @@ export function Navigator({
   const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = useApplication()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
+  const { theme } = useTheme()
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -43,16 +46,30 @@ export function Navigator({
     setTimestamp(0)
   }
 
+  function applyThemeToWindow(sourceDoc: Document, targetDoc: Document, theme: string | undefined) {
+    const sourceRoot = sourceDoc.documentElement
+    const targetRoot = targetDoc.documentElement
+
+    // use data-theme
+    targetRoot.setAttribute('data-theme', theme ?? 'dark')
+
+    // copy css style
+    const styles = getComputedStyle(sourceRoot)
+    for (let i = 0; i < styles.length; i++) {
+      const key = styles[i]
+      if (key.startsWith('--')) {
+        targetRoot.style.setProperty(key, styles.getPropertyValue(key))
+      }
+    }
+  }
+
   const handleTimestampChangeHandler = (ev: ChangeEvent<HTMLInputElement>) => {
     const { value } = ev.target
     const limits = Context.Entity.frame(app)
     if (!value) {
-      Logger.error(
-        `Expected number, got ${value}`,
-        'Navigator.handleTimestampChangeHandler',
-      )
-      resetTimestamp()
-      return
+      Logger.error(`Expected number, got ${value}`, 'Navigator.handleTimestampChangeHandler');
+      resetTimestamp();
+      return;
     }
 
     const num = parseInt(value)
@@ -102,18 +119,25 @@ export function Navigator({
     newWindow.document.body.appendChild(container)
     containerRef.current = container
 
+    applyThemeToWindow(document, newWindow.document, theme)
+
+    // copy style from css
     Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
-      if (styleSheet.href) {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = styleSheet.href
-        newWindow.document.head.appendChild(link)
-      } else if (styleSheet.cssRules) {
-        const style = document.createElement('style')
-        Array.from(styleSheet.cssRules).forEach((rule) => {
-          style.appendChild(document.createTextNode(rule.cssText))
-        })
-        newWindow.document.head.appendChild(style)
+      try {
+        if (styleSheet.href) {
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = styleSheet.href
+          newWindow.document.head.appendChild(link)
+        } else if (styleSheet.cssRules) {
+          const style = document.createElement('style')
+          Array.from(styleSheet.cssRules).forEach((rule) => {
+            style.appendChild(document.createTextNode(rule.cssText))
+          })
+          newWindow.document.head.appendChild(style)
+        }
+      } catch (err) {
+        console.warn('error copyng style', err)
       }
     })
 
@@ -133,6 +157,12 @@ export function Navigator({
       }
     }
   }, [windowRef])
+
+  // sync thems for window
+  useEffect(() => {
+    if (!windowRef) return
+    applyThemeToWindow(document, windowRef.document, theme)
+  }, [theme, windowRef])
 
   const closeWindow = () => {
     if (windowRef) {
@@ -221,7 +251,7 @@ export function Navigator({
         title='Zoom in'
         ref={size_minus}
         onClick={() => zoom(false)}
-        img="ZoomIn"
+        icon="ZoomIn"
         size='md'
       />
       <Button
@@ -229,7 +259,7 @@ export function Navigator({
         title='Zoom out'
         ref={size_plus}
         onClick={() => zoom(true)}
-        img="ZoomOut"
+        icon="ZoomOut"
         size='md'
       />
       <Button
@@ -237,13 +267,13 @@ export function Navigator({
         title='Reset scale'
         ref={size_reset}
         onClick={resetScaleAndScroll}
-        img="AlignHorizontalSpaceBetween"
+        icon="AlignHorizontalSpaceBetween"
         size='md'
       />
       <Button
         variant="secondary"
         title='Create highlight'
-        img="ChartBarBig"
+        icon="ChartBarBig"
         onClick={createHighlightButtonClickHandler}
         size='md'
       />
@@ -258,7 +288,7 @@ export function Navigator({
       <Button
         variant="secondary"
         title="Open notes banner in new window"
-        img="PictureInPicture2"
+        icon="PictureInPicture2"
         onClick={openWindow}
         size='md'
       />
@@ -268,12 +298,12 @@ export function Navigator({
             size='md'
             variant="secondary"
             title='Toggle visibility of notes or links'
-            img={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
+            icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
             className={cn(s.notes_visibility)}
           />
         </Popover.Trigger>
         <Popover.Content>
-          <Stack dir='column' gap={4}>
+          <Stack dir='column' gap={4} ai='stretch'>
             {(Object.keys(app.hidden) as unknown as Array<keyof App.Type['hidden']>).map((key) => {
               return (
                 <Stack jc='space-between'>
@@ -282,12 +312,16 @@ export function Navigator({
                 </Stack>
               )
             })}
+            <Stack jc='space-between'>
+              <Label value='Theme' />
+              <Theme.Switcher />
+            </Stack>
           </Stack>
         </Popover.Content>
       </Popover.Root>
       <Popover.Root>
         <Popover.Trigger asChild>
-          <Button size='md' variant="secondary" img="Crosshair" />
+          <Button size='md' variant="secondary" icon="Crosshair" />
         </Popover.Trigger>
         <Popover.Content className={s.goto}>
           <Stack dir="column" ai="flex-start">
@@ -301,11 +335,11 @@ export function Navigator({
                 onChange={handleTimestampChangeHandler}
               />
               <Button
-                img="Undo2"
+                icon="Undo2"
                 variant="secondary"
                 onClick={resetTimestampToInitialValue}
               />
-              <Button img="Check" variant="glass" onClick={goToTimestamp} />
+              <Button icon="Check" variant="glass" onClick={goToTimestamp} />
             </Stack>
           </Stack>
         </Popover.Content>

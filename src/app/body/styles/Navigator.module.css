@@ -25,5 +25,5 @@
   color: var(--teal-900);
 }
 .notes_visibility.dimmed {
-  color: var(--white) !important;
+  color: var(--accent) !important;
 }

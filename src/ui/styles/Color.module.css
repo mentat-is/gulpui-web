@@ -1,16 +1,12 @@
 .button {
-  background-color: var(--soft-black);
+  background-color: var(--background-100);
   border: 1px solid var(--gray-400);
   width: 128px;
   padding-left: 2px;
   justify-content: start;
   text-align: left;
   font-weight: normal;
-  color: var(--white);
-}
-
-.muted {
-  color: var(--gray24);
+  color: var(--accent);
 }
 
 .button .content {
@@ -104,7 +100,6 @@
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
   min-height: unset;
-  padding: 8px;
 }
 .picker .select input::-webkit-color-swatch-wrapper {
   padding: 0;

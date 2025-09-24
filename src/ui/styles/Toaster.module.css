@@ -1,6 +1,6 @@
 .toast {
   background: var(--meta-black);
-  color: var(--white);
+  color: var(--accent);
   border: 1px solid var(--geist-border);
   box-shadow: var(--shadow-border);
   border-radius: 6px;
@@ -10,15 +10,15 @@
 }
 
 .description {
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 
 .actionButton {
-  background: var(--white);
+  background: var(--accent);
   color: var(--black);
 }
 
 .cancelButton {
-  background: var(--text-dimmed);
+  background: var(--second);
   color: var(--soft-black);
 }

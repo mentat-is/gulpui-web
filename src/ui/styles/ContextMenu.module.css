@@ -88,7 +88,7 @@
 .radioItem:hover,
 .radioItem:focus {
   background-color: var(--gray24);
-  color: var(--white);
+  color: var(--accent);
 }
 
 .checkboxItemIndicator,
@@ -112,7 +112,7 @@
   padding: 0.375rem 0.5rem;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--white);
+  color: var(--accent);
 }
 
 .labelInset {
@@ -131,11 +131,11 @@
   margin-left: auto;
   font-size: 0.75rem;
   letter-spacing: 0.05em;
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 
 .shortcut:hover {
-  color: var(--text-white);
+  color: var(--accent);
 }
 
 @keyframes fadeIn {

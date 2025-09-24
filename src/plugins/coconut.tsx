@@ -12,7 +12,7 @@ export default function () {
   }, [spawnBanner])
 
   return (
-    <Button img='Triangle' variant='glass' onClick={buttonClickHandler} />
+    <Button icon='Triangle' variant='glass' onClick={buttonClickHandler} />
   )
 }
 
@@ -28,7 +28,7 @@ namespace Example {
     return (
       <Banner title='This is example plugin' {...props}>
         <Stack style={{ width: '100%' }} ai='center' jc='center'>
-          <Button variant='tertiary' img='X' onClick={destroyBanner}>Close</Button>
+          <Button variant='tertiary' icon='X' onClick={destroyBanner}>Close</Button>
         </Stack>
       </Banner>
     )

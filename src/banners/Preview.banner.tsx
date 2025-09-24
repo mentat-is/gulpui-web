@@ -20,7 +20,7 @@ export namespace Preview {
 
     const OptionButton = useMemo(() => {
       return (
-        <Button variant='tertiary' onClick={() => setIsFullscreen(v => !v)} img={isFullscreen ? 'FullscreenClose' : 'Fullscreen'} />
+        <Button variant='tertiary' onClick={() => setIsFullscreen(v => !v)} icon={isFullscreen ? 'FullscreenClose' : 'Fullscreen'} />
       )
     }, [isFullscreen, setIsFullscreen]);
 

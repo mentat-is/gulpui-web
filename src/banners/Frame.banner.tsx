@@ -127,7 +127,7 @@ export namespace Frame {
     }
 
     const Done = () => (
-      <Button variant="glass" img="Check" onClick={() => save()} />
+      <Button variant="glass" icon="Check" onClick={() => save()} />
     )
 
     return (

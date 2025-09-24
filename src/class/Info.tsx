@@ -7,7 +7,6 @@ import { SetState } from './API'
 import { Icon } from '@impactium/icons'
 import { toast } from 'sonner'
 import { Pointers } from '@/components/Pointers'
-import { XY } from '@/dto/XY.dto'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Highlights } from '@/overlays/Highlights'
 import { RenderEngine } from './RenderEngine'
@@ -181,7 +180,6 @@ export class Info implements InfoProps {
   scrollY: number;
   setScrollX: SetState<number>
   setScrollY: SetState<number>
-
 
   constructor({ app, setInfo, timeline, setScrollX, setScrollY, scrollX, scrollY }: InfoProps) {
     this.app = app
@@ -401,6 +399,8 @@ export class Info implements InfoProps {
     if (preview) {
       body.q_options.preview_mode = preview
     }
+
+    body.q_options.limit = 10000;
 
     const request_query: Record<string, string> = {
       ws_id: this.app.general.ws_id,
@@ -1322,6 +1322,10 @@ export class Info implements InfoProps {
     await runQueue()
 
     Logger.log(`Glyphs has been syncronized with gulp-backend`, Info)
+
+    while (Glyph.Entries.length) { Glyph.Entries.pop(); }
+    Glyph.Entries.push(...Array.from(Glyph.List.entries()));
+
     this.setInfoByKey(true, 'general', 'glyphs_syncronized')
   }
 
@@ -1342,13 +1346,11 @@ export class Info implements InfoProps {
   session_create = async ({
     name,
     icon = Default.Icon.SESSION,
-    color = Default.Color.SESSION,
-    scroll
+    color = Default.Color.SESSION
   }: {
     name: string,
     icon: Icon.Name,
-    color: string,
-    scroll: XY
+    color: string
   }) => {
     const operation = Operation.Entity.selected(this.app);
     if (!operation) {
@@ -1377,7 +1379,10 @@ export class Info implements InfoProps {
         frame: this.app.timeline.frame,
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
-        scroll,
+        scroll: {
+          x: this.scrollX,
+          y: this.scrollY
+        },
       },
       filters: this.app.target.filters,
     })
@@ -1412,8 +1417,7 @@ export class Info implements InfoProps {
     await this.session_create({
       name: prefix + new Date().toISOString(),
       color: 'var(--green-800)',
-      icon: 'RefreshClockwise',
-      scroll: { x: this.scrollX, y: this.scrollY }
+      icon: 'RefreshClockwise'
     });
 
     setTimeout(() => {
@@ -1444,13 +1448,15 @@ export class Info implements InfoProps {
   }
 
   session_load = async (session: Internal.Session.Data) => {
-    this.setScrollX(session.timeline.scroll.x);
-    this.setScrollY(session.timeline.scroll.y);
 
-    this.setInfoByKey(session.timeline.scale, 'timeline', 'scale');
     this.setInfoByKey(session.timeline.target, 'timeline', 'target');
     this.setInfoByKey(session.timeline.frame, 'timeline', 'frame');
     this.setInfoByKey(session.timeline.filter, 'timeline', 'filter');
+    setTimeout(() => {
+      this.setScrollX(session.timeline.scroll.x);
+      this.setScrollY(session.timeline.scroll.y);
+      this.setInfoByKey(session.timeline.scale, 'timeline', 'scale');
+    }, 100);
     this.setInfoByKey(Operation.Entity.select(this.app, session.selected.operations), 'target', 'operations');
     this.setInfoByKey(Context.Entity.select(this.app, session.selected.contexts), 'target', 'contexts');
     this.setInfoByKey(Source.Entity.select(this.app, session.selected.files), 'target', 'files');
@@ -1462,7 +1468,6 @@ export class Info implements InfoProps {
   }
 
   async session_list(user = this.app.general.user): Promise<Internal.Session.Data[]> {
-    console.log(user);
     if (!user) {
       Logger.warn('Tried to load sessions list before authorization');
       return Internal.Transformator.toAsync([]);

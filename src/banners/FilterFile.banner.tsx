@@ -86,8 +86,8 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     setLoading(false);
   }
 
-  const Done = useCallback(() => <Button img='Check' variant='glass' loading={loading} onClick={submit} />, [loading, submit]);
-  const Undo = useCallback(() => <Button img='Undo' variant='tertiary' onClick={() => Info.filters_undo(files)} />, [files]);
+  const Done = useCallback(() => <Button icon='Check' variant='glass' loading={loading} onClick={submit} />, [loading, submit]);
+  const Undo = useCallback(() => <Button icon='Undo' variant='tertiary' onClick={() => Info.filters_undo(files)} />, [files]);
 
   const QueryStringPart = useMemo(() => {
     if (files.length > 1) {
@@ -144,7 +144,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     return (
       <Popover.Root>
         <Popover.Trigger asChild>
-          <Button img='ClockFading' variant='secondary'>
+          <Button icon='ClockFading' variant='secondary'>
             Last filters
           </Button>
         </Popover.Trigger>
@@ -157,7 +157,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
                     <TooltipTrigger>
                       <Stack>
                         <p>{q.string}</p>
-                        <Button img='Check' variant='glass' onClick={() => Info.setQuery(files, q)} />
+                        <Button icon='Check' variant='glass' onClick={() => Info.setQuery(files, q)} />
                       </Stack>
                     </TooltipTrigger>
                     <TooltipContent className={s.tooltip}>
@@ -202,7 +202,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
       {AddCondition}
       <Separator />
       {QueryConditions}
-      <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} img='PreviewDocument'>Preview result of current filter</Button>
+      <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} icon='PreviewDocument'>Preview result of current filter</Button>
     </Banner>
   )
 }

@@ -42,12 +42,12 @@
   justify-content: space-around;
 }
 .group p {
-  color: var(--text-white);
+  color: var(--accent);
   font-size: 14px;
   font-weight: 500;
 }
 .group p.bottom {
-  color: var(--text-dimmed);
+  color: var(--second);
   font-size: 12px;
   font-weight: 400;
 }

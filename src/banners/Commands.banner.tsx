@@ -138,7 +138,7 @@ export namespace Commands {
     const { spawnBanner } = useApplication();
 
     return (
-      <Button className={s.command} img={command.icon} variant="tertiary" onClick={command.onClick}>
+      <Button className={s.command} icon={command.icon} variant="tertiary" onClick={command.onClick}>
         {command.name}
       </Button>
     );

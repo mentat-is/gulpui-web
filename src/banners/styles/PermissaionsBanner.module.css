@@ -12,7 +12,7 @@
 }
 .combination .general span {
   font-size: 12px;
-  color: var(--text-dimmed);
+  color: var(--second);
   font-family: var(--font-mono);
 }
 .role {

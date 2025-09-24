@@ -33,7 +33,7 @@ export function useKeyHandler(key: string) {
 }
 
 export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
-  const { app, Info, setScrollX, scrollX, setScrollY, highlightsOverlay } = useApplication()
+  const { Info, setScrollX, setScrollY, highlightsOverlay } = useApplication()
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 

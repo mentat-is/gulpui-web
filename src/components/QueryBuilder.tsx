@@ -74,7 +74,7 @@ export namespace OpenSearchQueryBuilder {
 
     return (
       <Stack pos='relative' className={cn(s.preview, className)} {...props}>
-        <Button className={s.copy} img='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
+        <Button className={s.copy} icon='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
         <SyntaxHighlighter language='JSON' style={highlight.vs2015} customStyle={{ background: 'none', height: '100%' }}>
           {string}
         </SyntaxHighlighter>
@@ -110,8 +110,8 @@ export namespace OpenSearchQueryBuilder {
               value={string}
               onChange={queryStringInputChangeHandler}
             />
-            <Button img='Copy' variant='secondary' onClick={copyQueryStringButtonClickHandler} />
-            <Button img='Undo2' variant='secondary' onClick={reset ? reset : resetQueryStringButtonClickHandler} revert>
+            <Button icon='Copy' variant='secondary' onClick={copyQueryStringButtonClickHandler} />
+            <Button icon='Undo2' variant='secondary' onClick={reset ? reset : resetQueryStringButtonClickHandler} revert>
               Reset
             </Button>
           </Stack>
@@ -144,7 +144,7 @@ export namespace OpenSearchQueryBuilder {
       return (
         <Stack jc='space-between' {...props}>
           <p>Query conditions</p>
-          <Button onClick={add} variant='secondary' img='Plus'>
+          <Button onClick={add} variant='secondary' icon='Plus'>
             Add condition
           </Button>
         </Stack>
@@ -218,7 +218,7 @@ export namespace OpenSearchQueryBuilder {
                 <Button
                   variant='tertiary'
                   onClick={() => remove(filter.id)}
-                  img='Trash2'
+                  icon='Trash2'
                 />
               </Stack>
               <Stack style={fws}>

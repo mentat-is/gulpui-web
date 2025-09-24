@@ -48,7 +48,7 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   const [eventKeys, setEventKeys] = useState<string[] | null>(null);
 
   useEffect(() => {
-    Info.event_keys(file).then(Object.keys).then(setEventKeys);
+    Info.event_keys(file).then(Object.keys).then(keys => keys.sort((a, b) => a.localeCompare(b))).then(setEventKeys);
   }, []);
 
   const [field, setField] = useState<keyof Doc.Type>(file.settings.field);
@@ -60,14 +60,14 @@ export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
   }
 
   const done = (
-    <Button variant="glass" onClick={save} loading={loading} img="Check" />
+    <Button variant="glass" onClick={save} loading={loading} icon="Check" />
   )
 
   const option = (
     <Button
       onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)}
       variant="secondary"
-      img="Filter"
+      icon="Filter"
     />
   )
 

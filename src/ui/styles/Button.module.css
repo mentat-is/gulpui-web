@@ -56,60 +56,25 @@
 .destructive:hover {
   background: var(--red-900);
 }
-
-.outline {
-  border: 1px solid var(--gray-alpha-400);
-  background: none;
-  color: var(--text-dimmed);
-}
-
-.outline:hover {
-  border: 1px solid var(--accent);
-  color: var(--accent);
-}
-
-.ghost {
-  background: none;
-  color: var(--text-dimmed);
-}
-
-.ghost:hover {
-  background: var(--gray-alpha-100);
-  color: var(--accent);
-}
-
-.link {
-  color: var(--accent);
-}
-
-.link:hover {
-  text-decoration: underline 1.5px;
-  text-underline-position: from-font;
-}
-
 .disabled {
-  filter: brightness(0.5);
+  filter: var(--disabled);
   cursor: default;
   pointer-events: none;
 }
-
 .glass {
   background: var(--geist-background);
   border: var(--geist-border);
-  color: var(--text-dimmed);
+  color: var(--second);
   backdrop-filter: blur(8px);
 }
-
 .glass:hover {
   color: var(--accent);
 }
-
 .defaultSize {
   height: 32px;
   min-height: 32px;
   padding: 0 12px;
 }
-
 .sm {
   height: 24px;
   padding: 0 12px;

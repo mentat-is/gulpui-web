@@ -31,7 +31,7 @@ export namespace Maps {
       return (
         <Button
           variant="glass"
-          img={fullscreen ? 'Minimize' : 'Maximize'}
+          icon={fullscreen ? 'Minimize' : 'Maximize'}
           onClick={() => setFullscreen((v) => !v)}
         />
       )

@@ -73,7 +73,7 @@ export namespace Link {
       const DeleteButton = () => (
         <Button
           loading={loading}
-          img='Trash2'
+          icon='Trash2'
           variant='glass'
           onClick={deleteLink}
           disabled={!isSubmited}

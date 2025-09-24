@@ -200,7 +200,7 @@ namespace Components {
         {(app.target.plugins.find(p => p.filename === settings.plugin)?.custom_parameters.length ?? 0) > 0 &&
           <Popover.Root>
             <Popover.Trigger asChild>
-              <Button img='Settings' size='sm' style={{ width: 24 }} variant='tertiary' />
+              <Button icon='Settings' size='sm' style={{ width: 24 }} variant='tertiary' />
             </Popover.Trigger>
             <Popover.Content>
               <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters} />
@@ -209,7 +209,7 @@ namespace Components {
         }
         <Popover.Root onOpenChange={o => o && loadPreview()}>
           <Popover.Trigger asChild>
-            <Button img='PreviewDocument' size='sm' style={{ width: 24 }} variant='tertiary' />
+            <Button icon='PreviewDocument' size='sm' style={{ width: 24 }} variant='tertiary' />
           </Popover.Trigger>
           <Popover.Content style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
             {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
@@ -411,7 +411,7 @@ namespace Components {
     return (
       <Popover.Root>
         <Popover.Trigger asChild>
-          <Button style={{ width: '100%' }} variant='secondary' img='SettingsGear'>Select settings for all files</Button>
+          <Button style={{ width: '100%' }} variant='secondary' icon='SettingsGear'>Select settings for all files</Button>
         </Popover.Trigger>
         <Popover.Content>
           <Stack className={s.allSettings} gap={0}>
@@ -421,7 +421,7 @@ namespace Components {
             <Separator orientation='vertical' style={{ height: 32 }} />
             <MappingSelector settings={settings.all} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
             <Separator orientation='vertical' style={{ height: 32 }} />
-            <Button variant='tertiary' style={{ borderRadius: 2 }} img='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
+            <Button variant='tertiary' style={{ borderRadius: 2 }} icon='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
           </Stack>
         </Popover.Content>
       </Popover.Root>
@@ -531,7 +531,7 @@ export function UploadBanner() {
       <Button
         variant="glass"
         onClick={handleSubmit}
-        img="Check"
+        icon="Check"
         className={s.done}
         disabled={!context || !files.length || !isValidSettings}
         loading={loading}
@@ -597,7 +597,7 @@ export function UploadBanner() {
       </Stack>
       <Stack>
         <Components.ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
-        <Button variant="secondary" img="Cross" onClick={() => setFiles([])}>
+        <Button variant="secondary" icon="Cross" onClick={() => setFiles([])}>
           Clear selection
         </Button>
       </Stack>
@@ -641,9 +641,9 @@ export function UploadDoneBanner() {
       <Stack style={{ padding: 32 }} dir='column' flex gap={12}>
         <Icon name='CheckCircle' size={64} style={{ marginBottom: 12 }} strokeWidth='2px !important' fromGeist />
         <p style={{ fontSize: 24 }}>Upload done, gULP is still processing the data</p>
-        <span style={{ color: 'var(--text-dimmed)' }}>It can take up to 10 minutes, depending on CPU speed.</span>
-        <span style={{ color: 'var(--text-dimmed)' }}>You will see a notification when it would be done.</span>
-        <Button style={{ gap: 12, marginTop: 24 }} size='lg' rounded revert img='ChevronCircleRightFill' onClick={destroyBanner}>Got it!</Button>
+        <span style={{ color: 'var(--second)' }}>It can take up to 10 minutes, depending on CPU speed.</span>
+        <span style={{ color: 'var(--second)' }}>You will see a notification when it would be done.</span>
+        <Button style={{ gap: 12, marginTop: 24 }} size='lg' rounded revert icon='ChevronCircleRightFill' onClick={destroyBanner}>Got it!</Button>
       </Stack>
     </Banner>
   )

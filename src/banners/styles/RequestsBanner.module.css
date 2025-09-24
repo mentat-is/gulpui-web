@@ -39,17 +39,17 @@
   flex-shrink: 0;
 }
 .combination span {
-  color: var(--text-dimmed);
+  color: var(--second);
   flex-shrink: 0;
 }
 .combination .file {
-  color: var(--text-dimmed);
+  color: var(--second);
 }
 .combination hr {
   flex: 1;
 }
 .time_ago {
   font-size: 10px;
-  color: var(--text-dimmed);
+  color: var(--second);
   flex-shrink: 0;
 }

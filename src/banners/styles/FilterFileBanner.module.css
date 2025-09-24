@@ -67,5 +67,5 @@
   font-size: 8px;
   text-align: left;
   text-transform: unset !important;
-  color: var(--text-white);
+  color: var(--accent);
 }

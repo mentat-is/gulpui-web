@@ -9,7 +9,7 @@
   height: 32px;
   line-height: 16px;
   font-weight: 500;
-  color: var(--text-white);
+  color: var(--accent);
   animation: fadeIn 0.15s ease-in, zoomIn 0.15s ease-in;
 
   &.data-[state=closed] {
@@ -34,7 +34,7 @@
   font-size: 0.875rem;
   font-family: var(--font-mono);
   text-transform: capitalize;
-  color: var(--text-dimmed);
+  color: var(--second);
   font-weight: 500;
 }
 

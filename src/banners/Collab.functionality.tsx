@@ -101,7 +101,7 @@ export namespace NoteFunctionality {
               className={s.save}
               onClick={send}
               variant={name && text ? 'glass' : 'disabled'}
-              img='Check'
+              icon='Check'
             />
           }
           side={Sidebar}
@@ -114,10 +114,10 @@ export namespace NoteFunctionality {
               className={s.inp_input}
               disabled
               value={Context.Entity.id(app, event['gulp.context_id']).name}
-              icon='Box'
+              icon={Default.Icon.CONTEXT}
             />
             <Input
-              label='Source.Entity'
+              label='Source'
               variant='highlighted'
               className={s.inp_input}
               disabled
@@ -139,19 +139,19 @@ export namespace NoteFunctionality {
             value={name}
             icon='TextTitle'
             onChange={(e) => setName(String(e.currentTarget.value))}
-            placeholder='Note.Entity title'
+            placeholder='Note title'
             variant='highlighted'
             className={s.inp_input}
           />
-          <Stack>
+          <Stack className={s.chooser_wrapper}>
+            <Glyph.Chooser label='Glyph' icon={icon} setIcon={setIcon} />
             <Stack dir='column' gap={6} ai='flex-start' data-input>
-              <Label htmlFor='Glyph' value='Glyph' />
-              <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
+              <Label value='Pick a color' />
+              <ColorPicker color={color} setColor={setColor}>
+                <ColorPickerTrigger />
+                <ColorPickerPopover />
+              </ColorPicker>
             </Stack>
-            <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
-              <ColorPickerTrigger />
-              <ColorPickerPopover />
-            </ColorPicker>
           </Stack>
           <Input placeholder='Tags separated by comma' value={rawTags} onChange={e => setRawTags(e.target.value)} />
           {note?.id ? null : <Toggle option={['Public', 'Private']} checked={isPrivate} onCheckedChange={setIsPrivate} />}
@@ -237,7 +237,7 @@ export namespace LinkFunctionality {
           <Button
             onClick={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)}
             variant='tertiary'
-            img='GitPullRequestCreateArrow'
+            icon='GitPullRequestCreateArrow'
           />
         ),
         [event],
@@ -250,7 +250,7 @@ export namespace LinkFunctionality {
             onClick={send}
             variant='glass'
             disabled={!name || !icon}
-            img='Check'
+            icon='Check'
           />
         )
       }, [loading, name, send])
@@ -258,26 +258,48 @@ export namespace LinkFunctionality {
       return (
         <UIBanner title='Create link' done={<Done />} option={<Option />}>
           <Stack className={s.general} ai='stretch' dir='column' gap={8}>
-            {/* <Selection name='Context' value={context.name} icon='Box' />
-            <Selection name='Source.Entity' value={file.name} icon='Source.Entity' />
-            <Selection name='Event' value={event._id} icon='Triangle' /> */}
+            <Input
+              label='Context'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={context.name}
+              icon={Default.Icon.CONTEXT}
+            />
+            <Input
+              label='Source'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={file.name}
+              icon={Default.Icon.SOURCE}
+            />
+            <Input
+              label='Event'
+              variant='highlighted'
+              className={s.inp_input}
+              disabled
+              value={event._id}
+              icon='Triangle'
+            />
             <Separator />
-            {/* <Editable
-              name='Title'
+            <Input
+              label='Title'
               value={name}
+              variant='highlighted'
               icon='TextTitle'
               onChange={(e) => setName(String(e.currentTarget.value))}
               placeholder='Link title'
-            /> */}
-            <Stack>
-              <Stack jc='space-between' flex className={s.inp}>
-                <p>Glyph:</p>
-                <Glyph.Chooser icon={icon} setIcon={setIcon} className={s.chooser} />
+            />
+            <Stack className={s.chooser_wrapper}>
+              <Glyph.Chooser label='Glyph' icon={icon} setIcon={setIcon} />
+              <Stack dir='column' gap={6} ai='flex-start' data-input>
+                <Label value='Pick a color' />
+                <ColorPicker color={color} setColor={setColor}>
+                  <ColorPickerTrigger />
+                  <ColorPickerPopover />
+                </ColorPicker>
               </Stack>
-              <ColorPicker style={{ flex: 1 }} color={color} setColor={setColor}>
-                <ColorPickerTrigger />
-                <ColorPickerPopover />
-              </ColorPicker>
             </Stack>
             <Textarea
               className={s.textarea}
@@ -311,8 +333,8 @@ export namespace LinkFunctionality {
       const NoLinks = useMemo(() => {
         return (
           <Stack dir='column' gap={16}>
-            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--text-dimmed)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
-            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} img='GitPullRequestArrow'>Create link</Button>
+            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--second)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
+            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} icon='GitPullRequestArrow'>Create link</Button>
           </Stack>
         )
       }, [spawnBanner])
@@ -325,7 +347,7 @@ export namespace LinkFunctionality {
               variant='secondary'
               style={{ color: link.color }}
               onClick={connect(link)}
-              img={Link.Entity.icon(link)}
+              icon={Link.Entity.icon(link)}
             >
               {link.name}
             </Button>

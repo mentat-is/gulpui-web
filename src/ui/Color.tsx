@@ -12,7 +12,7 @@ import { Color } from '@/entities/Color'
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[]
   gradients?: Record<string, string[]>
-  solids?: number[]
+  solids?: string[]
   color?: string
   setColor?: React.Dispatch<React.SetStateAction<string>>
 }
@@ -63,10 +63,9 @@ export function ColorPickerTrigger({
 
   return (
     <Popover.Trigger asChild>
-      <Stack pos='relative' className={cn(s.picker, s.trigger)}>
+      <Stack pos='relative' gap={0} ai='flex-start' className={cn(s.picker, s.trigger)}>
         <Input
           className={s.select}
-          disabled
           variant="color"
           value={color}
         />
@@ -88,7 +87,7 @@ export function ColorPickerPopover({
   color: _color,
   setColor: _setColor,
   gradients = {},
-  solids = Object.values(Color.GEIST),
+  solids = Object.values(Color.GEIST).map(s => '#' + s.toString(16).padStart(6, '0')),
 }: ColorProps) {
   const { color: newColor, setColor: setNewColor } = useColor() || {}
 
@@ -146,7 +145,7 @@ export function ColorPickerPopover({
       </Tabs>
 
       {tab !== 'gradient' && (
-        <Stack pos='relative' className={s.picker}>
+        <Stack pos='relative' gap={0} ai='flex-start' className={s.picker}>
           <Input
             className={s.select}
             variant="color"

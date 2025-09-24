@@ -26,6 +26,6 @@
 .description p {
   font-size: var(--text-medium);
   line-height: 1.2;
-  color: var(--text-dimmed);
+  color: var(--second);
   margin: var(--card-padding) 0px;
 }
