@@ -108,7 +108,7 @@ export namespace Session {
 
 
     export function Banner({ ...props }: Session.Delete.Banner.Props) {
-      const { Info, app } = useApplication();
+      const { Info, app, destroyBanner } = useApplication();
       const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
       const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
       const [isDataDeleating, setIsDataDeleating] = useState<boolean>(false);
@@ -128,16 +128,15 @@ export namespace Session {
 
       const deleteSessionButtonClickHandler = async () => {
         setIsDataDeleating(true);
-        await Promise.all([...selected.values()].map(name => {
-          return Info.session_delete(name).then(() => {
-            Logger.log(`Session ${name} has been deleted successfully`, 'Session.Delete.Banner.deleteSessionButtonClickHandler', {
-              richColors: true,
-              icon: <Icon name='Check' />
-            });
+        await Info.sessions_delete([...selected.values()]).then(() => {
+          Logger.log(`${selected.size} ${selected.size === 1 ? 'session' : 'sessions'} has been deleted successfully`, 'Session.Delete.Banner.deleteSessionButtonClickHandler', {
+            richColors: true,
+            icon: <Icon name='Check' />
           });
-        }));
+        });
         setIsDataDeleating(false);
         await reload();
+        destroyBanner();
       };
 
       const DeleteButton = useMemo(() => <Button onClick={deleteSessionButtonClickHandler} loading={isDataDeleating || isDataLoading} disabled={!selected.size} icon='Trash' variant='glass' />, [selected, isDataDeleating, isDataLoading, deleteSessionButtonClickHandler]);

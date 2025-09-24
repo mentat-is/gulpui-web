@@ -1385,6 +1385,7 @@ export class Info implements InfoProps {
         },
       },
       filters: this.app.target.filters,
+      hidden: this.app.hidden
     })
 
     if (!this.app.general.user) {
@@ -1407,22 +1408,36 @@ export class Info implements InfoProps {
   }
 
   session_autosaver = async () => {
-    const prefix = 'autosaved-session-'
+    const prefix = 'Autosaved session '
     const sessions = await this.session_list();
-    const prev = sessions.find(session => session.name.startsWith(prefix));
-    if (prev) {
-      await this.session_delete(prev.name);
+    const prev = sessions.filter(session => session.name.startsWith(prefix));
+    if (prev.length) {
+      await this.sessions_delete(prev.map(s => s.name));
     }
 
     await this.session_create({
-      name: prefix + new Date().toISOString(),
-      color: 'var(--green-800)',
+      name: prefix + new Date().toUTCString(),
+      color: 'var(--green-700)',
       icon: 'RefreshClockwise'
     });
 
     setTimeout(() => {
       this.session_autosaver();
     }, MINUTE);
+  }
+
+  sessions_delete = async (names: string[]) => {
+    for (const name of names) {
+      try {
+        await this.session_delete(name);
+      } catch (err) {
+        Logger.log(
+          `Failed to delete session ${name}`,
+          'Session.Delete.Banner.deleteSessionButtonClickHandler',
+          { richColors: true, icon: <Icon name='Warning' /> }
+        );
+      }
+    }
   }
 
   session_delete = async (name: string) => {
@@ -1461,6 +1476,10 @@ export class Info implements InfoProps {
     this.setInfoByKey(Context.Entity.select(this.app, session.selected.contexts), 'target', 'contexts');
     this.setInfoByKey(Source.Entity.select(this.app, session.selected.files), 'target', 'files');
     this.setInfoByKey(session.filters, 'target', 'filters');
+    Object.keys(session.hidden).forEach(k => {
+      const key = k as keyof App.Type['hidden'];
+      this.setInfoByKey(session.hidden[key], 'hidden', key);
+    });
 
     setTimeout(() => {
       this.refetch();

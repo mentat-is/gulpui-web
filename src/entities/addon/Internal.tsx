@@ -177,7 +177,8 @@ export namespace Internal {
         filter: string
         target: Doc.Type | null,
       },
-      filters: App.Type['target']['filters']
+      filters: App.Type['target']['filters'],
+      hidden: App.Type['hidden'];
     }
   }
 }

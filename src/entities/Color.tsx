@@ -5,6 +5,8 @@ export namespace Color {
   export type Type = `#${string}`;
 
   export const GEIST: number[] = [0xa1a1a1, 0x3399ff, 0xff4d4d, 0xc99900, 0x65b58b, 0x009999, 0xc266ff, 0xff408c]
+  export const GEIST_STRINGS: string[] = Object.values(Color.GEIST).map(s => '#' + s.toString(16).padStart(6, '0'));
+
   export const GRADIENT = {
     thermal: [
       '0000c1',

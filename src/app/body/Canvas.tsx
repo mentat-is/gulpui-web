@@ -82,7 +82,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       scrollY
     })
 
-    const files = Source.Entity.selected(app)
+    const files = Source.Entity.selected(app);
 
     render.ruler.draw()
 

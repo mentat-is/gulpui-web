@@ -60,13 +60,7 @@ export namespace Source {
 
     // ⚠️ UNTOUCHABLE
     public static selected = (app: App.Type): Source.Type[] =>
-      Source.Entity.pins(app.target.files.filter((s) => s.selected)).filter(
-        (s) =>
-          s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) ||
-          Context.Entity.id(app, s.context_id)
-            .name?.toLowerCase()
-            .includes(app.timeline.filter.toLowerCase()),
-      )
+      Source.Entity.pins(app.target.files.filter((s) => s.selected && (app.hidden.filesWithNoEvents ? Doc.Entity.get(app, s.id).length > 0 : true))).filter(s => s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(app.timeline.filter.toLowerCase()))
 
     public static select = (app: App.Type, selected: Source.Type[] | Source.Id[]): Source.Type[] =>
       app.target.files.map((f) =>
