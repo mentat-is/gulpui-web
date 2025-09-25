@@ -7,7 +7,7 @@ export function MiddleLine () {
       preserveAspectRatio="none"
       style={{
         position: "absolute",
-        zIndex: 1000,
+        zIndex: 1,
         top: '-1px',
         left: "calc(10% + 55px)",
         width: 'calc(100% - 30% - 110px)',

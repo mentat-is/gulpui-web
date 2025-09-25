@@ -58,13 +58,13 @@ function Root() {
     <>
       <ThemeProviders>
         <Toaster />
-        <AppErrorBoundary>
-          <ApplicationProvider>
+        <ApplicationProvider>
+          <AppErrorBoundary>
             <ExtensionProvider>
               <Main />
             </ExtensionProvider>
-          </ApplicationProvider>
-        </AppErrorBoundary>
+          </AppErrorBoundary>
+        </ApplicationProvider>
       </ThemeProviders>
     </>
   )
@@ -81,22 +81,6 @@ function Main() {
     const obj: any = null;
     return <div>{obj.prop}</div>;
   }
-
-  useEffect(() => {
-    setTimeout(() => {
-      throw new Error("This is a long error message for testing layout.")
-    }, 0);
-
-    setTimeout(() => {
-      throw new Error("Detailed explanation of what went wrong, including stack traces and suggestions.")
-    }, 0);
-
-    setTimeout(() => {
-      throw new Error("Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:")
-    }, 0);
-
-    Component();
-  }, []);
 
   useEffect(() => {
     if (isPreloaded)
