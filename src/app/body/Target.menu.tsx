@@ -1,7 +1,7 @@
 import s from '../Gulp.module.css'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { SettingsFileBanner } from '@/banners/SettingsFileBanner'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { enginesBase } from '@/dto/Engine.dto'
 import {
   ContextMenuContent,
@@ -33,7 +33,7 @@ interface TargetMenuProps {
 }
 
 export function TargetMenu({ file }: TargetMenuProps) {
-  const { Info, spawnBanner, spawnDialog, app } = useApplication()
+  const { Info, spawnBanner, spawnDialog, app } = Application.use()
   const events = Source.Entity.events(app, file);
 
   const removeFilters = (file: Source.Type) => {

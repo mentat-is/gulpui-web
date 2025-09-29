@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useMemo, useState } from 'react'
-import { useApplication } from '../context/Application.context'
+import { Application } from '../context/Application.context'
 import s from './styles/Banner.module.css'
 import { cn } from '@impactium/utils'
 import { Stack } from './Stack'
@@ -34,7 +34,7 @@ export function Banner({
   side = null,
   onClose,
 }: Banner.Props) {
-  const { destroyBanner } = useApplication()
+  const { destroyBanner } = Application.use()
   const [isExpanded, setIsExpanded] = useState<boolean>(false)
 
   const close = () => {

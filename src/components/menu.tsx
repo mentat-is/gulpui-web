@@ -1,6 +1,6 @@
 import s from './styles/menu.module.css'
 import { UploadBanner } from '@/banners/Upload.banner'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { Frame } from '@/banners/Frame.banner'
 import { Sigma } from '@/banners/UploadSigmaRule.banner'
@@ -20,7 +20,7 @@ import { Source } from '@/entities/Source'
 import { Operation } from '@/entities/Operation'
 
 export function Menu() {
-  const { app, spawnBanner } = useApplication()
+  const { app, spawnBanner } = Application.use()
 
   const backToOperations = () => {
     spawnBanner(<Operation.Select.Banner />)

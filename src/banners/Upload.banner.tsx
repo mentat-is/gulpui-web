@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
 import { useEffect, useState, useCallback, useMemo, ChangeEvent, useRef } from 'react'
@@ -118,7 +118,7 @@ namespace Components {
     updateSettings: (update: Partial<FileEntity.Settings>) => void
     progress: number | undefined
   }) => {
-    const { Info, app } = useApplication();
+    const { Info, app } = Application.use();
     const [preview, setPreview] = useState<Doc.Type[] | null>(null);
 
     const methods = Mapping.Entity.methods(app, settings.plugin)
@@ -233,7 +233,7 @@ namespace Components {
     settings: FileEntity.Settings
     updateSettings: (update: Partial<FileEntity.Settings>) => void
   }) => {
-    const { app } = useApplication();
+    const { app } = Application.use();
 
     const plugins = Mapping.Entity.plugins(app);
 
@@ -355,7 +355,7 @@ namespace Components {
     updateSettings: any,
     setSettings: (s: FileEntity.Settings) => void
   }) => {
-    const { app } = useApplication();
+    const { app } = Application.use();
 
     useEffect(() => {
       if (!settings.all) {
@@ -430,7 +430,7 @@ namespace Components {
 }
 
 export function UploadBanner() {
-  const { Info, app, spawnBanner } = useApplication()
+  const { Info, app, spawnBanner } = Application.use()
   const [files, setFiles] = useState<File[]>([])
   const [context, setContext] = useState<FileEntity.IngestOptions['context']>('')
   const [loading, setLoading] = useState(false)
@@ -634,7 +634,7 @@ function Placeholder({ className, ...props }: Stack.Props) {
 }
 
 export function UploadDoneBanner() {
-  const { destroyBanner } = useApplication()
+  const { destroyBanner } = Application.use()
 
   return (
     <Banner fixed>

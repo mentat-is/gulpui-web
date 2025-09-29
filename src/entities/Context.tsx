@@ -8,7 +8,7 @@ import { Parser } from './addon/Parser'
 import { App } from './App'
 import { Source } from './Source'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Button } from '@/ui/Button'
 import { Toggle } from '@/ui/Toggle'
 import { useState } from 'react'
@@ -127,7 +127,7 @@ export namespace Context {
       }
     }
     export function Banner({ context, ...props }: Context.Delete.Banner.Props) {
-      const { Info } = useApplication()
+      const { Info } = Application.use()
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
       const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)

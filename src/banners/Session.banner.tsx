@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
 import s from './styles/Session.module.css'
@@ -26,7 +26,7 @@ export namespace Session {
       const [name, setName] = useState<string>('')
       const [color, setColor] = useState<string>(Default.Color.OPERATION)
       const [icon, setIcon] = useState<Glyph.Id | null>(null);
-      const { Info, app, scrollX, scrollY } = useApplication();
+      const { Info, app, scrollX, scrollY } = Application.use();
       const [loading, setLoading] = useState<boolean>(false)
 
       const changenameHandler = (
@@ -108,7 +108,7 @@ export namespace Session {
 
 
     export function Banner({ ...props }: Session.Delete.Banner.Props) {
-      const { Info, app, destroyBanner } = useApplication();
+      const { Info, app, destroyBanner } = Application.use();
       const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
       const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
       const [isDataDeleating, setIsDataDeleating] = useState<boolean>(false);

@@ -1,11 +1,11 @@
-import { useApplication } from "@/context/Application.context";
+import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import { Stack } from "@/ui/Stack";
 import { useCallback } from "react";
 
 export default function () {
-  const { app, spawnBanner } = useApplication();
+  const { app, spawnBanner } = Application.use();
 
   const buttonClickHandler = useCallback(() => {
     spawnBanner(<Example.Banner />);
@@ -23,7 +23,7 @@ namespace Example {
     }
   }
   export function Banner({ ...props }: Example.Banner.Props) {
-    const { destroyBanner } = useApplication();
+    const { destroyBanner } = Application.use();
 
     return (
       <Banner title='This is example plugin' {...props}>

@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Internal } from '@/entities/addon/Internal'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
@@ -9,7 +9,7 @@ export namespace Settings {
     export type Props = UIBanner.Props
   }
   export function Banner({ ...props }: Settings.Banner.Props) {
-    const { app, Info } = useApplication()
+    const { app, Info } = Application.use()
     const [isUTCTimestamps, setIsUTCTimestamps] = useState<boolean>(Internal.Settings.isUTCTimestamps);
 
     return (

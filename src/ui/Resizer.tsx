@@ -1,6 +1,6 @@
 import { Stack } from './Stack'
 import s from './styles/Resizer.module.css'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Icon } from '@impactium/icons'
 import { useRef, useEffect } from 'react'
 import { MinMax } from '@/class/Info'
@@ -22,7 +22,7 @@ export function Resizer({
   limits,
   ...props
 }: Resizer.Props) {
-  const { Info } = useApplication()
+  const { Info } = Application.use()
   const ref = useRef<HTMLDivElement>(null)
   const pos = useRef(0)
   const start = useRef(init)

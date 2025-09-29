@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { useCallback, useMemo, useState } from 'react'
@@ -35,7 +35,7 @@ export namespace NoteFunctionality {
       event,
       ...props
     }: NoteFunctionality.Create.Banner.Props) {
-      const { app, destroyBanner, Info } = useApplication()
+      const { app, destroyBanner, Info } = Application.use()
       const [color, setColor] = useState<string>(note?.color || '#ffffff')
       const [name, setName] = useState<string>(note?.name || '')
       const [text, setText] = useState<string>(note?.text || '')
@@ -181,7 +181,7 @@ export namespace LinkFunctionality {
     }
 
     export function Banner({ link, event, ...props }: LinkFunctionality.Create.Banner.Props) {
-      const { app, spawnBanner, destroyBanner, Info } = useApplication()
+      const { app, spawnBanner, destroyBanner, Info } = Application.use()
       const [color, setColor] = useState<string>(link?.color || Default.Color.LINK)
       const [icon, setIcon] = useState<Glyph.Id | null>(link?.glyph_id || Glyph.List.keys().next().value || null)
       const [name, setName] = useState<string>(link?.name || '')
@@ -322,7 +322,7 @@ export namespace LinkFunctionality {
       event: Doc.Type
     }
     export function Banner({ event }: LinkFunctionality.Connect.Props) {
-      const { app, Info, spawnBanner } = useApplication()
+      const { app, Info, spawnBanner } = Application.use()
 
       const connect = (link: Link.Type) => () => Info.links_connect(link, event)
 

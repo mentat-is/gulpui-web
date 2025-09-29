@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import s from './navigation.module.css'
 import { useEffect, useState } from 'react'
 import { cn } from '@impactium/utils'
@@ -15,7 +15,7 @@ export namespace Navigation {
 }
 
 export function Navigation({ event }: Navigation.Props) {
-  const { app, Info, spawnDialog } = useApplication()
+  const { app, Info, spawnDialog } = Application.use()
   const [events, setEvents] = useState<Doc.Type[]>([])
 
   useEffect(() => {

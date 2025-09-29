@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context';
+import { Application } from '@/context/Application.context';
 import { Badge } from '@/ui/Badge';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Icon } from '@impactium/icons';
@@ -16,7 +16,7 @@ export namespace Requests {
   }
 
   export function Banner({ className, ...props }: Requests.Banner.Props) {
-    const { Info, app, spawnBanner } = useApplication();
+    const { Info, app, spawnBanner } = Application.use();
     const [loading, setLoading] = useState<boolean>(false);
 
     const timeAgo = (timestamp: number): string => {

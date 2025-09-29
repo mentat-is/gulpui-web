@@ -61,6 +61,8 @@
 
 .content {
   min-height: calc(100% - 40px);
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 .cell {

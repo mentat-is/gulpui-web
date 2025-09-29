@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import s from '../Gulp.module.css'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Canvas } from './Canvas'
 import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
@@ -8,7 +8,7 @@ import { Stack } from '@/ui/Stack'
 import { Source } from '@/entities/Source'
 
 export function Timeline() {
-  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = useApplication()
+  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = Application.use()
 
   const focusEvent = (timestamp: number, onLeft = false, file_id?: Source.Id) => {
     const instanse = getAlgothitmInstance()

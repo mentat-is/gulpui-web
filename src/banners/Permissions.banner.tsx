@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { ChangeEvent, useCallback, useEffect, useState } from 'react'
 import s from './styles/PermissaionsBanner.module.css'
@@ -28,7 +28,7 @@ export namespace Permissions {
   }
 
   export const Banner = () => {
-    const { destroyBanner } = useApplication()
+    const { destroyBanner } = Application.use()
     const [users, setUsers] = useState<User.Type[]>([])
     const [_groups, setGroups] = useState<Group.Type[]>([])
     const [loading, setLoading] = useState<boolean>(false)
@@ -135,7 +135,7 @@ export namespace Permissions {
       }
     }
     export const Combination = ({ user, update, users }: Combination.Props) => {
-      const { app, spawnBanner } = useApplication()
+      const { app, spawnBanner } = Application.use()
 
       const changeRoles = (
         id: User.Id,
@@ -248,7 +248,7 @@ export namespace Permissions {
         export type Props = Button.Props
       }
       export const Trigger = ({ ...props }: Trigger.Props) => {
-        const { spawnBanner } = useApplication()
+        const { spawnBanner } = Application.use()
 
         return (
           <Button
@@ -260,7 +260,7 @@ export namespace Permissions {
         )
       }
       export const Banner = () => {
-        const { spawnBanner } = useApplication()
+        const { spawnBanner } = Application.use()
         const [loading, setLoading] = useState<boolean>(false)
         const [icon, setIcon] = useState<Glyph.Id | null>(null)
         const [id, setId] = useState<string>('')
@@ -395,7 +395,7 @@ export namespace Permissions {
         }
       }
       export function Banner({ user, ...props }: Banner.Props) {
-        const { spawnBanner } = useApplication()
+        const { spawnBanner } = Application.use()
         const [loading, setLoading] = useState<boolean>(false)
         const [icon, setIcon] = useState<Glyph.Id | null>(user.glyph_id)
         const [id, setId] = useState<string>(user.id)

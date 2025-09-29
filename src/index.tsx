@@ -1,14 +1,11 @@
 import ReactDOM from 'react-dom/client'
 import './global.css'
-import {
-  ApplicationProvider,
-  useApplication,
-} from './context/Application.context'
+import { Application } from './context/Application.context'
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect, useState } from 'react'
 import { cn } from '@impactium/utils'
-import { ExtensionProvider } from './context/Extension.context'
+import { Extension } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
 import s from './App.module.css';
@@ -17,7 +14,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
-import { ThemeProviders } from './context/Theme.context'
+import { Theme } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
 
@@ -37,20 +34,20 @@ function Root() {
   }
 
   return (
-    <ThemeProviders>
-      <ApplicationProvider>
-        <ExtensionProvider>
+    <Theme.Provider>
+      <Application.Provider>
+        <Extension.Provider>
           <Main />
           <Toaster />
-        </ExtensionProvider>
-      </ApplicationProvider>
-    </ThemeProviders>
+        </Extension.Provider>
+      </Application.Provider>
+    </Theme.Provider>
   )
 }
 
 function Main() {
   const { theme } = useTheme();
-  const { Info, app, dialog } = useApplication();
+  const { Info, app, dialog } = Application.use();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
   useEffect(() => {

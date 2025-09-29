@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { Point as UIPoint } from './Point'
 import { Icon } from '@impactium/icons'
@@ -33,7 +33,7 @@ export namespace NotePoint {
     note,
     ...props
   }: Combination.Props) {
-    const { app, spawnDialog } = useApplication()
+    const { app, spawnDialog } = Application.use()
 
     const targetNoteButtonHandler = (note: Note.Type) => {
       const event = Doc.Entity.id(app, note.doc._id);
@@ -66,7 +66,7 @@ export namespace NotePoint {
   }
 
   export function Point({ notes, ...props }: NotePoint.Props) {
-    const { app, spawnDialog } = useApplication()
+    const { app, spawnDialog } = Application.use()
 
     const handleClick = () => {
       const ids = notes.map(n => n.doc._id);

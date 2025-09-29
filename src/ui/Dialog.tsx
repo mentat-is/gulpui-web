@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import s from './styles/Dialog.module.css'
 import { cn } from '@impactium/utils'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { Stack } from './Stack'
 import { Spinner } from './Spinner'
@@ -20,7 +20,7 @@ export function Dialog({
   children,
   ...props
 }: Dialog.Props) {
-  const { Info, banner, spawnDialog } = useApplication()
+  const { Info, banner, spawnDialog } = Application.use()
 
   const close = () => {
     if (callback) {

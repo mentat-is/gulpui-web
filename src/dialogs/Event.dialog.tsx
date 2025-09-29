@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Dialog } from '@/ui/Dialog'
 import { Fragment, useEffect, useMemo, useState, useCallback } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
@@ -38,7 +38,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   if (!event) {
     return null;
   }
-  const { Info, app, spawnBanner } = useApplication()
+  const { Info, app, spawnBanner } = Application.use()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
   const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event]);
@@ -358,7 +358,7 @@ export namespace EventIndicator {
 
 
 export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
-  const { app } = useApplication();
+  const { app } = Application.use();
 
   if (!event) {
     return null;

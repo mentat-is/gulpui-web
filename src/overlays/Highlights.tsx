@@ -2,7 +2,7 @@ import s from './Highlights.module.css';
 import { Icon } from '@impactium/icons';
 import { useMemo, useRef, useState } from 'react';
 import { MinMax, Range } from '@/class/Info';
-import { useApplication } from '@/context/Application.context';
+import { Application } from '@/context/Application.context';
 import { Default } from '@/dto/Dataset';
 import { Algorhithm } from '@/ui/utils';
 import { capitalize, cn } from '@impactium/utils';
@@ -23,7 +23,7 @@ export namespace Highlights {
     }
 
     export function Overlay({ className, ...props }: Highlights.Create.Overlay.Props) {
-      const { Info, setHighlightsOverlay, scrollX, scrollY } = useApplication();
+      const { Info, setHighlightsOverlay, scrollX, scrollY } = Application.use();
       const [icon, setIcon] = useState<Glyph.Id | null>(Glyph.List.keys().next().value!);
       const [name, setName] = useState<string>('');
       const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
@@ -175,7 +175,7 @@ export namespace Highlights {
     }
 
     export function Overlay({ frame, fixed, layoutWidth, ...props }: Highlights.List.Overlay.Props) {
-      const { app } = useApplication();
+      const { app } = Application.use();
 
       const highlights = useMemo(() => Highlight.Entity.selected(app), [app.target.highlights, app.target.operations]);
 
@@ -231,7 +231,7 @@ export namespace Highlights {
   }
 
   export function Component({ highlight, fixed, layoutWidth, frame = {}, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
-    const { Info, app, scrollX } = useApplication();
+    const { Info, app, scrollX } = Application.use();
 
     if (layoutWidth) {
       native = true;

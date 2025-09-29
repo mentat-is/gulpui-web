@@ -14,7 +14,7 @@ import { Button } from '@/ui/Button'
 import s from './styles/Operation.module.css'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { Input } from '@/ui/Input'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Skeleton } from '@/ui/Skeleton'
 import { Stack } from '@/ui/Stack'
 import { useState, useEffect } from 'react'
@@ -86,7 +86,7 @@ export namespace Operation {
     }
 
     export function Banner({ ...props }: Operation.Select.Banner.Props) {
-      const { Info, app, spawnBanner } = useApplication()
+      const { Info, app, spawnBanner } = Application.use()
 
       const InitializeNewOperaion = () => (
         <Button
@@ -183,7 +183,7 @@ export namespace Operation {
     }
 
     export function Banner({ operation = {} as Operation.Type, ...props }: Operation.CreateOrUpdate.Banner.Props) {
-      const { Info, spawnBanner } = useApplication();
+      const { Info, spawnBanner } = Application.use();
       const [name, setName] = useState<string>(operation.name ?? '');
       const [icon, setIcon] = useState<Glyph.Id | null>(operation.glyph_id ?? Glyph.getIdByName(Default.Icon.OPERATION));
       const [description, setDescription] = useState<string>(operation.description ?? '');

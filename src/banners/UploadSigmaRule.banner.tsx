@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { NodeFile } from '@/ui/utils'
 import { ChangeEvent, useMemo, useState } from 'react'
@@ -26,7 +26,7 @@ export namespace Sigma {
     files: initFiles = [],
     ...props
   }: Sigma.Banner.Props) {
-    const { Info, app, destroyBanner } = useApplication();
+    const { Info, app, destroyBanner } = Application.use();
     const [rules, setRules] = useState<NodeFile[] | null>();
     const [files, setFiles] = useState(initFiles)
     const [createNotes, setCreateNotes] = useState<boolean>(false);

@@ -1,5 +1,5 @@
 import { DragDealer } from '@/class/dragDealer.class'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto'
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -33,7 +33,7 @@ export function useKeyHandler(key: string) {
 }
 
 export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
-  const { Info, setScrollX, setScrollY, highlightsOverlay } = useApplication()
+  const { Info, setScrollX, setScrollY, highlightsOverlay } = Application.use()
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 

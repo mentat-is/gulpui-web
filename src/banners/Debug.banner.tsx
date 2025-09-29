@@ -1,4 +1,4 @@
-import { useApplication } from "@/context/Application.context";
+import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Button } from "@/ui/Button";
 import { Stack } from "@/ui/Stack";
@@ -10,7 +10,7 @@ export namespace Debug {
     }
   }
   export function Banner({ ...props }: Debug.Banner.Props) {
-    const { Info } = useApplication();
+    const { Info } = Application.use();
 
     return (
       <UIBanner title='Deburger' {...props}>
