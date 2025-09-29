@@ -180,10 +180,6 @@ export function Navigator({
     setScrollX(0)
   }
 
-  useEffect(() => {
-    resetScaleAndScroll();
-  }, [app.timeline.frame]);
-
   const zoom = (out = false) => {
     const timelineWidth = timeline.current?.clientWidth || 1
     const currentScale = app.timeline.scale

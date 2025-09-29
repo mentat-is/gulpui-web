@@ -280,7 +280,7 @@ export namespace Auth {
             </Select.Root>
           </Stack>
         </Stack>
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id) && s.visible)}>
+        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).length && s.visible)}>
           <Label value='Session' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
