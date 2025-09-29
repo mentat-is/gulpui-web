@@ -187,9 +187,8 @@ export class Info implements InfoProps {
     this.timeline = timeline
     this.scrollX = scrollX;
     this.scrollY = scrollY;
-    this.setScrollX = setScrollX
-    this.setScrollY = setScrollY
-
+    this.setScrollX = setScrollX;
+    this.setScrollY = setScrollY;
   }
 
   refetch = async ({
@@ -1346,11 +1345,13 @@ export class Info implements InfoProps {
   session_create = async ({
     name,
     icon = Default.Icon.SESSION,
-    color = Default.Color.SESSION
+    color = Default.Color.SESSION,
+    scroll
   }: {
     name: string,
     icon: Icon.Name,
-    color: string
+    color: string,
+    scroll?: { x: number, y: number }
   }) => {
     const operation = Operation.Entity.selected(this.app);
     if (!operation) {
@@ -1365,13 +1366,15 @@ export class Info implements InfoProps {
       return
     }
 
+      console.log("scrol create session", scroll)
+
     sessions.push({
       name,
       icon,
       color,
       selected: {
-        files: Source.Entity.pins(this.app).map(f => f.id),
-        contexts: this.app.target.contexts.map(c => c.id),
+        files: Source.Entity.selected(this.app).map(f => f.id),
+        contexts: Context.Entity.selected(this.app).map(c => c.id),
         operations: operation.id
       },
       timeline: {
@@ -1382,15 +1385,11 @@ export class Info implements InfoProps {
         },        
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
-        scroll: {
-          x: this.scrollX,
-          y: this.scrollY
-        },
+        scroll: scroll ?? { x: this.scrollX, y: this.scrollY } 
       },
       filters: this.app.target.filters,
       hidden: this.app.hidden
     })
-    console.log("Timeline scale:", this.app.timeline);
 
     if (!this.app.general.user) {
       Logger.warn('Tried to create session before user has been defined');
@@ -1411,7 +1410,7 @@ export class Info implements InfoProps {
     })
   }
 
-  session_autosaver = async () => {
+  session_autosaver = async (scroll?: { x:number,y:number }) => {
     const prefix = 'Autosaved session '
     const sessions = await this.session_list();
     const prev = sessions.filter(session => session.name.startsWith(prefix));
@@ -1422,7 +1421,8 @@ export class Info implements InfoProps {
     await this.session_create({
       name: prefix + new Date().toUTCString(),
       color: 'var(--green-700)',
-      icon: 'RefreshClockwise'
+      icon: 'RefreshClockwise',
+      scroll: scroll
     });
 
     setTimeout(() => {
