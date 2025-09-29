@@ -1370,13 +1370,16 @@ export class Info implements InfoProps {
       icon,
       color,
       selected: {
-        files: Source.Entity.selected(this.app).map(f => f.id),
-        contexts: Context.Entity.selected(this.app).map(c => c.id),
+        files: Source.Entity.pins(this.app).map(f => f.id),
+        contexts: this.app.target.contexts.map(c => c.id),
         operations: operation.id
       },
       timeline: {
         scale: this.app.timeline.scale,
-        frame: this.app.timeline.frame,
+        frame: {
+                min: this.app.timeline.frame.min,
+                max: this.app.timeline.frame.max
+        },        
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
         scroll: {
@@ -1387,6 +1390,7 @@ export class Info implements InfoProps {
       filters: this.app.target.filters,
       hidden: this.app.hidden
     })
+    console.log("Timeline scale:", this.app.timeline);
 
     if (!this.app.general.user) {
       Logger.warn('Tried to create session before user has been defined');

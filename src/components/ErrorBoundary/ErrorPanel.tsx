@@ -1,12 +1,12 @@
-  import { useState, useCallback } from "react";
-  import { ErrorStackItem } from "./ErrorStackItem";
-  import { Button } from "@/ui/Button";
+  import { useState, useCallback, useEffect} from "react";
+  import { copy } from "@/ui/utils";
+  import { Action } from "./Action";
   import { Stack } from "@/ui/Stack";
   import { Badge } from "@/ui/Badge";
-  import { Action } from "./Action";
-  import { copy } from "@/ui/utils";
+  import { Button } from "@/ui/Button";
+  import { ErrorStackItem } from "./ErrorStackItem";
+  import { useApplication } from "@/context/Application.context";
   import s from "../styles/ErrorBoundary.module.css";
-import { useApplication } from "@/context/Application.context";
 
   interface ErrorWithDescription {
     name?: string;
@@ -60,7 +60,21 @@ import { useApplication } from "@/context/Application.context";
 
   export function ErrorPanel({ errors, onClose }: ErrorPanelProps) {
     const { Info } = useApplication();
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [currentErrorIndex, setCurrentErrorIndex] = useState(0);
+
+    useEffect(() => {
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
+
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+      };
+    }, []);
 
     if (!errors?.length) return null;
 
@@ -113,6 +127,9 @@ import { useApplication } from "@/context/Application.context";
           </Stack>
           <Stack jc="flex-end" gap={12} className={s.footer}>
             <Button variant='tertiary' size='lg'>Save log</Button>
+            {isOnline && (
+              <Button variant='tertiary' size='lg'>Report</Button>
+            )}
             <Button variant='default' size='lg' icon='X' onClick={onClose}>Ignore</Button>
             <Button variant="default" size="lg" icon="Save" onClick={ async () => {Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red'}); onClose?.() }}>Save sassion</Button>
           </Stack>
