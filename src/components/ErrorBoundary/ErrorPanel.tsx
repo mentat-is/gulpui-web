@@ -63,6 +63,22 @@
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [currentErrorIndex, setCurrentErrorIndex] = useState(0);
 
+    const handleSaveLog = useCallback(() => {
+      const content = errors
+        .map((e, index) => `Error #${index + 1}:\n${e.name ?? "Error"}: ${e.message}\n${e.stack ?? ""}`)
+        .join("\n\n");
+
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `error-log-${Date.now()}.txt`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+    }, [errors]);
+
     useEffect(() => {
       const handleOnline = () => setIsOnline(true);
       const handleOffline = () => setIsOnline(false);
@@ -126,7 +142,7 @@
             </Stack>
           </Stack>
           <Stack jc="flex-end" gap={12} className={s.footer}>
-            <Button variant='tertiary' size='lg'>Save log</Button>
+            <Button variant='tertiary' size='lg' onClick={handleSaveLog}>Save log</Button>
             {isOnline && (
               <Button variant='tertiary' size='lg'>Report</Button>
             )}
