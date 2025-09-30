@@ -43,7 +43,7 @@ export namespace Badge {
   export interface Props
     extends HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {
-    value?: string;
+    value?: React.ReactNode;
     icon?: Icon.Name;
     border?: boolean;
     radius?: number | string;

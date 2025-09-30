@@ -99,10 +99,11 @@ export namespace Extension {
   export namespace Component {
     export interface Props {
       name: string;
+      props?: any;
     }
   }
 
-  export function Component({ name }: Extension.Component.Props) {
+  export function Component({ name, props }: Extension.Component.Props) {
     const { extensions } = Extension.use();
     const extension = extensions[name];
     if (!extension) {
@@ -117,7 +118,7 @@ export namespace Extension {
     }
 
     return (
-      <Component Application={Application} />
+      <Component {...props} />
     )
   }
 

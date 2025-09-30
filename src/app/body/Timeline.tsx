@@ -6,6 +6,7 @@ import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
 import { Stack } from '@/ui/Stack'
 import { Source } from '@/entities/Source'
+import { MINUTE } from '@/dto'
 
 export function Timeline() {
   const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = Application.use()
@@ -23,9 +24,14 @@ export function Timeline() {
   }
 
   useEffect(() => {
-    // INITIALIZE AUTOSAVER
-    Info.session_autosaver()
-  }, []);
+    const interval = setInterval(() => {
+      Info.session_autosave();
+    }, MINUTE);
+
+    return () => {
+      clearInterval(interval);
+    }
+  }, [Info]);
 
   const getAlgothitmInstance = () => {
     return new Algorhithm({

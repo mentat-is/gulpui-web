@@ -299,7 +299,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         size='sm'
         className={s.amount}
         variant='gray-subtle'
-        value={file.total.toString()}
+        value={file.total}
       />
       <Button
         icon='Filter'

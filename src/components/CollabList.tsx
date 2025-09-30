@@ -111,7 +111,6 @@ export namespace Collab {
         <Stack dir='column' ai='stretch'>
           <Stack>
             {MemoizedSelect}
-            <Extension.Component name='Storyline.popover.tsx' />
             {Edit}
             <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
           </Stack>

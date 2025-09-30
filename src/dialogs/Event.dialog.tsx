@@ -29,6 +29,7 @@ import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
 import { Note } from '@/entities/Note'
 import { Color } from '@/entities/Color'
+import { Extension } from '@/context/Extension.context'
 
 interface DisplayEventDialogProps {
   event: Doc.Type
@@ -271,8 +272,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       <Navigation event={event} />
       {json ? (
         <Fragment>
-          <Stack className={s.group} gap={12}>
-            <Stack dir="column" gap={12} flex>
+          <Stack dir='column' className={s.group} gap={12} ai='stretch'>
+            <Stack gap={12} flex>
               <Button
                 onClick={handleCreateNote}
                 variant="secondary"
@@ -288,7 +289,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 Create link
               </Button>
             </Stack>
-            <Stack dir="column" gap={12} flex>
+            <Stack gap={12} flex>
               <Button
                 onClick={handleEnrich}
                 variant="glass"
@@ -304,6 +305,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 Connect link
               </Button>
             </Stack>
+            <Extension.Component name='Storyline.popover.tsx' props={{ doc: event }} />
           </Stack>
           <Collab.List notes={notes} links={links} />
           {highlights}

@@ -1407,7 +1407,7 @@ export class Info implements InfoProps {
     })
   }
 
-  session_autosaver = async () => {
+  session_autosave = async () => {
     const prefix = 'Autosaved session '
     const sessions = await this.session_list();
     const prev = sessions.filter(session => session.name.startsWith(prefix));
@@ -1420,10 +1420,6 @@ export class Info implements InfoProps {
       color: 'var(--green-700)',
       icon: 'RefreshClockwise'
     });
-
-    setTimeout(() => {
-      this.session_autosaver();
-    }, MINUTE);
   }
 
   sessions_delete = async (names: string[]) => {

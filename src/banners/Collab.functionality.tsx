@@ -135,7 +135,7 @@ export namespace NoteFunctionality {
           </Stack>
           <Separator />
           <Input
-            name='Title'
+            label='Title'
             value={name}
             icon='TextTitle'
             onChange={(e) => setName(String(e.currentTarget.value))}

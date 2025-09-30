@@ -33,10 +33,6 @@ export namespace Color {
     saga: ['9d80cb', 'f7c2e6'],
   }
 
-  export const FROM_CSS = {
-
-  } as const;
-
   export interface Theme {
     FONT_ACCENT: string;
     FONT_SECOND: string;
