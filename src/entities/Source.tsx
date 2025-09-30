@@ -22,7 +22,8 @@ import { Internal } from './addon/Internal'
 import { Color } from './Color'
 
 export namespace Source {
-  const _ = Symbol('Source')
+  export const name = 'Source'
+  const _ = Symbol(Source.name)
   export type Id = UUID & {
     readonly [_]: unique symbol
   }

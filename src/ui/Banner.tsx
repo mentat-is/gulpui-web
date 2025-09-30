@@ -112,7 +112,7 @@ export function Banner({
           {loading ? <Skeleton width="long" height={24} /> : title}
           {subtitle ? loading ? <Skeleton height={24} /> : subtitle : null}
         </h6>}
-        <Stack dir="column" ai="unset" gap={16} className={s.content} data-banner-content>
+        <Stack dir="column" ai="unset" gap={12} className={s.content} data-banner-content>
           {children}
         </Stack>
       </div>
