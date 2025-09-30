@@ -11,7 +11,7 @@ import { MINUTE } from '@/dto'
 export function Timeline() {
   const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
   const scrollRef = useRef({ x: scrollX, y: scrollY });
-  
+
   const focusEvent = (timestamp: number, onLeft = false, file_id?: Source.Id) => {
     const instance = getAlgothitmInstance()
 
@@ -29,13 +29,13 @@ export function Timeline() {
     scrollRef.current = { x: scrollX, y: scrollY }
 
     const autosave = () => {
-      Info.session_autosaver?.(scrollRef.current)
+      Info.session_autosaver?.(scrollRef.current, app.timeline.scale);
     }
 
     const interval = setInterval(autosave, MINUTE)
 
     return () => clearInterval(interval)
-  }, [Info, scrollX, scrollY])
+  }, [Info, scrollX, scrollY, app.timeline.scale])
 
   const getAlgothitmInstance = () => {
     return new Algorhithm({

@@ -1346,12 +1346,14 @@ export class Info implements InfoProps {
     name,
     icon = Default.Icon.SESSION,
     color = Default.Color.SESSION,
-    scroll
+    scroll,
+    scale
   }: {
     name: string,
     icon: Icon.Name,
     color: string,
-    scroll?: { x: number, y: number }
+    scroll?: { x: number, y: number },
+    scale?: number
   }) => {
     const operation = Operation.Entity.selected(this.app);
     if (!operation) {
@@ -1410,7 +1412,7 @@ export class Info implements InfoProps {
     })
   }
 
-  session_autosaver = async (scroll?: { x:number,y:number }) => {
+  session_autosaver = async (scroll?: { x:number,y:number }, scale?: number) => {
     const prefix = 'Autosaved session '
     const sessions = await this.session_list();
     const prev = sessions.filter(session => session.name.startsWith(prefix));
@@ -1422,7 +1424,8 @@ export class Info implements InfoProps {
       name: prefix + new Date().toUTCString(),
       color: 'var(--green-700)',
       icon: 'RefreshClockwise',
-      scroll: scroll
+      scroll: scroll,
+      scale
     });
 
     setTimeout(() => {
