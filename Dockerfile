@@ -1,14 +1,12 @@
 FROM node:22-alpine
-
-COPY --chown=node:node . ./web
+RUN npm install -g pnpm@latest
 
 WORKDIR /web
 
-ENV CI=true
+COPY --chown=node:node . .
 
-# Enable corepack and install dependencies
-RUN corepack enable && \
-    corepack prepare pnpm@latest --activate && \
-    pnpm install
+RUN pnpm install
+
+RUN pnpm run build
 
 CMD ["pnpx", "serve", "-s", "build"]

@@ -43,6 +43,7 @@
     "rehype-prism": "^2.3.3",
     "rehype-prism-plus": "^2.0.1",
     "remark-gfm": "^4.0.1",
+    "serve": "^14.2.5",
     "sonner": "^2.0.3",
     "typescript": "^5.8.3",
     "vaul": "^1.1.2"
