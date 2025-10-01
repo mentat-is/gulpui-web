@@ -31,11 +31,12 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   label?: string;
   revert?: boolean;
   skeleton?: boolean;
-  valid?: boolean
+  valid?: boolean;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, ...props }, ref) => {
+  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, onChange, ...props }, ref) => {
     const classes = cn(
       inputVariants({ variant, size, className }),
       s.wrapper,
@@ -59,8 +60,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <Label htmlFor={label} value={label} />
           <div className={classes}>
             <InputIcon />
-            <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} />
-          </div>
+            <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} onChange={onChange || (() => {})}/>
+          </div> 
         </Stack>
 
       </Skeleton>

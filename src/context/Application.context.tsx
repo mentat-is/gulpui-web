@@ -119,17 +119,25 @@ function _({ children }: { children: ReactNode }) {
 
     const key = event.key.toLowerCase()
 
+    // check for input etc... 
+    const target = event.target as HTMLElement;
+    const tag = target.tagName.toLowerCase();
+    if (['input', 'textarea'].includes(tag)|| target.isContentEditable) return;
+
     const events = Source.Entity.events(app, app.timeline.target['gulp.source_id'])
 
-    if (key === 'd' || key === 'a') {
-      const delta = Number(key === 'a') ? 1 : -1
+    if (['d', 'a', 'arrowright', 'arrowleft'].includes(key)) {
+      const delta = (key === 'a' || key === 'arrowleft') ? 1 : -1
       const target = instance.setTimelineTarget(delta)
       if (target) {
         spawnDialog(<DisplayEventDialog event={target} />)
       } else {
         toast(`Cannot open ${delta > 0 ? 'previous' : 'next'} event`)
       }
-    } else if (key === 'end') {
+    } else if (['ф', 'а'].includes(key)) {
+        toast('Use English letters A and D for scrolling');
+      }
+      else if (key === 'end') {
       event.preventDefault()
       const target = instance.setTimelineTarget(events[0])
       spawnDialog(<DisplayEventDialog event={target} />)

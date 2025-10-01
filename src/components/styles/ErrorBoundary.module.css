@@ -1,0 +1,83 @@
+.wrapper {
+  width: 100%;
+  height: 100vh;
+}
+
+.block {
+  width: 55%;
+  max-width: 900px;
+  height: 70%;
+  background-color: #0A0A0A;
+  border-radius: 1rem;
+  border: 1px solid #2e2e2e;
+}
+
+.panel {
+  width: 100%;
+  height: 100%;
+}
+
+.header {
+  width: 100%;  
+  border-radius: 1rem;
+  background-color: #0A0A0A;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  padding: 1rem 1.3rem;
+}
+
+.action {
+  width: 100%;  
+  padding: 0 1rem;
+}
+
+.iconWrapper {
+  border-radius: 1rem;
+  border: 1px solid #2e2e2e;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.iconWrapper:hover {
+  background-color: #1A1A1A;
+}
+
+.pagination > div {
+  width: 24px;
+}
+
+.message {
+  width: 100%;
+  padding: 0 1rem;
+  white-space: pre-wrap;
+}
+
+.stack, .stackContainer, .footer {
+  width: 100%;
+}
+
+.footer {
+  padding: 1rem 0;
+}
+
+.stack > span {
+  font-size: 16px;
+}
+
+.message > span{
+  color: var(--red-900);
+  font-size: 16px;
+}
+
+.message > p {
+  color: var(--red-900); 
+}
+
+.stackText {
+  width: 100%;
+  height: 250px;
+  padding: 8px;
+  overflow: hidden;
+  overflow-y: auto;
+  border: 1px solid #2e2e2e;
+  border-radius: 6px;
+}
