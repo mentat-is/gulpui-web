@@ -544,14 +544,23 @@ export class Info implements InfoProps {
     this.setInfoByKey(this.app.general.requests.sort((a, b) => b.time_created - a.time_created), 'general', 'requests');
   }
 
+  request_list = () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    return api<Request.Type[]>('/request_list', {
+      method: 'GET',
+      query: {
+        operation_id: operation.id
+      }
+    }, requests => this.setInfoByKey(requests, 'general', 'requests'));
+  }
+
   request_cancel = (req_id_to_cancel: Request.Id) => api('/request_cancel', {
     method: 'PATCH',
     query: { req_id_to_cancel },
-  });
-
-  request_get_by_id = (obj_id: Request.Id): Promise<Request.Type> => api<Request.Type>('/request_cancel', {
-    method: 'DELETE',
-    query: { obj_id },
   });
 
   filters_cache = (files: Array<Source.Type | Source.Id>) => {
@@ -1474,8 +1483,8 @@ export class Info implements InfoProps {
     this.setInfoByKey(session.filters, 'target', 'filters');
     if (session.hidden && typeof session.hidden === "object") {
       Object.keys(session.hidden).forEach(k => {
-          const key = k as keyof App.Type['hidden'];
-          this.setInfoByKey(session.hidden[key], 'hidden', key);
+        const key = k as keyof App.Type['hidden'];
+        this.setInfoByKey(session.hidden[key], 'hidden', key);
       });
     }
 
