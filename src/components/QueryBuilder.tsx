@@ -121,25 +121,24 @@ export namespace OpenSearchQueryBuilder {
 
     export namespace Add {
       export interface Props extends Stack.Props {
-        init: string;
         filters: Filter.Type[];
         setFilters: (filters: Filter.Type[]) => void;
       }
     }
 
-    export const Add = ({ filters, init, setFilters, ...props }: Query.Add.Props) => {
+    export const Add = ({ filters, setFilters, ...props }: Query.Add.Props) => {
       const add = useCallback(() => {
         filters.push({
           id: `condition-${Date.now()}` as Filter.Id,
           type: 'wildcard',
-          field: init,
+          field: '',
           case_insensitive: true,
           value: '',
           operator: 'must',
           enabled: true
         })
         setFilters(filters);
-      }, [filters, init, setFilters]);
+      }, [filters, setFilters]);
 
       return (
         <Stack jc='space-between' {...props}>

@@ -112,8 +112,8 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
   }, []);
 
   const AddCondition = useMemo(() => (
-    <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} init={[...keys][0]} />
-  ), [query, setFilters, keys.size, dubugger]);
+    <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} />
+  ), [query, setFilters, dubugger]);
 
   const QueryConditions = useMemo(() => (
     <OpenSearchQueryBuilder.Query.Filters filters={query.filters} setFilters={setFilters} keys={[...keys]} />
