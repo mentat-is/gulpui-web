@@ -4,10 +4,11 @@ COPY --chown=node:node . ./web
 
 WORKDIR /web
 
-RUN npm install -g serve
+ENV CI=true
 
-RUN npm install
+# Enable corepack and install dependencies
+RUN corepack enable && \
+    corepack prepare pnpm@latest --activate && \
+    pnpm install
 
-RUN npm run build
-
-CMD ["npx", "serve", "-s", "build"]
+CMD ["pnpx", "serve", "-s", "build"]
