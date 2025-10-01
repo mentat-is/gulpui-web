@@ -5,7 +5,7 @@ import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-import { useMemo, useCallback, ChangeEvent } from "react"
+import { useMemo, useCallback, ChangeEvent, useState } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
 import { Stack } from "@/ui/Stack"
@@ -160,6 +160,8 @@ export namespace OpenSearchQueryBuilder {
     }
 
     export const Filters = ({ filters, setFilters, keys }: Query.Filters.Props) => {
+      const [search, setSearch] = useState<string>('');
+
       const update = useCallback((id: Filter.Id, key: string, value: any) => {
         setFilters(filters.map((condition) =>
           condition.id === id ? { ...condition, [key]: value } : condition,
@@ -169,6 +171,16 @@ export namespace OpenSearchQueryBuilder {
       const remove = useCallback((id: Filter.Id) => {
         setFilters(filters.filter((condition) => condition.id !== id))
       }, [filters, setFilters]);
+
+      const SearchKeyInput = useMemo(() => {
+        const searchKeyInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+          setSearch(event.target.value);
+        }
+
+        return (
+          <Input value={search} onChange={searchKeyInputChangeHandler} icon='MagnifyingGlass' variant='highlighted' />
+        )
+      }, [search, setSearch]);
 
       return (
         <Stack ai='stretch' dir='column'>
@@ -224,13 +236,11 @@ export namespace OpenSearchQueryBuilder {
               <Stack style={fws}>
                 <Stack pos='relative'>
                   <Input className={s.key_input} icon='Dot' variant='highlighted' placeholder='Field name' value={filter.field} onChange={(e) => update(filter.id, 'field', e.target.value)} />
-                  <Select.Root
-                    value={filter.field}
-                    onValueChange={(e) => update(filter.id, 'field', e)}
-                  >
+                  <Select.Root value={filter.field} onValueChange={(e) => update(filter.id, 'field', e)}>
                     <Select.Trigger className={s.trigger} />
-                    <Select.Content>
-                      {keys.sort((a, b) => a.localeCompare(b)).map((k) => (
+                    <Select.Content style={{ minHeight: 60 }}>
+                      {SearchKeyInput}
+                      {keys.filter(key => key.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.localeCompare(b)).map((k) => (
                         <Select.Item key={k} value={k}>
                           {k}
                         </Select.Item>
