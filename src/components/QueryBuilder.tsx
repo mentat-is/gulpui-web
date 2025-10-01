@@ -160,8 +160,6 @@ export namespace OpenSearchQueryBuilder {
     }
 
     export const Filters = ({ filters, setFilters, keys }: Query.Filters.Props) => {
-      const [search, setSearch] = useState<string>('');
-
       const update = useCallback((id: Filter.Id, key: string, value: any) => {
         setFilters(filters.map((condition) =>
           condition.id === id ? { ...condition, [key]: value } : condition,
@@ -171,16 +169,6 @@ export namespace OpenSearchQueryBuilder {
       const remove = useCallback((id: Filter.Id) => {
         setFilters(filters.filter((condition) => condition.id !== id))
       }, [filters, setFilters]);
-
-      const SearchKeyInput = useMemo(() => {
-        const searchKeyInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
-          setSearch(event.target.value);
-        }
-
-        return (
-          <Input value={search} onChange={searchKeyInputChangeHandler} icon='MagnifyingGlass' variant='highlighted' />
-        )
-      }, [search, setSearch]);
 
       return (
         <Stack ai='stretch' dir='column'>
@@ -239,8 +227,8 @@ export namespace OpenSearchQueryBuilder {
                   <Select.Root value={filter.field} onValueChange={(e) => update(filter.id, 'field', e)}>
                     <Select.Trigger className={s.trigger} />
                     <Select.Content style={{ minHeight: 60 }}>
-                      {SearchKeyInput}
-                      {keys.filter(key => key.toLowerCase().includes(search.toLowerCase())).sort((a, b) => a.localeCompare(b)).map((k) => (
+                      <Input value={filter.field} disabled icon='MagnifyingGlass' variant='highlighted' />
+                      {keys.filter(key => key.toLowerCase().includes(filter.field.toLowerCase())).sort((a, b) => a.localeCompare(b)).map((k) => (
                         <Select.Item key={k} value={k}>
                           {k}
                         </Select.Item>
