@@ -1472,10 +1472,12 @@ export class Info implements InfoProps {
     this.setInfoByKey(Context.Entity.select(this.app, session.selected.contexts), 'target', 'contexts');
     this.setInfoByKey(Source.Entity.select(this.app, session.selected.files), 'target', 'files');
     this.setInfoByKey(session.filters, 'target', 'filters');
-    Object.keys(session.hidden).forEach(k => {
-      const key = k as keyof App.Type['hidden'];
-      this.setInfoByKey(session.hidden[key], 'hidden', key);
-    });
+    if (session.hidden && typeof session.hidden === "object") {
+      Object.keys(session.hidden).forEach(k => {
+          const key = k as keyof App.Type['hidden'];
+          this.setInfoByKey(session.hidden[key], 'hidden', key);
+      });
+    }
 
     setTimeout(() => {
       this.refetch();
