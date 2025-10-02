@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Doc } from '@/entities/Doc'
 import { Link } from '@/entities/Link'
 import { Source } from '@/entities/Source'
@@ -10,7 +10,7 @@ interface LinksDisplayerProps {
 }
 
 export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
-  const { app, scrollY } = useApplication()
+  const { app, scrollY } = Application.use()
 
   if (!app.target.links.length || app.hidden.links) return null
 

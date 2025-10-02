@@ -1,5 +1,5 @@
 import { RenderEngine } from '@/class/RenderEngine'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { XY } from '@/dto/XY.dto'
 import { Note } from '@/entities/Note';
 import { Source } from '@/entities/Source';
@@ -15,7 +15,7 @@ export function NotesDisplayer({
   getPixelPosition,
   self
 }: NotesDisplayerProps) {
-  const { app, scrollY } = useApplication()
+  const { app, scrollY } = Application.use()
   const [notes, setNotes] = useState<Note.Type[]>([]);
 
   useEffect(() => {

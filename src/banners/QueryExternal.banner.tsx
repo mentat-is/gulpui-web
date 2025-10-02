@@ -1,5 +1,5 @@
 import { GulpDataset } from '@/class/Info'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
 import { Switch } from '@/ui/Switch'
@@ -138,7 +138,7 @@ export namespace QueryExternal {
   }
 
   export const Banner = ({ preselectedOption, preparams, ...props }: QueryExternal.Banner.Props) => {
-    const { Info, spawnBanner, destroyBanner, app } = useApplication()
+    const { Info, spawnBanner, destroyBanner, app } = Application.use()
     const [options, setOptions] = useState<GulpDataset.PluginList.Interface[] | null>(app.target.plugins.filter((i) => i.type.includes('external')))
     const [selectedOption, setSelectedOption] = useState(preselectedOption ?? null)
     const [loading, setLoading] = useState<number>(0)

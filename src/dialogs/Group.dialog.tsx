@@ -1,7 +1,7 @@
 import { Dialog } from '@/ui/Dialog'
 import s from './styles/DisplayGroupDialog.module.css'
 import { DisplayEventDialog, EventIndicator } from './Event.dialog'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Stack } from '@/ui/Stack'
 import { format } from 'date-fns'
 import { useRef } from 'react'
@@ -13,7 +13,7 @@ interface DisplayGroupDialogProps {
 }
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
-  const { spawnDialog } = useApplication()
+  const { spawnDialog } = Application.use()
 
   const parentRef = useRef<HTMLDivElement>(null)
 

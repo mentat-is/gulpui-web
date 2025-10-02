@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import s from './styles/Canvas.module.css'
@@ -36,7 +36,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const canvas_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
-  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, setScrollY, Info, dialog, highlightsOverlay } = useApplication()
+  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, setScrollY, Info, dialog, highlightsOverlay } = Application.use()
   const [target, setTarget] = useState<Source.Type | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, [

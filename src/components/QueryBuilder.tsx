@@ -5,7 +5,7 @@ import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-import { useMemo, useCallback, ChangeEvent } from "react"
+import { useMemo, useCallback, ChangeEvent, useState } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
 import { Stack } from "@/ui/Stack"
@@ -121,25 +121,24 @@ export namespace OpenSearchQueryBuilder {
 
     export namespace Add {
       export interface Props extends Stack.Props {
-        init: string;
         filters: Filter.Type[];
         setFilters: (filters: Filter.Type[]) => void;
       }
     }
 
-    export const Add = ({ filters, init, setFilters, ...props }: Query.Add.Props) => {
+    export const Add = ({ filters, setFilters, ...props }: Query.Add.Props) => {
       const add = useCallback(() => {
         filters.push({
           id: `condition-${Date.now()}` as Filter.Id,
           type: 'wildcard',
-          field: init,
+          field: '',
           case_insensitive: true,
           value: '',
           operator: 'must',
           enabled: true
         })
         setFilters(filters);
-      }, [filters, init, setFilters]);
+      }, [filters, setFilters]);
 
       return (
         <Stack jc='space-between' {...props}>
@@ -224,13 +223,11 @@ export namespace OpenSearchQueryBuilder {
               <Stack style={fws}>
                 <Stack pos='relative'>
                   <Input className={s.key_input} icon='Dot' variant='highlighted' placeholder='Field name' value={filter.field} onChange={(e) => update(filter.id, 'field', e.target.value)} />
-                  <Select.Root
-                    value={filter.field}
-                    onValueChange={(e) => update(filter.id, 'field', e)}
-                  >
+                  <Select.Root value={filter.field} onValueChange={(e) => update(filter.id, 'field', e)}>
                     <Select.Trigger className={s.trigger} />
-                    <Select.Content>
-                      {keys.sort((a, b) => a.localeCompare(b)).map((k) => (
+                    <Select.Content style={{ minHeight: 60 }}>
+                      <Input value={filter.field} disabled icon='MagnifyingGlass' variant='highlighted' />
+                      {keys.filter(key => key.toLowerCase().includes(filter.field.toLowerCase())).sort((a, b) => a.localeCompare(b)).map((k) => (
                         <Select.Item key={k} value={k}>
                           {k}
                         </Select.Item>

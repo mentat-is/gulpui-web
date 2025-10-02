@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import s from './styles/NotesWindow.module.css'
 import { Banner } from '@/ui/Banner'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
@@ -18,7 +18,7 @@ interface FloatingWindowProps {
 }
 
 export function NotesWindow({ onClose }: FloatingWindowProps) {
-  const { app } = useApplication()
+  const { app } = Application.use()
   const [search, setSearch] = useState('');
 
   const getAvailableTags = useCallback(() => {

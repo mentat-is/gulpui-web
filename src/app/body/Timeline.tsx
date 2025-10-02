@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import s from '../Gulp.module.css'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Canvas } from './Canvas'
 import { Navigator } from './Navigator'
 import { Algorhithm, getTimestamp } from '@/ui/utils'
@@ -9,8 +9,7 @@ import { Source } from '@/entities/Source'
 import { MINUTE } from '@/dto'
 
 export function Timeline() {
-  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = useApplication()
-  const scrollRef = useRef({ x: scrollX, y: scrollY });
+  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = Application.use()
 
   const focusEvent = (timestamp: number, onLeft = false, file_id?: Source.Id) => {
     const instance = getAlgothitmInstance()
@@ -25,17 +24,14 @@ export function Timeline() {
   }
 
   useEffect(() => {
-    // INITIALIZE AUTOSAVER
-    scrollRef.current = { x: scrollX, y: scrollY }
+    const interval = setInterval(() => {
+      Info.session_autosave();
+    }, MINUTE);
 
-    const autosave = () => {
-      Info.session_autosaver?.(scrollRef.current, app.timeline.scale);
+    return () => {
+      clearInterval(interval);
     }
-
-    const interval = setInterval(autosave, MINUTE)
-
-    return () => clearInterval(interval)
-  }, [Info, scrollX, scrollY, app.timeline.scale])
+  }, [Info]);
 
   const getAlgothitmInstance = () => {
     return new Algorhithm({

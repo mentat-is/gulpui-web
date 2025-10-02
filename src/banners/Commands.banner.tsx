@@ -1,7 +1,7 @@
 import { Banner as UIBanner } from '@/ui/Banner';
 import { cn } from '@impactium/utils';
 import s from './styles/CommandsBanner.module.css';
-import { useApplication } from '@/context/Application.context';
+import { Application } from '@/context/Application.context';
 import { Input } from '@/ui/Input';
 import { ChangeEvent, useMemo, useState } from 'react';
 import { Icon } from '@impactium/icons';
@@ -36,7 +36,7 @@ export namespace Commands {
   }
 
   export function Banner({ className, ...props }: Banner.Props) {
-    const { app, spawnBanner } = useApplication();
+    const { app, spawnBanner } = Application.use();
     const [search, setSearch] = useState<string>('');
 
     const commands: Commands.Entity[] = useMemo(() => [
@@ -135,7 +135,7 @@ export namespace Commands {
   }
 
   export function Component({ command, search, setSearch }: Commands.Component.Props) {
-    const { spawnBanner } = useApplication();
+    const { spawnBanner } = Application.use();
 
     return (
       <Button className={s.command} icon={command.icon} variant="tertiary" onClick={command.onClick}>

@@ -12,7 +12,7 @@ import { User } from './User'
 import { Glyph } from './Glyph'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Button } from '@/ui/Button'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -98,7 +98,7 @@ export namespace Note {
       }
     }
     export function Banner({ note, ...props }: Note.Delete.Banner.Props) {
-      const { Info, destroyBanner } = useApplication();
+      const { Info, destroyBanner } = Application.use();
       const [loading, setLoading] = useState<boolean>(false);
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
 

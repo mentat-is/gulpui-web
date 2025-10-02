@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import './global.css'
-import {  Application } from './context/Application.context'
+import { Application } from './context/Application.context'
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect, useState } from 'react'
@@ -14,7 +14,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
-import { Boundary } from './context/Boundary.context'
+import { AppErrorBoundary } from './components/ErrorBoundary/AppErrorBoundary'
 import { Theme } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
@@ -36,20 +36,18 @@ function Root() {
 
   window.onerror = function (msg: any, src, line, col, err) {
     Logger.error("[Global Error]", msg);
-    const inst = Boundary.instance();
-    if (err && inst) {
-      inst.showError(err);
+    if (err && AppErrorBoundary.instance) {
+      AppErrorBoundary.instance.showError(err);
     }
   };
 
   window.onunhandledrejection = function (event) {
     Logger.error("[Unhandled Rejection]", event.reason);
-    const inst = Boundary.instance();
-    if (event.reason && inst) {
+    if (event.reason && AppErrorBoundary.instance) {
       const error = event.reason instanceof Error
         ? event.reason
         : new Error(String(event.reason));
-      inst.showError(error);
+      AppErrorBoundary.instance.showError(error);
     }
   };
 
@@ -58,11 +56,11 @@ function Root() {
       <Theme.Provider>
         <Toaster />
         <Application.Provider>
-          <Boundary.Provider>
+          <AppErrorBoundary>
             <Extension.Provider>
               <Main />
             </Extension.Provider>
-          </Boundary.Provider>
+          </AppErrorBoundary>
         </Application.Provider>
       </Theme.Provider>
     </>

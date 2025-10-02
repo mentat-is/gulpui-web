@@ -1,6 +1,6 @@
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { ChangeEvent, RefObject, useEffect, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom'
@@ -32,7 +32,7 @@ export function Navigator({
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = useApplication()
+  const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = Application.use()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
@@ -179,10 +179,6 @@ export function Navigator({
     Info.setTimelineScale(1)
     setScrollX(0)
   }
-
-  useEffect(() => {
-    resetScaleAndScroll();
-  }, [app.timeline.frame]);
 
   const zoom = (out = false) => {
     const timelineWidth = timeline.current?.clientWidth || 1

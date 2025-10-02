@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context';
+import { Application } from '@/context/Application.context';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { ChangeEvent, useCallback, useMemo, useState } from 'react';
 import { Separator } from '@/ui/Separator';
@@ -22,7 +22,7 @@ export namespace GlobalQuery {
   }
 
   export function Banner({ query: initQuery, ...props }: GlobalQuery.Banner.Props) {
-    const { Info, spawnBanner, destroyBanner } = useApplication();
+    const { Info, spawnBanner, destroyBanner } = Application.use();
     const [query, setQuery] = useState<Query.Type>(initQuery ?? {
       string: '',
       filters: []
@@ -57,7 +57,7 @@ export namespace GlobalQuery {
 
     const AddFilter = useMemo(() => {
       return (
-        <OpenSearchQueryBuilder.Query.Add init='' setFilters={setFilters} filters={query.filters} />
+        <OpenSearchQueryBuilder.Query.Add setFilters={setFilters} filters={query.filters} />
       )
     }, [query, setFilters]);
 

@@ -1,13 +1,12 @@
 FROM node:22-alpine
-
-COPY --chown=node:node . ./web
+RUN npm install -g pnpm@latest
 
 WORKDIR /web
 
-RUN npm install -g serve
+COPY --chown=node:node . .
 
-RUN npm install
+RUN pnpm install
 
-RUN npm run build
+RUN pnpm run build
 
-CMD ["npx", "serve", "-s", "build"]
+CMD ["pnpx", "serve", "-s", "build"]

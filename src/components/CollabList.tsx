@@ -1,5 +1,5 @@
 import { LinkFunctionality, NoteFunctionality } from "@/banners/Collab.functionality";
-import { useApplication } from "@/context/Application.context";
+import { Application } from "@/context/Application.context";
 import { cn } from "@impactium/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
@@ -48,7 +48,7 @@ export namespace Collab {
     if (notes.length === 0 && links.length === 0) {
       return null
     }
-    const { app, spawnBanner } = useApplication();
+    const { app, spawnBanner } = Application.use();
     const [target, setTarget] = useState<Note.Type | Link.Type>(notes[0] || links[0])
 
     useEffect(() => {
@@ -111,7 +111,6 @@ export namespace Collab {
         <Stack dir='column' ai='stretch'>
           <Stack>
             {MemoizedSelect}
-            <Extension.Component name='Storyline.popover.tsx' />
             {Edit}
             <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
           </Stack>

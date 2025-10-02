@@ -1,14 +1,15 @@
-import { useApplication } from '@/context/Application.context';
+import { Application } from '@/context/Application.context';
 import { Badge } from '@/ui/Badge';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Icon } from '@impactium/icons';
 import { cn } from '@impactium/utils';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import s from './styles/RequestsBanner.module.css';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Stack } from '@/ui/Stack';
 import { Request } from '@/entities/Request';
+import { Button } from '@/ui/Button';
 
 export namespace Requests {
   export namespace Banner {
@@ -16,7 +17,7 @@ export namespace Requests {
   }
 
   export function Banner({ className, ...props }: Requests.Banner.Props) {
-    const { Info, app, spawnBanner } = useApplication();
+    const { Info, app, spawnBanner } = Application.use();
     const [loading, setLoading] = useState<boolean>(false);
 
     const timeAgo = (timestamp: number): string => {
@@ -28,15 +29,22 @@ export namespace Requests {
 
     const cancelRequestButtonClickHandler = (id: Request.Type['id']) => Info.request_cancel(id);
 
-    const detailedViewRequestButtonClickHandler = async (id: Request.Type['id']) => {
+    const reload = async () => {
       setLoading(true);
-      const detailedRequest = await Info.request_get_by_id(id);
+      await Info.request_list();
       setLoading(false);
-      spawnBanner(<Requests.Detailed.Banner request={detailedRequest} />)
     };
 
+    const RefreshRequestsListButton = useMemo(() => {
+      return <Button variant='secondary' loading={loading} onClick={reload} icon='RefreshCcw'>Refresh</Button>
+    }, [reload]);
+
+    useEffect(() => {
+      reload();
+    }, []);
+
     return (
-      <UIBanner className={cn(className, s.banner)} title="Requests list" {...props}>
+      <UIBanner className={cn(className, s.banner)} title="Requests list" subtitle={RefreshRequestsListButton} {...props}>
         <Stack dir="column" gap={0} className={s.list}>
           {app.general.requests.map((request) => (
             <Stack key={request.id} className={cn(s.combination, className)} {...props}>
@@ -112,21 +120,5 @@ export namespace Requests {
       'success',
       'failed',
     ]
-  }
-
-  export namespace Detailed {
-    export namespace Banner {
-      export interface Props extends UIBanner.Props {
-        request: Request.Type;
-      }
-    }
-
-    export function Banner({ request, className, ...props }: Requests.Detailed.Banner.Props) {
-      return (
-        <UIBanner title='Request details' className={cn(className, s.detailedRequestBanner)} {...props}>
-
-        </UIBanner>
-      )
-    }
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, JSX } from 'react'
 import { Button as UIButton } from '@/ui/Button';
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
 import { toast } from 'sonner'
 import { GulpDataset, Pattern } from '@/class/Info'
@@ -26,7 +26,7 @@ export namespace Auth {
   }
 
   export function Page(_: Auth.Page.Props) {
-    const { spawnBanner, Info, app, spawnDialog } = useApplication()
+    const { spawnBanner, Info, app, spawnDialog } = Application.use()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('admin')
@@ -280,7 +280,7 @@ export namespace Auth {
             </Select.Root>
           </Stack>
         </Stack>
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id) && s.visible)}>
+        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).length && s.visible)}>
           <Label value='Session' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
@@ -314,7 +314,7 @@ export namespace Auth {
   }
 
   export function Banner({ className, ...props }: Banner.Props) {
-    const { Info, app } = useApplication()
+    const { Info, app } = Application.use()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('admin')

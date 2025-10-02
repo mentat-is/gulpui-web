@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Banner as UIBanner } from '../ui/Banner'
-import { useApplication } from '../context/Application.context'
+import { Application } from '../context/Application.context'
 import { Toggle } from '@/ui/Toggle'
 import s from './styles/LimitsBanner.module.css'
 import { MinMax } from '@/class/Info'
@@ -20,7 +20,7 @@ export namespace Frame {
     }
   }
   export function Banner({ frame: initFrame, callback, ...props }: Frame.Banner.Props) {
-    const { Info, destroyBanner, app } = useApplication()
+    const { Info, destroyBanner, app } = Application.use()
     const [frame, setFrame] = useState<MinMax>(initFrame ?? Context.Entity.frame(app))
     const [isMinValid, setIsMinValid] = useState<boolean>(true)
     const [isMaxValid, setIsMaxValid] = useState<boolean>(true)

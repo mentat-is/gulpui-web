@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Dialog } from '@/ui/Dialog'
 import { Fragment, useEffect, useMemo, useState, useCallback } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
@@ -29,6 +29,7 @@ import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
 import { Note } from '@/entities/Note'
 import { Color } from '@/entities/Color'
+import { Extension } from '@/context/Extension.context'
 
 interface DisplayEventDialogProps {
   event: Doc.Type
@@ -38,7 +39,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   if (!event) {
     return null;
   }
-  const { Info, app, spawnBanner } = useApplication()
+  const { Info, app, spawnBanner } = Application.use()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
   const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event]);
@@ -271,8 +272,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
       <Navigation event={event} />
       {json ? (
         <Fragment>
-          <Stack className={s.group} gap={12}>
-            <Stack dir="column" gap={12} flex>
+          <Stack dir='column' className={s.group} gap={12} ai='stretch'>
+            <Stack gap={12} flex>
               <Button
                 onClick={handleCreateNote}
                 variant="secondary"
@@ -288,7 +289,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 Create link
               </Button>
             </Stack>
-            <Stack dir="column" gap={12} flex>
+            <Stack gap={12} flex>
               <Button
                 onClick={handleEnrich}
                 variant="glass"
@@ -304,6 +305,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 Connect link
               </Button>
             </Stack>
+            <Extension.Component name='Storyline.popover.tsx' props={{ doc: event }} />
           </Stack>
           <Collab.List notes={notes} links={links} />
           {highlights}
@@ -358,7 +360,7 @@ export namespace EventIndicator {
 
 
 export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
-  const { app } = useApplication();
+  const { app } = Application.use();
 
   if (!event) {
     return null;

@@ -4,7 +4,7 @@ import { SwitchProps } from '@radix-ui/react-switch';
 import { ThemeProvider, useTheme } from 'next-themes'
 import { useCallback, useEffect, useState } from 'react'
 
-export function ThemeProviders({ children }: any) {
+function _({ children }: any) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -40,4 +40,6 @@ export namespace Theme {
   export namespace Switcher {
     export interface Props extends SwitchProps { };
   }
+
+  export const Provider = _;
 }

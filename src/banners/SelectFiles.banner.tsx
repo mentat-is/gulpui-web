@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Checkbox } from '@/ui/Checkbox'
 import s from './styles/SelectFilesBanner.module.css'
@@ -30,7 +30,7 @@ export namespace SelectFiles {
   }
 
   export function Banner(props: Banner.Props) {
-    const { app, Info, spawnBanner } = useApplication()
+    const { app, Info, spawnBanner } = Application.use()
     const [filter, setFilter] = useState('')
     const [loading, setLoading] = useState(false)
     const [selectedContexts, setSelectedContexts] = useState<Set<Context.Id>>(new Set(Context.Entity.selected(app).map(c => c.id)));
@@ -215,7 +215,7 @@ interface ContextComponentProps {
 };
 
 function ContextComponent({ context, filter, selectedFiles, selectedContexts, setFile, setContext }: ContextComponentProps) {
-  const { app, spawnBanner } = useApplication()
+  const { app, spawnBanner } = Application.use()
   const files = Context.Entity.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
@@ -266,7 +266,7 @@ interface FileComponentProps {
 }
 
 function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
-  const { app, Info, spawnBanner } = useApplication()
+  const { app, Info, spawnBanner } = Application.use()
   const [loading, setLoading] = useState<boolean>(false);
 
   const previewButtonClickHandler = () => {
@@ -299,7 +299,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         size='sm'
         className={s.amount}
         variant='gray-subtle'
-        value={file.total.toString()}
+        value={file.total}
       />
       <Button
         icon='Filter'

@@ -1,5 +1,5 @@
 import { GulpDataset, MinMax, MinMaxBase } from '@/class/Info'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Default } from '@/dto/Dataset'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
@@ -35,7 +35,7 @@ export namespace Enrichment {
   }
 
   export function Banner({ event, onEnrichment, ...props }: Enrichment.Props) {
-    const { Info, app, destroyBanner } = useApplication()
+    const { Info, app, destroyBanner } = Application.use()
     const [file, setFile] = useState<Source.Type | null>(
       event ? Source.Entity.id(app, event['gulp.source_id']) : null,
     )

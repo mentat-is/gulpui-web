@@ -1,5 +1,5 @@
 import s from './styles/Link.module.css'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { Point } from './Point'
 import { Link } from '@/entities/Link'
@@ -13,7 +13,7 @@ export namespace LinkPoint {
 }
 
 export function LinkPoint({ link, ...props }: LinkPoint.Props) {
-  const { app, spawnDialog } = useApplication()
+  const { app, spawnDialog } = Application.use()
 
   const openEvent = () => {
     if (link.doc_ids.length === 0) {

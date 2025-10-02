@@ -12,7 +12,7 @@ import { Glyph } from './Glyph'
 import { Engine } from '@/class/Engine.dto'
 import { generateUUID } from '@/ui/utils'
 import { Request } from './Request'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Button } from '@/ui/Button'
 import { Toggle } from '@/ui/Toggle'
 import { useState } from 'react'
@@ -22,7 +22,8 @@ import { Internal } from './addon/Internal'
 import { Color } from './Color'
 
 export namespace Source {
-  const _ = Symbol('Source')
+  export const name = 'Source'
+  const _ = Symbol(Source.name)
   export type Id = UUID & {
     readonly [_]: unique symbol
   }
@@ -210,7 +211,7 @@ export namespace Source {
       }
     }
     export function Banner({ file, ...props }: Source.Delete.Banner.Props) {
-      const { Info, destroyBanner } = useApplication()
+      const { Info, destroyBanner } = Application.use()
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
       const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)

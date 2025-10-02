@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import s from './styles/Pointers.module.css'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
@@ -31,7 +31,7 @@ export function Pointers({
   timestamp,
   ...props
 }: Pointers.Props) {
-  const { app, scrollY } = useApplication()
+  const { app, scrollY } = Application.use()
 
   const you: Pointers.Pointer = {
     ...self,

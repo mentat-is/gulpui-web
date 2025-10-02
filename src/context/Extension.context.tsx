@@ -1,14 +1,14 @@
 import { createContext, lazy, ReactNode, useContext, useEffect, useState } from "react";
-import { useApplication } from "./Application.context";
+import { Application } from "./Application.context";
 import React from "react";
 import { Logger } from "@/dto/Logger.class";
 import { Version } from "@/dto/Dataset";
 
 const __component = Symbol('__extension_component');
 
-export function ExtensionProvider({ children }: Extension.Provider.Props) {
-  const { app } = useApplication();
-  const { banner } = useApplication();
+function _({ children }: Extension.Provider.Props) {
+  const { app } = Application.use();
+  const { banner } = Application.use();
   const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function ExtensionProvider({ children }: Extension.Provider.Props) {
             const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
             const component = await Component();
             if (component.default) {
-              Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, ExtensionProvider);
+              Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
             }
 
             new_extensions[plugin.filename] = {
@@ -30,7 +30,7 @@ export function ExtensionProvider({ children }: Extension.Provider.Props) {
               [__component]: component.default,
             };
           } catch (err) {
-            Logger.error(`Failed to load component ${plugin.filename}`, ExtensionProvider);
+            Logger.error(`Failed to load component ${plugin.filename}`);
           }
         })
       );
@@ -85,6 +85,8 @@ export namespace Extension {
     }
   }
 
+  export const Provider = _;
+
   export const safe = (func: () => Promise<{ default: React.ComponentType<any> }>) => async () => {
     try {
       return await func();
@@ -97,10 +99,11 @@ export namespace Extension {
   export namespace Component {
     export interface Props {
       name: string;
+      props?: any;
     }
   }
 
-  export function Component({ name }: Extension.Component.Props) {
+  export function Component({ name, props }: Extension.Component.Props) {
     const { extensions } = Extension.use();
     const extension = extensions[name];
     if (!extension) {
@@ -115,7 +118,7 @@ export namespace Extension {
     }
 
     return (
-      <Component useApplication={useApplication} />
+      <Component {...props} />
     )
   }
 

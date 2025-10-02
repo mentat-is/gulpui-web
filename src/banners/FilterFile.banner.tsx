@@ -1,6 +1,6 @@
 import s from './styles/FilterFileBanner.module.css'
 import { Banner } from '@/ui/Banner'
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
 import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
 import { fws } from '@/ui/utils'
@@ -23,7 +23,7 @@ interface FilterFileBannerProps extends Banner.Props {
 }
 
 export function FilterFileBanner({ files: initFiles, query: initQuery, keys: initKeys, ...props }: FilterFileBannerProps) {
-  const { app, Info, spawnBanner, destroyBanner } = useApplication()
+  const { app, Info, spawnBanner, destroyBanner } = Application.use()
   const [loading, setLoading] = useState<boolean>(false)
   const [files, setFiles] = useState(initFiles);
 
@@ -112,8 +112,8 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
   }, []);
 
   const AddCondition = useMemo(() => (
-    <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} init={[...keys][0]} />
-  ), [query, setFilters, keys.size, dubugger]);
+    <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} />
+  ), [query, setFilters, dubugger]);
 
   const QueryConditions = useMemo(() => (
     <OpenSearchQueryBuilder.Query.Filters filters={query.filters} setFilters={setFilters} keys={[...keys]} />

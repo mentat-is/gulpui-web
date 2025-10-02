@@ -1,4 +1,4 @@
-import { useApplication } from '@/context/Application.context'
+import { Application } from '@/context/Application.context'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color'
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
@@ -24,7 +24,7 @@ interface SettingsFileBannerProps {
 }
 
 export function SettingsFileBanner({ file }: SettingsFileBannerProps) {
-  const { Info, app, spawnBanner, destroyBanner } = useApplication()
+  const { Info, app, spawnBanner, destroyBanner } = Application.use()
   const [render_color_palette, setRenderColorPalette] = useState<any>(file.settings.render_color_palette)
   const [offset, setOffset] = useState<number>(file.settings.offset)
   const [render_engine, setEngine] = useState<Engine.List>(file.settings.render_engine)

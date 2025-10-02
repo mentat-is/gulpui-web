@@ -154,9 +154,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public primary = (file: Source.Type) => {
     const y = Source.Entity.getHeight(this.info.app, file, this.scrollY)
 
-    this.ctx.fillStyle = stringToHexColor(
-      Source.Entity.context(this.info.app, file).name,
-    )
+    this.ctx.fillStyle = stringToHexColor(file.context_id);
     this.ctx.fillRect(0, y - 25, window.innerWidth, 1)
   }
 

@@ -1,12 +1,4 @@
-import React, {
-  useState,
-  createContext,
-  useContext,
-  ReactNode,
-  useRef,
-  useEffect,
-  useMemo,
-} from 'react'
+import { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
 import { Info } from '@/class/Info';
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
@@ -19,38 +11,7 @@ import { Link } from '@/entities/Link';
 import { Source } from '@/entities/Source';
 import { App } from '@/entities/App';
 
-export class ApplicationError extends Error {
-  constructor(message: string) {
-    super(`Application Error: ${message}`)
-  }
-}
-
-interface ApplicationContextProps {
-  spawnBanner: (banner: React.ReactNode) => void
-  destroyBanner: () => void
-  banner: React.ReactNode
-  spawnDialog: (dialog: React.ReactNode) => void
-  dialog: React.ReactNode
-  app: App.Type
-  scrollX: number;
-  scrollY: number;
-  setScrollX: SetState<number>;
-  setScrollY: SetState<number>;
-  setInfo: (info: App.Type) => void
-  Info: Info
-  timeline: React.RefObject<HTMLDivElement>
-  highlightsOverlay: React.ReactNode,
-  setHighlightsOverlay: SetState<React.ReactNode>;
-}
-
-export const ApplicationContext = createContext<
-  ApplicationContextProps | undefined
->(undefined)
-
-export const useApplication = (): ApplicationContextProps =>
-  useContext(ApplicationContext)!
-
-export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
+function _({ children }: { children: ReactNode }) {
   const [app, setInfo] = useState<App.Type>(App.Base);
   const [banner, setBanner] = useState<ReactNode>()
   const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />)
@@ -135,7 +96,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     setDialog(dialog)
   }
 
-  const props: ApplicationContextProps = {
+  const props = {
     spawnBanner,
     destroyBanner,
     banner,
@@ -151,7 +112,7 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
     timeline,
     highlightsOverlay,
     setHighlightsOverlay
-  }
+  } satisfies Application.Context.Props;
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!app.timeline.target || banner) return;
@@ -196,8 +157,36 @@ export const ApplicationProvider = ({ children }: { children: ReactNode }) => {
   }, [dialog, app.timeline.target, banner])
 
   return (
-    <ApplicationContext.Provider value={props}>
+    <Application.Context.Provider value={props}>
       {children}
-    </ApplicationContext.Provider>
+    </Application.Context.Provider>
   )
+}
+
+export namespace Application {
+  export namespace Context {
+    export interface Props {
+      spawnBanner: (banner: React.ReactNode) => void
+      destroyBanner: () => void
+      banner: React.ReactNode
+      spawnDialog: (dialog: React.ReactNode) => void
+      dialog: React.ReactNode
+      app: App.Type
+      scrollX: number;
+      scrollY: number;
+      setScrollX: SetState<number>;
+      setScrollY: SetState<number>;
+      setInfo: (info: App.Type) => void
+      Info: Info
+      timeline: React.RefObject<HTMLDivElement>
+      highlightsOverlay: React.ReactNode,
+      setHighlightsOverlay: SetState<React.ReactNode>;
+    }
+  }
+
+  export const Context = createContext<Application.Context.Props>(null!);
+
+  export const use = (): Application.Context.Props => useContext(Application.Context);
+
+  export const Provider = _;
 }
