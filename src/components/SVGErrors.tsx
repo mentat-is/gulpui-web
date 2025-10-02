@@ -32,8 +32,8 @@ export namespace SVGerrors {
 
         <path
           d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
-          fill="transparent"
-          stroke="#2e2e2e"
+          fill="none"
+          stroke="#1F1F1F"
           strokeWidth="1"
           shapeRendering="crispEdges"
         />
@@ -43,7 +43,7 @@ export namespace SVGerrors {
           y={0}
           width={10}
           height={1}
-          fill="#2e2e2e"
+          fill="#1F1F1F"
           shapeRendering="crispEdges"
         />
       </svg>
@@ -72,7 +72,7 @@ export namespace SVGerrors {
           y1="41"
           x2="100"
           y2="41"
-          stroke="#2e2e2e"
+          stroke="#1F1F1F"
           strokeWidth="1"
         />
       </svg>
@@ -107,12 +107,12 @@ export namespace SVGerrors {
         <path
           d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
           fill="none"
-          stroke="#2e2e2e"
+          stroke="#1F1F1F"
           strokeWidth="1"
           shapeRendering="crispEdges"
         />
 
-        <rect x={-2} y={0} width={10} height={1} fill="#2e2e2e" shapeRendering="crispEdges" />
+        <rect x={-2} y={0} width={10} height={1} fill="#1F1F1F" shapeRendering="crispEdges" />
       </svg>
     );
   }

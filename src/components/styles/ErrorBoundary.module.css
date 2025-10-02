@@ -4,12 +4,11 @@
 }
 
 .block {
-  width: 55%;
-  max-width: 900px;
+  width: 900px;
   height: 70%;
   background-color: #0A0A0A;
   border-radius: 1rem;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
 }
 
 .panel {
@@ -21,7 +20,6 @@
   width: 100%;  
   border-radius: 1rem;
   background-color: #0A0A0A;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   padding: 1rem 1.3rem;
 }
 
@@ -32,7 +30,7 @@
 
 .iconWrapper {
   border-radius: 1rem;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
   padding: 5px;
   cursor: pointer;
 }
@@ -78,7 +76,7 @@
   padding: 8px;
   overflow: hidden;
   overflow-y: auto;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
   border-radius: 6px;
 }
 
@@ -106,7 +104,7 @@
   height: 70%;
   background-color: #0A0A0A;
   border-radius: 1rem;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
 }
 
 .panel {
@@ -129,7 +127,7 @@
 
 .iconWrapper {
   border-radius: 1rem;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
   padding: 5px;
   cursor: pointer;
 }
@@ -175,6 +173,6 @@
   padding: 8px;
   overflow: hidden;
   overflow-y: auto;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
   border-radius: 6px;
 }
