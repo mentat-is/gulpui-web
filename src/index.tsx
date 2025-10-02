@@ -1,14 +1,11 @@
 import ReactDOM from 'react-dom/client'
 import './global.css'
-import {
-  ApplicationProvider,
-  useApplication,
-} from './context/Application.context'
+import {  Application } from './context/Application.context'
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
 import { useEffect, useState } from 'react'
 import { cn } from '@impactium/utils'
-import { ExtensionProvider } from './context/Extension.context'
+import { Extension } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
 import { Preloader } from './components/Preloader'
 import s from './App.module.css';
@@ -17,8 +14,8 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
-import { AppErrorBoundary } from './components/ErrorBoundary/AppErrorBoundary'
-import { ThemeProviders } from './context/Theme.context'
+import { Boundary } from './context/Boundary.context'
+import { Theme } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
 
@@ -39,40 +36,42 @@ function Root() {
 
   window.onerror = function (msg: any, src, line, col, err) {
     Logger.error("[Global Error]", msg);
-    if (err && AppErrorBoundary.instance) {
-      AppErrorBoundary.instance.showError(err);
+    const inst = Boundary.instance();
+    if (err && inst) {
+      inst.showError(err);
     }
   };
 
   window.onunhandledrejection = function (event) {
     Logger.error("[Unhandled Rejection]", event.reason);
-    if (event.reason && AppErrorBoundary.instance) {
+    const inst = Boundary.instance();
+    if (event.reason && inst) {
       const error = event.reason instanceof Error
         ? event.reason
         : new Error(String(event.reason));
-      AppErrorBoundary.instance.showError(error);
+      inst.showError(error);
     }
   };
 
   return (
     <>
-      <ThemeProviders>
+      <Theme.Provider>
         <Toaster />
-        <ApplicationProvider>
-          <AppErrorBoundary>
-            <ExtensionProvider>
+        <Application.Provider>
+          <Boundary.Provider>
+            <Extension.Provider>
               <Main />
-            </ExtensionProvider>
-          </AppErrorBoundary>
-        </ApplicationProvider>
-      </ThemeProviders>
+            </Extension.Provider>
+          </Boundary.Provider>
+        </Application.Provider>
+      </Theme.Provider>
     </>
   )
 }
 
 function Main() {
   const { theme } = useTheme();
-  const { Info, app, dialog } = useApplication();
+  const { Info, app, dialog } = Application.use();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
   // custom errors

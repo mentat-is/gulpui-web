@@ -28,12 +28,12 @@ coconut.tsx.json
 To interact with the application's state and data:
 
 * Use `Info.tsx` — provides access to shared app data.
-* Import `Info` and `app` using `useApplication` hook:
+* Import `Info` and `app` using `Application.use` hook:
 
 ```tsx
-import { useApplication } from '@/context/Application.context';
+import { Application } from '@/context/Application.context';
 
-const { app, Info } = useApplication();
+const { app, Info } = Application.use();
 ```
 
 ### UI Interaction Helpers

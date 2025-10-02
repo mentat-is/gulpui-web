@@ -81,3 +81,17 @@
   border: 1px solid #2e2e2e;
   border-radius: 6px;
 }
+
+.stackItem {
+  width: 100%;
+  padding: 6px;
+}
+
+.stackHeader, .stackPosition {
+  width: 100%;
+  color: var(--gray-alpha-1000);
+}
+  
+.stackPosition {
+  color: var(--gray-alpha-900);
+}
