@@ -155,7 +155,7 @@
           <Stack jc='flex-end' gap={12} className={s.footer}>
             <Button variant='tertiary' size='lg' onClick={handleSaveLog}>Save log</Button>
             {isOnline && (
-              <Button variant='tertiary' size='lg'>Report</Button>
+              <Button variant='tertiary' size='lg' onClick={() => window.open("https://github.com/orgs/mentat-is/projects/4/views/1?filterQuery=q3", "_blank")}>Report</Button>
             )}
             <Button variant='default' size='lg' icon='X' onClick={onClose}>Ignore</Button>
             <Button variant='default' size='lg' icon='Save' onClick={ async () => {Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red'}); onClose?.() }}>Save sassion</Button>
