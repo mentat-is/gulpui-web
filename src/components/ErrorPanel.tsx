@@ -136,7 +136,7 @@
           {HINTS.map((hint, idx) => <p key={idx}>{idx + 1}. {hint}</p>)}
           <Stack ai='center' jc='center' dir='column' className={s.stackContainer}>
             <Stack ai='center' jc='start' dir='row' gap={'6px'} className={s.stack}>
-              <span style={{ color: "white" }}>Call Stack</span>
+              <span style={{ color: "var(--gray-alpha-1000)"  }}>Call Stack</span>
               <Badge variant="gray-subtle" size="sm" value={currentError.stack ? `${currentError.stack.split("\n").length}` : ""} />
             </Stack>
             <Stack dir="column" className={s.stackText}>

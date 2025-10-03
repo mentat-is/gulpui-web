@@ -26,14 +26,14 @@ export namespace SVGerrors {
         <rect
           width="60"
           height="42"
-          fill="black"
+          fill="var(--background-200)"
           clipPath="url(#clipCurve)"
         />
 
         <path
           d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
           fill="none"
-          stroke="#1F1F1F"
+          stroke="var(--gray-400)"
           strokeWidth="1"
           shapeRendering="crispEdges"
         />
@@ -43,7 +43,7 @@ export namespace SVGerrors {
           y={0}
           width={10}
           height={1}
-          fill="#1F1F1F"
+          fill="var(--gray-400)"
           shapeRendering="crispEdges"
         />
       </svg>
@@ -65,14 +65,14 @@ export namespace SVGerrors {
           height: "42px",
         }}
       >
-        <rect width="100%" height="100%" fill="black" />
-        <rect width="100%" height="100%" fill="black" />
+        <rect width="100%" height="100%" fill="var(--background-200)" />
+        <rect width="100%" height="100%" fill="var(--background-200)" />
           <line
           x1="0"
           y1="41"
           x2="100"
           y2="41"
-          stroke="#1F1F1F"
+          stroke="var(--gray-400)"
           strokeWidth="1"
         />
       </svg>
@@ -102,17 +102,17 @@ export namespace SVGerrors {
           </clipPath>
         </defs>
 
-        <rect width="60" height="42" fill="black" clipPath="url(#clipCurveRight)" />
+        <rect width="60" height="42" fill="var(--background-200)" clipPath="url(#clipCurveRight)" />
 
         <path
           d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
           fill="none"
-          stroke="#1F1F1F"
+          stroke="var(--gray-400)"
           strokeWidth="1"
           shapeRendering="crispEdges"
         />
 
-        <rect x={-2} y={0} width={10} height={1} fill="#1F1F1F" shapeRendering="crispEdges" />
+        <rect x={-2} y={0} width={10} height={1} fill="var(--gray-400)" shapeRendering="crispEdges" />
       </svg>
     );
   }

@@ -84,7 +84,7 @@ function Main() {
     useEffect(() => {
     setTimeout(() => {
       Component() ;
-    }, 2500);
+    }, 15000);
   }, []);
 
   useEffect(() => {
