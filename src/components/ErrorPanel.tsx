@@ -1,12 +1,11 @@
   import { useState, useCallback, useEffect} from "react";
   import { copy } from "@/ui/utils";
-  import { Action } from "./Action";
   import { Stack } from "@/ui/Stack";
   import { Badge } from "@/ui/Badge";
   import { Button } from "@/ui/Button";
-  import { ErrorStackItem } from "./ErrorStackItem";
+  import { Icon } from '@impactium/icons';
   import { Application } from "@/context/Application.context";
-  import s from "../styles/ErrorBoundary.module.css";
+  import s from "./styles/ErrorBoundary.module.css";
 
   interface ErrorWithDescription {
     name?: string;
@@ -18,6 +17,18 @@
     errors: ErrorWithDescription[];
     sessionAutosaver?: () => Promise<void>;
     onClose?: () => void;
+  }
+
+  interface ErrorStackItemProps {
+    projectPath: string;
+    clientType: string;
+    filePath: string;
+    line?: number;
+    column?: number;
+  }
+
+  interface ActionProps {
+    onCopy?: () => void;
   }
 
   const getBadgeStyle = (disabled: boolean) => ({
@@ -46,7 +57,7 @@
           projectPath: pathSuffix ? `[project]/src/${pathSuffix}` : fullPath,
           clientType: fullPath.includes("/app/") ? "app-client" : "unknown",
           filePath: `/src/${pathSuffix || ""}`,
-          line: parseInt(lineStr, 10),
+          line: parseInt(lineStr, 100),
           column: parseInt(colStr, 10)
         };
       })
@@ -125,7 +136,7 @@
           {HINTS.map((hint, idx) => <p key={idx}>{idx + 1}. {hint}</p>)}
           <Stack ai='center' jc='center' dir='column' className={s.stackContainer}>
             <Stack ai='center' jc='start' dir='row' gap={'6px'} className={s.stack}>
-              <span style={{ color: "white" }}>Call Stack</span>
+              <span style={{ color: "var(--gray-alpha-1000)"  }}>Call Stack</span>
               <Badge variant="gray-subtle" size="sm" value={currentError.stack ? `${currentError.stack.split("\n").length}` : ""} />
             </Stack>
             <Stack dir="column" className={s.stackText}>
@@ -141,15 +152,44 @@
               ))}
             </Stack>
           </Stack>
-          <Stack jc="flex-end" gap={12} className={s.footer}>
+          <Stack jc='flex-end' gap={12} className={s.footer}>
             <Button variant='tertiary' size='lg' onClick={handleSaveLog}>Save log</Button>
             {isOnline && (
-              <Button variant='tertiary' size='lg'>Report</Button>
+              <Button variant='tertiary' size='lg' onClick={() => window.open("https://github.com/orgs/mentat-is/projects/4/views/1?filterQuery=q3", "_blank")}>Report</Button>
             )}
             <Button variant='default' size='lg' icon='X' onClick={onClose}>Ignore</Button>
-            <Button variant="default" size="lg" icon="Save" onClick={ async () => {Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red'}); onClose?.() }}>Save sassion</Button>
+            <Button variant='default' size='lg' icon='Save' onClick={ async () => {Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red'}); onClose?.() }}>Save sassion</Button>
           </Stack>
         </Stack>
       </Stack>
     );
   }
+
+export const ErrorStackItem: React.FC<ErrorStackItemProps> = ({ projectPath, clientType, filePath, line, column }) => {
+  return (
+    <Stack ai='start' jc='center' dir='column' gap={'8px'} className={s.stackItem}>
+      <Stack ai='start' jc='start' dir='row' gap={'6px'} className={s.stackHeader}>
+        [project] {projectPath} [{clientType}]
+      </Stack>
+      <Stack className={s.stackPosition}>
+        {filePath}{projectPath} {line && column ? `(${line}:${column})` : ""}
+      </Stack>
+    </Stack>
+  );
+};
+
+export function Action ({ onCopy }: ActionProps) {
+  return (
+    <Stack ai='center' jc='space-between' className={s.action}>
+      <Badge variant="red-subtle" size="md" value='Runtime Error' style={{fontFamily: "var(--font-mono)", borderRadius: "6px"}} />
+      <Stack className={s.action_block}>
+        <Stack ai='center' jc='center' className={s.iconWrapper} onClick={onCopy}>
+          <Icon name="Copy" size={14} color="var(--text-dimmed)" />
+        </Stack>
+        <Stack ai='center' jc='center' className={s.iconWrapper}>
+          <Icon name="BookOpen" size={14} color="var(--text-dimmed)" />
+        </Stack>
+      </Stack>
+    </Stack>
+  )
+}

@@ -187,9 +187,8 @@ export class Info implements InfoProps {
     this.timeline = timeline
     this.scrollX = scrollX;
     this.scrollY = scrollY;
-    this.setScrollX = setScrollX
-    this.setScrollY = setScrollY
-
+    this.setScrollX = setScrollX;
+    this.setScrollY = setScrollY;
   }
 
   refetch = async ({
@@ -1355,11 +1354,15 @@ export class Info implements InfoProps {
   session_create = async ({
     name,
     icon = Default.Icon.SESSION,
-    color = Default.Color.SESSION
+    color = Default.Color.SESSION,
+    scroll,
+    scale
   }: {
     name: string,
     icon: Icon.Name,
-    color: string
+    color: string,
+    scroll?: { x: number, y: number },
+    scale?: number
   }) => {
     const operation = Operation.Entity.selected(this.app);
     if (!operation) {
@@ -1374,6 +1377,8 @@ export class Info implements InfoProps {
       return
     }
 
+      console.log("scrol create session", scroll)
+
     sessions.push({
       name,
       icon,
@@ -1385,13 +1390,13 @@ export class Info implements InfoProps {
       },
       timeline: {
         scale: this.app.timeline.scale,
-        frame: this.app.timeline.frame,
+        frame: {
+                min: this.app.timeline.frame.min,
+                max: this.app.timeline.frame.max
+        },        
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
-        scroll: {
-          x: this.scrollX,
-          y: this.scrollY
-        },
+        scroll: scroll ?? { x: this.scrollX, y: this.scrollY } 
       },
       filters: this.app.target.filters,
       hidden: this.app.hidden

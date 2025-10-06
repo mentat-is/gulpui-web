@@ -352,7 +352,8 @@ img {
   -webkit-user-select: none;
   color: var(--accent);
   font-family: var(--font-sans);
-  box-sizing: border-box;
+  box-sizing: 
+  border-box;
   border: none;
   scrollbar-width: 0px;
   scrollbar-color: var(--background-100);
@@ -609,7 +610,6 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 .hljs-link {
   color: #00b0e8;
 }
-
 
 .hljs-emphasis {
   font-style: italic;

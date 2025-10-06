@@ -14,7 +14,7 @@ import { Menu } from './components/menu'
 import { Timeline } from './app/body/Timeline'
 import { Resizer } from './ui/Resizer'
 import { Auth } from './page/Auth.page'
-import { AppErrorBoundary } from './components/ErrorBoundary/AppErrorBoundary'
+import { Boundary } from './context/Boundary.context'
 import { Theme } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
@@ -36,18 +36,20 @@ function Root() {
 
   window.onerror = function (msg: any, src, line, col, err) {
     Logger.error("[Global Error]", msg);
-    if (err && AppErrorBoundary.instance) {
-      AppErrorBoundary.instance.showError(err);
+    const inst = Boundary.instance();
+    if (err && inst) {
+      inst.showError(err);
     }
   };
 
   window.onunhandledrejection = function (event) {
     Logger.error("[Unhandled Rejection]", event.reason);
-    if (event.reason && AppErrorBoundary.instance) {
+    const inst = Boundary.instance();
+    if (event.reason && inst) {
       const error = event.reason instanceof Error
         ? event.reason
         : new Error(String(event.reason));
-      AppErrorBoundary.instance.showError(error);
+      inst.showError(error);
     }
   };
 
@@ -56,11 +58,11 @@ function Root() {
       <Theme.Provider>
         <Toaster />
         <Application.Provider>
-          <AppErrorBoundary>
+          <Boundary.Provider>
             <Extension.Provider>
               <Main />
             </Extension.Provider>
-          </AppErrorBoundary>
+          </Boundary.Provider>
         </Application.Provider>
       </Theme.Provider>
     </>
@@ -78,6 +80,12 @@ function Main() {
     const obj: any = null;
     return <div>{obj.prop}</div>;
   }
+
+  //   useEffect(() => {
+  //   setTimeout(() => {
+  //     Component() ;
+  //   }, 15000);
+  // }, []);
 
   useEffect(() => {
     if (isPreloaded)

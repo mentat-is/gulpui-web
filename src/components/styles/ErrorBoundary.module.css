@@ -4,12 +4,11 @@
 }
 
 .block {
-  width: 55%;
-  max-width: 900px;
+  width: 850px;
   height: 70%;
-  background-color: #0A0A0A;
+  background-color: var(--background-100);
   border-radius: 1rem;
-  border: 1px solid #2e2e2e;
+  border: 1px solid var(--gray-400);
 }
 
 .panel {
@@ -20,8 +19,6 @@
 .header {
   width: 100%;  
   border-radius: 1rem;
-  background-color: #0A0A0A;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   padding: 1rem 1.3rem;
 }
 
@@ -32,13 +29,13 @@
 
 .iconWrapper {
   border-radius: 1rem;
-  border: 1px solid #2e2e2e;
+  border: 1px solid #252525;
   padding: 5px;
   cursor: pointer;
 }
 
 .iconWrapper:hover {
-  background-color: #1A1A1A;
+  background-color: var(--background-100);
 }
 
 .pagination > div {
@@ -78,6 +75,21 @@
   padding: 8px;
   overflow: hidden;
   overflow-y: auto;
-  border: 1px solid #2e2e2e;
+  background-color: var(--background-200);
+  border: 1px solid var(--gray-400);
   border-radius: 6px;
+}
+
+.stackItem {
+  width: 100%;
+  padding: 6px;
+}
+
+.stackHeader, .stackPosition {
+  width: 100%;
+  color: var(--gray-alpha-1000);
+}
+  
+.stackPosition {
+  color: var(--gray-alpha-900);
 }

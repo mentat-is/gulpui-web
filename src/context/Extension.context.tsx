@@ -28,7 +28,7 @@ function _({ children }: Extension.Provider.Props) {
               ...plugin,
               type: plugin.type ?? [],
               [__component]: component.default,
-            };
+            };  
           } catch (err) {
             Logger.error(`Failed to load component ${plugin.filename}`);
           }
