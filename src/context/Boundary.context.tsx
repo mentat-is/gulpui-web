@@ -7,7 +7,7 @@ import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
 import { Icon } from '@impactium/icons';
 import { Application } from '@/context/Application.context';
-import s from './styles/ErrorBoundary.module.css';
+import s from './styles/Boundary.module.css';
 
 export namespace Boundary {
   export type Props = {
