@@ -81,11 +81,11 @@ function Main() {
     return <div>{obj.prop}</div>;
   }
 
-    useEffect(() => {
-    setTimeout(() => {
-      Component() ;
-    }, 15000);
-  }, []);
+  //   useEffect(() => {
+  //   setTimeout(() => {
+  //     Component() ;
+  //   }, 15000);
+  // }, []);
 
   useEffect(() => {
     if (isPreloaded)

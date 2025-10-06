@@ -9,7 +9,6 @@ import { format } from 'date-fns'
 import {
   ChangeEvent,
   CSSProperties,
-  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -110,7 +109,7 @@ export namespace Enrichment {
       />
     )
 
-    const FileSelection = () => {
+    const FileSelection = useMemo(() => {
       if (event && file) {
         return (
           <Skeleton show={!plugins} width='full' className={s.skeleton}>
@@ -153,9 +152,9 @@ export namespace Enrichment {
           </Select.Content>
         </Select.Root>
       )
-    }
+    }, [plugins, file, event])
 
-    const PluginSelection = () => {
+    const PluginSelection = useMemo(() => {
       if (!plugins) {
         return <Skeleton className={s.skeleton} width='full' />
       }
@@ -187,7 +186,7 @@ export namespace Enrichment {
           </Select.Content>
         </Select.Root>
       )
-    }
+    },  [plugin, plugins])
 
     const [frame, setFrame] = useState<MinMax>(MinMaxBase)
 
@@ -266,8 +265,8 @@ export namespace Enrichment {
         loading={!plugins}
         {...props}
       >
-        <PluginSelection />
-        <FileSelection />
+        {PluginSelection}
+        {FileSelection}
         <FrameSelector />
         <CustomParameters.Editor customParameters={customParameters} setCustomParameters={setCustomParameters} plugin={plugin} />
         <Stack ai='center' gap={4}>
