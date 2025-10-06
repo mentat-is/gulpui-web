@@ -29,7 +29,7 @@
 
 .iconWrapper {
   border-radius: 1rem;
-  border: 1px solid #252525;
+  border: 1px solid var(--gray-400);
   padding: 5px;
   cursor: pointer;
 }

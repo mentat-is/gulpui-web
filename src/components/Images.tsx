@@ -1,4 +1,4 @@
-export namespace SVGerrors {
+export namespace Images {
   export function LeftCap() {
     return (
       <svg
@@ -22,14 +22,12 @@ export namespace SVGerrors {
             />
           </clipPath>
         </defs>
-
         <rect
           width="60"
           height="42"
           fill="var(--background-200)"
           clipPath="url(#clipCurve)"
         />
-
         <path
           d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
           fill="none"
@@ -37,7 +35,6 @@ export namespace SVGerrors {
           strokeWidth="1"
           shapeRendering="crispEdges"
         />
-
         <rect
           x={-2}
           y={0}
@@ -50,7 +47,7 @@ export namespace SVGerrors {
     );
   }
 
-  export function MiddleLine () {
+  export function MiddleLine() {
     return (
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -67,7 +64,7 @@ export namespace SVGerrors {
       >
         <rect width="100%" height="100%" fill="var(--background-200)" />
         <rect width="100%" height="100%" fill="var(--background-200)" />
-          <line
+        <line
           x1="0"
           y1="41"
           x2="100"
@@ -101,9 +98,7 @@ export namespace SVGerrors {
             <path d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60 V0 H0 Z" />
           </clipPath>
         </defs>
-
         <rect width="60" height="42" fill="var(--background-200)" clipPath="url(#clipCurveRight)" />
-
         <path
           d="M1.5 0.5 L10.5 0.5 C18.5 0.5 23.5 4 26 11 L35 30 C38 36 45 41 53 41 H60"
           fill="none"
@@ -111,7 +106,6 @@ export namespace SVGerrors {
           strokeWidth="1"
           shapeRendering="crispEdges"
         />
-
         <rect x={-2} y={0} width={10} height={1} fill="var(--gray-400)" shapeRendering="crispEdges" />
       </svg>
     );
