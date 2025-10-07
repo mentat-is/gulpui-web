@@ -13,5 +13,5 @@ let commit = '';
 try { commit = sh('git rev-parse --short HEAD'); } catch { commit = ''; }
 
 const builtAt = new Date().toISOString();
-writeFileSync(join(process.cwd(), 'public', 'version.json'), JSON.stringify({ version, commit, builtAt }, null, 2));
+writeFileSync(join(process.cwd(), 'public', 'version'), version);
 console.log(`[version] ${version} (${commit}) ${builtAt}`);
