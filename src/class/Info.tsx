@@ -1377,8 +1377,6 @@ export class Info implements InfoProps {
       return
     }
 
-    console.log("scrol create session", scroll)
-
     sessions.push({
       name,
       icon,
@@ -1504,27 +1502,18 @@ export class Info implements InfoProps {
       return Internal.Transformator.toAsync([]);
     }
 
-    // return api<any>('/user_get_by_id', {
-    //   method: 'GET',
-    //   query: { user_id: user.id }
-    // }).then(data => data.user_data.sessions || [])
-
-    return [];
+    return api<any>('/user_get_by_id', {
+      method: 'GET',
+      query: { user_id: user.id }
+    }).then(data => data.user_data.sessions || [])
   };
 
   sync = async () => {
-    const selectedOperation = Operation.Entity.selected(this.app);
-
     await this.mapping_file_list()
 
-    const operations: Operation.Type[] = [];
-
-    await api<Operation.Type[]>('/operation_list', {
+    const operations = await api<Operation.Type[]>('/operation_list', {
       method: 'POST'
-    }).then(operations => operations.forEach(operation => {
-      if (selectedOperation && operation.id !== selectedOperation.id) {
-        return;
-      }
+    }).then(operations => operations.map(operation => {
       // @ts-ignore
       delete operation.contexts;
       // @ts-ignore
@@ -1534,7 +1523,7 @@ export class Info implements InfoProps {
 
       operation.selected = exist.selected ?? false;
 
-      operations.push(operation);
+      return operation;
     }));
 
     const contexts = await Promise.all(operations.map(operation => api<Context.Type[]>('/context_list', { query: { operation_id: operation.id } }))).then(contexts => contexts.flat().map(context => {

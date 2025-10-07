@@ -112,7 +112,7 @@ export namespace Operation {
               />,
             )
           }
-          size='icon'
+          shape='icon'
           variant='glass'
           icon='Check'
         />

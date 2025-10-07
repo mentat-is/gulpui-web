@@ -395,7 +395,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
 
   return (
     <Button
-      size='icon'
+      shape='icon'
       className={cn(className, s.indicator)}
       rounded
       style={{ ...style, background }} {...props}>

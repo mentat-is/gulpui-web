@@ -89,7 +89,7 @@ export function Banner({
               onClick={close}
               icon="X"
               loading={loading}
-              size="icon"
+              shape='icon'
             />
           )}
         </Cell>
