@@ -1,71 +1,27 @@
 .wrapper {
-  width: 100%;
+  width: 100vw;
   height: 100vh;
 }
-
 .block {
-  width: 850px;
-  height: 70%;
+  width: calc(100vw - 128px);
+  height: 75vh;
   background-color: var(--background-100);
-  border-radius: 1rem;
+  border-radius: 16px;
   border: 1px solid var(--gray-400);
+  padding: 16px;
 }
-
 .panel {
   width: 100%;
   height: 100%;
 }
-
-.header {
-  width: 100%;  
-  border-radius: 1rem;
-  padding: 1rem 1.3rem;
-}
-
-.action {
-  width: 100%;  
-  padding: 0 1rem;
-}
-
-.iconWrapper {
-  border-radius: 1rem;
-  border: 1px solid var(--gray-400);
-  padding: 5px;
-  cursor: pointer;
-}
-
-.iconWrapper:hover {
-  background-color: var(--background-100);
-}
-
 .pagination > div {
   width: 24px;
 }
-
-.message {
-  width: 100%;
-  padding: 0 1rem;
-  white-space: pre-wrap;
-}
-
-.stack, .stackContainer, .footer {
-  width: 100%;
-}
-
-.footer {
-  padding: 1rem 0;
-}
-
-.stack > span {
-  font-size: 16px;
-}
-
-.message > span{
+.panel span {
   color: var(--red-900);
   font-size: 16px;
 }
-
-.message > p {
+.panel   p {
   color: var(--red-900); 
 }
 

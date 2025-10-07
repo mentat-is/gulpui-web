@@ -75,6 +75,9 @@
   min-height: 32px;
   padding: 0 12px;
 }
+.defaultSize.icon {
+  width: 32px;
+}
 .sm {
   height: 24px;
   padding: 0 12px;
@@ -84,9 +87,15 @@
   font-weight: 400;
   border-radius: 4px;
 }
+.sm.icon {
+  width: 24px;
+}
 .md {
   height: 36px;
   min-width: 36px;
+}
+.mg.icon {
+  width: 36px;
 }
 .lg {
   height: 48px;
@@ -94,12 +103,13 @@
   font-size: 16px;
   padding: 0 16px;
 }
+.lg.icon {
+  width: 48px;
+}
 
 .icon {
-  height: 32px;
-  width: 32px;
-  min-height: 32px;
-  min-width: 32px;
+  border-radius: var(--round);
+  padding: 0;
 }
 
 .withImage {

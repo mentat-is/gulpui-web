@@ -45,6 +45,7 @@ export namespace Badge {
     VariantProps<typeof badgeVariants> {
     value?: React.ReactNode;
     disabled?: boolean;
+    mono?: boolean;
     icon?: Icon.Name;
     border?: boolean;
     radius?: number | string;
@@ -55,9 +56,9 @@ export namespace Badge {
   export type Size = Badge.Props['size'];
 }
 
-export function Badge({ className, variant, size, value, icon, border, disabled, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
+export function Badge({ className, mono, variant, size, value, icon, border, disabled, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
   return (
-    <div className={cn(badgeVariants({ variant, size, className }), border && s.bordered, disabled && s.disabled)} style={{ borderRadius }} {...props}>
+    <div className={cn(badgeVariants({ variant, size, className }), border && s.bordered, disabled && s.disabled, mono && s.mono)} style={{ borderRadius }} {...props}>
       {icon ? <Icon name={icon} size={convertButtonVariantToIconSize(size)} /> : null}
       {value || props.children}
     </div>

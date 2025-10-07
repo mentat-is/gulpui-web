@@ -58,7 +58,7 @@ export namespace Images {
           zIndex: 1,
           top: '-1px',
           left: "calc(10% + 55px)",
-          width: 'calc(100% - 30% - 110px)',
+          width: 'calc(76% - 110px)',
           height: "42px",
         }}
       >
@@ -87,7 +87,7 @@ export namespace Images {
         style={{
           position: "absolute",
           top: "-1px",
-          right: "20%",
+          right: "14%",
           transform: "scaleX(-1)",
           zIndex: 1,
           pointerEvents: "none"

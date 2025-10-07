@@ -125,24 +125,23 @@ export namespace Boundary {
     const handleCopy = () => copy(`${visibleError.message}\n${visibleError.stack ?? ''}`);
 
     return (
-      <Stack ai='center' jc='start' dir='column' className={s.panel}>
-        <Stack ai='center' jc='space-between' dir='row' className={s.header}>
-          <Stack style={{ color: 'var(--gray-alpha-1000)', fontFamily: 'var(--font-mono)' }} ai='center' jc='center' dir='row' gap={'6px'} className={s.pagination}>
-            <Badge variant='gray-subtle' style={{ fontFamily: 'var(--font-mono)' }} disabled={current === 0} onClick={() => setCurrent(i => i - 1)} icon='ArrowLeft' />
-            {current + 1}/{errors.length}
-            <Badge variant='gray-subtle' style={{ fontFamily: 'var(--font-mono)' }} disabled={current === errors.length - 1} onClick={() => setCurrent(i => i + 1)} icon='ArrowRight' />
+      <Stack ai='stretch' jc='start' dir='column' className={s.panel} gap={16}>
+        <Stack ai='center' jc='space-between' dir='row'>
+          <Stack style={{ color: 'var(--gray-alpha-1000)' }} ai='center' jc='center' dir='row' gap={'6px'} className={s.pagination}>
+            <Badge variant='gray-subtle' disabled={current === 0} onClick={() => setCurrent(i => i - 1)} icon='ArrowLeft' />
+            {current + 1} / {errors.length}
+            <Badge variant='gray-subtle' disabled={current === errors.length - 1} onClick={() => setCurrent(i => i + 1)} icon='ArrowRight' />
           </Stack>
           <Stack ai='center' jc='center' dir='row' gap={'6px'}>
-            <p>Current version:</p>
-            <Badge variant='gray-subtle' value='1.0.0' style={{ color: 'var(--gray-alpha-900)' }} />
+            <Badge variant='gray-subtle' mono value='Version: 1.0.0' />
           </Stack>
         </Stack>
         <Panel.Actions onCopy={handleCopy} />
-        <Stack ai='flex-start' jc='center' dir='column' gap={'16px'} className={s.message}>
+        <Stack ai='stretch' flex jc='center' dir='column' gap={16}>
           <span>{visibleError.message}</span>
           {Panel.HINTS.map((hint, idx) => <p key={idx}>{idx + 1}. {hint}</p>)}
-          <Stack ai='center' jc='center' dir='column' className={s.stackContainer}>
-            <Stack ai='center' jc='start' dir='row' gap={'6px'} className={s.stack}>
+          <Stack ai='flex-start' jc='center' dir='column' className={s.stackContainer} flex>
+            <Stack ai='center' jc='start' dir='row' gap={6} className={s.stack} flex={0}>
               <span style={{ color: 'var(--gray-alpha-1000)' }}>Call Stack</span>
               <Badge variant='gray-subtle' size='sm' value={visibleError.stack ? `${visibleError.stack.split('\n').length}` : ''} />
             </Stack>
@@ -155,13 +154,12 @@ export namespace Boundary {
               ))}
             </Stack>
           </Stack>
-          <Stack jc='flex-end' gap={12} className={s.footer}>
-            <Button variant='tertiary' size='lg' onClick={handleSaveLog}>Save log</Button>
-            {isOnline && (
-              <Button variant='tertiary' size='lg' onClick={() => window.open('https://github.com/mentat-is/gulpui-web/issues/new', '_blank')}>Report</Button>
-            )}
-            <Button variant='default' size='lg' icon='X' onClick={onClose}>Ignore</Button>
-            <Button variant='default' size='lg' icon='Save' onClick={async () => { Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red' }); onClose?.() }}>Save sassion</Button>
+          <Stack jc='flex-end' flex={0} gap={12}>
+            {isOnline ? (
+              <Button variant='tertiary' onClick={() => window.open('https://github.com/mentat-is/gulpui-web/issues/new', '_blank')}>Report</Button>
+            ) : <Button variant='tertiary' onClick={handleSaveLog}>Save log</Button>}
+            <Button variant='secondary' icon='X' onClick={onClose}>Ignore</Button>
+            <Button variant='default' icon='Save' onClick={async () => { Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red' }); onClose?.() }}>Save sassion</Button>
           </Stack>
         </Stack>
       </Stack>
@@ -217,8 +215,8 @@ export namespace Boundary {
 
     export function Item({ projectPath, clientType, filePath, line, column }: Boundary.Panel.Item.Props) {
       return (
-        <Stack ai='start' jc='center' dir='column' gap={'8px'} className={s.stackItem}>
-          <Stack ai='start' jc='start' dir='row' gap={'6px'} className={s.stackHeader}>
+        <Stack ai='start' jc='center' dir='column' className={s.stackItem} flex={0}>
+          <Stack ai='start' jc='start' dir='row' gap={6} className={s.stackHeader}>
             [project] {projectPath} [{clientType}]
           </Stack>
           <Stack className={s.stackPosition}>
@@ -239,12 +237,12 @@ export namespace Boundary {
         <Stack ai='center' jc='space-between' className={s.action}>
           <Badge variant='red-subtle' value='Runtime Error' style={{ fontFamily: 'var(--font-mono)', borderRadius: '6px' }} />
           <Stack className={s.action_block}>
-            <Stack ai='center' jc='center' className={s.iconWrapper} onClick={onCopy}>
-              <Icon name='Copy' size={14} color='var(--text-dimmed)' />
-            </Stack>
-            <Stack ai='center' jc='center' className={s.iconWrapper}>
-              <Icon name='BookOpen' size={14} color='var(--text-dimmed)' />
-            </Stack>
+            <Button variant='secondary' icon='Copy' onClick={onCopy} size='sm' shape='icon' />
+            <Button variant='secondary' asChild rounded size='sm' shape='icon'>
+              <a href=''>
+                <Icon name='BookOpen' size={12} />
+              </a>
+            </Button>
           </Stack>
         </Stack>
       )
