@@ -1377,7 +1377,7 @@ export class Info implements InfoProps {
       return
     }
 
-      console.log("scrol create session", scroll)
+    console.log("scrol create session", scroll)
 
     sessions.push({
       name,
@@ -1391,12 +1391,12 @@ export class Info implements InfoProps {
       timeline: {
         scale: this.app.timeline.scale,
         frame: {
-                min: this.app.timeline.frame.min,
-                max: this.app.timeline.frame.max
-        },        
+          min: this.app.timeline.frame.min,
+          max: this.app.timeline.frame.max
+        },
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
-        scroll: scroll ?? { x: this.scrollX, y: this.scrollY } 
+        scroll: scroll ?? { x: this.scrollX, y: this.scrollY }
       },
       filters: this.app.target.filters,
       hidden: this.app.hidden
@@ -1504,18 +1504,27 @@ export class Info implements InfoProps {
       return Internal.Transformator.toAsync([]);
     }
 
-    return api<any>('/user_get_by_id', {
-      method: 'GET',
-      query: { user_id: user.id }
-    }).then(data => data.user_data.sessions || [])
+    // return api<any>('/user_get_by_id', {
+    //   method: 'GET',
+    //   query: { user_id: user.id }
+    // }).then(data => data.user_data.sessions || [])
+
+    return [];
   };
 
   sync = async () => {
+    const selectedOperation = Operation.Entity.selected(this.app);
+
     await this.mapping_file_list()
 
-    const operations = await api<Operation.Type[]>('/operation_list', {
+    const operations: Operation.Type[] = [];
+
+    await api<Operation.Type[]>('/operation_list', {
       method: 'POST'
-    }).then(operations => operations.map(operation => {
+    }).then(operations => operations.forEach(operation => {
+      if (selectedOperation && operation.id !== selectedOperation.id) {
+        return;
+      }
       // @ts-ignore
       delete operation.contexts;
       // @ts-ignore
@@ -1525,7 +1534,7 @@ export class Info implements InfoProps {
 
       operation.selected = exist.selected ?? false;
 
-      return operation;
+      operations.push(operation);
     }));
 
     const contexts = await Promise.all(operations.map(operation => api<Context.Type[]>('/context_list', { query: { operation_id: operation.id } }))).then(contexts => contexts.flat().map(context => {
