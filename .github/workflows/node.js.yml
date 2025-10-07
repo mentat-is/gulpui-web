@@ -24,11 +24,11 @@ jobs:
           node-version: 20.x
           cache: pnpm
 
-      - name: Enable corepack
-        run: corepack enable
-
-      - name: Use pnpm 9
-        run: corepack prepare pnpm@9 --activate
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
 
       - name: Compute version from git tag
         run: echo "APP_VERSION=$(git describe --tags --always)" >> "$GITHUB_ENV"
