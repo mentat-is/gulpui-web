@@ -51,6 +51,7 @@
   "scripts": {
     "start": "react-app-rewired start",
     "dev": "pnpm install && npm run start",
+    "prebuild": "node scripts/version.js",
     "build": "react-app-rewired build",
     "server": "serve -s build -l 80"
   },

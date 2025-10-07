@@ -1,12 +1,13 @@
-FROM node:22-alpine
-RUN npm install -g pnpm@latest
+FROM node:20-alpine AS build
+WORKDIR /app
 
-WORKDIR /web
+ARG _VERSION=dev
+ENV APP_VERSION=${_VERSION}
 
-COPY --chown=node:node . .
-
-RUN pnpm install
-
+COPY package.json pnpm-lock.yaml* ./
+RUN npm i -g pnpm && pnpm install --frozen-lockfile
+COPY . .
 RUN pnpm run build
 
-CMD ["pnpx", "serve", "-s", "build"]
+FROM nginx:alpine
+COPY --from=build /app/dist/ /usr/share/nginx/html/
