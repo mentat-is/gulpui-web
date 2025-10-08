@@ -74,19 +74,6 @@ function Main() {
   const { Info, app, dialog } = Application.use();
   const [isPreloaded, setIsPreloaded] = useState(false);
 
-  // custom errors
-
-  function Component() {
-    const obj: any = null;
-    return <div>{obj.prop}</div>;
-  }
-
-  //   useEffect(() => {
-  //   setTimeout(() => {
-  //     Component() ;
-  //   }, 15000);
-  // }, []);
-
   useEffect(() => {
     if (isPreloaded)
       return;
