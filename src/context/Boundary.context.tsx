@@ -137,7 +137,7 @@ export namespace Boundary {
           </Stack>
         </Stack>
         <Panel.Actions onCopy={handleCopy} />
-        <Stack ai='stretch' flex jc='center' dir='column' gap={16}>
+        <Stack ai='stretch' flex jc='center' dir='column' gap={16} style={{ height: 0 }}>
           <span>{visibleError.message}</span>
           {Panel.HINTS.map((hint, idx) => <p key={idx}>{idx + 1}. {hint}</p>)}
           <Stack ai='flex-start' jc='center' dir='column' className={s.stackContainer} flex>
@@ -237,7 +237,7 @@ export namespace Boundary {
         <Stack ai='center' jc='space-between' className={s.action}>
           <Badge variant='red-subtle' value='Runtime Error' style={{ fontFamily: 'var(--font-mono)', borderRadius: '6px' }} />
           <Stack className={s.action_block}>
-            <Button variant='secondary' icon='Copy' onClick={onCopy} size='sm' shape='icon' />
+            <Button rounded variant='secondary' icon='Copy' onClick={onCopy} size='sm' shape='icon' />
             <Button variant='secondary' asChild rounded size='sm' shape='icon'>
               <a href=''>
                 <Icon name='BookOpen' size={12} />
