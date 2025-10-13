@@ -122,7 +122,7 @@ function _({ children }: { children: ReactNode }) {
     // check for input etc... 
     const target = event.target as HTMLElement;
     const tag = target.tagName.toLowerCase();
-    if (['input', 'textarea'].includes(tag)|| target.isContentEditable) return;
+    if (['input', 'textarea'].includes(tag) || target.isContentEditable) return;
 
     const events = Source.Entity.events(app, app.timeline.target['gulp.source_id'])
 
@@ -135,9 +135,9 @@ function _({ children }: { children: ReactNode }) {
         toast(`Cannot open ${delta > 0 ? 'previous' : 'next'} event`)
       }
     } else if (['ф', 'а'].includes(key)) {
-        toast('Use English letters A and D for scrolling');
-      }
-      else if (key === 'end') {
+      toast('Use English letters A and D for scrolling');
+    }
+    else if (key === 'end') {
       event.preventDefault()
       const target = instance.setTimelineTarget(events[0])
       spawnDialog(<DisplayEventDialog event={target} />)
@@ -189,4 +189,14 @@ export namespace Application {
   export const use = (): Application.Context.Props => useContext(Application.Context);
 
   export const Provider = _;
+
+  export const version = (async () => {
+    try {
+      const r = await fetch('/version', { cache: 'no-store' });
+      if (!r.ok) throw new Error();
+      return await r.text();
+    } catch {
+      return '0.0.0'
+    }
+  })();
 }

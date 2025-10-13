@@ -29,7 +29,7 @@ export function Point({
 }: Point.Props) {
   return (
     <Button
-      size="icon"
+      shape='icon'
       tabIndex={-1}
       variant="secondary"
       aria-exportable

@@ -305,7 +305,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
                 Connect link
               </Button>
             </Stack>
-            <Extension.Component name='Storyline.popover.tsx' props={{ doc: event }} />
+            <Extension.Component name='Story.popover.tsx' props={{ doc: event }} />
           </Stack>
           <Collab.List notes={notes} links={links} />
           {highlights}
@@ -395,7 +395,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
 
   return (
     <Button
-      size='icon'
+      shape='icon'
       className={cn(className, s.indicator)}
       rounded
       style={{ ...style, background }} {...props}>

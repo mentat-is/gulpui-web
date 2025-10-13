@@ -21,7 +21,10 @@ const buttonVariants = cva(s.button, {
       sm: s.sm,
       md: s.md,
       lg: s.lg,
-      icon: s.icon,
+    },
+    shape: {
+      default: '',
+      icon: s.icon
     },
     disabled: {
       true: s.disabled
@@ -30,6 +33,7 @@ const buttonVariants = cva(s.button, {
   defaultVariants: {
     variant: 'default',
     size: 'default',
+    shape: 'default'
   },
 });
 
@@ -49,14 +53,14 @@ export namespace Button {
 }
 
 const Button = React.forwardRef<HTMLButtonElement, Button.Props>(
-  ({ className, variant, rounded, size, icon, revert, disabled, loading, asChild = false, placeholder, ...props }, ref) => {
+  ({ className, shape, variant, rounded, size, icon, revert, disabled, loading, asChild = false, placeholder, ...props }, ref) => {
     const Comp = asChild ? Slot : 'button';
     const paddingClass = icon ? (props.children ? (revert ? s.revert : s.withImage) : s.onlyImage) : null;
 
     const children = !asChild && props.children;
 
-    if (!size && icon && !children) {
-      size = 'icon'
+    if (!shape && icon && !children) {
+      shape = 'icon'
     }
 
     const color = convertButtonVariantToSpinnerColor(variant);
@@ -64,14 +68,14 @@ const Button = React.forwardRef<HTMLButtonElement, Button.Props>(
 
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className, disabled }), paddingClass, loading && s.loading, rounded && s.rounded)}
+        className={cn(buttonVariants({ variant, size, className, disabled, shape }), paddingClass, loading && s.loading, rounded && s.rounded)}
         ref={ref}
         {...props}>
         {asChild ? props.children : (loading
           ? (
             <>
               <Spinner color={color} size={iconSize + 4} />
-              {size !== 'icon' ? placeholder ?? 'Loading...' : null}
+              {shape !== 'icon' ? placeholder ?? 'Loading...' : null}
             </>
           )
           : <>

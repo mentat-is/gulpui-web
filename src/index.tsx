@@ -36,7 +36,7 @@ function Root() {
 
   window.onerror = function (msg: any, src, line, col, err) {
     Logger.error("[Global Error]", msg);
-    const inst = Boundary.instance();
+    const inst = Boundary.Provider.instance;
     if (err && inst) {
       inst.showError(err);
     }
@@ -44,7 +44,7 @@ function Root() {
 
   window.onunhandledrejection = function (event) {
     Logger.error("[Unhandled Rejection]", event.reason);
-    const inst = Boundary.instance();
+    const inst = Boundary.Provider.instance;
     if (event.reason && inst) {
       const error = event.reason instanceof Error
         ? event.reason

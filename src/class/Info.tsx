@@ -1377,8 +1377,6 @@ export class Info implements InfoProps {
       return
     }
 
-      console.log("scrol create session", scroll)
-
     sessions.push({
       name,
       icon,
@@ -1391,12 +1389,12 @@ export class Info implements InfoProps {
       timeline: {
         scale: this.app.timeline.scale,
         frame: {
-                min: this.app.timeline.frame.min,
-                max: this.app.timeline.frame.max
-        },        
+          min: this.app.timeline.frame.min,
+          max: this.app.timeline.frame.max
+        },
         filter: this.app.timeline.filter,
         target: this.app.timeline.target,
-        scroll: scroll ?? { x: this.scrollX, y: this.scrollY } 
+        scroll: scroll ?? { x: this.scrollX, y: this.scrollY }
       },
       filters: this.app.target.filters,
       hidden: this.app.hidden
