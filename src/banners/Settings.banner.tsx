@@ -17,7 +17,10 @@ export namespace Settings {
         <Toggle
           option={['Local timestamps', 'UTC timestamps']}
           checked={isUTCTimestamps}
-          onCheckedChange={setIsUTCTimestamps}
+          onCheckedChange={(v) => {
+            setIsUTCTimestamps(v)
+            Internal.Settings.isUTCTimestamps = v
+          }}
         />
         <Toggle
           option={['Normal scroll', 'Reverse scroll']}
