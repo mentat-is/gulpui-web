@@ -200,6 +200,11 @@ export function Canvas({ timeline }: Canvas.Props) {
       return
     }
 
+    const rect = canvas_ref.current.getBoundingClientRect();
+    if ( event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
+      return;
+    }
+
     const { top, left } = canvas_ref.current.getBoundingClientRect()
     const click: XY = {
       x: Math.round(event.clientX - left),
