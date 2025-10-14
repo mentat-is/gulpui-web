@@ -555,7 +555,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       }
 
       groups.forEach(async (group) => {
-        if (group[1] === 1) {
+        if (!group.length) {
+          return;
+        }
+        if (group[1] === 1 && notes[group[0]]) {
           this.renderNote(notes[group[0]])
         } else {
           this.renderNote({
