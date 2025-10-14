@@ -104,6 +104,7 @@
 .highlighted input {
   font-family: var(--font-mono);
   overflow: hidden;
+  align-content: center;
   flex: 1;
   text-overflow: ellipsis;
 }

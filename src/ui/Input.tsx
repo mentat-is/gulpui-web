@@ -63,7 +63,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} onChange={onChange || (() => {})}/>
           </div> 
         </Stack>
-
       </Skeleton>
     )
   }
