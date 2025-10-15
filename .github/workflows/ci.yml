@@ -11,8 +11,8 @@ permissions:
   contents: write
 
 env:
-  DOCKER_REPOSITORY: mentatis
-  DOCKER_IMAGE_NAME: gulp-web
+  DOCKER_REPOSITORY: your-dockerhub-user
+  DOCKER_IMAGE_NAME: your-image-name
 
 jobs:
   build_and_push:
@@ -29,10 +29,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Compute and tag version
+      - name: Ensure VERSION
+        run: |
+          test -f VERSION || echo "1.0" > VERSION
+          cat VERSION
+
+      - name: Compute and tag version (no push yet)
         id: rel
         env:
-          PUSH_TAGS: "1"
+          PUSH_TAGS: "0"
         run: |
           v="$(bash scripts/release.sh)"
           echo "version=${v}" >> "$GITHUB_OUTPUT"
@@ -73,7 +78,7 @@ jobs:
           echo "tag=${{ env.DOCKER_REPOSITORY }}/${{ env.DOCKER_IMAGE_NAME }}:${V}" >> "$GITHUB_OUTPUT"
           echo "latest=${{ env.DOCKER_REPOSITORY }}/${{ env.DOCKER_IMAGE_NAME }}:latest" >> "$GITHUB_OUTPUT"
 
-      - name: Build and push
+      - name: Build and push image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -84,3 +89,7 @@ jobs:
             ${{ steps.meta.outputs.tag }}
             ${{ steps.meta.outputs.latest }}
           no-cache: true
+
+      - name: Push tag
+        run: git push --tags
+        continue-on-error: true

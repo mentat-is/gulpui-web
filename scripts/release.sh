@@ -8,8 +8,7 @@ if [[ -n "${1:-}" && "${1}" == "--help" ]]; then
 fi
 
 if [[ ! -f "${MAJOR_MINOR_FILE}" ]]; then
-  echo "VERSION file missing"
-  exit 1
+  echo "1.0" > "${MAJOR_MINOR_FILE}"
 fi
 
 MM_RAW="$(cat "${MAJOR_MINOR_FILE}" | tr -d '[:space:]')"
