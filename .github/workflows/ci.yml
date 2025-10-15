@@ -11,8 +11,8 @@ permissions:
   contents: write
 
 env:
-  DOCKER_REPOSITORY: your-dockerhub-user
-  DOCKER_IMAGE_NAME: your-image-name
+  DOCKER_REPOSITORY: mentatis
+  DOCKER_IMAGE_NAME: gulp-web
 
 jobs:
   build_and_push:
@@ -48,11 +48,11 @@ jobs:
           node-version: 20
           cache: pnpm
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-          run_install: false
+      - name: Enable corepack and activate pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@9 --activate
+          pnpm --version
 
       - name: Install deps
         run: pnpm install --frozen-lockfile
