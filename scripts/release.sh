@@ -1,35 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage() {
-  echo "Usage: $0 --major N --minor N [--push] [--dry-run]"
-  exit 2
-}
+MAJOR_MINOR_FILE="${MAJOR_MINOR_FILE:-VERSION}"
+if [[ -n "${1:-}" && "${1}" == "--help" ]]; then
+  echo "env MAJOR_MINOR_FILE=VERSION"
+  exit 0
+fi
 
-MAJOR=""
-MINOR=""
-PUSH=false
-DRY=false
+if [[ ! -f "${MAJOR_MINOR_FILE}" ]]; then
+  echo "VERSION file missing"
+  exit 1
+fi
 
-while [[ $# -gt 0 ]]; do
-  case "$1" in
-    --major) MAJOR="${2:-}"; shift 2 ;;
-    --minor) MINOR="${2:-}"; shift 2 ;;
-    --push)  PUSH=true; shift ;;
-    --dry-run) DRY=true; shift ;;
-    *) usage ;;
-  esac
-done
+MM_RAW="$(cat "${MAJOR_MINOR_FILE}" | tr -d '[:space:]')"
+if [[ ! "${MM_RAW}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "VERSION must be MAJOR.MINOR"
+  exit 1
+fi
 
-[[ -n "$MAJOR" && -n "$MINOR" ]] || usage
-[[ "$MAJOR" =~ ^[0-9]+$ ]] || { echo "major must be integer"; exit 1; }
-[[ "$MINOR" =~ ^[0-9]+$ ]] || { echo "minor must be integer"; exit 1; }
+MAJOR="${MM_RAW%%.*}"
+MINOR="${MM_RAW##*.}"
 
-# полная история тэгов
 git fetch --tags --force >/dev/null 2>&1 || true
 
-PREFIX="v${MAJOR}.${MINOR}."
-# найти максимальный fix среди тегов v{major}.{minor}.*
+BRANCH="${GITHUB_REF_NAME:-$(git rev-parse --abbrev-ref HEAD)}"
+BRANCH="${BRANCH//\//-}"
+BRANCH="${BRANCH//[^A-Za-z0-9._-]/-}"
+
+PREFIX="${BRANCH}_${MAJOR}.${MINOR}."
 LATEST_FIX=$(
   git tag -l "${PREFIX}*" \
   | sed -nE "s/^${PREFIX}([0-9]+)$/\1/p" \
@@ -44,15 +42,8 @@ fi
 
 NEW_TAG="${PREFIX}${NEXT_FIX}"
 
-if $DRY; then
-  echo "${NEW_TAG}"
-  exit 0
-fi
+git tag -a "${NEW_TAG}" -m "${NEW_TAG}"
 
-# создать аннотированный тег
-git tag -a "${NEW_TAG}" -m "release ${NEW_TAG}"
-
-# вывод для локальных скриптов / GitHub Actions
 echo "${NEW_TAG}"
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   {
@@ -60,7 +51,10 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "major=${MAJOR}"
     echo "minor=${MINOR}"
     echo "fix=${NEXT_FIX}"
+    echo "branch=${BRANCH}"
   } >> "$GITHUB_OUTPUT"
 fi
 
-$PUSH && git push --tags
+if [[ "${PUSH_TAGS:-1}" == "1" ]]; then
+  git push --tags
+fi
