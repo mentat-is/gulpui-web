@@ -103,11 +103,11 @@ export namespace Session {
 
   export namespace Delete {
     export namespace Banner {
-      export interface Props extends UIBanner.Props { }
+      export interface Props extends UIBanner.Props { onClose?: () => void; }
     }
 
 
-    export function Banner({ ...props }: Session.Delete.Banner.Props) {
+    export function Banner({ onClose, ...props }: Session.Delete.Banner.Props) {
       const { Info, app, destroyBanner } = Application.use();
       const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
       const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
@@ -136,6 +136,7 @@ export namespace Session {
         });
         setIsDataDeleating(false);
         await reload();
+        onClose?.();
         destroyBanner();
       };
 

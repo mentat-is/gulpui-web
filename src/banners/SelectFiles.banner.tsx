@@ -113,6 +113,7 @@ export namespace SelectFiles {
       Info.setInfoByKey(contexts, 'target', 'contexts')
       Info.setInfoByKey(files, 'target', 'files')
 
+      Info.session_autosave();
       setTimeout(() => {
         spawnBanner(<Frame.Banner fixed back={() => spawnBanner(<SelectFiles.Banner />)} />);
       }, 10);
