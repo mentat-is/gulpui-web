@@ -46,33 +46,51 @@ export namespace Glyph {
 
   export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton }: Chooser.Props) => {
     const [search, setSearch] = useState<string>('');
-
+    const [visibleCount, setVisibleCount] = useState<number>(128);
+    
     const entities = useMemo(() => {
       return Glyph.Entries.filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
     }, [search]);
 
     const handleGlyphSearchInput = useCallback((event: ChangeEvent<HTMLInputElement>) => {
       setSearch(event.target.value);
+      setVisibleCount(128);
     }, [setSearch]);
 
     const SearchInput = useMemo(() => {
       return <Input variant='highlighted' icon='MagnifyingGlass' placeholder='Glyph name or association' value={search} onChange={handleGlyphSearchInput} />
     }, [search, handleGlyphSearchInput]);
 
-    const GlyphList = useMemo(() => {
-      return (
-        entities.slice(0, 128).map(([k, n]) =>
+    const handleLoadMore = useCallback(() => {
+      setVisibleCount(prev => prev + 128);
+    }, []);
+
+    const GlyphList = useMemo(() => (
+      <>
+        {entities.slice(0, visibleCount).map(([k, n]) =>
           k ? (
             <Button
               key={n}
               variant={k === icon ? 'glass' : 'tertiary'}
               icon={n}
               onClick={() => setIcon(k)}
-            >{n}</Button>
-          ) : null,
-        )
-      )
-    }, [entities])
+            >
+              {n}
+            </Button>
+          ) : null
+        )}
+
+        {entities.length > visibleCount && (
+          <Button
+            variant='secondary'
+            onClick={handleLoadMore}
+            icon='Loader'
+          >
+            Load more icons
+          </Button>
+        )}
+      </>
+    ), [entities, visibleCount, icon, setIcon, handleLoadMore]);
 
     return (
       <Popover.Root>
