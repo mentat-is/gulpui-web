@@ -24,24 +24,21 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     overscan: 5,
   });
 
-  const renderEvent = (event: Doc.Type) => (
-    <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
-      <EventIndicator event={event} />
-      <Stack
-        dir="column"
-        jc="space-evenly"
-        ai="flex-start"
-        flex
-        className={s.info}
-        gap={2}
-      >
-        <p className={s.id}>{event._id}</p>
-        <span className={s.description}>
-          {`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}
-        </span>
+  const renderEvent = (event: Doc.Type) => {
+    if (!event) return null;
+
+    return (
+      <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
+        <EventIndicator event={event} />
+        <Stack dir="column" jc="space-evenly" ai="flex-start" flex className={s.info} gap={2}>
+          <p className={s.id}>{event._id}</p>
+          <span className={s.description}>
+            {`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}
+          </span>
+        </Stack>
       </Stack>
-    </Stack>
-  )
+    );
+  };
 
   return (
     <Dialog>
