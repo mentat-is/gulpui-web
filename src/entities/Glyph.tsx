@@ -61,7 +61,7 @@ export namespace Glyph {
 
     const GlyphList = useMemo(() => {
       return (
-        entities.map(([k, n]) =>
+        entities.slice(0, 128).map(([k, n]) =>
           k ? (
             <Button
               key={n}
