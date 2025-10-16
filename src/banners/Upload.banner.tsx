@@ -415,11 +415,11 @@ namespace Components {
         </Popover.Trigger>
         <Popover.Content>
           <Stack className={s.allSettings} gap={0}>
-            <PluginSelector settings={settings.all} updateSettings={(s) => updateSettings('all', s)} />
+            <PluginSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} />
             <Separator orientation='vertical' style={{ height: 32 }} />
-            <MethodSelector settings={settings.all} updateSettings={(s) => updateSettings('all', s)} methods={methods} />
+            <MethodSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} methods={methods} />
             <Separator orientation='vertical' style={{ height: 32 }} />
-            <MappingSelector settings={settings.all} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
+            <MappingSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
             <Separator orientation='vertical' style={{ height: 32 }} />
             <Button variant='tertiary' style={{ borderRadius: 2 }} icon='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
           </Stack>
