@@ -212,7 +212,7 @@ namespace Components {
             <Button icon='PreviewDocument' size='sm' style={{ width: 24 }} variant='tertiary' />
           </Popover.Trigger>
           <Popover.Content style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
-            {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
+            {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={Array.isArray(preview) ? preview: []} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
           </Popover.Content>
         </Popover.Root>
       </Stack>
