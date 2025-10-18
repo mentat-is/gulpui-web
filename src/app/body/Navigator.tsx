@@ -226,7 +226,7 @@ export function Navigator({
   }, [])
 
   const createHighlightButtonClickHandler = () => {
-    setHighlightsOverlay(<Highlights.Create.Overlay />)
+    setHighlightsOverlay(prev => prev ? null : <Highlights.Create.Overlay />)
   }
 
   const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
