@@ -1498,14 +1498,24 @@ export class Info implements InfoProps {
 
   async session_list(user = this.app.general.user): Promise<Internal.Session.Data[]> {
     if (!user) {
-      Logger.warn('Tried to load sessions list before authorization');
       return Internal.Transformator.toAsync([]);
     }
 
     return api<any>('/user_get_by_id', {
       method: 'GET',
       query: { user_id: user.id }
-    }).then(data => data.user_data.sessions || [])
+    }).then(data => {
+      const sessions = data
+        ? data.user_data.sessions
+        : [];
+
+      return sessions || [];
+    }).catch(error => {
+      toast.error('Failed to load your sessions', {
+        description: `Error message: ${JSON.stringify(error)}`,
+        icon: <Icon name='FaceSad' />
+      })
+    });
   };
 
   sync = async () => {

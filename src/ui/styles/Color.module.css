@@ -32,7 +32,6 @@
 }
 
 .popover {
-  width: 256px;
   display: flex;
   flex-direction: column;
   gap: calc(var(--card-gap) / 2);
