@@ -302,7 +302,7 @@ export function Navigator({
           <Stack dir='column' gap={4} ai='stretch'>
             {(Object.keys(app.hidden) as unknown as Array<keyof App.Type['hidden']>).map((key) => {
               return (
-                <Stack jc='space-between'>
+                <Stack key={key} jc='space-between'>
                   <Label value={`Show ${key.replace(/([A-Z])/g, " $1").toLowerCase()}`} />
                   <Switch checked={!app.hidden[key]} onCheckedChange={() => Info.toggle_visibility(key)} />
                 </Stack>
