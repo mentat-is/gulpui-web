@@ -140,6 +140,6 @@ export namespace Extension {
   export function Components({ type }: Components.Props) {
     const { extensions } = Extension.use();
 
-    return Object.keys(extensions).filter(name => extensions[name].type.includes(type)).map(name => <Extension.Component name={name} />);
+    return Object.keys(extensions).filter(name => extensions[name].type.includes(type)).map(name => <Extension.Component key={name} name={name} />);
   }
 }
