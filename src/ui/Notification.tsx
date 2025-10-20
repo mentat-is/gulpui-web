@@ -22,6 +22,7 @@ export const notificationVariants = cva(s.notification, {
 export namespace Notification {
   export interface Props extends Stack.Props,
     VariantProps<typeof notificationVariants> {
+    value?: string
     icon?: Icon.Name
   }
 

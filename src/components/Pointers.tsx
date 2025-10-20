@@ -41,7 +41,7 @@ export function Pointers({
   }
 
   return (
-    <Stack aria-pointers pos="absolute" className={s.pointers} {...props}>
+    <Stack data-aria-pointers pos="absolute" className={s.pointers} {...props}>
       {[you, ...app.timeline.pointers].map((p) => {
         const isYours = p.id === ('You' as User.Id)
         const x = p.x || getPixelPosition(p.timestamp)
