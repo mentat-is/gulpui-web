@@ -264,8 +264,8 @@ export namespace Auth {
               <SelectOperationTrigger />
               <Select.Content>
                 {app.target.operations.map((operation) => (
-                  <Stack gap={2}>
-                    <Select.Item key={operation.id} value={operation.id}>
+                  <Stack key={operation.id} gap={2}>
+                    <Select.Item value={operation.id}>
                       <Select.Icon name={Operation.Entity.icon(operation)} />
                       {operation.name}
                       <span className={s.operation_description}>{operation.description}</span>
