@@ -1,13 +1,14 @@
+import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Icon } from '@impactium/icons';
+import { Popover } from '@/ui/Popover';
+import { cn } from '@impactium/utils';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
-import { Popover } from '@/ui/Popover';
-import { Icon } from '@impactium/icons';
-import { cn } from '@impactium/utils';
-import { UUID } from 'crypto';
-import { useVirtualizer } from '@tanstack/react-virtual';
-import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import s from './styles/Glyph.module.css';
 import { Stack } from '@/ui/Stack';
+import { UUID } from 'crypto';
+
+import s from './styles/Glyph.module.css';
 
 export namespace Glyph {
   const _ = Symbol('Glyph')
@@ -47,6 +48,7 @@ export namespace Glyph {
 
   export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton }: Chooser.Props) => {
     const [search, setSearch] = useState<string>('');
+    const parentRef = useRef<HTMLDivElement | null>(null);
     
     const entities = useMemo(() => {
       return Glyph.Entries.filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
@@ -60,7 +62,6 @@ export namespace Glyph {
       return <Input variant='highlighted' icon='MagnifyingGlass' placeholder='Glyph name or association' value={search} onChange={handleGlyphSearchInput} name="glyph-search"/>
     }, [search, handleGlyphSearchInput]);
 
-    const parentRef = useRef<HTMLDivElement | null>(null);
     
     const rowVirtualizer = useVirtualizer({
       count: entities.length,
