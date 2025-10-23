@@ -27,8 +27,8 @@ function _({ children }: { children: ReactNode }) {
       return;
     }
 
-    return new SmartSocket.Class(app.general.server + '/ws', app.general.user.token, app.general.ws_id);
-  }, [app.general]);
+    return new SmartSocket.Class(app.general.ws_id);
+  }, [app.general, app.general.server, app.general.ws_id, app.general.user]);
 
   useEffect(() => {
     if (!SmartSocket.Class.instance)
@@ -189,14 +189,4 @@ export namespace Application {
   export const use = (): Application.Context.Props => useContext(Application.Context);
 
   export const Provider = _;
-
-  export const version = (async () => {
-    try {
-      const r = await fetch('/version', { cache: 'no-store' });
-      if (!r.ok) throw new Error();
-      return await r.text();
-    } catch {
-      return '0.0.0'
-    }
-  })();
 }

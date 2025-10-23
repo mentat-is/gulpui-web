@@ -1,4 +1,5 @@
 import { Logger } from "@/dto/Logger.class"
+import { Internal } from '@/entities/addon/Internal'
 import { Icon } from "@impactium/icons"
 import { EventEmitter } from 'events'
 
@@ -41,9 +42,9 @@ export namespace SmartSocket {
     private readonly conditional: Map<string, Conditional[]> = new Map()
     private counter = 0
 
-    constructor(url: string, token: string, ws_id: string) {
+    constructor(ws_id: string) {
       super()
-      if (!url.length || !token.length || !ws_id.length) {
+      if (!ws_id.length) {
         return;
       }
 
@@ -51,8 +52,8 @@ export namespace SmartSocket {
         return SmartSocket.Class.instance
       }
 
-      this.ws = new WebSocket(url);
-      this.forwarding(token, ws_id);
+      this.ws = new WebSocket(Internal.Settings.server);
+      this.forwarding(Internal.Settings.token, ws_id);
       // @ts-ignore
       SmartSocket.Class.instance = this;
     }
