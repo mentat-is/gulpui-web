@@ -52,7 +52,7 @@ export namespace SmartSocket {
         return SmartSocket.Class.instance
       }
 
-      this.ws = new WebSocket(Internal.Settings.server);
+      this.ws = new WebSocket(Internal.Settings.server + "/ws");
       this.forwarding(Internal.Settings.token, ws_id);
       // @ts-ignore
       SmartSocket.Class.instance = this;
