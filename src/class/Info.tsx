@@ -1102,7 +1102,7 @@ export class Info implements InfoProps {
       glyph_id,
       color,
     },
-    toast: `Note.Entity ${name} has been updated successfully`,
+    toast: `Note ${name} has been updated successfully`,
     body: {
       text,
       tags,
@@ -1111,7 +1111,7 @@ export class Info implements InfoProps {
   }).then(note => {
     const index = this.app.target.notes.findIndex(n => n.id === note.id);
     if (index === -1) {
-      Logger.error(`Note.Entity with id: ${note.id} was not found in application data`, Info + this.note_edit.name);
+      Logger.error(`Note with id: ${note.id} was not found in application data`, Info + this.note_edit.name);
       return;
     }
     const updated = [...this.app.target.notes];
