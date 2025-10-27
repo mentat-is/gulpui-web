@@ -208,7 +208,8 @@ export namespace Operation {
         body: { description, glyph_id: icon },
       }, Info.sync)
         .then(() => {
-          Logger.log(`Operation ${op?.name ?? operation.name} has been successfully updated`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
+          const isNewOperation = !operation.id;
+          Logger.log(`Operation ${op?.name ?? operation.name} has been successfully ${isNewOperation ? 'created' : 'updated'}`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
             icon: <Icon name='Check' />,
             richColors: true
           })
