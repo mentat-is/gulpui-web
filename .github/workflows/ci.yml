@@ -54,6 +54,14 @@ jobs:
         with:
           version: 9
 
+      - name: Ensure pnpm available
+        run: |
+          if ! command -v pnpm >/dev/null 2>&1; then
+            echo "pnpm not found, installing globally..."
+            npm install -g pnpm@9
+          fi
+          pnpm --version
+
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
