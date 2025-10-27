@@ -43,26 +43,23 @@ jobs:
           v="$(bash scripts/release.sh)"
           echo "version=${v}" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Cache pnpm store
+        uses: actions/cache@v4
         with:
-          version: 9
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
-      - name: Ensure pnpm available
-        run: |
-          if ! command -v pnpm >/dev/null 2>&1; then
-            echo "pnpm not found, installing globally..."
-            npm install -g pnpm@9
-          fi
-          pnpm --version
-
-      - name: Install deps
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build
