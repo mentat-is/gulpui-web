@@ -63,6 +63,8 @@ export namespace Highlights {
           icon,
           time_range
         });
+        
+        setHighlightsOverlay(null);
       }
 
       const Hint = useMemo(() => {

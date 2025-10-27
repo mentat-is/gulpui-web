@@ -11,15 +11,15 @@ interface LinksDisplayerProps {
 
 export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
   const { app, scrollY } = Application.use()
-
-  if (!app.target.links.length || app.hidden.links) return null
-
+  
   const selectedFiles = useMemo(
     () => new Set(app.target.files.filter((f) => f.selected).map((f) => f.id)),
     [app.target.files],
   )
 
   const points = useMemo(() => {
+    if (!app.target.links.length || app.hidden.links) return [];
+
     const result: Array<{ link: Link.Type; x: number; y: number }> = [];
 
     for (const link of app.target.links) {

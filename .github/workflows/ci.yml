@@ -18,8 +18,10 @@ jobs:
   build_and_push:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -46,21 +48,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
 
-      - name: Enable corepack and activate pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@9 --activate
-          pnpm --version
+      - name: Install pnpm
+        run: npm install -g pnpm@9
 
       - name: Install deps
-        run: pnpm install --frozen-lockfile
+        run: |
+          export PATH="$HOME/.local/share/pnpm:$PATH"
+          pnpm install --frozen-lockfile
 
       - name: Build
         env:
           APP_VERSION: ${{ steps.rel.outputs.version }}
-        run: pnpm run build
+        run: |
+          export PATH="$HOME/.local/share/pnpm:$PATH"
+          pnpm run build
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

@@ -1,12 +1,14 @@
+import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Icon } from '@impactium/icons';
+import { Popover } from '@/ui/Popover';
+import { cn } from '@impactium/utils';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
-import { Popover } from '@/ui/Popover';
-import { Icon } from '@impactium/icons';
-import { cn } from '@impactium/utils';
-import { UUID } from 'crypto';
-import { ChangeEvent, CSSProperties, useCallback, useMemo, useState } from 'react';
-import s from './styles/Glyph.module.css';
 import { Stack } from '@/ui/Stack';
+import { UUID } from 'crypto';
+
+import s from './styles/Glyph.module.css';
 
 export namespace Glyph {
   const _ = Symbol('Glyph')
@@ -46,7 +48,8 @@ export namespace Glyph {
 
   export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton }: Chooser.Props) => {
     const [search, setSearch] = useState<string>('');
-
+    const parentRef = useRef<HTMLDivElement | null>(null);
+    
     const entities = useMemo(() => {
       return Glyph.Entries.filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
     }, [search]);
@@ -56,35 +59,69 @@ export namespace Glyph {
     }, [setSearch]);
 
     const SearchInput = useMemo(() => {
-      return <Input variant='highlighted' icon='MagnifyingGlass' placeholder='Glyph name or association' value={search} onChange={handleGlyphSearchInput} />
+      return <Input variant='highlighted' icon='MagnifyingGlass' placeholder='Glyph name or association' value={search} onChange={handleGlyphSearchInput} name="glyph-search"/>
     }, [search, handleGlyphSearchInput]);
 
-    const GlyphList = useMemo(() => {
-      return (
-        entities.map(([k, n]) =>
-          k ? (
-            <Button
-              key={n}
-              variant={k === icon ? 'glass' : 'tertiary'}
-              icon={n}
-              onClick={() => setIcon(k)}
-            >{n}</Button>
-          ) : null,
-        )
-      )
-    }, [entities])
+    
+    const rowVirtualizer = useVirtualizer({
+      count: entities.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 40,
+      overscan: 10,
+    });
 
     return (
-      <Popover.Root>
+      <Popover.Root
+        onOpenChange={(open) => {
+          if (open) {
+            setTimeout(() => {
+              rowVirtualizer.measure();
+            }, 0);
+          }
+        }}
+      >
         <Popover.Trigger asChild>
           {asButton ? <Button className={rootClassName} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} label={label} />}
         </Popover.Trigger>
-        <Popover.Content align='end'>
+        <Popover.Content align='end' forceMount>
           <Stack dir='column' className={s.wrapper} ai='stretch'>
             {SearchInput}
-            <Stack className={s.list} ai='stretch' dir='column'>
-              {GlyphList}
-            </Stack>
+            <div ref={parentRef} className={s.list} style={{ width: '300px' }}>
+              <div
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  position: 'relative',
+                  width: '100%',
+                }}
+              >
+                {rowVirtualizer.getVirtualItems().map(virtualRow => {
+                  const [k, n] = entities[virtualRow.index];
+                  if (!k) return null;
+
+                  return (
+                    <div
+                      key={n}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualRow.start}px)`,
+                      }}
+                    >
+                      <Button
+                        variant={k === icon ? 'glass' : 'tertiary'}
+                        icon={n}
+                        onClick={() => setIcon(k)}
+                        className={s.iconButton}
+                      >
+                        {n}
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </Stack>
         </Popover.Content>
       </Popover.Root>

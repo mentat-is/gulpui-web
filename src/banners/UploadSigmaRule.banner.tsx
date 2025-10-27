@@ -79,7 +79,7 @@ export namespace Sigma {
           </Select.Trigger>
           <Select.Content>
             {allFiles.map(file => (
-              <Select.Item value={file.id}>
+              <Select.Item key={file.id} value={file.id}>
                 <Icon name={Source.Entity.icon(file)} />
                 {file.name}
                 <Badge variant='gray-subtle' value={Context.Entity.id(app, file.context_id).name} />

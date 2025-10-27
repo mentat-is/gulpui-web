@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import s from '../Gulp.module.css'
 import { Application } from '@/context/Application.context'
 import { Canvas } from './Canvas'

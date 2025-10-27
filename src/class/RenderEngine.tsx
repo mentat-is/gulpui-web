@@ -548,6 +548,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public notes = (files: Source.Type[]) => {
+    if (!files || !files.length) return;
     files.forEach(file => {
       const { notes, groups } = this.calculateNotesGroups(file.id);
       if (!notes.length) {
@@ -555,9 +556,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       }
 
       groups.forEach(async (group) => {
-        if (!group.length) {
-          return;
-        }
+        if (!group || group.length < 2 || !notes[group[0]]) return;
+        
         if (group[1] === 1 && notes[group[0]]) {
           this.renderNote(notes[group[0]])
         } else {

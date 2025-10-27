@@ -1,26 +1,24 @@
+import { Application } from '@/context/Application.context'
+import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { Default, Selectable } from '@/dto/Dataset'
-import { UUID } from 'crypto'
-import { Glyph } from './Glyph'
-import { User } from './User'
-import { App } from './App'
-import { Logger } from '@/dto/Logger.class'
-import { Parser } from './addon/Parser'
-import { Context } from './Context'
-import { Refractor } from '@/ui/utils'
-import { Internal } from './addon/Internal'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Select as UISelect } from '@/ui/Select'
-import { Button } from '@/ui/Button'
-import s from './styles/Operation.module.css'
-import { SelectFiles } from '@/banners/SelectFiles.banner'
-import { Input } from '@/ui/Input'
-import { Application } from '@/context/Application.context'
-import { Skeleton } from '@/ui/Skeleton'
-import { Stack } from '@/ui/Stack'
 import { useState, useEffect } from 'react'
-import { Label } from '@/ui/Label'
-import { toast } from 'sonner'
+import { Logger } from '@/dto/Logger.class'
+import { Internal } from './addon/Internal'
+import { Skeleton } from '@/ui/Skeleton'
 import { Icon } from '@impactium/icons'
+import { Parser } from './addon/Parser'
+import { Refractor } from '@/ui/utils'
+import { Button } from '@/ui/Button'
+import { Context } from './Context'
+import { Input } from '@/ui/Input'
+import { Glyph } from './Glyph'
+import { User } from './User'
+import { UUID } from 'crypto'
+import { App } from './App'
+
+import s from './styles/Operation.module.css'
 
 export namespace Operation {
   export const name = 'Operation'
@@ -195,22 +193,23 @@ export namespace Operation {
           setLoading,
           query: { name },
           body: { description },
-        }, operation => updateOperation(operation.id).then(Info.sync)).then(() => {
+        }, operation => updateOperation(operation).then(Info.sync)).then(() => {
           spawnBanner(<Operation.Select.Banner />)
         });
       }
 
-      const updateOperation = (id?: Operation.Id) => api<any>('/operation_update', {
+      const updateOperation = (op?: Operation.Type) => api<any>('/operation_update', {
         method: 'PATCH',
         setLoading,
         query: {
-          operation_id: id ?? operation.id,
+          operation_id: op?.id ?? operation.id,
           glyph_id: icon,
         },
         body: { description, glyph_id: icon },
       }, Info.sync)
         .then(() => {
-          Logger.log(`Operation ${operation.name} has been successfully updated`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
+          const isNewOperation = !operation.id;
+          Logger.log(`Operation ${op?.name ?? operation.name} has been successfully ${isNewOperation ? 'created' : 'updated'}`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
             icon: <Icon name='Check' />,
             richColors: true
           })

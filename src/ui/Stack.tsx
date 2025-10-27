@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 export namespace Stack {
-  export interface Props extends React.ButtonHTMLAttributes<HTMLDivElement> {
+  export interface Props extends React.HTMLAttributes<HTMLDivElement> {
     gap?: React.CSSProperties['gap'];
     dir?: React.CSSProperties['flexDirection'];
     pos?: React.CSSProperties['position'];

@@ -93,7 +93,7 @@ export namespace QueryExternal {
       <Stack dir="column" className={s.wrapper} ai='stretch' gap={16}>
         {selectedOption.custom_parameters.map((custom) => (
           custom.values ? (
-            <Stack dir="column">
+            <Stack dir="column" ai='start'>
               {custom.values.map((value) => (
                 <Stack dir='column' gap={6} ai='flex-start' data-input>
                   <Label value={value} />
