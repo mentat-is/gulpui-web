@@ -1,12 +1,13 @@
-import { Dialog } from '@/ui/Dialog'
-import s from './styles/DisplayGroupDialog.module.css'
 import { DisplayEventDialog, EventIndicator } from './Event.dialog'
 import { Application } from '@/context/Application.context'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { Dialog } from '@/ui/Dialog'
+import { Doc } from '@/entities/Doc'
 import { Stack } from '@/ui/Stack'
 import { format } from 'date-fns'
 import { useRef } from 'react'
-import { useVirtualizer } from '@tanstack/react-virtual'
-import { Doc } from '@/entities/Doc'
+
+import s from './styles/DisplayGroupDialog.module.css'
 
 interface DisplayGroupDialogProps {
   events: Doc.Type[]
@@ -20,7 +21,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
   const virtualizer = useVirtualizer({
     count: events.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 32 + 12,
+    estimateSize: () => 44,
     overscan: 5,
   });
 
@@ -42,35 +43,21 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 
   return (
     <Dialog>
-      <div
-        ref={parentRef}
-        className={s.virtualizedContainer}
-        style={{
-          height: '100%',
-          paddingRight: 12,
-          overflow: 'auto',
-        }}
-      >
-        <div
-          style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: '100%',
-            position: 'relative',
-          }}
-        >
-          {virtualizer.getVirtualItems().map((virtualItem) => (
+      <div ref={parentRef} className={s.virtualizedContainer} style={{ height: '100%', paddingRight: 12, overflow: 'auto'}} >
+        <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }} >
+         {virtualizer.getVirtualItems().map(v => (
             <div
-              key={virtualItem.key}
+              key={v.key}
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: `${virtualItem.size}px`,
-                transform: `translateY(${virtualItem.start}px)`,
+                height: `${v.size}px`,
+                transform: `translateY(${v.start}px)`,
               }}
             >
-              {renderEvent(events[virtualItem.index])}
+              {renderEvent(events[v.index])}
             </div>
           ))}
         </div>

@@ -1,16 +1,17 @@
-import { Application } from '@/context/Application.context'
-import s from './styles/NotesWindow.module.css'
-import { Banner } from '@/ui/Banner'
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import { Application } from '@/context/Application.context'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Notification } from '@/ui/Notification'
+import { Context } from '@/entities/Context'
+import { Source } from '@/entities/Source'
+import { Note } from '@/entities/Note'
+import { NotePoint } from '@/ui/Note'
 import { Select } from '@/ui/Select'
+import { Banner } from '@/ui/Banner'
 import { Stack } from '@/ui/Stack'
 import { Input } from '@/ui/Input'
-import { Note } from '@/entities/Note'
-import { Source } from '@/entities/Source'
-import { Context } from '@/entities/Context'
-import { NotePoint } from '@/ui/Note'
+
+import s from './styles/NotesWindow.module.css'
 
 interface FloatingWindowProps {
   onClose: () => void
