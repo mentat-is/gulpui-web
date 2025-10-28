@@ -198,18 +198,18 @@ export namespace Operation {
         });
       }
 
-      const updateOperation = (op?: Operation.Type) => api<any>('/operation_update', {
+      const updateOperation = (operationType?: Operation.Type) => api<any>('/operation_update', {
         method: 'PATCH',
         setLoading,
         query: {
-          operation_id: op?.id ?? operation.id,
+          operation_id: operationType?.id ?? operation.id,
           glyph_id: icon,
         },
         body: { description, glyph_id: icon },
       }, Info.sync)
         .then(() => {
           const isNewOperation = !operation.id;
-          Logger.log(`Operation ${op?.name ?? operation.name} has been successfully ${isNewOperation ? 'created' : 'updated'}`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
+          Logger.log(`Operation ${operationType?.name ?? operation.name} has been successfully ${isNewOperation ? 'created' : 'updated'}`, 'Operation.CreateOrUpdate.Banner.updateOperation', {
             icon: <Icon name='Check' />,
             richColors: true
           })
