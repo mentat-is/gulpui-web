@@ -43,7 +43,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 
   return (
     <Dialog>
-      <div ref={parentRef} className={s.virtualizedContainer} style={{ height: '100%', paddingRight: 12, overflow: 'auto'}} >
+      <div ref={parentRef} style={{ height: '100%', paddingRight: 12, overflow: 'auto'}} >
         <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }} >
          {virtualizer.getVirtualItems().map(v => (
             <div
