@@ -36,6 +36,11 @@ export namespace GlobalQuery {
       })
     }
 
+    const normalizedQuery = useMemo(
+      () => Filter.Entity.query(query) as unknown as Query.Type,
+      [query]
+    );
+
     const QueryStringBuilder = useMemo(() => {
       return (
         <OpenSearchQueryBuilder.Query.String string={query.string} setString={string => setQuery(q => ({ ...q, string }))} />
@@ -64,11 +69,18 @@ export namespace GlobalQuery {
     const [isQueryLoading, setIsQueryLoading] = useState<boolean>(false);
     const doneButtonClickHandler = async () => {
       setIsQueryLoading(true);
-      const { total_hits: total } = await Info.query_file(query, {
+
+      const { total_hits: total } = await Info.query_file(normalizedQuery, {
         preview: true
       });
 
-      await Info.query_global({ filename, context, separately, query, total });
+      await Info.query_global({ 
+        filename, 
+        context, 
+        separately, 
+        query: normalizedQuery, 
+        total 
+      });
 
       setIsQueryLoading(false);
       destroyBanner();
@@ -77,7 +89,7 @@ export namespace GlobalQuery {
     const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
     const tabularPreviewButtonClickHandler = async () => {
       setIsPreviewLoading(true);
-      const { docs, total_hits } = await Info.query_file(query, {
+      const { docs, total_hits } = await Info.query_file(normalizedQuery, {
         preview: true
       });
       setIsPreviewLoading(false);
@@ -123,7 +135,7 @@ export namespace GlobalQuery {
     }, [separately, filename, setFilename, isFilenameValid, setIsFilenameValid, context, setContext, isContextValid, setIsContextValid]);
 
     return (
-      <UIBanner done={<DoneButton />} title='Global query' side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />} {...props}>
+      <UIBanner done={<DoneButton />} title='Global query' side={<OpenSearchQueryBuilder.Preview query={normalizedQuery} />} {...props}>
         {QueryStringBuilder}
         {AddFilter}
         <Separator />
