@@ -1,11 +1,11 @@
 import { DisplayEventDialog, EventIndicator } from './Event.dialog'
 import { Application } from '@/context/Application.context'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useCallback, useRef } from 'react'
 import { Dialog } from '@/ui/Dialog'
 import { Doc } from '@/entities/Doc'
 import { Stack } from '@/ui/Stack'
 import { format } from 'date-fns'
-import { useRef } from 'react'
 
 import s from './styles/DisplayGroupDialog.module.css'
 
@@ -25,9 +25,9 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
     overscan: 5,
   });
 
-  const renderEvent = (event: Doc.Type) => {
+  const renderEvent = useCallback((event: Doc.Type) => {
     if (!event) return null;
-
+  
     return (
       <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
         <EventIndicator event={event} />
@@ -39,7 +39,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
         </Stack>
       </Stack>
     );
-  };
+  }, [spawnDialog]);
 
   return (
     <Dialog>

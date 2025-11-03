@@ -30,19 +30,17 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     return [...tags.values()];
   }, [app.target.notes]);
 
-  const [availableTags, setAvailableTags] = useState(getAvailableTags());
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    setAvailableTags(getAvailableTags());
-  }, [app.target.notes]);
+  const availableTags = useMemo(() => getAvailableTags(), [getAvailableTags]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLDivElement>(null);
 
   const sortedNotes = useMemo(() => {
+    const lowerSearch = search.toLowerCase();
+    
     const filtered = app.target.notes.filter(n => {
-      const lowerSearch = search.toLowerCase();
       return !search || (
         n.name.toLowerCase().includes(lowerSearch) ||
         n.text.toLowerCase().includes(lowerSearch) ||
@@ -54,9 +52,10 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       !selectedTags.size || [...selectedTags].every(tag => n.tags.map(t => t.toLowerCase()).includes(tag))
     );
 
-    return filtered
-      .sort((a, b) => a.context_id.localeCompare(b.context_id))
-      .sort((a, b) => a.source_id.localeCompare(b.source_id));
+    return filtered.sort((a, b) => {
+      const byContext = a.context_id.localeCompare(b.context_id);
+      return byContext !== 0 ? byContext : a.source_id.localeCompare(b.source_id);
+    });
   }, [app.target.notes, search, app, selectedTags]);
 
   const virtualizer = useVirtualizer({
@@ -87,7 +86,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
               text={len => typeof len === 'number' ? `Selected ${len} tags` : len}
             />
           </Select.Trigger>
-          <Select.Content container={windowRef.current}>
+          <Select.Content container={windowRef.current ?? undefined}>
             {availableTags.map(tag => (
               <Select.Item key={tag} value={tag}>
                 {tag}
