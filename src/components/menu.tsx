@@ -68,7 +68,7 @@ export function Menu() {
         size='md'
         onClick={() => spawnBanner(<SelectFiles.Banner />)}
       >
-        <Button className={s.file_counter} size='sm' variant='glass'>{Source.Entity.selected(app).length}</Button>
+        <Button asChild className={s.file_counter} size='sm' variant='glass'>{Source.Entity.selected(app).length}</Button>
       </Button>
       <Button
         variant="secondary"

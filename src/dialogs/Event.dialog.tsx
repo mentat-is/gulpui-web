@@ -311,9 +311,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           {highlights}
           <Stack className={s.actionButtons} gap={12}>
             <Button variant="secondary" onClick={handleCopyJson} icon="Copy">Copy JSON</Button>
-            <Button variant="secondary" onClick={handleDownloadJson} icon="Download">
-              Download JSON
-            </Button>
+            <Button variant="secondary" onClick={handleDownloadJson} icon="Download" title='Download JSON'>Download JSON</Button>
             <Button
               onClick={handleFocusTimeline}
               variant="secondary"

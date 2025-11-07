@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import { useState, useMemo, useRef, useCallback } from 'react'
 import { Application } from '@/context/Application.context'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Notification } from '@/ui/Notification'
