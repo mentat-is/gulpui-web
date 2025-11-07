@@ -892,12 +892,12 @@ export class Info implements InfoProps {
     )
 
   // ⚠️ UNTOUCHABLE
-  context_delete = (context: Context.Type, wipe: boolean) => api<any>('/context_delete', {
+  context_delete = (context: Context.Type, delete_data: boolean) => api<any>('/context_delete', {
     method: 'DELETE',
     query: {
-      operation_id: context.operation_id,
       context_id: context.id,
-      delete_data: wipe,
+      delete_data,
+      ws_id: this.app.general.ws_id
     },
   }, this.sync);
 
@@ -944,6 +944,11 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   notes_reload = async () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     const files = Source.Entity.selected(this.app).map((f) => f.id);
     if (files.length === 0) {
       Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info);
@@ -953,6 +958,9 @@ export class Info implements InfoProps {
     const fetch = async (offset = 0) => {
       const fetched = await api<Note.Type[]>('/note_list', {
         method: 'POST',
+        query: {
+          operation_id: operation.id
+        },
         body: {
           source_ids: files,
           offset,
@@ -1121,10 +1129,18 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   links_reload = async () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     return api<Link.Type[]>(
       '/link_list',
       {
         method: 'POST',
+        query: {
+          operation_id: operation.id
+        },
         body: {
           source_ids: Source.Entity.selected(this.app).map((f) => f.id),
         },
