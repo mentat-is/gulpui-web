@@ -2,7 +2,7 @@
   "name": "gulpui-web",
   "version": "0.3.0",
   "private": true,
-  "packageManager": "pnpm@10.18.3",
+  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "prebuild": "node scripts/write-version.js",
     "build": "react-app-rewired build",
