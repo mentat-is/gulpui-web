@@ -20,6 +20,7 @@ import { Operation } from '@/entities/Operation'
 import { Context } from '@/entities/Context'
 import { Source } from '@/entities/Source'
 import { Link } from '@/entities/Link'
+import { Select } from '@/ui/Select'
 
 export namespace NoteFunctionality {
   export namespace Create {
@@ -324,34 +325,56 @@ export namespace LinkFunctionality {
     export function Banner({ event }: LinkFunctionality.Connect.Props) {
       const { app, Info, spawnBanner } = Application.use()
 
-      const connect = (link: Link.Type) => () => Info.links_connect(link, event)
+      const links = useMemo(() => Link.Entity.selected(app), [app.target.links]);
 
-      const links = useMemo(() => {
-        return Link.Entity.selected(app).filter((l) => !l.doc_ids.some((e) => e === event._id))
-      }, [app.target.links])
+      const [loading, setLoading] = useState<boolean>(false);
 
-      const NoLinks = useMemo(() => {
-        return (
-          <Stack dir='column' gap={16}>
-            <Stack gap={4} style={{ fontFamily: 'var(--font-mono)', fontSize: 16, color: 'var(--second)' }}>There is no links at all. <Icon name='FaceSad' size={18} /></Stack>
-            <Button rounded onClick={() => spawnBanner(<LinkFunctionality.Create.Banner event={event} />)} icon='GitPullRequestArrow'>Create link</Button>
-          </Stack>
-        )
-      }, [spawnBanner])
+      // Returns a list of already connected links. Updates together with links
+      const alreadyConnectedLinks = useMemo(() => links.filter(link => link.doc_ids.includes(event._id)).map(link => link.id), [links, event]);
+
+      const handleChange = useCallback(async (nextIds: string[]) => {
+        setLoading(() => true);
+        const prev = new Set(alreadyConnectedLinks);
+        const next = new Set(nextIds);
+
+        const toConnect = links.filter(l => next.has(l.id) && !prev.has(l.id));
+        const toDisconnect = links.filter(l => prev.has(l.id) && !next.has(l.id));
+
+        for (const link of toConnect) await Info.links_connect(link, event);
+        for (const link of toDisconnect) await Info.links_disconnect(link, event);
+        setLoading(() => false);
+      }, [alreadyConnectedLinks, links]);
+
+      const createNewLinkButtonClickHandler = () => spawnBanner(<LinkFunctionality.Create.Banner event={event} back={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)} />);
 
       return (
-        <UIBanner title='Connect link'>
-          {links.length ? links.map((link) => (
-            <Button
-              key={link.id}
-              variant='secondary'
-              style={{ color: link.color }}
-              onClick={connect(link)}
-              icon={Link.Entity.icon(link)}
-            >
-              {link.name}
-            </Button>
-          )) : NoLinks}
+        <UIBanner title='Connect link' option={<Button variant='tertiary' title='Create link' onClick={createNewLinkButtonClickHandler} icon='GitPullRequestArrow' />}>
+          <Select.Multi.Root
+            value={alreadyConnectedLinks}
+            onValueChange={handleChange}
+            disabled={loading}
+          >
+            <Select.Trigger>
+              <Select.Multi.Value
+                icon={['DataPointMedium', 'DataPoint']}
+                placeholder='Select links to be connected with this event'
+                text={len => `Connected with ${len} links`}
+              />
+            </Select.Trigger>
+            <Select.Content>
+              {links.map(link => (
+                <Select.Item key={link.id} value={link.id} style={{ color: link.color }} disabled={loading}>
+                  <Select.Icon name={Link.Entity.icon(link)} />
+                  {link.name}
+                </Select.Item>
+              ))}
+              <Button variant='tertiary' style={{ width: '100%' }} value='create_link' onClick={createNewLinkButtonClickHandler}>
+                <Select.Icon name='GitPullRequestArrow' />
+                Create link
+              </Button>
+            </Select.Content>
+
+          </Select.Multi.Root>
         </UIBanner>
       )
     }

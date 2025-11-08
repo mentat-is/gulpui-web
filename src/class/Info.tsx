@@ -1223,19 +1223,29 @@ export class Info implements InfoProps {
     },
   }).then(this.links_reload)
 
-  links_connect = (link: Link.Type, event: Doc.Type) => {
-    return api<Link.Type>('/link_update', {
-      method: 'PATCH',
-      query: {
-        obj_id: link.id,
-        ws_id: this.app.general.ws_id,
-      },
-      toast: `Event ${event._id} has been connected to link ${link.name} successfully`,
-      body: {
-        doc_ids: [...link.doc_ids, event._id],
-      },
-    }).then(this.links_reload);
-  }
+  links_connect = (link: Link.Type, event: Doc.Type) => api<Link.Type>('/link_update', {
+    method: 'PATCH',
+    query: {
+      obj_id: link.id,
+      ws_id: this.app.general.ws_id,
+    },
+    toast: `Event ${event._id} has been connected to link ${link.name} successfully`,
+    body: {
+      doc_ids: Refractor.array(...link.doc_ids, event._id),
+    },
+  }).then(this.links_reload)
+
+  links_disconnect = (link: Link.Type, event: Doc.Type) => api<Link.Type>('/link_update', {
+    method: 'PATCH',
+    query: {
+      obj_id: link.id,
+      ws_id: this.app.general.ws_id,
+    },
+    toast: `Event ${event._id} has been disconnected from link ${link.name} successfully`,
+    body: {
+      doc_ids: Refractor.array(...link.doc_ids.filter(id => id !== event._id)),
+    },
+  }).then(this.links_reload)
 
   highlights_reload = () => {
     const operation = Operation.Entity.selected(this.app);
