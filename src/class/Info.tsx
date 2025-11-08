@@ -258,11 +258,11 @@ export class Info implements InfoProps {
         this.setLoading(req_id, file.id)
       }
       const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
-        const events = Doc.Entity.normalize(m.data.docs);
+        const events = Doc.Entity.normalize(m.payload.docs);
 
         this.events_add(events);
 
-        if (m.data.last) {
+        if (m.payload.last) {
           this.delLoading(req_id)
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         }
@@ -275,7 +275,7 @@ export class Info implements InfoProps {
           });
         } else {
           toast.success('Enrichment finished', {
-            description: `Total processed documents: ${m.data.total_hits ?? 0}`,
+            description: `Total processed documents: ${m.payload.total_hits ?? 0}`,
             icon: <Icon name='Check' />
           });
         }
@@ -424,10 +424,10 @@ export class Info implements InfoProps {
       }
 
       const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
-        const events = Doc.Entity.normalize(m.data.docs);
+        const events = Doc.Entity.normalize(m.payload.docs);
 
         this.events_add(events);
-        if (m.data.last) {
+        if (m.payload.last) {
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         };
       })
@@ -799,22 +799,22 @@ export class Info implements InfoProps {
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
-        const contexts = Refractor.array(...this.app.target.contexts, m.data.data);
+        const contexts = Refractor.array(...this.app.target.contexts, m.payload.obj);
 
         this.setInfoByKey(contexts, 'target', 'contexts');
       })
     }
 
     SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
-      this.setLoading(m.req_id, m.data.data.id);
+      this.setLoading(m.req_id, m.payload.obj.id);
 
-      this.app.target.files = Refractor.array(...this.app.target.files, Source.Entity.normalize(this.app, m.data.data));
+      this.app.target.files = Refractor.array(...this.app.target.files, Source.Entity.normalize(this.app, m.payload.obj));
 
       this.setInfoByKey(this.app.target.files, 'target', 'files');
     })
 
     const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
-      const events = Doc.Entity.normalize(m.data.docs);
+      const events = Doc.Entity.normalize(m.payload.docs);
 
       const files = Refractor.array(...this.app.target.files);
       const file = Source.Entity.id(files, events[0]['gulp.source_id']);
@@ -851,7 +851,7 @@ export class Info implements InfoProps {
       this.setInfoByKey(files, 'target', 'files');
       this.setInfoByKey(frame, 'timeline', 'frame');
 
-      if (m.data.last) {
+      if (m.payload.last) {
         this.delLoading(m.req_id);
         SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         toast.success(`Source ${file.name} has been ingested successfully`, {
@@ -1237,9 +1237,19 @@ export class Info implements InfoProps {
     }).then(this.links_reload);
   }
 
-  highlights_reload = () => api<Highlight.Type[]>('/highlight_list', {
-    method: 'POST',
-  }, h => this.setInfoByKey(h, 'target', 'highlights'));
+  highlights_reload = () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    return api<Highlight.Type[]>('/highlight_list', {
+      method: 'POST',
+      query: {
+        operation_id: operation.id
+      }
+    }, h => this.setInfoByKey(h, 'target', 'highlights'))
+  };
 
   highlight_create = async ({
     time_range,

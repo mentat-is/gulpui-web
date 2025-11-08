@@ -35,42 +35,43 @@ function _({ children }: { children: ReactNode }) {
       return;
 
     const collabCallback = (message: any) => {
-      switch (message.data.type) {
+      console.log(message);
+      switch (message.payload.obj.type) {
         case 'note':
-          const notes: Note.Type[] = message.data.data;
-          notes.forEach(note => {
-            const exist = message.data.created ? -2 : app.target.notes.findIndex(n => n.id === note.id);
-            if (exist >= 0) {
-              app.target.notes[exist] = note;
-              app.target.notes = [...app.target.notes];
-            } else {
-              app.target.notes = [...app.target.notes, note];
-            }
-          });
+          const note: Note.Type = message.payload.obj;
+
+          const isExistingNote = app.target.notes.findIndex(n => n.id === note.id);
+          if (isExistingNote >= 0) {
+            app.target.notes[isExistingNote] = note;
+            app.target.notes = [...app.target.notes];
+          } else {
+            app.target.notes = [...app.target.notes, note];
+          }
+
           setInfo(app);
           return;
         case 'link':
-          const links: Link.Type[] = message.data.data;
-          links.forEach(link => {
-            const exist = message.data.created === true ? -2 : app.target.links.findIndex(n => n.id === link.id);
-            if (exist >= 0) {
-              app.target.links[exist] = link;
-              app.target.links = [...app.target.links];
-            } else {
-              app.target.links = [...app.target.links, link];
-            }
-          });
+          const link: Link.Type = message.payload.obj;
+
+          const isExistingLink = app.target.links.findIndex(n => n.id === link.id);
+          if (isExistingLink >= 0) {
+            app.target.links[isExistingLink] = link;
+            app.target.links = [...app.target.links];
+          } else {
+            app.target.links = [...app.target.links, link];
+          }
+
           setInfo(app);
           return;
       }
       instance.highlights_reload();
     }
 
-    const reqeustStatsCallback = (message: any) => instance.request_add(message.data.data);
+    const reqeustStatsCallback = (message: any) => instance.request_add(message.payload.obj);
 
     SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabCallback);
     SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabCallback);
-    const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.STATS_UPDATE, m => m.data.data.type === 'request_stats', reqeustStatsCallback);
+    const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.STATS_UPDATE, m => m.payload.obj.type === 'request_stats', reqeustStatsCallback);
 
     return () => {
       SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_UPDATE, collabCallback);
