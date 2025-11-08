@@ -10,6 +10,7 @@ import { Note } from '@/entities/Note';
 import { Link } from '@/entities/Link';
 import { Source } from '@/entities/Source';
 import { App } from '@/entities/App';
+import { Refractor } from '@/ui/utils';
 
 function _({ children }: { children: ReactNode }) {
   const [app, setInfo] = useState<App.Type>(App.Base);
@@ -34,8 +35,7 @@ function _({ children }: { children: ReactNode }) {
     if (!SmartSocket.Class.instance)
       return;
 
-    const collabCallback = (message: any) => {
-      console.log(message);
+    const collabUpdateCallback = (message: any) => {
       switch (message.payload.obj.type) {
         case 'note':
           const note: Note.Type = message.payload.obj;
@@ -67,15 +67,32 @@ function _({ children }: { children: ReactNode }) {
       instance.highlights_reload();
     }
 
+    const collabDeleteCallback = (message: any) => {
+      const id: Link.Id | Note.Id = message.payload.id;
+      switch (true) {
+        case app.target.notes.some(n => n.id === id):
+          app.target.notes = Refractor.array(...app.target.notes.filter(n => n.id !== id));
+
+          setInfo(app);
+          return;
+        case app.target.links.some(l => l.id === id):
+          app.target.links = Refractor.array(...app.target.links.filter(l => l.id !== id));
+
+          setInfo(app);
+          return;
+      }
+      instance.highlights_reload();
+    }
+
     const reqeustStatsCallback = (message: any) => instance.request_add(message.payload.obj);
 
-    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabCallback);
-    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabCallback);
+    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
+    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
     const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.STATS_UPDATE, m => m.payload.obj.type === 'request_stats', reqeustStatsCallback);
 
     return () => {
-      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_UPDATE, collabCallback);
-      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_DELETE, collabCallback);
+      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
+      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
       SmartSocket.Class.instance.coff(SmartSocket.Message.Type.STATS_UPDATE, sid);
     }
   }, [ws, app, instance]);
