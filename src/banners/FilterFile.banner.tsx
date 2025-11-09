@@ -193,7 +193,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
         <Select.Content>
           {Source.Entity.selected(app).map(file => (
             <Select.Item value={file.id}>
-              <Icon name={Source.Entity.icon(file)} />
+              <Icon name={Source.Entity.icon(file) || 'File'} />
               {file.name}
             </Select.Item>
           ))}
