@@ -59,9 +59,11 @@ export function Table<T extends Object>({
             ))}
           </tr>
         </thead>
-        {values.map((i, index) => (
-          <Item columns={columns} key={String(i) + index} i={i} />
-        ))}
+        <tbody>
+          {values.map((i, index) => (
+            <Item columns={columns} key={String(i) + index} i={i} />
+          ))}
+        </tbody>
       </table>
     </Stack>
   )
