@@ -1,4 +1,5 @@
 import s from './styles/FilterFileBanner.module.css'
+import React from 'react'
 import { Banner } from '@/ui/Banner'
 import { Application } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
@@ -151,7 +152,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
         <Popover.Content className={s.lastFilters}>
           <Stack dir='column'>
             {lastQueriesList.map((q, i) => (
-              <>
+              <React.Fragment key={i}>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger>
@@ -167,7 +168,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
                   </Tooltip>
                 </TooltipProvider>
                 {lastQueriesList.length - 1 > i && <Separator />}
-              </>
+              </React.Fragment>
             ))}
           </Stack>
         </Popover.Content>
