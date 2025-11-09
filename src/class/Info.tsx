@@ -128,7 +128,7 @@ export namespace GulpDataset {
   }
   export namespace QueryHistoryGet {
     export interface Interface {
-      query: {
+      q: {
         query: {
           bool: Record<OpenSearchQueryBuilder.Operator, Record<OpenSearchQueryBuilder.Condition, any>[]>;
         }
@@ -482,7 +482,12 @@ export class Info implements InfoProps {
     const queries: Query.Type[] = [];
 
     list.forEach(query => {
-      const root = query.query.query;
+      if (!query.q || !query.q.query) {
+        Logger.error(`Invalid query object: \n${JSON.stringify(query, null, 2)}`, 'Info.getLastQueries');
+        return;
+      }
+
+      const root = query.q.query;
 
       let string = '';
       const filters: Filter.Type[] = [];
@@ -527,10 +532,7 @@ export class Info implements InfoProps {
         string = Filter.Entity.base(Source.Entity.selected(this.app)[0]);
       }
 
-      queries.push({
-        string,
-        filters
-      })
+      queries.push({ string, filters })
     })
 
     return queries;
