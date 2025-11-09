@@ -182,7 +182,7 @@ export namespace Permissions {
           </Stack>
           <Stack flex />
           <Popover.Root>
-            <Popover.Trigger>
+            <Popover.Trigger asChild>
               <Button icon="Gavel" variant="secondary">
                 Roles /{' '}
                 {user.permission
@@ -210,7 +210,7 @@ export namespace Permissions {
             </Popover.Content>
           </Popover.Root>
           <Popover.Root>
-            <Popover.Trigger>
+            <Popover.Trigger asChild>
               <Button icon="Users" variant="secondary">
                 Groups
               </Button>
