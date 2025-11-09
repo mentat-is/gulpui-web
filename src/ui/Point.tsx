@@ -32,7 +32,6 @@ export function Point({
       shape='icon'
       tabIndex={-1}
       variant="secondary"
-      aria-exportable
       className={cn(type === 'link' && s.round, className, s.target)}
       style={{ ...props.style, left: x, top: y, borderColor: accent }}
       {...props}
