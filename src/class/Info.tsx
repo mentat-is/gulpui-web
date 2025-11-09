@@ -434,6 +434,14 @@ export class Info implements InfoProps {
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
         this.delLoading(req_id);
 
+        if (!m.data) {
+          toast.error('Query failed: empty data', {
+            icon: <Icon name='Stop' />,
+            richColors: true
+          });
+          return;
+        }
+
         if (m.data.status !== 'done') {
           toast.error('Query failed', {
             icon: <Icon name='Stop' />,
