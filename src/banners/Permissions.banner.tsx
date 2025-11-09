@@ -166,7 +166,9 @@ export namespace Permissions {
 
       return (
         <Stack className={s.combination}>
-          <Icon name={Glyph.List.get(user.glyph_id ?? Glyph.getIdByName('User'))!} />
+          {Glyph.List.get(user.glyph_id ?? Glyph.getIdByName('User')) && (
+            <Icon name={Glyph.List.get(user.glyph_id ?? Glyph.getIdByName('User'))!} />
+          )}
           <Stack
             className={s.general}
             ai="flex-start"
@@ -197,7 +199,7 @@ export namespace Permissions {
                   const has = user.permission.includes(r)
                   return (
                     <Stack key={r} className={s.role} gap={6}>
-                      <Icon name={RolesIcons[r]} size={12} />
+                     {RolesIcons[r] && <Icon name={RolesIcons[r]} size={12} />}
                       <p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
                       <Switch
                         checked={has}
