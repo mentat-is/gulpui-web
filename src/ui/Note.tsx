@@ -13,6 +13,8 @@ import { Context } from '@/entities/Context'
 import { Source } from '@/entities/Source'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { Note } from '@/entities/Note'
+import { useMemo } from 'react'
+import { useCallback } from 'react'
 
 export namespace NotePoint {
   export interface Props
@@ -68,9 +70,9 @@ export namespace NotePoint {
   export function Point({ notes, ...props }: NotePoint.Props) {
     const { app, spawnDialog } = Application.use()
 
-    const handleClick = () => {
+    const handleClick = useCallback(() => {
       const ids = notes.map(n => n.doc._id);
-      const events = Source.Entity.events(app, notes[0].source_id).filter(f => ids.includes(f._id));
+      const events = Source.Entity.events(app, notes[0].source_id).filter(e => ids.includes(e._id));
       if (!events.length) {
         return;
       }
@@ -80,7 +82,7 @@ export namespace NotePoint {
       }
 
       return spawnDialog(<DisplayGroupDialog events={events} />);
-    };
+    }, [notes, app.target.files, app.target.events]);
 
     return (
       <UIPoint

@@ -258,11 +258,11 @@ export class Info implements InfoProps {
         this.setLoading(req_id, file.id)
       }
       const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
-        const events = Doc.Entity.normalize(m.data.docs);
+        const events = Doc.Entity.normalize(m.payload.docs);
 
         this.events_add(events);
 
-        if (m.data.last) {
+        if (m.payload.last) {
           this.delLoading(req_id)
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         }
@@ -275,7 +275,7 @@ export class Info implements InfoProps {
           });
         } else {
           toast.success('Enrichment finished', {
-            description: `Total processed documents: ${m.data.total_hits ?? 0}`,
+            description: `Total processed documents: ${m.payload.total_hits ?? 0}`,
             icon: <Icon name='Check' />
           });
         }
@@ -424,10 +424,10 @@ export class Info implements InfoProps {
       }
 
       const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
-        const events = Doc.Entity.normalize(m.data.docs);
+        const events = Doc.Entity.normalize(m.payload.docs);
 
         this.events_add(events);
-        if (m.data.last) {
+        if (m.payload.last) {
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         };
       })
@@ -799,22 +799,22 @@ export class Info implements InfoProps {
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
-        const contexts = Refractor.array(...this.app.target.contexts, m.data.data);
+        const contexts = Refractor.array(...this.app.target.contexts, m.payload.obj);
 
         this.setInfoByKey(contexts, 'target', 'contexts');
       })
     }
 
     SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
-      this.setLoading(m.req_id, m.data.data.id);
+      this.setLoading(m.req_id, m.payload.obj.id);
 
-      this.app.target.files = Refractor.array(...this.app.target.files, Source.Entity.normalize(this.app, m.data.data));
+      this.app.target.files = Refractor.array(...this.app.target.files, Source.Entity.normalize(this.app, m.payload.obj));
 
       this.setInfoByKey(this.app.target.files, 'target', 'files');
     })
 
     const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
-      const events = Doc.Entity.normalize(m.data.docs);
+      const events = Doc.Entity.normalize(m.payload.docs);
 
       const files = Refractor.array(...this.app.target.files);
       const file = Source.Entity.id(files, events[0]['gulp.source_id']);
@@ -851,7 +851,7 @@ export class Info implements InfoProps {
       this.setInfoByKey(files, 'target', 'files');
       this.setInfoByKey(frame, 'timeline', 'frame');
 
-      if (m.data.last) {
+      if (m.payload.last) {
         this.delLoading(m.req_id);
         SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         toast.success(`Source ${file.name} has been ingested successfully`, {
@@ -892,12 +892,12 @@ export class Info implements InfoProps {
     )
 
   // ⚠️ UNTOUCHABLE
-  context_delete = (context: Context.Type, wipe: boolean) => api<any>('/context_delete', {
+  context_delete = (context: Context.Type, delete_data: boolean) => api<any>('/context_delete', {
     method: 'DELETE',
     query: {
-      operation_id: context.operation_id,
       context_id: context.id,
-      delete_data: wipe,
+      delete_data,
+      ws_id: this.app.general.ws_id
     },
   }, this.sync);
 
@@ -944,6 +944,11 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   notes_reload = async () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     const files = Source.Entity.selected(this.app).map((f) => f.id);
     if (files.length === 0) {
       Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info);
@@ -953,6 +958,9 @@ export class Info implements InfoProps {
     const fetch = async (offset = 0) => {
       const fetched = await api<Note.Type[]>('/note_list', {
         method: 'POST',
+        query: {
+          operation_id: operation.id
+        },
         body: {
           source_ids: files,
           offset,
@@ -1121,10 +1129,18 @@ export class Info implements InfoProps {
 
   // ⚠️ UNTOUCHABLE
   links_reload = async () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
     return api<Link.Type[]>(
       '/link_list',
       {
         method: 'POST',
+        query: {
+          operation_id: operation.id
+        },
         body: {
           source_ids: Source.Entity.selected(this.app).map((f) => f.id),
         },
@@ -1207,23 +1223,43 @@ export class Info implements InfoProps {
     },
   }).then(this.links_reload)
 
-  links_connect = (link: Link.Type, event: Doc.Type) => {
-    return api<Link.Type>('/link_update', {
-      method: 'PATCH',
-      query: {
-        obj_id: link.id,
-        ws_id: this.app.general.ws_id,
-      },
-      toast: `Event ${event._id} has been connected to link ${link.name} successfully`,
-      body: {
-        doc_ids: [...link.doc_ids, event._id],
-      },
-    }).then(this.links_reload);
-  }
+  links_connect = (link: Link.Type, event: Doc.Type) => api<Link.Type>('/link_update', {
+    method: 'PATCH',
+    query: {
+      obj_id: link.id,
+      ws_id: this.app.general.ws_id,
+    },
+    toast: `Event ${event._id} has been connected to link ${link.name} successfully`,
+    body: {
+      doc_ids: Refractor.array(...link.doc_ids, event._id),
+    },
+  }).then(this.links_reload)
 
-  highlights_reload = () => api<Highlight.Type[]>('/highlight_list', {
-    method: 'POST',
-  }, h => this.setInfoByKey(h, 'target', 'highlights'));
+  links_disconnect = (link: Link.Type, event: Doc.Type) => api<Link.Type>('/link_update', {
+    method: 'PATCH',
+    query: {
+      obj_id: link.id,
+      ws_id: this.app.general.ws_id,
+    },
+    toast: `Event ${event._id} has been disconnected from link ${link.name} successfully`,
+    body: {
+      doc_ids: Refractor.array(...link.doc_ids.filter(id => id !== event._id)),
+    },
+  }).then(this.links_reload)
+
+  highlights_reload = () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    return api<Highlight.Type[]>('/highlight_list', {
+      method: 'POST',
+      query: {
+        operation_id: operation.id
+      }
+    }, h => this.setInfoByKey(h, 'target', 'highlights'))
+  };
 
   highlight_create = async ({
     time_range,
