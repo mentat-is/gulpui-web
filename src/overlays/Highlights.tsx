@@ -81,7 +81,7 @@ export namespace Highlights {
                 <Select.Content>
                   {['blue', 'gray', 'green', 'pink', 'purple', 'red', 'teal'].map(color => {
                     return (
-                      <Select.Item value={color} style={{ color: `var(--${color}-700)`, background: `var(--${color}-200)` }}>
+                      <Select.Item key={color} value={color} style={{ color: `var(--${color}-700)`, background: `var(--${color}-200)` }}>
                         <Icon name='Status' />
                         <p>{capitalize(color)}</p>
                       </Select.Item>
