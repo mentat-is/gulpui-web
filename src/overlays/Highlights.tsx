@@ -63,7 +63,7 @@ export namespace Highlights {
           icon,
           time_range
         });
-        
+
         setHighlightsOverlay(null);
       }
 
@@ -262,10 +262,7 @@ export namespace Highlights {
       <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index, background: native ? `hsla(var(--${highlight.color}-800-value), 0.16)` : 'transparent' }} jc='flex-end' ai='flex-start' {...props}>
         <Stack style={{ background: `var(--${highlight.color}-700)` }}>
           <Badge className={s.title} data-type='badge' variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
-          <Stack gap={0} className={s.buttons}>
-            <Button tabIndex={-1} size='sm' variant='glass' icon='PencilEdit' onClick={() => { }} />
-            <Button tabIndex={-1} size='sm' variant='glass' icon='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />
-          </Stack>
+          <Button tabIndex={-1} size='sm' variant='glass' className={s.deleteButton} icon='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />
         </Stack>
       </Stack>
     )

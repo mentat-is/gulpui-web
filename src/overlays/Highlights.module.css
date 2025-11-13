@@ -74,23 +74,8 @@
 .highlight.minified {
   height: calc(100% - 106px);
 }
-.buttons {
-  background: var(--geist-background);
-  border: var(--geist-border);
-  border-radius: 4px;
-  z-index: 2;
-  flex: 0 !important;
-  backdrop-filter: blur(6px);
-  position: sticky;
-  pointer-events: all;
-}
-.buttons * {
-  backdrop-filter: none;
-  pointer-events: all;
-  width: 24px;
-  color: var(--accent) !important;
-  background: none !important;
-  border: none;
+.deleteButton {
+  z-index: 1    ;
 }
 .title,
 [data-type="badge"] {
