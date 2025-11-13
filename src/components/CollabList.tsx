@@ -7,7 +7,6 @@ import { Markdown } from "@/ui/Markdown";
 import s from './styles/Collab.module.css';
 import { Select } from "@/ui/Select";
 import { Separator } from "@/ui/Separator";
-import { Extension } from "@/context/Extension.context";
 import { Stack } from "@/ui/Stack";
 import { Button } from "@/ui/Button";
 import { Badge } from "@/ui/Badge";
@@ -23,7 +22,6 @@ export namespace Collab {
     }
   }
 
-  const EDIT_BUTTON_STYLE = { height: 20, marginLeft: 'auto' } as const;
   const FLEX_WRAP_STYLE = { flexWrap: 'wrap' } as const;
 
   const SelectItem = memo(({ item }: { item: Note.Type | Link.Type }) => {
@@ -49,11 +47,13 @@ export namespace Collab {
       return null
     }
     const { app, spawnBanner } = Application.use();
-    const [target, setTarget] = useState<Note.Type | Link.Type>(notes[0] || links[0])
+    const [targetId, setTargetId] = useState<string>(notes[0]?.id || links[0]?.id);
+
+    const target = Note.Entity.id(app, targetId as Note.Id) || Link.Entity.id(app, targetId as Link.Id);
 
     useEffect(() => {
-      setTarget(notes[0] || links[0]);
-    }, [notes, links])
+      setTargetId(notes[0]?.id || links[0]?.id);
+    }, [notes, links]);
     if (!target) {
       return null;
     }
@@ -61,24 +61,23 @@ export namespace Collab {
     const handleEditClick = useCallback(() => {
       const banner = target.type === 'note'
         ? <NoteFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc._id)} note={target} />
-        : <LinkFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc_id_from)} link={target} />;
+        : <LinkFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc_id_from)} link={target as unknown as Link.Type} />;
       spawnBanner(banner);
     }, [target, app, spawnBanner]);
     const handleDeleteClick = useCallback(() => {
       const banner = target.type === 'note'
         ? <Note.Delete.Banner note={target} />
-        : <Link.Delete.Banner link={target} />;
+        : <Link.Delete.Banner link={target as unknown as Link.Type} />;
       spawnBanner(banner);
     }, [target, spawnBanner]);
     const handleValueChange = useCallback((v: string) => {
-      const newTarget = Note.Entity.id(app, v as Note.Id) || Link.Entity.id(app, v as Link.Id);
-      setTarget(newTarget);
-    }, [app]);
+      setTargetId(v);
+    }, []);
 
     const targetColorStyle = useMemo(() => ({ color: target.color }), [target.color]);
     const Edit = useMemo(() => <Button variant='secondary' icon='PencilEdit' onClick={handleEditClick} />, [handleEditClick]);
 
-    const List = useMemo(() => {
+   const List = useMemo(() => {
       return [...notes, ...links].map(c => (
         <SelectItem key={c.id} item={c} />
       ));
@@ -89,7 +88,7 @@ export namespace Collab {
     }, [notes]);
 
     const targetIcon = useMemo(() => {
-      return target.type === 'note' ? Note.Entity.icon(target) : Link.Entity.icon(target);
+      return target.type === 'note' ? Note.Entity.icon(target) : Link.Entity.icon(target as unknown as Link.Type);
     }, [target]);
 
     const MemoizedSelect = useMemo(() => {
