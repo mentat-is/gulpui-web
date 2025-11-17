@@ -40,7 +40,12 @@ export namespace Auth {
       if (methods.length === 0) {
         Internal.Settings.server = server
         api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-          toast: false,
+          toast: {
+            onError: payload => payload.status === 500 ? toast.warning('Auth plugin is not configured', {
+              description: 'Check configuration file on server side',
+              icon: <Icon name='Warning' />
+            }) : undefined
+          },
         }, setMethods)
       }
     }, [methods, server])
@@ -325,7 +330,12 @@ export namespace Auth {
       if (methods.length === 0) {
         Internal.Settings.server = server
         api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-          toast: false,
+          toast: {
+            onError: payload => payload.status === 500 ? toast.warning('Auth plugin is not configured', {
+              description: 'Check configuration file on server side',
+              icon: <Icon name='Warning' />
+            }) : undefined
+          },
         }, setMethods)
       }
     }, [methods, server])

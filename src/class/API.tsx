@@ -1,6 +1,4 @@
-import { capitalize } from '@impactium/utils'
 import { type Callback } from '@impactium/types'
-import { toast } from 'sonner'
 import { Logger } from '@/dto/Logger.class'
 import { Icon } from '@impactium/icons'
 import { Auth } from '@/page/Auth.page'
@@ -13,8 +11,6 @@ interface ResponseBase<T = any> {
   req_id: Request.Id
   data: T
 }
-
-type ResponseSuccess<T = any> = ResponseBase<T>
 
 type ResponseError = ResponseBase<{
   statusCode: number
@@ -39,8 +35,13 @@ export class ResponseHandler<T extends ResponseBase<any>> {
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>
 
+type Toast = ((data: any) => string | number | undefined) | null | undefined;
+
 export interface RequestOptions {
-  toast?: string | boolean
+  toast?: {
+    onSuccess?: Toast;
+    onError?: Toast;
+  }
   setLoading?: SetState<boolean>
   query?: Record<string, any>;
   body?: Record<string, any> | RequestInit['body']
@@ -202,8 +203,8 @@ const api: Api = async function <T>(
   // [ OK ] Status
   // [ OK ] Data
   if (isSuccess) {
-    if (typeof options.toast === 'string') {
-      toast(options.toast)
+    if (options.toast?.onSuccess) {
+      options.toast?.onSuccess(res);
     }
     soft(result, callback);
 
@@ -219,10 +220,8 @@ const api: Api = async function <T>(
     window.spawnBanner(<Auth.Banner />);
     // [FAIL] Status
     // [ ?? ] Data
-  } else if ((options.toast !== false)) {
-    toast.error(toSeparatedCase(error.name), {
-      description: capitalize(error.msg) ?? 'Check console for further information',
-    });
+  } else if (options.toast?.onError) {
+    options.toast?.onError(res)
   }
 
   soft(() => false, options.setLoading)
