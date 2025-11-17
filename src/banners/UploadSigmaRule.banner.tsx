@@ -80,7 +80,7 @@ export namespace Sigma {
           <Select.Content>
             {allFiles.map(file => (
               <Select.Item key={file.id} value={file.id}>
-                <Icon name={Source.Entity.icon(file)} />
+                <Icon name={Source.Entity.icon(file) || 'File'} />
                 {file.name}
                 <Badge variant='gray-subtle' value={Context.Entity.id(app, file.context_id).name} />
               </Select.Item>
