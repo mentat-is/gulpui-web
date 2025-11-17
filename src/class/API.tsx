@@ -213,7 +213,8 @@ const api: Api = async function <T>(
     if (options.toast?.onSuccess) {
       options.toast?.onSuccess(res);
     }
-    soft(res.data, callback);
+    // @ts-ignore
+    soft(options.raw ? res : res.data, callback);
   } else if ((res.data as ResponseErrorBody).__error.name === 'MissingPermission') {
     Internal.Settings.token = ''
     Logger.warn('Session has been expired', api, {
@@ -228,15 +229,7 @@ const api: Api = async function <T>(
 
   soft(() => false, options.setLoading)
 
-  return res.data;
+  return options.raw ? res : res.data;
 }
-
-const toSeparatedCase = (str: string): string => str
-  ?.replace(/([a-z])([A-Z])/g, '$1 $2')
-  .split(/[\s_]+/)
-  .map((word) => word
-    .charAt(0)
-    .toUpperCase() + word.slice(1))
-  .join(' ') ?? 'Unknown Error';
 
 globalThis.api = api
