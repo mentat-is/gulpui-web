@@ -128,7 +128,7 @@ export namespace GulpDataset {
   }
   export namespace QueryHistoryGet {
     export interface Interface {
-      query: {
+      q: {
         query: {
           bool: Record<OpenSearchQueryBuilder.Operator, Record<OpenSearchQueryBuilder.Condition, any>[]>;
         }
@@ -473,8 +473,8 @@ export class Info implements InfoProps {
   getLastQueries = (): Promise<Query.Type[]> => api<GulpDataset.QueryHistoryGet.Response>('/query_history_get').then(list => {
     const queries: Query.Type[] = [];
 
-    list.forEach(query => {
-      const root = query.query.query;
+    list.forEach(payload => {
+      const root = payload.q.query;
 
       let string = '';
       const filters: Filter.Type[] = [];
@@ -515,7 +515,7 @@ export class Info implements InfoProps {
       });
 
       if (!string) {
-        Logger.error(`Cannot find query_string part in given object: \n${JSON.stringify(query, null, 2)}`, 'Info.getLastQueries');
+        Logger.error(`Cannot find query_string part in given object: \n${JSON.stringify(payload, null, 2)}`, 'Info.getLastQueries');
         string = Filter.Entity.base(Source.Entity.selected(this.app)[0]);
       }
 
