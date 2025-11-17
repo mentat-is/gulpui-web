@@ -69,3 +69,7 @@
   text-transform: unset !important;
   color: var(--accent);
 }
+.groupLabel {
+  display: flex;
+  align-items: center;
+}

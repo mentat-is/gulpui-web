@@ -201,7 +201,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               <JsonView data={unflattenObject} clickToExpandNode={true} shouldExpandNode={allExpanded} style={newStyles} />
             </TabsContent>
             <TabsContent value="raw">
-              <Markdown className={s.highlighter} value={`\`\`\`json\n${JSON.stringify(json, null, 2)}\`\`\``} />
+              <Markdown className={s.highlighter} value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`} />
             </TabsContent>
             <TabsContent value="table">
               <Table values={Object.entries(json)}></Table>

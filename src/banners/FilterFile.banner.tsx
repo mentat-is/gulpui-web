@@ -15,6 +15,7 @@ import { Stack } from '@/ui/Stack'
 import { Query } from '@/entities/Query'
 import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
+import { Context } from '@/entities/Context'
 
 interface FilterFileBannerProps extends Banner.Props {
   files: Source.Type[],
@@ -190,11 +191,18 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
           <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
         </Select.Trigger>
         <Select.Content>
-          {Source.Entity.selected(app).map(file => (
-            <Select.Item value={file.id}>
-              <Icon name={Source.Entity.icon(file)} />
-              {file.name}
-            </Select.Item>
+          {Context.Entity.selected(app).map(context => (
+            <Select.Group key={context.id}>
+              <Select.Label className={s.groupLabel}>
+                {context.name}
+              </Select.Label>
+              {Source.Entity.selected(app).map(file => (
+                <Select.Item value={file.id}>
+                  <Icon name={Source.Entity.icon(file)} />
+                  {file.name}
+                </Select.Item>
+              ))}
+            </Select.Group>
           ))}
         </Select.Content>
       </Select.Multi.Root>
