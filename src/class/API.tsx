@@ -12,10 +12,24 @@ interface ResponseBase<T = any> {
   data: T
 }
 
-type ResponseError = ResponseBase<{
-  statusCode: number
-  message: string
-}>
+interface ResponseErrorBody {
+  request: {
+    path: string,
+    method: string,
+    query: string,
+    headers: {
+      [key: string]: string
+    },
+    body: string
+  },
+  __error: {
+    name: string;
+    msg: string;
+    trace: string;
+  }
+}
+
+type ResponseError = ResponseBase<ResponseErrorBody>
 
 export class ResponseHandler<T extends ResponseBase<any>> {
   status: 'success' | 'error' | 'pending'
@@ -23,24 +37,23 @@ export class ResponseHandler<T extends ResponseBase<any>> {
   timestamp: Date
   data: T['data']
 
-  constructor(data: T = {} as T) {
+  constructor(data: T) {
     this.status = data.status ?? 'error';
     this.req_id = data.req_id ?? '' as Request.Id;
     this.timestamp = data.timestamp ?? Date.now();
     this.data = data.data ?? { message: 'internal_server_error', statusCode: 500 };
   }
-
-  isError = (): this is ResponseError => this.status === 'error'
 }
 
 export type SetState<T> = React.Dispatch<React.SetStateAction<T>>
 
-type Toast = ((data: any) => string | number | undefined) | null | undefined;
 
-export interface RequestOptions {
+type Toast<T> = ((data: ResponseBase<T>) => string | number | undefined) | null | undefined;
+
+export interface RequestOptions<T> {
   toast?: {
-    onSuccess?: Toast;
-    onError?: Toast;
+    onSuccess?: Toast<T>;
+    onError?: Toast<ResponseErrorBody>;
   }
   setLoading?: SetState<boolean>
   query?: Record<string, any>;
@@ -48,15 +61,15 @@ export interface RequestOptions {
   deassign?: boolean
 }
 
-type RawTrueOptions = Omit<RequestInit, 'body'> & {
+type RawTrueOptions<T> = Omit<RequestInit, 'body'> & {
   raw: true
-} & RequestOptions
-type RawFalseOptions = Omit<RequestInit, 'body'> & {
+} & RequestOptions<T>
+type RawFalseOptions<T> = Omit<RequestInit, 'body'> & {
   raw?: false
-} & RequestOptions
-type AnyOptions = Omit<RequestInit, 'body'> & {
+} & RequestOptions<T>
+type AnyOptions<T> = Omit<RequestInit, 'body'> & {
   raw?: boolean
-} & RequestOptions
+} & RequestOptions<T>
 
 export type Api = {
   /**
@@ -64,45 +77,45 @@ export type Api = {
    *
    * @param toast: keyof Locale | boolean
    */
-  <T>(path: string, options: RawTrueOptions): Promise<ResponseHandler<ResponseBase<T>>>
-  <T>(path: string, options?: RawFalseOptions): Promise<T>
-  <T>(path: string, options?: AnyOptions): Promise<ResponseHandler<ResponseBase<T>> | T>
+  <T>(path: string, options: RawTrueOptions<T>): Promise<ResponseHandler<ResponseBase<T>>>
+  <T>(path: string, options?: RawFalseOptions<T>): Promise<T>
+  <T>(path: string, options?: AnyOptions<T>): Promise<ResponseHandler<ResponseBase<T>> | T>
 
   <T>(
     path: string,
-    options: RawTrueOptions,
+    options: RawTrueOptions<T>,
     callback: Callback<ResponseHandler<ResponseBase<T>>>,
   ): Promise<ResponseHandler<ResponseBase<T>>>
   <T>(
     path: string,
-    options?: RawFalseOptions,
+    options?: RawFalseOptions<T>,
     callback?: Callback<T>,
   ): Promise<T>
   <T>(
     path: string,
-    options?: AnyOptions,
+    options?: AnyOptions<T>,
     callback?: Callback<ResponseHandler<ResponseBase<T>> | T>,
   ): Promise<ResponseHandler<ResponseBase<T>> | T>
 
   <T>(
     path: string,
     callback: Callback<ResponseHandler<ResponseBase<T>>>,
-    options: RawTrueOptions,
+    options: RawTrueOptions<T>,
   ): Promise<ResponseHandler<ResponseBase<T>>>
   <T>(
     path: string,
     callback: Callback<T>,
-    options?: RawFalseOptions,
+    options?: RawFalseOptions<T>,
   ): Promise<T>
   <T>(
     path: string,
     callback: Callback<ResponseHandler<ResponseBase<T>> | T>,
-    options?: AnyOptions,
+    options?: AnyOptions<T>,
   ): Promise<ResponseHandler<ResponseBase<T>> | T>
 }
 
 type unresolwedArgument<T> =
-  | (RequestInit & RequestOptions & { raw?: boolean })
+  | (RequestInit & RequestOptions<T> & { raw?: boolean })
   | Callback<T>
   | undefined
 
@@ -111,7 +124,7 @@ export function parseApiOptions<T>(
   b: unresolwedArgument<T>,
   _path: string,
 ) {
-  const options: RequestInit & RequestOptions & { raw?: boolean } = {}
+  const options: RequestInit & RequestOptions<T> & { raw?: boolean } = {}
   let callback: Callback<T> | undefined
 
   if (typeof a === 'function') {
@@ -192,25 +205,16 @@ const api: Api = async function <T>(
     },
   ).catch(() => { });
 
-  const res = new ResponseHandler(await response?.json())
+  const res = new ResponseHandler((await response?.json()) as ResponseBase<T>)
 
   const isSuccess = res.status === 'success' || res.status === 'pending';
 
-  const error = res.data?.__error ?? {};
-
-  const result = options.raw ? res : isSuccess ? res.data : null
-
-  // [ OK ] Status
-  // [ OK ] Data
   if (isSuccess) {
     if (options.toast?.onSuccess) {
       options.toast?.onSuccess(res);
     }
-    soft(result, callback);
-
-    // [FAIL] Status
-    // [ OK ] Data
-  } else if (error.name === 'MissingPermission') {
+    soft(res.data, callback);
+  } else if ((res.data as ResponseErrorBody).__error.name === 'MissingPermission') {
     Internal.Settings.token = ''
     Logger.warn('Session has been expired', api, {
       icon: <Icon name='Warning' />,
@@ -218,15 +222,13 @@ const api: Api = async function <T>(
     });
     // @ts-ignore
     window.spawnBanner(<Auth.Banner />);
-    // [FAIL] Status
-    // [ ?? ] Data
   } else if (options.toast?.onError) {
-    options.toast?.onError(res)
+    options.toast?.onError(res as ResponseError)
   }
 
   soft(() => false, options.setLoading)
 
-  return result;
+  return res.data;
 }
 
 const toSeparatedCase = (str: string): string => str

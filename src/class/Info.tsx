@@ -786,7 +786,7 @@ export class Info implements InfoProps {
       }
 
       // resume
-      if (response.isError() && response.data.continue_offset)
+      if (response.status === 'error' && response.data.continue_offset)
         return ingest(response.data.continue_offset, response.req_id);
 
 
