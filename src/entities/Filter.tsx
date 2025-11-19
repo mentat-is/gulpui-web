@@ -7,7 +7,6 @@ import { Parser } from "./addon/Parser"
 import { App } from "./App"
 import { UUID } from "crypto"
 import { Internal } from "./addon/Internal"
-import { Icon } from "@impactium/icons"
 
 export namespace Filter {
   export const name = 'Filter'
@@ -35,6 +34,8 @@ export namespace Filter {
     value: any
     enabled: boolean
     case_insensitive?: boolean
+    min?: string
+    max?: string
   }
 
   export class Entity {

@@ -21,6 +21,8 @@ export namespace OpenSearchQueryBuilder {
     | 'prefix'
     | 'wildcard'
     | 'range'
+    | 'Min'
+    | 'Max'
 
   export type Operator = 'must' | 'should' | 'must_not' | 'filter'
 
@@ -43,6 +45,8 @@ export namespace OpenSearchQueryBuilder {
     { value: 'prefix', label: 'Prefix', icon: 'Braces' },
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
+    { value: 'Min', label: 'Min <=', icon: 'Magnet' },
+    { value: 'Max', label: 'Max >=', icon: 'Magnet'}
   ]
 
   export const OPERATORS: Entity.Operator[] = [
@@ -235,13 +239,41 @@ export namespace OpenSearchQueryBuilder {
                     </Select.Content>
                   </Select.Root>
                 </Stack>
-                <Input
-                  variant='highlighted'
-                  icon='ChevronRightSmall'
-                  placeholder={filter.type === 'range' ? 'min,max' : 'Value'}
-                  value={filter.value}
-                  onChange={(e) => update(filter.id, 'value', e.target.value)}
-                />
+                {filter.type === 'Min' ? (
+                  <Input
+                    variant='highlighted'
+                    icon='ChevronRightSmall'
+                    placeholder='Min value'
+                    value={filter.value}
+                    onChange={(e) => update(filter.id, 'value', e.target.value)}
+                    prefix='<='
+                  />
+                ) : filter.type === 'Max' ? (
+                  <Input
+                    variant='highlighted'
+                    icon='ChevronRightSmall'
+                    placeholder='Max value'
+                    value={filter.value}
+                    onChange={(e) => update(filter.id, 'value', e.target.value)}
+                    prefix='>='
+                  />
+                ) : filter.type === 'range' ? (
+                  <Input
+                    variant='highlighted'
+                    icon='ChevronRightSmall'
+                    placeholder='min,max'
+                    value={filter.value}
+                    onChange={(e) => update(filter.id, 'value', e.target.value)}
+                  />
+                ) : (
+                  <Input
+                    variant='highlighted'
+                    icon='ChevronRightSmall'
+                    placeholder='Value'
+                    value={filter.value}
+                    onChange={(e) => update(filter.id, 'value', e.target.value)}
+                  />
+                )}
               </Stack>
               {filter.type === 'wildcard' ? <Toggle option={['Case sensitive', 'Case insensitive']} checked={filter.case_insensitive} onCheckedChange={v => update(filter.id, 'case_insensitive', v)} /> : null}
             </Stack>
