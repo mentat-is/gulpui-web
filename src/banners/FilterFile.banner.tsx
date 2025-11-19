@@ -153,7 +153,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
           <Stack dir='column'>
             {lastQueriesList.map((q, i) => (
               <>
-                <TooltipProvider>
+                <TooltipProvider key={i}>
                   <Tooltip>
                     <TooltipTrigger>
                       <Stack>
@@ -197,8 +197,8 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
                 {context.name}
               </Select.Label>
               {Source.Entity.selected(app).map(file => (
-                <Select.Item value={file.id}>
-                  <Icon name={Source.Entity.icon(file)} />
+                <Select.Item key={file.id} value={file.id}>
+                  <Icon name={Source.Entity.icon(file) || 'File'} />
                   {file.name}
                 </Select.Item>
               ))}

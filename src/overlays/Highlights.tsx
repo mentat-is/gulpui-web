@@ -187,7 +187,7 @@ export namespace Highlights {
         <Stack pos='absolute' className={cn(s.overlay, s.ignore)} {...props}>
           {highlights.map((highlight, index) => {
             return (
-              <Highlights.Component fixed={fixed} frame={frame} layoutWidth={layoutWidth} highlight={highlight} index={computedDepths[index]} />
+              <Highlights.Component key={index} fixed={fixed} frame={frame} layoutWidth={layoutWidth} highlight={highlight} index={computedDepths[index]} />
             )
           })}
         </Stack>
