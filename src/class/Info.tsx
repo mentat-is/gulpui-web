@@ -296,7 +296,12 @@ export class Info implements InfoProps {
       doc_id: event._id,
     },
     body: { custom_parameters },
-    toast: 'Document has been enriched successfully',
+    toast: {
+      onSuccess: () => toast.success('Document has been enriched successfully', {
+        richColors: true,
+        icon: <Icon name='Check' />
+      })
+    },
   })
 
   query_global = async ({
@@ -417,7 +422,6 @@ export class Info implements InfoProps {
       query: request_query,
       body,
       raw: true,
-      toast: false,
     }, ({ req_id, status }) => {
       if (status !== 'pending') {
         return;
@@ -433,14 +437,6 @@ export class Info implements InfoProps {
       })
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
         this.delLoading(req_id);
-
-        if (!m.data) {
-          toast.error('Query failed: empty data', {
-            icon: <Icon name='Stop' />,
-            richColors: true
-          });
-          return;
-        }
 
         if (m.data.status !== 'done') {
           toast.error('Query failed', {
@@ -481,13 +477,8 @@ export class Info implements InfoProps {
   getLastQueries = (): Promise<Query.Type[]> => api<GulpDataset.QueryHistoryGet.Response>('/query_history_get').then(list => {
     const queries: Query.Type[] = [];
 
-    list.forEach(query => {
-      if (!query.q || !query.q.query) {
-        Logger.error(`Invalid query object: \n${JSON.stringify(query, null, 2)}`, 'Info.getLastQueries');
-        return;
-      }
-
-      const root = query.q.query;
+    list.forEach(payload => {
+      const root = payload.q.query;
 
       let string = '';
       const filters: Filter.Type[] = [];
@@ -528,11 +519,14 @@ export class Info implements InfoProps {
       });
 
       if (!string) {
-        Logger.error(`Cannot find query_string part in given object: \n${JSON.stringify(query, null, 2)}`, 'Info.getLastQueries');
+        Logger.error(`Cannot find query_string part in given object: \n${JSON.stringify(payload, null, 2)}`, 'Info.getLastQueries');
         string = Filter.Entity.base(Source.Entity.selected(this.app)[0]);
       }
 
-      queries.push({ string, filters })
+      queries.push({
+        string,
+        filters
+      })
     })
 
     return queries;
@@ -780,7 +774,6 @@ export class Info implements InfoProps {
         body: formData,
         deassign: true,
         raw: true,
-        toast: false,
         query,
         headers: {
           size: file.size.toString(),
@@ -793,7 +786,7 @@ export class Info implements InfoProps {
       }
 
       // resume
-      if (response.isError() && response.data.continue_offset)
+      if (response.status === 'error' && response.data.continue_offset)
         return ingest(response.data.continue_offset, response.req_id);
 
 
@@ -1083,7 +1076,14 @@ export class Info implements InfoProps {
       glyph_id,
       private: isPrivate,
     },
-    toast: `Note.Entity ${name} has been created successfully`,
+
+    toast: {
+
+      onSuccess: () => toast.success(`Note ${name} has been created successfully`, {
+        richColors: true,
+        icon: <Icon name='Check' />
+      })
+    },
     body: {
       text,
       tags,
@@ -1120,7 +1120,12 @@ export class Info implements InfoProps {
       glyph_id,
       color,
     },
-    toast: `Note ${name} has been updated successfully`,
+    toast: {
+      onSuccess: () => toast.success(`Note ${name} has been updated successfully`, {
+        richColors: true,
+        icon: <Icon name='Check' />
+      })
+    },
     body: {
       text,
       tags,
@@ -1129,7 +1134,7 @@ export class Info implements InfoProps {
   }).then(note => {
     const index = this.app.target.notes.findIndex(n => n.id === note.id);
     if (index === -1) {
-      Logger.error(`Note with id: ${note.id} was not found in application data`, Info + this.note_edit.name);
+      Logger.error(`Note with id: ${note.id} was not found in application data`);
       return;
     }
     const updated = [...this.app.target.notes];
@@ -1196,7 +1201,13 @@ export class Info implements InfoProps {
         color,
         description
       },
-      toast: `Link ${name} has been created successfully`,
+
+      toast: {
+        onSuccess: () => toast.success(`Link ${name} has been created successfully`, {
+          richColors: true,
+          icon: <Icon name='Check' />
+        })
+      },
       body: {
         doc_ids: [event._id]
       }
@@ -1227,7 +1238,12 @@ export class Info implements InfoProps {
       ws_id: this.app.general.ws_id,
       description
     },
-    toast: `Link ${name} has been updated successfully`,
+    toast: {
+      onSuccess: () => toast.success(`Link ${name} has been updated successfully`, {
+        richColors: true,
+        icon: <Icon name='Check' />
+      })
+    },
     body: {
       doc_ids: events
     },
@@ -1239,7 +1255,12 @@ export class Info implements InfoProps {
       obj_id: link.id,
       ws_id: this.app.general.ws_id,
     },
-    toast: `Event ${event._id} has been connected to link ${link.name} successfully`,
+    toast: {
+      onSuccess: () => toast.success(`Event ${event._id} has been connected to link ${link.name} successfully`, {
+        richColors: true,
+        icon: <Icon name='Check' />
+      })
+    },
     body: {
       doc_ids: Refractor.array(...link.doc_ids, event._id),
     },
@@ -1251,7 +1272,12 @@ export class Info implements InfoProps {
       obj_id: link.id,
       ws_id: this.app.general.ws_id,
     },
-    toast: `Event ${event._id} has been disconnected from link ${link.name} successfully`,
+    toast: {
+      onSuccess: () => toast.success(`Event ${event._id} has been disconnected from link ${link.name} successfully`, {
+        richColors: true,
+        icon: <Icon name='Check' />
+      })
+    },
     body: {
       doc_ids: Refractor.array(...link.doc_ids.filter(id => id !== event._id)),
     },
@@ -1306,7 +1332,12 @@ export class Info implements InfoProps {
         color,
         glyph_id
       },
-      toast: `Highlight ${name} has been created successfully`,
+      toast: {
+        onSuccess: () => toast.success(`Highlight ${name} has been created successfully`, {
+          richColors: true,
+          icon: <Icon name='Check' />
+        })
+      },
       body: {
         time_range,
         tags
@@ -1690,7 +1721,6 @@ export class Info implements InfoProps {
       query: {
         ws_id: this.app.general.ws_id,
       },
-      toast: false,
       body: {
         user_id: credentials.id,
         password: credentials.password
@@ -1886,7 +1916,12 @@ export class Info implements InfoProps {
         },
         src_ids
       },
-      toast: 'Sigma rule has been successfully applied'
+      toast: {
+        onSuccess: () => toast.success('Sigma rule has been successfully applied', {
+          richColors: true,
+          icon: <Icon name='Check' />
+        })
+      }
     }).then(({ req_id }) => {
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
         if (m.data.status !== 'done') {

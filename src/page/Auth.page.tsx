@@ -33,14 +33,20 @@ export namespace Auth {
     const [loading, setLoading] = useState<boolean>(false)
     const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
-    const [openSelectAuth, setOpenSelectAuth] = useState<"operation" | "session" | null>(null);
+    const [openSelectAuth, setOpenSelectAuth] = useState<'operation' | 'session' | null>(null);
     const currentBannerRef = useRef<JSX.Element | null>(null);
 
     useEffect(() => {
       if (methods.length === 0) {
         Internal.Settings.server = server
         api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-          toast: false,
+          toast: {
+            onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
+              description: 'Check configuration file on server side',
+              icon: <Icon name='Warning' />,
+              richColors: true
+            }) : undefined
+          },
         }, setMethods)
       }
     }, [methods, server])
@@ -257,7 +263,7 @@ export namespace Auth {
           <Stack style={{ width: '100%' }}>
             <Select.Root
               open={openSelectAuth === 'operation'}
-              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? "operation" : null)}
+              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? 'operation' : null)}
               defaultValue={Operation.Entity.selected(Info.app)?.id}
               onValueChange={(id) => Info.operations_select(id as Operation.Id)}
             >
@@ -284,8 +290,8 @@ export namespace Auth {
           <Label value='Session' />
           <Stack style={{ width: '100%' }}>
             <Select.Root
-              open={openSelectAuth === "session"}
-              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? "session" : null)}
+              open={openSelectAuth === 'session'}
+              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? 'session' : null)}
               onValueChange={name => load_session(name)}
             >
               <Select.Trigger tabIndex={5}>
@@ -325,7 +331,13 @@ export namespace Auth {
       if (methods.length === 0) {
         Internal.Settings.server = server
         api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-          toast: false,
+          toast: {
+            onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
+              description: 'Check configuration file on server side',
+              icon: <Icon name='Warning' />,
+              richColors: true
+            }) : undefined
+          },
         }, setMethods)
       }
     }, [methods, server])
