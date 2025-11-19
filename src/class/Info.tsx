@@ -436,12 +436,12 @@ export class Info implements InfoProps {
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         };
       })
-      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
-        this.delLoading(req_id);
-
-        if (m.data.status !== 'done') {
-          toast.error('Query failed', {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.STATS_UPDATE, m => m.req_id === req_id, m => {
+        if (m.payload.obj.status !== 'done') {
+          toast.error(`Query ${req_id} failed`, {
             icon: <Icon name='Stop' />,
+            description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            duration: 1000 * 60 * 10,
             richColors: true
           })
         } else {
@@ -746,7 +746,7 @@ export class Info implements InfoProps {
 
     formData.append('payload', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
-    const chunkSize = 1024 * size * 1024
+    const chunkSize = 1024 * size * 1024;
 
     const query: Record<string, string | boolean> = {
       plugin: plugin.split('.')[0],
@@ -787,7 +787,7 @@ export class Info implements InfoProps {
       }
 
       // resume
-      if (response.status === 'error' && response.data.continue_offset)
+      if (response.data.continue_offset)
         return ingest(response.data.continue_offset, response.req_id);
 
 
@@ -802,14 +802,22 @@ export class Info implements InfoProps {
     const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
 
     if (!this.app.target.contexts.find(c => c.name === context)) {
-      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_CONTEXT, m => m.req_id === id, m => {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.COLLAB_CREATE, m => m.req_id === id, m => {
+        if (m.payload.obj.type !== 'context') {
+          return;
+        }
+
         const contexts = Refractor.array(...this.app.target.contexts, m.payload.obj);
 
         this.setInfoByKey(contexts, 'target', 'contexts');
       })
     }
 
-    SmartSocket.Class.instance.conce(SmartSocket.Message.Type.NEW_SOURCE, m => m.req_id === id, m => {
+    SmartSocket.Class.instance.conce(SmartSocket.Message.Type.COLLAB_CREATE, m => m.req_id === id, m => {
+      if (m.payload.obj.type !== 'source') {
+        return;
+      }
+
       this.setLoading(m.req_id, m.payload.obj.id);
 
       this.app.target.files = Refractor.array(...this.app.target.files, Source.Entity.normalize(this.app, m.payload.obj));
@@ -859,8 +867,14 @@ export class Info implements InfoProps {
         this.delLoading(m.req_id);
         SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         toast.success(`Source ${file.name} has been ingested successfully`, {
-          description: `Total amount of documents is: ${Source.Entity.events(this.app, file.id).length}`
+          description: `Total amount of documents is: ${Source.Entity.events(this.app, file.id).length}`,
+          richColors: true,
+          icon: <Icon name='Check' />
         });
+      } else {
+        toast.success(`Has been added ${events.length} events to source ${file.name}`, {
+          description: `There are ${all.length} events at this moment`
+        })
       }
     })
 
@@ -1924,7 +1938,7 @@ export class Info implements InfoProps {
         })
       }
     }).then(({ req_id }) => {
-      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.QUERY_DONE, m => m.req_id === req_id, m => {
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.STATS_UPDATE, m => m.req_id === req_id, m => {
         if (m.data.status !== 'done') {
           toast.error('Sigma query failed', {
             icon: <Icon name='Stop' />,

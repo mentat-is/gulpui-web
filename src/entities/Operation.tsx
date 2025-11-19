@@ -19,6 +19,7 @@ import { UUID } from 'crypto'
 import { App } from './App'
 
 import s from './styles/Operation.module.css'
+import { toast } from 'sonner'
 
 export namespace Operation {
   export const name = 'Operation'
@@ -192,6 +193,17 @@ export namespace Operation {
           method: 'POST',
           setLoading,
           query: { name },
+          toast: {
+            onSuccess: () => toast.success(`Operation has been created successfully`, {
+              icon: <Icon name='Check' />,
+              richColors: true,
+            }),
+            onError: response => toast.error(`Failed creating operation`, {
+              description: `Reason ${response.data.__error.msg}`,
+              icon: <Icon name='Check' />,
+              richColors: true,
+            })
+          },
           body: { description },
         }, operation => updateOperation(operation).then(Info.sync)).then(() => {
           spawnBanner(<Operation.Select.Banner />)

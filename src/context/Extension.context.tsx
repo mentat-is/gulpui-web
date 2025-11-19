@@ -13,7 +13,7 @@ function _({ children }: Extension.Provider.Props) {
   const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
 
   useEffect(() => {
-    api<Extension.Interface[]>('/ui_plugin_list').then(async (plugins) => {
+    api<Extension.Interface[]>('/ui_plugin_list', async (plugins) => {
       if (!Array.isArray(plugins)) {
         Logger.error(`Backend returned unexpected type of \${plugins}. Expected array of plugins, but got ${typeof plugins}`, 'Extension.Provider', {
           richColors: true,

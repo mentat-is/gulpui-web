@@ -207,9 +207,12 @@ const api: Api = async function <T>(
 
   const res = new ResponseHandler((await response?.json()) as ResponseBase<T>)
 
-  if (['success', 'pending'].includes(res.status)) {
+  // [λ] Workaround. Remove after gulp/issues/110 would be fixed
+  // @ts-ignore
+  if (['success', 'pending'].includes(res.status) || typeof res.data.__error === 'undefined') {
     if (options.toast?.onSuccess) {
       options.toast?.onSuccess(res);
+      Logger.log(res, 'API');
     }
     // @ts-ignore
     soft(options.raw ? res : res.data, callback);
@@ -222,7 +225,8 @@ const api: Api = async function <T>(
     // @ts-ignore
     window.spawnBanner(<Auth.Banner />);
   } else if (options.toast?.onError) {
-    options.toast?.onError(res as ResponseError)
+    options.toast?.onError(res as ResponseError);
+    Logger.error(res, 'API');
   }
 
   soft(() => false, options.setLoading)
