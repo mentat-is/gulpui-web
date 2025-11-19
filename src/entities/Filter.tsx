@@ -83,6 +83,16 @@ export namespace Filter {
               },
             }
             break
+          case 'Min':
+            conditionObj = {
+              range: { [field]: { lte: Number(value) } }
+            }
+            break
+          case 'Max':
+            conditionObj = {
+              range: { [field]: { gte: Number(value) } }
+            }
+            break
           default:
             conditionObj = { term: { [field]: value } }
         }
