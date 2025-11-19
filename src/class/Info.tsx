@@ -432,6 +432,7 @@ export class Info implements InfoProps {
 
         this.events_add(events);
         if (m.payload.last) {
+          this.delLoading(req_id);
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
         };
       })

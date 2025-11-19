@@ -207,9 +207,7 @@ const api: Api = async function <T>(
 
   const res = new ResponseHandler((await response?.json()) as ResponseBase<T>)
 
-  const isSuccess = res.status === 'success' || res.status === 'pending';
-
-  if (isSuccess) {
+  if (['success', 'pending'].includes(res.status)) {
     if (options.toast?.onSuccess) {
       options.toast?.onSuccess(res);
     }
