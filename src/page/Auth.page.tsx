@@ -19,6 +19,7 @@ import { Internal } from '@/entities/addon/Internal';
 import { Shimmer } from '@/ui/Shimmer';
 import { Session } from '@/banners/Session.banner';
 import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+import { Logo } from '@/components/Logo';
 
 export namespace Auth {
   export namespace Page {
@@ -225,6 +226,7 @@ export namespace Auth {
 
     return (
       <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
+        <Logo />
         <Shimmer duration={2} className={s.title} as='p' color='var(--gray-800)'>[ Login ]</Shimmer>
         <Input
           variant='highlighted'
