@@ -1,7 +1,7 @@
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
-import { ChangeEvent, RefObject, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom'
 import { NotesWindow } from '@/components/NotesWindow'
@@ -18,6 +18,8 @@ import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
+import { SnikerChatPanel } from '@/banners/SnikerChat.banner'
+import { JSX } from 'react/jsx-runtime'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -36,6 +38,9 @@ export function Navigator({
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
+  const [chatOpen, setChatOpen] = useState(false)
+
+  const toggleChat = () => setChatOpen(prev => !prev)
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -340,6 +345,16 @@ export function Navigator({
           </Stack>
         </Popover.Content>
       </Popover.Root>
+      <Button
+        variant='secondary'
+        title='Open Sniker chat'
+        icon='MessageCircleCode'
+        onClick={toggleChat}
+        size='md'
+      />
+      {chatOpen && (
+        <SnikerChatPanel onClose={() => setChatOpen(false)} />
+      )}
       {windowRef &&
         containerRef.current &&
         ReactDOM.createPortal(

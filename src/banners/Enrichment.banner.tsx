@@ -15,8 +15,6 @@ import {
   useState,
 } from 'react'
 import s from './styles/EnrichmentBanner.module.css'
-import { capitalize } from '@impactium/utils'
-import { Toggle } from '@/ui/Toggle'
 import { CustomParameters } from '@/components/CustomParameters'
 import { Checkbox } from '@/ui/Checkbox'
 import { Button } from '@/ui/Button'
