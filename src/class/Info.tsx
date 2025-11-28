@@ -480,6 +480,10 @@ export class Info implements InfoProps {
 
     list.forEach(payload => {
       const root = payload.q.query;
+      console.log(root, payload);
+      if (!root) {
+        return;
+      }
 
       let string = '';
       const filters: Filter.Type[] = [];
@@ -1940,6 +1944,7 @@ export class Info implements InfoProps {
       }
     }).then(({ req_id }) => {
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.STATS_UPDATE, m => m.req_id === req_id, m => {
+        console.log(m);
         if (m.data.status !== 'done') {
           toast.error('Sigma query failed', {
             icon: <Icon name='Stop' />,
