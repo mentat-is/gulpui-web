@@ -440,13 +440,14 @@ export class Info implements InfoProps {
         if (m.payload.obj.status !== 'done') {
           toast.error(`Query ${req_id} failed`, {
             icon: <Icon name='Stop' />,
-            // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
             duration: 1000 * 60 * 10,
             richColors: true
           })
         } else {
+          console.log(m);
           toast.success('Query finished', {
-            description: `Total processed documents: ${m.data.total_hits}`,
+            description: `Total processed documents: ${m.payload.obj.total_hits}`,
             icon: <Icon name='Check' />
           })
         }
