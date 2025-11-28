@@ -470,7 +470,7 @@ export class Info implements InfoProps {
     }
 
 
-    return resp.data || {
+    return resp ? resp.data : {
       docs: [],
       total_hits: 0
     };
