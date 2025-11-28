@@ -447,7 +447,7 @@ export class Info implements InfoProps {
         } else {
           console.log(m);
           toast.success('Query finished', {
-            description: `Total processed documents: ${m.payload.obj.total_hits}`,
+            description: `Total processed documents: ${m.payload.total_hits}`,
             icon: <Icon name='Check' />
           })
         }
