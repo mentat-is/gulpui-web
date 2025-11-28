@@ -459,7 +459,7 @@ export class Info implements InfoProps {
     });
 
     if (preview) {
-      if (!resp?.data?.total_hits) {
+      if (!resp || (resp || {})?.data?.total_hits === 0) {
         toast.error('This filter returned no results. No matching documents were found', {
           icon: <Icon name='FaceUnhappy' />,
           richColors: true
