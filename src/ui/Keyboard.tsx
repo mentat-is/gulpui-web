@@ -12,7 +12,7 @@ export function Keyboard({ meta, shift, alt, ctrl, plus, command, className, chi
   return (
     <kbd className={cn(className, s.kbd)} {...props}>
       {keys.map((key, i) => (
-        <span key={key}>{key} {plus && i !== keys.length - 1 && '+'}</span>
+        <>{key} {plus && i !== keys.length - 1 && '+'}</>
       ))}
     </kbd>
   )

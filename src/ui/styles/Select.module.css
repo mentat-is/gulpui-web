@@ -11,6 +11,7 @@
   outline-offset: var(--accent);
   gap: 16px;
   overflow: hidden;
+  font-size: 12px;
   padding: 8px;
   color: var(--accent);
   text-align: left;
@@ -101,7 +102,7 @@
   display: flex;
   transition: all 0.25s var(--transition);
   flex-direction: column;
-  padding: 2px;
+  padding: 4px;
   box-shadow: none;
   border: 1px solid var(--gray-alpha-400);
 }
@@ -175,6 +176,7 @@
 }
 .popper {
   transform: translate(var(--popper-translate-x), var(--popper-translate-y));
+  overflow: unset !important;
 }
 
 .popper[data-side="bottom"] {
@@ -205,7 +207,7 @@
 }
 .label {
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
 }
 .item {
@@ -218,10 +220,10 @@
   user-select: none;
   gap: 8px;
   border-radius: 4px;
-  padding: 0 12px;
+  padding: 0 8px;
   align-items: center;
   outline: none;
-  font-size: 14px;
+  font-size: 12px;
   transition: background-color 0.2s, color 0.2s;
   transition-duration: 150ms;
   transition-timing-function: var(--transition);

@@ -26,16 +26,19 @@ const inputVariants = cva(s.button, {
   },
 });
 
-export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
-  icon?: Icon.Name | null;
-  label?: string;
-  revert?: boolean;
-  skeleton?: boolean;
-  valid?: boolean;
-  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+export namespace Input {
+  export interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
+    icon?: Icon.Name | null;
+    label?: string;
+    revert?: boolean;
+    skeleton?: boolean;
+    valid?: boolean;
+    onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  }
 }
 
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
+
+const Input = React.forwardRef<HTMLInputElement, Input.Props>(
   ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, onChange, ...props }, ref) => {
     const classes = cn(
       inputVariants({ variant, size, className }),
@@ -60,8 +63,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <Label htmlFor={label} value={label} />
           <div className={classes}>
             <InputIcon />
-            <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} onChange={onChange || (() => {})}/>
-          </div> 
+            <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} onChange={onChange || (() => { })} />
+          </div>
         </Stack>
       </Skeleton>
     )

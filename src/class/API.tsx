@@ -4,6 +4,7 @@ import { Icon } from '@impactium/icons'
 import { Auth } from '@/page/Auth.page'
 import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
+import { toast } from 'sonner'
 
 interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending'
@@ -37,11 +38,19 @@ export class ResponseHandler<T extends ResponseBase<any>> {
   timestamp: Date
   data: T['data']
 
-  constructor(data: T) {
-    this.status = data.status ?? 'error';
-    this.req_id = data.req_id ?? '' as Request.Id;
-    this.timestamp = data.timestamp ?? Date.now();
-    this.data = data.data ?? { message: 'internal_server_error', statusCode: 500 };
+  constructor(payload: T = {} as T) {
+    this.status = payload.status ?? 'error';
+    this.req_id = payload.req_id ?? '' as Request.Id;
+    this.timestamp = payload.timestamp ?? Date.now();
+    this.data = payload.data ?? { __error: '' };
+
+    if (this.status === 'error' && !this.req_id && !this.data) {
+      toast.error('Gulp UI could not estabilish connection with API', {
+        description: 'Make sure API is working and ready to accept connections',
+        richColors: true,
+        icon: <Icon name='Warning' />
+      });
+    }
   }
 }
 
@@ -224,9 +233,13 @@ const api: Api = async function <T>(
     });
     // @ts-ignore
     window.spawnBanner(<Auth.Banner />);
-  } else if (options.toast?.onError) {
-    options.toast?.onError(res as ResponseError);
+  } else {
+    if (options.toast?.onError) {
+      options.toast?.onError(res as ResponseError);
+    }
     Logger.error(res, 'API');
+    soft(() => false, options.setLoading)
+    return void 0 as T;
   }
 
   soft(() => false, options.setLoading)

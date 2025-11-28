@@ -39,23 +39,6 @@ const badgeVariants = cva(s.badge, {
   },
 })
 
-export namespace Badge {
-  export interface Props
-    extends HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {
-    value?: React.ReactNode;
-    disabled?: boolean;
-    mono?: boolean;
-    icon?: Icon.Name;
-    border?: boolean;
-    radius?: number | string;
-  }
-
-  export type Variant = Badge.Props['variant'];
-
-  export type Size = Badge.Props['size'];
-}
-
 export function Badge({ className, mono, variant, size, value, icon, border, disabled, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
   return (
     <div className={cn(badgeVariants({ variant, size, className }), border && s.bordered, disabled && s.disabled, mono && s.mono)} style={{ borderRadius }} data-badge {...props}>
@@ -70,3 +53,22 @@ const convertButtonVariantToIconSize = (size: Badge.Size): Icon.Size => ({
   md: 14,
   sm: 11,
 } as Record<NonNullable<Badge.Size>, Icon.Size>)[size || 'md'];
+
+export namespace Badge {
+  export interface Props
+    extends HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {
+    value?: React.ReactNode;
+    disabled?: boolean;
+    mono?: boolean;
+    icon?: Icon.Name;
+    border?: boolean;
+    radius?: number | string;
+  }
+
+  export type Variant = Badge.Props['variant'];
+
+  export const Variants = ['default', 'gray', 'gray-subtle', 'blue', 'blue-subtle', 'purple', 'purple-subtle', 'amber', 'amber-subtle', 'red', 'red-subtle', 'pink', 'pink-subtle', 'green', 'green-subtle', 'teal', 'teal-subtle', 'inverted'] as const;
+
+  export type Size = Badge.Props['size'];
+}

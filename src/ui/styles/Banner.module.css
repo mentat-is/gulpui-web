@@ -77,7 +77,7 @@
   --graph-width: calc(var(--cell-size, 88px)* 3);
   border: 1px solid var(--gray-400);
   width: 0px;
-  height: calc(100% + 0.5px);
+  height: 100%;
   top: -1px;
   left: 100%;
   z-index: 0;
@@ -89,10 +89,9 @@
 }
 
 .side_content {
+  padding: 8px;
   width: var(--graph-width);
-  flex-shrink: 0;
   left: 1px;
-  display: flex;
   background: var(--background-200);
   height: 100%;
 }
