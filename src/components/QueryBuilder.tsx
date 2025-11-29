@@ -39,8 +39,8 @@ export namespace OpenSearchQueryBuilder {
     { value: 'prefix', label: 'Prefix', icon: 'Braces' },
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
-    { value: 'Min', label: 'Min <=', icon: 'Magnet' },
-    { value: 'Max', label: 'Max >=', icon: 'Magnet'}
+    { value: 'Min', label: 'Min', icon: 'Magnet' },
+    { value: 'Max', label: 'Max', icon: 'Magnet'}
   ]
 
   export const OPERATORS: Entity.Operator[] = [
