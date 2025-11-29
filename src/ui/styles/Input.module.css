@@ -28,18 +28,15 @@
   color: var(--gray-700);
 }
 
-.wrapper:focus-visible {
+.wrapper:focus-visible,
+.wrapper:focus-within {
   outline: none;
   box-shadow: var(--ring);
-}
-.wrapper:focus-within {
-  box-shadow: 0px 0px 0px 4px #ffffff3d;
-  border-color: var(--gray-alpha-600);
 }
 
 .wrapper.disabled {
   pointer-events: none;
-  filter: var(--disabled);
+  opacity: 0.5;
 }
 
 .wrapper[type='color'] {

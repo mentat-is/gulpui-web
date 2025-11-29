@@ -58,9 +58,6 @@ export namespace Filter {
         let conditionObj = {}
 
         switch (type) {
-          case 'term':
-            conditionObj = { term: { [field]: value } }
-            break
           case 'match':
             conditionObj = { match: { [field]: value } }
             break
@@ -94,7 +91,7 @@ export namespace Filter {
             }
             break
           default:
-            conditionObj = { term: { [field]: value } }
+            conditionObj = { match: { [field]: value } }
         }
 
         query.bool[operator].push(conditionObj)

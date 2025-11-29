@@ -18,21 +18,19 @@ export namespace SmartSocket {
       WS_ERROR = "ws_error",
       WS_CONNECTED = "ws_connected",
       STATS_UPDATE = "stats_update",
+      COLLAB_CREATE = "collab_create",
       COLLAB_UPDATE = "collab_update",
       USER_LOGIN = "user_login",
       USER_LOGOUT = "user_logout",
       DOCUMENTS_CHUNK = "docs_chunk",
       COLLAB_DELETE = "collab_delete",
       INGEST_SOURCE_DONE = "ingest_source_done",
-      QUERY_DONE = "query_done",
       ENRICH_DONE = "enrich_done",
       TAG_DONE = "tag_done",
       QUERY_GROUP_MATCH = "query_group_match",
       REBASE_DONE = "rebase_done",
       CLIENT_DATA = "client_data",
-      SOURCE_FIELDS_CHUNK = "source_fields_chunk",
-      NEW_SOURCE = "new_source",
-      NEW_CONTEXT = "new_context"
+      SOURCE_FIELDS_CHUNK = "source_fields_chunk"
     }
   }
 
@@ -56,6 +54,10 @@ export namespace SmartSocket {
       this.forwarding(Internal.Settings.token, ws_id);
       // @ts-ignore
       SmartSocket.Class.instance = this;
+
+      setInterval(() => {
+        Logger.log(JSON.stringify([...SmartSocket.Class.instance.conditional.entries()], null, 2), 'SmartSocket.Class')
+      }, 5000);
     }
 
     private forwarding(token: string, ws_id: string) {

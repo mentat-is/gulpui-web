@@ -68,7 +68,7 @@ export function Banner({
 
     return (
       <Stack className={cn(s.side, isExpanded && s.open)} pos="absolute">
-        <Stack className={s.side_content} pos="relative">
+        <Stack className={s.side_content} ai='flex-start' pos="relative">
           {side}
         </Stack>
       </Stack>

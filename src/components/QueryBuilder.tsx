@@ -15,7 +15,6 @@ import { Filter } from "@/entities/Filter"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
-    | 'term'
     | 'match'
     | 'regexp'
     | 'prefix'
@@ -39,7 +38,6 @@ export namespace OpenSearchQueryBuilder {
   }
 
   export const CONDITIONS: Entity.Condition[] = [
-    { value: 'term', label: 'Term', icon: 'WholeWord' },
     { value: 'match', label: 'Match', icon: 'Search' },
     { value: 'regexp', label: 'Regexp', icon: 'Asterisk' },
     { value: 'prefix', label: 'Prefix', icon: 'Braces' },
