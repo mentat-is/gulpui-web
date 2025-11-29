@@ -133,7 +133,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     const newFilters: Filter.Type[] = Object.keys(object).map(k => ({
       id: generateUUID<Filter.Id>(),
-      type: (object[k].includes('*') || k.includes('*')) ? 'regexp' : 'match',
+      type: (object[k].includes('*') || k.includes('*')) ? 'wildcard' : 'range',
       operator: 'must',
       field: k,
       value: object[k],
@@ -219,6 +219,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             Create new note
           </ContextMenuItem>
           <ContextMenuItem disabled={!selection} icon='GitPullRequestCreate'>Create new link</ContextMenuItem>
+            <ContextMenuItem onClick={() => copy(JSON.stringify(json, null, 2))} icon='Copy'>Copy</ContextMenuItem>
           <ContextMenuItem onClick={applySelectionAsFileFilter} icon='Filter'>New filter</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
