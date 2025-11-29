@@ -1849,9 +1849,11 @@ export class Info implements InfoProps {
     const files = Parser.array(file);
 
     files.forEach(file => {
+      const prev = this.app.target.filters[file.id];
+      
       this.app.target.filters[file.id] = {
         string: query.string || Filter.Entity.base(file),
-        filters: query.filters
+        filters: (Array.isArray(query.filters) && query.filters.length > 0) ? query.filters : prev?.filters ?? []
       };
     });
 
