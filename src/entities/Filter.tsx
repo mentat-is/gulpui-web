@@ -58,12 +58,6 @@ export namespace Filter {
         let conditionObj = {}
 
         switch (type) {
-          case 'match':
-            conditionObj = { match: { [field]: value } }
-            break
-          case 'regexp':
-            conditionObj = { regexp: { [field]: { value, flags: 'ALL' } } }
-            break
           case 'prefix':
             conditionObj = { prefix: { [field]: value } }
             break

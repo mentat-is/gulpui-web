@@ -5,7 +5,7 @@ import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-import { useMemo, useCallback, ChangeEvent, useState } from "react"
+import { useMemo, useCallback, ChangeEvent } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
 import { Stack } from "@/ui/Stack"
@@ -15,8 +15,6 @@ import { Filter } from "@/entities/Filter"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
-    | 'match'
-    | 'regexp'
     | 'prefix'
     | 'wildcard'
     | 'range'
@@ -38,8 +36,6 @@ export namespace OpenSearchQueryBuilder {
   }
 
   export const CONDITIONS: Entity.Condition[] = [
-    { value: 'match', label: 'Match', icon: 'Search' },
-    { value: 'regexp', label: 'Regexp', icon: 'Asterisk' },
     { value: 'prefix', label: 'Prefix', icon: 'Braces' },
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
