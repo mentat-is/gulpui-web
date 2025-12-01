@@ -188,16 +188,26 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     >
       <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => Source.Entity.id(app, file as Source.Id)))}>
         <Select.Trigger>
-          <Select.Multi.Value icon={['File','Files']} placeholder='Select files to apply filters' text={len => typeof len==='number'?`Selected ${len} files`:Source.Entity.id(app, len as Source.Id).name} />
+          <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
         </Select.Trigger>
         <Select.Content>
-          {Context.Entity.selected(app).map(ctx=>{
-            const filesInCtx = Source.Entity.selected(app).filter(f=>f.context_id===ctx.id)
-            if(!filesInCtx.length) return null
-            return <Select.Group key={ctx.id}>
-              <Select.Label className={s.groupLabel}>{ctx.name}</Select.Label>
-              {filesInCtx.map(f=><Select.Item key={f.id} value={f.id}><Icon name={Source.Entity.icon(f)||'File'} />{f.name}</Select.Item>)}
-            </Select.Group>
+          {Context.Entity.selected(app).map(context => {
+            const sources = Context.Entity.files(app, context).filter(s => s.selected);
+
+            if (!sources.length)
+              return null;
+
+            return (
+              <Select.Group key={context.id}>
+                <Select.Label className={s.groupLabel}>{context.name}</Select.Label>
+                {sources.map(s => (
+                  <Select.Item key={s.id} value={s.id}>
+                    <Icon name={Source.Entity.icon(s)} />
+                    {s.name}
+                  </Select.Item>
+                ))}
+              </Select.Group>
+            )
           })}
         </Select.Content>
       </Select.Multi.Root>

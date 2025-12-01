@@ -307,7 +307,7 @@ export namespace Auth {
                     {session.name}
                   </Select.Item>
                 ))}
-                <UIButton variant='tertiary' style={{ width: '100%' }} onClick={() => openAuthBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(app.general.user)} />)} icon='Trash2'>Open session managment dialog</UIButton>
+                <UIButton variant='tertiary' style={{ width: '100%' }} onClick={() => openAuthBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(app.general.user)} />)} icon='Wrench'>Manage sessions</UIButton>
               </Select.Content>
             </Select.Root>
           </Stack>

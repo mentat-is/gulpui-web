@@ -717,9 +717,8 @@ export class Info implements InfoProps {
     file,
     frame,
     settings,
-    size,
     setProgress,
-    preview
+    preview_mode,
   }: FileEntity.IngestOptions) => {
     const operation = Operation.Entity.selected(this.app)
     if (!operation) {
@@ -742,6 +741,8 @@ export class Info implements InfoProps {
         custom_parameters: settings.custom_parameters,
       },
       original_file_path: file.name,
+      preview_mode,
+      offset: settings.offset ?? 0
     }
     if (frame) {
       payload.flt = {
@@ -751,8 +752,6 @@ export class Info implements InfoProps {
 
     formData.append('payload', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
 
-    const chunkSize = 1024 * size * 1024;
-
     const query: Record<string, string | boolean> = {
       plugin: plugin.split('.')[0],
       operation_id: operation.id,
@@ -760,14 +759,10 @@ export class Info implements InfoProps {
       ws_id: this.app.general.ws_id,
     }
 
-    if (preview) {
-      query.preview_mode = preview
-    }
-
     const ingest = async (start = 0, id?: Request.Id): Promise<void | Doc.Type[]> => {
       formData.delete('f')
 
-      const end = Math.min(file.size, preview ? file.size : start + chunkSize)
+      const end = Math.min(file.size, preview_mode ? file.size : start + 1024 * 1024 * 8) // 8MB
 
       formData.append('f', file.slice(start, end), file.name)
 
@@ -787,7 +782,7 @@ export class Info implements InfoProps {
         },
       })
 
-      if (preview) {
+      if (preview_mode) {
         return response.data as unknown as Doc.Type[]
       }
 
@@ -974,7 +969,7 @@ export class Info implements InfoProps {
 
     const files = Source.Entity.selected(this.app).map((f) => f.id);
     if (files.length === 0) {
-      Logger.warn('Tried to fetch all notes from all operations. Ignoring', Info);
+      Logger.warn('Tried to fetch all notes from all operations. Ignoring', 'Info.notes_reload');
       return;
     }
     let notes: Note.Type[] = [];
@@ -1742,20 +1737,22 @@ export class Info implements InfoProps {
       query: {
         ws_id: this.app.general.ws_id,
       },
+      toast: {
+        onSuccess: () => toast.success('Access granted', {
+          richColors: true,
+          icon: <Icon name='Check' />
+        }),
+        onError: response => toast.error(`Login failed`, {
+          richColors: true,
+          description: `Reason: ${response.data.__error.msg}`,
+          icon: <Icon name='Warning' />
+        }),
+      },
       body: {
         user_id: credentials.id,
         password: credentials.password
       },
-    }).then(user => {
-      if (user) {
-        return user;
-      }
-
-      toast.error('Invalid server URL, or username, or password', {
-        richColors: true,
-        icon: <Icon name='Warning' />
-      });
-    })
+    });
 
     if (!user) {
       return null;
@@ -1850,7 +1847,7 @@ export class Info implements InfoProps {
 
     files.forEach(file => {
       const prev = this.app.target.filters[file.id];
-      
+
       this.app.target.filters[file.id] = {
         string: query.string || Filter.Entity.base(file),
         filters: (Array.isArray(query.filters) && query.filters.length > 0) ? query.filters : prev?.filters ?? []
