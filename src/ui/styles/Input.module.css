@@ -110,6 +110,12 @@
 .highlighted svg {
   z-index: 2;
   width: 32px;
+  color: var(--second);
+}
+.highlighted:focus-visible svg,
+.highlighted:focus-within svg,
+.highlighted:hover svg {
+  color: var(--accent);
 }
 
 .lg {
@@ -126,11 +132,11 @@
   height: 100%;
   width: 32px;
   z-index: 0;
-  border-right: 1px solid var(--gray-alpha-400);
+  border-right: 1px solid var(--gray-400);
   background: var(--background-200);
 }
 .highlighted:hover::before {
-  border-right: 1px solid var(--gray-alpha-500);
+  border-right: 1px solid var(--gray-500);
 }
 
 @keyframes shake {
