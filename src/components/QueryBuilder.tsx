@@ -15,11 +15,11 @@ import { Filter } from "@/entities/Filter"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
-    | 'prefix'
+    | 'regexp'
     | 'wildcard'
     | 'range'
-    | 'Min'
-    | 'Max'
+    | 'Lte'
+    | 'Gte'
 
   export type Operator = 'must' | 'should' | 'must_not' | 'filter'
 
@@ -36,11 +36,11 @@ export namespace OpenSearchQueryBuilder {
   }
 
   export const CONDITIONS: Entity.Condition[] = [
-    { value: 'prefix', label: 'Prefix', icon: 'Braces' },
+    { value: 'regexp', label: 'Regexp', icon: 'Asterisk' },
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
-    { value: 'Min', label: 'Min', icon: 'Magnet' },
-    { value: 'Max', label: 'Max', icon: 'Magnet'}
+    { value: 'Lte', label: 'Lte', icon: 'Magnet' },
+    { value: 'Gte', label: 'Gte', icon: 'Magnet'}
   ]
 
   export const OPERATORS: Entity.Operator[] = [
@@ -233,7 +233,7 @@ export namespace OpenSearchQueryBuilder {
                     </Select.Content>
                   </Select.Root>
                 </Stack>
-                {filter.type === 'Min' ? (
+                {filter.type === 'Lte' ? (
                   <Input
                     variant='highlighted'
                     icon='ChevronRightSmall'
@@ -242,7 +242,7 @@ export namespace OpenSearchQueryBuilder {
                     onChange={(e) => update(filter.id, 'value', e.target.value)}
                     prefix='<='
                   />
-                ) : filter.type === 'Max' ? (
+                ) : filter.type === 'Gte' ? (
                   <Input
                     variant='highlighted'
                     icon='ChevronRightSmall'

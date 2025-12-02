@@ -58,8 +58,8 @@ export namespace Filter {
         let conditionObj = {}
 
         switch (type) {
-          case 'prefix':
-            conditionObj = { prefix: { [field]: value } }
+          case 'regexp':
+            conditionObj = { regexp: { [field]: { value, flags: 'ALL' } } }
             break
           case 'wildcard':
             conditionObj = { wildcard: { [field]: { value, case_insensitive } } }
@@ -74,12 +74,12 @@ export namespace Filter {
               },
             }
             break
-          case 'Min':
+          case 'Lte':
             conditionObj = {
               range: { [field]: { lte: Number(value) } }
             }
             break
-          case 'Max':
+          case 'Gte':
             conditionObj = {
               range: { [field]: { gte: Number(value) } }
             }
