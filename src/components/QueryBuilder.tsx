@@ -39,8 +39,8 @@ export namespace OpenSearchQueryBuilder {
     { value: 'regexp', label: 'Regexp', icon: 'Asterisk' },
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
-    { value: 'Lte', label: 'Lte', icon: 'Magnet' },
-    { value: 'Gte', label: 'Gte', icon: 'Magnet'}
+    { value: 'Lte', label: 'Lte', icon: 'ArrowDown' },
+    { value: 'Gte', label: 'Gte', icon: 'ArrowUp'}
   ]
 
   export const OPERATORS: Entity.Operator[] = [
