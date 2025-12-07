@@ -202,7 +202,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
                 <Select.Label className={s.groupLabel}>{context.name}</Select.Label>
                 {sources.map(s => (
                   <Select.Item key={s.id} value={s.id}>
-                    <Icon name={Source.Entity.icon(s)} />
+                    <Icon name={Source.Entity.icon(s) ||'X' } />
                     {s.name}
                   </Select.Item>
                 ))}

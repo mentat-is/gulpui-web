@@ -5,7 +5,7 @@ import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-import { useMemo, useCallback, ChangeEvent } from "react"
+import { useCallback, ChangeEvent, useState, useEffect } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
 import { Stack } from "@/ui/Stack"
@@ -65,20 +65,41 @@ export namespace OpenSearchQueryBuilder {
     }
   }
 
-  export const Preview = ({ query, className, ...props }: Preview.Props) => {
-    const string = useMemo(() => JSON.stringify(query, null, 2), [query]);
+export const Preview = ({ query, className, onQueryChange, ...props }: Preview.Props & { onQueryChange?: (newQuery: any) => void }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [localString, setLocalString] = useState(JSON.stringify(query, null, 2));
 
-    const copyQueryButtonClickHandler = useCallback(() => copy(string), [string]);
+  useEffect(() => {
+    setLocalString(JSON.stringify(query, null, 2));
+  }, [query]);
 
-    return (
-      <Stack pos='relative' className={cn(s.preview, className)} {...props}>
-        <Button className={s.copy} icon='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
-        <SyntaxHighlighter language='JSON' style={highlight.vs2015} customStyle={{ background: 'none', height: '100%' }}>
-          {string}
-        </SyntaxHighlighter>
+  const copyQueryButtonClickHandler = useCallback(() => copy(localString), [localString]);
+
+  return (
+    <Stack pos='relative' className={cn(s.preview, className)} {...props}>
+      <Stack ai='center' jc='center' dir='row' gap={6}>
+        <Button style={{ right: '8px'}} className={s.copy} icon='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
+        <Button style={{ right: '48px'}} className={s.copy} icon={isEditing ? 'Eye' : 'EyeClosed'} onClick={() => setIsEditing(prev => !prev)} variant='secondary'/>
       </Stack>
-    )
-  }
+
+      {isEditing ? (
+        <textarea
+          style={{ height: '100%', fontFamily: 'monospace', fontSize: 14 }}
+          value={localString}
+          onChange={(e) => setLocalString(e.target.value)}
+        />
+      ) : (
+        <SyntaxHighlighter
+          language='JSON'
+          style={highlight.vs2015}
+          customStyle={{ background: 'none', height: '100%' }}
+        >
+          {localString}
+        </SyntaxHighlighter>
+      )}
+    </Stack>
+  );
+};
 
   export namespace Query {
     export namespace String {
