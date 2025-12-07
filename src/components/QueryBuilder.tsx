@@ -65,28 +65,60 @@ export namespace OpenSearchQueryBuilder {
     }
   }
 
-export const Preview = ({ query, className, onQueryChange, ...props }: Preview.Props & { onQueryChange?: (newQuery: any) => void }) => {
+export const Preview = ({query, className, onQueryChange, ...props}: Preview.Props & { onQueryChange?: (newQuery: any) => void }) => {
+
   const [isEditing, setIsEditing] = useState(false);
   const [localString, setLocalString] = useState(JSON.stringify(query, null, 2));
 
   useEffect(() => {
-    setLocalString(JSON.stringify(query, null, 2));
+    if (!isEditing) {
+      setLocalString(JSON.stringify(query, null, 2));
+    }
   }, [query]);
 
   const copyQueryButtonClickHandler = useCallback(() => copy(localString), [localString]);
 
+  const toggleEdit = () => {
+    if (isEditing && onQueryChange) {
+      try {
+        const parsed = JSON.parse(localString);
+        onQueryChange(parsed);
+      } catch (e) {
+        console.warn("Invalid JSON:", e);
+      }
+    }
+    setIsEditing(prev => !prev);
+  };
+
+  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setLocalString(value);
+  };
+
   return (
     <Stack pos='relative' className={cn(s.preview, className)} {...props}>
       <Stack ai='center' jc='center' dir='row' gap={6}>
-        <Button style={{ right: '8px'}} className={s.copy} icon='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
-        <Button style={{ right: '48px'}} className={s.copy} icon={isEditing ? 'Eye' : 'EyeClosed'} onClick={() => setIsEditing(prev => !prev)} variant='secondary'/>
+        <Button
+          style={{ right: '8px'}}
+          className={s.copy}
+          icon='Copy'
+          onClick={copyQueryButtonClickHandler}
+          variant='glass'
+        />
+        <Button
+          style={{ right: '48px'}}
+          className={s.copy}
+          icon={isEditing ? 'Eye' : 'EyeClosed'}
+          onClick={toggleEdit}
+          variant='secondary'
+        />
       </Stack>
 
       {isEditing ? (
         <textarea
           style={{ height: '100%', fontFamily: 'monospace', fontSize: 14 }}
           value={localString}
-          onChange={(e) => setLocalString(e.target.value)}
+          onChange={onTextChange}
         />
       ) : (
         <SyntaxHighlighter
@@ -100,6 +132,7 @@ export const Preview = ({ query, className, onQueryChange, ...props }: Preview.P
     </Stack>
   );
 };
+
 
   export namespace Query {
     export namespace String {

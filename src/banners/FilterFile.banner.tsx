@@ -180,7 +180,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     <Banner
       title='Choose filtering options'
       done={<Done />}
-      side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />}
+      side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} onQueryChange={(newQuery) => {setQuery(newQuery)}}/>}
       subtitle={LastQueries}
       className={s.banner}
       option={<Undo />}
