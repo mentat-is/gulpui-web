@@ -112,8 +112,6 @@ export class Logger {
       `[${level.toUpperCase()}]${pid} - ${_Logger.white(timestamp)} ${level.toUpperCase().padStart(7, ' ')} ${_Logger.yellow(contextInfo)}${typeof message === 'object' ? JSON.stringify(message, (_, v) => (typeof v === 'bigint' ? v.toString() : v), 2) : message}${traceInfo}`,
     )
 
-    console.log(log);
-
     return log
   }
 }

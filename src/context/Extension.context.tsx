@@ -116,7 +116,7 @@ export namespace Extension {
     const { extensions } = Extension.use();
     const extension = extensions[name];
     if (!extension) {
-      Logger.error(`Extenstion ${name} not found in plugin list. Skipping...`)
+      Logger.warn(`Extenstion ${name} not found in plugin list. Skipping...`)
       return null;
     }
 
@@ -129,6 +129,23 @@ export namespace Extension {
     return (
       <Component {...props} />
     )
+  }
+
+  export namespace Optional {
+    export interface Props {
+      name: string;
+      children: React.ReactNode;
+    }
+  }
+
+  export function Optional({ name, children }: Extension.Optional.Props) {
+    const { extensions } = Extension.use();
+    const extension = extensions[name];
+    if (!extension) {
+      return null;
+    }
+
+    return children;
   }
 
   export namespace Components {

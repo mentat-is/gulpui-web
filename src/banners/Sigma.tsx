@@ -14,21 +14,23 @@ import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { Source } from '@/entities/Source'
 import { Context } from '@/entities/Context'
+import { Toggle } from '@/ui/Toggle'
+import { SigmaZip } from '@/plugins/SigmaZip.banner'
 
 export namespace Sigma {
   export namespace Banner {
     export interface Props extends UIBanner.Props {
-      files?: Source.Id[]
+      sources: Source.Id[]
     }
   }
 
   export function Banner({
-    files: initFiles = [],
+    sources: initialSources = [],
     ...props
   }: Sigma.Banner.Props) {
-    const { Info, app, destroyBanner } = Application.use();
+    const { Info, app, destroyBanner, spawnBanner } = Application.use();
     const [rules, setRules] = useState<NodeFile[] | null>();
-    const [files, setFiles] = useState(initFiles)
+    const [sources, setSources] = useState(initialSources)
     const [createNotes, setCreateNotes] = useState<boolean>(false);
 
     const DoneButton = () => {
@@ -37,7 +39,7 @@ export namespace Sigma {
           return toast('Select at least one rule or zip file')
         }
 
-        await Info.query_sigma(files, rules, createNotes);
+        await Info.query_sigma(sources, rules, createNotes);
 
         destroyBanner()
       }
@@ -69,24 +71,14 @@ export namespace Sigma {
       setRules(fileData);
     }
 
-    const allFiles = useMemo(() => Source.Entity.selected(app), [app.timeline.filter, ...app.target.files]);
+    const allFiles = useMemo(() => Source.Entity.selected(app), [app.timeline.filter, app.target.files]);
 
     return (
       <UIBanner title="Apply sigma rules" done={<DoneButton />} {...props}>
-        <Select.Multi.Root value={files} onValueChange={values => setFiles(values as typeof files)}>
-          <Select.Trigger>
-            <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply sigma rules' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
-          </Select.Trigger>
-          <Select.Content>
-            {allFiles.map(file => (
-              <Select.Item key={file.id} value={file.id}>
-                <Icon name={Source.Entity.icon(file) || 'File'} />
-                {file.name}
-                <Badge variant='gray-subtle' value={Context.Entity.id(app, file.context_id).name} />
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Multi.Root>
+        <Extension.Optional name='SigmaZip.banner.tsx'>
+          <Toggle option={['File', 'Zip']} checked={false} onClick={() => spawnBanner(<SigmaZip.Banner sources={sources} />)} />
+        </Extension.Optional>
+        <Source.Select.Multi selected={sources} setSelected={setSources} placeholder='Select sources to apply sigma rules for them' />
         <Input
           type="file"
           icon="Sigma"
@@ -94,11 +86,10 @@ export namespace Sigma {
           variant="highlighted"
           onChange={rulesInputChangeHandler}
         />
-        <Stack ai='center' gap={4}>
+        <Stack ai='center' gap={6}>
           <Checkbox id='isCreateNotes' checked={createNotes} onCheckedChange={v => setCreateNotes(!!v)} />
           <Label htmlFor='isCreateNotes' cursor='pointer' value='Create notes' />
         </Stack>
-        <Extension.Component name='SigmaZip.banner.tsx' />
       </UIBanner>
     )
   }

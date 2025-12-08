@@ -70,6 +70,10 @@
 .cell {
   background-color: var(--background-200);
 }
+.cell > button {
+  border: none;
+  box-shadow: none;
+}
 .done * {
   --spinner-size: 28px !important;
 }

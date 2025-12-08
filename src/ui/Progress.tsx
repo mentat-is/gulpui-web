@@ -8,7 +8,7 @@ const Progress = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & {
     background?: string
   }
->(({ className, value, color = 'var(--meta-black)', background = 'white', ...props }, ref) => (
+>(({ className, value, color = 'var(--background-100)', background = 'white', ...props }, ref) => (
   <ProgressPrimitive.Root
     ref={ref}
     className={cn(s.root, className)}

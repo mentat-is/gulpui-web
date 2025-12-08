@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from '@/ui/Tooltip'
 import { Enrichment } from '@/banners/Enrichment.banner'
-import { Sigma } from '@/banners/UploadSigmaRule.banner'
+import { Sigma } from '@/banners/Sigma'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { Refractor } from '@/ui/utils'
 import { toast } from 'sonner'
@@ -172,7 +172,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner files={[file.id]} />)} icon="Sigma" >
+        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner sources={[file.id]} />)} icon="Sigma" >
           Upload rule
         </ContextMenuItem>
       </ContextMenuGroup>

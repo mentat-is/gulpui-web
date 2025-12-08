@@ -3,7 +3,7 @@ import { UploadBanner } from '@/banners/Upload.banner'
 import { Application } from '@/context/Application.context'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
 import { Frame } from '@/banners/Frame.banner'
-import { Sigma } from '@/banners/UploadSigmaRule.banner'
+import { Sigma } from '@/banners/Sigma'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { Permissions } from '@/banners/Permissions.banner'
@@ -58,7 +58,7 @@ export function Menu() {
         title="Upload sigma rule"
         icon="Sigma"
         size='md'
-        onClick={() => spawnBanner(<Sigma.Banner />)}
+        onClick={() => spawnBanner(<Sigma.Banner sources={[]} />)}
       />
       <Button
         variant="secondary"

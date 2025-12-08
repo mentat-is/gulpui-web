@@ -41,9 +41,10 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <Stack ai='start' jc='center' pos='fixed' dir='column' className={s.wrapper}>
-      <Stack ai='center' jc='space-between' dir='row' style={{ width: '100%'}}>
+      <Stack ai='center' jc='space-between' dir='row' style={{ width: '100%' }}>
         <Stack gap={8} style={{ fontSize: '18px' }}>
-          <Icon name='Robot' size={18}/> Ai Assistent
+          <Icon name='Robot' size={18} />
+          AI Assistent
         </Stack>
         <Button icon='X' variant='tertiary' onClick={onClose} />
       </Stack>

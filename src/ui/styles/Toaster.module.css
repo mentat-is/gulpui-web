@@ -1,5 +1,5 @@
 .toast {
-  background: var(--meta-black);
+  background: var(--background-100);
   color: var(--accent);
   border: 1px solid var(--geist-border);
   box-shadow: var(--shadow-border);

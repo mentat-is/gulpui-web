@@ -110,19 +110,12 @@
 .highlighted svg {
   z-index: 2;
   width: 32px;
-  color: var(--second);
 }
-.highlighted:focus-visible svg,
-.highlighted:focus-within svg,
-.highlighted:hover svg {
-  color: var(--accent);
-}
-
 .lg {
   height: 48px;
 }
 .lg input {
-  padding: 0 12px;
+padding: 0 12px;
   font-size: 1rem;
 }
 

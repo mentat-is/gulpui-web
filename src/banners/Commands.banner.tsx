@@ -14,7 +14,7 @@ import { GlobalQuery } from './GlobalQuery.banner';
 import { QueryExternal } from './QueryExternal.banner';
 import { Requests } from './Requests.banner';
 import { UploadBanner } from './Upload.banner';
-import { Sigma } from './UploadSigmaRule.banner';
+import { Sigma } from './Sigma';
 import { Session } from './Session.banner';
 import { Permissions } from './Permissions.banner';
 import { Stack } from '@/ui/Stack';
@@ -52,7 +52,7 @@ export namespace Commands {
       {
         name: "Upload sigma rule",
         icon: "Sigma",
-        onClick: () => spawnBanner(<Sigma.Banner />)
+        onClick: () => spawnBanner(<Sigma.Banner sources={[]} />)
       },
       {
         name: "Select files and contexts",

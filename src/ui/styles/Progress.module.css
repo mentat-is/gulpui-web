@@ -1,6 +1,6 @@
 .root {
   overflow: hidden;
-  background-color: var(--meta-black);
+  background-color: var(--background-100);
   border: 1px solid var(--gray-400);
   border-radius: var(--round);
   min-height: 12px;
@@ -20,7 +20,7 @@
   border-radius: var(--round);
   width: 100%;
   text-align: center;
-  color: var(--meta-black);
+  color: var(--background-100);
   background: var(--accent);
   border: var(--geist-border);
   font-family: var(--font-mono);

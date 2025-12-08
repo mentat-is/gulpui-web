@@ -10,7 +10,7 @@
   overflow-y: auto;
   max-height: 256px;
   border: 1px solid var(--gray-400);
-  background-color: var(--meta-black);
+  background-color: var(--background-100);
   border-radius: 6px;
 }
 .filters .filter:not(:first-child) {

@@ -28,7 +28,7 @@
 
 .wrapper:hover .position {
   font-weight: 600;
-  text-shadow: 0px 0px 2px var(--meta-black);
+  text-shadow: 0px 0px 2px var(--background-100);
   transform: translate(10%, 32px);
   left: -256px;
   z-index: 6;

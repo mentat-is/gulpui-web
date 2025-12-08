@@ -80,7 +80,7 @@ function Main() {
 
     setTimeout(() => {
       setIsPreloaded(true);
-    }, 2500);
+    }, 500);
   }, [isPreloaded]);
 
   useEffect(() => {

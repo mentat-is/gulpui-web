@@ -1,12 +1,9 @@
 import { SetState } from "@/class/API";
 import { GulpDataset } from "@/class/Info";
-import s from './styles/CustomParameters.module.css'
-import { Separator } from "@/ui/Separator";
 import { Toggle } from "@/ui/Toggle";
 import { Icon } from "@impactium/icons";
-import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@radix-ui/react-tooltip";
 import { capitalize } from "lodash";
-import { ChangeEvent, Fragment, useEffect } from "react";
+import { ChangeEvent, useEffect } from "react";
 import { Stack } from "@/ui/Stack";
 import { Input } from "@/ui/Input";
 
@@ -36,7 +33,7 @@ export namespace CustomParameters {
   }
   export function Editor({ plugin, customParameters, setCustomParameters }: CustomParameters.Editor.Props) {
     if (!plugin || !customParameters) {
-      return <CustomParameters.Error />
+      return null;
     }
 
     useEffect(() => {
@@ -75,75 +72,35 @@ export namespace CustomParameters {
         })
       }
 
-    const mapping: Record<string, Icon.Name> = {
-      ip_fields: 'Location',
-    }
-
     return (
-      <Stack dir='column' gap={16} ai='stretch'>
+      <Stack dir='column' ai='stretch'>
         {Object.entries(customParameters).map(([k, value], i, arr) => {
           const param = plugin.custom_parameters.find(c => c.name === k)
           if (!param) return null
 
-          const common = (
-            <Stack key={k} dir='column' ai='flex-start' className={s.param}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Stack>
-                      <Icon name='Info' />
-                      <p>{param.name}:</p>
-                    </Stack>
-                  </TooltipTrigger>
-                  <TooltipContent>{capitalize(param.desc)}</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              {param.type === 'bool' ? (
-                <Stack style={{ width: '100%' }}>
-                  <Toggle
-                    onCheckedChange={v => setCustomParameters(c => ({ ...c, [k]: v }))}
-                    checked={value}
-                    option={['Disabled', 'Enabled']}
-                  />
-                </Stack>
-              ) : (
-                <>
-                  <Input
-                    placeholder={`${k} value should be in ${param.type} format`}
-                    onChange={customParameterInputChangeHandlerConstructor(k)}
-                    value={Array.isArray(value) ? value.join(', ') : value}
-                    variant="highlighted"
-                    icon={mapping[k] || 'Status'}
-                  />
-                  <span>{capitalize(param.desc)}</span>
-                </>
-              )}
-            </Stack>
-          )
-
-          const addSeparator = param.type === 'bool' || i < arr.length - 1
+          if (param.type === 'bool') {
+            return (
+              <Stack style={{ width: '100%' }}>
+                <Toggle
+                  onCheckedChange={v => setCustomParameters(c => ({ ...c, [k]: v }))}
+                  checked={value}
+                  option={['Disabled', 'Enabled']}
+                />
+              </Stack>
+            )
+          }
 
           return (
-            <Fragment key={k}>
-              {common}
-              {addSeparator && <Separator />}
-            </Fragment>
+            <Input
+              placeholder={`${k} value should be in ${param.type} format`}
+              onChange={customParameterInputChangeHandlerConstructor(k)}
+              value={Array.isArray(value) ? value.join(', ') : value}
+              variant="highlighted"
+              label={capitalize(param.desc)}
+              icon='Status'
+            />
           )
         })}
-      </Stack>
-    )
-  }
-
-  export namespace Error {
-    export interface Props {
-
-    }
-  }
-
-  export function Error() {
-    return (
-      <Stack dir='row'>
-        <p>Select plugin to enable custom parameters editor</p>
       </Stack>
     )
   }

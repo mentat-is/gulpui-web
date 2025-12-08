@@ -52,13 +52,13 @@
   min-height: unset !important;
 }
 .files {
-  display: flex;
-  flex-direction: column;
   overflow-y: auto;
-  max-height: 384px;
-  border-radius: 6px;
-  border: 1px solid var(--gray-400);
-  background: var(--meta-black);
+}
+.inner {
+  border: 1px solid var(--gray-alpha-400);
+  margin-right: 8px;
+  background: var(--background-100);
+  border-radius: 8px;
 }
 .fill {
   min-height: 64px;
@@ -77,17 +77,29 @@
 .filePreview {
   width: 100%;
   max-width: 60vw;
-  height: 28px;
-  padding-right: 2px;
+  height: 32px;
   background: var(--background-100);
 }
-.filePreview > svg {
-  padding: 6px;
-  background: var(--background-200);
-  border-right: 1px solid var(--gray-400);
+.filePreview > button {
+  border-radius: 0;
 }
-.files .filePreview:not(:nth-last-child(2)) {
-  border-bottom: 1px solid var(--gray-400);
+.filePreview > svg {
+  padding: 8px;
+  background: var(--background-200);
+  border-right: 1px solid var(--gray-alpha-400);
+}
+.files .filePreview:not(:last-child) {
+  border-bottom: 1px solid var(--gray-alpha-400);
+}
+.files .filePreview:first-child,
+.files .filePreview:last-child {
+  overflow: hidden;
+}
+.files .filePreview:first-child {
+  border-radius: 7px 7px 0 0;
+}
+.files .filePreview:last-child {
+  border-radius: 0 0 7px 7px;
 }
 .filePreview *:not(path) {
   font-size: 11px;
@@ -96,24 +108,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.select {
-  height: 28px;
-  overflow: hidden;
-  min-height: unset;
-  border: none;
-  background: unset;
-  border-radius: 2px;
-  box-shadow: none !important;
-}
-.select::before {
-  content: none !important;
-}
 .frame_selector [data-input] {
   flex: 1;
-}
-.select > button {
-  border-radius: 0;
-  height: 28px;
 }
 .weight {
   min-width: 64px;
@@ -124,13 +120,14 @@
   margin-left: 8px;
 }
 .filename {
-  width: 128px;
+  flex: 1;
+  height: 32px;
+  line-height: 32px;
   overflow: hidden;
   margin: 0 8px;
-  flex-shrink: 0;
 }
 .progress {
-  background: var(--meta-black);
+  background: var(--background-100);
   height: 100%;
   width: 100%;
   padding: 8px;
@@ -138,13 +135,6 @@
 }
 .progress .bar {
   background: var(--soft-black);
-}
-.sr_only {
-  height: 0px;
-  width: 0px;
-  position: absolute;
-  overflow: hidden;
-  opacity: 0;
 }
 .frame_selector > div {
   flex: 1 !important;

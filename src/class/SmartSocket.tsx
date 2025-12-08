@@ -1,22 +1,28 @@
 import { Logger } from "@/dto/Logger.class"
 import { Internal } from '@/entities/addon/Internal'
+import { Doc } from "@/entities/Doc"
+import { Group } from "@/entities/Group"
+import { Operation } from "@/entities/Operation"
+import { Request } from "@/entities/Request"
+import { User } from "@/entities/User"
 import { Icon } from "@impactium/icons"
 import { EventEmitter } from 'events'
 
 export namespace SmartSocket {
-  type Condition<T = any> = (data: T) => boolean
-  type Handler<T = any> = (data: T) => void
+  type Condition = (data: Message.Entity) => boolean
+  type Handler = (data: Message.Entity) => void
 
-  interface Conditional<T = any> {
+  interface Conditional<T = Message.Entity> {
     id: string
-    condition: Condition<T>
-    handler: Handler<T>
+    condition: Condition
+    handler: Handler
     once?: boolean
   }
   export namespace Message {
     export enum Type {
       WS_ERROR = "ws_error",
       WS_CONNECTED = "ws_connected",
+      STATS_CREATE = 'stats_update',
       STATS_UPDATE = "stats_update",
       COLLAB_CREATE = "collab_create",
       COLLAB_UPDATE = "collab_update",
@@ -31,6 +37,40 @@ export namespace SmartSocket {
       REBASE_DONE = "rebase_done",
       CLIENT_DATA = "client_data",
       SOURCE_FIELDS_CHUNK = "source_fields_chunk"
+    }
+
+    export interface Entity {
+      '@timestamp': number,
+      type: Message.Type,
+      private: boolean,
+      payload: {
+        obj: {
+          operation_id: Operation.Id,
+          server_id: string,
+          status: string,
+          req_type: string,
+          time_expire: number,
+          time_finished: number,
+          errors: string[],
+          data: any,
+          id: Request.Id,
+          type: string,
+          user_id: User.Id,
+          name: string,
+          time_created: number,
+          time_updated: number,
+          tags: string[],
+          granted_user_ids: User.Id[],
+          granted_user_group_ids: Group.Id[]
+        },
+        last?: boolean;
+        docs?: Doc.Type[]
+        [key: string]: any;
+      },
+      ws_id: string,
+      user_id: User.Id,
+      req_id: Request.Id,
+      'gulp.operation_id': Operation.Id
     }
   }
 
@@ -113,10 +153,10 @@ export namespace SmartSocket {
       }
     }
 
-    con<T = any>(
+    con(
       event: SmartSocket.Message.Type,
-      condition: Condition<T>,
-      handler: Handler<T>
+      condition: Condition,
+      handler: Handler
     ): string {
       const id = `listener_${++this.counter}`
 
@@ -135,10 +175,10 @@ export namespace SmartSocket {
       return id
     }
 
-    conce<T = any>(
+    conce(
       event: SmartSocket.Message.Type,
-      condition: Condition<T>,
-      handler: Handler<T>
+      condition: Condition,
+      handler: Handler
     ): string {
       const id = `listener_${++this.counter}`
 
@@ -164,9 +204,9 @@ export namespace SmartSocket {
       this.conditional.delete(event)
     }
 
-    coffWhenCondition<T = any>(
+    coffWhenCondition<T = Message.Entity>(
       event: SmartSocket.Message.Type,
-      condition: Condition<T>
+      condition: Condition
     ): void {
       const listeners = this.conditional.get(event) || []
       const filtered = listeners.filter(l => l.condition !== condition)
@@ -178,11 +218,11 @@ export namespace SmartSocket {
       }
     }
 
-    wait<T = any>(
+    wait(
       event: SmartSocket.Message.Type,
-      condition: Condition<T>,
+      condition: Condition,
       timeout?: number
-    ): Promise<T> {
+    ): Promise<Message.Entity> {
       return new Promise((resolve, reject) => {
         let timeoutId: NodeJS.Timeout | null = null
 

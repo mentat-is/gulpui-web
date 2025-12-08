@@ -4,7 +4,7 @@ import { Select } from '@/ui/Select'
 import { useEffect, useState, useCallback, useMemo, ChangeEvent, useRef } from 'react'
 import s from './styles/UploadBanner.module.css'
 import { MinMax, MinMaxBase } from '@/class/Info'
-import { formatBytes } from '@/ui/utils'
+import { formatBytes, Refractor } from '@/ui/utils'
 import { SelectFiles } from './SelectFiles.banner'
 import { Popover } from '@/ui/Popover'
 import { Icon } from '@impactium/icons'
@@ -26,9 +26,9 @@ import { Spinner } from '@/ui/Spinner'
 import { Context } from '@/entities/Context'
 import { Operation } from '@/entities/Operation'
 import { Doc } from '@/entities/Doc'
-import { Source } from '@/entities/Source'
 import { Mapping } from '@/entities/Mapping'
 import React from 'react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 
 export namespace FileEntity {
   export interface IngestOptions {
@@ -85,20 +85,20 @@ Object.values(FILE_SIGNATURES).forEach((array) => {
 
 const FilesList = React.memo(function FilesList(props: {
   files: File[]
+  setFiles: SetState<File[]>
   settings: Record<string, FileEntity.Settings>
   progress: Record<string, number>
   updateSettings: (filename: string, update: Partial<FileEntity.Settings>) => void
 }) {
   const { files, settings, progress, updateSettings } = props
 
-  if (!files.length) return <Placeholder />
-
   return (
     <>
       {files.map((file, i) => (
-        <Components.FilePreview
+        <FilePreview
           key={file.name || i}
           file={file}
+          setFiles={props.setFiles}
           settings={settings[file.name] || { custom_parameters: {} }}
           progress={progress[file.name]}
           updateSettings={update => updateSettings(file.name, update)}
@@ -108,171 +108,176 @@ const FilesList = React.memo(function FilesList(props: {
   )
 })
 
-namespace Components {
-  export const ContextSelector = ({ app, context, setContext }: {
-    app: any
-    context: string
-    setContext: (value: string) => void
-  }) => {
-    const contexts = Operation.Entity.contexts(app);
+export const ContextSelector = ({ app, context, setContext }: {
+  app: any
+  context: string
+  setContext: (value: string) => void
+}) => {
+  const contexts = Operation.Entity.contexts(app);
 
-    return (
-      <Stack dir='column' gap={6} ai='flex-start'>
-        <Label value='Context' />
-        <Select.Root value={context} onValueChange={setContext} disabled={!contexts.length}>
-          <Select.Trigger>
-            <Icon name={Context.Entity.icon(Context.Entity.findByName(app, context)!)} />
-            {context || 'Select context'}
-          </Select.Trigger>
-          <Select.Content>
-            {contexts.map(c => (
-              <Select.Item key={c.name} value={c.name}>
-                <Icon name={Context.Entity.icon(c)} />
-                {c.name}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Root>
-      </Stack>
-    )
+  return (
+    <Stack dir='column' gap={6} ai='flex-start'>
+      <Label value='Context' />
+      <Select.Root value={context} onValueChange={setContext} disabled={!contexts.length}>
+        <Select.Trigger>
+          <Icon name={Context.Entity.icon(Context.Entity.findByName(app, context)!)} />
+          {context || 'Select context'}
+        </Select.Trigger>
+        <Select.Content>
+          {contexts.map(c => (
+            <Select.Item key={c.name} value={c.name}>
+              <Icon name={Context.Entity.icon(c)} />
+              {c.name}
+            </Select.Item>
+          ))}
+        </Select.Content>
+      </Select.Root>
+    </Stack>
+  )
+}
+
+export const FilePreview = React.memo(({ file, settings, updateSettings, progress, setFiles }: {
+  file: File
+  settings: FileEntity.Settings
+  updateSettings: (update: Partial<FileEntity.Settings>) => void
+  progress: number | undefined
+  setFiles: SetState<File[]>
+}) => {
+  const { Info, app } = Application.use()
+  const [preview, setPreview] = useState<Doc.Type[] | null>(null)
+
+  const methods = useMemo(
+    () => Mapping.Entity.methods(app, settings.plugin),
+    [app, settings.plugin],
+  )
+
+  const mappings = useMemo(
+    () => Mapping.Entity.mappings(app, settings.plugin, settings.method),
+    [app, settings.plugin, settings.method],
+  )
+
+  useEffect(() => {
+    if (!settings.plugin) return
+
+    if (methods.length === 0) {
+      updateSettings({ method: undefined })
+    } else if (methods.length === 1) {
+      updateSettings({ method: methods[0] })
+    } else if (settings.method !== undefined && !methods.includes(settings.method)) {
+      updateSettings({ method: undefined })
+    }
+  }, [settings.plugin, methods])
+
+  useEffect(() => {
+    if (!settings.plugin) return
+
+    if (mappings.length === 0 || !settings.method) {
+      updateSettings({ mapping: undefined })
+    } else if (mappings.length === 1) {
+      updateSettings({ mapping: mappings[0] })
+    } else if (settings.mapping && !mappings.includes(settings.mapping)) {
+      updateSettings({ mapping: undefined })
+    }
+  }, [settings.method, mappings])
+
+
+  const loadPreview = async () => {
+    const preview = await Info.file_ingest({
+      preview_mode: true,
+      context: 'context',
+      file,
+      settings
+    })
+
+    setPreview(preview ?? null);
   }
 
-  export const FilePreview = React.memo(({ file, settings, updateSettings, progress }: {
-    file: File
-    settings: FileEntity.Settings
-    updateSettings: (update: Partial<FileEntity.Settings>) => void
-    progress: number | undefined
-  }) => {
-    const { Info, app } = Application.use()
-    const [preview, setPreview] = useState<Doc.Type[] | null>(null)
+  const setCustomParameters = (custom_parameters: Record<string, any>) => {
+    updateSettings({ custom_parameters });
+  }
 
-    const methods = useMemo(
-      () => Mapping.Entity.methods(app, settings.plugin),
-      [app, settings.plugin],
-    )
-
-    const mappings = useMemo(
-      () => Mapping.Entity.mappings(app, settings.plugin, settings.method),
-      [app, settings.plugin, settings.method],
-    )
-
-    useEffect(() => {
-      if (!settings.plugin) return
-
-      if (methods.length === 0) {
-        updateSettings({ method: undefined })
-      } else if (methods.length === 1) {
-        updateSettings({ method: methods[0] })
-      } else if (settings.method !== undefined && !methods.includes(settings.method)) {
-        updateSettings({ method: undefined })
-      }
-    }, [settings.plugin, methods])
-
-    useEffect(() => {
-      if (!settings.plugin) return
-
-      if (mappings.length === 0 || !settings.method) {
-        updateSettings({ mapping: undefined })
-      } else if (mappings.length === 1) {
-        updateSettings({ mapping: mappings[0] })
-      } else if (settings.mapping && !mappings.includes(settings.mapping)) {
-        updateSettings({ mapping: undefined })
-      }
-    }, [settings.method, mappings])
-
-
-    const loadPreview = async () => {
-      const preview = await Info.file_ingest({
-        preview_mode: true,
-        context: 'context',
-        file,
-        settings
-      })
-
-      setPreview(preview ?? null);
+  const fileOffsetInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
+    const offset = parseInt(event.currentTarget.value);
+    if (Number.isNaN(offset)) {
+      return;
     }
 
-    const setCustomParameters = (custom_parameters: Record<string, any>) => {
-      updateSettings({ custom_parameters });
-    }
+    updateSettings({ offset })
+  }
 
-    const fileOffsetInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {
-      const offset = parseInt(event.currentTarget.value);
-      if (Number.isNaN(offset)) {
-        return;
-      }
-
-      updateSettings({ offset })
-    }
-
-    return (
-      <Stack className={s.filePreview} gap={0} pos='relative'>
-        {progress && <Progress value={progress} />}
-        <Icon name={Default.Icon.SOURCE} size={14} fromGeist />
-        <Popover.Root>
-          <Popover.Trigger asChild>
+  return (
+    <Stack className={s.filePreview} gap={0} flex={0} pos='relative'>
+      {progress && <Progress value={progress} />}
+      <Icon name={Default.Icon.SOURCE} />
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
             <p className={s.filename}>{file.name}</p>
-          </Popover.Trigger>
-          <Popover.Content className={s.popover}>{file.name}</Popover.Content>
-        </Popover.Root>
-        <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
-        <PluginSelector settings={settings} updateSettings={updateSettings} />
-        <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
-        <MethodSelector settings={settings} updateSettings={updateSettings} methods={methods} />
-        <Separator orientation="vertical" style={{ height: 28 }} color="var(--gray-400)" />
-        <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
-        <Popover.Root>
-          <Popover.Trigger asChild>
-            <Button icon='Settings' size='sm' style={{ width: 24 }} variant='tertiary' />
-          </Popover.Trigger>
-          <Popover.Content>
+          </TooltipTrigger>
+          <TooltipContent>
+            {file.name}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <Popover.Root onOpenChange={o => o && loadPreview()}>
+        <Popover.Trigger asChild>
+          <Button icon='PreviewDocument' variant='tertiary' />
+        </Popover.Trigger>
+        <Popover.Content style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
+          {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={Array.isArray(preview) ? preview : []} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
+        </Popover.Content>
+      </Popover.Root>
+      <Popover.Root>
+        <Popover.Trigger asChild>
+          <Button icon='Settings' variant='tertiary' />
+        </Popover.Trigger>
+        <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh' }}>
+          <Stack dir='column' ai='stretch'>
             <Input value={settings.offset} onChange={fileOffsetInputChangeHandler} icon='LayoutShift' variant='highlighted' placeholder='0 milliseconds' label='Offset' />
+            <PluginSelector settings={settings} updateSettings={updateSettings} />
+            <MethodSelector settings={settings} updateSettings={updateSettings} methods={methods} />
+            <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
             <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters} />
-          </Popover.Content>
-        </Popover.Root>
-        <Popover.Root onOpenChange={o => o && loadPreview()}>
-          <Popover.Trigger asChild>
-            <Button icon='PreviewDocument' size='sm' style={{ width: 24 }} variant='tertiary' />
-          </Popover.Trigger>
-          <Popover.Content style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
-            {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={Array.isArray(preview) ? preview : []} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
-          </Popover.Content>
-        </Popover.Root>
-      </Stack>
-    )
-  })
+          </Stack>
+        </Popover.Content>
+      </Popover.Root>
+      <Button icon='X' variant='tertiary' shape='icon' onClick={() => setFiles(sources => sources.filter(source => source.name !== file.name))} />
+    </Stack>
+  )
+})
 
-  const Progress = ({ value }: {
-    value: number
-  }) => {
-    return (
-      <Stack className={s.progress} pos='absolute'>
-        <UIProgress className={s.bar} background='var(--green-800)' color='var(--green-800)' value={value} />
-      </Stack>
-    )
-  }
+const Progress = ({ value }: {
+  value: number
+}) => {
+  return (
+    <Stack className={s.progress} pos='absolute'>
+      <UIProgress className={s.bar} background='var(--green-800)' color='var(--green-800)' value={value} />
+    </Stack>
+  )
+}
 
-  const PluginSelector = ({ settings, updateSettings }: {
-    settings: FileEntity.Settings
-    updateSettings: (update: Partial<FileEntity.Settings>) => void
-  }) => {
-    const { app } = Application.use();
+const PluginSelector = ({ settings, updateSettings }: {
+  settings: FileEntity.Settings
+  updateSettings: (update: Partial<FileEntity.Settings>) => void
+}) => {
+  const { app } = Application.use();
 
-    const plugins = Mapping.Entity.plugins(app);
+  const plugins = Mapping.Entity.plugins(app);
 
-    const cutExtension = useCallback((str: string) => {
-      return str.split('.').slice(0, -1).join('')
-    }, []);
+  const cutExtension = useCallback((str: string) => {
+    return str.split('.').slice(0, -1).join('')
+  }, []);
 
-    return (
+  return (
+    <Stack dir='column' gap={6} ai='flex-start' data-input>
+      <Label value='Plugin' />
       <Select.Root
         value={settings.plugin}
         onValueChange={plugin => updateSettings({ plugin })}
       >
         <Select.Trigger className={s.select}>
-          <Select.Value placeholder="Select plugin">
-            <p>{settings.plugin ? cutExtension(settings.plugin) : plugins.length > 0 ? 'Select plugin' : 'No plugins'}</p>
-          </Select.Value>
+          <Icon name='Puzzle' />
+          {settings.plugin ? cutExtension(settings.plugin) : plugins.length > 0 ? 'Select plugin' : 'No plugins'}
         </Select.Trigger>
         <Select.Content>
           {plugins.map(p => (
@@ -280,18 +285,22 @@ namespace Components {
           ))}
         </Select.Content>
       </Select.Root>
-    )
-  }
+    </Stack>
+  )
+}
 
-  const MethodSelector = ({ settings, updateSettings, methods }: {
-    settings: FileEntity.Settings
-    updateSettings: (update: Partial<FileEntity.Settings>) => void
-    methods: string[]
-  }) => {
-    return methods.length > 0 ? (
+const MethodSelector = ({ settings, updateSettings, methods }: {
+  settings: FileEntity.Settings
+  updateSettings: (update: Partial<FileEntity.Settings>) => void
+  methods: string[]
+}) => {
+  return methods.length > 0 ? (
+    <Stack dir='column' gap={6} ai='flex-start' data-input>
+      <Label value='Method' />
       <Select.Root value={settings.method} onValueChange={method => updateSettings({ method })}>
         <Select.Trigger className={s.select}>
-          <p>{settings.method ? settings.method : methods.length > 0 ? 'Select method' : '-'}</p>
+          <Icon name='ChevronRight' />
+          {settings.method ? settings.method : methods.length > 0 ? 'Select method' : '-'}
         </Select.Trigger>
         <Select.Content>
           {methods.map(m => (
@@ -299,20 +308,24 @@ namespace Components {
           ))}
         </Select.Content>
       </Select.Root>
-    ) : null
-  }
+    </Stack>
+  ) : null
+}
 
-  const MappingSelector = ({ settings, updateSettings, mappings }: {
-    settings: FileEntity.Settings
-    updateSettings: (update: Partial<FileEntity.Settings>) => void
-    mappings: string[]
-  }) => mappings.length > 0 ? (
+const MappingSelector = ({ settings, updateSettings, mappings }: {
+  settings: FileEntity.Settings
+  updateSettings: (update: Partial<FileEntity.Settings>) => void
+  mappings: string[]
+}) => mappings.length > 0 ? (
+  <Stack dir='column' gap={6} ai='flex-start' data-input>
+    <Label value='Mapping' />
     <Select.Root
       value={settings.mapping}
       onValueChange={mapping => updateSettings({ mapping })}
     >
       <Select.Trigger className={s.select}>
-        <p>{settings.mapping ? settings.mapping : mappings.length > 0 ? 'Select mapping' : (settings.method ? 'No mappings' : '-')}</p>
+        <Icon name='ChevronRight' />
+        {settings.mapping ? settings.mapping : mappings.length > 0 ? 'Select mapping' : (settings.method ? 'No mappings' : '-')}
       </Select.Trigger>
       <Select.Content>
         {mappings.map(m => (
@@ -320,137 +333,137 @@ namespace Components {
         ))}
       </Select.Content>
     </Select.Root>
-  ) : null
+  </Stack>
+) : null
 
-  export const FrameSelector = ({ isCustomFrame, setFrame }: {
-    isCustomFrame: boolean,
-    setFrame: SetState<FileEntity.IngestOptions['frame']>
-  }) => {
-    if (!isCustomFrame) {
-      return null;
-    }
-
-    const frameInputChangeHandler = (
-      event: ChangeEvent<HTMLInputElement>,
-      type: keyof MinMax,
-    ) => {
-      const value = event.target.valueAsDate
-
-      if (!value) {
-        toast.error('Date is not valid', {
-          richColors: true,
-        })
-        return
-      }
-
-      setFrame((f) => ({
-        ...f!,
-        [type]: value.valueOf(),
-      }))
-    }
-
-    const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
-      frameInputChangeHandler(event, 'min')
-
-    const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
-      frameInputChangeHandler(event, 'max')
-
-    return (
-      <Stack gap={12} className={s.frame_selector}>
-        <Input
-          variant="highlighted"
-          type="date"
-          icon="CalendarArrowUp"
-          onChange={frameMinInputChangeHandler}
-        />
-        <Input
-          variant="highlighted"
-          type="date"
-          icon="CalendarArrowDown"
-          onChange={frameMaxInputChangeHandler}
-        />
-      </Stack>
-    )
+export const FrameSelector = ({ isCustomFrame, setFrame }: {
+  isCustomFrame: boolean,
+  setFrame: SetState<FileEntity.IngestOptions['frame']>
+}) => {
+  if (!isCustomFrame) {
+    return null;
   }
 
-  export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings }: {
-    settings: Record<string, FileEntity.Settings>,
-    updateSettings: any,
-    setSettings: (s: FileEntity.Settings) => void
-  }) => {
-    const { app } = Application.use();
+  const frameInputChangeHandler = (
+    event: ChangeEvent<HTMLInputElement>,
+    type: keyof MinMax,
+  ) => {
+    const value = event.target.valueAsDate
 
-    useEffect(() => {
-      if (!settings.all) {
-        settings.all = {
-          offset: 0,
-          custom_parameters: {}
-        }
-      }
-    }, [settings]);
+    if (!value) {
+      toast.error('Date is not valid', {
+        richColors: true,
+      })
+      return
+    }
 
-    const methods = Mapping.Entity.methods(app, settings.all?.plugin)
-    const mappings = Mapping.Entity.mappings(app, settings.all?.plugin, settings.all?.method)
-
-    useEffect(() => {
-      if (!settings.all?.plugin) {
-        return
-      }
-
-      if (methods.length === 0) {
-        updateSettings('all', {
-          method: undefined
-        })
-      } else if (methods.length === 1) {
-        updateSettings('all', {
-          method: methods[0]
-        })
-      } else if (settings.all?.method !== undefined && !methods.includes(settings.all?.method)) {
-        updateSettings('all', {
-          method: undefined
-        })
-      }
-    }, [settings.all?.plugin])
-
-    useEffect(() => {
-      if (!settings.all?.plugin) {
-        return
-      }
-
-      if (mappings.length === 0 || !settings.all?.method) {
-        updateSettings('all', {
-          mapping: undefined
-        })
-      } else if (mappings.length === 1) {
-        updateSettings('all', {
-          mapping: mappings[0]
-        })
-      } else if (settings.all?.mapping && !mappings.includes(settings.all?.mapping)) {
-        updateSettings('all', {
-          mapping: undefined
-        })
-      }
-    }, [settings.all?.method])
-
-    return (
-      <Popover.Root>
-        <Popover.Trigger asChild>
-          <Button style={{ width: '100%' }} variant='secondary' icon='SettingsGear'>Select settings for all files</Button>
-        </Popover.Trigger>
-        <Popover.Content>
-          <Stack className={s.allSettings} gap={0}>
-            <PluginSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} />
-            <Separator orientation='vertical' style={{ height: 32 }} />
-            <MethodSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} methods={methods} />
-            <Separator orientation='vertical' style={{ height: 32 }} />
-            <MappingSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
-            <Separator orientation='vertical' style={{ height: 32 }} />
-            <Button variant='tertiary' style={{ borderRadius: 2 }} icon='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
-          </Stack>
-        </Popover.Content>
-      </Popover.Root>
-    )
+    setFrame((f) => ({
+      ...f!,
+      [type]: value.valueOf(),
+    }))
   }
+
+  const frameMinInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
+    frameInputChangeHandler(event, 'min')
+
+  const frameMaxInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) =>
+    frameInputChangeHandler(event, 'max')
+
+  return (
+    <Stack gap={12} className={s.frame_selector}>
+      <Input
+        variant="highlighted"
+        type="date"
+        icon="CalendarArrowUp"
+        onChange={frameMinInputChangeHandler}
+      />
+      <Input
+        variant="highlighted"
+        type="date"
+        icon="CalendarArrowDown"
+        onChange={frameMaxInputChangeHandler}
+      />
+    </Stack>
+  )
+}
+
+export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings }: {
+  settings: Record<string, FileEntity.Settings>,
+  updateSettings: any,
+  setSettings: (s: FileEntity.Settings) => void
+}) => {
+  const { app } = Application.use();
+
+  useEffect(() => {
+    if (!settings.all) {
+      settings.all = {
+        offset: 0,
+        custom_parameters: {}
+      }
+    }
+  }, [settings]);
+
+  const methods = Mapping.Entity.methods(app, settings.all?.plugin)
+  const mappings = Mapping.Entity.mappings(app, settings.all?.plugin, settings.all?.method)
+
+  useEffect(() => {
+    if (!settings.all?.plugin) {
+      return
+    }
+
+    if (methods.length === 0) {
+      updateSettings('all', {
+        method: undefined
+      })
+    } else if (methods.length === 1) {
+      updateSettings('all', {
+        method: methods[0]
+      })
+    } else if (settings.all?.method !== undefined && !methods.includes(settings.all?.method)) {
+      updateSettings('all', {
+        method: undefined
+      })
+    }
+  }, [settings.all?.plugin])
+
+  useEffect(() => {
+    if (!settings.all?.plugin) {
+      return
+    }
+
+    if (mappings.length === 0 || !settings.all?.method) {
+      updateSettings('all', {
+        mapping: undefined
+      })
+    } else if (mappings.length === 1) {
+      updateSettings('all', {
+        mapping: mappings[0]
+      })
+    } else if (settings.all?.mapping && !mappings.includes(settings.all?.mapping)) {
+      updateSettings('all', {
+        mapping: undefined
+      })
+    }
+  }, [settings.all?.method])
+
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <Button style={{ width: '100%' }} variant='secondary' icon='Settings'>Select settings for all files</Button>
+      </Popover.Trigger>
+      <Popover.Content>
+        <Stack className={s.allSettings} gap={0}>
+          <PluginSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} />
+          <Separator orientation='vertical' style={{ height: 32 }} />
+          <MethodSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} methods={methods} />
+          <Separator orientation='vertical' style={{ height: 32 }} />
+          <MappingSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
+          <Separator orientation='vertical' style={{ height: 32 }} />
+          <Button variant='tertiary' style={{ borderRadius: 2 }} icon='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
+        </Stack>
+      </Popover.Content>
+    </Popover.Root>
+  )
 }
 
 export function UploadBanner() {
@@ -592,9 +605,17 @@ export function UploadBanner() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const arr = [...(event.target.files || [])];
 
-    arr.filter(f => ![...files].some(fx => fx.webkitRelativePath === f.webkitRelativePath))
+    setFiles(files => {
+      const sources = Refractor.array(...files);
 
-    setFiles(f => [...f, ...arr]);
+      arr.forEach(source => {
+        if (sources.every(s => s.name !== source.name)) {
+          sources.push(source);
+        }
+      });
+
+      return sources;
+    });
   };
 
   return (
@@ -607,25 +628,28 @@ export function UploadBanner() {
         checked={customFrame}
         onCheckedChange={setCustomFrame}
       />
-      <Components.FrameSelector setFrame={setFrame} isCustomFrame={customFrame} />
-      <Stack dir="column" gap={0} className={cn(s.files, !files.length && s.fill)} onClick={() => files.length === 0 ? addFilesButtonClickHandler() : null}>
-        <FilesList
-          files={files}
-          settings={settings}
-          progress={progress}
-          updateSettings={updateSettings}
-        />
-        <Input
-          className={s.sr_only}
-          ref={fileInputRef}
-          type="file"
-          multiple
-          style={{ display: 'none' }}
-          onChange={handleFileChange}
-        />
-      </Stack>
+      <FrameSelector setFrame={setFrame} isCustomFrame={customFrame} />
+      {files.length ? <Stack dir='column' className={cn(s.files, !files.length && s.fill)} onClick={() => files.length === 0 ? addFilesButtonClickHandler() : null} ai='stretch'>
+        <Stack className={s.inner} gap={0} dir='column'>
+          <FilesList
+            files={files}
+            setFiles={setFiles}
+            settings={settings}
+            progress={progress}
+            updateSettings={updateSettings}
+          />
+        </Stack>
+      </Stack> : null}
+      <Input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        value={''}
+        variant='highlighted'
+        onChange={handleFileChange}
+      />
       <Stack>
-        <Components.ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
+        <ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
         <Button variant="secondary" icon="Cross" onClick={() => setFiles([])}>
           Clear selection
         </Button>
@@ -642,7 +666,7 @@ export function UploadBanner() {
             className={s.reset_font}
           />
         ) : (
-          <Components.ContextSelector app={app} context={context} setContext={setContext} />
+          <ContextSelector app={app} context={context} setContext={setContext} />
         )}
         <Stack ai='center' gap={4}>
           <Checkbox id='newContext' checked={newContext} onCheckedChange={e => setNewContext(!!e)} />
@@ -650,14 +674,5 @@ export function UploadBanner() {
         </Stack>
       </Stack>
     </Banner>
-  )
-}
-
-function Placeholder({ className, ...props }: Stack.Props) {
-  return (
-    <Stack {...props}>
-      <Icon name="FileScan" />
-      <p>Click here to select files</p>
-    </Stack>
   )
 }

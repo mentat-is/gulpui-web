@@ -258,7 +258,7 @@ export class Info implements InfoProps {
         this.setLoading(req_id, file.id)
       }
       const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
-        const events = Doc.Entity.normalize(m.payload.docs);
+        const events = Doc.Entity.normalize(m.payload.docs ?? []);
 
         this.events_add(events);
 
@@ -268,14 +268,14 @@ export class Info implements InfoProps {
         }
       });
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.ENRICH_DONE, m => m.req_id === req_id, m => {
-        if (m.data.status !== 'done') {
+        if (m.payload.obj.status !== 'done') {
           toast.error('Enrichment failed', {
             icon: <Icon name='Stop' />,
             richColors: true
           });
         } else {
           toast.success('Enrichment finished', {
-            description: `Total processed documents: ${m.payload.total_hits ?? 0}`,
+            description: `Total processed documents: ${m.payload.obj.data.total_hits ?? 0}`,
             icon: <Icon name='Check' />
           });
         }
@@ -428,7 +428,7 @@ export class Info implements InfoProps {
       }
 
       const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
-        const events = Doc.Entity.normalize(m.payload.docs);
+        const events = Doc.Entity.normalize(m.payload.docs ?? []);
 
         this.events_add(events);
         if (m.payload.last) {
@@ -442,12 +442,15 @@ export class Info implements InfoProps {
             icon: <Icon name='Stop' />,
             description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
             duration: 1000 * 2,
+            // [λ] Uncomment next lines if not fixed in backend till 2026
+            // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            // duration: 1000 * 60 * 10,
             richColors: true
           })
         } else {
           console.log(m);
           toast.success('Query finished', {
-            description: `Total processed documents: ${m.payload.total_hits}`,
+            description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
             icon: <Icon name='Check' />
           })
         }
@@ -807,7 +810,10 @@ export class Info implements InfoProps {
           return;
         }
 
-        const contexts = Refractor.array(...this.app.target.contexts, m.payload.obj);
+
+        console.log(m.payload, '814');
+        // [λ] Fix
+        const contexts = Refractor.array(...this.app.target.contexts, m.payload.obj as never);
 
         this.setInfoByKey(contexts, 'target', 'contexts');
       })
@@ -818,14 +824,19 @@ export class Info implements InfoProps {
         return;
       }
 
-      this.setLoading(m.req_id, m.payload.obj.id);
+      this.setLoading(m.req_id, m.payload.obj.id as unknown as Source.Id);
 
+      // @ts-ignore
       this.app.target.files = Refractor.array(...this.app.target.files, Source.Entity.normalize(this.app, m.payload.obj));
 
       this.setInfoByKey(this.app.target.files, 'target', 'files');
     })
 
     const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === id && this.app.general.loadings.byRequestId.has(id), m => {
+      if (typeof m.payload.docs === 'undefined') {
+        return;
+      }
+
       const events = Doc.Entity.normalize(m.payload.docs);
 
       const files = Refractor.array(...this.app.target.files);
@@ -1093,7 +1104,6 @@ export class Info implements InfoProps {
     },
 
     toast: {
-
       onSuccess: () => toast.success(`Note ${name} has been created successfully`, {
         richColors: true,
         icon: <Icon name='Check' />
@@ -1940,19 +1950,23 @@ export class Info implements InfoProps {
         onSuccess: () => toast.success('Sigma rule has been successfully applied', {
           richColors: true,
           icon: <Icon name='Check' />
-        })
+        }),
+        onError: response => toast.error('Sigma rule has not been applied', {
+          richColors: true,
+          icon: <Icon name='Warning' />
+        }),
       }
-    }).then(({ req_id }) => {
+    }, ({ req_id }) => {
       SmartSocket.Class.instance.conce(SmartSocket.Message.Type.STATS_UPDATE, m => m.req_id === req_id, m => {
         console.log(m);
-        if (m.data.status !== 'done') {
+        if (m.payload.obj.status !== 'done') {
           toast.error('Sigma query failed', {
             icon: <Icon name='Stop' />,
             richColors: true
           });
         } else {
-          toast.success(`Sigma query finished: ${m.data.name}`, {
-            description: `Total matches: ${m.data.total_hits ?? 0}`,
+          toast.success(`Sigma query ${m.payload.obj.name} has been successfully finished`, {
+            description: `Total matches: ${m.payload.obj.data.total_hits ?? 0}`,
             icon: <Icon name='Sigma' />
           });
         }

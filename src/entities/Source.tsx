@@ -15,11 +15,15 @@ import { Request } from './Request'
 import { Application } from '@/context/Application.context'
 import { Button } from '@/ui/Button'
 import { Toggle } from '@/ui/Toggle'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Internal } from './addon/Internal'
 import { Color } from './Color'
+import { Select as UISelect } from '@/ui/Select'
+import { SetState } from '@/class/API'
+import { Icon } from '@impactium/icons'
+import { Badge } from '@/ui/Badge'
 
 export namespace Source {
   export const name = 'Source'
@@ -256,6 +260,39 @@ export namespace Source {
             />
           )}
         </UIBanner>
+      )
+    }
+  }
+
+  export namespace Select {
+    export namespace Multi {
+      export interface Props {
+        sources?: Source.Type[];
+        selected: Source.Id[];
+        setSelected: SetState<Source.Id[]>;
+        placeholder?: string;
+      }
+    }
+    export function Multi({ sources, selected, setSelected, placeholder }: Select.Multi.Props) {
+      const { app } = Application.use();
+
+      const all = useMemo(() => sources ?? Source.Entity.selected(app), [sources, app.timeline.filter, app.target.files]);
+
+      return (
+        <UISelect.Multi.Root value={selected} onValueChange={selected => setSelected(selected as Source.Id[])}>
+          <UISelect.Trigger>
+            <UISelect.Multi.Value icon={['File', 'Files']} placeholder={placeholder ?? 'Select files to apply sigma rules'} text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
+          </UISelect.Trigger>
+          <UISelect.Content>
+            {all.map(source => (
+              <UISelect.Item key={source.id} value={source.id}>
+                <Icon name={Source.Entity.icon(source) || 'File'} />
+                {source.name}
+                <Badge variant='gray-subtle' value={Context.Entity.id(app, source.context_id).name} />
+              </UISelect.Item>
+            ))}
+          </UISelect.Content>
+        </UISelect.Multi.Root>
       )
     }
   }

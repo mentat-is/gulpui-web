@@ -36,7 +36,7 @@
   width: 20px;
   border-radius: var(--round);
   border: 2px solid var(--accent);
-  background-color: var(--meta-black);
+  background-color: var(--background-100);
   transition: background-color 0.3s;
   outline: none;
 }

@@ -107,11 +107,6 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
 
   --disabled: brightness(0.75);
   --geist-background: radial-gradient(100% 100% at 50% 0, hsla(0, 0%, 100%, .16) 0, hsla(0, 0%, 100%, 0) 100%), linear-gradient(103.94deg, hsla(0, 0%, 100%, .07) 7.66%, hsla(0, 0%, 100%, .01) 32.57%, hsla(0, 0%, 100%, .01) 72.45%, hsla(0, 0%, 100%, .08) 96.25%);
-
-  /* --focus-border: 0 0 0 1px var(--gray-alpha-600), 0px 0px 0px 4px hsla(0, 0%, 100%, .24);
-  --focus-color: var(--blue-900);
-  --shadow-border-inset: inset 0 0 0 1px hsla(0, 0%, 100%, .1);
-  --geist-background: radial-gradient(100% 100% at 50% 0,hsla(0,0%,100%,.07) 0,hsla(0,0%,100%,0) 100%),linear-gradient(103.94deg,hsla(0,0%,100%,.05) 7.66%,hsla(0,0%,100%,.02) 32.57%,hsla(0,0%,100%,.008) 72.45%,hsla(0,0%,100%,.05) 96.25%); */
 }
 
 :root[data-theme='light'] {
@@ -224,13 +219,12 @@ iframe#webpack-dev-server-client-overlay{display:none!important}
   --second: var(--gray-900);
 
   --geist-border: 1px solid hsla(0, 0%, 100%, .07);
-  --shadow-border: 0 0 0 1px hsla(0, 0%, 100%, .145);
+  --shadow-border: 0 0 0 1px var(--gray-alpha-400);
   --ring: 0 0 0 1px var(--accent), 0 0 0 4px hsla(0, 0%, 100%, .24);
-  --shadow-menu: var(--shadow-border), 0px 1px 1px rgba(0, 0, 0, .02), 0px 4px 8px -4px rgba(0, 0, 0, .04), 0px 16px 24px -8px rgba(0, 0, 0, .06);
 
   --focus-border: 0 0 0 1px var(--gray-alpha-600), 0px 0px 0px 4px hsla(0, 0%, 100%, .24);
   --focus-color: var(--blue-900);
-  --shadow-border-inset: inset 0 0 0 1px hsla(0, 0%, 100%, .1);
+  --shadow-border-inset: inset 0 0 0 1px var(--gray-alpha-400);
   --gray-100: hsla(var(--gray-100-value), 1);
   --gray-200: hsla(var(--gray-200-value), 1);
   --gray-300: hsla(var(--gray-300-value), 1);
