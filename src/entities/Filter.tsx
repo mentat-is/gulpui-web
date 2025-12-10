@@ -39,7 +39,7 @@ export namespace Filter {
   }
 
   export class Entity {
-    static query = ({ filters, string }: Query.Type) => {
+    static query = ({ filters, string, fieldTypeMap }: Query.Type & {fieldTypeMap?: Record<string, string> }) => {
       const query: Record<string, any> = structuredClone(
         OpenSearchQueryBuilder.INITIAL,
       )
@@ -57,40 +57,41 @@ export namespace Filter {
 
         let conditionObj = {}
 
-        switch (type) {
-          case 'regexp':
-            conditionObj = { regexp: { [field]: { value, flags: 'ALL' } } }
-            break
-          case 'wildcard':
-            conditionObj = { wildcard: { [field]: { value, case_insensitive } } }
-            break
-          case 'range':
-            conditionObj = {
-              range: {
-                [field]: {
-                  gte: value.split(',')[0]?.trim() || 0,
-                  lte: value.split(',')[1]?.trim() || 0,
-                },
-              },
-            }
-            break
-          case 'Lte':
-            conditionObj = {
-              range: { [field]: { lte: Number(value) } }
-            }
-            break
-          case 'Gte':
-            conditionObj = {
-              range: { [field]: { gte: Number(value) } }
-            }
-            break
-          default:
-            conditionObj = { match: { [field]: value } }
-        }
+        const fieldType = fieldTypeMap?.[field]
 
-        query.bool[operator].push(conditionObj)
-      })
+        if ((type === 'wildcard' || type === 'regexp') && (fieldType === 'long' || fieldType === 'integer')) {
+            conditionObj = { query_string: { query: `${field}:${value}` } }
+          } else {
+            switch (type) {
+              case 'regexp':
+                conditionObj = { regexp: { [field]: { value, flags: 'ALL' } } }
+                break
+              case 'wildcard':
+                conditionObj = { wildcard: { [field]: { value, case_insensitive } } }
+                break
+              case 'range':
+                conditionObj = {
+                  range: {
+                    [field]: {
+                      gte: value.split(',')[0]?.trim() || 0,
+                      lte: value.split(',')[1]?.trim() || 0,
+                    },
+                  },
+                }
+                break
+              case 'Lte':
+                conditionObj = { range: { [field]: { lte: Number(value) } } }
+                break
+              case 'Gte':
+                conditionObj = { range: { [field]: { gte: Number(value) } } }
+                break
+              default:
+                conditionObj = { match: { [field]: value } }
+            }
+          }
 
+          query.bool[operator].push(conditionObj)
+        })
       Object.keys(query.bool).forEach((key) => {
         if (query.bool[key].length === 0) {
           delete query.bool[key]
