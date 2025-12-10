@@ -197,9 +197,7 @@ export namespace Auth {
 
     const onLoginAndOperationSelection = () => {
       const operation = Operation.Entity.selected(app);
-      if (!operation) {
-        return;
-      }
+      if (!operation) return;
 
       switch (true) {
         case app.target.files.filter(file => file.operation_id === operation.id).length > 0:
