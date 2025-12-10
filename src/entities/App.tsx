@@ -40,6 +40,7 @@ export namespace App {
         byRequestId: Map<Request.Id, Source.Id>;
         byFileId: Map<Source.Id, Request.Id>;
       }
+      skippedAuth?: boolean
     }
     timeline: {
       scale: number
