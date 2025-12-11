@@ -114,3 +114,15 @@
   z-index: 2;
   color: var(--accent);
 }
+
+.flagged {
+  background-color: black;
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  border-radius: var(--round);
+  color: var(--accent);
+  border: 1px solid var(--gray-400);
+  padding: 2px;
+  z-index: 1;
+}

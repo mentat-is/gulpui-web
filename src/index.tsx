@@ -91,7 +91,9 @@ function Main() {
     return <Preloader />
   }
 
-  return Info.app.target.files.filter(file => file.selected).length ? (
+  const showTimeline = Info.app.target.files.filter(f => f.selected).length || Info.app.general.skippedAuth;
+
+  return showTimeline ? (
     <Stack gap={12} className={s.window} ai='stretch'>
       <Menu />
       <Timeline />

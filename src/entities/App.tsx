@@ -40,6 +40,8 @@ export namespace App {
         byRequestId: Map<Request.Id, Source.Id>;
         byFileId: Map<Source.Id, Request.Id>;
       }
+      skippedAuth?: boolean
+      ai_hint?: string
     }
     timeline: {
       scale: number
@@ -75,7 +77,8 @@ export namespace App {
       loadings: {
         byRequestId: new Map(),
         byFileId: new Map(),
-      }
+      },
+      ai_hint: ''
     },
     timeline: {
       scale: 1,

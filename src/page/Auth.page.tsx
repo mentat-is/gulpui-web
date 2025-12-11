@@ -93,36 +93,48 @@ export namespace Auth {
     }
 
     const NextButton = () => {
-      if (!app.general.user) {
-        return (
-          <UIButton
-            icon='LogIn'
-            disabled={!id || !password}
-            variant='glass'
-            revert
-            loading={loading}
-            tabIndex={4}
-            onClick={login}
-            style={{ marginLeft: 'auto' }}
-          >Login</UIButton>
-        )
-      }
+      return (
+        <Stack jc='flex-end' dir="row" gap={6} style={{ marginLeft: 'auto' }}>
+          {!app.general.user && (
+            <UIButton
+              icon='LogIn'
+              disabled={!id || !password}
+              variant='glass'
+              revert
+              loading={loading}
+              tabIndex={4}
+              onClick={login}
+            >
+              Login
+            </UIButton>
+          )}
 
-      if (Operation.Entity.selected(app)) {
-        return (
-          <UIButton
-            icon='Check'
+          {Operation.Entity.selected(app) && (
+            <UIButton
+            icon='ArrowRight'
             variant='glass'
             revert
             loading={loading}
             tabIndex={6}
-            onClick={onLoginAndOperationSelection}
-            style={{ marginLeft: 'auto' }}
-          >Done</UIButton>
-        );
-      }
-
-      return null;
+            onClick={skipToTimeline}
+            >
+              Skip
+            </UIButton>
+          )}
+          {Operation.Entity.selected(app) && (
+            <UIButton
+              icon='Check'
+              variant='glass'
+              revert
+              loading={loading}
+              tabIndex={6}
+              onClick={onLoginAndOperationSelection}
+            >
+              Done
+            </UIButton>
+          )}
+        </Stack>
+      )
     }
 
     useEffect(() => {
@@ -138,6 +150,15 @@ export namespace Auth {
 
     const [customLoading, setCustomLoading] = useState<string | null>(null)
 
+    const skipToTimeline = () => {
+      Info.setInfo({
+        ...Info.app,
+        general: {
+          ...Info.app.general,
+          skippedAuth: true
+        }
+      })
+    }
     const customLoginConstructor = (url: string) => () => {
       const x = new URLSearchParams()
       x.append('client', window.location.origin)
@@ -197,9 +218,7 @@ export namespace Auth {
 
     const onLoginAndOperationSelection = () => {
       const operation = Operation.Entity.selected(app);
-      if (!operation) {
-        return;
-      }
+      if (!operation) return;
 
       switch (true) {
         case app.target.files.filter(file => file.operation_id === operation.id).length > 0:

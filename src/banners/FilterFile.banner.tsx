@@ -199,10 +199,14 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
 
             return (
               <Select.Group key={context.id}>
-                <Select.Label className={s.groupLabel}>{context.name}</Select.Label>
+                <Select.Label className={s.groupLabel}>
+                  <Select.Item value={`ctx:${context.id}`} style={{ marginLeft: '-12px' }}>
+                    {context.name}
+                  </Select.Item>
+                </Select.Label>
                 {sources.map(s => (
-                  <Select.Item key={s.id} value={s.id}>
-                    <Icon name={Source.Entity.icon(s) || 'X'} />
+                  <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px' }}>
+                    <Icon name={Source.Entity.icon(s) || 'File'} />
                     {s.name}
                   </Select.Item>
                 ))}
