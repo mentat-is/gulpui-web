@@ -39,77 +39,121 @@ export function Menu() {
       ai="flex-start"
       gap={12}
     >
-      <Button
-        variant="secondary"
-        title="Upload files"
-        icon="Upload"
-        size='md'
-        onClick={() => spawnBanner(<UploadBanner />)}
-      />
-      <Button
-        variant="secondary"
-        title="Query external source"
-        icon="ServerCrash"
-        size='md'
-        onClick={() => spawnBanner(<QueryExternal.Banner />)}
-      />
-      <Button
-        variant="secondary"
-        title="Upload sigma rule"
-        icon="Sigma"
-        size='md'
-        onClick={() => spawnBanner(<Sigma.Banner sources={[]} />)}
-      />
-      <Button
-        variant="secondary"
-        className={s.relative}
-        title="Select files and contexts"
-        icon="FileStack"
-        size='md'
-        onClick={() => spawnBanner(<SelectFiles.Banner />)}
-      >
-        <Button asChild className={s.file_counter} size='sm' variant='glass'>
-          <span>
-            {Source.Entity.selected(app).length}
-          </span>
+      <Stack ai='center' jc='center' dir='column' gap={16} className={s.menuScrol}>
+        <Button
+          variant="secondary"
+          title="Upload files"
+          icon="Upload"
+          size='md'
+          onClick={() => spawnBanner(<UploadBanner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Query external source"
+          icon="ServerCrash"
+          size='md'
+          onClick={() => spawnBanner(<QueryExternal.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Upload sigma rule"
+          icon="Sigma"
+          size='md'
+          onClick={() => spawnBanner(<Sigma.Banner sources={[]} />)}
+        />
+        <Button
+          variant="secondary"
+          className={s.relative}
+          title="Select files and contexts"
+          icon="FileStack"
+          size='md'
+          onClick={() => spawnBanner(<SelectFiles.Banner />)}
+        >
+          <Button asChild className={s.file_counter} size='sm' variant='glass'>
+            <span>
+              {Source.Entity.selected(app).length}
+            </span>
+          </Button>
         </Button>
-      </Button>
-      <Button
-        variant="secondary"
-        title="Change workflow frame"
-        icon="AlignHorizontalSpaceAround"
-        size='md'
-        onClick={() => spawnBanner(<Frame.Banner />)}
-      />
-      <Button
-        variant="secondary"
-        title="Global query"
-        icon="Globe"
-        size='md'
-        onClick={() => spawnBanner(<GlobalQuery.Banner />)}
-      />
-      <Button
-        variant="secondary"
-        title="Apply filters"
-        icon="Filter"
-        size='md'
-        onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
-      />
-      <Extension.Components type='menu' />
-      <Button
-        variant="glass"
-        title="Data enrichment"
-        icon="PrismColor"
-        size='md'
-        onClick={enrichment}
-      />
-      <Button
-        variant="glass"
-        title="Commands"
-        icon="Command"
-        size='md'
-        onClick={() => spawnBanner(<Commands.Banner />)}
-      />
+        <Button
+          variant="secondary"
+          title="Change workflow frame"
+          icon="AlignHorizontalSpaceAround"
+          size='md'
+          onClick={() => spawnBanner(<Frame.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Global query"
+          icon="Globe"
+          size='md'
+          onClick={() => spawnBanner(<GlobalQuery.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Apply filters"
+          icon="Filter"
+          size='md'
+          onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
+        />
+        <Button
+          variant="secondary"
+          title="Change workflow frame"
+          icon="AlignHorizontalSpaceAround"
+          size='md'
+          onClick={() => spawnBanner(<Frame.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Global query"
+          icon="Globe"
+          size='md'
+          onClick={() => spawnBanner(<GlobalQuery.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Apply filters"
+          icon="Filter"
+          size='md'
+          onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
+        />
+        <Button
+          variant="secondary"
+          title="Change workflow frame"
+          icon="AlignHorizontalSpaceAround"
+          size='md'
+          onClick={() => spawnBanner(<Frame.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Global query"
+          icon="Globe"
+          size='md'
+          onClick={() => spawnBanner(<GlobalQuery.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Apply filters"
+          icon="Filter"
+          size='md'
+          onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
+        />
+        <Extension.Components type='menu' />
+        <Button
+          variant="glass"
+          title="Data enrichment"
+          icon="PrismColor"
+          size='md'
+          onClick={enrichment}
+        />
+        <Button
+          variant="glass"
+          title="Commands"
+          icon="Command"
+          size='md'
+          onClick={() => spawnBanner(<Commands.Banner />)}
+        />
+      </Stack>
       <Stack flex />
       <Button
         className={s.requests}
