@@ -281,6 +281,11 @@ const flagEvent = () => {
 
   const list = new Set(JSON.parse(localStorage.getItem('flagged-events') || '[]'));
 
+  if (!list.has(event._id) && list.size >= 10) {
+    toast.error("Max 10 events can be flagged", {richColors: true });
+    return;
+  }
+
   if (list.has(event._id)) {
     list.delete(event._id);
     toast.info("Event unflagged");
