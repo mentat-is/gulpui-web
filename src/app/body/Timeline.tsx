@@ -58,7 +58,7 @@ export function Timeline() {
       dir="column"
       ref={timeline}
     >
-      <Canvas timeline={timeline} />
+      {app.timeline.isTabularView ? <Tabular /> : <Canvas timeline={timeline} />}
       <Navigator
         timeline={timeline}
         timestamp={getTimestamp(scrollX + (timeline.current?.clientWidth || 0), Info)}

@@ -20,14 +20,9 @@
   pointer-events: none;
 }
 
-.menuScrol {
+.scroll {
   overflow-y: auto;
   overflow-x: hidden; 
-  scrollbar-width: thin;
+  scrollbar-width: 0px;
   scrollbar-color: transparent transparent;
-}
-
-.menuScroll::-webkit-scrollbar {
-  width: 0;
-  background: transparent; 
 }

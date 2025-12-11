@@ -42,6 +42,7 @@
 }
 .source.expanded .body {
   height: 512px;
+  overflow: auto;
 }
 .context .entity:last-child .header,
 .source.expanded .header,
@@ -72,6 +73,7 @@
 }
 .source .body > div {
   border: none;
-  border-radius: none;
-  overflow: hidden;
+  border-radius: 0;
+  height: 100%;
+  width: 100%;
 }

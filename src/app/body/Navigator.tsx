@@ -353,9 +353,6 @@ export function Navigator({
         onClick={toggleChat}
         size='md'
       />
-      {chatOpen && (
-        <SnikerChatPanel onClose={() => setChatOpen(false)} />
-      )}
       <Button
         variant='secondary'
         title='Toggle view between table and canvas'

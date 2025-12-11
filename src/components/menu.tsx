@@ -39,7 +39,7 @@ export function Menu() {
       ai="flex-start"
       gap={12}
     >
-      <Stack ai='center' jc='center' dir='column' gap={16} className={s.menuScrol}>
+      <Stack ai='center' jc='flex-start' dir='column' gap={8} className={s.scroll}>
         <Button
           variant="secondary"
           title="Upload files"
@@ -75,62 +75,6 @@ export function Menu() {
             </span>
           </Button>
         </Button>
-        <Button
-          variant="secondary"
-          title="Change workflow frame"
-          icon="AlignHorizontalSpaceAround"
-          size='md'
-          onClick={() => spawnBanner(<Frame.Banner />)}
-        />
-        <Button
-          variant="secondary"
-          title="Global query"
-          icon="Globe"
-          size='md'
-          onClick={() => spawnBanner(<GlobalQuery.Banner />)}
-        />
-        <Button
-          variant="secondary"
-          title="Apply filters"
-          icon="Filter"
-          size='md'
-          onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
-        />
-        <Button
-          variant="secondary"
-          title="Change workflow frame"
-          icon="AlignHorizontalSpaceAround"
-          size='md'
-          onClick={() => spawnBanner(<Frame.Banner />)}
-        />
-        <Button
-          variant="secondary"
-          title="Global query"
-          icon="Globe"
-          size='md'
-          onClick={() => spawnBanner(<GlobalQuery.Banner />)}
-        />
-        <Button
-          variant="secondary"
-          title="Apply filters"
-          icon="Filter"
-          size='md'
-          onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
-        />
-        <Button
-          variant="secondary"
-          title="Change workflow frame"
-          icon="AlignHorizontalSpaceAround"
-          size='md'
-          onClick={() => spawnBanner(<Frame.Banner />)}
-        />
-        <Button
-          variant="secondary"
-          title="Global query"
-          icon="Globe"
-          size='md'
-          onClick={() => spawnBanner(<GlobalQuery.Banner />)}
-        />
         <Button
           variant="secondary"
           title="Apply filters"

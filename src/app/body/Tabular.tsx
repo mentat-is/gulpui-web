@@ -36,7 +36,7 @@ export function Tabular({ ...props }) {
         </Button>
         <Stack
           className={s.body}
-          gap={0} dir='column' ai='stretch' flex={0}
+          gap={0} dir='column' ai='stretch' flex={isExpanded ? 0 : 'unset'}
         >
           {sources.map(source => (
             <SourceTable key={source.id} source={source} />
@@ -60,10 +60,7 @@ export function Tabular({ ...props }) {
         >
           {source.name}
         </Button>
-        <Stack
-          className={s.body}
-          ai='flex-start' jc='flex-start'
-        >
+        <Stack className={s.body} ai='flex-start' jc='flex-start'>
           <Table values={events.slice(0, 200)} />
         </Stack>
       </Stack>
