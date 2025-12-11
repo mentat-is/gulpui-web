@@ -296,7 +296,7 @@ const MethodSelector = ({ settings, updateSettings, methods }: {
 }) => {
   return methods.length > 0 ? (
     <Stack dir='column' gap={6} ai='flex-start' data-input>
-      <Label value='Method' />
+      <Label value='Mapping File' />
       <Select.Root value={settings.method} onValueChange={method => updateSettings({ method })}>
         <Select.Trigger className={s.select}>
           <Icon name='ChevronRight' />
@@ -318,7 +318,7 @@ const MappingSelector = ({ settings, updateSettings, mappings }: {
   mappings: string[]
 }) => mappings.length > 0 ? (
   <Stack dir='column' gap={6} ai='flex-start' data-input>
-    <Label value='Mapping' />
+    <Label value='Mapping ID' />
     <Select.Root
       value={settings.mapping}
       onValueChange={mapping => updateSettings({ mapping })}
