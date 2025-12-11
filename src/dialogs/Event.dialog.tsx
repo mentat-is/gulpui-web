@@ -263,10 +263,36 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     }
   }, [json, event._id, event]);
 
+  const [isFlagged, setIsFlagged] = useState(false);
+
+  useEffect(() => {
+    if(!event?._id) return;
+    const flagged = JSON.parse(localStorage.getItem('flagged-events') || '[]').includes(event._id);
+    setIsFlagged(flagged);
+  }, [event]);
+
   const handleFocusTimeline = useCallback(() => {
     // @ts-ignore
     return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
   }, [event]);
+
+const flagEvent = () => {
+  if (!event?._id) return;
+
+  const list = new Set(JSON.parse(localStorage.getItem('flagged-events') || '[]'));
+
+  if (list.has(event._id)) {
+    list.delete(event._id);
+    toast.info("Event unflagged");
+    setIsFlagged(false);
+  } else {
+    list.add(event._id);
+    toast.success("Event flagged");
+    setIsFlagged(true);
+  }
+
+  localStorage.setItem('flagged-events', JSON.stringify([...list]));
+};
 
   return (
     <Dialog>
@@ -319,6 +345,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               icon="Crosshair"
               style={{ flex: 0 }}
               title="Focus timeline on this event"
+            />
+            <Button 
+              onClick={flagEvent}
+              variant="secondary"
+              icon={isFlagged ? 'Flag' : 'FlagOff'}
+              style={{ flex: 0 }}
+              title="Flag events"
             />
           </Stack>
         </Fragment>
