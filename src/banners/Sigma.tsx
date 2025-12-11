@@ -6,16 +6,12 @@ import { toast } from 'sonner'
 import { Extension } from '@/context/Extension.context'
 import { Checkbox } from '@/ui/Checkbox'
 import { Label } from '@/ui/Label'
-import { Select } from '@/ui/Select'
 import { Icon } from '@impactium/icons'
 import { Input } from '@/ui/Input'
-import { Badge } from '@/ui/Badge'
 import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { Source } from '@/entities/Source'
-import { Context } from '@/entities/Context'
 import { Toggle } from '@/ui/Toggle'
-import { SigmaZip } from '@/plugins/SigmaZip.banner'
 
 export namespace Sigma {
   export namespace Banner {
@@ -71,12 +67,10 @@ export namespace Sigma {
       setRules(fileData);
     }
 
-    const allFiles = useMemo(() => Source.Entity.selected(app), [app.timeline.filter, app.target.files]);
-
     return (
       <UIBanner title="Apply sigma rules" done={<DoneButton />} {...props}>
         <Extension.Optional name='SigmaZip.banner.tsx'>
-          <Toggle option={['File', 'Zip']} checked={false} onClick={() => spawnBanner(<SigmaZip.Banner sources={sources} />)} />
+          <Toggle option={['File', 'Zip']} checked={false} onClick={() => spawnBanner(<Extension.Component name='SigmaZip.banner.tsx' props={{ sources }} />)} />
         </Extension.Optional>
         <Source.Select.Multi selected={sources} setSelected={setSources} placeholder='Select sources to apply sigma rules for them' />
         <Input

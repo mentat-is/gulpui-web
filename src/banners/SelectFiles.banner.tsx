@@ -55,7 +55,7 @@ export namespace SelectFiles {
       });
 
       app.target.contexts.filter(context => context.operation_id === operation.id).forEach(context => {
-        const files = Context.Entity.files(app, context);
+        const files = Context.Entity.sources(app, context);
 
         if (files.some(file => selectedFiles.has(file.id))) {
           selectedContexts.add(context.id);
@@ -73,7 +73,7 @@ export namespace SelectFiles {
 
       selectedContexts[method](context);
 
-      Context.Entity.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => selectedFiles[method](file.id));
+      Context.Entity.sources(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => selectedFiles[method](file.id));
 
       update(selectedFiles, setSelectedFiles);
       update(selectedContexts, setSelectedContexts);
@@ -86,7 +86,7 @@ export namespace SelectFiles {
 
       const file = Source.Entity.id(app, target);
 
-      const files = Context.Entity.files(app, file.context_id);
+      const files = Context.Entity.sources(app, file.context_id);
 
       if (files.some(file => selectedFiles.has(file.id))) {
         selectedContexts.add(file.context_id);
@@ -125,7 +125,7 @@ export namespace SelectFiles {
       setLoading(false);
     };
 
-    const filteredContexts = Operation.Entity.contexts(app).filter((ctx) => Context.Entity.files(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
+    const filteredContexts = Operation.Entity.contexts(app).filter((ctx) => Context.Entity.sources(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
 
     const SearchInput = useMemo(() => {
       return (
@@ -217,7 +217,7 @@ interface ContextComponentProps {
 
 function ContextComponent({ context, filter, selectedFiles, selectedContexts, setFile, setContext }: ContextComponentProps) {
   const { app, spawnBanner } = Application.use()
-  const files = Context.Entity.files(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
+  const files = Context.Entity.sources(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
     <Stack

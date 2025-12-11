@@ -106,7 +106,7 @@ export namespace Context {
         (c) => c.id === Parser.useUUID(context),
       ) as Context.Type
 
-    public static files = (
+    public static sources = (
       app: App.Type,
       context: Context.Type | Context.Id,
     ): Source.Type[] =>

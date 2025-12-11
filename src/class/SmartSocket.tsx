@@ -9,20 +9,21 @@ import { Icon } from "@impactium/icons"
 import { EventEmitter } from 'events'
 
 export namespace SmartSocket {
-  type Condition = (data: Message.Entity) => boolean
-  type Handler = (data: Message.Entity) => void
+  export type Condition<T = any> = (data: Message.Entity<T>) => boolean
+  export type Handler<T = any> = (data: Message.Entity<T>) => void
 
-  interface Conditional<T = Message.Entity> {
+  interface Conditional<T = any> {
     id: string
-    condition: Condition
-    handler: Handler
+    condition: Condition<T>
+    handler: Handler<T>
     once?: boolean
   }
+
   export namespace Message {
     export enum Type {
       WS_ERROR = "ws_error",
       WS_CONNECTED = "ws_connected",
-      STATS_CREATE = 'stats_update',
+      STATS_CREATE = "stats_create",
       STATS_UPDATE = "stats_update",
       COLLAB_CREATE = "collab_create",
       COLLAB_UPDATE = "collab_update",
@@ -39,73 +40,52 @@ export namespace SmartSocket {
       SOURCE_FIELDS_CHUNK = "source_fields_chunk"
     }
 
-    export interface Entity {
-      '@timestamp': number,
-      type: Message.Type,
-      private: boolean,
+    export interface Entity<T = any> {
+      '@timestamp': number
+      type: Message.Type
+      private: boolean
       payload: {
-        obj: {
-          operation_id: Operation.Id,
-          server_id: string,
-          status: string,
-          req_type: string,
-          time_expire: number,
-          time_finished: number,
-          errors: string[],
-          data: any,
-          id: Request.Id,
-          type: string,
-          user_id: User.Id,
-          name: string,
-          time_created: number,
-          time_updated: number,
-          tags: string[],
-          granted_user_ids: User.Id[],
-          granted_user_group_ids: Group.Id[]
-        },
-        last?: boolean;
+        obj: T
+        last?: boolean
         docs?: Doc.Type[]
-        [key: string]: any;
-      },
-      ws_id: string,
-      user_id: User.Id,
-      req_id: Request.Id,
+        [key: string]: any
+      }
+      ws_id: string
+      user_id: User.Id
+      req_id: Request.Id
       'gulp.operation_id': Operation.Id
     }
   }
 
   export class Class extends EventEmitter {
     public static readonly instance: SmartSocket.Class;
-    private readonly ws!: WebSocket;
-    private readonly conditional: Map<string, Conditional[]> = new Map()
+
+    private readonly ws!: WebSocket
+    private readonly conditional: Map<SmartSocket.Message.Type, Conditional[]> = new Map()
     private counter = 0
 
     constructor(ws_id: string) {
       super()
-      if (!ws_id.length) {
-        return;
-      }
 
       if (SmartSocket.Class.instance) {
         return SmartSocket.Class.instance
       }
 
-      this.ws = new WebSocket(Internal.Settings.server + "/ws");
+      this.ws = new WebSocket(Internal.Settings.server + "/ws")
       this.forwarding(Internal.Settings.token, ws_id);
+
       // @ts-ignore
       SmartSocket.Class.instance = this;
-
-      setInterval(() => {
-        Logger.log(JSON.stringify([...SmartSocket.Class.instance.conditional.entries()], null, 2), 'SmartSocket.Class')
-      }, 5000);
     }
 
     private forwarding(token: string, ws_id: string) {
       this.ws.onopen = (event) => {
-        this.send({ token, ws_id });
-        this.once(SmartSocket.Message.Type.WS_CONNECTED, () => Logger.log(`WebSocket has been initialized`, SmartSocket.Class, {
-          icon: <Icon name='Rss' />
-        }));
+        this.send({ token, ws_id })
+        this.once(SmartSocket.Message.Type.WS_CONNECTED, () =>
+          Logger.log(`WebSocket has been initialized`, SmartSocket.Class, {
+            icon: <Icon name='Rss' />
+          })
+        )
         this.emit('open', event)
       }
 
@@ -118,28 +98,36 @@ export namespace SmartSocket {
       }
 
       this.ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
+        let message: any
+        try {
+          message = JSON.parse(event.data)
+        } catch (err) {
+          this.emit(SmartSocket.Message.Type.WS_ERROR, { error: err, raw: event.data })
+          return
+        }
 
-        this.emit(message.type, message);
-        this.handle(message.type, message);
+        this.emit(message.type, message)
+        this.handle(message.type as SmartSocket.Message.Type, message)
       }
     }
 
     private handle(event: SmartSocket.Message.Type, data: any) {
-      const listeners = this.conditional.get(event) || [];
+      const listeners = this.conditional.get(event) || []
       const remove: string[] = []
 
       for (const listener of listeners) {
-        if (listener.condition(data)) {
-          listener.handler(data)
-
-          if (listener.once) {
-            remove.push(listener.id)
+        try {
+          if (listener.condition(data)) {
+            listener.handler(data)
+            if (listener.once) remove.push(listener.id)
           }
+        } catch (err) {
+          // swallow handler errors to avoid breaking loop
+          Logger.log(`Handler error for ${event}: ${(err as Error).message}`, SmartSocket.Class)
         }
       }
 
-      remove.forEach(id => this.remove(event, id));
+      for (const id of remove) this.remove(event, id)
     }
 
     private remove(event: SmartSocket.Message.Type, id: string) {
@@ -153,46 +141,27 @@ export namespace SmartSocket {
       }
     }
 
-    con(
+    con<T = any>(
       event: SmartSocket.Message.Type,
-      condition: Condition,
-      handler: Handler
+      condition: Condition<T>,
+      handler: Handler<T>
     ): string {
       const id = `listener_${++this.counter}`
-
-      const listeners = this.conditional.get(event) ?? [];
-
-      this.conditional.set(event, [
-        ...listeners,
-        {
-          id,
-          condition,
-          handler,
-          once: false
-        }
-      ]);
-
+      const listeners = this.conditional.get(event) ?? []
+      listeners.push({ id, condition, handler, once: false })
+      this.conditional.set(event, listeners)
       return id
     }
 
-    conce(
+    conce<T = any>(
       event: SmartSocket.Message.Type,
-      condition: Condition,
-      handler: Handler
+      condition: Condition<T>,
+      handler: Handler<T>
     ): string {
       const id = `listener_${++this.counter}`
-
-      if (!this.conditional.has(event)) {
-        this.conditional.set(event, [])
-      }
-
-      this.conditional.get(event)!.push({
-        id,
-        condition,
-        handler,
-        once: true
-      })
-
+      const listeners = this.conditional.get(event) ?? []
+      listeners.push({ id, condition, handler, once: true })
+      this.conditional.set(event, listeners)
       return id
     }
 
@@ -204,10 +173,7 @@ export namespace SmartSocket {
       this.conditional.delete(event)
     }
 
-    coffWhenCondition<T = Message.Entity>(
-      event: SmartSocket.Message.Type,
-      condition: Condition
-    ): void {
+    coffWhenCondition<T = any>(event: SmartSocket.Message.Type, condition: Condition<T>): void {
       const listeners = this.conditional.get(event) || []
       const filtered = listeners.filter(l => l.condition !== condition)
 
@@ -218,19 +184,17 @@ export namespace SmartSocket {
       }
     }
 
-    wait(
+    wait<T = any>(
       event: SmartSocket.Message.Type,
-      condition: Condition,
+      condition: Condition<T>,
       timeout?: number
-    ): Promise<Message.Entity> {
+    ): Promise<Message.Entity<T>> {
       return new Promise((resolve, reject) => {
-        let timeoutId: NodeJS.Timeout | null = null
+        let timeoutId: any = null
 
-        const listenerId = this.conce(event, condition, (data) => {
-          if (timeoutId) {
-            clearTimeout(timeoutId)
-          }
-          resolve(data)
+        const listenerId = this.conce<T>(event, condition, (data) => {
+          if (timeoutId) clearTimeout(timeoutId)
+          resolve(data as Message.Entity<T>)
         })
 
         if (timeout) {
@@ -243,11 +207,23 @@ export namespace SmartSocket {
     }
 
     send(data: object): void {
-      this.ws.send(JSON.stringify(data))
+      try {
+        if (this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify(data))
+        } else {
+          Logger.log('WebSocket not open, cannot send message', SmartSocket.Class)
+        }
+      } catch (err) {
+        Logger.log(`Failed to send websocket message: ${(err as Error).message}`, SmartSocket.Class)
+      }
     }
 
     close(code?: number, reason?: string): void {
-      this.ws.close(code, reason)
+      try {
+        this.ws.close(code, reason)
+      } catch (err) {
+        Logger.log(`Failed to close websocket: ${(err as Error).message}`, SmartSocket.Class)
+      }
     }
   }
 }

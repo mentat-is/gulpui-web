@@ -180,7 +180,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     <Banner
       title='Choose filtering options'
       done={<Done />}
-      side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} onQueryChange={(newQuery) => {setQuery(newQuery)}}/>}
+      side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} onQueryChange={(newQuery) => { setQuery(newQuery) }} />}
       subtitle={LastQueries}
       className={s.banner}
       option={<Undo />}
@@ -192,7 +192,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
         </Select.Trigger>
         <Select.Content>
           {Context.Entity.selected(app).map(context => {
-            const sources = Context.Entity.files(app, context).filter(s => s.selected);
+            const sources = Context.Entity.sources(app, context).filter(s => s.selected);
 
             if (!sources.length)
               return null;
@@ -200,13 +200,13 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
             return (
               <Select.Group key={context.id}>
                 <Select.Label className={s.groupLabel}>
-                  <Select.Item value={`ctx:${context.id}`} style={{ marginLeft: '-12px'}}>
-                  {context.name}
+                  <Select.Item value={`ctx:${context.id}`} style={{ marginLeft: '-12px' }}>
+                    {context.name}
                   </Select.Item>
                 </Select.Label>
                 {sources.map(s => (
-                  <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px'}}>
-                    <Icon name={Source.Entity.icon(s) ||'File' } />
+                  <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px' }}>
+                    <Icon name={Source.Entity.icon(s) || 'File'} />
                     {s.name}
                   </Select.Item>
                 ))}
