@@ -292,6 +292,7 @@ const flagEvent = () => {
   }
 
   localStorage.setItem('flagged-events', JSON.stringify([...list]));
+  window.dispatchEvent(new CustomEvent('flagged-events-changed', { detail: event._id }));
 };
 
   return (
@@ -394,19 +395,14 @@ export namespace EventIndicator {
 export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
   const { app } = Application.use();
 
-  if (!event) {
-    return null;
-  }
+  if (!event) return null;
 
   const file = Source.Entity.id(app, event['gulp.source_id']);
-  if (!file) {
-    return null;
-  }
+  if (!file) return null;
 
   const background = useMemo(() => {
     const range = RenderEngine[CacheKey].range.get(event['gulp.source_id']) ?? MinMaxBase;
     const code = Refractor.any.toNumber(event[file.settings.field]);
-
     return Color.Entity.gradient(file.settings.render_color_palette, code, range);
   }, [event, app.target.files]);
 
@@ -414,26 +410,45 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     const notes = Doc.Entity.notes(app, event);
     const links = Doc.Entity.links(app, event);
 
-    if (notes.length === 0 && links.length === 0) {
-      return null;
-    }
+    if (notes.length === 0 && links.length === 0) return null;
 
     return (
       <Stack ai='center' jc='center' className={s.collab} pos='absolute'>
         <Icon size={8} name={notes.length > 0 ? 'StickyNote' : 'Link'} />
       </Stack>
-    )
+    );
   }, [app.target.notes, app.target.links, event]);
+
+  const [isFlagged, setIsFlagged] = useState(() => {
+    const list: string[] = JSON.parse(localStorage.getItem('flagged-events') || '[]');
+    return list.includes(event._id);
+  });
+
+
+  useEffect(() => {
+    const handleFlagChange = (e: Event) => {
+      const list: string[] = JSON.parse(localStorage.getItem('flagged-events') || '[]');
+      setIsFlagged(list.includes(event._id));
+    };
+
+    window.addEventListener('flagged-events-changed', handleFlagChange);
+    return () => window.removeEventListener('flagged-events-changed', handleFlagChange);
+  }, [event._id]);
 
   return (
     <Button
       shape='icon'
       className={cn(className, s.indicator)}
       rounded
-      style={{ ...style, background }} {...props}>
+      style={{ ...style, background }}
+      {...props}
+    >
       <hr />
       <p>{String(event['gulp.event_code']).slice(0, 6)}</p>
       {Collab}
+      {isFlagged && (
+        <Icon name='Flag' size={10} className={s.flagged}/> 
+      )}
     </Button>
   );
 }
