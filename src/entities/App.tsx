@@ -50,9 +50,10 @@ export namespace App {
         data: Map<Source.Id, Doc.Type[]>
         filters: Record<Source.Id, Query.Type>
       }
-      isScrollReversed: boolean
+      isScrollReversed: boolean;
+      isTabularView: boolean;
       dialogSize: number
-      pointers: Pointers.Pointer[]
+      pointers: Pointers.Pointer[];
     },
     settings: {
       [key: string]: any;
@@ -89,8 +90,9 @@ export namespace App {
         max: Date.now(),
       },
       isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
+      isTabularView: true,
       dialogSize: window.innerWidth / 3,
-      pointers: [],
+      pointers: []
     },
     target: {
       operations: [],

@@ -216,23 +216,11 @@ export namespace Source {
     }
     export function Banner({ file, ...props }: Source.Delete.Banner.Props) {
       const { Info, destroyBanner } = Application.use()
-      const [isSubmited, setIsSubmited] = useState<boolean>(false)
-      const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)
-
-      const DeleteButton = () => (
-        <Button
-          loading={loading}
-          icon='Trash2'
-          variant='glass'
-          onClick={deleteFile}
-          disabled={!isSubmited}
-        />
-      )
 
       const deleteFile = async () => {
         setLoading(true)
-        await Info.file_delete(file, isWipe)
+        await Info.file_delete(file)
         setLoading(false)
         if (props.back) {
           props.back()
@@ -243,22 +231,9 @@ export namespace Source {
       }
 
       return (
-        <UIBanner title='Delete file' done={<DeleteButton />} {...props}>
-          <p>
-            Are you sure you want to delete file: <code>{file.name}</code>
-          </p>
-          <Toggle
-            option={['No, don`t delete', 'Yes, i`m sure']}
-            checked={isSubmited}
-            onCheckedChange={setIsSubmited}
-          />
-          {isSubmited && (
-            <Toggle
-              option={['Don`t delete data inside', 'Delete data inside']}
-              checked={isWipe}
-              onCheckedChange={setIsWipe}
-            />
-          )}
+        <UIBanner title='Delete file' {...props}>
+          <p>Are you going to delete file <code>{file.name}</code>. Are you sure?</p>
+          <Button loading={loading} icon='Trash2' style={{ width: '100' }} onClick={deleteFile}>Yes, delete file</Button>
         </UIBanner>
       )
     }

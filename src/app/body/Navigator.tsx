@@ -19,7 +19,6 @@ import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
 import { SnikerChatPanel } from '@/banners/SnikerChat.banner'
-import { JSX } from 'react/jsx-runtime'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {

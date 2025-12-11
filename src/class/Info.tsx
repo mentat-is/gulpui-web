@@ -1,4 +1,3 @@
-import { MINUTE } from '@/dto'
 import { Default } from '@/dto/Dataset'
 import React from 'react'
 import { generateUUID, NodeFile, Refractor } from '@/ui/utils'
@@ -699,16 +698,14 @@ export class Info implements InfoProps {
   }
 
   // ⚠️ UNTOUCHABLE
-  file_delete = (file: Source.Type, wipe: boolean) => {
+  file_delete = (source: Source.Type) => {
     return api(
       '/source_delete',
       {
         method: 'DELETE',
         query: {
-          operation_id: file.operation_id,
-          context_id: file.context_id,
-          source_id: file.id,
-          delete_data: wipe,
+          source_id: source.id,
+          ws_id: this.app.general.ws_id
         },
       },
       this.sync,
@@ -1386,34 +1383,30 @@ export class Info implements InfoProps {
 
     const glyphs = await api<Glyph.Type[]>('/glyph_list', {
       method: 'POST',
-    })
+    });
 
-    if (!glyphs) {
-      return
-    }
+    const queue: (() => Promise<void>)[] = [];
 
-    const queue: (() => Promise<void>)[] = []
+    const synced = new Map<string, Glyph.Id>();
 
-    Glyph.Raw.forEach((name) => {
+    glyphs.forEach(g => {
+      synced.set(g.name, g.id);
+      Glyph.List.set(g.id, g.name);
+    });
+
+    const notSynced = Glyph.Raw.filter(glyph => !synced.has(glyph));
+
+    notSynced.forEach((name) => {
       queue.push(async () => {
-        const exist = glyphs.find((g) => g.name === name)
-
-        if (exist) {
-          Glyph.List.set(exist.id, exist.name)
-          return
-        }
-
         const formData = new FormData()
         formData.append('img', new Blob())
 
-        await api<Glyph.Type>(
-          '/glyph_create',
-          {
-            method: 'POST',
-            deassign: true,
-            query: { name },
-            body: formData,
-          },
+        await api<Glyph.Type>('/glyph_create', {
+          method: 'POST',
+          deassign: true,
+          query: { name },
+          body: formData,
+        },
           (glyph) => {
             Glyph.List.set(glyph.id, glyph.name)
           },
