@@ -238,6 +238,8 @@ export function Navigator({
     Info.setTimelineFilter(e.target.value)
   }
 
+  const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
+
   return (
     <Stack
       pos="relative"
@@ -349,6 +351,16 @@ export function Navigator({
         title='Open Sniker chat'
         icon='MessageCircleCode'
         onClick={toggleChat}
+        size='md'
+      />
+      {chatOpen && (
+        <SnikerChatPanel onClose={() => setChatOpen(false)} />
+      )}
+      <Button
+        variant='secondary'
+        title='Toggle view between table and canvas'
+        icon={app.timeline.isTabularView ? 'ChartArea' : 'Table'}
+        onClick={toggleView}
         size='md'
       />
       {chatOpen && (

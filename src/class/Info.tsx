@@ -969,70 +969,70 @@ export class Info implements InfoProps {
     this.setInfoByKey(number, 'timeline', 'dialogSize')
   }
 
-  ai_listen = (req_id: string) => {
-    let buffer = '';
+  // ai_listen = (req_id: string) => {
+  //   let buffer = '';
 
-    const sid = SmartSocket.Class.instance.con(
-      SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-      m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id),
-      m => {
-        buffer += m.payload;
+  //   const sid = SmartSocket.Class.instance.con(
+  //     SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
+  //     m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id),
+  //     m => {
+  //       buffer += m.payload;
 
-        this.setInfo(info => ({
-          ...info,
-          general: {
-            ...info.general,
-            ai_hint: buffer
-          }
-        }));
-      }
-    );
+  //       this.setInfo(info => ({
+  //         ...info,
+  //         general: {
+  //           ...info.general,
+  //           ai_hint: buffer
+  //         }
+  //       }));
+  //     }
+  //   );
 
-    SmartSocket.Class.instance.conce(
-      SmartSocket.Message.Type.AI_ASSISTANT_DONE,
-      m => m.req_id === req_id,
-      () => {
-        this.delLoading(req_id);
-        SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, sid);
-      }
-    );
+  //   SmartSocket.Class.instance.conce(
+  //     SmartSocket.Message.Type.AI_ASSISTANT_DONE,
+  //     m => m.req_id === req_id,
+  //     () => {
+  //       this.delLoading(req_id);
+  //       SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, sid);
+  //     }
+  //   );
 
-    SmartSocket.Class.instance.conce(
-      SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
-      m => m.req_id === req_id,
-      m => {
-        this.delLoading(req_id);
-        SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, sid);
-      }
-    );
-  };
+  //   SmartSocket.Class.instance.conce(
+  //     SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
+  //     m => m.req_id === req_id,
+  //     m => {
+  //       this.delLoading(req_id);
+  //       SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, sid);
+  //     }
+  //   );
+  // };
 
-  get_ai_hint = async(logs: any[]) => {
-    const operation = Operation.Entity.selected(this.app);
-    if(!operation) return;
+  // get_ai_hint = async(logs: any[]) => {
+  //   const operation = Operation.Entity.selected(this.app);
+  //   if(!operation) return;
 
-    const req_id = generateUUID(Request.Prefix.AI);
+  //   const req_id = generateUUID(Request.Prefix.AI);
 
-    await api(
-      '/get_ai_hint',
-      {
-        method: 'POST',
-        query: {
-          token: this.app.general.token,
-          ws_id: this.app.general.ws_id,
-          operation_id: operation.id,
-          req_id
-        },
-        body: {
-          data: logs
-        },
-        raw: true
-      }
-    );
+  //   await api(
+  //     '/get_ai_hint',
+  //     {
+  //       method: 'POST',
+  //       query: {
+  //         token: this.app.general.token,
+  //         ws_id: this.app.general.ws_id,
+  //         operation_id: operation.id,
+  //         req_id
+  //       },
+  //       body: {
+  //         data: logs
+  //       },
+  //       raw: true
+  //     }
+  //   );
 
-    this.setLoading(req_id, 'ai')
-    this.ai_listen(req_id);
-  };
+  //   // this.setLoading(req_id, 'ai')
+  //   // this.ai_listen(req_id);
+  // };
 
   // ⚠️ UNTOUCHABLE
   notes_reload = async () => {
