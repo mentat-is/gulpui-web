@@ -1,13 +1,13 @@
-import { useEffect, useMemo } from 'react'
-import s from '../Gulp.module.css'
-import { Application } from '@/context/Application.context'
-import { Canvas } from './Canvas'
-import { Navigator } from './Navigator'
-import { Algorhithm, getTimestamp } from '@/ui/utils'
-import { Stack } from '@/ui/Stack'
-import { Source } from '@/entities/Source'
-import { MINUTE } from '@/dto'
-import { Tabular } from './Tabular'
+import { Application } from '@/context/Application.context';
+import { Algorhithm, getTimestamp } from '@/ui/utils';
+import { Source } from '@/entities/Source';
+import { useEffect, useMemo } from 'react';
+import { Navigator } from './Navigator';
+import { Tabular } from './Tabular';
+import { Stack } from '@/ui/Stack';
+import s from '../Gulp.module.css';
+import { Canvas } from './Canvas';
+import { MINUTE } from '@/dto';
 
 export function Timeline() {
   const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = Application.use()
@@ -58,7 +58,7 @@ export function Timeline() {
       dir="column"
       ref={timeline}
     >
-      {app.timeline.isTabularView ? <Tabular /> : <Canvas timeline={timeline} />}
+      {app.timeline.isTabularView ? <Canvas timeline={timeline} /> : <Tabular />}
       <Navigator
         timeline={timeline}
         timestamp={getTimestamp(scrollX + (timeline.current?.clientWidth || 0), Info)}
