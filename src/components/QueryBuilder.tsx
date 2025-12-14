@@ -5,7 +5,7 @@ import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-import { useCallback, ChangeEvent, useState, useEffect } from "react"
+import { useMemo, useCallback, ChangeEvent } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
 import { Stack } from "@/ui/Stack"
@@ -65,74 +65,21 @@ export namespace OpenSearchQueryBuilder {
     }
   }
 
-export const Preview = ({query, className, onQueryChange, ...props}: Preview.Props & { onQueryChange?: (newQuery: any) => void }) => {
+  export const Preview = ({ query, className, ...props }: Preview.Props) => {
+    const string = useMemo(() => JSON.stringify(query, null, 2), [query]);
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [localString, setLocalString] = useState(JSON.stringify(query, null, 2));
+    const copyQueryButtonClickHandler = useCallback(() => copy(string), [string]);
 
-  useEffect(() => {
-    if (!isEditing) {
-      setLocalString(JSON.stringify(query, null, 2));
-    }
-  }, [query]);
-
-  const copyQueryButtonClickHandler = useCallback(() => copy(localString), [localString]);
-
-  const toggleEdit = () => {
-    if (isEditing && onQueryChange) {
-      try {
-        const parsed = JSON.parse(localString);
-        onQueryChange(parsed);
-      } catch (e) {
-        console.warn("Invalid JSON:", e);
-      }
-    }
-    setIsEditing(prev => !prev);
-  };
-
-  const onTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setLocalString(value);
-  };
-
-  return (
-    <Stack pos='relative' className={cn(s.preview, className)} {...props}>
-      <Stack ai='center' jc='center' dir='row' gap={6}>
-        <Button
-          style={{ right: '8px'}}
-          className={s.copy}
-          icon='Copy'
-          onClick={copyQueryButtonClickHandler}
-          variant='glass'
-        />
-        <Button
-          style={{ right: '48px'}}
-          className={s.copy}
-          icon={isEditing ? 'Eye' : 'EyeClosed'}
-          onClick={toggleEdit}
-          variant='secondary'
-        />
-      </Stack>
-
-      {isEditing ? (
-        <textarea
-          style={{ height: '100%', fontFamily: 'monospace', fontSize: 14 }}
-          value={localString}
-          onChange={onTextChange}
-        />
-      ) : (
-        <SyntaxHighlighter
-          language='JSON'
-          style={highlight.vs2015}
-          customStyle={{ background: 'none', height: '100%' }}
-        >
-          {localString}
+    return (
+      <Stack pos='relative' className={cn(s.preview, className)} {...props}>
+        <Button className={s.copy} icon='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
+        <SyntaxHighlighter language='JSON' style={highlight.vs2015} customStyle={{ background: 'none', height: '100%' }}>
+          {string}
         </SyntaxHighlighter>
-      )}
-    </Stack>
-  );
-};
 
+      </Stack>
+    )
+  }
 
   export namespace Query {
     export namespace String {
