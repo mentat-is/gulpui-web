@@ -2,7 +2,7 @@ import s from './styles/FilterFileBanner.module.css'
 import { Banner } from '@/ui/Banner'
 import { Application } from '@/context/Application.context'
 import { Select } from '@/ui/Select'
-import { useCallback, useEffect, useMemo, useReducer, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useState, useRef } from 'react'
 import { fws } from '@/ui/utils'
 import { Icon } from '@impactium/icons'
 import { Separator } from '@/ui/Separator'
@@ -16,6 +16,7 @@ import { Query } from '@/entities/Query'
 import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
 import { Context } from '@/entities/Context'
+import { toast } from 'sonner'
 
 interface FilterFileBannerProps extends Banner.Props {
   files: Source.Type[],
@@ -25,6 +26,7 @@ interface FilterFileBannerProps extends Banner.Props {
 
 export function FilterFileBanner({ files: initFiles, query: initQuery, keys: initKeys, ...props }: FilterFileBannerProps) {
   const { app, Info, spawnBanner, destroyBanner } = Application.use()
+  const jsonRef = useRef<HTMLTextAreaElement | null>(null);
   const [loading, setLoading] = useState<boolean>(false)
   const [isEditQuery, setIsEditQuery] = useState(false)
   const [files, setFiles] = useState(initFiles);
@@ -88,7 +90,35 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     setLoading(false);
   }
 
-  const Done = useCallback(() => <Button icon='Check' variant='glass' loading={loading} onClick={submit} />, [loading, submit]);
+  const jsonSubmit = async () => {
+    if (!jsonRef.current) return;
+
+    let normalized: Query.Type | null = null;
+
+    try {
+      const parsed = JSON.parse(jsonRef.current.value);
+      normalized = normalizeQuery(parsed);
+    } catch (e) {
+      toast.error("Invalid JSON in EditQuery", {richColors: true});
+      return;
+    }
+
+    if (!normalized) return;
+
+    setLoading(true);
+
+    Info.filters_cache(files);
+    Info.setQuery(files, normalized);
+
+    await Info.refetch({ ids: files.map(f => f.id) });
+    Info.render();
+
+    props.back ? props.back() : destroyBanner();
+
+    setLoading(false);
+  };
+
+  const Done = useCallback(() => <Button icon='Check' variant='glass' loading={loading} onClick={isEditQuery ? jsonSubmit : submit}/>, [loading, submit, isEditQuery, jsonSubmit]);
   const Undo = useCallback(() => <Button icon='Undo' variant='tertiary' onClick={() => Info.filters_undo(files)} />, [files]);
 
   const QueryStringPart = useMemo(() => {
@@ -189,6 +219,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
 const EditQuery = useMemo(() => {
   return (
     <textarea
+      ref={jsonRef}
       style={{
         height: '100%',
         minHeight: '200px',
@@ -197,17 +228,6 @@ const EditQuery = useMemo(() => {
         padding: 12
       }}
       defaultValue={JSON.stringify(query, null, 2)}
-      onBlur={(e) => {
-        try {
-          const parsed = JSON.parse(e.target.value);
-          const normalized = normalizeQuery(parsed);
-          if (!normalized) return;
-
-          setQuery(normalized);
-        } catch(error) {
-          console.error('error Editting query', error);
-        }
-      }}
     />
   );
 }, [query]);
