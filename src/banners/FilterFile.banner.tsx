@@ -26,6 +26,7 @@ interface FilterFileBannerProps extends Banner.Props {
 export function FilterFileBanner({ files: initFiles, query: initQuery, keys: initKeys, ...props }: FilterFileBannerProps) {
   const { app, Info, spawnBanner, destroyBanner } = Application.use()
   const [loading, setLoading] = useState<boolean>(false)
+  const [isEditQuery, setIsEditQuery] = useState(false)
   const [files, setFiles] = useState(initFiles);
 
   const base = useMemo(() => ({
@@ -176,50 +177,96 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     )
   }, [lastQueriesList]);
 
+  const normalizeQuery = (input: any): Query.Type | null => {
+    if (!input || typeof input !== 'object') return null;
+
+    return {
+      string: typeof input.string === 'string' ? input.string : '',
+      filters: Array.isArray(input.filters) ? input.filters : []
+    };
+  };
+
+const EditQuery = useMemo(() => {
+  return (
+    <textarea
+      style={{
+        height: '100%',
+        minHeight: '200px',
+        fontFamily: 'monospace',
+        fontSize: 14,
+        padding: 12
+      }}
+      defaultValue={JSON.stringify(query, null, 2)}
+      onBlur={(e) => {
+        try {
+          const parsed = JSON.parse(e.target.value);
+          const normalized = normalizeQuery(parsed);
+          if (!normalized) return;
+
+          setQuery(normalized);
+        } catch(error) {
+          console.error('error Editting query', error);
+        }
+      }}
+    />
+  );
+}, [query]);
+
+
   return (
     <Banner
       title='Choose filtering options'
       done={<Done />}
       side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />}
+      back={isEditQuery ? () => setIsEditQuery(v => !v) : undefined}
       subtitle={LastQueries}
       className={s.banner}
       option={<Undo />}
       {...props}
     >
-      <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => Source.Entity.id(app, file as Source.Id)))}>
-        <Select.Trigger>
-          <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
-        </Select.Trigger>
-        <Select.Content>
-          {Context.Entity.selected(app).map(context => {
-            const sources = Context.Entity.sources(app, context).filter(s => s.selected);
+      {isEditQuery ? (
+        EditQuery
+      ) : (
+      <>
+        <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => Source.Entity.id(app, file as Source.Id)))}>
+          <Select.Trigger>
+            <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
+          </Select.Trigger>
+          <Select.Content>
+            {Context.Entity.selected(app).map(context => {
+              const sources = Context.Entity.sources(app, context).filter(s => s.selected);
 
-            if (!sources.length)
-              return null;
+              if (!sources.length)
+                return null;
 
-            return (
-              <Select.Group key={context.id}>
-                <Select.Label className={s.groupLabel}>
-                  <Select.Item value={`ctx:${context.id}`} style={{ marginLeft: '-12px' }}>
-                    {context.name}
-                  </Select.Item>
-                </Select.Label>
-                {sources.map(s => (
-                  <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px' }}>
-                    <Icon name={Source.Entity.icon(s) || 'File'} />
-                    {s.name}
-                  </Select.Item>
-                ))}
-              </Select.Group>
-            )
-          })}
-        </Select.Content>
-      </Select.Multi.Root>
-      {QueryStringPart}
-      {AddCondition}
-      <Separator />
-      {QueryConditions}
-      <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} icon='PreviewDocument'>Preview result of current filter</Button>
+              return (
+                <Select.Group key={context.id}>
+                  <Select.Label className={s.groupLabel}>
+                    <Select.Item value={`ctx:${context.id}`} style={{ marginLeft: '-12px' }}>
+                      {context.name}
+                    </Select.Item>
+                  </Select.Label>
+                  {sources.map(s => (
+                    <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px' }}>
+                      <Icon name={Source.Entity.icon(s) || 'File'} />
+                      {s.name}
+                    </Select.Item>
+                  ))}
+                </Select.Group>
+              )
+            })}
+          </Select.Content>
+        </Select.Multi.Root>
+        {QueryStringPart}
+        {AddCondition}
+        <Separator />
+        {QueryConditions}
+      <Stack ai='center' jc='flex-start' dir='row'>
+        <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} icon='PreviewDocument'>Preview result of current filter</Button>
+        <Button variant='glass' loading={false} onClick={() => setIsEditQuery(v => !v)} icon='FileJson'>{isEditQuery ? 'Back to builder' : 'Edit query'}</Button>
+      </Stack>
+      </>
+      )}
     </Banner>
   )
 }
