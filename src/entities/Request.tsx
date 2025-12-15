@@ -41,6 +41,7 @@ export namespace Request {
   export enum Prefix {
     INGESTION = 'ingestion',
     QUERY = 'query',
-    ENRICHMENT = 'enrichment'
+    ENRICHMENT = 'enrichment',
+    AI = "AI"
   }
 }

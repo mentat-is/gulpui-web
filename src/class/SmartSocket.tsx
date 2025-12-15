@@ -37,7 +37,10 @@ export namespace SmartSocket {
       QUERY_GROUP_MATCH = "query_group_match",
       REBASE_DONE = "rebase_done",
       CLIENT_DATA = "client_data",
-      SOURCE_FIELDS_CHUNK = "source_fields_chunk"
+      SOURCE_FIELDS_CHUNK = "source_fields_chunk",
+      AI_ASSISTANT_STREAM = "AI_ASSISTANT_STREAM",
+      AI_ASSISTANT_DONE = "AI_ASSISTANT_DONE",
+      AI_ASSISTANT_ERROR = "AI_ASSISTANT_ERROR"
     }
 
     export interface Entity<T = any> {

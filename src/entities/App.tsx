@@ -40,6 +40,10 @@ export namespace App {
         byRequestId: Map<Request.Id, Source.Id>;
         byFileId: Map<Source.Id, Request.Id>;
       }
+      ai_chat: {
+        messages: { from: 'user' | 'ai'; text: string }[],
+        streaming: boolean,
+      }
       skippedAuth?: boolean
       ai_hint?: string
     }
@@ -78,7 +82,11 @@ export namespace App {
         byRequestId: new Map(),
         byFileId: new Map(),
       },
-      ai_hint: ''
+      ai_chat: {
+        messages: [],
+        streaming: false,
+      },
+      ai_hint: '',
     },
     timeline: {
       scale: 1,
