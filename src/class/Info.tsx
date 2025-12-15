@@ -1047,9 +1047,7 @@ export class Info implements InfoProps {
           operation_id: operation.id,
           req_id
         },
-        body: {
-          data: logs
-        },
+        body: logs,
         raw: true
       }
     );
@@ -1058,7 +1056,6 @@ export class Info implements InfoProps {
     this.ai_listen(req_id);
   };
 
-  // need to refactor 100%
   // get my flagget events
   get_flagged_events = (): Doc.Type[] => {
     const raw = localStorage.getItem('flagged-events');
@@ -1075,13 +1072,9 @@ export class Info implements InfoProps {
       for (const event of events) {
         if (ids.has(event._id)) {
           result.push(event);
-          if (result.length >= 10) {
-            return result;
-          }
         }
       }
     }
-
     return result;
   };
 

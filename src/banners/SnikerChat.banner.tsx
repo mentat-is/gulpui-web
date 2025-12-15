@@ -2,28 +2,32 @@ import { Icon } from '@impactium/icons'
 import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { useState, KeyboardEvent, useRef, useEffect } from 'react'
+import { Application } from '@/context/Application.context'
 
 import s from './styles/SnikerChatBanner.module.css'
 
 export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
-  const [messages, setMessages] = useState([
-    { from: 'ai', text: `Hi I'm Sniker AI. how can i help you?` }
-  ])
+  const { Info } = Application.use()
+
+  const chat = Info.app.general.ai_chat
   const [text, setText] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
 
   const send = () => {
     if (!text.trim()) return
-    setMessages(prev => [...prev, { from: 'user', text }])
+
+    Info.ai_chat_addMessage('user', text)
     setText('')
+
+    Info.ai_analyze_flagged_events()
   }
 
   useEffect(() => {
     if (chatRef.current) {
       chatRef.current.scrollTop = chatRef.current.scrollHeight
     }
-  }, [messages])
+  }, [chat.messages.length])
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -44,13 +48,13 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
       <Stack ai='center' jc='space-between' dir='row' style={{ width: '100%' }}>
         <Stack gap={8} style={{ fontSize: '18px' }}>
           <Icon name='Robot' size={18} />
-          AI Assistent
+          AI Assistant
         </Stack>
         <Button icon='X' variant='tertiary' onClick={onClose} />
       </Stack>
 
       <Stack ai='center' jc='start' dir='column' gap={8} className={s.chat} ref={chatRef}>
-        {messages.map((msg, idx) => (
+        {chat.messages.map((msg, idx) => (
           <Stack key={idx} className={msg.from === 'ai' ? s.aiMessage : s.userMessage}>
             {msg.text}
           </Stack>
@@ -67,6 +71,7 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
           onKeyDown={handleKeyDown}
           data-virtualkeyboard='true'
         />
+        <Button icon='Send' variant={'secondary'} onClick={send} />
       </Stack>
     </Stack>
   )
