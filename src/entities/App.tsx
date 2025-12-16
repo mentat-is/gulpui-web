@@ -14,6 +14,7 @@ import { Glyph } from './Glyph'
 import { Highlight } from './Highlight'
 import { Mapping } from './Mapping'
 import { Internal } from './addon/Internal'
+import { AI } from '@/banners/SnikerChat.banner'
 
 export namespace App {
   export interface Type {
@@ -39,13 +40,12 @@ export namespace App {
       loadings: {
         byRequestId: Map<Request.Id, Source.Id>;
         byFileId: Map<Source.Id, Request.Id>;
-      }
-      ai_chat: {
-        messages: { from: 'user' | 'ai'; text: string }[],
-        streaming: boolean,
+      };
+      ai: {
+        messages: AI.Message[],
+        streaming: boolean;
       }
       skippedAuth?: boolean
-      ai_hint?: string
     }
     timeline: {
       scale: number
@@ -82,11 +82,10 @@ export namespace App {
         byRequestId: new Map(),
         byFileId: new Map(),
       },
-      ai_chat: {
+      ai: {
         messages: [],
-        streaming: false,
-      },
-      ai_hint: '',
+        streaming: false
+      }
     },
     timeline: {
       scale: 1,

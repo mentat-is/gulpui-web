@@ -32,6 +32,7 @@ import { Highlight } from '@/entities/Highlight'
 import { Mapping } from '@/entities/Mapping'
 import { Internal } from '@/entities/addon/Internal'
 import { buffer } from 'stream/consumers'
+import { AI } from '@/banners/SnikerChat.banner'
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -969,171 +970,108 @@ export class Info implements InfoProps {
     this.setInfoByKey(number, 'timeline', 'dialogSize')
   }
 
-  // need to refactor 1000%
-  // socket must suck but never mind
-  ai_listen = (req_id: Request.Id) => {
-    let buffer = '';
+  ai = {
+    setStreaming: (streaming: boolean) => this.setInfoByKey({ ...this.app.general.ai, streaming }, 'general', 'ai'),
+    addMessage: (message: AI.Message) => {
+      const messages = [...this.app.general.ai.messages, message];
+      this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
+    },
+    addMessages: (newMessages: AI.Message[]) => {
+      const messages = [...this.app.general.ai.messages, ...newMessages];
+      this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
+    },
+    getHint: async (logs: any[]) => {
+      const operation = Operation.Entity.selected(this.app);
+      if (!operation) return;
 
-    const streamSid = SmartSocket.Class.instance.con(
-      SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-      m => m.req_id === req_id,
-      m => {
-        if (!m.payload) return;
+      this.ai.setStreaming(true);
 
-        buffer += m.payload;
+      await api('/get_ai_hint', {
+        method: 'POST',
+        query: {
+          token: Internal.Settings.token,
+          ws_id: this.app.general.ws_id,
+          operation_id: operation.id
+        },
+        body: logs,
+        raw: true
+      }, ({ req_id }) => {
+        let content = '';
 
-        const chat = this.app.general.ai_chat;
-        const last = chat.messages.length - 1;
+        const stream = SmartSocket.Class.instance.con(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, m => m.req_id === req_id, m => {
+          if (!m.payload) return;
 
-        if (last < 0 || chat.messages[last]?.from !== 'ai') {
-          chat.messages.push({ from: 'ai', text: buffer });
-        } else {
-          chat.messages[last].text = buffer;
+          content += m.payload;
+
+          const messages = [...this.app.general.ai.messages];
+          const last = messages.length - 1;
+
+          if (last < 0 || !messages[last]?.isGenerated) {
+            messages.push({ isGenerated: true, content });
+          } else {
+            messages[last].content = content;
+          }
+
+          this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
+        });
+
+        const done = SmartSocket.Class.instance.conce(SmartSocket.Message.Type.AI_ASSISTANT_DONE, m => m.req_id === req_id, () => {
+          this.ai.setStreaming(false);
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, stream);
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_ERROR, error);
+        });
+
+        const error = SmartSocket.Class.instance.conce(SmartSocket.Message.Type.AI_ASSISTANT_ERROR, m => m.req_id === req_id, m => {
+          this.ai.setStreaming(false);
+          const messages = [...this.app.general.ai.messages];
+          const last = messages.length - 1;
+
+          const content = String(m.payload) ?? 'Error during response generation';
+
+          if (last < 0 || !messages[last]?.isGenerated) {
+            messages.push({ isGenerated: true, content });
+          } else {
+            messages[last].content = content;
+          }
+
+          this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
+
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, stream);
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_DONE, done);
+        });
+      });
+    },
+    analyze: async () => {
+      const docs = Doc.Entity.flagged(this.app);
+      if (!docs.length) {
+        return this.ai.addMessage({
+          content: 'No flagged events found to analyze.',
+          isGenerated: true
+        });
+      }
+
+      this.ai.addMessages([
+        {
+          content: `Analyze ${docs.length} flagged events`,
+          isGenerated: false
+        },
+        {
+          content: '',
+          isGenerated: true
         }
+      ]);
 
-        this.setInfoByKey(chat, 'general', 'ai_chat');
-      }
-    );
-
-    const doneSid = SmartSocket.Class.instance.conce(
-      SmartSocket.Message.Type.AI_ASSISTANT_DONE,
-      m => m.req_id === req_id,
-      () => {
-        const chat = this.app.general.ai_chat;
-        chat.streaming = false;
-        this.setInfoByKey(chat, 'general', 'ai_chat');
-
-        this.delLoading(req_id);
-
-        SmartSocket.Class.instance.coff(
-          SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-          streamSid
-        );
-        SmartSocket.Class.instance.coff(
-          SmartSocket.Message.Type.AI_ASSISTANT_DONE,
-          doneSid
-        );
-        SmartSocket.Class.instance.coff(
-          SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
-          errorSid
-        );
-      }
-    );
-
-    const errorSid = SmartSocket.Class.instance.conce(
-      SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
-      m => m.req_id === req_id,
-      m => {
-        const chat = this.app.general.ai_chat;
-        chat.streaming = false;
-
-        const last = chat.messages.length - 1;
-        const errorText = `${m.payload ?? 'AI error'}`;
-
-        if (last < 0 || chat.messages[last]?.from !== 'ai') {
-          chat.messages.push({ from: 'ai', text: errorText });
-        } else {
-          chat.messages[last].text = errorText;
-        }
-
-        this.setInfoByKey(chat, 'general', 'ai_chat');
-        this.delLoading(req_id);
-
-        SmartSocket.Class.instance.coff(
-          SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-          streamSid
-        );
-        SmartSocket.Class.instance.coff(
-          SmartSocket.Message.Type.AI_ASSISTANT_DONE,
-          doneSid
-        );
-        SmartSocket.Class.instance.coff(
-          SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
-          errorSid
-        );
-      }
-    );
-  };
-
-  // need to refactor 100%
-  // api for chat
-  get_ai_hint = async (logs: any[]) => {
-    const operation = Operation.Entity.selected(this.app);
-    if (!operation) return;
-
-    const req_id = generateUUID(Request.Prefix.AI) as Request.Id;
-
-    this.setLoading(req_id, 'ai' as Source.Id);
-    this.ai_listen(req_id);
-
-    await api('/get_ai_hint', {
-      method: 'POST',
-      query: {
-        token: Internal.Settings.token,
-        ws_id: this.app.general.ws_id,
-        operation_id: operation.id,
-        req_id
-      },
-      body: logs,
-      raw: true
-    });
-  };
-
-  // get my flagget events
-  get_flagged_events = (): Doc.Type[] => {
-    const raw = localStorage.getItem('flagged-events');
-    if (!raw) {
-      return [];
+      await this.ai.getHint(
+        docs.map(e => ({
+          'event.original': e['event.original'],
+          timestamp: e['@timestamp'],
+          'agent.type': e['agent.type'],
+          'gulp.source_id': e['gulp.source_id'],
+          'gulp.context_id': e['gulp.context_id'],
+        }))
+      );
     }
-
-    const ids = new Set<string>(JSON.parse(raw));
-    if (!ids.size) return [];
-
-    const result: Doc.Type[] = [];
-
-    for (const events of this.app.target.events.values()) {
-      for (const event of events) {
-        if (ids.has(event._id)) {
-          result.push(event);
-        }
-      }
-    }
-    return result;
-  };
-
-  // need to refactor 100%
-  // unit all this shit
-  ai_analyze_flagged_events = async () => {
-    const logs = this.get_flagged_events();
-    if (!logs.length) {
-      this.ai_chat_addMessage('ai', 'No flagged events found to analyze.');
-      return;
-    }
-
-    this.ai_chat_addMessage('user', `Analyze ${logs.length} flagged events`);
-    this.ai_chat_addMessage('ai', '');
-    
-    const chat = this.app.general.ai_chat;
-    chat.streaming = true;
-    this.setInfoByKey(chat, 'general', 'ai_chat');
-
-    await this.get_ai_hint(
-      logs.map(e => ({
-        'event.original': e['event.original'],
-        timestamp: e['@timestamp'],
-        'agent.type': e['agent.type'],
-        'gulp.source_id': e['gulp.source_id'],
-        'gulp.context_id': e['gulp.context_id'],
-      }))
-    );
-  };
-
-  // need to refactor 100%
-  ai_chat_addMessage = (from: 'user' | 'ai', text: string) => {
-    const chat = this.app.general.ai_chat;
-    chat.messages.push({ from, text });
-    this.setInfoByKey(chat, 'general', 'ai_chat');
-  };
+  }
 
   // ⚠️ UNTOUCHABLE
   notes_reload = async () => {

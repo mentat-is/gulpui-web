@@ -42,6 +42,6 @@ export namespace Request {
     INGESTION = 'ingestion',
     QUERY = 'query',
     ENRICHMENT = 'enrichment',
-    AI = "AI"
+    AI = 'ai'
   }
 }

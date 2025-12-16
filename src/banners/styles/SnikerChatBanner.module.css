@@ -30,16 +30,16 @@
   resize: none;
   }
 
-.aiMessage {
-  padding: 8px;
-  border-radius: 8px;
-  background-color: var(--gray-alpha-200);
+  .message {
+    padding: 8px;
+    border-radius: 8px;
+    background-color: var(--gray-alpha-200);
+  }
+
+.message.ai {  
   align-self: flex-start;
 }
 
-.userMessage {
-  padding: 8px;
-  border-radius: 8px;
-  background-color: var(--gray-alpha-200);
+.message.user {
   align-self: flex-end;
 }

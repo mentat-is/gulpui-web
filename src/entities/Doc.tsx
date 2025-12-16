@@ -102,5 +102,31 @@ export namespace Doc {
       ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
       timestamp: Internal.Transformator.toTimestamp(e['gulp.timestamp'], 'round')
     })) as Doc.Type[];
+
+    public static flagged = (app: App.Type): Doc.Type[] => {
+      const raw = localStorage.getItem('flagged-events');
+      if (!raw) {
+        return [];
+      }
+
+      const ids: Set<Doc.Id> = new Set();
+      try {
+        JSON.parse(raw).forEach(ids.add);
+      } catch (_) { }
+
+      if (!ids.size) return [];
+
+      const result: Doc.Type[] = [];
+
+      for (const events of app.target.events.values()) {
+        for (const event of events) {
+          if (ids.has(event._id)) {
+            result.push(event);
+          }
+        }
+      }
+
+      return result;
+    }
   }
 }
