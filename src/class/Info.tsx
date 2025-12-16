@@ -1028,7 +1028,7 @@ export class Info implements InfoProps {
         chat.streaming = false;
 
         const last = chat.messages.length - 1;
-        const errorText = `❌ ${m.payload ?? 'AI error'}`;
+        const errorText = `${m.payload ?? 'AI error'}`;
 
         if (last < 0 || chat.messages[last]?.from !== 'ai') {
           chat.messages.push({ from: 'ai', text: errorText });
