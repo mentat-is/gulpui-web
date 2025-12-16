@@ -974,23 +974,28 @@ export class Info implements InfoProps {
   ai_listen = (req_id: Request.Id) => {
     let buffer = '';
 
-    const sid = SmartSocket.Class.instance.con(
+    const streamSid = SmartSocket.Class.instance.con(
       SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-      m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id),
+      m => m.req_id === req_id,
       m => {
+        if (!m.payload) return;
+
         buffer += m.payload;
 
         const chat = this.app.general.ai_chat;
         const last = chat.messages.length - 1;
 
-        if (chat.messages[last]?.from === 'ai') {
+        if (last < 0 || chat.messages[last]?.from !== 'ai') {
+          chat.messages.push({ from: 'ai', text: buffer });
+        } else {
           chat.messages[last].text = buffer;
-          this.setInfoByKey(chat, 'general', 'ai_chat');
         }
+
+        this.setInfoByKey(chat, 'general', 'ai_chat');
       }
     );
 
-    SmartSocket.Class.instance.conce(
+    const doneSid = SmartSocket.Class.instance.conce(
       SmartSocket.Message.Type.AI_ASSISTANT_DONE,
       m => m.req_id === req_id,
       () => {
@@ -999,14 +1004,23 @@ export class Info implements InfoProps {
         this.setInfoByKey(chat, 'general', 'ai_chat');
 
         this.delLoading(req_id);
+
         SmartSocket.Class.instance.coff(
           SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-          sid
+          streamSid
+        );
+        SmartSocket.Class.instance.coff(
+          SmartSocket.Message.Type.AI_ASSISTANT_DONE,
+          doneSid
+        );
+        SmartSocket.Class.instance.coff(
+          SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
+          errorSid
         );
       }
     );
 
-    SmartSocket.Class.instance.conce(
+    const errorSid = SmartSocket.Class.instance.conce(
       SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
       m => m.req_id === req_id,
       m => {
@@ -1014,8 +1028,12 @@ export class Info implements InfoProps {
         chat.streaming = false;
 
         const last = chat.messages.length - 1;
-        if (chat.messages[last]?.from === 'ai') {
-          chat.messages[last].text = `❌ ${m.payload}`;
+        const errorText = `❌ ${m.payload ?? 'AI error'}`;
+
+        if (last < 0 || chat.messages[last]?.from !== 'ai') {
+          chat.messages.push({ from: 'ai', text: errorText });
+        } else {
+          chat.messages[last].text = errorText;
         }
 
         this.setInfoByKey(chat, 'general', 'ai_chat');
@@ -1023,7 +1041,15 @@ export class Info implements InfoProps {
 
         SmartSocket.Class.instance.coff(
           SmartSocket.Message.Type.AI_ASSISTANT_STREAM,
-          sid
+          streamSid
+        );
+        SmartSocket.Class.instance.coff(
+          SmartSocket.Message.Type.AI_ASSISTANT_DONE,
+          doneSid
+        );
+        SmartSocket.Class.instance.coff(
+          SmartSocket.Message.Type.AI_ASSISTANT_ERROR,
+          errorSid
         );
       }
     );
@@ -1031,29 +1057,26 @@ export class Info implements InfoProps {
 
   // need to refactor 100%
   // api for chat
-  get_ai_hint = async(logs: any[]) => {
+  get_ai_hint = async (logs: any[]) => {
     const operation = Operation.Entity.selected(this.app);
-    if(!operation) return;
+    if (!operation) return;
 
     const req_id = generateUUID(Request.Prefix.AI) as Request.Id;
 
-    await api(
-      '/get_ai_hint',
-      {
-        method: 'POST',
-        query: {
-          token: Internal.Settings.token,
-          ws_id: this.app.general.ws_id,
-          operation_id: operation.id,
-          req_id
-        },
-        body: logs,
-        raw: true
-      }
-    );
-
-    this.setLoading(req_id, 'ai' as Source.Id)
+    this.setLoading(req_id, 'ai' as Source.Id);
     this.ai_listen(req_id);
+
+    await api('/get_ai_hint', {
+      method: 'POST',
+      query: {
+        token: Internal.Settings.token,
+        ws_id: this.app.general.ws_id,
+        operation_id: operation.id,
+        req_id
+      },
+      body: logs,
+      raw: true
+    });
   };
 
   // get my flagget events
@@ -1088,8 +1111,8 @@ export class Info implements InfoProps {
     }
 
     this.ai_chat_addMessage('user', `Analyze ${logs.length} flagged events`);
-    
     this.ai_chat_addMessage('ai', '');
+    
     const chat = this.app.general.ai_chat;
     chat.streaming = true;
     this.setInfoByKey(chat, 'general', 'ai_chat');
@@ -1111,7 +1134,6 @@ export class Info implements InfoProps {
     chat.messages.push({ from, text });
     this.setInfoByKey(chat, 'general', 'ai_chat');
   };
-
 
   // ⚠️ UNTOUCHABLE
   notes_reload = async () => {

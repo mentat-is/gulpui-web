@@ -11,6 +11,7 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
 
   const chat = Info.app.general.ai_chat
   const [text, setText] = useState('')
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
 
@@ -18,6 +19,7 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
     if (!text.trim()) return
 
     Info.ai_chat_addMessage('user', text)
+    Info.ai_chat_addMessage('ai', '')
     setText('')
 
     Info.ai_analyze_flagged_events()
@@ -30,10 +32,10 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
   }, [chat.messages.length])
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px'
-    }
+    if (!textareaRef.current) return
+    textareaRef.current.style.height = 'auto'
+    textareaRef.current.style.height =
+      textareaRef.current.scrollHeight + 'px'
   }, [text])
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -44,34 +46,42 @@ export function SnikerChatPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Stack ai='start' jc='center' pos='fixed' dir='column' className={s.wrapper}>
-      <Stack ai='center' jc='space-between' dir='row' style={{ width: '100%' }}>
+    <Stack ai="start" jc="center" pos="fixed" dir="column" className={s.wrapper}>
+      <Stack ai="center" jc="space-between" dir="row" style={{ width: '100%' }}>
         <Stack gap={8} style={{ fontSize: '18px' }}>
-          <Icon name='Robot' size={18} />
+          <Icon name="Robot" size={18} />
           AI Assistant
         </Stack>
-        <Button icon='X' variant='tertiary' onClick={onClose} />
+        <Button icon="X" variant="tertiary" onClick={onClose} />
       </Stack>
 
-      <Stack ai='center' jc='start' dir='column' gap={8} className={s.chat} ref={chatRef}>
+      <Stack ai="center" jc="start" dir="column" gap={8} className={s.chat} ref={chatRef}>
         {chat.messages.map((msg, idx) => (
-          <Stack key={idx} className={msg.from === 'ai' ? s.aiMessage : s.userMessage}>
+          <Stack
+            key={idx}
+            className={msg.from === 'ai' ? s.aiMessage : s.userMessage}
+          >
             {msg.text}
           </Stack>
         ))}
       </Stack>
 
-      <Stack dir='row' ai='end' gap={8} style={{ width: '100%' }}>
+      <Stack dir="row" ai="end" gap={8} style={{ width: '100%' }}>
         <textarea
           ref={textareaRef}
           className={s.textarea}
-          placeholder='Ask about your investigation...'
+          placeholder="Ask about your investigation..."
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          data-virtualkeyboard='true'
+          data-virtualkeyboard="true"
         />
-        <Button icon='Send' variant={'secondary'} onClick={send} />
+        <Button
+          icon="Send"
+          variant="secondary"
+          onClick={send}
+          disabled={chat.streaming}
+        />
       </Stack>
     </Stack>
   )
