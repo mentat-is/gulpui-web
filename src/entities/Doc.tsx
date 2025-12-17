@@ -7,6 +7,8 @@ import { Note } from "./Note";
 import { Operation } from "./Operation";
 import { Context } from "./Context";
 import { Internal } from "./addon/Internal";
+import { toast } from "sonner";
+import { Icon } from "@impactium/icons";
 
 export namespace Doc {
   export const name = 'Doc'
@@ -36,6 +38,15 @@ export namespace Doc {
     | 'gulp.context_id'
     | 'gulp.operation_id'
   >
+
+  interface Flag {
+    KEY: string;
+    getList: () => Set<Doc.Id>;
+    getDocs: (app: App.Type, id?: Doc.Id) => Doc.Type[];
+    isLimitReached: (ids?: Set<Doc.Id>) => boolean;
+    toggle: (id: Doc.Id) => boolean;
+    isFlagged: (id: Doc.Id) => boolean;
+  }
 
   export class Entity {
     public static toDoc = (event: Doc.Type) => ({
@@ -103,30 +114,95 @@ export namespace Doc {
       timestamp: Internal.Transformator.toTimestamp(e['gulp.timestamp'], 'round')
     })) as Doc.Type[];
 
-    public static flagged = (app: App.Type): Doc.Type[] => {
-      const raw = localStorage.getItem('flagged-events');
-      if (!raw) {
-        return [];
-      }
+    public static flag: Flag = {
+      KEY: 'flagged-events',
 
-      const ids: Set<Doc.Id> = new Set();
-      try {
-        JSON.parse(raw).forEach(ids.add);
-      } catch (_) { }
+      /**
+       * Method to get all flagged events from local storage
+       * @returns Set of Doc.Id
+       */
+      getList: (): Set<Doc.Id> => {
+        const ids: Set<Doc.Id> = new Set();
 
-      if (!ids.size) return [];
+        const raw = localStorage.getItem(Doc.Entity.flag.KEY);
+        if (!raw) {
+          return ids;
+        }
 
-      const result: Doc.Type[] = [];
+        try {
+          JSON.parse(raw).forEach(ids.add);
+        } catch (_) { }
 
-      for (const events of app.target.events.values()) {
-        for (const event of events) {
-          if (ids.has(event._id)) {
-            result.push(event);
+        return ids;
+      },
+
+      /**
+       * Method to get all flagged events from local storage
+       * @returns Array of Doc.Type
+       */
+      getDocs: (app: App.Type, id?: Doc.Id): Doc.Type[] => {
+        const ids = Doc.Entity.flag.getList();
+
+        if (!ids.size) return [];
+
+        const result: Doc.Type[] = [];
+
+        for (const events of app.target.events.values()) {
+          for (const event of events) {
+            if (ids.has(event._id)) {
+              result.push(event);
+            }
           }
         }
-      }
 
-      return result;
+        return result;
+      },
+
+      isLimitReached: (ids = Doc.Entity.flag.getList()) => ids.size >= 10,
+
+      /**
+       * 
+       * @param id Doc.Id
+       * @returns New document flagged state;
+       */
+      toggle: (id: Doc.Id) => {
+        if (typeof id !== 'string') {
+          return false;
+        }
+
+        const ids = Doc.Entity.flag.getList();
+
+        const isFlagged = ids.has(id);
+
+        if (!isFlagged && Doc.Entity.flag.isLimitReached(ids)) {
+          toast.error('Limit reached', {
+            description: 'Max 10 events can be flagged',
+            richColors: true,
+            icon: <Icon name='X' />
+          });
+          return isFlagged;
+        }
+
+        ids[ids.has(id) ? 'delete' : 'add'](id);
+        toast.info(`Event has been successfully ${isFlagged ? 'unflagged' : 'flagged'}`);
+
+        localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify([...ids.values()]))
+        return !isFlagged;
+      },
+
+      /**
+       * 
+       * @param id Doc.Id
+       * @returns Checks if document is flagged
+       */
+      isFlagged: (id: Doc.Id) => {
+        if (typeof id !== 'string') {
+          return false;
+        }
+
+        const ids = Doc.Entity.flag.getList();
+        return ids.has(id);
+      }
     }
   }
 }

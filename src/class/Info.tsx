@@ -1042,7 +1042,7 @@ export class Info implements InfoProps {
       });
     },
     analyze: async () => {
-      const docs = Doc.Entity.flagged(this.app);
+      const docs = Doc.Entity.flag.getDocs(this.app);
       if (!docs.length) {
         return this.ai.addMessage({
           content: 'No flagged events found to analyze.',

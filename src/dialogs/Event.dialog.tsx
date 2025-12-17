@@ -219,7 +219,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             Create new note
           </ContextMenuItem>
           <ContextMenuItem disabled={!selection} icon='GitPullRequestCreate'>Create new link</ContextMenuItem>
-            <ContextMenuItem onClick={() => copy(JSON.stringify(json, null, 2))} icon='Copy'>Copy</ContextMenuItem>
+          <ContextMenuItem onClick={() => copy(JSON.stringify(json, null, 2))} icon='Copy'>Copy</ContextMenuItem>
           <ContextMenuItem onClick={applySelectionAsFileFilter} icon='Filter'>New filter</ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
@@ -265,40 +265,18 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
   const [isFlagged, setIsFlagged] = useState(false);
 
+  const updateFlaggedState = useCallback(() => {
+    setIsFlagged(Doc.Entity.flag.isFlagged(event._id));
+  }, [setIsFlagged]);
+
   useEffect(() => {
-    if(!event?._id) return;
-    const flagged = JSON.parse(localStorage.getItem('flagged-events') || '[]').includes(event._id);
-    setIsFlagged(flagged);
+    updateFlaggedState();
   }, [event]);
 
   const handleFocusTimeline = useCallback(() => {
     // @ts-ignore
     return window.focusCanvasOnEvent(event.timestamp, false, event.file_id)
   }, [event]);
-
-const flagEvent = () => {
-  if (!event?._id) return;
-
-  const list = new Set(JSON.parse(localStorage.getItem('flagged-events') || '[]'));
-
-  if (!list.has(event._id) && list.size >= 10) {
-    toast.error("Max 10 events can be flagged", {richColors: true });
-    return;
-  }
-
-  if (list.has(event._id)) {
-    list.delete(event._id);
-    toast.info("Event unflagged");
-    setIsFlagged(false);
-  } else {
-    list.add(event._id);
-    toast.success("Event flagged");
-    setIsFlagged(true);
-  }
-
-  localStorage.setItem('flagged-events', JSON.stringify([...list]));
-  window.dispatchEvent(new CustomEvent('flagged-events-changed', { detail: event._id }));
-};
 
   return (
     <Dialog>
@@ -352,12 +330,13 @@ const flagEvent = () => {
               style={{ flex: 0 }}
               title="Focus timeline on this event"
             />
-            <Button 
-              onClick={flagEvent}
-              variant="secondary"
+            <Button
+              onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id))}
+              variant={isFlagged ? 'glass' : 'tertiary'}
               icon={isFlagged ? 'Flag' : 'FlagOff'}
+              disabled={Doc.Entity.flag.isLimitReached() && !isFlagged}
               style={{ flex: 0 }}
-              title="Flag events"
+              title='Flag event'
             />
           </Stack>
         </Fragment>
@@ -429,17 +408,6 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     return list.includes(event._id);
   });
 
-
-  useEffect(() => {
-    const handleFlagChange = (e: Event) => {
-      const list: string[] = JSON.parse(localStorage.getItem('flagged-events') || '[]');
-      setIsFlagged(list.includes(event._id));
-    };
-
-    window.addEventListener('flagged-events-changed', handleFlagChange);
-    return () => window.removeEventListener('flagged-events-changed', handleFlagChange);
-  }, [event._id]);
-
   return (
     <Button
       shape='icon'
@@ -452,7 +420,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
       <p>{String(event['gulp.event_code']).slice(0, 6)}</p>
       {Collab}
       {isFlagged && (
-        <Icon name='Flag' size={10} className={s.flagged}/> 
+        <Icon name='Flag' size={10} className={s.flagged} />
       )}
     </Button>
   );

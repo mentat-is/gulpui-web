@@ -1,12 +1,11 @@
 .event {
   width: 100%;
-  padding: 3px;
-  border: 1px solid var(--background-100);
-  border-radius: 4px;
+  border-radius: var(--round);
+  padding: 4px;
   transition: all 0.125s var(--transition);
 }
 .event:hover {
-  background: var(--gray-200);
+  background: var(--gray-alpha-400);
   border-color: var(--gray-400);
 }
 .info {

@@ -27,14 +27,14 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 
   const renderEvent = useCallback((event: Doc.Type) => {
     if (!event) return null;
-  
+
     return (
       <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
         <EventIndicator event={event} />
         <Stack dir="column" jc="space-evenly" ai="flex-start" flex className={s.info} gap={2}>
-          <p className={s.id}>{event._id}</p>
+          <p className={s.id}>{`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}</p>
           <span className={s.description}>
-            {`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}
+            {event._id}
           </span>
         </Stack>
       </Stack>
@@ -43,9 +43,9 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 
   return (
     <Dialog>
-      <div ref={parentRef} style={{ height: '100%', paddingRight: 12, overflow: 'auto'}} >
+      <div ref={parentRef} style={{ height: '100%', paddingRight: 12, overflow: 'auto' }} >
         <div style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }} >
-         {virtualizer.getVirtualItems().map(v => (
+          {virtualizer.getVirtualItems().map(v => (
             <div
               key={v.key}
               style={{

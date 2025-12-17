@@ -111,14 +111,14 @@ export namespace Auth {
 
           {Operation.Entity.selected(app) && (
             <UIButton
-            icon='ArrowRight'
-            variant='glass'
-            revert
-            loading={loading}
-            tabIndex={6}
-            onClick={skipToTimeline}
+              icon='ArrowRight'
+              variant='tertiary'
+              revert
+              loading={loading}
+              tabIndex={6}
+              onClick={skipToTimeline}
             >
-              Skip
+              Skip to timeline
             </UIButton>
           )}
           {Operation.Entity.selected(app) && (

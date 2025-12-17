@@ -21,8 +21,7 @@
 }
 
 .scroll {
-  overflow-y: auto;
-  overflow-x: hidden; 
+  overflow: visible auto;
   scrollbar-width: 0px;
   scrollbar-color: transparent transparent;
 }
