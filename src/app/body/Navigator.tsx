@@ -18,7 +18,7 @@ import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
-import { SnikerChatPanel } from '@/banners/SnikerChat.banner'
+import { AI } from '@/banners/SnikerChat.banner'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -361,7 +361,7 @@ export function Navigator({
         size='md'
       />
       {chatOpen && (
-        <SnikerChatPanel onClose={() => setChatOpen(false)} />
+        <AI.Skiker.Panel onClose={() => setChatOpen(false)} />
       )}
       {windowRef &&
         containerRef.current &&

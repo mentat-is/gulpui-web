@@ -1490,6 +1490,10 @@ export class Info implements InfoProps {
       method: 'POST',
     });
 
+    if (!glyphs) {
+      return Logger.error('Failed to sync glyphs', 'Info.glyphs_reload');
+    }
+
     const queue: (() => Promise<void>)[] = [];
 
     const synced = new Map<string, Glyph.Id>();
