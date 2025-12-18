@@ -99,7 +99,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
       const parsed = JSON.parse(jsonRef.current.value);
       normalized = normalizeQuery(parsed);
     } catch (e) {
-      toast.error("Invalid JSON in EditQuery", {richColors: true});
+      toast.error("Invalid JSON in EditQuery", { richColors: true });
       return;
     }
 
@@ -118,7 +118,7 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     setLoading(false);
   };
 
-  const Done = useCallback(() => <Button icon='Check' variant='glass' loading={loading} onClick={isEditQuery ? jsonSubmit : submit}/>, [loading, submit, isEditQuery, jsonSubmit]);
+  const Done = useCallback(() => <Button icon='Check' variant='glass' loading={loading} onClick={isEditQuery ? jsonSubmit : submit} />, [loading, submit, isEditQuery, jsonSubmit]);
   const Undo = useCallback(() => <Button icon='Undo' variant='tertiary' onClick={() => Info.filters_undo(files)} />, [files]);
 
   const QueryStringPart = useMemo(() => {
@@ -216,22 +216,32 @@ export function FilterFileBanner({ files: initFiles, query: initQuery, keys: ini
     };
   };
 
-const EditQuery = useMemo(() => {
-  return (
-    <textarea
-      ref={jsonRef}
-      style={{
-        height: '100%',
-        minHeight: '200px',
-        fontFamily: 'monospace',
-        fontSize: 14,
-        padding: 12
-      }}
-      defaultValue={JSON.stringify(query, null, 2)}
-    />
-  );
-}, [query]);
+  const EditQuery = useMemo(() => {
+    return (
+      <textarea
+        ref={jsonRef}
+        style={{
+          height: '100%',
+          minHeight: '200px',
+          fontFamily: 'monospace',
+          fontSize: 14,
+          padding: 12
+        }}
+        defaultValue={JSON.stringify(query, null, 2)}
+      />
+    );
+  }, [query]);
 
+  const contextSelectButtonClickHandlerConstructor = (id: Context.Id) => () => setFiles(files => {
+    const newSources = Context.Entity.sources(app, id);
+    const x = new Map<Source.Id, Source.Type>([...newSources, ...files].map(file => [file.id, file]));
+    if (files.some(file => newSources.find(s => s.id === file.id))) {
+      newSources.forEach(s => x.delete(s.id));
+    }
+    return [...x.values()];
+  });
+
+  console.log(files.map(file => file.id));
 
   return (
     <Banner
@@ -247,45 +257,45 @@ const EditQuery = useMemo(() => {
       {isEditQuery ? (
         EditQuery
       ) : (
-      <>
-        <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => Source.Entity.id(app, file as Source.Id)))}>
-          <Select.Trigger>
-            <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
-          </Select.Trigger>
-          <Select.Content>
-            {Context.Entity.selected(app).map(context => {
-              const sources = Context.Entity.sources(app, context).filter(s => s.selected);
+        <>
+          <Select.Multi.Root value={files.map(file => file.id)} onValueChange={files => setFiles(files.map(file => Source.Entity.id(app, file as Source.Id)))}>
+            <Select.Trigger>
+              <Select.Multi.Value icon={['File', 'Files']} placeholder='Select files to apply filters' text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
+            </Select.Trigger>
+            <Select.Content>
+              {Context.Entity.selected(app).map(context => {
+                const sources = Context.Entity.sources(app, context).filter(s => s.selected);
 
-              if (!sources.length)
-                return null;
+                if (!sources.length)
+                  return null;
 
-              return (
-                <Select.Group key={context.id}>
-                  <Select.Label className={s.groupLabel}>
-                    <Select.Item value={`ctx:${context.id}`} style={{ marginLeft: '-12px' }}>
-                      {context.name}
-                    </Select.Item>
-                  </Select.Label>
-                  {sources.map(s => (
-                    <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px' }}>
-                      <Icon name={Source.Entity.icon(s) || 'File'} />
-                      {s.name}
-                    </Select.Item>
-                  ))}
-                </Select.Group>
-              )
-            })}
-          </Select.Content>
-        </Select.Multi.Root>
-        {QueryStringPart}
-        {AddCondition}
-        <Separator />
-        {QueryConditions}
-      <Stack ai='center' jc='flex-start' dir='row'>
-        <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} icon='PreviewDocument'>Preview result of current filter</Button>
-        <Button variant='glass' loading={false} onClick={() => setIsEditQuery(v => !v)} icon='FileJson'>{isEditQuery ? 'Back to builder' : 'Edit query'}</Button>
-      </Stack>
-      </>
+                return (
+                  <Select.Group key={context.id}>
+                    <Select.Label className={s.groupLabel}>
+                      <Select.Item value={`ctx:${context.id}`} aria-checked={Context.Entity.sources(app, context.id).every(s => files.find(f => f.id === s.id))} onClick={contextSelectButtonClickHandlerConstructor(context.id)}>
+                        {context.name}
+                      </Select.Item>
+                    </Select.Label>
+                    {sources.map(s => (
+                      <Select.Item key={s.id} value={s.id} style={{ marginLeft: '24px' }}>
+                        <Icon name={Source.Entity.icon(s) || 'File'} />
+                        {s.name}
+                      </Select.Item>
+                    ))}
+                  </Select.Group>
+                )
+              })}
+            </Select.Content>
+          </Select.Multi.Root>
+          {QueryStringPart}
+          {AddCondition}
+          <Separator />
+          {QueryConditions}
+          <Stack ai='center' jc='flex-start' dir='row'>
+            <Button variant='glass' loading={isPreviewLoading} onClick={previewCurrentFilterButtonClickHandler} icon='PreviewDocument'>Preview result of current filter</Button>
+            <Button variant='glass' loading={false} onClick={() => setIsEditQuery(v => !v)} icon='FileJson'>{isEditQuery ? 'Back to builder' : 'Edit query'}</Button>
+          </Stack>
+        </>
       )}
     </Banner>
   )

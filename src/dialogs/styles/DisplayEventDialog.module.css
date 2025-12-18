@@ -102,27 +102,22 @@
   font-family: var(--font-mono);
   text-shadow: 0 0 1px black;
 }
-.indicator .collab {
+.indicator .marker {
   border: 1px solid var(--gray-400);
   width: 14px;
   height: 14px;
   background: var(--background-100);
-  bottom: 0;
-  right: 0;
   border-radius: var(--round);
   transform: translate(16.5%, 16.5%);
   z-index: 2;
-  color: var(--accent);
+  color: var(--accent); 
+}
+.indicator .collab {
+  bottom: 0;
+  right: 0;
 }
 
 .flagged {
-  background-color: black;
-  position: absolute;
-  right: -4px;
-  top: -4px;
-  border-radius: var(--round);
-  color: var(--accent);
-  border: 1px solid var(--gray-400);
-  padding: 2px;
-  z-index: 1;
+  top: 0;
+  right: 0;
 }

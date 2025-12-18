@@ -44,10 +44,11 @@
 }
 .tertiary {
   background: transparent;
-  color: var(--gray-1000);
+  color: var(--second);
 }
 .tertiary:hover {
   background: var(--gray-alpha-200);
+  color: var(--gray-1000);
 }
 .destructive {
   background: var(--red-800);
@@ -65,13 +66,12 @@
   background: var(--geist-background);
   border: none;
   box-shadow: inset 0 0 0 1px var(--gray-alpha-400);
-  color: var(--second);
+  color: var(--accent);
   font-weight: 400;
   backdrop-filter: blur(8px);
 }
 .glass:hover {
   box-shadow: inset 0 0 0 1px var(--gray-alpha-500);
-  color: var(--accent);
 }
 .defaultSize {
   height: 32px;

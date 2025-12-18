@@ -9,6 +9,7 @@ import { Context } from "./Context";
 import { Internal } from "./addon/Internal";
 import { toast } from "sonner";
 import { Icon } from "@impactium/icons";
+import { Logger } from "@/dto/Logger.class";
 
 export namespace Doc {
   export const name = 'Doc'
@@ -130,7 +131,12 @@ export namespace Doc {
         }
 
         try {
-          JSON.parse(raw).forEach(ids.add);
+          JSON.parse(raw).forEach((id: unknown) => {
+            if (typeof id === 'string') {
+              return ids.add(id as Doc.Id);
+            }
+            Logger.error(`LocalStorage entity ${Doc.Entity.flag.KEY} has shit inside`, 'Doc.flag.getList');
+          });
         } catch (_) { }
 
         return ids;
@@ -170,7 +176,11 @@ export namespace Doc {
           return false;
         }
 
+        console.log(id);
+
         const ids = Doc.Entity.flag.getList();
+
+        console.log(ids);
 
         const isFlagged = ids.has(id);
 
@@ -185,6 +195,8 @@ export namespace Doc {
 
         ids[ids.has(id) ? 'delete' : 'add'](id);
         toast.info(`Event has been successfully ${isFlagged ? 'unflagged' : 'flagged'}`);
+
+        console.log(ids);
 
         localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify([...ids.values()]))
         return !isFlagged;

@@ -267,7 +267,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
   const updateFlaggedState = useCallback(() => {
     setIsFlagged(Doc.Entity.flag.isFlagged(event._id));
-  }, [setIsFlagged]);
+  }, [setIsFlagged, event._id]);
 
   useEffect(() => {
     updateFlaggedState();
@@ -332,8 +332,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
             />
             <Button
               onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id))}
-              variant={isFlagged ? 'glass' : 'tertiary'}
-              icon={isFlagged ? 'Flag' : 'FlagOff'}
+              variant={isFlagged ? 'tertiary' : 'glass'}
+              icon={isFlagged ? 'FlagOff' : 'Flag'}
               disabled={Doc.Entity.flag.isLimitReached() && !isFlagged}
               style={{ flex: 0 }}
               title='Flag event'
@@ -397,16 +397,23 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     if (notes.length === 0 && links.length === 0) return null;
 
     return (
-      <Stack ai='center' jc='center' className={s.collab} pos='absolute'>
+      <Stack ai='center' jc='center' className={cn(s.marker, s.collab)} pos='absolute'>
         <Icon size={8} name={notes.length > 0 ? 'StickyNote' : 'Link'} />
       </Stack>
     );
   }, [app.target.notes, app.target.links, event]);
 
-  const [isFlagged, setIsFlagged] = useState(() => {
-    const list: string[] = JSON.parse(localStorage.getItem('flagged-events') || '[]');
-    return list.includes(event._id);
-  });
+  const Flag = () => {
+    const flagged = Doc.Entity.flag.isFlagged(event._id);
+
+    if (!flagged) return null;
+
+    return (
+      <Stack ai='center' jc='center' className={cn(s.marker, s.flagged)} pos='absolute'>
+        <Icon size={8} name='Flag' />
+      </Stack>
+    );
+  };
 
   return (
     <Button
@@ -418,10 +425,8 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     >
       <hr />
       <p>{String(event['gulp.event_code']).slice(0, 6)}</p>
+      <Flag />
       {Collab}
-      {isFlagged && (
-        <Icon name='Flag' size={10} className={s.flagged} />
-      )}
     </Button>
   );
 }
