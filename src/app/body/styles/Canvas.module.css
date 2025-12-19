@@ -1,6 +1,11 @@
 .canvas {
   z-index: 1;
 }
+.island {
+  z-index: 2;
+  bottom: 8px;
+  right: 8px;
+}
 
 .resize {
   position: absolute;

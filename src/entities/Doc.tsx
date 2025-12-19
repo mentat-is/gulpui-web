@@ -43,9 +43,10 @@ export namespace Doc {
   interface Flag {
     KEY: string;
     getList: () => Set<Doc.Id>;
-    getDocs: (app: App.Type, id?: Doc.Id) => Doc.Type[];
+    getDocs: (app: App.Type) => Doc.Type[];
     isLimitReached: (ids?: Set<Doc.Id>) => boolean;
     toggle: (id: Doc.Id) => boolean;
+    reset: () => void;
     isFlagged: (id: Doc.Id) => boolean;
   }
 
@@ -146,7 +147,7 @@ export namespace Doc {
        * Method to get all flagged events from local storage
        * @returns Array of Doc.Type
        */
-      getDocs: (app: App.Type, id?: Doc.Id): Doc.Type[] => {
+      getDocs: (app: App.Type): Doc.Type[] => {
         const ids = Doc.Entity.flag.getList();
 
         if (!ids.size) return [];
@@ -201,6 +202,12 @@ export namespace Doc {
         localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify([...ids.values()]))
         return !isFlagged;
       },
+
+      /**
+       * Resets flagged events
+       * @returns Nothing
+       */
+      reset: () => localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify([])),
 
       /**
        * 

@@ -88,8 +88,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     }
 
     const getTimestampForPixel = (x: number): number => {
-      const visibleWidth =
-        this.renderer.ctx.canvas.width * this.renderer.info.app.timeline.scale
+      const visibleWidth = this.renderer.ctx.canvas.width * this.renderer.info.app.timeline.scale
       const pixelOffset = x + this.renderer.scrollX
 
       return (

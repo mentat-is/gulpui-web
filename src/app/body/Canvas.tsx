@@ -24,6 +24,7 @@ import { Source } from '@/entities/Source'
 import { Note } from '@/entities/Note'
 import { Doc } from '@/entities/Doc'
 import { useTheme } from 'next-themes'
+import { Button } from '@/ui/Button'
 
 export namespace Canvas {
   export interface Props extends Stack.Props {
@@ -108,7 +109,10 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     if (force || Math.random() < 0.05) {
       RenderEngine.reset('notes');
+      RenderEngine.reset('flags');
     }
+
+    render.highlightFlaggedDocuments();
 
     if (!app.hidden.notes) {
       render.notes(files);
@@ -201,7 +205,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
 
     const rect = canvas_ref.current.getBoundingClientRect();
-    if ( event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) {
       return;
     }
 
@@ -398,6 +402,8 @@ export function Canvas({ timeline }: Canvas.Props) {
     isProgramScroll.current = true;
   }, [scrollY, canvas_ref]);
 
+  const flaggedEvents = Doc.Entity.flag.getList();
+
   return (
     <ContextMenu>
       <ContextMenuTrigger
@@ -423,6 +429,9 @@ export function Canvas({ timeline }: Canvas.Props) {
           width={wrapper_ref.current?.offsetWidth}
           height={timeline.current?.clientHeight}
         />
+        <Stack pos='absolute' className={s.island}>
+          {flaggedEvents.size > 0 && <Button className={s.unflag} variant='glass' onClick={() => Doc.Entity.flag.reset()} icon='FlagOff'>Unflag all {flaggedEvents.size} documents</Button>}
+        </Stack>
         <Spinner size={48} className={s.loading_background} />
         <Pointers
           getPixelPosition={getPixelPosition}

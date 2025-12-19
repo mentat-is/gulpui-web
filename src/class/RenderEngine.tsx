@@ -82,6 +82,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     range: new Map() as Map<Source.Id, MinMax & {
       [Hardcode.Length]: number,
       field: keyof Doc.Type
+    }>,
+    flags: new Map() as Map<Doc.Id, {
+      // Y coordinate
+      y: number,
+      // timestamp
+      t: number,
+      // offset
+      o: number
     }>
   };
 
@@ -261,6 +269,54 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     })
 
     return { dots }
+  }
+
+  private getYForDoc = (id: Doc.Id): { y: number, t: number, o: number } => {
+    const e = RenderEngine[CacheKey].flags.get(id);
+    if (!e) {
+      const docs = Doc.Entity.flag.getDocs(this.info.app);
+
+      let result = {
+        y: 0,
+        t: 0,
+        o: 0
+      }
+
+      docs.forEach(doc => {
+        const p = {
+          y: Source.Entity.getHeight(this.info.app, doc['gulp.source_id'], 0),
+          t: doc.timestamp,
+          o: Source.Entity.id(this.info.app, doc['gulp.source_id']).settings.offset ?? 0
+        };
+        if (doc._id === id) {
+          result = p;
+        }
+        RenderEngine[CacheKey].flags.set(doc._id, p);
+      });
+
+      return result;
+    }
+    return e;
+  }
+  /**
+   * Draws green line on position of every flagged event
+   */
+  public highlightFlaggedDocuments = () => {
+    const flagged = Doc.Entity.flag.getList();
+
+    for (const id of flagged) {
+      const { y, t, o } = this.getYForDoc(id);
+
+      console.log(y, t, o);
+
+      const x = this.getPixelPosition(t + o);
+      const dy = y - 24 - this.scrollY;
+
+      this.ctx.fillStyle = '#00FF00';
+      this.ctx.fillRect(x - 1, dy - 2, 1, 51);
+      this.ctx.fillRect(x, dy - 4, 1, 55);
+      this.ctx.fillRect(x + 1, dy - 2, 1, 51);
+    }
   }
 
   public locals = (file: Source.Type) => {
@@ -557,7 +613,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       groups.forEach(async (group) => {
         if (!group || group.length < 2 || !notes[group[0]]) return;
-        
+
         if (group[1] === 1 && notes[group[0]]) {
           this.renderNote(notes[group[0]])
         } else {
