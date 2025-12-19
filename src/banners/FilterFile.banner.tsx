@@ -288,6 +288,38 @@ export function FilterFileBanner({
 
   const selectedContexts = Context.Entity.selected(app);
 
+  const itemDomId = (ctxId: Context.Id, fileId: Source.Id) => `ctx_${ctxId}__file_${fileId}`
+
+  const virtualClick = (el: HTMLElement) => {
+    el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }))
+    el.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }))
+    el.click()
+    el.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }))
+    el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }))
+  }
+
+  const toggleContextViaClicks = useCallback(
+    (ctx: Context.Type) => {
+      const sources = Context.Entity.sources(app, ctx).filter(s => s.selected)
+      if (!sources.length) return
+
+      const selected = new Set(files.map(f => f.id))
+      const hasAny = sources.some(s => selected.has(s.id))
+      const shouldSelectAll = !hasAny
+
+      sources.forEach(src => {
+        const isSelected = selected.has(src.id)
+        const needToggle = shouldSelectAll ? !isSelected : isSelected
+        if (!needToggle) return
+
+        const el = document.getElementById(itemDomId(ctx.id, src.id))
+        if (el) virtualClick(el)
+      })
+    },
+    [app, files]
+  )
+
+
   return (
     <Banner
       title="Choose filtering options"
@@ -304,6 +336,7 @@ export function FilterFileBanner({
       ) : (
         <>
           <Select.Multi.Root
+            open
             value={files.map(file => file.id)}
             onValueChange={ids => setFiles(ids.map(id => Source.Entity.id(app, id as Source.Id)))}
           >
@@ -328,15 +361,32 @@ export function FilterFileBanner({
                   <>
                     <Select.Group key={context.id} className={s.group}>
                       <Select.Label>
+                        <Checkbox
+                          style={{ width: 'calc(100% - 20px)', opacity: 0, position: 'absolute' }}
+                          checked={
+                            sources.every(src => files.some(f => f.id === src.id))
+                              ? true
+                              : sources.some(src => files.some(f => f.id === src.id))
+                                ? 'indeterminate'
+                                : false
+                          }
+                          onCheckedChange={() => toggleContextViaClicks(context)}
+                        />
                         {context.name}
                       </Select.Label>
+
                       {sources.map(src => (
-                        <Select.Item key={src.id} value={src.id}>
+                        <Select.Item
+                          key={src.id}
+                          id={itemDomId(context.id, src.id)}
+                          value={src.id}
+                        >
                           <Icon name={Source.Entity.icon(src) || 'File'} />
                           {src.name}
                         </Select.Item>
                       ))}
                     </Select.Group>
+
                     {i > 1 && selectedContexts.length - 1 !== i}
                   </>
                 )
