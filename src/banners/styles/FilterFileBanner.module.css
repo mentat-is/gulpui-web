@@ -40,6 +40,11 @@
   width: 24px;
   padding: 2px;
 }
+.group {
+  padding: 2px;
+  border-radius: 4px;
+  border: 1px solid var(--gray-400);
+}
 .bottom {
   display: flex;
   flex-direction: row;
@@ -68,8 +73,4 @@
   text-align: left;
   text-transform: unset !important;
   color: var(--accent);
-}
-.groupLabel {
-  display: flex;
-  align-items: center;
 }

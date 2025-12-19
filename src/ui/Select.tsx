@@ -26,9 +26,10 @@ export namespace Select {
     export const use = () => useContext(Select.Multi.Context);
 
     export namespace Root {
-      export interface Props extends Omit<SelectPrimitive.SelectProps, 'value' | 'onValueChange'> {
+      export interface Props extends Omit<SelectPrimitive.SelectProps, 'value' | 'onValueChange' | 'defaultValue'> {
         value?: string[]
         onValueChange?: (value: string[]) => void
+        defaultValue?: string[]
         placeholder?: string
         children: React.ReactNode
         open?: boolean
@@ -40,11 +41,12 @@ export namespace Select {
       value = [],
       onValueChange,
       children,
+      defaultValue,
       open,
       onOpenChange,
       ...props
     }: Select.Multi.Root.Props) => {
-      const [selectedValues, setSelectedValues] = useState<string[]>(value)
+      const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue ?? value)
       const [isOpen, setIsOpen] = useState(open ?? false);
 
       const handleValueChange = useCallback((newValue: string) => {

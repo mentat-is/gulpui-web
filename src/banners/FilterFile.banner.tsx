@@ -18,7 +18,6 @@ import { Filter } from '@/entities/Filter'
 import { Context } from '@/entities/Context'
 import { toast } from 'sonner'
 import { Checkbox } from '@/ui/Checkbox'
-import { CheckedState } from '@radix-ui/react-checkbox'
 
 interface FilterFileBannerProps extends Banner.Props {
   files: Source.Type[]
@@ -271,7 +270,7 @@ export function FilterFileBanner({
   }, [query])
 
   const contextSelectButtonClickHandlerConstructor = useCallback(
-    (id: Context.Id) => (checked: CheckedState) =>
+    (id: Context.Id) => () =>
       setFiles(prev => {
         const newSources = Context.Entity.sources(app, id)
         const map = new Map<Source.Id, Source.Type>(
@@ -286,6 +285,8 @@ export function FilterFileBanner({
       }),
     [app]
   )
+
+  const selectedContexts = Context.Entity.selected(app);
 
   return (
     <Banner
@@ -319,24 +320,25 @@ export function FilterFileBanner({
             </Select.Trigger>
 
             <Select.Content>
-              {Context.Entity.selected(app).map(context => {
+              {selectedContexts.map((context, i) => {
                 const sources = Context.Entity.sources(app, context).filter(src => src.selected)
                 if (!sources.length) return null
 
                 return (
-                  <Select.Group key={context.id}>
-                    <Select.Label className={s.groupLabel}>
-                      <Checkbox checked={Context.Entity.sources(app, context.id).every(src => files.some(f => f.id === src.id))} onCheckedChange={contextSelectButtonClickHandlerConstructor(context.id)} />
-                      {context.name}
-                    </Select.Label>
-
-                    {sources.map(src => (
-                      <Select.Item key={src.id} value={src.id} style={{ marginLeft: '24px' }}>
-                        <Icon name={Source.Entity.icon(src) || 'File'} />
-                        {src.name}
-                      </Select.Item>
-                    ))}
-                  </Select.Group>
+                  <>
+                    <Select.Group key={context.id} className={s.group}>
+                      <Select.Label>
+                        {context.name}
+                      </Select.Label>
+                      {sources.map(src => (
+                        <Select.Item key={src.id} value={src.id}>
+                          <Icon name={Source.Entity.icon(src) || 'File'} />
+                          {src.name}
+                        </Select.Item>
+                      ))}
+                    </Select.Group>
+                    {i > 1 && selectedContexts.length - 1 !== i}
+                  </>
                 )
               })}
             </Select.Content>
