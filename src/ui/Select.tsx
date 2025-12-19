@@ -47,7 +47,7 @@ export namespace Select {
       ...props
     }: Select.Multi.Root.Props) => {
       const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue ?? value)
-      const [isOpen, setIsOpen] = useState(open ?? false);
+      const [isOpen, setIsOpen] = useState(false);
 
       const handleValueChange = useCallback((newValue: string) => {
         const updatedValues = selectedValues.includes(newValue)
@@ -59,8 +59,8 @@ export namespace Select {
       }, [selectedValues, onValueChange])
 
       const handleOpenChange = useCallback((newOpen: boolean) => {
-        setIsOpen(open ?? newOpen)
-        onOpenChange?.(open ?? newOpen)
+        setIsOpen(newOpen)
+        onOpenChange?.(newOpen)
       }, [onOpenChange])
 
       const contextValue: Select.Multi.Context.Type = {

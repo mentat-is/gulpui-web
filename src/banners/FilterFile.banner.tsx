@@ -44,6 +44,7 @@ export function FilterFileBanner({
   const jsonRef = useRef<HTMLTextAreaElement | null>(null)
   const hasExternalInitQuery = useRef(Boolean(initQuery))
 
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [loading, setLoading] = useState(false)
   const [isEditQuery, setIsEditQuery] = useState(false)
   const [files, setFiles] = useState<Source.Type[]>(initFiles)
@@ -269,22 +270,22 @@ export function FilterFileBanner({
     )
   }, [query])
 
-  const contextSelectButtonClickHandlerConstructor = useCallback(
-    (id: Context.Id) => () =>
-      setFiles(prev => {
-        const newSources = Context.Entity.sources(app, id)
-        const map = new Map<Source.Id, Source.Type>(
-          [...newSources, ...prev].map(file => [file.id, file])
-        )
+  // const contextSelectButtonClickHandlerConstructor = useCallback(
+  //   (id: Context.Id) => () =>
+  //     setFiles(prev => {
+  //       const newSources = Context.Entity.sources(app, id)
+  //       const map = new Map<Source.Id, Source.Type>(
+  //         [...newSources, ...prev].map(file => [file.id, file])
+  //       )
 
-        if (prev.some(file => newSources.some(s => s.id === file.id))) {
-          newSources.forEach(s => map.delete(s.id))
-        }
+  //       if (prev.some(file => newSources.some(s => s.id === file.id))) {
+  //         newSources.forEach(s => map.delete(s.id))
+  //       }
 
-        return [...map.values()]
-      }),
-    [app]
-  )
+  //       return [...map.values()]
+  //     }),
+  //   [app]
+  // )
 
   const selectedContexts = Context.Entity.selected(app);
 
@@ -324,11 +325,10 @@ export function FilterFileBanner({
     <Banner
       title="Choose filtering options"
       done={Done}
-      side={<OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />}
+      side={isEditQuery ? null : <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} />}
       back={isEditQuery ? () => setIsEditQuery(v => !v) : undefined}
       subtitle={LastQueries}
       className={s.banner}
-      option={Undo}
       {...props}
     >
       {isEditQuery ? (
@@ -336,7 +336,8 @@ export function FilterFileBanner({
       ) : (
         <>
           <Select.Multi.Root
-            open
+            open={isSelectOpen}
+            onOpenChange={setIsSelectOpen}
             value={files.map(file => file.id)}
             onValueChange={ids => setFiles(ids.map(id => Source.Entity.id(app, id as Source.Id)))}
           >
