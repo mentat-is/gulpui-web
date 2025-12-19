@@ -307,8 +307,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     for (const id of flagged) {
       const { y, t, o } = this.getYForDoc(id);
 
-      console.log(y, t, o);
-
       const x = this.getPixelPosition(t + o);
       const dy = y - 24 - this.scrollY;
 
