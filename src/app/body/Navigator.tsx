@@ -203,6 +203,11 @@ export function Navigator({
   }
 
   const handleControllers = (event: KeyboardEvent) => {
+    const target = event.target as HTMLElement;
+    const tag = target.tagName.toLowerCase();
+    if (['input', 'textarea', 'select'].includes(tag) || target.isContentEditable) return;
+
+
     switch (true) {
       case event.key === '-':
         size_plus.current?.click()

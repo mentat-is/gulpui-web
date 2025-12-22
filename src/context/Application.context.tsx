@@ -140,7 +140,7 @@ function _({ children }: { children: ReactNode }) {
     // check for input etc... 
     const target = event.target as HTMLElement;
     const tag = target.tagName.toLowerCase();
-    if (['input', 'textarea'].includes(tag) || target.isContentEditable) return;
+    if (['input', 'textarea', 'select'].includes(tag) || target.isContentEditable) return;
 
     const events = Source.Entity.events(app, app.timeline.target['gulp.source_id'])
 
