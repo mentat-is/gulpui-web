@@ -393,6 +393,7 @@ export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings 
   setSettings: (s: FileEntity.Settings) => void
 }) => {
   const { app } = Application.use();
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!settings.all) {
@@ -447,7 +448,7 @@ export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings 
   }, [settings.all?.method])
 
   return (
-    <Popover.Root>
+    <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
         <Button style={{ width: '100%' }} variant='secondary' icon='Settings'>Select settings for all files</Button>
       </Popover.Trigger>
@@ -459,7 +460,18 @@ export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings 
           <Separator orientation='vertical' style={{ height: 32 }} />
           <MappingSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
           <Separator orientation='vertical' style={{ height: 32 }} />
-          <Button variant='tertiary' style={{ borderRadius: 2 }} icon='Check' onClick={() => setSettings(settings.all)}>Apply!</Button>
+          <Button
+            variant='tertiary'
+            style={{ borderRadius: 2 }}
+            icon='Check'
+            disabled={!settings.all?.plugin}
+            onClick={() => {
+              setSettings(settings.all);
+              setIsOpen(false);
+            }}
+          >
+            Apply!
+          </Button>
         </Stack>
       </Popover.Content>
     </Popover.Root>
