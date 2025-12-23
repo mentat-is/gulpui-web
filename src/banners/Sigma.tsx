@@ -1,7 +1,7 @@
 import { Application } from '@/context/Application.context'
 import { Extension } from '@/context/Extension.context'
 import { Banner as UIBanner } from '@/ui/Banner'
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useCallback, useState, useMemo } from 'react'
 import { Source } from '@/entities/Source'
 import { Checkbox } from '@/ui/Checkbox'
 import { Icon } from '@impactium/icons'
@@ -30,9 +30,18 @@ export namespace Sigma {
     const [isZip, setIsZip] = useState<boolean>(false);
     const { Info, destroyBanner } = Application.use();
 
+    const [zipSubmit, setZipSubmit] = useState<{ run: () => Promise<void> }>();
+
     const DoneButton = () => {
       const submit = async () => {
-        if (!rules.length && !isZip) {
+        if (isZip) {
+          if (zipSubmit) {
+            await zipSubmit.run();
+          }
+          return;
+        }
+
+        if (!rules.length) {
           return toast('Select at least one rule or zip file')
         }
 
@@ -65,19 +74,34 @@ export namespace Sigma {
       setRules(fileData);
     }
 
+    const onRegisterSubmit = useCallback((callback: () => Promise<void>) => setZipSubmit({ run: callback }), []);
+
+    const sourcePlaceholder = useMemo(() => {
+      if (isZip) {
+        return 'Select sources to apply sigma zip for them'
+      }
+      return 'Select sources to apply sigma rules for them'
+    }, [isZip])
+
     return (
       <UIBanner title="Apply sigma rules" done={<DoneButton />} {...props}>
         <Extension.Optional name='SigmaZip.banner.tsx'>
           <Toggle option={['File', 'Zip']} checked={isZip} onClick={() => setIsZip(!isZip)} />
-        </Extension.Optional>
+        </Extension.Optional>       
 
+        <Source.Select.Multi selected={sources} setSelected={setSources} placeholder={sourcePlaceholder} />
         {isZip ? (
-          <Extension.Component name='SigmaZip.banner.tsx' props={{ sources }} />
+          <Extension.Component
+            name='SigmaZip.banner.tsx'
+            props={{
+              sources,
+              createNotes,
+              onRegisterSubmit
+            }}
+          />
         ) : (
-          <Input type="file" icon="Sigma" multiple variant="highlighted" onChange={rulesInputChangeHandler}/>
+          <Input type="file" icon="Sigma" accept='.yml' multiple variant="highlighted" onChange={rulesInputChangeHandler} />
         )}
-
-        <Source.Select.Multi selected={sources} setSelected={setSources} placeholder='Select sources to apply sigma rules for them' />
         <Stack ai='center' gap={6}>
           <Checkbox id='isCreateNotes' checked={createNotes} onCheckedChange={v => setCreateNotes(!!v)} />
           <Label htmlFor='isCreateNotes' cursor='pointer' value='Create notes' />

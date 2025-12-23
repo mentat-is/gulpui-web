@@ -1118,7 +1118,7 @@ export class Info implements InfoProps {
       } else {
         const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
         Logger.log(message, Info);
-        this.setInfoByKey([...notes], 'target', 'notes'); // Сохранение данных после завершения всех запросов
+        this.setInfoByKey([...notes], 'target', 'notes'); // Saving data after all requests are completed
         if (notes.length >= 2500) {
           toast.success(message, {
             icon: <Icon name='Check' />,
@@ -2042,9 +2042,7 @@ export class Info implements InfoProps {
       body: {
         sigmas: await Promise.all(sigmas.map(s => s.text())),
         q_options: {
-          note_parameters: {
-            create_notes: notes,
-          },
+          create_notes: notes,
         },
         src_ids
       },
@@ -2073,6 +2071,16 @@ export class Info implements InfoProps {
           });
         }
       })
+      SmartSocket.Class.instance.con(SmartSocket.Message.Type.COLLAB_CREATE, m => m.req_id === req_id, m => {
+          if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
+            const currentNotes = this.app.target.notes;
+            const newItems = m.payload.obj.filter(item => item.type === 'note');
+            this.setInfoByKey([...currentNotes, ...newItems], 'target', 'notes');            
+            toast.success(`Fetched ${newItems.length} notes`, {
+                        richColors: true
+                      });
+          }          
+        })
     });
   }
 
