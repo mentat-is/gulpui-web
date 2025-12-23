@@ -2,7 +2,7 @@ import s from './styles/Select.module.css'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { cn } from '@impactium/utils'
 import { Icon, Icon as ImpactiumIcon } from '@impactium/icons'
-import { ComponentRef, forwardRef, createContext, useContext, useState, useCallback, useMemo } from 'react'
+import { ComponentRef, forwardRef, createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { ComponentPropsWithoutRef } from 'react'
 import { Checkbox } from './Checkbox'
 import { Arrayed } from '@/class/Info'
@@ -48,6 +48,12 @@ export namespace Select {
     }: Select.Multi.Root.Props) => {
       const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue ?? value)
       const [isOpen, setIsOpen] = useState(false);
+
+      useEffect(() => {
+        if (value) {
+          setSelectedValues(value)
+        }
+      }, [value])
 
       const handleValueChange = useCallback((newValue: string) => {
         const updatedValues = selectedValues.includes(newValue)
@@ -112,6 +118,31 @@ export namespace Select {
           <Icon name={(Array.isArray(icon) ? icon[Math.min(selectedValues.length, icon.length) - 1] : icon) || 'Status'} />
           {Text}
         </>
+      )
+    }
+
+    export const ToggleAll = ({
+      label = "Select all",
+      onToggle,
+      checked
+    }: {
+      label?: string,
+      onToggle: (checked: boolean) => void,
+      checked: boolean
+    }) => {
+      
+      const isSelected = checked;
+
+      const handleClick = (event: React.MouseEvent) => {
+        event.preventDefault()
+        onToggle(!isSelected)
+      }
+
+      return (
+        <div className={cn(s.item, isSelected && s.selected)} onClick={handleClick} role="option" aria-selected={isSelected}>
+          <Checkbox checked={isSelected} />
+          <span className={s.itemText}>{label}</span>
+        </div>
       )
     }
   }

@@ -252,6 +252,7 @@ export namespace Source {
       const { app } = Application.use();
 
       const all = useMemo(() => sources ?? Source.Entity.selected(app), [sources, app.timeline.filter, app.target.files]);
+      const isAllSelected = useMemo(() => all.length > 0 && all.every(s => selected.includes(s.id)), [all, selected]);
 
       return (
         <UISelect.Multi.Root value={selected} onValueChange={selected => setSelected(selected as Source.Id[])}>
@@ -259,6 +260,11 @@ export namespace Source {
             <UISelect.Multi.Value icon={['File', 'Files']} placeholder={placeholder ?? 'Select files to apply sigma rules'} text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
           </UISelect.Trigger>
           <UISelect.Content>
+            <UISelect.Multi.ToggleAll
+              label={isAllSelected ? "Deselect all" : "Select all"}
+              checked={isAllSelected}
+              onToggle={(val) => setSelected(val ? all.map(s => s.id) : [])}
+            />
             {all.map(source => (
               <UISelect.Item key={source.id} value={source.id}>
                 <Icon name={Source.Entity.icon(source) || 'File'} />
