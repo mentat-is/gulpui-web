@@ -11,7 +11,6 @@ import { Preview } from './Preview.banner'
 import { FilterFileBanner } from './FilterFile.banner'
 import { cn } from '@impactium/utils'
 import { Refractor } from '@/ui/utils'
-import { SetState } from '@/class/API'
 import { toast } from 'sonner'
 import { Stack } from '@/ui/Stack'
 import { Badge } from '@/ui/Badge'
@@ -36,9 +35,6 @@ export namespace SelectFiles {
     const [selectedContexts, setSelectedContexts] = useState<Set<Context.Id>>(new Set(Context.Entity.selected(app).map(c => c.id)));
     const [selectedFiles, setSelectedFiles] = useState<Set<Source.Id>>(new Set(Source.Entity.selected(app).map(c => c.id)));
 
-    // @ts-ignore
-    const update = <T extends Set<Source.Id | Context.Id>>(values: T, vault: SetState<T>) => vault(new Set<T>([...values.values()]));
-
     function all(select: boolean) {
       const operation = Operation.Entity.selected(app);
       if (!operation) {
@@ -48,54 +44,68 @@ export namespace SelectFiles {
         return;
       }
 
-      const method = select ? 'add' : 'delete';
-
-      app.target.files.filter(file => file.operation_id === operation.id).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => {
-        selectedFiles[method](file.id);
-      });
-
-      app.target.contexts.filter(context => context.operation_id === operation.id).forEach(context => {
-        const files = Context.Entity.sources(app, context);
-
-        if (files.some(file => selectedFiles.has(file.id))) {
-          selectedContexts.add(context.id);
-        } else {
-          selectedContexts.delete(context.id);
-        }
+      setSelectedFiles(prev => {
+        const newSet = new Set(prev)
+        app.target.files
+          .filter(file => file.operation_id === operation.id)
+          .filter(file => file.name.toLowerCase().includes(filter.toLowerCase()))
+          .forEach(file => select ? newSet.add(file.id) : newSet.delete(file.id))
+        return newSet
       })
 
-      update(selectedFiles, setSelectedFiles);
-      update(selectedContexts, setSelectedContexts);
+      setSelectedContexts(prev => {
+        const newSet = new Set(prev)
+        app.target.contexts
+          .filter(context => context.operation_id === operation.id)
+          .forEach(context => {
+            const files = Context.Entity.sources(app, context)
+            if (files.some(file => selectedFiles.has(file.id))) {
+              newSet.add(context.id)
+            } else {
+              newSet.delete(context.id)
+            }
+          })
+        return newSet
+      })
     }
 
     function setContext(context: Context.Id, select: boolean) {
-      const method = select ? 'add' : 'delete';
+      setSelectedContexts(prev => {
+        const newSet = new Set(prev)
+        if (select) newSet.add(context)
+        else newSet.delete(context)
+        return newSet
+      })
 
-      selectedContexts[method](context);
-
-      Context.Entity.sources(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase())).forEach(file => selectedFiles[method](file.id));
-
-      update(selectedFiles, setSelectedFiles);
-      update(selectedContexts, setSelectedContexts);
+      setSelectedFiles(prev => {
+        const newSet = new Set(prev)
+        Context.Entity.sources(app, context)
+          .filter(file => file.name.toLowerCase().includes(filter.toLowerCase()))
+          .forEach(file => select ? newSet.add(file.id) : newSet.delete(file.id))
+        return newSet
+      })
     }
 
     function setFile(target: Source.Id, select: boolean) {
-      const method = select ? 'add' : 'delete';
-
-      selectedFiles[method](target);
+      setSelectedFiles(prev => {
+        const newSet = new Set(prev)
+        if (select) newSet.add(target)
+        else newSet.delete(target)
+        return newSet
+      })
 
       const file = Source.Entity.id(app, target);
 
-      const files = Context.Entity.sources(app, file.context_id);
-
-      if (files.some(file => selectedFiles.has(file.id))) {
-        selectedContexts.add(file.context_id);
-      } else {
-        selectedContexts.delete(file.context_id);
-      }
-
-      update(selectedContexts, setSelectedContexts);
-      update(selectedFiles, setSelectedFiles);
+      setSelectedContexts(prev => {
+        const files = Context.Entity.sources(app, file.context_id)
+        const newSet = new Set(prev)
+        if (files.some(f => selectedFiles.has(f.id) || f.id === target)) {
+          newSet.add(file.context_id)
+        } else {
+          newSet.delete(file.context_id)
+        }
+        return newSet
+      })
     }
 
     const hasData = app.target.operations.length > 0 || app.target.contexts.length > 0;
@@ -164,7 +174,7 @@ export namespace SelectFiles {
         <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
           <Skeleton show={!hasData} width='full'>
             {filteredContexts.length > 0 ? (
-              filteredContexts.map((context) => (
+              filteredContexts.map(context => (
                 <ContextComponent key={context.id} context={context} filter={filter} setFile={setFile} setContext={setContext} selectedFiles={selectedFiles} selectedContexts={selectedContexts} />
               ))
             ) : (
@@ -220,13 +230,7 @@ function ContextComponent({ context, filter, selectedFiles, selectedContexts, se
   const files = Context.Entity.sources(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
 
   return (
-    <Stack
-      dir='column'
-      ai='stretch'
-      jc='flex-start'
-      className={s.branch}
-      key={context.id}
-    >
+    <Stack dir='column' ai='stretch' jc='flex-start' className={s.branch} key={context.id}>
       <Stack className={s.contextHeading}>
         <Checkbox
           style={{ height: 20, width: 20 }}
@@ -253,7 +257,7 @@ function ContextComponent({ context, filter, selectedFiles, selectedContexts, se
         />
       </Stack>
       <Separator className={s.separator} />
-      {files.map((file) => (
+      {files.map(file => (
         <FileComponent key={file.id} file={file} selectedFiles={selectedFiles} setFile={setFile} />
       ))}
     </Stack>
