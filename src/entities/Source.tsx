@@ -77,6 +77,11 @@ export namespace Source {
         a.pinned === b.pinned ? 0 : a.pinned ? -1 : 1,
       )
 
+    public static pin = (file: Source.Type): Source.Type => ({ ...file, pinned: true })
+    public static unpin = (file: Source.Type): Source.Type => ({ ...file, pinned: false })
+    public static togglePin = (file: Source.Type): Source.Type =>
+      file.pinned ? Source.Entity.unpin(file) : Source.Entity.pin(file)
+
     public static isEventKeyFetched = (app: App.Type, id: Source.Type | Source.Id, keys: Array<keyof Doc.Type> = []) => {
       const file = Source.Entity.id(app, id);
       return Source.Entity.events(app, file).slice(0, 100).every(e => [...keys, file.settings.field].every(k => typeof e[k] !== 'undefined'));
@@ -266,9 +271,17 @@ export namespace Source {
               onToggle={(val) => setSelected(val ? all.map(s => s.id) : [])}
             />
             {all.map(source => (
-              <UISelect.Item key={source.id} value={source.id}>
-                <Icon name={Source.Entity.icon(source) || 'File'} />
+              <UISelect.Item key={source.id} value={source.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon
+                  name={Source.Entity.icon(source) || 'File'}
+                  onClick={() => {
+                    const updated = Source.Entity.togglePin(source);
+                    app.target.files = app.target.files.map(f => f.id === updated.id ? updated : f);
+                  }}
+                  style={{ cursor: 'pointer' }}
+                />
                 {source.name}
+                {source.pinned && <Icon name="Pin" style={{ color: '#f5a623' }} />}
                 <Badge variant='gray-subtle' value={Context.Entity.id(app, source.context_id).name} />
               </UISelect.Item>
             ))}
