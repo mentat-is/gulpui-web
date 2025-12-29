@@ -32,7 +32,7 @@ import { Highlight } from '@/entities/Highlight'
 import { Mapping } from '@/entities/Mapping'
 import { Internal } from '@/entities/addon/Internal'
 import { buffer } from 'stream/consumers'
-import { AI } from '@/banners/SnikerChat.banner'
+
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -379,6 +379,95 @@ export class Info implements InfoProps {
     }));
 
     return file.id
+  }
+
+  query_gulp = async(docIds: Doc.Id[], fields: string[], preview: boolean) => {
+    const operation = Operation.Entity.selected(this.app)
+    if (!operation) {
+      return
+    }
+
+    const body: Record<any, any> = {
+      flt: {
+        doc_ids: docIds
+      },
+      q_options: {
+        limit: 10000,
+      }
+    }
+
+    if (fields.length > 0) {
+      body.q_options.fields = fields
+    }
+
+    if (preview) {
+      body.q_options.preview_mode = true
+    }
+
+    const request_query: Record<string, string> = {
+      ws_id: this.app.general.ws_id,
+      operation_id: operation.id,
+      req_id: generateUUID(Request.Prefix.QUERY)
+    }
+
+     const resp = await api<any>(
+      '/query_gulp', {
+      method: 'POST',
+      query: request_query,
+      body,
+      raw: true,
+    }, ({ req_id, status }) => {
+      if (status !== 'pending') {
+        return;
+      }
+
+      const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.DOCUMENTS_CHUNK, m => m.req_id === req_id && this.app.general.loadings.byRequestId.has(req_id), m => {
+        const events = Doc.Entity.normalize(m.payload.docs ?? []);
+
+        this.events_add(events);
+        if (m.payload.last) {
+          this.delLoading(req_id);
+          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+        };
+      })
+      SmartSocket.Class.instance.conce(SmartSocket.Message.Type.STATS_UPDATE, m => m.req_id === req_id, m => {
+        if (m.payload.obj.status !== 'done') {
+          toast.error(`Query ${req_id} failed`, {
+            icon: <Icon name='Stop' />,
+            description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            duration: 1000 * 2,
+            // [λ] Uncomment next lines if not fixed in backend till 2026
+            // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            // duration: 1000 * 60 * 10,
+            richColors: true
+          })
+        } else {
+          console.log(m);
+          toast.success('Query finished', {
+            description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
+            icon: <Icon name='Check' />
+          })
+        }
+      });
+    });
+
+    if (preview) {
+      if (!resp || (resp || {})?.data?.total_hits === 0) {
+        toast.error('This filter returned no results. No matching documents were found', {
+          icon: <Icon name='FaceUnhappy' />,
+          richColors: true
+        })
+      } else {
+        toast(`Total hits for this filter is ${resp.data?.total_hits}`)
+      }
+    }
+
+
+    return resp ? resp.data : {
+      docs: [],
+      total_hits: 0
+    };
+
   }
 
   query_file = async (query: Query.Type, {
@@ -968,109 +1057,6 @@ export class Info implements InfoProps {
 
   setDialogSize = (number: number) => {
     this.setInfoByKey(number, 'timeline', 'dialogSize')
-  }
-
-  ai = {
-    setStreaming: (streaming: boolean) => this.setInfoByKey({ ...this.app.general.ai, streaming }, 'general', 'ai'),
-    addMessage: (message: AI.Message) => {
-      const messages = [...this.app.general.ai.messages, message];
-      this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
-    },
-    addMessages: (newMessages: AI.Message[]) => {
-      const messages = [...this.app.general.ai.messages, ...newMessages];
-      this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
-    },
-    getHint: async (logs: any[]) => {
-      const operation = Operation.Entity.selected(this.app);
-      if (!operation) return;
-
-      this.ai.setStreaming(true);
-
-      await api('/get_ai_hint', {
-        method: 'POST',
-        query: {
-          token: Internal.Settings.token,
-          ws_id: this.app.general.ws_id,
-          operation_id: operation.id
-        },
-        body: logs,
-        raw: true
-      }, ({ req_id }) => {
-        let content = '';
-
-        const stream = SmartSocket.Class.instance.con(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, m => m.req_id === req_id, m => {
-          if (!m.payload) return;
-
-          content += m.payload;
-
-          const messages = [...this.app.general.ai.messages];
-          const last = messages.length - 1;
-
-          if (last < 0 || !messages[last]?.isGenerated) {
-            messages.push({ isGenerated: true, content });
-          } else {
-            messages[last].content = content;
-          }
-
-          this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
-        });
-
-        const done = SmartSocket.Class.instance.conce(SmartSocket.Message.Type.AI_ASSISTANT_DONE, m => m.req_id === req_id, () => {
-          this.ai.setStreaming(false);
-          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, stream);
-          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_ERROR, error);
-        });
-
-        const error = SmartSocket.Class.instance.conce(SmartSocket.Message.Type.AI_ASSISTANT_ERROR, m => m.req_id === req_id, m => {
-          this.ai.setStreaming(false);
-          const messages = [...this.app.general.ai.messages];
-          const last = messages.length - 1;
-
-          const content = String(m.payload) ?? 'Error during response generation';
-
-          if (last < 0 || !messages[last]?.isGenerated) {
-            messages.push({ isGenerated: true, content });
-          } else {
-            messages[last].content = content;
-          }
-
-          this.setInfoByKey({ ...this.app.general.ai, messages }, 'general', 'ai');
-
-          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, stream);
-          SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_DONE, done);
-        });
-      });
-    },
-    analyze: async () => {
-      const docs = Doc.Entity.flag.getDocs(this.app);
-      if (!docs.length) {
-        return this.ai.addMessage({
-          content: 'No flagged events found to analyze.',
-          isGenerated: true
-        });
-      }
-
-      this.ai.addMessages([
-        {
-          content: `Analyze ${docs.length} flagged events`,
-          isGenerated: false
-        },
-        {
-          content: '',
-          isGenerated: true
-        }
-      ]);
-
-      await this.ai.getHint(
-        docs.map(e => ({
-          'event.original': e['event.original'],
-          timestamp: e['@timestamp'],
-          'agent.type': e['agent.type'],
-          'gulp.source_id': e['gulp.source_id'],
-          'gulp.context_id': e['gulp.context_id'],
-        }))
-      );
-    }
   }
 
   // ⚠️ UNTOUCHABLE

@@ -43,6 +43,7 @@ export namespace Doc {
   interface Flag {
     KEY: string;
     getList: () => Set<Doc.Id>;
+    getDocIds: (app: App.Type) => Doc.Id[];
     getDocs: (app: App.Type) => Doc.Type[];
     isLimitReached: (ids?: Set<Doc.Id>) => boolean;
     toggle: (id: Doc.Id) => boolean;
@@ -145,8 +146,23 @@ export namespace Doc {
 
       /**
        * Method to get all flagged events from local storage
-       * @returns Array of Doc.Type
+       * @returns Array of Doc.Id
        */
+      getDocIds: (app: App.Type): Doc.Id[] => {
+        const ids  = Doc.Entity.flag.getList();
+        if (!ids.size) return [];
+        const result: Doc.Id[] = [];
+
+        for (const events of app.target.events.values()) {
+          for (const event of events) {
+            if (ids.has(event._id)) {
+              result.push(event._id);
+            }
+          }
+        }
+        return result;
+      },
+      
       getDocs: (app: App.Type): Doc.Type[] => {
         const ids = Doc.Entity.flag.getList();
 
