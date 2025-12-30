@@ -74,3 +74,12 @@
   text-transform: unset !important;
   color: var(--accent);
 }
+
+.manualTextarea {
+  min-height: 200px;
+  width: 640px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 12px;
+  color: var(--blue-900);
+}

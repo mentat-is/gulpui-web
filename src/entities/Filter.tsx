@@ -39,7 +39,10 @@ export namespace Filter {
   }
 
   export class Entity {
-    static query = ({ filters, string, fieldTypeMap }: Query.Type & {fieldTypeMap?: Record<string, string> }) => {
+    static query = (q: Query.Type & {fieldTypeMap?: Record<string, string> }) => {
+      if (q.mode === 'manual' && q.raw) return q.raw
+
+      const { filters, string, fieldTypeMap } = q
       const query: Record<string, any> = structuredClone(
         OpenSearchQueryBuilder.INITIAL,
       )

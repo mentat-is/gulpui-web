@@ -1948,7 +1948,9 @@ export class Info implements InfoProps {
 
       this.app.target.filters[file.id] = {
         string: query.string || Filter.Entity.base(file),
-        filters: (Array.isArray(query.filters) && query.filters.length > 0) ? query.filters : prev?.filters ?? []
+        filters: (Array.isArray(query.filters) && query.filters.length > 0) ? query.filters : prev?.filters ?? [],
+        raw: query.raw,
+        mode: query.mode
       };
     });
 
