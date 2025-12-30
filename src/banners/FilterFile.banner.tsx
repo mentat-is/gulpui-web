@@ -50,9 +50,10 @@ export function FilterFileBanner({
   const base = useMemo<Query.Type>(() => ({ string: '', filters: [] }), [])
 
   const updateQuery = useCallback((): Query.Type => {
-    if (!files.length) return base
+    const string = Filter.Entity.base(files)
+    if (!files.length) return { ...base, string }
     const q = Info.getQuery(files[0])
-    return { ...q, string: files.length === 1 ? q.string : '' }
+    return { ...q, string }
   }, [Info, files, base])
 
   useEffect(() => {
@@ -147,16 +148,15 @@ export function FilterFileBanner({
   )
 
   const QueryStringPart = useMemo(() => {
-    if (files.length > 1) return null
     return (
       <OpenSearchQueryBuilder.Query.String
         style={fws}
         string={query.string}
         setString={string => setQuery(q => ({ ...q, string }))}
-        reset={() => setQuery(base)}
+        reset={() => setQuery(q => ({ ...q, string: Filter.Entity.base(files) }))}
       />
     )
-  }, [files.length, query.string, base])
+  }, [files, query.string])
 
   const AddCondition = useMemo(
     () => <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} />,
