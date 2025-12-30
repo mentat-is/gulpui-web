@@ -1,4 +1,4 @@
-import { HTMLAttributes } from 'react';
+import React,{ HTMLAttributes } from 'react';
 import s from './styles/Keyboard.module.css';
 import { cn } from '@impactium/utils';
 
@@ -12,7 +12,9 @@ export function Keyboard({ meta, shift, alt, ctrl, plus, command, className, chi
   return (
     <kbd className={cn(className, s.kbd)} {...props}>
       {keys.map((key, i) => (
-        <>{key} {plus && i !== keys.length - 1 && '+'}</>
+        <React.Fragment key={i}>
+         {key} {plus && i !== keys.length - 1 && '+'}
+        </React.Fragment>
       ))}
     </kbd>
   )
