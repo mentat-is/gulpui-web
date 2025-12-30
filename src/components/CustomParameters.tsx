@@ -80,7 +80,7 @@ export namespace CustomParameters {
 
           if (param.type === 'bool') {
             return (
-              <Stack style={{ width: '100%' }}>
+              <Stack key={k} style={{ width: '100%' }}>
                 <Toggle
                   onCheckedChange={v => setCustomParameters(c => ({ ...c, [k]: v }))}
                   checked={value}
@@ -92,6 +92,7 @@ export namespace CustomParameters {
 
           return (
             <Input
+              key={k} 
               placeholder={`${k} value should be in ${param.type} format`}
               onChange={customParameterInputChangeHandlerConstructor(k)}
               value={Array.isArray(value) ? value.join(', ') : value}
