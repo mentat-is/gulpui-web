@@ -14,7 +14,7 @@ import { generateUUID } from '@/ui/utils'
 import { Request } from './Request'
 import { Application } from '@/context/Application.context'
 import { Button } from '@/ui/Button'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, Fragment } from 'react'
 import { toast } from 'sonner'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Internal } from './addon/Internal'
@@ -23,6 +23,7 @@ import { Select as UISelect } from '@/ui/Select'
 import { SetState } from '@/class/API'
 import { Icon } from '@impactium/icons'
 import { Badge } from '@/ui/Badge'
+import { Checkbox } from '@/ui/Checkbox'
 
 export namespace Source {
   export const name = 'Source'
@@ -256,34 +257,112 @@ export namespace Source {
       const { app } = Application.use();
 
       const all = useMemo(() => sources ?? Source.Entity.selected(app), [sources, app.timeline.filter, app.target.files]);
+      const availableContexts = useMemo(() => {
+        const contextIds = new Set(all.map(s => s.context_id));
+        return Context.Entity.selected(app).filter(c => contextIds.has(c.id));
+      }, [all, app]);
+
       const isAllSelected = useMemo(() => all.length > 0 && all.every(s => selected.includes(s.id)), [all, selected]);
+
+      const toggleContext = (contextId: Context.Id, currentSelectedContextSources: Source.Type[], allContextSources: Source.Type[]) => {
+        const allContextSourceIds = allContextSources.map(s => s.id);
+        const isAllContextSelected = currentSelectedContextSources.length === allContextSources.length;
+
+        let newSelected = [...selected];
+
+        if (isAllContextSelected) {
+           // Deselect all in context
+           newSelected = newSelected.filter(id => !allContextSourceIds.includes(id));
+        } else {
+           // Select all in context
+           // Add ones that are not already present
+           allContextSourceIds.forEach(id => {
+             if (!newSelected.includes(id)) {
+               newSelected.push(id);
+             }
+           });
+        }
+        setSelected(newSelected);
+      };
+
+      const ContextGroup = ({ context, all, selected, toggleContext, isAllContextSelected, isIndeterminate, selectedContextSources, contextSources }: any) => {
+          const { app } = Application.use();
+          const [isCollapsed, setIsCollapsed] = useState(false);
+
+          return (
+             <UISelect.Group>
+                <UISelect.Label style={{ display: 'flex', justifyContent: 'flex-start', textAlign: 'left', gap: 8, paddingLeft: 25 }}>
+                   <Icon 
+                      name={isCollapsed ? "ChevronRight" : "ChevronDown"} 
+                      onClick={(e) => {
+                         e.preventDefault();
+                         e.stopPropagation();
+                         setIsCollapsed(!isCollapsed);
+                      }}
+                      style={{ cursor: 'pointer', width: 16, height: 16, position: 'absolute', left: 4 }}
+                   />
+                   <Checkbox
+                      style={{ width: 'calc(100% - 20px)', opacity: 0, position: 'absolute', left: 20 }}
+                      checked={isAllContextSelected ? true : isIndeterminate ? 'indeterminate' : false}
+                      onCheckedChange={() => toggleContext(context.id, selectedContextSources, contextSources)}
+                   />
+                   {context.name}
+                </UISelect.Label>
+                {!isCollapsed && contextSources.map((source: Source.Type) => (
+                  <UISelect.Item key={source.id} value={source.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Icon
+                      name={Source.Entity.icon(source) || 'File'}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // @ts-ignore
+                        const updated = Source.Entity.togglePin(source);
+                        // @ts-ignore
+                        app.target.files = app.target.files.map(f => f.id === updated.id ? updated : f);
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    {source.name}
+                    {source.pinned && <Icon name="Pin" style={{ color: '#f5a623' }} />}
+                  </UISelect.Item>
+                ))}
+             </UISelect.Group>
+          );
+      }
 
       return (
         <UISelect.Multi.Root value={selected} onValueChange={selected => setSelected(selected as Source.Id[])}>
           <UISelect.Trigger>
-            <UISelect.Multi.Value icon={['File', 'Files']} placeholder={placeholder ?? 'Select files to apply sigma rules'} text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
+            <UISelect.Multi.Value icon={['File', 'Files']} placeholder={placeholder ?? 'Select Sources'} text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
           </UISelect.Trigger>
           <UISelect.Content>
-            <UISelect.Multi.ToggleAll
+             <UISelect.Multi.ToggleAll
               label={isAllSelected ? "Deselect all" : "Select all"}
               checked={isAllSelected}
               onToggle={(val) => setSelected(val ? all.map(s => s.id) : [])}
             />
-            {all.map(source => (
-              <UISelect.Item key={source.id} value={source.id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon
-                  name={Source.Entity.icon(source) || 'File'}
-                  onClick={() => {
-                    const updated = Source.Entity.togglePin(source);
-                    app.target.files = app.target.files.map(f => f.id === updated.id ? updated : f);
-                  }}
-                  style={{ cursor: 'pointer' }}
-                />
-                {source.name}
-                {source.pinned && <Icon name="Pin" style={{ color: '#f5a623' }} />}
-                <Badge variant='gray-subtle' value={Context.Entity.id(app, source.context_id).name} />
-              </UISelect.Item>
-            ))}
+             {availableContexts.map((context, index) => {
+               const contextSources = all.filter(s => s.context_id === context.id);
+               const selectedContextSources = contextSources.filter(s => selected.includes(s.id));
+               const isAllContextSelected = selectedContextSources.length === contextSources.length;
+               const isIndeterminate = selectedContextSources.length > 0 && !isAllContextSelected;
+               
+               return (
+                   <Fragment key={context.id}>
+                       <ContextGroup 
+                           context={context} 
+                           all={all} 
+                           selected={selected} 
+                           toggleContext={toggleContext} 
+                           isAllContextSelected={isAllContextSelected} 
+                           isIndeterminate={isIndeterminate} 
+                           selectedContextSources={selectedContextSources} 
+                           contextSources={contextSources}
+                       />
+                       {index < availableContexts.length - 1 && <UISelect.Separator />}
+                   </Fragment>
+               )
+            })}
           </UISelect.Content>
         </UISelect.Multi.Root>
       )

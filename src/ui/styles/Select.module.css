@@ -268,7 +268,7 @@
   margin-top: 4px;
   margin-bottom: 4px;
   height: 1px;
-  background-color: var(--gray-36);
+  background-color: var(--gray-alpha-400);
 }
 .item button[role='checkbox'] svg {
   transform: translateY(0px);
