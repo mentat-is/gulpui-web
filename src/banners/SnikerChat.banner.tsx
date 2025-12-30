@@ -270,13 +270,7 @@ export namespace AI {
             ))}
           </Stack>
           <Stack dir="row" ai="end" gap={8} style={{ width: '100%' }}>
-            <Button
-              icon="Search"
-              variant="secondary"
-              onClick={analyze}
-              disabled={loading}
-              style={{ width: '100%' }}
-            >
+            <Button icon="Search" variant="secondary" onClick={analyze} disabled={loading} style={{ width: '100%' }}>
               Analyze Flagged Events
             </Button>
           </Stack>
