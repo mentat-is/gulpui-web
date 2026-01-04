@@ -14,6 +14,7 @@
   cursor: pointer;
   margin-top: 1px;
 }
+
 .focus {
   border: 1px solid var(--geist-border);
   box-shadow: 0px 0px 0px 4px #ffffff3d;

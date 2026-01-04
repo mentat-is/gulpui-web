@@ -7,12 +7,8 @@ import { Label } from '@/ui/Label'
 import { Icon } from '@impactium/icons'
 import { format } from 'date-fns'
 import {
-  ChangeEvent,
-  CSSProperties,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
+  ChangeEvent, CSSProperties, useCallback,
+  useEffect, useMemo, useState,
 } from 'react'
 import s from './styles/EnrichmentBanner.module.css'
 import { CustomParameters } from '@/components/CustomParameters'

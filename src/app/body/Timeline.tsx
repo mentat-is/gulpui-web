@@ -1,16 +1,16 @@
 import { Application } from '@/context/Application.context';
 import { Algorhithm, getTimestamp } from '@/ui/utils';
 import { Source } from '@/entities/Source';
-import { useEffect, useMemo } from 'react';
 import { Navigator } from './Navigator';
 import { Tabular } from './Tabular';
 import { Stack } from '@/ui/Stack';
 import s from '../Gulp.module.css';
+import { useEffect } from 'react';
 import { Canvas } from './Canvas';
 import { MINUTE } from '@/dto';
 
 export function Timeline() {
-  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY, spawnBanner } = Application.use()
+  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = Application.use()
 
   const focusEvent = (timestamp: number, onLeft = false, file_id?: Source.Id) => {
     const instance = getAlgothitmInstance()

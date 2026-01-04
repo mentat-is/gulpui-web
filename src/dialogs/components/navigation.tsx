@@ -1,12 +1,12 @@
+import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
 import { Application } from '@/context/Application.context'
-import s from './navigation.module.css'
 import { useEffect, useState } from 'react'
+import { Source } from '@/entities/Source'
+import s from './navigation.module.css'
 import { cn } from '@impactium/utils'
-import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { Doc } from '@/entities/Doc'
-import { Source } from '@/entities/Source'
-import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
+import { Stack } from '@/ui/Stack'
 
 export namespace Navigation {
   export interface Props {
@@ -14,62 +14,55 @@ export namespace Navigation {
   }
 }
 
+const WINDOW_SIZE = 11
+
 export function Navigation({ event }: Navigation.Props) {
-  const { app, Info, spawnDialog } = Application.use()
+  const { app, spawnDialog } = Application.use()
   const [events, setEvents] = useState<Doc.Type[]>([])
 
   useEffect(() => {
     const file = Source.Entity.id(app, event['gulp.source_id'])
+    if (!file) return
 
-    const events = Doc.Entity.get(app, file.id)
+    const allEvents = Doc.Entity.get(app, file.id)
+    if (!allEvents.length) return
 
-    const index = events.findIndex((ev) => ev._id === event._id)
+    const index = allEvents.findIndex((e) => e._id === event._id)
+    if (index === -1) return
 
-    const nears = events.filter((e, i) => i > index - 16 && i < index + 16)
+    const CENTER = Math.floor(WINDOW_SIZE / 2)
+    setEvents(
+      Array.from({ length: WINDOW_SIZE }, (_, i) => allEvents[(index + i - CENTER + allEvents.length) % allEvents.length])
+    )
+  }, [event._id, app])
 
-    setEvents(nears.reverse())
-  }, [event])
+  const openEvent = (e: Doc.Type) => () => spawnDialog(<DisplayEventDialog event={e} />)
 
-  const navigatorEventClickHandlerConstructor = (e: Doc.Type) => {
-    return () => spawnDialog(<DisplayEventDialog event={e} />)
+  const changeEvent = (forward: boolean) => () => {
+    const file = Source.Entity.id(app, event['gulp.source_id'])
+    const allEvents = Doc.Entity.get(app, file.id)
+    const index = allEvents.findIndex((e) => e._id === event._id)
+
+    if (index === -1) return
+    
+    const nextIndex = (index + (forward ? -1 : 1) + allEvents.length) % allEvents.length
+    spawnDialog(<DisplayEventDialog event={allEvents[nextIndex]} />)
   }
-
-  const changeEventTargerHandlerConstructor = (forvard: boolean) => () => {
-    const event = Info.setTimelineTarget(forvard ? 1 : -1)
-
-    if (event) {
-      spawnDialog(<DisplayEventDialog event={event} />)
-    }
-  }
-
-  const all = Doc.Entity.get(app, event['gulp.source_id']);
 
   return (
     <Stack className={s.navigation} jc="space-between">
-      <Button
-        disabled={all.length > 0 && all[all.length - 1]._id === event._id}
-        onClick={changeEventTargerHandlerConstructor(true)}
-        icon="ArrowLeft"
-        variant='default'
-        rounded
-      />
+      <Button onClick={changeEvent(false)} icon="ArrowLeft" variant="default" rounded />
       <Stack className={s.content} jc="center" flex>
         {events.map((e) => (
           <EventIndicator
             key={e._id}
             className={cn(e._id === event._id && s.focus)}
-            onClick={navigatorEventClickHandlerConstructor(e)}
+            onClick={openEvent(e)}
             event={e}
           />
         ))}
       </Stack>
-      <Button
-        disabled={all.length > 0 && all[0]._id === event._id}
-        onClick={changeEventTargerHandlerConstructor(false)}
-        icon="ArrowRight"
-        variant='default'
-        rounded
-      />
+      <Button onClick={changeEvent(true)} icon="ArrowRight" variant="default" rounded />
     </Stack>
   )
 }
