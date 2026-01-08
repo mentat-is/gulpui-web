@@ -43,28 +43,27 @@ export namespace Collab {
       prevProps.item.type === nextProps.item.type;
   });
   export function List({ notes, links, className, ...props }: Collab.List.Props) {
-    if (notes.length === 0 && links.length === 0) {
-      return null
-    }
     const { app, spawnBanner } = Application.use();
+    const hasItems = notes.length > 0 || links.length > 0;
     const [targetId, setTargetId] = useState<string>(notes[0]?.id || links[0]?.id);
 
-    const target = Note.Entity.id(app, targetId as Note.Id) || Link.Entity.id(app, targetId as Link.Id);
+    const target = useMemo(() => {
+      if (!targetId) return null;
+      return ( Note.Entity.id(app, targetId as Note.Id) || Link.Entity.id(app, targetId as Link.Id) ); }, [targetId, app]);
 
     useEffect(() => {
       setTargetId(notes[0]?.id || links[0]?.id);
     }, [notes, links]);
-    if (!target) {
-      return null;
-    }
 
     const handleEditClick = useCallback(() => {
+      if (!target) return;
       const banner = target.type === 'note'
         ? <NoteFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc._id)} note={target} />
         : <LinkFunctionality.Create.Banner event={Doc.Entity.id(app, target.doc_id_from)} link={target as unknown as Link.Type} />;
       spawnBanner(banner);
     }, [target, app, spawnBanner]);
     const handleDeleteClick = useCallback(() => {
+      if (!target) return;
       const banner = target.type === 'note'
         ? <Note.Delete.Banner note={target} />
         : <Link.Delete.Banner link={target as unknown as Link.Type} />;
@@ -74,10 +73,11 @@ export namespace Collab {
       setTargetId(v);
     }, []);
 
-    const targetColorStyle = useMemo(() => ({ color: target.color }), [target.color]);
+    const targetColorStyle = useMemo(() => ({ color: target?.color || '#000' }), [target?.color]);
+
     const Edit = useMemo(() => <Button variant='secondary' icon='PencilEdit' onClick={handleEditClick} />, [handleEditClick]);
 
-   const List = useMemo(() => {
+    const List = useMemo(() => {
       return [...notes, ...links].map(c => (
         <SelectItem key={c.id} item={c} />
       ));
@@ -87,52 +87,45 @@ export namespace Collab {
       return notes.map(n => n.tags).flat();
     }, [notes]);
 
-    const targetIcon = useMemo(() => {
-      return target.type === 'note' ? Note.Entity.icon(target) : Link.Entity.icon(target as unknown as Link.Type);
-    }, [target]);
-
     const MemoizedSelect = useMemo(() => {
+      if (!target) return null;
       return (
         <Select.Root onValueChange={handleValueChange}>
           <Select.Trigger style={targetColorStyle} value={target.id}>
-            <Select.Icon name={targetIcon} />
+            <Select.Icon name="Target" />
             <p>{target.name}</p>
           </Select.Trigger>
           <Select.Content>
             {List}
           </Select.Content>
         </Select.Root>
-      )
-    }, [handleValueChange, targetColorStyle, target, targetIcon, List]);
+      );
+    }, [handleValueChange, targetColorStyle, target, List]);
 
-    return (
+    return hasItems && target && (
       <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
-        <Stack dir='column' ai='stretch'>
-          <Stack>
-            {MemoizedSelect}
-            {Edit}
-            <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
-          </Stack>
-          <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
-            <Badge
-              variant='gray-subtle'
-              icon='ClockRewind'
-              size='sm'
-            >
-              Created {formatDistanceToNow(target.time_created, { addSuffix: true })}
-            </Badge>
-            {allTags.map((tag, index) => (
-              <Badge
-                key={tag}
-                value={tag}
-                variant='gray-subtle'
-                size='sm'
-              />
-            ))}
-          </Stack>
-        </Stack>
-        <Separator />
-        <Description value={target.type === 'note' ? target.text : target.description} />
+          <>
+            <Stack dir='column' ai='stretch'>
+              <Stack>
+                {MemoizedSelect}
+                {Edit}
+                <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
+              </Stack>
+              <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
+                <Badge variant='gray-subtle' icon='ClockRewind' size='sm'>
+                  Created {formatDistanceToNow(
+                    target.time_created,
+                    { addSuffix: true }
+                  )}
+                </Badge>
+                {allTags.map(tag => (
+                  <Badge key={tag} value={tag} variant='gray-subtle' size='sm'/>
+                ))}
+              </Stack>
+            </Stack>
+            <Separator />
+            <Description value={ target.type === 'note' ? target.text : target.description }/>
+          </>
       </Stack>
     )
   }
