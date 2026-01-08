@@ -32,10 +32,12 @@ export function Navigation({ event }: Navigation.Props) {
 
     const CENTER = Math.floor(WINDOW_SIZE / 2)
     setEvents(
-      Array.from({ length: WINDOW_SIZE }, (_, i) => allEvents[(index + i - CENTER + allEvents.length) % allEvents.length])
+      Array.from({ length: WINDOW_SIZE }, (_, i) =>
+        allEvents[(index + i - CENTER + allEvents.length) % allEvents.length]
+      )
     )
-  }, [event._id, app])
-
+  }, [event._id, app.target.notes, app.target.links]) 
+  
   const openEvent = (e: Doc.Type) => () => spawnDialog(<DisplayEventDialog event={e} />)
 
   const changeEvent = (forward: boolean) => () => {

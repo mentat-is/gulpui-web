@@ -118,6 +118,10 @@
 }
 
 .flagged {
-  top: 0;
+  top: -5px;
   right: 0;
+}
+
+.linkMarker {
+  left: -4px;
 }

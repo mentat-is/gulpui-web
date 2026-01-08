@@ -30,6 +30,7 @@ import { Filter } from '@/entities/Filter'
 import { Note } from '@/entities/Note'
 import { Color } from '@/entities/Color'
 import { Extension } from '@/context/Extension.context'
+import { Link } from '@/entities/Link'
 
 interface DisplayEventDialogProps {
   event: Doc.Type
@@ -42,9 +43,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { Info, app, spawnBanner } = Application.use()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
-  const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event]);
-  const links = useMemo(() => Doc.Entity.links(app, event), [app.target.links, event]);
+  const [notes, setNotes] = useState<Note.Type[]>(Doc.Entity.notes(app, event));
+  const [links, setLinks] = useState<Link.Type[]>(Doc.Entity.links(app, event));
   const file = useMemo(() => Source.Entity.id(app, event['gulp.source_id']), [app.target.files, event]);
+
+  useEffect(() => {
+    setLinks(Doc.Entity.links(app, event));
+    setNotes(Doc.Entity.notes(app, event));
+  }, [app.target.links, app.target.notes, event]);
 
   useEffect(() => {
     if (!file) {
@@ -323,13 +329,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Stack className={s.actionButtons} gap={12}>
             <Button variant="secondary" onClick={handleCopyJson} icon="Copy">Copy JSON</Button>
             <Button variant="secondary" onClick={handleDownloadJson} icon="Download" title='Download JSON'>Download JSON</Button>
-            <Button
-              onClick={handleFocusTimeline}
-              variant="secondary"
-              icon="Crosshair"
-              style={{ flex: 0 }}
-              title="Focus timeline on this event"
-            />
+            <Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" style={{ flex: 0 }} title="Focus timeline on this event"/>
             <Button
               onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id))}
               variant={isFlagged ? 'tertiary' : 'glass'}
@@ -341,14 +341,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           </Stack>
         </Fragment>
       ) : (
-        <Stack
-          style={{ width: '100%', height: '100%' }}
-          flex
-          ai="center"
-          jc="center"
-          dir="column"
-          gap={12}
-        >
+        <Stack style={{ width: '100%', height: '100%' }} flex ai="center" jc="center" dir="column" gap={12}>
           <Stack style={{ width: '100%' }}>
             <Skeleton width="full" />
             <Skeleton width="full" />
@@ -378,6 +371,8 @@ export namespace EventIndicator {
 
 export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
   const { app } = Application.use();
+  const [notes, setNotes] = useState<Note.Type[]>(Doc.Entity.notes(app, event));
+  const [links, setLinks] = useState<Link.Type[]>(Doc.Entity.links(app, event));
 
   if (!event) return null;
 
@@ -390,24 +385,26 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
     return Color.Entity.gradient(file.settings.render_color_palette, code, range);
   }, [event, app.target.files]);
 
-  const Collab = useMemo(() => {
-    const notes = Doc.Entity.notes(app, event);
-    const links = Doc.Entity.links(app, event);
-
-    if (notes.length === 0 && links.length === 0) return null;
-
-    return (
-      <Stack ai='center' jc='center' className={cn(s.marker, s.collab)} pos='absolute'>
-        <Icon size={8} name={notes.length > 0 ? 'StickyNote' : 'Link'} />
-      </Stack>
-    );
+  useEffect(() => {
+    setNotes(Doc.Entity.notes(app, event));
+    setLinks(Doc.Entity.links(app, event));
   }, [app.target.notes, app.target.links, event]);
+
+  const NoteIcon = notes.length > 0 ? (
+    <Stack ai='center' jc='center' className={cn(s.marker, s.collab)} pos='absolute'>
+      <Icon size={8} name='StickyNote' />
+    </Stack>
+  ) : null;
+
+  const LinkIcon = links.length > 0 ? (
+    <Stack ai='center' jc='center' className={cn(s.marker, s.collab, s.linkMarker)} pos='absolute'>
+      <Icon size={8} name='Link' />
+    </Stack>
+  ) : null;
 
   const Flag = () => {
     const flagged = Doc.Entity.flag.isFlagged(event._id);
-
     if (!flagged) return null;
-
     return (
       <Stack ai='center' jc='center' className={cn(s.marker, s.flagged)} pos='absolute'>
         <Icon size={8} name='Flag' />
@@ -426,7 +423,8 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
       <hr />
       <p>{String(event['gulp.event_code']).slice(0, 6)}</p>
       <Flag />
-      {Collab}
+      {NoteIcon}
+      {LinkIcon}
     </Button>
   );
 }
