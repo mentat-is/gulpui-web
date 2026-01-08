@@ -1786,7 +1786,22 @@ export class Info implements InfoProps {
     this.setInfoByKey(this.app.target.files, 'target', 'files');
   })
 
-  getDetails = () => api<GulpDataset.QueryOperations.Summary>('/query_operations').then(operations => operations.map(operation => operation.contexts.map(context => context.plugins.map(plugin => plugin.sources))).flat(3));
+getDetails = () => 
+  api<GulpDataset.QueryOperations.Summary>('/query_operations')
+    .then(operations => {
+      if (!operations || !Array.isArray(operations)) return [];
+      return operations
+        .map(operation => 
+          operation.contexts?.map(context => 
+            context.plugins?.map(plugin => plugin.sources ?? []) ?? []
+          ) ?? []
+        )
+        .flat(3);
+    })
+    .catch(err => {
+      Logger.error('Failed to fetch /query_operations', err);
+      return [];
+    });
 
   query_single_id = (doc_id: Doc.Type['_id'], operation_id: Operation.Id) => {
     return api<Doc.Type>('/query_single_id', {
