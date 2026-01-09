@@ -44,28 +44,23 @@ export function FilterFileBanner({
 
   const [loading, setLoading] = useState(false)
   const [files, setFiles] = useState<Source.Type[]>(initFiles)
-  
+
   // -- State Management --
   // Builder Mode State
   const [query, setQuery] = useState<Query.Type>(initQuery ?? { string: '', filters: [] })
-  
+
   // Manual Mode State (Raw JSON string)
   const [manualContent, setManualContent] = useState('')
-  const [activeTab, setActiveTab] = useState(initQuery?.mode === 'manual' ? 'manual' : 'builder')
+  const [isManual, setIsManual] = useState<boolean>(!!initQuery?.isManual)
 
   // Refs for change tracking
   const isFirstRun = useRef(true)
   const prevFileIds = useRef(files.map(f => f.id).sort().join(','))
 
-  // -- Helpers --
-
-  /** Formats object as indented JSON string */
-  const formatJSON = (obj: any) => JSON.stringify(obj, null, 2)
-
   /** Generates a clean base query for the given files */
-  const getCleanBase = (targetFiles: Source.Type[]): Query.Type => ({ 
-    string: Filter.Entity.base(targetFiles), 
-    filters: [] 
+  const getCleanBase = (targetFiles: Source.Type[]): Query.Type => ({
+    string: Filter.Entity.base(targetFiles),
+    filters: []
   })
 
   /** 
@@ -73,8 +68,10 @@ export function FilterFileBanner({
    * If `raw` exists, uses it; otherwise generates from builder structure.
    */
   const getManualContentFromQuery = (q: Query.Type): string => {
-    if (q.raw) return formatJSON(q.raw)
-    return formatJSON(Filter.Entity.query({ ...q, mode: 'builder' }))
+    if (q.raw)
+      return JSON.stringify(q.raw, null, 2);
+
+    return JSON.stringify(Filter.Entity.query({ ...q, isManual: false }), null, 2)
   }
 
   /**
@@ -83,8 +80,8 @@ export function FilterFileBanner({
    */
   const resetToCleanBase = (targetFiles: Source.Type[]) => {
     const cleanBase = getCleanBase(targetFiles)
-    setQuery(cleanBase)
-    setManualContent(formatJSON(Filter.Entity.query(cleanBase)))
+    setQuery(cleanBase);
+    setManualContent(JSON.stringify(Filter.Entity.query(cleanBase), null, 2));
   }
 
   // -- Event Handlers --
@@ -96,7 +93,7 @@ export function FilterFileBanner({
    */
   const handleSourceChange = (action: SetStateAction<Source.Id[]>) => {
     let newIds: Source.Id[] = []
-    
+
     if (typeof action === 'function') {
       newIds = action(files.map(f => f.id))
     } else {
@@ -111,11 +108,11 @@ export function FilterFileBanner({
     // 2. Conditional Reset (only if selection changed)
     const newIdsStr = newIds.sort().join(',')
     if (newIdsStr !== prevFileIds.current) {
-        toast.info('Query reset based on source selection')
-        resetToCleanBase(newFiles)
-        
-        // Update ref to track this new state
-        prevFileIds.current = newIdsStr
+      toast.info('Query reset based on source selection')
+      resetToCleanBase(newFiles)
+
+      // Update ref to track this new state
+      prevFileIds.current = newIdsStr
     }
   }
 
@@ -127,22 +124,22 @@ export function FilterFileBanner({
   useEffect(() => {
     if (isFirstRun.current) {
       isFirstRun.current = false
-      
+
       let startingQuery = initQuery
       // Fallback: Fetch persisted query from Info if no explicit prop
       if (!startingQuery && files.length) {
         const persisted = Info.getQuery(files[0]) as Query.Type & { raw?: any; mode?: 'builder' | 'manual' }
         if (persisted && (persisted.filters?.length || persisted.string || persisted.raw)) {
-           startingQuery = persisted
+          startingQuery = persisted
         }
       }
 
       if (startingQuery) {
         // Restore State
         setQuery(startingQuery)
-        setActiveTab(startingQuery.mode === 'manual' ? 'manual' : 'builder')
+        setIsManual(!!startingQuery.isManual)
         setManualContent(getManualContentFromQuery(startingQuery))
-        
+
         // Sync ref
         prevFileIds.current = files.map(f => f.id).sort().join(',')
         return
@@ -151,7 +148,7 @@ export function FilterFileBanner({
         resetToCleanBase(initFiles)
         prevFileIds.current = initFiles.map(f => f.id).sort().join(',')
       }
-    } 
+    }
     // Note: Subsequent updates are handled via handleSourceChange, not here.
   }, [files, initQuery, initFiles, Info])
 
@@ -192,23 +189,23 @@ export function FilterFileBanner({
   const getFinalQuery = useCallback((): Query.Type | null => {
     const builderState = { ...query }
     let manualState = undefined;
-    
+
     try {
       manualState = JSON.parse(manualContent)
     } catch {
-       if (activeTab === 'manual') {
-          toast.error('Invalid JSON in Manual mode')
-          return null
-       }
-       // In builder mode, we can ignore invalid manual content or fallback
+      if (isManual) {
+        toast.error('Invalid JSON')
+        return null
+      }
+      // In builder mode, we can ignore invalid manual content or fallback
     }
 
     return {
       ...builderState,
       raw: manualState,
-      mode: activeTab as 'builder' | 'manual'
+      isManual
     }
-  }, [activeTab, manualContent, query])
+  }, [isManual, manualContent, query])
 
   /** Submits the query to the App/Info, refetches, and closes. */
   const submit = useCallback(async () => {
@@ -288,7 +285,7 @@ export function FilterFileBanner({
                 spawnBanner(
                   <FilterFileBanner
                     files={files}
-                    query={finalQuery} 
+                    query={finalQuery}
                     keys={keys}
                     {...props}
                   />
@@ -332,7 +329,7 @@ export function FilterFileBanner({
                     </TooltipTrigger>
                     <TooltipContent className={s.tooltip}>
                       <p>{q.string}</p>
-                      <p>{formatJSON(q.filters)}</p>
+                      <p>{JSON.stringify(q.filters, null, 2)}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -353,20 +350,19 @@ export function FilterFileBanner({
     toast.success('Reset to generated query from sources')
   }
 
-  const handleBeautify = () => {
+  const handleBeautify = useCallback(() => {
     try {
-      const parsed = JSON.parse(manualContent)
-      setManualContent(formatJSON(parsed))
+      setManualContent(JSON.stringify(JSON.parse(manualContent), null, 2))
     } catch {
-      toast.error('Invalid JSON')
+      toast.error('Failed to parse JSON input');
     }
-  }
+  }, [manualContent]);
 
   return (
     <Banner
       title="Choose filtering options"
       done={Done}
-      side={activeTab === 'builder' ? <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} /> : null}
+      side={isManual ? <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} /> : null}
       subtitle={LastQueries}
       className={s.banner}
       {...props}
@@ -377,10 +373,10 @@ export function FilterFileBanner({
         placeholder="Select files to apply filters"
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={String(isManual)} onValueChange={v => setIsManual(v === 'true')}>
         <TabsList>
-          <TabsTrigger value="builder">Builder</TabsTrigger>
-          <TabsTrigger value="manual">Manual</TabsTrigger>
+          <TabsTrigger value="false">Builder</TabsTrigger>
+          <TabsTrigger value="true">Manual</TabsTrigger>
         </TabsList>
 
         <div style={{ padding: '8px 0' }}>
@@ -413,7 +409,7 @@ export function FilterFileBanner({
           Preview result of current filter
         </Button>
 
-        {activeTab === 'manual' && (
+        {isManual && (
           <>
             <Button
               variant="secondary"

@@ -5,6 +5,6 @@ export namespace Query {
     string: string
     filters: Filter.Type[]
     raw?: any
-    mode?: 'builder' | 'manual'
+    isManual?: boolean
   }
 }

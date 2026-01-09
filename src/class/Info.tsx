@@ -381,7 +381,7 @@ export class Info implements InfoProps {
     return file.id
   }
 
-  query_gulp = async(docIds: Doc.Id[], fields: string[], preview: boolean) => {
+  query_gulp = async (docIds: Doc.Id[], fields: string[], preview: boolean) => {
     const operation = Operation.Entity.selected(this.app)
     if (!operation) {
       return
@@ -410,7 +410,7 @@ export class Info implements InfoProps {
       req_id: generateUUID(Request.Prefix.QUERY)
     }
 
-     const resp = await api<any>(
+    const resp = await api<any>(
       '/query_gulp', {
       method: 'POST',
       query: request_query,
@@ -1786,22 +1786,22 @@ export class Info implements InfoProps {
     this.setInfoByKey(this.app.target.files, 'target', 'files');
   })
 
-getDetails = () => 
-  api<GulpDataset.QueryOperations.Summary>('/query_operations')
-    .then(operations => {
-      if (!operations || !Array.isArray(operations)) return [];
-      return operations
-        .map(operation => 
-          operation.contexts?.map(context => 
-            context.plugins?.map(plugin => plugin.sources ?? []) ?? []
-          ) ?? []
-        )
-        .flat(3);
-    })
-    .catch(err => {
-      Logger.error('Failed to fetch /query_operations', err);
-      return [];
-    });
+  getDetails = () =>
+    api<GulpDataset.QueryOperations.Summary>('/query_operations')
+      .then(operations => {
+        if (!operations || !Array.isArray(operations)) return [];
+        return operations
+          .map(operation =>
+            operation.contexts?.map(context =>
+              context.plugins?.map(plugin => plugin.sources ?? []) ?? []
+            ) ?? []
+          )
+          .flat(3);
+      })
+      .catch(err => {
+        Logger.error('Failed to fetch /query_operations', err);
+        return [];
+      });
 
   query_single_id = (doc_id: Doc.Type['_id'], operation_id: Operation.Id) => {
     return api<Doc.Type>('/query_single_id', {
@@ -1965,7 +1965,7 @@ getDetails = () =>
         string: query.string || Filter.Entity.base(file),
         filters: (Array.isArray(query.filters) && query.filters.length > 0) ? query.filters : prev?.filters ?? [],
         raw: query.raw,
-        mode: query.mode
+        isManual: query.isManual
       };
     });
 
@@ -2075,15 +2075,15 @@ getDetails = () =>
         }
       })
       SmartSocket.Class.instance.con(SmartSocket.Message.Type.COLLAB_CREATE, m => m.req_id === req_id, m => {
-          if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
-            const currentNotes = this.app.target.notes;
-            const newItems = m.payload.obj.filter(item => item.type === 'note');
-            this.setInfoByKey([...currentNotes, ...newItems], 'target', 'notes');            
-            toast.success(`Fetched ${newItems.length} notes`, {
-                        richColors: true
-                      });
-          }          
-        })
+        if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
+          const currentNotes = this.app.target.notes;
+          const newItems = m.payload.obj.filter(item => item.type === 'note');
+          this.setInfoByKey([...currentNotes, ...newItems], 'target', 'notes');
+          toast.success(`Fetched ${newItems.length} notes`, {
+            richColors: true
+          });
+        }
+      })
     });
   }
 
