@@ -65,6 +65,7 @@ export namespace App {
       notes: boolean;
       links: boolean;
       filesWithNoEvents: boolean;
+      toasts: boolean;
     }
   }
 
@@ -115,7 +116,8 @@ export namespace App {
     hidden: {
       notes: false,
       links: false,
-      filesWithNoEvents: false
+      filesWithNoEvents: false,
+      toasts: false
     }
   }
 }

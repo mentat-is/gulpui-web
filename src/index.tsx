@@ -87,6 +87,15 @@ function Main() {
     Color.Themer.setTheme(theme ?? 'dark');
   }, []);
 
+  useEffect(() => {
+    const root = document.getElementById('root');
+    if (!root) {
+      return Logger.error('ROOT_NOT_FOUND');
+    }
+
+    root.classList[app.hidden.toasts ? 'add' : 'remove']('hidden_toats');
+  }, [app.hidden.toasts]);
+
   if (!isPreloaded) {
     return <Preloader />
   }

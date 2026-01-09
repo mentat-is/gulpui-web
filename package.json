@@ -73,6 +73,7 @@
     "@types/react-dom": "^19.2.2",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@types/uuid": "^11.0.0",
+    "baseline-browser-mapping": "^2.9.14",
     "react-app-rewired": "^2.2.1"
   }
 }
