@@ -180,7 +180,6 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
     }
   }, [settings.method, mappings])
 
-
   const loadPreview = async () => {
     const preview = await Info.file_ingest({
       preview_mode: true,
@@ -237,7 +236,35 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
             <PluginSelector settings={settings} updateSettings={updateSettings} />
             <MethodSelector settings={settings} updateSettings={updateSettings} methods={methods} />
             <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
-            <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters} />
+            
+            <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters}/>
+
+            <Popover.Root>
+              <Popover.Trigger asChild>
+                <Button style={{ width: '100%'}} icon="Code" variant="tertiary">
+                  Advanced
+                </Button>
+              </Popover.Trigger>
+              <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', width: '400px' }}>
+                <Stack dir="column" gap={6}>
+                  <Label value="Plugin Params (JSON)" />
+                  <textarea
+                    style={{ width: '100%', height: '150px', fontSize: 12 }}
+                    value={JSON.stringify(settings.custom_parameters, null, 2)}
+                    onChange={(e) => {
+                      try {
+                        const parsed = JSON.parse(e.target.value)
+                        updateSettings({ custom_parameters: parsed })
+                      } catch(e) {
+                        console.log("error in Json", e);
+                        toast.error('Invalid JSON! Please check syntax.');
+                      }
+                    }}
+                  />
+                </Stack>
+              </Popover.Content>
+            </Popover.Root>
+
           </Stack>
         </Popover.Content>
       </Popover.Root>
