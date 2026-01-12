@@ -13,6 +13,7 @@ import { Badge } from "@/ui/Badge";
 import { Note } from "@/entities/Note";
 import { Link } from "@/entities/Link";
 import { Doc } from "@/entities/Doc";
+import { Glyph } from "@/entities/Glyph";
 
 export namespace Collab {
   export namespace List {
@@ -49,7 +50,8 @@ export namespace Collab {
 
     const target = useMemo(() => {
       if (!targetId) return null;
-      return ( Note.Entity.id(app, targetId as Note.Id) || Link.Entity.id(app, targetId as Link.Id) ); }, [targetId, app]);
+      return (Note.Entity.id(app, targetId as Note.Id) || Link.Entity.id(app, targetId as Link.Id));
+    }, [targetId, app]);
 
     useEffect(() => {
       setTargetId(notes[0]?.id || links[0]?.id);
@@ -73,8 +75,6 @@ export namespace Collab {
       setTargetId(v);
     }, []);
 
-    const targetColorStyle = useMemo(() => ({ color: target?.color || '#000' }), [target?.color]);
-
     const Edit = useMemo(() => <Button variant='secondary' icon='PencilEdit' onClick={handleEditClick} />, [handleEditClick]);
 
     const List = useMemo(() => {
@@ -83,16 +83,23 @@ export namespace Collab {
       ));
     }, [notes, links]);
 
-    const allTags = useMemo(() => {
-      return notes.map(n => n.tags).flat();
+    const Tags = useMemo(() => {
+      return (
+        <>
+          {notes.map(n => n.tags).flat().map(tag => (
+            <Badge key={tag} value={tag} variant='gray-subtle' size='sm' />
+          ))}
+        </>
+      )
     }, [notes]);
 
     const MemoizedSelect = useMemo(() => {
       if (!target) return null;
+
       return (
         <Select.Root onValueChange={handleValueChange}>
-          <Select.Trigger style={targetColorStyle} value={target.id}>
-            <Select.Icon name="Target" />
+          <Select.Trigger style={{ color: target?.color }} value={target.id}>
+            <Select.Icon name={Glyph.List.get(target.glyph_id!) ?? 'Target'} />
             <p>{target.name}</p>
           </Select.Trigger>
           <Select.Content>
@@ -100,32 +107,30 @@ export namespace Collab {
           </Select.Content>
         </Select.Root>
       );
-    }, [handleValueChange, targetColorStyle, target, List]);
+    }, [handleValueChange, target, List]);
 
     return hasItems && target && (
       <Stack dir='column' ai='stretch' className={cn(s.detailed, className)} {...props}>
-          <>
-            <Stack dir='column' ai='stretch'>
-              <Stack>
-                {MemoizedSelect}
-                {Edit}
-                <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
-              </Stack>
-              <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
-                <Badge variant='gray-subtle' icon='ClockRewind' size='sm'>
-                  Created {formatDistanceToNow(
-                    target.time_created,
-                    { addSuffix: true }
-                  )}
-                </Badge>
-                {allTags.map(tag => (
-                  <Badge key={tag} value={tag} variant='gray-subtle' size='sm'/>
-                ))}
-              </Stack>
+        <>
+          <Stack dir='column' ai='stretch'>
+            <Stack>
+              {MemoizedSelect}
+              {Edit}
+              <Button onClick={handleDeleteClick} variant='tertiary' icon='Trash2' />
             </Stack>
-            <Separator />
-            <Description value={ target.type === 'note' ? target.text : target.description }/>
-          </>
+            <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
+              <Badge variant='gray-subtle' icon='ClockRewind' size='sm'>
+                Created {formatDistanceToNow(
+                  target.time_created,
+                  { addSuffix: true }
+                )}
+              </Badge>
+              {Tags}
+            </Stack>
+          </Stack>
+          <Separator />
+          <Description value={target.type === 'note' ? target.text : target.description} />
+        </>
       </Stack>
     )
   }

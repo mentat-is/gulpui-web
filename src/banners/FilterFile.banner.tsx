@@ -383,13 +383,13 @@ export function FilterFileBanner({
           <Separator />
         </div>
 
-        <TabsContent value="builder">
+        <TabsContent value="false">
           {QueryStringPart}
           {AddCondition}
           <Separator />
           {QueryConditions}
         </TabsContent>
-        <TabsContent value="manual">
+        <TabsContent value="true">
           <Textarea
             className={s.manualTextarea}
             value={manualContent}
