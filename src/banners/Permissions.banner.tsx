@@ -438,9 +438,7 @@ export namespace Permissions {
               },
               setLoading,
               body: {
-                permission: JSON.stringify(
-                  permissions.split(',').map((v) => v.trim()),
-                ),
+                permission: permissions.split(',').map((v) => v.trim()),                
               },
             },
             () => spawnBanner(<Permissions.Banner />),
