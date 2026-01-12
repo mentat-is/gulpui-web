@@ -47,7 +47,7 @@ export function Navigation({ event }: Navigation.Props) {
 
     if (index === -1) return
     
-    const nextIndex = (index + (forward ? -1 : 1) + allEvents.length) % allEvents.length
+    const nextIndex = (index + (forward ? 1 : -1) + allEvents.length) % allEvents.length
     spawnDialog(<DisplayEventDialog event={allEvents[nextIndex]} />)
   }
 
