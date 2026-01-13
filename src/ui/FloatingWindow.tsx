@@ -143,8 +143,11 @@ export function FloatingWindow({
 
   useEffect(() => {
     if (!trigger) return;
-
+    
     const onKeyPress = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const tag = target.tagName.toLowerCase();
+      if (['input', 'textarea', 'select'].includes(tag) || target.isContentEditable) return;
       if (e.key === trigger) {
         e.preventDefault();
         setOpenSafe(true);
