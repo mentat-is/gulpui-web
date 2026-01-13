@@ -363,7 +363,6 @@ export function Navigator({
         title='Sniker Chat'
         icon='Sparkles'
         defaultOpen={chatOpen}
-        trigger="i"
         size={[480, 800]}
         position={[120, 120]}
         onOpenChange={setChatOpen}
