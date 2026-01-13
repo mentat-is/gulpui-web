@@ -24,7 +24,7 @@ export function Navigation({ event }: Navigation.Props) {
     const file = Source.Entity.id(app, event['gulp.source_id'])
     if (!file) return
 
-    const allEvents = Doc.Entity.get(app, file.id)
+    const allEvents = Doc.Entity.get(app, file.id).toReversed()
     if (!allEvents.length) return
 
     const index = allEvents.findIndex((e) => e._id === event._id)
@@ -42,7 +42,7 @@ export function Navigation({ event }: Navigation.Props) {
 
   const changeEvent = (forward: boolean) => () => {
     const file = Source.Entity.id(app, event['gulp.source_id'])
-    const allEvents = Doc.Entity.get(app, file.id)
+    const allEvents = Doc.Entity.get(app, file.id).toReversed()
     const index = allEvents.findIndex((e) => e._id === event._id)
 
     if (index === -1) return
