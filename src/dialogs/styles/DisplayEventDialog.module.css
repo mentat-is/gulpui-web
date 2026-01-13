@@ -86,11 +86,11 @@
   position: relative;
 }
 .indicator hr {
-  width: 26px;
-  height: 26px;
+  width: 27px;
+  height: 26.5px;
   position: absolute;
   background: var(--geist-background);
-  border: var(--geist-border);
+  box-shadow: inset 0 0 0 1px var(--gray-alpha-400);
   border-radius: var(--round);
   backdrop-filter: brightness(0.4);
   z-index: 0;
