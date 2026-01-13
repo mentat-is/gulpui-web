@@ -185,9 +185,6 @@ export namespace AI {
         const docIds = Doc.Entity.flag.getDocIds(Info.app);
         
         if (!docIds.length) {
-            // For simple notifications we might still want a way to show them, 
-            // but the request is specifically about analysis requests.
-            // We can just show a toast here.
             toast.info('No flagged events found to analyze.')
             return;
         }
@@ -248,10 +245,11 @@ export namespace AI {
             </Stack>
             <Stack gap={4}>
               <Button icon="Trash2" variant="tertiary" onClick={() => {
-                  if (confirm('Are you sure you want to delete all history?')) {
-                      setHistory([])
-                      if (operation) chatDB.DeleteConfiguration(operation.id)
-                  }
+                const confirmed = window.confirm('Are you sure you want to delete all history?');
+                if (!confirmed) return;
+                setHistory([]);
+                if (operation) chatDB.DeleteConfiguration(operation.id);
+                toast.info('History deleted'); 
               }} />
               <Button icon="X" variant="tertiary" onClick={onClose} />
             </Stack>

@@ -87,7 +87,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             />
           </Select.Trigger>
           <Select.Content container={windowRef.current ?? undefined}>
-            {availableTags.map(tag => (
+            {availableTags.sort().map(tag => (
               <Select.Item key={tag} value={tag}>
                 {tag}
               </Select.Item>
