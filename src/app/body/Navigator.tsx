@@ -374,8 +374,12 @@ export function Navigator({
       <FloatingWindow
         title='Sniker Chat'
         icon='Sparkles'
+<<<<<<< HEAD
         defaultOpen={snikerChatOpen}
         trigger="i"
+=======
+        defaultOpen={chatOpen}
+>>>>>>> 2eb20873416ed241b0caef9fa18fe597a23b1751
         size={[480, 800]}
         position={[120, 120]}
         onOpenChange={setSnikerChatOpen}
