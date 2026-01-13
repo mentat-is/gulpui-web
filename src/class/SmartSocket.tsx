@@ -38,6 +38,9 @@ export namespace SmartSocket {
       REBASE_DONE = "rebase_done",
       CLIENT_DATA = "client_data",
       SOURCE_FIELDS_CHUNK = "source_fields_chunk",
+      AI_ASSISTANT_DONE = "ai_assistant_done",
+      AI_ASSISTANT_STREAM = "ai_assistant_stream",
+      AI_ASSISTANT_ERROR = "ai_assistant_error"
     }
 
     export interface Entity<T = any> {

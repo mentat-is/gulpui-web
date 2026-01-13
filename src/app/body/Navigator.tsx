@@ -19,6 +19,7 @@ import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
 import { AI } from '@/banners/SnikerChat.banner'
+import { FloatingWindow } from '@/ui/FloatingWindow'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -354,10 +355,21 @@ export function Navigator({
       <Button
         variant='secondary'
         title='Open Sniker chat'
-        icon='MessageCircleCode'
+        icon='Sparkles'
         onClick={toggleChat}
         size='md'
       />
+      <FloatingWindow
+        title='Sniker Chat'
+        icon='Sparkles'
+        defaultOpen={chatOpen}
+        trigger="i"
+        size={[480, 800]}
+        position={[120, 120]}
+        onOpenChange={setChatOpen}
+      >
+        <AI.Skiker.Panel />
+      </FloatingWindow>
       <Button
         variant='secondary'
         title='Toggle view between table and canvas'
@@ -365,9 +377,6 @@ export function Navigator({
         onClick={toggleView}
         size='md'
       />
-      {chatOpen && (
-        <AI.Skiker.Panel onClose={() => setChatOpen(false)} />
-      )}
       {windowRef &&
         containerRef.current &&
         ReactDOM.createPortal(
