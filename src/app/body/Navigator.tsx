@@ -20,6 +20,7 @@ import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
 import { AI } from '@/banners/SnikerChat.banner'
 import { FloatingWindow } from '@/ui/FloatingWindow'
+import { Extension } from '@/context/Extension.context'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -38,9 +39,11 @@ export function Navigator({
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
-  const [chatOpen, setChatOpen] = useState(false)
+  const [snikerChatOpen, setSnikerChatOpen] = useState(false)
+  const toggleSnikerChat = () => setSnikerChatOpen(prev => !prev)
+  const [gulpBotChatOpen, setGulpBotChatOpen] = useState(false)
+  const toggleGulpBotChat = () => setGulpBotChatOpen(prev => !prev)
 
-  const toggleChat = () => setChatOpen(prev => !prev)
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -356,20 +359,34 @@ export function Navigator({
         variant='secondary'
         title='Open Sniker chat'
         icon='Sparkles'
-        onClick={toggleChat}
+        onClick={toggleSnikerChat}
         size='md'
       />
+      <Extension.Optional name='GulpBotChat.banner.tsx'>
+        <Button
+          variant='secondary'
+          title='Open GulpBot chat'
+          icon='Robot'
+          onClick={toggleGulpBotChat}
+          size='md'
+        />
+      </Extension.Optional>
       <FloatingWindow
         title='Sniker Chat'
         icon='Sparkles'
-        defaultOpen={chatOpen}
+        defaultOpen={snikerChatOpen}
         trigger="i"
         size={[480, 800]}
         position={[120, 120]}
-        onOpenChange={setChatOpen}
+        onOpenChange={setSnikerChatOpen}
       >
         <AI.Skiker.Panel />
       </FloatingWindow>
+      {gulpBotChatOpen && (
+        <Extension.Optional name='GulpBotChat.banner.tsx'>
+          <Extension.Component name='GulpBotChat.banner.tsx' props={{ onClose: () => setGulpBotChatOpen(false) }} />
+        </Extension.Optional>
+      )}
       <Button
         variant='secondary'
         title='Toggle view between table and canvas'
