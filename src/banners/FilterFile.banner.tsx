@@ -362,7 +362,7 @@ export function FilterFileBanner({
     <Banner
       title="Choose filtering options"
       done={Done}
-      side={isManual ? <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} /> : null}
+      side={!isManual ? <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} /> : null}
       subtitle={LastQueries}
       className={s.banner}
       {...props}

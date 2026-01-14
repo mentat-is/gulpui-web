@@ -1,6 +1,15 @@
 .markdown {
   overflow: auto !important;
   overflow-x: hidden !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  overflow-wrap: break-word !important;
+  word-wrap: break-word !important;
+}
+
+.markdown * {
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 .markdown > h1:first-of-type {
   margin-top: 0;
@@ -9,6 +18,8 @@
   all: revert;
   line-height: 150%;
   font-family: var(--font-sans);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 .markdown a {
   text-decoration: underline;
@@ -17,6 +28,8 @@
 .markdown ul,
 .markdown li {
   all: revert;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 .markdown li {
   margin-bottom: 8px;
