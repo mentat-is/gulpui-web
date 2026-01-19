@@ -94,7 +94,46 @@ export namespace Doc {
         .flat()
 
     public static add = (app: App.Type, events: Doc.Type[]) => {
-      events.forEach((e) => Doc.Entity.get(app, e['gulp.source_id']).push(e))
+      const sources = new Set<Source.Id>();
+
+      // Group events by source to optimize processing
+      const eventsBySource = new Map<Source.Id, Map<Doc.Id, Doc.Type>>();
+      events.forEach((e) => {
+        const sourceId = e['gulp.source_id'];
+        sources.add(sourceId);
+        if (!eventsBySource.has(sourceId)) {
+          eventsBySource.set(sourceId, new Map());
+        }
+        eventsBySource.get(sourceId)!.set(e._id, e);
+      });
+
+      // Process each source: Update existing and Add new events
+      sources.forEach((id) => {
+        const existingEvents = Doc.Entity.get(app, id);
+        const newEventsMap = eventsBySource.get(id)!;
+        let hasChanges = false;
+
+        // Updating existing events in place
+        for (let i = 0; i < existingEvents.length; i++) {
+          const evt = existingEvents[i];
+          if (newEventsMap.has(evt._id)) {
+            existingEvents[i] = newEventsMap.get(evt._id)!;
+            newEventsMap.delete(evt._id);
+            hasChanges = true;
+          }
+        }
+
+        // Add remaining new events
+        if (newEventsMap.size > 0) {
+          existingEvents.push(...newEventsMap.values());
+          hasChanges = true;
+        }
+
+        // Sort if we modified the list, optimize performance
+        if (hasChanges) {
+          Doc.Entity.sort(existingEvents);
+        }
+      })
 
       return app.target.events
     }

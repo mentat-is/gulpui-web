@@ -144,7 +144,7 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       return closestIndex
     }
 
-    for (let x = visiblePixelRange.min; x < visiblePixelRange.max; x++) {
+    for (let x = visiblePixelRange.min; x <= visiblePixelRange.max; x++) {
       const targetTimestamp = getTimestampForPixel(x)
       const closestIndex = findClosestEventIndex(targetTimestamp)
 
