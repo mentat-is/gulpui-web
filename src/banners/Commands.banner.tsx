@@ -84,7 +84,6 @@ export namespace Commands {
         icon: 'AcronymHttp',
         onClick: () => spawnBanner(<Requests.Banner />)
       },
-
       {
         name: "Manage Permissions",
         icon: "UserSettings",

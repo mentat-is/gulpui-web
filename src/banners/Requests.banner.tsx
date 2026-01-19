@@ -37,16 +37,20 @@ export namespace Requests {
 
     const RefreshRequestsListButton = useMemo(() => {
       return <Button variant='secondary' loading={loading} onClick={reload} icon='RefreshCcw'>Refresh</Button>
-    }, [reload]);
+    }, [reload, loading]);
 
     useEffect(() => {
       reload();
     }, []);
 
+    const sortedRequests = useMemo(() => {
+      return [...app.general.requests].sort((a, b) => b.time_created - a.time_created);
+    }, [app.general.requests]);
+
     return (
       <UIBanner className={cn(className, s.banner)} title="Requests list" subtitle={RefreshRequestsListButton} {...props}>
         <Stack dir="column" gap={0} className={s.list}>
-          {app.general.requests.map((request) => (
+          {sortedRequests.map((request) => (
             <Stack key={request.id} className={cn(s.combination, className)} {...props}>
               <Status status={request.status} />
               <p className={s.id}>{request.id}</p>

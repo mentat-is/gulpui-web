@@ -18,9 +18,14 @@ import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { Source } from '@/entities/Source'
 import { Operation } from '@/entities/Operation'
+import { useEffect } from 'react'
 
 export function Menu() {
-  const { app, spawnBanner } = Application.use()
+  const { app, spawnBanner, Info } = Application.use()
+
+  useEffect(() => {
+    Info.request_list()
+  }, [])
 
   const backToOperations = () => {
     spawnBanner(<Operation.Select.Banner />)
@@ -106,7 +111,7 @@ export function Menu() {
         size='md'
         onClick={() => spawnBanner(<Requests.Banner />)}
       >
-        {app.general.requests.filter((r) => r.status === 'ongoing').length}
+        {app.general.requests.filter(r => r.status === 'ongoing' || r.status === 'done').length}
       </Button>
       <Button
         variant="secondary"
