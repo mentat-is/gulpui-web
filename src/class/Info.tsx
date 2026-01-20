@@ -63,7 +63,8 @@ export namespace GulpDataset {
     export interface Options {
       preview?: boolean,
       id?: Source.Id,
-      refetchKeys?: Array<keyof Doc.Type>
+      refetchKeys?: Array<keyof Doc.Type>,
+      addToHistory?: boolean
     }
   }
   export namespace QueryOperations {
@@ -161,6 +162,7 @@ export namespace GulpDataset {
 interface RefetchOptions {
   ids?: Arrayed<Source.Id>;
   refetchKeys?: Record<Source.Id, Array<keyof Doc.Type>>;
+  addToHistory?: boolean;
 }
 
 interface InfoProps {
@@ -194,7 +196,8 @@ export class Info implements InfoProps {
 
   refetch = async ({
     ids: _ids = Source.Entity.selected(this.app).map((f) => f.id),
-    refetchKeys
+    refetchKeys,
+    addToHistory
   }: RefetchOptions = {}) => {
     const files: Source.Type[] = Parser.array(_ids).map((id) => Source.Entity.id(this.app, id));
 
@@ -217,7 +220,8 @@ export class Info implements InfoProps {
       this.query_file(query, {
         id: file.id,
         preview: false,
-        refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined
+        refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
+        addToHistory
       });
     })
 
@@ -473,7 +477,8 @@ export class Info implements InfoProps {
   query_file = async (query: Query.Type, {
     preview = false,
     id,
-    refetchKeys
+    refetchKeys,
+    addToHistory
   }: GulpDataset.QueryGulp.Options) => {
     const operation = Operation.Entity.selected(this.app)
     if (!operation) {
@@ -504,6 +509,10 @@ export class Info implements InfoProps {
 
     if (id) {
       body.q_options.fields = refetchKeys ?? [Source.Entity.id(this.app, id).settings.field];
+    }
+
+    if (addToHistory) {
+      body.q_options.add_to_history = true
     }
 
     const resp = await api<any>(

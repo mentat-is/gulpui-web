@@ -217,7 +217,7 @@ export function FilterFileBanner({
       Info.filters_cache(files)
       // This saves the query (including mode/raw) to app state
       Info.setQuery(files, finalQuery)
-      await Info.refetch({ ids: files.map(f => f.id) })
+      await Info.refetch({ ids: files.map(f => f.id), addToHistory: true })
       Info.render()
       props.back ? props.back() : destroyBanner()
     } finally {
