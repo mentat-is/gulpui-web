@@ -18,7 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Textarea } from '@/ui/Textarea'
 
 interface FilterFileBannerProps extends Banner.Props {
-  files: Source.Type[]
+  sources: Source.Type[]
   query?: Query.Type
   keys?: string[]
 }
@@ -35,7 +35,7 @@ interface FilterFileBannerProps extends Banner.Props {
  * state management for each mode.
  */
 export function FilterFileBanner({
-  files: initFiles,
+  sources: initSources,
   query: initQuery,
   keys: initKeys,
   ...props
@@ -43,7 +43,7 @@ export function FilterFileBanner({
   const { app, Info, spawnBanner, destroyBanner } = Application.use()
 
   const [loading, setLoading] = useState(false)
-  const [files, setFiles] = useState<Source.Type[]>(initFiles)
+  const [files, setFiles] = useState<Source.Type[]>(initSources)
 
   // -- State Management --
   // Builder Mode State
@@ -145,12 +145,12 @@ export function FilterFileBanner({
         return
       } else {
         // Default Initialization
-        resetToCleanBase(initFiles)
-        prevFileIds.current = initFiles.map(f => f.id).sort().join(',')
+        resetToCleanBase(initSources)
+        prevFileIds.current = initSources.map(f => f.id).sort().join(',')
       }
     }
     // Note: Subsequent updates are handled via handleSourceChange, not here.
-  }, [files, initQuery, initFiles, Info])
+  }, [files, initQuery, initSources, Info])
 
   const [keys, setKeys] = useState<string[]>(initKeys ?? [])
 
@@ -284,7 +284,7 @@ export function FilterFileBanner({
               back={() =>
                 spawnBanner(
                   <FilterFileBanner
-                    files={files}
+                    sources={files}
                     query={finalQuery}
                     keys={keys}
                     {...props}
@@ -312,7 +312,6 @@ export function FilterFileBanner({
             Last filters
           </Button>
         </Popover.Trigger>
-
         <Popover.Content className={s.lastFilters}>
           <Stack dir="column">
             {lastQueriesList.map((q, i) => (
@@ -374,20 +373,18 @@ export function FilterFileBanner({
       />
 
       <Tabs value={String(isManual)} onValueChange={v => setIsManual(v === 'true')}>
-        <TabsList>
-          <TabsTrigger value="false">Builder</TabsTrigger>
-          <TabsTrigger value="true">Manual</TabsTrigger>
+        <TabsList style={{ width: '100%' }}>
+          <TabsTrigger style={{ flex: 1 }} value="false">Builder</TabsTrigger>
+          <TabsTrigger style={{ flex: 1 }} value="true">Manual</TabsTrigger>
         </TabsList>
-
-        <div style={{ padding: '8px 0' }}>
-          <Separator />
-        </div>
-
+        <Separator style={{ margin: '8px 0' }} />
         <TabsContent value="false">
-          {QueryStringPart}
-          {AddCondition}
-          <Separator />
-          {QueryConditions}
+          <Stack dir='column' ai='stretch'>
+            {QueryStringPart}
+            {AddCondition}
+            <Separator />
+            {QueryConditions}
+          </Stack>
         </TabsContent>
         <TabsContent value="true">
           <Textarea
@@ -398,7 +395,6 @@ export function FilterFileBanner({
           />
         </TabsContent>
       </Tabs>
-
       <Stack ai="center" jc="flex-start" dir="row">
         <Button
           variant="glass"

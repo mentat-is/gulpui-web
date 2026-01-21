@@ -168,19 +168,6 @@ export namespace SelectFiles {
         {...props}
       >
         {SearchInput}
-        <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
-          <Skeleton show={!hasData} width='full'>
-            {filteredContexts.length > 0 ? (
-              filteredContexts.map((context) => (
-                <ContextComponent key={context.id} context={context} filter={filter} setFile={setFile} setContext={setContext} selectedFiles={selectedFiles} selectedContexts={selectedContexts} />
-              ))
-            ) : (
-              <p className={s.noData}>
-                There is no data to analyze. Click below to upload...
-              </p>
-            )}
-          </Skeleton>
-        </Stack>
         <Stack>
           <Button
             onClick={() => all(true)}
@@ -198,6 +185,21 @@ export namespace SelectFiles {
           >
             Unselect all
           </Button>
+        </Stack>
+        <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
+          <Skeleton show={!hasData} width='full'>
+            {filteredContexts.length > 0 ? (
+              filteredContexts.map((context) => (
+                <ContextComponent key={context.id} context={context} filter={filter} setFile={setFile} setContext={setContext} selectedFiles={selectedFiles} selectedContexts={selectedContexts} />
+              ))
+            ) : (
+              <p className={s.noData}>
+                There is no data to analyze. Click below to upload...
+              </p>
+            )}
+          </Skeleton>
+        </Stack>
+        <Stack>
           <Button
             onClick={reloadClickHandler}
             variant='secondary'
@@ -310,12 +312,14 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         value={file.total}
       />
       <Button
+        shape='icon'
         icon='Filter'
         variant='secondary'
         className={s.smallButton}
-        onClick={() => spawnBanner(<FilterFileBanner files={[file]} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)}
+        onClick={() => spawnBanner(<FilterFileBanner sources={[file]} fixed back={() => spawnBanner(<SelectFiles.Banner />)} />)}
       />
       <Button
+        shape='icon'
         icon='PreviewEye'
         variant='secondary'
         loading={loading}
@@ -327,7 +331,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         style={{ border: '1px solid var(--red-400)', borderRadius: '2px', padding: 4 }}
         variant='red-subtle'
         icon='Trash2'
-        onClick={() => spawnBanner(<Source.Delete.Banner file={file} back={() => spawnBanner(<SelectFiles.Banner />)} />)}
+        onClick={() => spawnBanner(<Source.Delete.Banner source={file} back={() => spawnBanner(<SelectFiles.Banner />)} />)}
       />
     </Stack>
   )

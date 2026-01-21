@@ -1,5 +1,4 @@
 import { MinMax } from "@/class/Info"
-import { th } from "date-fns/locale";
 
 export namespace Color {
   export type Type = `#${string}`;

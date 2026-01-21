@@ -3,25 +3,31 @@
   height: 100%;
   width: 100%;
 }
-.preview > pre {
+
+.preview>pre {
   width: 100%;
 }
-.preview > button {
+
+.preview>button {
   right: 24px;
 }
+
 .card {
   background: var(--geist-background);
   border: 1px solid var(--gray-400);
   padding: 8px;
   border-radius: 6px;
 }
+
 .key_input {
   flex: 1;
   padding-right: 0;
 }
+
 .key_input input {
   padding-right: 38px;
 }
+
 .trigger {
   width: 32px;
   height: 30px;
@@ -36,22 +42,32 @@
   border-bottom-right-radius: 5px;
   border-left: 1px solid var(--gray-400);
 }
+
 .trigger::before {
   content: none;
 }
-.value > span {
+
+.value>span {
   gap: 16px;
 }
+
 .copy {
   position: absolute;
   top: 8px;
 }
+
 .disabled {
   opacity: 0.5;
 }
+
 .disabled *:not([role="switch"]):not(div) {
   pointer-events: none;
 }
+
 .disabled *:not([role="switch"]) {
   box-shadow: none !important;
+}
+
+.query_string_input {
+  width: 100%;
 }

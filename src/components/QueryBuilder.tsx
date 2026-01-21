@@ -12,14 +12,15 @@ import { Stack } from "@/ui/Stack"
 import { Button } from "@/ui/Button"
 import { Input } from "@/ui/Input"
 import { Filter } from "@/entities/Filter"
+import { Label } from "@/ui/Label"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
     | 'regexp'
     | 'wildcard'
     | 'range'
-    | 'Lte'
-    | 'Gte'
+    | 'LTE'
+    | 'GTE'
 
   export type Operator = 'must' | 'should' | 'must_not' | 'filter'
 
@@ -39,8 +40,8 @@ export namespace OpenSearchQueryBuilder {
     { value: 'regexp', label: 'Regexp', icon: 'Asterisk' },
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
-    { value: 'Lte', label: 'Lte', icon: 'ArrowDown' },
-    { value: 'Gte', label: 'Gte', icon: 'ArrowUp'}
+    { value: 'LTE', label: 'Lte', icon: 'ArrowDown' },
+    { value: 'GTE', label: 'Gte', icon: 'ArrowUp' }
   ]
 
   export const OPERATORS: Entity.Operator[] = [
@@ -99,12 +100,13 @@ export namespace OpenSearchQueryBuilder {
 
       return (
         <Stack dir='column' gap={6} style={fws} ai='stretch' {...props}>
-          <p>Query String</p>
+          <Label value='Query String' />
           <Stack>
             <Input
               style={{ flex: 1 }}
               variant='highlighted'
               icon='Code'
+              className={s.query_string_input}
               placeholder='Enter query_string part...'
               value={string}
               onChange={queryStringInputChangeHandler}
@@ -127,18 +129,18 @@ export namespace OpenSearchQueryBuilder {
 
     export const Add = ({ filters, setFilters, ...props }: Query.Add.Props) => {
       const add = useCallback(() => {
-      const filter: Filter.Type = {
-        id: `condition-${Date.now()}` as Filter.Id,
-        type: 'wildcard',
-        field: '',
-        case_insensitive: true,
-        value: '',
-        operator: 'must',
-        enabled: true
-      };
+        const filter: Filter.Type = {
+          id: `condition-${Date.now()}` as Filter.Id,
+          type: 'wildcard',
+          field: '',
+          case_insensitive: true,
+          value: '',
+          operator: 'must',
+          enabled: true
+        };
 
-      setFilters([...filters, filter]);
-    }, [filters, setFilters]);
+        setFilters([...filters, filter]);
+      }, [filters, setFilters]);
 
       return (
         <Stack jc='space-between' {...props}>
@@ -235,7 +237,7 @@ export namespace OpenSearchQueryBuilder {
                     </Select.Content>
                   </Select.Root>
                 </Stack>
-                {filter.type === 'Lte' ? (
+                {filter.type === 'LTE' ? (
                   <Input
                     variant='highlighted'
                     icon='ChevronRightSmall'
@@ -244,7 +246,7 @@ export namespace OpenSearchQueryBuilder {
                     onChange={(e) => update(filter.id, 'value', e.target.value)}
                     prefix='<='
                   />
-                ) : filter.type === 'Gte' ? (
+                ) : filter.type === 'GTE' ? (
                   <Input
                     variant='highlighted'
                     icon='ChevronRightSmall'

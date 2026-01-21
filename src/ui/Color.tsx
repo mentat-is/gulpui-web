@@ -1,4 +1,4 @@
-import { createContext, HTMLAttributes, useContext, useState } from 'react'
+import { createContext, HTMLAttributes, useContext, useMemo, useState } from 'react'
 import { Popover } from './Popover'
 import { arrayToLinearGradientCSS } from './utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs'
@@ -53,7 +53,7 @@ export function ColorPicker(props: ColorPickerProps) {
   )
 }
 
-type ColorPickerTriggerProps = HTMLAttributes<HTMLButtonElement>
+type ColorPickerTriggerProps = Stack.Props
 
 export function ColorPickerTrigger({
   className,
@@ -61,14 +61,16 @@ export function ColorPickerTrigger({
 }: ColorPickerTriggerProps) {
   const { color } = useColor()
 
+  const isGradient = useMemo(() => Object.keys(Color.GRADIENT).includes(color), [color]);
+
   return (
     <Popover.Trigger asChild>
-      <Stack pos='relative' gap={0} ai='flex-start' className={cn(s.picker, s.trigger)}>
-        <Input
+      <Stack pos='relative' gap={0} ai='flex-start' className={cn(s.picker, s.trigger, className)} {...props}>
+        {isGradient ? <div className={s.gradient_indicator} style={{ background: arrayToLinearGradientCSS(Color.GRADIENT[color as never]) }} /> : <Input
           className={s.select}
           variant="color"
           value={color}
-        />
+        />}
         <Input
           className={s.manual}
           variant='highlighted'

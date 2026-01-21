@@ -361,7 +361,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       return null
     }
 
-    return <TargetMenu file={target} />
+    return <TargetMenu source={target} />
   }, [target]);
 
   const totalHeight = useMemo(() => {

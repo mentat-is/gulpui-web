@@ -82,10 +82,10 @@ export namespace Filter {
                 },
               }
               break
-            case 'Lte':
+            case 'LTE':
               conditionObj = { range: { [field]: { lte: Number(value) } } }
               break
-            case 'Gte':
+            case 'GTE':
               conditionObj = { range: { [field]: { gte: Number(value) } } }
               break
             default:

@@ -1,7 +1,7 @@
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
-import { ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom'
 import { NotesWindow } from '@/components/NotesWindow'
@@ -18,7 +18,7 @@ import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
-import { AI } from '@/banners/SnikerChat.banner'
+import { Snifer } from '@/banners/SniferChat.banner'
 import { FloatingWindow } from '@/ui/FloatingWindow'
 import { Extension } from '@/context/Extension.context'
 
@@ -39,11 +39,8 @@ export function Navigator({
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
-  const [snikerChatOpen, setSnikerChatOpen] = useState(false)
-  const toggleSnikerChat = () => setSnikerChatOpen(prev => !prev)
-  const [gulpBotChatOpen, setGulpBotChatOpen] = useState(false)
-  const toggleGulpBotChat = () => setGulpBotChatOpen(prev => !prev)
-
+  const [chatOpen, setChatOpen] = useState(false)
+  const toggleChatOpen = () => setChatOpen(prev => !prev)
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -249,6 +246,54 @@ export function Navigator({
 
   const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
 
+  const { Trigger, Content } = useMemo(() => {
+    const Slot = <Extension.Component name='SniferProChat.banner.tsx' />;
+
+    if (!Slot) {
+      return {
+        Trigger: <Button
+          variant='secondary'
+          title='Open Snifer chat'
+          icon='Sparkle'
+          onClick={toggleChatOpen}
+          size='md'
+        />,
+        Content: <FloatingWindow
+          title='Snifer Chat'
+          icon='Sparkle'
+          defaultOpen={chatOpen}
+          trigger="i"
+          size={[480, 800]}
+          position={[120, 120]}
+          onOpenChange={setChatOpen}
+        >
+          <Snifer.Panel />
+        </FloatingWindow>
+      }
+    }
+
+    return {
+      Trigger: <Button
+        variant='secondary'
+        title='Open Snifer Pro chat'
+        icon='Sparkles'
+        onClick={toggleChatOpen}
+        size='md'
+      />,
+      Content: <FloatingWindow
+        title='Snifer Pro Chat'
+        icon='Sparkles'
+        defaultOpen={chatOpen}
+        trigger="i"
+        size={[480, 800]}
+        position={[120, 120]}
+        onOpenChange={setChatOpen}
+      >
+        {Slot}
+      </FloatingWindow>
+    }
+  }, [chatOpen]);
+
   return (
     <Stack
       pos="relative"
@@ -355,38 +400,8 @@ export function Navigator({
           </Stack>
         </Popover.Content>
       </Popover.Root>
-      <Button
-        variant='secondary'
-        title='Open Sniker chat'
-        icon='Sparkles'
-        onClick={toggleSnikerChat}
-        size='md'
-      />
-      <Extension.Optional name='GulpBotChat.banner.tsx'>
-        <Button
-          variant='secondary'
-          title='Open GulpBot chat'
-          icon='Robot'
-          onClick={toggleGulpBotChat}
-          size='md'
-        />
-      </Extension.Optional>
-      <FloatingWindow
-        title='Sniker Chat'
-        icon='Sparkles'
-        defaultOpen={snikerChatOpen}
-        trigger="i"
-        size={[480, 800]}
-        position={[120, 120]}
-        onOpenChange={setSnikerChatOpen}
-      >
-        <AI.Skiker.Panel />
-      </FloatingWindow>
-      {gulpBotChatOpen && (
-        <Extension.Optional name='GulpBotChat.banner.tsx'>
-          <Extension.Component name='GulpBotChat.banner.tsx' props={{ onClose: () => setGulpBotChatOpen(false) }} />
-        </Extension.Optional>
-      )}
+      {Trigger}
+      {Content}
       <Button
         variant='secondary'
         title='Toggle view between table and canvas'

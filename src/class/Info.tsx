@@ -1,5 +1,4 @@
 import { Default } from '@/dto/Dataset'
-import React from 'react'
 import { generateUUID, NodeFile, Refractor } from '@/ui/utils'
 import { Logger } from '@/dto/Logger.class'
 import { SetState } from './API'
@@ -31,8 +30,6 @@ import { Query } from '@/entities/Query'
 import { Highlight } from '@/entities/Highlight'
 import { Mapping } from '@/entities/Mapping'
 import { Internal } from '@/entities/addon/Internal'
-import { buffer } from 'stream/consumers'
-
 
 export namespace GulpDataset {
   export namespace GetAvailableLoginApi {
@@ -215,17 +212,14 @@ export class Info implements InfoProps {
     this.highlights_reload()
 
     files.forEach((file) => {
-      const query = this.getQuery(file);
-
-      this.query_file(query, {
+      this.events_reset_in_file(file)
+      this.query_file(this.getQuery(file), {
         id: file.id,
         preview: false,
         refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
         addToHistory
       });
     })
-
-    files.forEach(this.events_reset_in_file)
   }
 
   enrichment = (

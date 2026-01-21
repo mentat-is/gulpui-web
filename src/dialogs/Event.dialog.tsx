@@ -153,7 +153,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     toast(`Has been added ${newFilters.length} new filters`)
 
-    spawnBanner(<FilterFileBanner files={[file]} />);
+    spawnBanner(<FilterFileBanner sources={[file]} />);
   }, [selection, Info, event, toKeyValue, spawnBanner, file]);
 
   const highlights = useMemo(() => {
@@ -329,7 +329,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Stack className={s.actionButtons} gap={12}>
             <Button variant="secondary" onClick={handleCopyJson} icon="Copy">Copy JSON</Button>
             <Button variant="secondary" onClick={handleDownloadJson} icon="Download" title='Download JSON'>Download JSON</Button>
-            <Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" style={{ flex: 0 }} title="Focus timeline on this event"/>
+            <Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" style={{ flex: 0 }} title="Focus timeline on this event" />
             <Button
               onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id))}
               variant={isFlagged ? 'tertiary' : 'glass'}

@@ -143,7 +143,7 @@ export function FloatingWindow({
 
   useEffect(() => {
     if (!trigger) return;
-    
+
     const onKeyPress = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       const tag = target.tagName.toLowerCase();
@@ -244,7 +244,7 @@ export function FloatingWindow({
           style={settings}
           {...props}
         >
-          <div className={s.heading} onMouseDown={onMouseDownMove}>
+          <div className={cn(s.heading, s.glass)} onMouseDown={onMouseDownMove}>
             <span className={cn(s.button, s.close)} onClick={close} />
             <span className={cn(s.button, s.hide)} onClick={() => setHidden(v => !v)} />
             <span className={cn(s.button, s.open)} onClick={toggleFullscreen} />
@@ -254,7 +254,7 @@ export function FloatingWindow({
             </div>
           </div>
 
-          <div className={cn(s.content, className)}>
+          <div className={cn(s.content, s.glass, className)}>
             <Noise enable={noise} className={s.noise} />
             {children}
           </div>
