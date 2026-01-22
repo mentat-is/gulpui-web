@@ -8,6 +8,7 @@ import { Preview } from './Preview.banner'
 import { Popover } from '@/ui/Popover'
 import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
+import { Checkbox } from '@/ui/Checkbox'
 import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { Query } from '@/entities/Query'
@@ -16,6 +17,7 @@ import { Filter } from '@/entities/Filter'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Textarea } from '@/ui/Textarea'
+import { Label } from '@/ui/Label'
 
 interface FilterFileBannerProps extends Banner.Props {
   sources: Source.Type[]
@@ -44,7 +46,7 @@ export function FilterFileBanner({
 
   const [loading, setLoading] = useState(false)
   const [files, setFiles] = useState<Source.Type[]>(initSources)
-
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   // -- State Management --
   // Builder Mode State
   const [query, setQuery] = useState<Query.Type>(initQuery ?? { string: '', filters: [] })
@@ -227,6 +229,19 @@ export function FilterFileBanner({
 
   // -- Render Components --
 
+  const getQueryWithFlaggedEvents = useCallback(() => {
+    const baseQuery = Filter.Entity.query(query)
+    if (flaggedOnly) {
+      const flaggedEvents: string[] = JSON.parse(localStorage.getItem('flagged-events') || '[]')
+      if (flaggedEvents.length > 0) {
+        if (!baseQuery.bool) baseQuery.bool = { must: [] }
+        if (!baseQuery.bool.must) baseQuery.bool.must = []
+        baseQuery.bool.must.push({ terms: { id: flaggedEvents } })
+      }
+    }
+    return baseQuery
+  }, [query, flaggedOnly])
+
   const Done = useMemo(
     () => (
       <Button
@@ -361,7 +376,7 @@ export function FilterFileBanner({
     <Banner
       title="Choose filtering options"
       done={Done}
-      side={!isManual ? <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} /> : null}
+      side={!isManual ? <OpenSearchQueryBuilder.Preview query={getQueryWithFlaggedEvents()} /> : null}
       subtitle={LastQueries}
       className={s.banner}
       {...props}
@@ -373,10 +388,16 @@ export function FilterFileBanner({
       />
 
       <Tabs value={String(isManual)} onValueChange={v => setIsManual(v === 'true')}>
-        <TabsList style={{ width: '100%' }}>
-          <TabsTrigger style={{ flex: 1 }} value="false">Builder</TabsTrigger>
-          <TabsTrigger style={{ flex: 1 }} value="true">Manual</TabsTrigger>
-        </TabsList>
+        <Stack dir='row' jc='space-between'>
+          <TabsList>
+            <TabsTrigger value="false">Builder</TabsTrigger>
+            <TabsTrigger value="true">Manual</TabsTrigger>
+          </TabsList>
+          <Stack style={{ margin: '8px 0' }}>
+            <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
+            <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
+          </Stack>
+        </Stack>
         <Separator style={{ margin: '8px 0' }} />
         <TabsContent value="false">
           <Stack dir='column' ai='stretch'>
