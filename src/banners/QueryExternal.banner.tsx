@@ -14,6 +14,7 @@ import { SelectFiles } from './SelectFiles.banner'
 import { Skeleton } from '@/ui/Skeleton'
 import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
+import { Textarea } from '@/ui/Textarea'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -134,15 +135,22 @@ export namespace QueryExternal {
     export interface Props extends UIBanner.Props {
       preselectedOption?: GulpDataset.PluginList.Interface;
       preparams?: Record<string, any>
+      preQ?: any
+      preQOptions?: Record<string, any>
     }
   }
 
-  export const Banner = ({ preselectedOption, preparams, ...props }: QueryExternal.Banner.Props) => {
+  export const Banner = ({ preselectedOption, preparams, preQ, preQOptions, ...props }: QueryExternal.Banner.Props) => {
     const { Info, spawnBanner, destroyBanner, app } = Application.use()
     const [options, setOptions] = useState<GulpDataset.PluginList.Interface[] | null>(app.target.plugins.filter((i) => i.type.includes('external')))
     const [selectedOption, setSelectedOption] = useState(preselectedOption ?? null)
     const [loading, setLoading] = useState<number>(0)
     const [params, setParams] = useState(preparams ?? {});
+    const [q, setQ] = useState(preQ ?? null);
+    const [qOptions, setQOptions] = useState(preQOptions ?? {});
+    const [qText, setQText] = useState(preQ ? JSON.stringify(preQ, null, 2) : '');
+    const [qOptionsText, setQOptionsText] = useState(preQOptions && Object.keys(preQOptions).length > 0 ? JSON.stringify(preQOptions, null, 2) : '');
+    const [showAdvanced, setShowAdvanced] = useState(false);
 
     useEffect(() => {
       setOptions(app.target.plugins.filter((i) => i.type.includes('external')))
@@ -153,10 +161,10 @@ export namespace QueryExternal {
     const handleQuery = async (preview = false) => {
       if (!selectedOption) return
       setLoading(preview ? 2 : 1)
-      const result = await Info.query_external(selectedOption.filename, params, preview)
+      const result = await Info.query_external(selectedOption.filename, params, preview, q || undefined, Object.keys(qOptions).length > 0 ? qOptions : undefined)
       setLoading(0)
       if (result) {
-        spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} {...props} />)} />)
+        spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} preQ={q} preQOptions={qOptions} {...props} />)} />)
       } else {
         setIsDone(true);
       }
@@ -213,6 +221,75 @@ export namespace QueryExternal {
           params={params}
           setParams={setParams}
         />
+        <Stack dir="column" className={s.wrapper} ai='stretch' gap={16}>
+          <Button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            variant="tertiary"
+            icon={showAdvanced ? 'ChevronUp' : 'ChevronDown'}
+          >
+            Advanced Query Options
+          </Button>
+          {showAdvanced && (
+            <>
+              <Stack dir="column" gap={8} ai='stretch'>
+                <Label value="Query (q) - JSON format" />
+                <Textarea
+                  value={qText}
+                  onChange={(e) => {
+                    setQText(e.target.value)
+                  }}
+                  onBlur={(e) => {
+                    const value = e.currentTarget.value.trim()
+                    try {
+                      if (value) {
+                        const parsed = JSON.parse(value)
+                        setQ(parsed)
+                        setQText(JSON.stringify(parsed, null, 2))
+                      } else {
+                        setQ(null)
+                        setQText('')
+                      }
+                    } catch {
+                      // Invalid JSON, revert to last valid value
+                      setQText(q ? JSON.stringify(q, null, 2) : '')
+                    }
+                  }}
+                  placeholder='{"query": {"match_all": {}}}'
+                  className={s.jsonInput}
+                />
+                <span className={s.description}>Optional: Custom OpenSearch query. Leave empty to use default.</span>
+              </Stack>
+              <Stack dir="column" gap={8} ai='stretch'>
+                <Label value="Query Options (q_options) - JSON format" />
+                <Textarea
+                  value={qOptionsText}
+                  onChange={(e) => {
+                    setQOptionsText(e.target.value)
+                  }}
+                  onBlur={(e) => {
+                    const value = e.currentTarget.value.trim()
+                    try {
+                      if (value) {
+                        const parsed = JSON.parse(value)
+                        setQOptions(parsed)
+                        setQOptionsText(JSON.stringify(parsed, null, 2))
+                      } else {
+                        setQOptions({})
+                        setQOptionsText('')
+                      }
+                    } catch {
+                      // Invalid JSON, revert to last valid value
+                      setQOptionsText(Object.keys(qOptions).length > 0 ? JSON.stringify(qOptions, null, 2) : '')
+                    }
+                  }}
+                  placeholder='{"limit": 1000, "fields": ["@timestamp", "event.id"]}'
+                  className={s.jsonInput}
+                />
+                <span className={s.description}>Optional: Query options like limit, fields, sort, etc.</span>
+              </Stack>
+            </>
+          )}
+        </Stack>
         <p className={s.hint}>
           Required params marked with <Icon name="Asterisk" />
         </p>

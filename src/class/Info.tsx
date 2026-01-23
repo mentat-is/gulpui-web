@@ -1921,7 +1921,9 @@ export class Info implements InfoProps {
   query_external = async (
     plugin: string,
     custom_parameters: Record<string, string | number | object | null | undefined>,
-    isPreviewMode = false
+    isPreviewMode = false,
+    q?: any,
+    q_options?: Record<string, any>
   ): Promise<{
     total_hits: number,
     docs: Doc.Type[]
@@ -1939,7 +1941,7 @@ export class Info implements InfoProps {
         plugin
       },
       body: {
-        q: [
+        q: q ?? [
           {
             query: {
               query_string: {
@@ -1952,6 +1954,7 @@ export class Info implements InfoProps {
           custom_parameters
         },
         q_options: {
+          ...q_options,
           preview_mode: isPreviewMode
         },
       },
