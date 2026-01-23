@@ -29,17 +29,10 @@ export namespace Operation {
   }
 
   export interface Type extends Selectable {
-    glyph_id: Glyph.Id;
-    granted_user_group_ids: User.Id[];
-    granted_user_ids: string[];
     id: Id;
     index: string;
     name: string;
-    description: string;
-    owner_user_id: User.Id;
-    time_created: number;
-    time_updated: number;
-    type: 'operation';
+    glyph_id: Glyph.Id;
   }
 
   export class Entity {
@@ -185,7 +178,6 @@ export namespace Operation {
       const { Info, spawnBanner } = Application.use();
       const [name, setName] = useState<string>(operation.name ?? '');
       const [icon, setIcon] = useState<Glyph.Id | null>(operation.glyph_id ?? Glyph.getIdByName(Default.Icon.OPERATION));
-      const [description, setDescription] = useState<string>(operation.description ?? '');
       const [loading, setLoading] = useState<boolean>(false);
 
       const createOperation = () => {
@@ -203,8 +195,7 @@ export namespace Operation {
               icon: <Icon name='Check' />,
               richColors: true,
             })
-          },
-          body: { description },
+          }
         }, operation => updateOperation(operation).then(Info.sync)).then(() => {
           spawnBanner(<Operation.Select.Banner />)
         });
@@ -217,7 +208,7 @@ export namespace Operation {
           operation_id: operationType?.id ?? operation.id,
           glyph_id: icon,
         },
-        body: { description, glyph_id: icon },
+        body: { glyph_id: icon },
       }, Info.sync)
         .then(() => {
           const isNewOperation = !operation.id;
@@ -239,7 +230,7 @@ export namespace Operation {
         return (
           <Button
             variant='glass'
-            disabled={!name || !description}
+            disabled={!name}
             loading={loading}
             icon='Check'
             onClick={doneButtonClickHandler} />
@@ -256,14 +247,6 @@ export namespace Operation {
             onChange={(e) => setName(e.currentTarget.value)}
             placeholder='Name of operation'
           />}
-          <Input
-            label='Description'
-            value={description}
-            variant='highlighted'
-            icon='Question'
-            onChange={(e) => setDescription(e.currentTarget.value)}
-            placeholder='Description of operation'
-          />
           <Glyph.Chooser icon={icon} setIcon={setIcon} label='Operation icon' />
         </UIBanner>
       )

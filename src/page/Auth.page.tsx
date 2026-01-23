@@ -295,7 +295,6 @@ export namespace Auth {
                     <Select.Item value={operation.id}>
                       <Select.Icon name={Operation.Entity.icon(operation)} />
                       {operation.name}
-                      <span className={s.operation_description}>{operation.description}</span>
                     </Select.Item>
                     <UIButton icon='PencilEdit' style={{ color: 'var(--second) !important' }} variant='tertiary' onClickCapture={() => openAuthBanner(<Operation.CreateOrUpdate.Banner operation={operation} />)} />
                   </Stack>
