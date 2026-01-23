@@ -1941,7 +1941,7 @@ export class Info implements InfoProps {
         plugin
       },
       body: {
-        q: q ?? [
+        q: q ?? 
           {
             query: {
               query_string: {
@@ -1949,7 +1949,7 @@ export class Info implements InfoProps {
               },
             },
           }
-        ],
+        ,
         plugin_params: {
           custom_parameters
         },
