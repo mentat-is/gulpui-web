@@ -145,6 +145,11 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
 }) => {
   const { Info, app } = Application.use()
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
+  const [jsonText, setJsonText] = useState('');
+
+  useEffect(() => {
+    setJsonText(JSON.stringify(settings.custom_parameters ?? {}, null, 2));
+  }, [file.name]);
 
   const methods = useMemo(
     () => Mapping.Entity.methods(app, settings.plugin),
@@ -248,16 +253,17 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
               <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', width: '400px' }}>
                 <Stack dir="column" gap={6}>
                   <Label value="Plugin Params (JSON)" />
-                  <textarea
+                 <textarea
                     style={{ width: '100%', height: '150px', fontSize: 12 }}
-                    value={JSON.stringify(settings.custom_parameters, null, 2)}
+                    value={jsonText}
                     onChange={(e) => {
+                      const value = e.target.value;
+                      setJsonText(value);
+
                       try {
-                        const parsed = JSON.parse(e.target.value)
-                        updateSettings({ custom_parameters: parsed })
-                      } catch(e) {
-                        console.log("error in Json", e);
-                        toast.error('Invalid JSON! Please check syntax.');
+                        const parsed = JSON.parse(value);
+                        updateSettings({ custom_parameters: parsed });
+                      } catch {
                       }
                     }}
                   />
