@@ -826,18 +826,27 @@ export class Info implements InfoProps {
 
     const formData = new FormData()
     const payload: Record<any, any> = {
-      plugin_params: {
-        mapping_parameters: {
-          mapping_file: settings.method,
-          mapping_id: settings.mapping,
-          mappings: {}
-        },
-        custom_parameters: settings.custom_parameters,
-      },
       original_file_path: file.name,
       preview_mode,
       offset: settings.offset ?? 0
     }
+
+    if (settings.custom_parameters || settings.method || settings.mapping) {
+      payload.plugin_params = {};
+
+      if (settings.custom_parameters && Object.keys(settings.custom_parameters).length) {
+        payload.plugin_params.custom_parameters = settings.custom_parameters;
+      }
+
+      if (settings.method || settings.mapping) {
+        payload.plugin_params.mapping_parameters = {
+          mapping_file: settings.method,
+          mapping_id: settings.mapping,
+          mappings: {}
+        }
+      }
+    }
+
     if (frame) {
       payload.flt = {
         int_filter: [frame.min, frame.max],

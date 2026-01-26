@@ -146,6 +146,7 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
   const { Info, app } = Application.use()
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
   const [jsonText, setJsonText] = useState('');
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   useEffect(() => {
     setJsonText(JSON.stringify(settings.custom_parameters ?? {}, null, 2));
@@ -244,32 +245,39 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
             
             <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters}/>
 
-            <Popover.Root>
-              <Popover.Trigger asChild>
-                <Button style={{ width: '100%'}} icon="Code" variant="tertiary">
-                  Advanced
+            <Popover.Root open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+            <Popover.Trigger asChild>
+              <Button style={{ width: '100%' }} icon="Code" variant="tertiary">
+                Advanced
+              </Button>
+            </Popover.Trigger>
+            <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', width: '400px' }}>
+              <Stack dir="column" gap={6}>
+                <Label value="Full Settings (JSON)" />
+                <textarea
+                  style={{ width: '100%', height: '200px', fontSize: 12 }}
+                  value={jsonText}
+                  onChange={(e) => setJsonText(e.target.value)}
+                  onFocus={() => {setJsonText(JSON.stringify(settings, null, 2))}}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    try {
+                      const parsed = JSON.parse(jsonText)
+                      updateSettings(parsed)
+                      setIsAdvancedOpen(false)
+                      toast.success('Settings updated!')
+                    } catch {
+                      toast.error('Invalid JSON')
+                    }
+                  }}
+                >
+                  Apply
                 </Button>
-              </Popover.Trigger>
-              <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', width: '400px' }}>
-                <Stack dir="column" gap={6}>
-                  <Label value="Plugin Params (JSON)" />
-                 <textarea
-                    style={{ width: '100%', height: '150px', fontSize: 12 }}
-                    value={jsonText}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setJsonText(value);
-
-                      try {
-                        const parsed = JSON.parse(value);
-                        updateSettings({ custom_parameters: parsed });
-                      } catch {
-                      }
-                    }}
-                  />
-                </Stack>
-              </Popover.Content>
-            </Popover.Root>
+              </Stack>
+            </Popover.Content>
+          </Popover.Root>
 
           </Stack>
         </Popover.Content>
