@@ -29,6 +29,7 @@ import { Doc } from '@/entities/Doc'
 import { Mapping } from '@/entities/Mapping'
 import React from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
+import { Notification } from '@/ui/Notification'
 
 export namespace FileEntity {
   export interface IngestOptions {
@@ -147,6 +148,7 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
   const [jsonText, setJsonText] = useState('');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [exampleJson, setExampleJson] = useState<string>('');
 
   useEffect(() => {
     setJsonText(JSON.stringify(settings.custom_parameters ?? {}, null, 2));
@@ -245,36 +247,60 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
             
             <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters}/>
 
-            <Popover.Root open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+            <Popover.Root
+              open={isAdvancedOpen}
+              onOpenChange={async (open) => {
+                setIsAdvancedOpen(open);
+                if (open) {
+                  const example = await Info.fetch_gulp_parameters()
+                  if (example) { setExampleJson(JSON.stringify(example, null, 2)); 
+                }}}}>
             <Popover.Trigger asChild>
-              <Button style={{ width: '100%' }} icon="Code" variant="tertiary">
+              <Button style={{ width: '100%' }} icon='Code' variant='tertiary'>
                 Advanced
               </Button>
             </Popover.Trigger>
-            <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', width: '400px' }}>
-              <Stack dir="column" gap={6}>
-                <Label value="Full Settings (JSON)" />
+            <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', minWidth: '400px' }}>
+              <Stack dir='column' gap={6}>
+                <Label value='Full Settings (JSON)' />
                 <textarea
-                  style={{ width: '100%', height: '200px', fontSize: 12 }}
+                  style={{ width: '100%', minHeight: '200px', fontSize: 12 }}
                   value={jsonText}
                   onChange={(e) => setJsonText(e.target.value)}
                   onFocus={() => {setJsonText(JSON.stringify(settings, null, 2))}}
                 />
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    try {
-                      const parsed = JSON.parse(jsonText)
-                      updateSettings(parsed)
-                      setIsAdvancedOpen(false)
-                      toast.success('Settings updated!')
-                    } catch {
-                      toast.error('Invalid JSON')
-                    }
-                  }}
-                >
-                  Apply
-                </Button>
+                <Stack dir='row' gap={8} style={{ width: '100%'}}>
+                  <Popover.Root>
+                    <Popover.Trigger asChild>
+                      <Button variant='secondary' icon='Info' style={{ width: '100%'}}>
+                        Example
+                      </Button>
+                    </Popover.Trigger>
+
+                    <Popover.Content side='left' align='end' style={{ marginRight: '6px' }}>
+                      <Notification variant='warning' icon="Code">
+                        Example for plugin params.
+                      </Notification>
+                      <pre style={{ fontSize: 10 }}>{exampleJson || 'No example available'}</pre>
+                    </Popover.Content>
+                  </Popover.Root>
+                  <Button
+                    variant='tertiary'
+                    style={{ width: '100%' }}
+                    onClick={() => {
+                      try {
+                        const parsed = JSON.parse(jsonText)
+                        updateSettings(parsed)
+                        setIsAdvancedOpen(false)
+                        toast.success('Settings updated!')
+                      } catch {
+                        toast.error('Invalid JSON')
+                      }
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </Stack>
               </Stack>
             </Popover.Content>
           </Popover.Root>

@@ -791,6 +791,14 @@ export class Info implements InfoProps {
     )
   }
 
+  fetch_gulp_parameters = async () => {
+    const res = await fetch('http://localhost:8080/openapi.json');
+    const json = await res.json();
+    const pluginParamsSchema = json.components?.schemas?.GulpPluginParameters;
+    const example = pluginParamsSchema?.examples?.[0];
+    return example;
+  };
+
   // ⚠️ UNTOUCHABLE
   file_delete = (source: Source.Type) => {
     return api(
@@ -991,6 +999,8 @@ export class Info implements InfoProps {
 
     return ingest(0, id);
   }
+
+
 
   // ⚠️ UNTOUCHABLE
   file_set_settings = (id: Source.Id, settings: Partial<Source.Type['settings']>) => {
