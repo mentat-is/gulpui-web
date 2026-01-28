@@ -1941,7 +1941,7 @@ export class Info implements InfoProps {
     plugin: string,
     custom_parameters: Record<string, string | number | object | null | undefined>,
     preview_mode = false,
-    q?: string | Record<string, any>,
+    q?: string,
     q_options?: Record<string, any>
   ): Promise<{
     total_hits: number,
@@ -1951,19 +1951,6 @@ export class Info implements InfoProps {
     if (!operation) {
       return { total_hits: 0, docs: [] };
     }
-
-    const normalizedQ =
-      typeof q === 'string'
-        ? q
-        : JSON.stringify(
-            q ?? {
-              query: {
-                query_string: {
-                  query: '*'
-                }
-              }
-            }
-          );
 
     return api<{
       total_hits: number,
@@ -1977,7 +1964,13 @@ export class Info implements InfoProps {
         plugin
       },
       body: {
-        q: normalizedQ,
+        q: q ?? JSON.stringify({
+          query: {
+            query_string: {
+              query: '*'
+            }
+          }
+        }),
         plugin_params: {
           custom_parameters
         },
