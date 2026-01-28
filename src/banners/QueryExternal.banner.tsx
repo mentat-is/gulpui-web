@@ -258,6 +258,7 @@ export namespace QueryExternal {
                   placeholder='{"query": {"match_all": {}}}'
                   className={s.jsonInput}
                 />
+                <span className={s.description}>Query in the target query language</span>
               </Stack>
               <Stack dir="column" gap={8} ai='stretch'>
                 <Label value="Query Options in JSON format" />
