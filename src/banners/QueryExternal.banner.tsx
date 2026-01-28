@@ -147,7 +147,7 @@ export namespace QueryExternal {
     const [selectedOption, setSelectedOption] = useState(preselectedOption ?? null)
     const [loading, setLoading] = useState<number>(0)
     const [params, setParams] = useState(preparams ?? {});
-    const [q, setQ] = useState(preQ ?? null);
+    const [q, setQ] = useState<string>(preQ ? JSON.stringify(preQ, null, 2) : '');
     const [qOptions, setQOptions] = useState(preQOptions ?? {});
     const [qText, setQText] = useState(preQ ? JSON.stringify(preQ, null, 2) : '');
     const [qOptionsText, setQOptionsText] = useState(preQOptions && Object.keys(preQOptions).length > 0 ? JSON.stringify(preQOptions, null, 2) : '');
@@ -246,19 +246,22 @@ export namespace QueryExternal {
                   }}
                   onBlur={(e) => {
                     const value = e.currentTarget.value.trim()
+
+                    if (!value) {
+                      setQ('')
+                      setQText('')
+                      return
+                    }
+
                     try {
-                      if (value) {
-                        const parsed = JSON.parse(value)
-                        setQ(parsed)
-                        setQText(JSON.stringify(parsed, null, 2))
-                      } else {
-                        setQ(null)
-                        setQText('')
-                      }
+                      JSON.parse(value)
+                      setQ(value)
+                      setQText(JSON.stringify(JSON.parse(value), null, 2))
                     } catch {
-                      setQText(q ? JSON.stringify(q, null, 2) : '')
+                      setQText(q)
                     }
                   }}
+
                   placeholder='{"query": {"match_all": {}}}'
                   className={s.jsonInput}
                 />

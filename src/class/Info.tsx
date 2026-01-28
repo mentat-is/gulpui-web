@@ -1964,13 +1964,7 @@ export class Info implements InfoProps {
         plugin
       },
       body: {
-        q: q ?? JSON.stringify({
-          query: {
-            query_string: {
-              query: '*'
-            }
-          }
-        }),
+        q: q,
         plugin_params: {
           custom_parameters
         },
