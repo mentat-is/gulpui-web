@@ -898,8 +898,10 @@ export class Info implements InfoProps {
       }
 
       // resume
-      if (response.data.continue_offset)
-        return ingest(response.data.continue_offset, response.req_id);
+      const nextOffset = response?.data?.continue_offset;
+      if (nextOffset !== undefined && nextOffset !== null) {
+        return ingest(nextOffset, response.req_id);
+      }
 
 
       if (setProgress) setProgress(end / file.size * 100)
