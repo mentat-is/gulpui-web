@@ -258,7 +258,6 @@ export namespace QueryExternal {
                   placeholder='{"query": {"match_all": {}}}'
                   className={s.jsonInput}
                 />
-                <span className={s.description}>Optional: Custom OpenSearch query. Leave empty to use default.</span>
               </Stack>
               <Stack dir="column" gap={8} ai='stretch'>
                 <Label value="Query Options in JSON format" />
