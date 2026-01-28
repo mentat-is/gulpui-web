@@ -15,6 +15,8 @@ import { Skeleton } from '@/ui/Skeleton'
 import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { Textarea } from '@/ui/Textarea'
+import { SmartSocket } from '@/class/SmartSocket'
+import { toast } from 'sonner'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -78,15 +80,7 @@ export namespace QueryExternal {
     const handleCheckChange = (name: string) => (bool: boolean) =>
       setParams((prev) => ({ ...prev, [name]: bool }))
 
-    const handleCheckboxChange = (name: string, value: string) => (checked: boolean) => {
-      setParams((prev) => {
-        const currentValues = new Set(prev[name] || [])
-        if (checked) currentValues.add(value)
-        else currentValues.delete(value)
-
-        return { ...prev, [name]: Array.from(currentValues) }
-      })
-    }
+    const handleCheckboxChange = (name: string, value: string) => setParams((prev) => ({ ...prev, [name]: value }));
 
     if (!selectedOption) return null
 
@@ -94,23 +88,30 @@ export namespace QueryExternal {
       <Stack dir="column" className={s.wrapper} ai='stretch' gap={16}>
         {selectedOption.custom_parameters.map((custom) => (
           custom.values ? (
-            <Stack dir="column" ai='start'>
-              {custom.values.map((value) => (
-                <Stack dir='column' gap={6} ai='flex-start' data-input>
-                  <Label value={value} />
-                  <Switch
-                    key={value}
-                    checked={params[custom.name]?.includes(value) || false}
-                    onCheckedChange={handleCheckboxChange(custom.name, value)}
-                  />
-                </Stack>
-              ))}
+            <Stack dir='column' gap={6} ai='flex-start' data-input>
+              <Label value={custom.name} />
+              <Select.Root onValueChange={value => handleCheckboxChange(custom.name, value)}>
+                <Select.Trigger value={params[custom.name]} data-no-icon>
+                  {params[custom.name]}
+                </Select.Trigger>
+                <Select.Content>
+                  {custom.values!.map(value => (
+                    <Select.Item key={value} value={value}>{value}</Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+              <span className={s.description}>{custom.desc}</span>
             </Stack>
           ) : custom.type === 'bool' ? (
-            <Switch
-              checked={params[custom.name]}
-              onCheckedChange={handleCheckChange(custom.name)}
-            />
+            <Stack dir='column' gap={6} ai='flex-start' data-input>
+              <Label value={custom.name} />
+              <Switch
+                checked={params[custom.name]}
+                onCheckedChange={handleCheckChange(custom.name)}
+              />
+              <span className={s.description}>{custom.desc}</span>
+            </Stack>
+
           ) : (
             <Stack dir='column' gap={8} ai='stretch'>
               <Input
@@ -156,25 +157,33 @@ export namespace QueryExternal {
       setOptions(app.target.plugins.filter((i) => i.type.includes('external')))
     }, [app.target.plugins]);
 
-    const [isDone, setIsDone] = useState<boolean>(false);
-
     const handleQuery = async (preview = false) => {
       if (!selectedOption) return
-      setLoading(preview ? 2 : 1)
-      const result = await Info.query_external(selectedOption.filename, params, preview, q || undefined, Object.keys(qOptions).length > 0 ? qOptions : undefined)
-      setLoading(0)
-      if (result) {
-        spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} preQ={q} preQOptions={qOptions} {...props} />)} />)
-      } else {
-        setIsDone(true);
-      }
-    }
+      setLoading(preview ? 2 : 1);
+      Info.query_external(selectedOption.filename, params, preview, q, qOptions)
+        .then(result => {
+          if (result) {
+            spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} preQ={q} preQOptions={qOptions} {...props} />)} />)
+            return;
+          }
 
-    useEffect(() => {
-      if (isDone) {
-        spawnBanner(<SelectFiles.Banner />)
-      }
-    }, [app.target.files]);
+          toast.success('Query executed successfully', {
+            description: 'Now you can select new source',
+            icon: <Icon name='Check' />,
+            richColors: true
+          });
+
+          spawnBanner(<SelectFiles.Banner />);
+        })
+        .catch(() => {
+          toast.error('Query failed', {
+            description: 'Most common reason - there are no matches',
+            icon: <Icon name='X' />,
+            richColors: true
+          });
+        })
+        .finally(() => setLoading(0))
+    }
 
     useEffect(() => {
       if (!selectedOption) {
@@ -207,14 +216,11 @@ export namespace QueryExternal {
     )
 
     return (
-      <UIBanner title="Query external" done={done} fixed={isDone} option={optionButton} {...props}>
+      <UIBanner title="Query external" done={done} option={optionButton} {...props}>
         <PluginSelection
           options={options}
           selectedOption={selectedOption}
-          onSelect={(name) => {
-            const option = options?.find((op) => op.filename === name)
-            if (option) setSelectedOption(option)
-          }}
+          onSelect={(name) => setSelectedOption(options?.find((op) => op.filename === name)!)}
         />
         <DynamicRequestBuilder
           selectedOption={selectedOption}
@@ -232,7 +238,7 @@ export namespace QueryExternal {
           {showAdvanced && (
             <>
               <Stack dir="column" gap={8} ai='stretch'>
-                <Label value="Query (q) - JSON format" />
+                <Label value="Query Q in JSON format" />
                 <Textarea
                   value={qText}
                   onChange={(e) => {
@@ -250,7 +256,6 @@ export namespace QueryExternal {
                         setQText('')
                       }
                     } catch {
-                      // Invalid JSON, revert to last valid value
                       setQText(q ? JSON.stringify(q, null, 2) : '')
                     }
                   }}
@@ -260,7 +265,7 @@ export namespace QueryExternal {
                 <span className={s.description}>Optional: Custom OpenSearch query. Leave empty to use default.</span>
               </Stack>
               <Stack dir="column" gap={8} ai='stretch'>
-                <Label value="Query Options (q_options) - JSON format" />
+                <Label value="Query Options in JSON format" />
                 <Textarea
                   value={qOptionsText}
                   onChange={(e) => {
@@ -278,7 +283,6 @@ export namespace QueryExternal {
                         setQOptionsText('')
                       }
                     } catch {
-                      // Invalid JSON, revert to last valid value
                       setQOptionsText(Object.keys(qOptions).length > 0 ? JSON.stringify(qOptions, null, 2) : '')
                     }
                   }}

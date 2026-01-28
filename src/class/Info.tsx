@@ -1940,43 +1940,62 @@ export class Info implements InfoProps {
   query_external = async (
     plugin: string,
     custom_parameters: Record<string, string | number | object | null | undefined>,
-    isPreviewMode = false,
-    q?: any,
+    preview_mode = false,
+    q?: Record<string, any>,
     q_options?: Record<string, any>
   ): Promise<{
     total_hits: number,
     docs: Doc.Type[]
-  }> => {
+  } | null> => {
     const operation = Operation.Entity.selected(this.app);
     if (!operation) {
       return { total_hits: 0, docs: [] };
     }
 
-    return api('/query_external', {
+    q = q ?? {
+      query: {
+        query_string: {
+          query: '*'
+        }
+      }
+    }
+
+    return api<{
+      total_hits: number,
+      docs: Doc.Type[]
+    }>('/query_external', {
       method: 'POST',
+      raw: true,
       query: {
         ws_id: this.app.general.ws_id,
         operation_id: operation.id,
         plugin
       },
       body: {
-        q: q ?? 
-          {
-            query: {
-              query_string: {
-                query: '*',
-              },
-            },
-          }
-        ,
+        q,
         plugin_params: {
           custom_parameters
         },
         q_options: {
           ...q_options,
-          preview_mode: isPreviewMode
-        },
-      },
+          preview_mode
+        }
+      }
+    }).then(response => {
+      if (response.data) {
+        return response.data;
+      }
+
+      return new Promise((resolve, reject) => {
+        SmartSocket.Class.instance.conce(SmartSocket.Message.Type.INGEST_SOURCE_DONE, m => m.req_id === response.req_id, m => {
+          if (m.payload.status === 'failed') {
+            return reject();
+          }
+
+          // Trust me bro, this is masterpieceofshit
+          resolve(null);
+        })
+      })
     })
   }
 

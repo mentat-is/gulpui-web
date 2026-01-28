@@ -130,7 +130,7 @@ export namespace Select {
       onToggle: (checked: boolean) => void,
       checked: boolean
     }) => {
-      
+
       const isSelected = checked;
 
       const handleClick = (event: React.MouseEvent) => {
@@ -147,6 +147,9 @@ export namespace Select {
     }
   }
 
+  /**
+   * Use data-no-icon to omit icon from trigger
+   */
   export const Trigger = forwardRef<
     ComponentRef<typeof SelectPrimitive.Trigger>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Trigger>

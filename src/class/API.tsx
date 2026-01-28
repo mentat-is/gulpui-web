@@ -42,7 +42,7 @@ export class ResponseHandler<T extends ResponseBase<any>> {
     this.status = payload.status ?? 'error';
     this.req_id = payload.req_id ?? '' as Request.Id;
     this.timestamp = payload.timestamp ?? Date.now();
-    this.data = payload.data ?? { __error: '' };
+    this.data = payload.data;
 
     if (this.status === 'error' && !this.req_id && !this.data) {
       toast.error('Gulp UI could not estabilish connection with API', {
@@ -243,6 +243,8 @@ const api: Api = async function <T>(
   }
 
   soft(() => false, options.setLoading)
+
+  console.log(res.data);
 
   return options.raw ? res : res.data;
 }
