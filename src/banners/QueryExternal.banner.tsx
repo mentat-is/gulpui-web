@@ -246,20 +246,13 @@ export namespace QueryExternal {
                   }}
                   onBlur={(e) => {
                     const value = e.currentTarget.value.trim()
-
                     if (!value) {
                       setQ('')
                       setQText('')
                       return
                     }
-
-                    try {
-                      JSON.parse(value)
-                      setQ(value)
-                      setQText(JSON.stringify(JSON.parse(value), null, 2))
-                    } catch {
-                      setQText(q)
-                    }
+                    setQ(value)
+                    setQText(value)
                   }}
 
                   placeholder='{"query": {"match_all": {}}}'
