@@ -29,7 +29,7 @@ import { Doc } from '@/entities/Doc'
 import { Mapping } from '@/entities/Mapping'
 import React from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
-import { Notification } from '@/ui/Notification'
+import { AdvancedPluginParams } from '@/components/AdvancedPluginParams'
 
 export namespace FileEntity {
   export interface IngestOptions {
@@ -47,6 +47,7 @@ export namespace FileEntity {
     mapping?: string;
     offset: number;
     custom_parameters: Record<string, any>;
+    plugin_params?: Record<string, any>;
   }
 }
 
@@ -146,13 +147,7 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
 }) => {
   const { Info, app } = Application.use()
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
-  const [jsonText, setJsonText] = useState('');
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
-  const [exampleJson, setExampleJson] = useState<string>('');
-
-  useEffect(() => {
-    setJsonText(JSON.stringify(settings.custom_parameters ?? {}, null, 2));
-  }, [file.name]);
 
   const methods = useMemo(
     () => Mapping.Entity.methods(app, settings.plugin),
@@ -246,65 +241,16 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
             <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
             
             <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters}/>
-
-            <Popover.Root
-              open={isAdvancedOpen}
-              onOpenChange={async (open) => {
-                setIsAdvancedOpen(open);
-                if (open) {
-                  const example = await Info.fetch_gulp_parameters()
-                  if (example) { setExampleJson(JSON.stringify(example, null, 2)); 
-                }}}}>
-            <Popover.Trigger asChild>
-              <Button style={{ width: '100%' }} icon='Code' variant='tertiary'>
-                Advanced
-              </Button>
-            </Popover.Trigger>
-            <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh', minWidth: '400px' }}>
-              <Stack dir='column' gap={6}>
-                <Label value='Full Settings (JSON)' />
-                <textarea
-                  style={{ width: '100%', minHeight: '200px', fontSize: 12 }}
-                  value={jsonText}
-                  onChange={(e) => setJsonText(e.target.value)}
-                  onFocus={() => {setJsonText(JSON.stringify(settings, null, 2))}}
-                />
-                <Stack dir='row' gap={8} style={{ width: '100%'}}>
-                  <Popover.Root>
-                    <Popover.Trigger asChild>
-                      <Button variant='secondary' icon='Info' style={{ width: '100%'}}>
-                        Example
-                      </Button>
-                    </Popover.Trigger>
-
-                    <Popover.Content side='left' align='end' style={{ marginRight: '6px' }}>
-                      <Notification variant='warning' icon="Code">
-                        Example for plugin params.
-                      </Notification>
-                      <pre style={{ fontSize: 10 }}>{exampleJson || 'No example available'}</pre>
-                    </Popover.Content>
-                  </Popover.Root>
-                  <Button
-                    variant='tertiary'
-                    style={{ width: '100%' }}
-                    onClick={() => {
-                      try {
-                        const parsed = JSON.parse(jsonText)
-                        updateSettings(parsed)
-                        setIsAdvancedOpen(false)
-                        toast.success('Settings updated!')
-                      } catch {
-                        toast.error('Invalid JSON')
-                      }
-                    }}
-                  >
-                    Apply
-                  </Button>
-                </Stack>
-              </Stack>
-            </Popover.Content>
-          </Popover.Root>
-
+            <AdvancedPluginParams
+              pluginParams={settings.plugin_params || {}}
+              updatePluginParams={(pluginParams) =>
+                updateSettings({
+                  ...settings,
+                  plugin_params: pluginParams
+                })
+              }
+              loadExample={() => Info.fetch_gulp_parameters()}
+            />
           </Stack>
         </Popover.Content>
       </Popover.Root>

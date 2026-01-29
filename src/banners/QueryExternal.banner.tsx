@@ -15,7 +15,6 @@ import { Skeleton } from '@/ui/Skeleton'
 import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { Textarea } from '@/ui/Textarea'
-import { SmartSocket } from '@/class/SmartSocket'
 import { toast } from 'sonner'
 
 export namespace QueryExternal {
