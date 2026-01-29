@@ -147,7 +147,6 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
 }) => {
   const { Info, app } = Application.use()
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
-  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   const methods = useMemo(
     () => Mapping.Entity.methods(app, settings.plugin),

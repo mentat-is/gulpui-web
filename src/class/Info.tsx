@@ -1941,7 +1941,7 @@ export class Info implements InfoProps {
 
   query_external = async (
     plugin: string,
-    custom_parameters: Record<string, string | number | object | null | undefined>,
+    plugin_params?: Record<string, any>,
     preview_mode = false,
     q?: string,
     q_options?: Record<string, any>
@@ -1967,9 +1967,7 @@ export class Info implements InfoProps {
       },
       body: {
         q: q,
-        plugin_params: {
-          custom_parameters
-        },
+        plugin_params,
         q_options: {
           ...q_options,
           preview_mode

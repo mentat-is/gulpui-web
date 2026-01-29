@@ -53,14 +53,14 @@ export function AdvancedPluginParams({
   return (
     <Popover.Root open={open} onOpenChange={onOpenChange}>
       <Popover.Trigger asChild>
-        <Button variant="tertiary" icon="Code" style={{ width: '100%' }}>
+        <Button variant='tertiary' icon='Code' style={{ width: '100%' }}>
           Advanced
         </Button>
       </Popover.Trigger>
 
       <Popover.Content style={{ minWidth: 420, maxHeight: '50vh', overflow: 'auto' }}>
-        <Stack dir="column" gap={6}>
-          <Label value="plugin_params (JSON)" />
+        <Stack dir='column' gap={6}>
+          <Label value='plugin_params (JSON)' />
 
           <textarea
             style={{ width: '100%', minHeight: 200, fontSize: 12 }}
@@ -68,24 +68,23 @@ export function AdvancedPluginParams({
             onChange={e => setJsonText(e.target.value)}
           />
 
-          <Stack dir="row" gap={8}>
+          <Stack dir='row' gap={8} style={{ width: '100%'}}>
             {loadExample && (
               <Popover.Root>
                 <Popover.Trigger asChild>
-                  <Button variant="secondary" icon="Info" style={{ width: '100%' }}>
+                  <Button variant='secondary' icon='Info' style={{ width: '100%' }}>
                     Example
                   </Button>
                 </Popover.Trigger>
-                <Popover.Content side="left" align="end">
-                  <Notification variant="warning" icon="Code">
+                <Popover.Content side='left' align='end' sideOffset={12}>
+                  <Notification variant='warning' icon='Code'>
                     Example plugin_params
                   </Notification>
                   <pre style={{ fontSize: 10 }}>{example || 'No example available'}</pre>
                 </Popover.Content>
               </Popover.Root>
             )}
-
-            <Button variant="tertiary" style={{ width: '100%' }} onClick={apply}>
+            <Button variant='tertiary' style={{ width: '100%' }} onClick={apply}>
               Apply
             </Button>
           </Stack>

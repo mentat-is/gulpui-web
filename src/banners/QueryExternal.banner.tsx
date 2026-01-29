@@ -16,6 +16,7 @@ import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { Textarea } from '@/ui/Textarea'
 import { toast } from 'sonner'
+import { AdvancedPluginParams } from '@/components/AdvancedPluginParams'
 
 export namespace QueryExternal {
   export const PluginSelection = ({
@@ -151,6 +152,14 @@ export namespace QueryExternal {
     const [qText, setQText] = useState(preQ ? JSON.stringify(preQ, null, 2) : '');
     const [qOptionsText, setQOptionsText] = useState(preQOptions && Object.keys(preQOptions).length > 0 ? JSON.stringify(preQOptions, null, 2) : '');
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [pluginParams, setPluginParams] = useState<Record<string, any>>({custom_parameters: preparams ?? {}})
+
+    useEffect(() => {
+      setPluginParams(prev => ({
+        ...prev,
+        custom_parameters: params
+      }))
+    }, [params])
 
     useEffect(() => {
       setOptions(app.target.plugins.filter((i) => i.type.includes('external')))
@@ -159,7 +168,7 @@ export namespace QueryExternal {
     const handleQuery = async (preview = false) => {
       if (!selectedOption) return
       setLoading(preview ? 2 : 1);
-      Info.query_external(selectedOption.filename, params, preview, q, qOptions)
+      Info.query_external(selectedOption.filename, pluginParams, preview, q, qOptions)
         .then(result => {
           if (result) {
             spawnBanner(<Preview.Banner total={result.total_hits || result.docs.length} fixed values={result.docs} back={() => spawnBanner(<QueryExternal.Banner preparams={params} preselectedOption={selectedOption} preQ={q} preQOptions={qOptions} {...props} />)} />)
@@ -182,6 +191,14 @@ export namespace QueryExternal {
           });
         })
         .finally(() => setLoading(0))
+    }
+
+    const updatePluginParams = (next: Record<string, any>) => {
+      setPluginParams(next)
+
+      if (next.custom_parameters && typeof next.custom_parameters === 'object') {
+        setParams(next.custom_parameters)
+      }
     }
 
     useEffect(() => {
@@ -225,6 +242,11 @@ export namespace QueryExternal {
           selectedOption={selectedOption}
           params={params}
           setParams={setParams}
+        />
+        <AdvancedPluginParams
+          pluginParams={pluginParams}
+          updatePluginParams={updatePluginParams}
+          loadExample={() => Info.fetch_gulp_parameters()}
         />
         <Stack dir="column" className={s.wrapper} ai='stretch' gap={16}>
           <Button
