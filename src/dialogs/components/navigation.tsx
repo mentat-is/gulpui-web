@@ -27,33 +27,38 @@ export function Navigation({ event }: Navigation.Props) {
     const allEvents = Doc.Entity.get(app, file.id).toReversed()
     if (!allEvents.length) return
 
-    const index = allEvents.findIndex((e) => e._id === event._id)
+    const index = allEvents.findIndex((e) => e && e._id === event._id)
     if (index === -1) return
 
     const CENTER = Math.floor(WINDOW_SIZE / 2)
+
     setEvents(
       Array.from({ length: WINDOW_SIZE }, (_, i) =>
         allEvents[(index + i - CENTER + allEvents.length) % allEvents.length]
-      )
+      ).filter(Boolean) as Doc.Type[]
     )
-  }, [event._id, app.target.notes, app.target.links]) 
-  
+  }, [event._id, app.target.notes, app.target.links])
+
   const openEvent = (e: Doc.Type) => () => spawnDialog(<DisplayEventDialog event={e} />)
 
   const changeEvent = (forward: boolean) => () => {
     const file = Source.Entity.id(app, event['gulp.source_id'])
-    const allEvents = Doc.Entity.get(app, file.id).toReversed()
-    const index = allEvents.findIndex((e) => e._id === event._id)
+    if (!file) return
 
+    const allEvents = Doc.Entity.get(app, file.id).toReversed()
+    const index = allEvents.findIndex((e) => e && e._id === event._id)
     if (index === -1) return
-    
-    const nextIndex = (index + (forward ? 1 : -1) + allEvents.length) % allEvents.length
+
+    const nextIndex =
+      (index + (forward ? 1 : -1) + allEvents.length) % allEvents.length
+
     spawnDialog(<DisplayEventDialog event={allEvents[nextIndex]} />)
   }
 
   return (
     <Stack className={s.navigation} jc="space-between">
       <Button onClick={changeEvent(false)} icon="ArrowLeft" variant="default" rounded />
+
       <Stack className={s.content} jc="center" flex>
         {events.map((e) => (
           <EventIndicator
@@ -64,6 +69,7 @@ export function Navigation({ event }: Navigation.Props) {
           />
         ))}
       </Stack>
+
       <Button onClick={changeEvent(true)} icon="ArrowRight" variant="default" rounded />
     </Stack>
   )
