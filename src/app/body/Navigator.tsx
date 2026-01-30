@@ -288,6 +288,7 @@ export function Navigator({
         size={[480, 800]}
         position={[120, 120]}
         onOpenChange={setChatOpen}
+        className={s.chat}
       >
         {Slot}
       </FloatingWindow>

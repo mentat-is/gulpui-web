@@ -6,14 +6,14 @@ import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
 import { toast } from 'sonner'
 
-interface ResponseBase<T = any> {
+export interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending'
   timestamp: Date
   req_id: Request.Id
   data: T
 }
 
-interface ResponseErrorBody {
+export interface ResponseErrorBody {
   request: {
     path: string,
     method: string,
@@ -30,7 +30,7 @@ interface ResponseErrorBody {
   }
 }
 
-type ResponseError = ResponseBase<ResponseErrorBody>
+export type ResponseError = ResponseBase<ResponseErrorBody>
 
 export class ResponseHandler<T extends ResponseBase<any>> {
   status: 'success' | 'error' | 'pending'

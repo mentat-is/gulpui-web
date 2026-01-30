@@ -18,9 +18,14 @@ const chatDB = new GulpIndexedDB('gulp_DB', 'gulp_ai_assistant_history');
 
 export namespace Snifer {
 
+  export enum Role {
+    USER = 'user',
+    ASSISTANT = 'assistant'
+  }
+
   export interface Message {
     content: string;
-    isGenerated: boolean;
+    role: Role;
   }
 
   /**
@@ -211,11 +216,11 @@ export namespace Snifer {
         eventIds: docIds,
         userMessage: {
           content: `Analyze ${docIds.length} flagged events`,
-          isGenerated: false
+          role: Role.USER
         },
         aiMessage: {
           content: '',
-          isGenerated: true
+          role: Role.ASSISTANT
         }
       };
 

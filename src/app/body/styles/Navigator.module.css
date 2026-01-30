@@ -2,28 +2,40 @@
   width: 100%;
   flex-basis: unset !important;
 }
+
 .navigator [data-input] {
   flex: 1 !important;
 }
+
 .filter {
   height: 36px;
 }
+
 .filter svg {
   height: 18px;
   width: 36px;
 }
+
 .filter::before {
   width: 36px;
 }
+
 .filter input {
   font-size: 14px;
 }
+
 .goto p {
   font-family: var(--font-mono);
 }
+
 .notes_visibility {
   color: var(--teal-900);
 }
+
 .notes_visibility.dimmed {
   color: var(--accent) !important;
+}
+
+.chat {
+  padding: 0 !important;
 }
