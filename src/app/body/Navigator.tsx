@@ -246,54 +246,35 @@ export function Navigator({
 
   const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
 
-  const { Trigger, Content } = useMemo(() => {
-    const Slot = <Extension.Component name='SniferProChat.banner.tsx' />;
+  /* 
+   * Replaced the complex useMemo with direct state management for better control flow 
+   * and to implement the selection logic requested.
+   */
+  const { extensions } = Extension.use();
+  const hasPro = !!extensions['SniferProChat.banner.tsx'];
+  const [chatMode, setChatMode] = useState<'free' | 'pro'>('free'); // Default to free, but will be set by selection
+  const [selectionOpen, setSelectionOpen] = useState(false);
 
-    if (!Slot) {
-      return {
-        Trigger: <Button
-          variant='secondary'
-          title='Open Snifer chat'
-          icon='Sparkle'
-          onClick={toggleChatOpen}
-          size='md'
-        />,
-        Content: <FloatingWindow
-          title='Snifer Chat'
-          icon='Sparkle'
-          defaultOpen={chatOpen}
-          trigger="i"
-          size={[480, 800]}
-          position={[120, 120]}
-          onOpenChange={setChatOpen}
-        >
-          <Snifer.Panel />
-        </FloatingWindow>
-      }
+  const handleChatButtonClick = () => {
+    if (chatOpen) {
+      setChatOpen(false);
+      return;
     }
 
-    return {
-      Trigger: <Button
-        variant='secondary'
-        title='Open Snifer Pro chat'
-        icon='Sparkles'
-        onClick={toggleChatOpen}
-        size='md'
-      />,
-      Content: <FloatingWindow
-        title='Snifer Pro Chat'
-        icon='Sparkles'
-        defaultOpen={chatOpen}
-        trigger="i"
-        size={[480, 800]}
-        position={[120, 120]}
-        onOpenChange={setChatOpen}
-        className={s.chat}
-      >
-        {Slot}
-      </FloatingWindow>
+    if (hasPro) {
+      setSelectionOpen(true);
+    } else {
+      setChatMode('free');
+      setChatOpen(true);
     }
-  }, [chatOpen]);
+  };
+
+  const selectChat = (mode: 'free' | 'pro') => {
+    setChatMode(mode);
+    setChatOpen(true);
+    setSelectionOpen(false);
+  };
+
 
   return (
     <Stack
@@ -401,8 +382,68 @@ export function Navigator({
           </Stack>
         </Popover.Content>
       </Popover.Root>
-      {Trigger}
-      {Content}
+      {hasPro ? (
+        <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
+          <Popover.Trigger asChild>
+            <Button
+              variant={chatOpen || selectionOpen ? 'default' : 'secondary'}
+              title='Select Chat Version'
+              icon='Sparkles'
+              onClick={handleChatButtonClick}
+              size='md'
+            />
+          </Popover.Trigger>
+          <Popover.Content>
+            <Stack dir='column' gap={3}>
+              <Label value="Select Chat Version" />
+              <Stack>
+                <Button 
+                  variant="glass" 
+                  onClick={() => selectChat('free')}
+                  icon="Sparkle"
+                  title="Use Free Version"
+                >
+                  Snifer Chat (Free)
+                </Button>
+                <Button 
+                  variant="default" 
+                  onClick={() => selectChat('pro')}
+                  icon="Sparkles"
+                  title="Use Pro Version"
+                >
+                  Snifer Pro (Paid)
+                </Button>
+              </Stack>
+            </Stack>
+          </Popover.Content>
+        </Popover.Root>
+      ) : (
+        <Button
+          variant={chatOpen ? 'default' : 'secondary'}
+          title='Open Snifer Chat'
+          icon='Sparkle'
+          onClick={handleChatButtonClick}
+          size='md'
+        />
+      )}
+
+      <FloatingWindow
+        title={chatMode === 'pro' ? 'Snifer Pro Chat' : 'Snifer Chat'}
+        icon={chatMode === 'pro' ? 'Sparkles' : 'Sparkle'}
+        defaultOpen={chatOpen} 
+        /* FloatingWindow updates internal state when defaultOpen changes */
+        onOpenChange={setChatOpen}
+        trigger="i"
+        size={[480, 800]}
+        position={[120, 120]}
+        className={chatMode === 'pro' ? s.chat : undefined}
+      >
+        {chatMode === 'pro' ? (
+           <Extension.Component name='SniferProChat.banner.tsx' />
+        ) : (
+          <Snifer.Panel />
+        )}
+      </FloatingWindow>
       <Button
         variant='secondary'
         title='Toggle view between table and canvas'

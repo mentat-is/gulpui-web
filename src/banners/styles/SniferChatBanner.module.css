@@ -27,6 +27,8 @@
   border-radius: 8px;
   background-color: var(--background-100);
   border: 1px solid var(--gray-400);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .message > span {
   font-size: 10px;

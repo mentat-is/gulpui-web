@@ -29,6 +29,9 @@ function _({ children }: Extension.Provider.Props) {
           try {
             const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
             const component = await Component();
+            
+            if (!component) return;
+
             if (component.default) {
               Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
             }
@@ -101,7 +104,7 @@ export namespace Extension {
       return await func();
     } catch (error) {
       Logger.log('Component not found or failed to load:', String(error));
-      return { default: () => null };
+      return null;
     }
   }
 
