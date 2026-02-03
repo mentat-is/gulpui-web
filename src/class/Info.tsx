@@ -227,7 +227,8 @@ export class Info implements InfoProps {
     file: Source.Type,
     range: MinMax,
     custom_parameters: Record<string, any>,
-    isShowOnlyEnriched: boolean
+    isShowOnlyEnriched: boolean,
+    fields: Record<string, string | null>
   ) => {
     return api('/enrich_documents', {
       method: 'POST',
@@ -245,11 +246,10 @@ export class Info implements InfoProps {
             Internal.Transformator.toNanos(range.max).toString()
           ]
         },
-        external_parameters: {
-          plugin_params: {
-            custom_parameters,
-          },
+        plugin_params: {
+          custom_parameters,
         },
+        fields,
       },
     }).then(({ req_id }) => {
       if (isShowOnlyEnriched) {
@@ -286,6 +286,7 @@ export class Info implements InfoProps {
     plugin: string,
     event: Doc.Type,
     custom_parameters: Record<string, any>,
+    fields: Record<string, string | null>
   ): Promise<Doc.Type> | undefined => api<Doc.Type>('/enrich_single_id', {
     method: 'POST',
     query: {
@@ -294,7 +295,12 @@ export class Info implements InfoProps {
       ws_id: this.app.general.ws_id,
       doc_id: event._id,
     },
-    body: { custom_parameters },
+    body: { 
+      plugin_params: {
+        custom_parameters,
+      },
+      fields, 
+    },
     toast: {
       onSuccess: () => toast.success('Document has been enriched successfully', {
         richColors: true,
