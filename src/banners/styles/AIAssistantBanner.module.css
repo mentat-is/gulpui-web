@@ -47,12 +47,12 @@
 .message.ai {
   align-self: flex-start;
   max-width: 95%;
-  background-color: var(--background-100);
+  background-color: var(--gray-200);
   border-color: var(--gray-400);
 }
 
 .message.user {
   align-self: flex-end;
-  background-color: var(--blue-100);
-  border-color: var(--blue-400);
+  background-color: var(--blue-200);
+  border-color: var(--blue-500);
 }
