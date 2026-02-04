@@ -2,15 +2,18 @@
   max-height: 64vh;
   height: 64vh;
 }
-.banner > div {
+
+.banner>div {
   overflow-y: hidden;
   overflow-x: auto;
 }
+
 .wrapper {
   height: 100%;
   overflow: auto;
   padding-right: 8px;
 }
+
 .noData {
   height: 100%;
   width: 100%;
@@ -20,6 +23,7 @@
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
 .branch {
   padding: 8px;
   background: var(--background-100);
@@ -27,6 +31,7 @@
   border-radius: 6px;
   width: 100%;
 }
+
 .contextHeading label {
   font-size: 16px;
   font-family: var(--font-mono);
@@ -36,6 +41,7 @@
   text-overflow: ellipsis;
   max-width: 512px;
 }
+
 .file label {
   font-size: 11px;
   font-family: var(--font-mono);
@@ -45,35 +51,42 @@
   text-overflow: ellipsis;
   flex: 1;
 }
+
 .separator {
-  width: calc(100% + 16px);
+  width: calc(100% + 16px) !important;
   left: -8px;
   position: relative;
 }
+
 .smallButton {
-  width: 20px;
+  width: 20px !important;
   height: 20px;
   min-height: 20px;
   min-width: 20px;
   border-radius: 2px;
-} 
+}
+
 .smallButton svg {
   height: 10px;
   width: 10px;
 }
+
 .amount {
   border-radius: 2px !important;
   background-color: var(--soft-black);
   border: 1px solid var(--gray-400);
 }
+
 .disabled {
   opacity: 0.5;
   pointer-events: none;
 }
+
 .actionButton {
   background: var(--background-100);
   flex: 1;
 }
-.smallButton > div {
+
+.smallButton>div {
   --spinner-size: 14px !important;
 }

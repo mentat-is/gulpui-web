@@ -55,8 +55,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
                 width: '100%',
                 height: `${v.size}px`,
                 transform: `translateY(${v.start}px)`,
-              }}
-            >
+              }}>
               {renderEvent(events[v.index])}
             </div>
           ))}

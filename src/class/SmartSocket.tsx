@@ -40,7 +40,11 @@ export namespace SmartSocket {
       SOURCE_FIELDS_CHUNK = "source_fields_chunk",
       AI_ASSISTANT_DONE = "ai_assistant_done",
       AI_ASSISTANT_STREAM = "ai_assistant_stream",
-      AI_ASSISTANT_ERROR = "ai_assistant_error"
+      AI_ASSISTANT_ERROR = "ai_assistant_error",
+      AI_GULPBOT_PROGRESS = 'ai_gulpbot_progress',
+      AI_GULPBOT_ERROR = 'ai_gulpbot_error',
+      AI_GULPBOT_UI_ACTION = 'ai_gulpbot_ui_action',
+      AI_GULPBOT_DONE = 'ai_gulpbot_done'
     }
 
     export interface Entity<T = any> {

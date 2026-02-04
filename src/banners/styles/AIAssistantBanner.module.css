@@ -27,6 +27,8 @@
   border-radius: 8px;
   background-color: var(--background-100);
   border: 1px solid var(--gray-400);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 .message > span {
   font-size: 10px;
@@ -42,11 +44,15 @@
   top: 8px;
   right: 8px;
 }
-.message.ai {  
+.message.ai {
   align-self: flex-start;
   max-width: 95%;
+  background-color: var(--gray-200);
+  border-color: var(--gray-400);
 }
 
 .message.user {
   align-self: flex-end;
+  background-color: var(--blue-200);
+  border-color: var(--blue-500);
 }

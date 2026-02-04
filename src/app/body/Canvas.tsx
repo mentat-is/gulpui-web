@@ -23,6 +23,7 @@ import { Spinner } from '@/ui/Spinner'
 import { Source } from '@/entities/Source'
 import { Note } from '@/entities/Note'
 import { Doc } from '@/entities/Doc'
+import { Operation } from '@/entities/Operation'
 import { useTheme } from 'next-themes'
 import { Button } from '@/ui/Button'
 
@@ -361,7 +362,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       return null
     }
 
-    return <TargetMenu file={target} />
+    return <TargetMenu source={target} />
   }, [target]);
 
   const totalHeight = useMemo(() => {
@@ -402,7 +403,8 @@ export function Canvas({ timeline }: Canvas.Props) {
     isProgramScroll.current = true;
   }, [scrollY, canvas_ref]);
 
-  const flaggedEvents = Doc.Entity.flag.getList();
+  const operation = Operation.Entity.selected(app);
+  const flaggedEvents = Doc.Entity.flag.getList(operation?.id);
 
   return (
     <ContextMenu>
@@ -430,7 +432,7 @@ export function Canvas({ timeline }: Canvas.Props) {
           height={timeline.current?.clientHeight}
         />
         <Stack pos='absolute' className={s.island}>
-          {flaggedEvents.size > 0 && <Button className={s.unflag} variant='glass' onClick={() => Doc.Entity.flag.reset()} icon='FlagOff'>Unflag all {flaggedEvents.size} documents</Button>}
+          {flaggedEvents.size > 0 && operation && <Button className={s.unflag} variant='glass' onClick={() => Doc.Entity.flag.reset(operation.id)} icon='FlagOff'>Unflag all {flaggedEvents.size} documents</Button>}
         </Stack>
         <Spinner size={48} className={s.loading_background} />
         <Pointers

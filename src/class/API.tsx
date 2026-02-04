@@ -6,14 +6,14 @@ import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
 import { toast } from 'sonner'
 
-interface ResponseBase<T = any> {
+export interface ResponseBase<T = any> {
   status: 'success' | 'error' | 'pending'
   timestamp: Date
   req_id: Request.Id
   data: T
 }
 
-interface ResponseErrorBody {
+export interface ResponseErrorBody {
   request: {
     path: string,
     method: string,
@@ -30,7 +30,7 @@ interface ResponseErrorBody {
   }
 }
 
-type ResponseError = ResponseBase<ResponseErrorBody>
+export type ResponseError = ResponseBase<ResponseErrorBody>
 
 export class ResponseHandler<T extends ResponseBase<any>> {
   status: 'success' | 'error' | 'pending'
@@ -42,7 +42,7 @@ export class ResponseHandler<T extends ResponseBase<any>> {
     this.status = payload.status ?? 'error';
     this.req_id = payload.req_id ?? '' as Request.Id;
     this.timestamp = payload.timestamp ?? Date.now();
-    this.data = payload.data ?? { __error: '' };
+    this.data = payload.data;
 
     if (this.status === 'error' && !this.req_id && !this.data) {
       toast.error('Gulp UI could not estabilish connection with API', {
@@ -243,6 +243,8 @@ const api: Api = async function <T>(
   }
 
   soft(() => false, options.setLoading)
+
+  console.log(res.data);
 
   return options.raw ? res : res.data;
 }

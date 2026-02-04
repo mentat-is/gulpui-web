@@ -153,7 +153,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
     toast(`Has been added ${newFilters.length} new filters`)
 
-    spawnBanner(<FilterFileBanner files={[file]} />);
+    spawnBanner(<FilterFileBanner sources={[file]} />);
   }, [selection, Info, event, toKeyValue, spawnBanner, file]);
 
   const highlights = useMemo(() => {
@@ -272,8 +272,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const [isFlagged, setIsFlagged] = useState(false);
 
   const updateFlaggedState = useCallback(() => {
-    setIsFlagged(Doc.Entity.flag.isFlagged(event._id));
-  }, [setIsFlagged, event._id]);
+    setIsFlagged(Doc.Entity.flag.isFlagged(event._id, event['gulp.operation_id']));
+  }, [setIsFlagged, event._id, event]);
 
   useEffect(() => {
     updateFlaggedState();
@@ -329,12 +329,12 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <Stack className={s.actionButtons} gap={12}>
             <Button variant="secondary" onClick={handleCopyJson} icon="Copy">Copy JSON</Button>
             <Button variant="secondary" onClick={handleDownloadJson} icon="Download" title='Download JSON'>Download JSON</Button>
-            <Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" style={{ flex: 0 }} title="Focus timeline on this event"/>
+            <Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" style={{ flex: 0 }} title="Focus timeline on this event" />
             <Button
-              onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id))}
+              onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id, event['gulp.operation_id']))}
               variant={isFlagged ? 'tertiary' : 'glass'}
               icon={isFlagged ? 'FlagOff' : 'Flag'}
-              disabled={Doc.Entity.flag.isLimitReached() && !isFlagged}
+              disabled={Doc.Entity.flag.isLimitReached(Doc.Entity.flag.getList(event['gulp.operation_id'])) && !isFlagged}
               style={{ flex: 0 }}
               title='Flag event'
             />
@@ -403,7 +403,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
   ) : null;
 
   const Flag = () => {
-    const flagged = Doc.Entity.flag.isFlagged(event._id);
+    const flagged = Doc.Entity.flag.isFlagged(event._id, event['gulp.operation_id']);
     if (!flagged) return null;
     return (
       <Stack ai='center' jc='center' className={cn(s.marker, s.flagged)} pos='absolute'>

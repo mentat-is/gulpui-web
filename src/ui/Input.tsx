@@ -59,7 +59,7 @@ const Input = React.forwardRef<HTMLInputElement, Input.Props>(
 
     return (
       <Skeleton show={skeleton}>
-        <Stack dir='column' gap={6} ai='flex-start' data-input>
+        <Stack dir='column' gap={6} ai='flex-start' data-input style={{ width: '100%' }}>
           <Label htmlFor={label} value={label} />
           <div className={classes}>
             <InputIcon />

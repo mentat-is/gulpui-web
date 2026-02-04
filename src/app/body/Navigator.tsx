@@ -1,7 +1,7 @@
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
-import { ChangeEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom'
 import { NotesWindow } from '@/components/NotesWindow'
@@ -18,7 +18,7 @@ import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
-import { AI } from '@/banners/SnikerChat.banner'
+import { AIAssistant } from '@/banners/AIAssistant.banner'
 import { FloatingWindow } from '@/ui/FloatingWindow'
 import { Extension } from '@/context/Extension.context'
 
@@ -39,11 +39,8 @@ export function Navigator({
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
-  const [snikerChatOpen, setSnikerChatOpen] = useState(false)
-  const toggleSnikerChat = () => setSnikerChatOpen(prev => !prev)
-  const [gulpBotChatOpen, setGulpBotChatOpen] = useState(false)
-  const toggleGulpBotChat = () => setGulpBotChatOpen(prev => !prev)
-
+  const [chatOpen, setChatOpen] = useState(false)
+  const toggleChatOpen = () => setChatOpen(prev => !prev)
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -249,6 +246,32 @@ export function Navigator({
 
   const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
 
+  const { extensions } = Extension.use();
+  const hasPro = !!extensions['AIAssistantPro.banner.tsx'];
+  const [chatMode, setChatMode] = useState<'free' | 'pro'>('free'); // Default to free, but will be set by selection
+  const [selectionOpen, setSelectionOpen] = useState(false);
+
+  const handleChatButtonClick = () => {
+    if (chatOpen) {
+      setChatOpen(false);
+      return;
+    }
+
+    if (hasPro) {
+      setSelectionOpen(true);
+    } else {
+      setChatMode('free');
+      setChatOpen(true);
+    }
+  };
+
+  const selectChat = (mode: 'free' | 'pro') => {
+    setChatMode(mode);
+    setChatOpen(true);
+    setSelectionOpen(false);
+  };
+
+
   return (
     <Stack
       pos="relative"
@@ -355,38 +378,68 @@ export function Navigator({
           </Stack>
         </Popover.Content>
       </Popover.Root>
-      <Button
-        variant='secondary'
-        title='Open Sniker chat'
-        icon='Sparkles'
-        onClick={toggleSnikerChat}
-        size='md'
-      />
-      <Extension.Optional name='GulpBotChat.banner.tsx'>
+      {hasPro ? (
+        <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
+          <Popover.Trigger asChild>
+            <Button
+              variant={chatOpen || selectionOpen ? 'default' : 'secondary'}
+              title='Select Chat Version'
+              icon='Sparkles'
+              onClick={handleChatButtonClick}
+              size='md'
+            />
+          </Popover.Trigger>
+          <Popover.Content>
+            <Stack dir='column' gap={3}>
+              <Label value="Select Chat Version" />
+              <Stack>
+                <Button 
+                  variant="glass" 
+                  onClick={() => selectChat('free')}
+                  icon="Sparkle"
+                  title="Use Free Version"
+                >
+                  AIAssistant Chat
+                </Button>
+                <Button 
+                  variant="default" 
+                  onClick={() => selectChat('pro')}
+                  icon="Sparkles"
+                  title="Use Pro Version"
+                >
+                  AIAssistant Pro
+                </Button>
+              </Stack>
+            </Stack>
+          </Popover.Content>
+        </Popover.Root>
+      ) : (
         <Button
-          variant='secondary'
-          title='Open GulpBot chat'
-          icon='Robot'
-          onClick={toggleGulpBotChat}
+          variant={chatOpen ? 'default' : 'secondary'}
+          title='Open AI Assistant Chat'
+          icon='Sparkle'
+          onClick={handleChatButtonClick}
           size='md'
         />
-      </Extension.Optional>
+      )}
+
       <FloatingWindow
-        title='Sniker Chat'
-        icon='Sparkles'
-        defaultOpen={snikerChatOpen}
+        title={chatMode === 'pro' ? 'AI Assistant Pro' : 'AI Assistant'}
+        icon={chatMode === 'pro' ? 'Sparkles' : 'Sparkle'}
+        defaultOpen={chatOpen} 
+        /* FloatingWindow updates internal state when defaultOpen changes */
+        onOpenChange={setChatOpen}
         trigger="i"
         size={[480, 800]}
         position={[120, 120]}
-        onOpenChange={setSnikerChatOpen}
+        className={chatMode === 'pro' ? s.chat : undefined}
       >
-        <AI.Skiker.Panel />
+        {chatMode === 'pro' ? (
+           <Extension.Component name='AIAssistantPro.banner.tsx' />
+        ) : (
+          <AIAssistant.Panel />
+        )}
       </FloatingWindow>
-      {gulpBotChatOpen && (
-        <Extension.Optional name='GulpBotChat.banner.tsx'>
-          <Extension.Component name='GulpBotChat.banner.tsx' props={{ onClose: () => setGulpBotChatOpen(false) }} />
-        </Extension.Optional>
-      )}
       <Button
         variant='secondary'
         title='Toggle view between table and canvas'

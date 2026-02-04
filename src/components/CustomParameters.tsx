@@ -6,6 +6,7 @@ import { capitalize } from "lodash";
 import { ChangeEvent, useEffect } from "react";
 import { Stack } from "@/ui/Stack";
 import { Input } from "@/ui/Input";
+import { Label } from "@/ui/Label";
 
 export namespace CustomParameters {
   export type Location = 'query';
@@ -80,7 +81,8 @@ export namespace CustomParameters {
 
           if (param.type === 'bool') {
             return (
-              <Stack key={k} style={{ width: '100%' }}>
+              <Stack key={k} dir='column' gap={6} ai='flex-start' style={{ width: '100%' }}>
+                <Label value={param.desc} />
                 <Toggle
                   onCheckedChange={v => setCustomParameters(c => ({ ...c, [k]: v }))}
                   checked={value}
@@ -92,7 +94,7 @@ export namespace CustomParameters {
 
           return (
             <Input
-              key={k} 
+              key={k}
               placeholder={`${k} value should be in ${param.type} format`}
               onChange={customParameterInputChangeHandlerConstructor(k)}
               value={Array.isArray(value) ? value.join(', ') : value}

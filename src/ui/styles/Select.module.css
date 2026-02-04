@@ -21,22 +21,27 @@
   text-overflow: ellipsis;
   text-wrap: nowrap;
 }
+
 .trigger:hover {
   border-color: var(--gray-alpha-500);
 }
+
 .trigger:focus-visible {
   outline: none;
   box-shadow: var(--ring);
 }
+
 .trigger * {
   z-index: 1;
 }
+
 .trigger p {
   overflow: hidden;
   text-overflow: ellipsis;
   color: currentColor;
 }
-.trigger::before {
+
+.trigger:not([data-no-icon]):before {
   position: absolute;
   left: 0;
   content: '';
@@ -46,9 +51,11 @@
   border-right: 1px solid var(--gray-alpha-400);
   background: var(--background-200);
 }
+
 .trigger:hover::before {
   border-right: 1px solid var(--gray-alpha-500);
 }
+
 .trigger:focus {
   outline: none;
   box-shadow: var(--ring);
@@ -60,7 +67,7 @@
   opacity: 0.5;
 }
 
-.trigger > span {
+.trigger>span {
   overflow: hidden;
   display: flex;
   text-overflow: ellipsis;
@@ -68,9 +75,11 @@
   gap: 6px;
   white-space: nowrap;
 }
+
 .trigger svg:not(:first-of-type) {
   color: var(--gray-1000);
 }
+
 .scroll {
   background: var(--background-200);
   display: flex;
@@ -82,14 +91,17 @@
   justify-content: center;
   position: absolute;
 }
+
 .up {
   top: 0;
   border-bottom: 1px solid var(--gray-400);
 }
+
 .down {
   bottom: 0;
   border-top: 1px solid var(--gray-400);
 }
+
 .content {
   position: relative;
   z-index: 50;
@@ -136,44 +148,85 @@
 }
 
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes fade-out {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
 
 @keyframes zoom-in {
-  from { transform: scale(0.95); }
-  to { transform: scale(1); }
+  from {
+    transform: scale(0.95);
+  }
+
+  to {
+    transform: scale(1);
+  }
 }
 
 @keyframes zoom-out {
-  from { transform: scale(1); }
-  to { transform: scale(0.95); }
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(0.95);
+  }
 }
 
 @keyframes slide-in-from-top {
-  from { transform: translateY(-8px); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(-8px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-in-from-bottom {
-  from { transform: translateY(8px); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(8px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes slide-in-from-left {
-  from { transform: translateX(-8px); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(-8px);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes slide-in-from-right {
-  from { transform: translateX(8px); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(8px);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
+
 .popper {
   transform: translate(var(--popper-translate-x), var(--popper-translate-y));
   overflow: unset !important;
@@ -194,6 +247,7 @@
 .popper[data-side="top"] {
   transform: translateY(-4px);
 }
+
 .podder {
   height: var(--radix-select-trigger-height);
   width: 100%;
@@ -202,9 +256,11 @@
   gap: 2px;
   min-width: var(--radix-select-trigger-width);
 }
+
 .viewport {
   padding: 4px;
 }
+
 .label {
   padding: 8px 8px;
   display: flex;
@@ -214,6 +270,7 @@
   font-size: 16px;
   justify-content: center;
 }
+
 .item {
   position: relative;
   display: flex;
@@ -233,11 +290,13 @@
   transition-timing-function: var(--transition);
   color: var(--gray-900);
 }
+
 .item p {
   color: currentColor;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
 .item span {
   color: currentColor;
   display: flex;
@@ -246,12 +305,15 @@
   align-items: center;
   text-align: left;
 }
+
 .item[data-state="checked"] {
   color: var(--gray-1000);
 }
+
 .item[data-state="checked"] span {
   color: currentColor;
 }
+
 .item:focus,
 .item:hover {
   background-color: var(--gray-alpha-200);
@@ -262,6 +324,7 @@
   pointer-events: none;
   opacity: 0.5;
 }
+
 .separator {
   margin-left: -4px;
   margin-right: -4px;
@@ -270,6 +333,7 @@
   height: 1px;
   background-color: var(--gray-alpha-400);
 }
+
 .item button[role='checkbox'] svg {
   transform: translateY(0px);
 }

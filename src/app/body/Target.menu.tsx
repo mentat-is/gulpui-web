@@ -1,6 +1,5 @@
 import s from '../Gulp.module.css'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
-import { SettingsFileBanner } from '@/banners/SettingsFileBanner'
 import { Application } from '@/context/Application.context'
 import { enginesBase } from '@/dto/Engine.dto'
 import {
@@ -29,24 +28,23 @@ import { Stack } from '@/ui/Stack'
 import { Source } from '@/entities/Source'
 
 interface TargetMenuProps {
-  file: Source.Type
+  source: Source.Type
 }
 
-export function TargetMenu({ file }: TargetMenuProps) {
+export function TargetMenu({ source }: TargetMenuProps) {
   const { Info, spawnBanner, spawnDialog, app } = Application.use()
-  const events = Source.Entity.events(app, file);
 
-  const removeFilters = (file: Source.Type) => {
-    Info.filters_remove(file)
+  const removeFilters = (source: Source.Type) => {
+    Info.filters_remove(source)
     setTimeout(() => {
       Info.refetch({
-        ids: file.id,
+        ids: source.id,
       })
     }, 300)
   }
 
   const showEvent = (last = false) => {
-    const events = Source.Entity.events(app, file);
+    const events = Source.Entity.events(app, source);
     if (!events.length) {
       toast.error('There are no events in this source', {
         icon: <Icon name='FileQuestion' />,
@@ -70,21 +68,21 @@ export function TargetMenu({ file }: TargetMenuProps) {
         <Tooltip>
           <TooltipTrigger asChild>
             <ContextMenuLabel className={s.cm_title}>
-              {file.name}
+              {source.name}
             </ContextMenuLabel>
           </TooltipTrigger>
-          <TooltipContent>{file.name}</TooltipContent>
+          <TooltipContent>{source.name}</TooltipContent>
         </Tooltip>
       </TooltipProvider>
       <ContextMenuSeparator />
-      <ContextMenuItem onClick={() => Info.refetch({ ids: file.id })} icon="RefreshClockwise">Refetch</ContextMenuItem>
+      <ContextMenuItem onClick={() => Info.refetch({ ids: source.id })} icon="RefreshClockwise">Refetch</ContextMenuItem>
       <ContextMenuSub>
-        <ContextMenuSubTrigger icon="Cpu">Render method</ContextMenuSubTrigger>
+        <ContextMenuSubTrigger icon="Cpu">Render engine</ContextMenuSubTrigger>
         <ContextMenuSubContent>
           {enginesBase.map((i) => (
             <ContextMenuItem
               key={i.plugin}
-              onClick={() => Info.file_set_settings(file.id, { render_engine: i.plugin })}
+              onClick={() => Info.file_set_settings(source.id, { render_engine: i.plugin })}
               icon={i.img}
             >
               {i.title}
@@ -93,7 +91,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
         </ContextMenuSubContent>
       </ContextMenuSub>
       <ContextMenuItem
-        onClick={() => spawnBanner(<SettingsFileBanner file={file} />)}
+        onClick={() => spawnBanner(<Source.Settings.Banner source={source} />)}
         icon="Settings"
       >
         Settings
@@ -108,14 +106,14 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Filters</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner files={[file]} />)} icon='Filter'>
+        <ContextMenuItem onClick={() => spawnBanner(<FilterFileBanner sources={[source]} />)} icon='Filter'>
           Manage filters
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => removeFilters(file)} icon="X">
+        <ContextMenuItem onClick={() => removeFilters(source)} icon="X">
           Reset filters
         </ContextMenuItem>
-        {app.timeline.cache.data.has(file.id) && (
-          <ContextMenuItem onClick={() => Info.filters_undo([file])} icon="Undo">
+        {app.timeline.cache.data.has(source.id) && (
+          <ContextMenuItem onClick={() => Info.filters_undo([source])} icon="Undo">
             Undo last filters change
           </ContextMenuItem>
         )}
@@ -124,7 +122,7 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuGroup>
         <ContextMenuLabel>Actions</ContextMenuLabel>
         <ContextMenuItem
-          onClick={() => Info.setInfoByKey(Refractor.array(...app.target.files.map(f => ({ ...f, selected: f.id === file.id ? false : f.selected }))), 'target', 'files')}
+          onClick={() => Info.setInfoByKey(Refractor.array(...app.target.files.map(f => ({ ...f, selected: f.id === source.id ? false : f.selected }))), 'target', 'files')}
           icon="EyeOff"
         >
           Hide
@@ -133,19 +131,19 @@ export function TargetMenu({ file }: TargetMenuProps) {
           <ContextMenuSubTrigger icon="Move">Reorder</ContextMenuSubTrigger>
           <ContextMenuSubContent>
             <ContextMenuItem
-              onClick={() => Info.files_repin(file.id)}
-              icon={file.pinned ? 'PinOff' : 'Pin'}
+              onClick={() => Info.files_repin(source.id)}
+              icon={source.pinned ? 'PinOff' : 'Pin'}
             >
-              {file ? (file.pinned ? 'Unpin' : 'Pin') : '...'}
+              {source ? (source.pinned ? 'Unpin' : 'Pin') : '...'}
             </ContextMenuItem>
             <ContextMenuItem
-              onClick={() => Info.files_reorder_upper(file.id)}
+              onClick={() => Info.files_reorder_upper(source.id)}
               icon="ArrowBigUp"
             >
               Move upper
             </ContextMenuItem>
             <ContextMenuItem
-              onClick={() => Info.files_reorder_lower(file.id)}
+              onClick={() => Info.files_reorder_lower(source.id)}
               icon="ArrowBigDown"
             >
               Move lower
@@ -172,14 +170,14 @@ export function TargetMenu({ file }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Sigma</ContextMenuLabel>
-        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner sources={[file.id]} />)} icon="Sigma" >
+        <ContextMenuItem onClick={() => spawnBanner(<Sigma.Banner sources={[source.id]} />)} icon="Sigma" >
           Upload rule
         </ContextMenuItem>
       </ContextMenuGroup>
       <ContextMenuItem
         className={s.delete}
         icon="Trash2"
-        onClick={() => spawnBanner(<Source.Delete.Banner file={file} />)}
+        onClick={() => spawnBanner(<Source.Delete.Banner source={source} />)}
       >
         Delete!
       </ContextMenuItem>

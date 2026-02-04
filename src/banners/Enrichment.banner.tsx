@@ -5,6 +5,8 @@ import { Banner as UIBanner } from '@/ui/Banner'
 import { Select } from '@/ui/Select'
 import { Label } from '@/ui/Label'
 import { Icon } from '@impactium/icons'
+import { generateUUID } from '@/ui/utils'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 import { format } from 'date-fns'
 import {
   ChangeEvent, CSSProperties, useCallback,
@@ -39,6 +41,7 @@ export namespace Enrichment {
     >({})
     const [loading, setLoading] = useState<boolean>(false)
     const [isShowOnlyEnriched, setIsShowOnlyEnriched] = useState<boolean>(true);
+    const [fields, setFields] = useState<{ id: string, key: string, value: string | null }[]>([])
 
     useEffect(() => {
       if (!plugin) {
@@ -67,12 +70,19 @@ export namespace Enrichment {
         return
       }
 
+      const formattedFields = fields.reduce((acc, f) => {
+        if (!f.key) return acc
+        acc[f.key] = f.value
+        return acc
+      }, {} as Record<string, string | null>)
+
       if (event) {
         setLoading(true)
         const enriched = await Info.enrich_single_id(
           plugin.filename,
           event,
           customParameters,
+          formattedFields,
         )
         if (enriched && onEnrichment) {
           onEnrichment(enriched)
@@ -83,7 +93,7 @@ export namespace Enrichment {
       }
 
       setLoading(true)
-      await Info.enrichment(plugin.filename, file, frame, customParameters, isShowOnlyEnriched)
+      await Info.enrichment(plugin.filename, file, frame, customParameters, isShowOnlyEnriched, formattedFields)
       setLoading(false)
       destroyBanner()
     }
@@ -263,6 +273,84 @@ export namespace Enrichment {
         {FileSelection}
         <FrameSelector />
         <CustomParameters.Editor customParameters={customParameters} setCustomParameters={setCustomParameters} plugin={plugin} />
+        
+        <Stack style={{ border: '1px solid var(--border)', borderRadius: 6, padding: 8 }} gap={8} dir='column'>
+          <Stack ai='center' jc='space-between'>
+            <Label value='Fields' />            
+            <Button variant='tertiary' icon='Plus' onClick={() => setFields(p => [...p, { id: generateUUID(), key: '', value: null }])} />
+          </Stack>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p style={{
+                  fontSize: 12,
+                  color: 'var(--second)',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  cursor: 'help'
+                }}>
+                  Define key/value pairs for enrichment. Use `null` values to extract data from the document, or specific values to override/add new data. Supports dot notation for nested fields.
+                </p>
+              </TooltipTrigger>
+              <TooltipContent className={s.tooltip}>
+                <p>
+                  A dict with key/value pairs to be updated (`enriched`) in the document, following this pattern: <br />
+                  - A field with a <b>None</b> value will trigger plugin to get the value from the document and process it with the enrichment source. <br />
+                  Example: <code>{`{ "host.name": null, "ip.address": null }`}</code> will enrich using values from `host.name` and `ip.address` fields in the document.<br />
+                  <br />
+                  - A field with a <b>value set</b> will trigger `plugin` to process that value with the enrichment source. <br />
+                  Example: <code>{`{ "host.name": "example.com", "ip.address": "8.8.8.8" }`}</code> will enrich "host.name" and "ip.address" using provided values.<br />
+                  <br />
+                  - A mix of the two is also possible.<br />
+                  <br />
+                  `Dot notation` is supported for nested fields, i.e.: field1.field2, arrayfield[0].field3, and so on.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          {fields.map((field, index) => (
+            <Stack key={field.id} gap={8} ai='center'>
+              <Input
+                placeholder='Field key'
+                value={field.key}
+                onChange={e => {
+                  const newFields = [...fields]
+                  newFields[index].key = e.target.value
+                  setFields(newFields)
+                }}
+              />
+              <Input
+                placeholder='Field value'
+                disabled={field.value === null}
+                value={field.value ?? ''}
+                onChange={e => {
+                  const newFields = [...fields]
+                  newFields[index].value = e.target.value
+                  setFields(newFields)
+                }}
+              />
+              <Checkbox
+                checked={field.value !== null}
+                onCheckedChange={(checked) => {
+                  const newFields = [...fields]
+                  newFields[index].value = checked ? '' : null
+                  setFields(newFields)
+                }}
+              />
+              <Button
+                variant='tertiary'
+                icon='Trash'
+                onClick={() => {
+                  setFields(p => p.filter(f => f.id !== field.id))
+                }}
+              />
+            </Stack>
+          ))}
+        </Stack>
+
         <Stack ai='center' gap={4}>
           <Checkbox id='isShowOnlyEnriched' checked={isShowOnlyEnriched} onCheckedChange={v => setIsShowOnlyEnriched(!!v)} />
           <Label htmlFor='isShowOnlyEnriched' value='Show only enriched docs' cursor='pointer' />

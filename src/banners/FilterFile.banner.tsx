@@ -8,17 +8,21 @@ import { Preview } from './Preview.banner'
 import { Popover } from '@/ui/Popover'
 import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
+import { Checkbox } from '@/ui/Checkbox'
 import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { Query } from '@/entities/Query'
 import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
+import { Operation } from '@/entities/Operation'
+import { Doc } from '@/entities/Doc'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Textarea } from '@/ui/Textarea'
+import { Label } from '@/ui/Label'
 
 interface FilterFileBannerProps extends Banner.Props {
-  files: Source.Type[]
+  sources: Source.Type[]
   query?: Query.Type
   keys?: string[]
 }
@@ -35,7 +39,7 @@ interface FilterFileBannerProps extends Banner.Props {
  * state management for each mode.
  */
 export function FilterFileBanner({
-  files: initFiles,
+  sources: initSources,
   query: initQuery,
   keys: initKeys,
   ...props
@@ -43,8 +47,8 @@ export function FilterFileBanner({
   const { app, Info, spawnBanner, destroyBanner } = Application.use()
 
   const [loading, setLoading] = useState(false)
-  const [files, setFiles] = useState<Source.Type[]>(initFiles)
-
+  const [files, setFiles] = useState<Source.Type[]>(initSources)
+  const [flaggedOnly, setFlaggedOnly] = useState(false);
   // -- State Management --
   // Builder Mode State
   const [query, setQuery] = useState<Query.Type>(initQuery ?? { string: '', filters: [] })
@@ -145,12 +149,12 @@ export function FilterFileBanner({
         return
       } else {
         // Default Initialization
-        resetToCleanBase(initFiles)
-        prevFileIds.current = initFiles.map(f => f.id).sort().join(',')
+        resetToCleanBase(initSources)
+        prevFileIds.current = initSources.map(f => f.id).sort().join(',')
       }
     }
     // Note: Subsequent updates are handled via handleSourceChange, not here.
-  }, [files, initQuery, initFiles, Info])
+  }, [files, initQuery, initSources, Info])
 
   const [keys, setKeys] = useState<string[]>(initKeys ?? [])
 
@@ -227,6 +231,20 @@ export function FilterFileBanner({
 
   // -- Render Components --
 
+  const getQueryWithFlaggedEvents = useCallback(() => {
+    const baseQuery = Filter.Entity.query(query)
+    if (flaggedOnly) {
+      const operation = Operation.Entity.selected(app);
+      const flaggedEvents = Doc.Entity.flag.getDocIds(app, operation?.id);
+      if (flaggedEvents.length > 0) {
+        if (!baseQuery.bool) baseQuery.bool = { must: [] }
+        if (!baseQuery.bool.must) baseQuery.bool.must = []
+        baseQuery.bool.must.push({ terms: { id: flaggedEvents } })
+      }
+    }
+    return baseQuery
+  }, [query, flaggedOnly, app])
+
   const Done = useMemo(
     () => (
       <Button
@@ -284,7 +302,7 @@ export function FilterFileBanner({
               back={() =>
                 spawnBanner(
                   <FilterFileBanner
-                    files={files}
+                    sources={files}
                     query={finalQuery}
                     keys={keys}
                     {...props}
@@ -312,7 +330,6 @@ export function FilterFileBanner({
             Last filters
           </Button>
         </Popover.Trigger>
-
         <Popover.Content className={s.lastFilters}>
           <Stack dir="column">
             {lastQueriesList.map((q, i) => (
@@ -362,7 +379,7 @@ export function FilterFileBanner({
     <Banner
       title="Choose filtering options"
       done={Done}
-      side={!isManual ? <OpenSearchQueryBuilder.Preview query={Filter.Entity.query(query)} /> : null}
+      side={!isManual ? <OpenSearchQueryBuilder.Preview query={getQueryWithFlaggedEvents()} /> : null}
       subtitle={LastQueries}
       className={s.banner}
       {...props}
@@ -374,20 +391,24 @@ export function FilterFileBanner({
       />
 
       <Tabs value={String(isManual)} onValueChange={v => setIsManual(v === 'true')}>
-        <TabsList>
-          <TabsTrigger value="false">Builder</TabsTrigger>
-          <TabsTrigger value="true">Manual</TabsTrigger>
-        </TabsList>
-
-        <div style={{ padding: '8px 0' }}>
-          <Separator />
-        </div>
-
+        <Stack dir='row' jc='space-between'>
+          <TabsList>
+            <TabsTrigger value="false">Builder</TabsTrigger>
+            <TabsTrigger value="true">Manual</TabsTrigger>
+          </TabsList>
+          <Stack style={{ margin: '8px 0' }}>
+            <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
+            <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
+          </Stack>
+        </Stack>
+        <Separator style={{ margin: '8px 0' }} />
         <TabsContent value="false">
-          {QueryStringPart}
-          {AddCondition}
-          <Separator />
-          {QueryConditions}
+          <Stack dir='column' ai='stretch'>
+            {QueryStringPart}
+            {AddCondition}
+            <Separator />
+            {QueryConditions}
+          </Stack>
         </TabsContent>
         <TabsContent value="true">
           <Textarea
@@ -398,7 +419,6 @@ export function FilterFileBanner({
           />
         </TabsContent>
       </Tabs>
-
       <Stack ai="center" jc="flex-start" dir="row">
         <Button
           variant="glass"

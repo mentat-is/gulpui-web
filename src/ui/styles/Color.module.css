@@ -48,6 +48,11 @@
 
 .trigger {
   flex: 1;
+  width: 100%;
+}
+
+.trigger div:last-child {
+  width: 100%;
 }
 
 .tabs .content {
@@ -90,6 +95,7 @@
 .image:active {
   transform: scale(1.05);
 }
+
 .picker .select {
   position: absolute;
   z-index: 3;
@@ -100,6 +106,7 @@
   border-bottom-right-radius: 0;
   min-height: unset;
 }
+
 .picker .select input::-webkit-color-swatch-wrapper {
   padding: 0;
   height: 16px;
@@ -107,6 +114,7 @@
   max-width: 16px;
   max-height: 16px;
 }
+
 .picker .select input::-webkit-color-swatch {
   height: 16px;
   width: 16px;
@@ -114,9 +122,21 @@
   border: none;
   border-radius: 3px;
 }
+
 .picker .manual input {
   width: 100%;
 }
+
 .trigger input {
   pointer-events: none;
+}
+
+.gradient_indicator {
+  height: 20px;
+  position: absolute;
+  width: 20px;
+  border-radius: 2px;
+  left: 6px;
+  top: 6px;
+  z-index: 3;
 }

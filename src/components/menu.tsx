@@ -2,17 +2,14 @@ import s from './styles/menu.module.css'
 import { UploadBanner } from '@/banners/Upload.banner'
 import { Application } from '@/context/Application.context'
 import { SelectFiles } from '@/banners/SelectFiles.banner'
-import { Frame } from '@/banners/Frame.banner'
 import { Sigma } from '@/banners/Sigma'
 import { QueryExternal } from '@/banners/QueryExternal.banner'
 import { Enrichment } from '@/banners/Enrichment.banner'
 import { Permissions } from '@/banners/Permissions.banner'
 import { Requests } from '@/banners/Requests.banner'
-import { GlobalQuery } from '@/banners/GlobalQuery.banner'
 import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
-import { Commands } from '@/banners/Commands.banner'
 import { Settings } from '@/banners/Settings.banner'
 import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
@@ -85,7 +82,7 @@ export function Menu() {
           title="Apply filters"
           icon="Filter"
           size='md'
-          onClick={() => spawnBanner(<FilterFileBanner files={[]} />)}
+          onClick={() => spawnBanner(<FilterFileBanner sources={[]} />)}
         />
         <Extension.Components type='menu' />
         <Button
@@ -94,13 +91,6 @@ export function Menu() {
           icon="PrismColor"
           size='md'
           onClick={enrichment}
-        />
-        <Button
-          variant="glass"
-          title="Commands"
-          icon="Command"
-          size='md'
-          onClick={() => spawnBanner(<Commands.Banner />)}
         />
       </Stack>
       <Stack flex />
@@ -111,7 +101,7 @@ export function Menu() {
         size='md'
         onClick={() => spawnBanner(<Requests.Banner />)}
       >
-        {app.general.requests.filter(r => r.status === 'ongoing' || r.status === 'done').length}
+        {app.general.requests.filter(r => r.status === 'pending' || r.status === 'ongoing').length}
       </Button>
       <Button
         variant="secondary"
