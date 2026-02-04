@@ -8,7 +8,7 @@ import { SmartSocket } from '@/class/SmartSocket'
 import { Internal } from '@/entities/addon/Internal'
 import { Markdown } from '@/ui/Markdown'
 import { toast } from 'sonner'
-import s from './styles/SniferChatBanner.module.css'
+import s from './styles/AIAssistantBanner.module.css'
 import { cn } from '@impactium/utils'
 import { GulpIndexedDB } from '@/class/IndexedDB'
 import { copy, generateUUID } from '@/ui/utils'
@@ -16,7 +16,7 @@ import { copy, generateUUID } from '@/ui/utils'
 // initialize indexed db and store if not already initialized
 const chatDB = new GulpIndexedDB('gulp_DB', 'gulp_ai_assistant_history');
 
-export namespace Snifer {
+export namespace AIAssistant {
 
   export enum Role {
     USER = 'user',

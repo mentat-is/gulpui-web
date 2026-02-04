@@ -44,11 +44,15 @@
   top: 8px;
   right: 8px;
 }
-.message.ai {  
+.message.ai {
   align-self: flex-start;
   max-width: 95%;
+  background-color: var(--background-100);
+  border-color: var(--gray-400);
 }
 
 .message.user {
   align-self: flex-end;
+  background-color: var(--blue-100);
+  border-color: var(--blue-400);
 }

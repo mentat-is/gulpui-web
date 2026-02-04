@@ -18,7 +18,7 @@ import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
 import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
-import { Snifer } from '@/banners/SniferChat.banner'
+import { AIAssistant } from '@/banners/AIAssistant.banner'
 import { FloatingWindow } from '@/ui/FloatingWindow'
 import { Extension } from '@/context/Extension.context'
 
@@ -246,12 +246,8 @@ export function Navigator({
 
   const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
 
-  /* 
-   * Replaced the complex useMemo with direct state management for better control flow 
-   * and to implement the selection logic requested.
-   */
   const { extensions } = Extension.use();
-  const hasPro = !!extensions['SniferProChat.banner.tsx'];
+  const hasPro = !!extensions['AIAssistantPro.banner.tsx'];
   const [chatMode, setChatMode] = useState<'free' | 'pro'>('free'); // Default to free, but will be set by selection
   const [selectionOpen, setSelectionOpen] = useState(false);
 
@@ -403,7 +399,7 @@ export function Navigator({
                   icon="Sparkle"
                   title="Use Free Version"
                 >
-                  Snifer Chat (Free)
+                  AIAssistant Chat
                 </Button>
                 <Button 
                   variant="default" 
@@ -411,7 +407,7 @@ export function Navigator({
                   icon="Sparkles"
                   title="Use Pro Version"
                 >
-                  Snifer Pro (Paid)
+                  AIAssistant Pro
                 </Button>
               </Stack>
             </Stack>
@@ -420,7 +416,7 @@ export function Navigator({
       ) : (
         <Button
           variant={chatOpen ? 'default' : 'secondary'}
-          title='Open Snifer Chat'
+          title='Open AI Assistant Chat'
           icon='Sparkle'
           onClick={handleChatButtonClick}
           size='md'
@@ -428,7 +424,7 @@ export function Navigator({
       )}
 
       <FloatingWindow
-        title={chatMode === 'pro' ? 'Snifer Pro Chat' : 'Snifer Chat'}
+        title={chatMode === 'pro' ? 'AI Assistant Pro' : 'AI Assistant'}
         icon={chatMode === 'pro' ? 'Sparkles' : 'Sparkle'}
         defaultOpen={chatOpen} 
         /* FloatingWindow updates internal state when defaultOpen changes */
@@ -439,9 +435,9 @@ export function Navigator({
         className={chatMode === 'pro' ? s.chat : undefined}
       >
         {chatMode === 'pro' ? (
-           <Extension.Component name='SniferProChat.banner.tsx' />
+           <Extension.Component name='AIAssistantPro.banner.tsx' />
         ) : (
-          <Snifer.Panel />
+          <AIAssistant.Panel />
         )}
       </FloatingWindow>
       <Button
