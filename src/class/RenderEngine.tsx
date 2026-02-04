@@ -17,6 +17,7 @@ import { Glyph } from '@/entities/Glyph'
 import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
 import { Color } from '@/entities/Color'
+import { Operation } from '@/entities/Operation'
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = NOTE_SIZE / 2 * -1;
@@ -274,7 +275,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   private getYForDoc = (id: Doc.Id): { y: number, t: number, o: number } => {
     const e = RenderEngine[CacheKey].flags.get(id);
     if (!e) {
-      const docs = Doc.Entity.flag.getDocs(this.info.app);
+      const operation = Operation.Entity.selected(this.info.app);
+      const docs = Doc.Entity.flag.getDocs(this.info.app, operation?.id);
 
       let result = {
         y: 0,
@@ -299,10 +301,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return e;
   }
   /**
-   * Draws green line on position of every flagged event
+   * Draws green line on position of every flagged event for the current operation
    */
   public highlightFlaggedDocuments = () => {
-    const flagged = Doc.Entity.flag.getList();
+    const operation = Operation.Entity.selected(this.info.app);
+    const flagged = Doc.Entity.flag.getList(operation?.id);
 
     for (const id of flagged) {
       const { y, t, o } = this.getYForDoc(id);

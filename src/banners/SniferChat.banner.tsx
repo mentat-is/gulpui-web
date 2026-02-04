@@ -184,7 +184,7 @@ export namespace Snifer {
      * 4. If new, creates a new request, updates state, and initiates the API call.
      */
     const analyze = async () => {
-      const docIds = Doc.Entity.flag.getDocIds(Info.app);
+      const docIds = Doc.Entity.flag.getDocIds(Info.app, operation?.id);
 
       if (!docIds.length) {
         toast.info('No flagged events found to analyze.')

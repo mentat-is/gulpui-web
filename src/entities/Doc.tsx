@@ -42,13 +42,13 @@ export namespace Doc {
 
   interface Flag {
     KEY: string;
-    getList: () => Set<Doc.Id>;
-    getDocIds: (app: App.Type) => Doc.Id[];
-    getDocs: (app: App.Type) => Doc.Type[];
+    getList: (operationId?: Operation.Id) => Set<Doc.Id>;
+    getDocIds: (app: App.Type, operationId?: Operation.Id) => Doc.Id[];
+    getDocs: (app: App.Type, operationId?: Operation.Id) => Doc.Type[];
     isLimitReached: (ids?: Set<Doc.Id>) => boolean;
-    toggle: (id: Doc.Id) => boolean;
-    reset: () => void;
-    isFlagged: (id: Doc.Id) => boolean;
+    toggle: (id: Doc.Id, operationId?: Operation.Id) => boolean;
+    reset: (operationId?: Operation.Id) => void;
+    isFlagged: (id: Doc.Id, operationId?: Operation.Id) => boolean;
   }
 
   export class Entity {
@@ -156,39 +156,76 @@ export namespace Doc {
       timestamp: Internal.Transformator.toTimestamp(e['gulp.timestamp'], 'round')
     })) as Doc.Type[];
 
+    /**
+     * Helper to get all flagged data from localStorage
+     * @returns Record<Operation.Id, Doc.Id[]>
+     */
+    private static getFlaggedData = (): Record<string, string[]> => {
+      const raw = localStorage.getItem(Doc.Entity.flag.KEY);
+      if (!raw) {
+        return {};
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        // Handle migration from old format (array) to new format (object)
+        if (Array.isArray(parsed)) {
+          // Old format - return empty, we can't migrate without operation_id
+          return {};
+        }
+        return parsed as Record<string, string[]>;
+      } catch (_) {
+        return {};
+      }
+    }
+
+    /**
+     * Helper to save flagged data to localStorage
+     */
+    private static saveFlaggedData = (data: Record<string, string[]>) => {
+      // Clean up empty arrays
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([_, ids]) => ids.length > 0)
+      );
+      localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify(cleaned));
+    }
+
     public static flag: Flag = {
       KEY: 'flagged-events',
 
       /**
        * Method to get all flagged events from local storage
-       * @returns Set of Doc.Id
+       * @param operationId - Optional operation ID to filter by
+       * @returns Set of Doc.Id for the specified operation (or all if not specified)
        */
-      getList: (): Set<Doc.Id> => {
+      getList: (operationId?: Operation.Id): Set<Doc.Id> => {
         const ids: Set<Doc.Id> = new Set();
+        const data = Doc.Entity.getFlaggedData();
 
-        const raw = localStorage.getItem(Doc.Entity.flag.KEY);
-        if (!raw) {
-          return ids;
-        }
-
-        try {
-          JSON.parse(raw).forEach((id: unknown) => {
+        if (operationId) {
+          // Return only IDs for the specified operation
+          const operationIds = data[operationId] || [];
+          operationIds.forEach((id) => ids.add(id as Doc.Id));
+        } else {
+          // Return all IDs across all operations
+          Object.values(data).flat().forEach((id) => {
             if (typeof id === 'string') {
-              return ids.add(id as Doc.Id);
+              ids.add(id as Doc.Id);
             }
-            Logger.error(`LocalStorage entity ${Doc.Entity.flag.KEY} has shit inside`, 'Doc.flag.getList');
           });
-        } catch (_) { }
+        }
 
         return ids;
       },
 
       /**
-       * Method to get all flagged events from local storage
+       * Method to get all flagged event IDs for the specified operation
+       * @param app - App state
+       * @param operationId - Optional operation ID to filter by
        * @returns Array of Doc.Id
        */
-      getDocIds: (app: App.Type): Doc.Id[] => {
-        const ids  = Doc.Entity.flag.getList();
+      getDocIds: (app: App.Type, operationId?: Operation.Id): Doc.Id[] => {
+        const ids = Doc.Entity.flag.getList(operationId);
         if (!ids.size) return [];
         const result: Doc.Id[] = [];
 
@@ -202,8 +239,14 @@ export namespace Doc {
         return result;
       },
       
-      getDocs: (app: App.Type): Doc.Type[] => {
-        const ids = Doc.Entity.flag.getList();
+      /**
+       * Method to get all flagged documents for the specified operation
+       * @param app - App state
+       * @param operationId - Optional operation ID to filter by
+       * @returns Array of Doc.Type
+       */
+      getDocs: (app: App.Type, operationId?: Operation.Id): Doc.Type[] => {
+        const ids = Doc.Entity.flag.getList(operationId);
 
         if (!ids.size) return [];
 
@@ -223,58 +266,79 @@ export namespace Doc {
       isLimitReached: (ids = Doc.Entity.flag.getList()) => ids.size >= 10,
 
       /**
-       * 
+       * Toggle flag state for a document within a specific operation
        * @param id Doc.Id
-       * @returns New document flagged state;
+       * @param operationId Operation.Id to associate the flag with
+       * @returns New document flagged state
        */
-      toggle: (id: Doc.Id) => {
+      toggle: (id: Doc.Id, operationId?: Operation.Id) => {
         if (typeof id !== 'string') {
           return false;
         }
 
-        console.log(id);
+        if (!operationId) {
+          toast.error('Cannot flag document', {
+            description: 'No operation selected',
+            richColors: true,
+            icon: <Icon name='X' />
+          });
+          return false;
+        }
 
-        const ids = Doc.Entity.flag.getList();
+        const data = Doc.Entity.getFlaggedData();
+        const operationIds = data[operationId] || [];
+        const isFlagged = operationIds.includes(id);
 
-        console.log(ids);
-
-        const isFlagged = ids.has(id);
-
-        if (!isFlagged && Doc.Entity.flag.isLimitReached(ids)) {
+        // Check limit for the specific operation
+        if (!isFlagged && operationIds.length >= 10) {
           toast.error('Limit reached', {
-            description: 'Max 10 events can be flagged',
+            description: 'Max 10 events can be flagged per operation',
             richColors: true,
             icon: <Icon name='X' />
           });
           return isFlagged;
         }
 
-        ids[ids.has(id) ? 'delete' : 'add'](id);
+        if (isFlagged) {
+          // Remove the id
+          data[operationId] = operationIds.filter(docId => docId !== id);
+        } else {
+          // Add the id
+          data[operationId] = [...operationIds, id];
+        }
+
         toast.info(`Event has been successfully ${isFlagged ? 'unflagged' : 'flagged'}`);
 
-        console.log(ids);
-
-        localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify([...ids.values()]))
+        Doc.Entity.saveFlaggedData(data);
         return !isFlagged;
       },
 
       /**
-       * Resets flagged events
-       * @returns Nothing
+       * Resets flagged events for a specific operation
+       * @param operationId - If provided, only resets flags for that operation. Otherwise resets all.
        */
-      reset: () => localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify([])),
+      reset: (operationId?: Operation.Id) => {
+        if (operationId) {
+          const data = Doc.Entity.getFlaggedData();
+          delete data[operationId];
+          Doc.Entity.saveFlaggedData(data);
+        } else {
+          localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify({}));
+        }
+      },
 
       /**
-       * 
+       * Checks if document is flagged
        * @param id Doc.Id
-       * @returns Checks if document is flagged
+       * @param operationId Optional operation ID to check within
+       * @returns Whether the document is flagged
        */
-      isFlagged: (id: Doc.Id) => {
+      isFlagged: (id: Doc.Id, operationId?: Operation.Id) => {
         if (typeof id !== 'string') {
           return false;
         }
 
-        const ids = Doc.Entity.flag.getList();
+        const ids = Doc.Entity.flag.getList(operationId);
         return ids.has(id);
       }
     }

@@ -14,6 +14,8 @@ import { Stack } from '@/ui/Stack'
 import { Query } from '@/entities/Query'
 import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
+import { Operation } from '@/entities/Operation'
+import { Doc } from '@/entities/Doc'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Textarea } from '@/ui/Textarea'
@@ -232,7 +234,8 @@ export function FilterFileBanner({
   const getQueryWithFlaggedEvents = useCallback(() => {
     const baseQuery = Filter.Entity.query(query)
     if (flaggedOnly) {
-      const flaggedEvents: string[] = JSON.parse(localStorage.getItem('flagged-events') || '[]')
+      const operation = Operation.Entity.selected(app);
+      const flaggedEvents = Doc.Entity.flag.getDocIds(app, operation?.id);
       if (flaggedEvents.length > 0) {
         if (!baseQuery.bool) baseQuery.bool = { must: [] }
         if (!baseQuery.bool.must) baseQuery.bool.must = []
@@ -240,7 +243,7 @@ export function FilterFileBanner({
       }
     }
     return baseQuery
-  }, [query, flaggedOnly])
+  }, [query, flaggedOnly, app])
 
   const Done = useMemo(
     () => (
