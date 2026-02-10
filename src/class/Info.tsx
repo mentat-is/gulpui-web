@@ -949,7 +949,6 @@ export class Info implements InfoProps {
 		const formData = new FormData();
 		const payload: Record<any, any> = {
 			original_file_path: file.name,
-			preview_mode,
 			offset: settings.offset ?? 0,
 		};
 
@@ -969,6 +968,9 @@ export class Info implements InfoProps {
 					mapping_id: settings.mapping,
 					mappings: {},
 				};
+			}
+			if (preview_mode) {
+				payload.plugin_params.preview_mode = true;
 			}
 		}
 
