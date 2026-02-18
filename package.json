@@ -4,6 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.20.0",
   "scripts": {
+    "prestart": "node ./scripts/copy_paid_plugins.js",
+    "prebuild": "node ./scripts/copy_paid_plugins.js && node scripts/write-version.js",
     "build": "react-app-rewired build",
     "start": "react-app-rewired start",
     "server": "serve -s build -l 80"
