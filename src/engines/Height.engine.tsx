@@ -7,12 +7,20 @@ import { Doc } from '@/entities/Doc';
 
 const SAMPLE_SIZE = 60000;
 
+/**
+ * Height-based render engine: draws vertical bars proportional to event density.
+ * Caches per-source height maps (Map<timestamp, eventCount>).
+ * Singleton pattern — reused across frames.
+ */
 export class HeightEngine implements Engine.Interface<typeof HeightEngine.target> {
-  private static instance: HeightEngine | null = null
+  /** Singleton instance, accessible for cache clearing in clearAllCaches(). */
+  public static instance: HeightEngine | null = null
   static target: Map<number, number> & {
     [Hardcode.MaxHeight]: number;
   };
+  /** Reference to the parent RenderEngine. */
   private renderer!: RenderEngine
+  /** Per-source cache of height data. Key: source ID, Value: height map. */
   map = new Map<Source.Id, typeof HeightEngine.target>();
 
   constructor(renderer: Engine.Constructor) {
@@ -22,6 +30,11 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     }
     this.renderer = renderer;
     HeightEngine.instance = this
+  }
+
+  /** Updates the renderer reference without constructor overhead. Called per frame. */
+  updateRenderer(renderer: Engine.Constructor) {
+    this.renderer = renderer
   }
 
   render(file: Source.Type, y: number) {
@@ -52,9 +65,18 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     }
   }
 
+  private cacheKeys = new Map<Source.Id, string>();
+
   get(file: Source.Type) {
     const events = Source.Entity.events(this.renderer.info.app, file)
     const [minTime, maxTime] = [Math.min(file.timestamp.min, file.timestamp.max), Math.max(file.timestamp.min, file.timestamp.max)]
+
+    // Check cache validity — recompute only when events or bounds changed
+    const cacheKey = `${events.length}:${minTime}:${maxTime}`;
+    const existingKey = this.cacheKeys.get(file.id);
+    if (existingKey === cacheKey && this.map.has(file.id)) {
+      return this.map.get(file.id)!;
+    }
 
     const bucketCount = Math.ceil((maxTime - minTime) / SAMPLE_SIZE)
     const sampledData = new Map() as typeof HeightEngine.target;
@@ -81,6 +103,7 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     sampledData[Hardcode.MaxHeight] = maxHeight;
 
     this.map.set(file.id, sampledData)
+    this.cacheKeys.set(file.id, cacheKey)
 
     return sampledData;
   }

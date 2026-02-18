@@ -7,7 +7,7 @@ import { DefaultEngine } from '../engines/Default.engine'
 import { Engine, Hardcode, CacheKey } from './Engine.dto'
 import { HeightEngine } from '../engines/Height.engine'
 import { GraphEngine } from '../engines/Graph.engine'
-import { getCanvasIcon } from '@/ui/CanvasIcon'
+import { getCanvasIcon, CanvasIcon } from '@/ui/CanvasIcon'
 import { Logger } from '@/dto/Logger.class'
 import { Source } from '@/entities/Source'
 import { Doc } from '@/entities/Doc'
@@ -94,6 +94,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }>
   };
 
+  /**
+   * Creates or updates the singleton RenderEngine instance.
+   *
+   * SINGLETON PATTERN: If an instance already exists, updates its properties
+   * (ctx, limits, scroll, etc.) and calls `updateRenderer()` on each sub-engine
+   * instead of creating new DefaultEngine/HeightEngine/GraphEngine instances.
+   * This avoids 3 constructor calls + singleton checks per frame.
+   *
+   * On first call, initializes the singleton with canvas context settings
+   * (image smoothing, font) and creates the sub-engines.
+   */
   constructor({
     ctx,
     limits,
@@ -117,9 +128,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.scrollX = scrollX
       RenderEngine.instance.scrollY = scrollY
       RenderEngine.instance.getPixelPosition = getPixelPosition
-      RenderEngine.instance.default = new DefaultEngine(RenderEngine.instance)
-      RenderEngine.instance.height = new HeightEngine(RenderEngine.instance)
-      RenderEngine.instance.graph = new GraphEngine(RenderEngine.instance)
+      // Reuse engine singletons — only update their RenderEngine reference.
+      // Avoids `new DefaultEngine()` etc. which would enter each constructor,
+      // check the singleton, and return the existing instance anyway.
+      RenderEngine.instance.default.updateRenderer(RenderEngine.instance)
+      RenderEngine.instance.height.updateRenderer(RenderEngine.instance)
+      RenderEngine.instance.graph.updateRenderer(RenderEngine.instance)
       return RenderEngine.instance
     }
 
@@ -173,11 +187,18 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
   public links = () => {
+    const canvasWidth = this.ctx.canvas.width;
+
     this.info.app.target.links.forEach((link) => {
       if (link.doc_ids.some(id => !Source.Entity.id(this.info.app, Doc.Entity.id(this.info.app, id)?.['gulp.source_id'])?.selected))
         return
 
       const { dots } = this.calcDots(link)
+
+      // Skip links entirely outside the visible viewport
+      const allOutsideLeft = dots.every(d => d.x < -50);
+      const allOutsideRight = dots.every(d => d.x > canvasWidth + 50);
+      if (allOutsideLeft || allOutsideRight) return;
 
       this.connection(dots)
       dots.forEach((dot) => this.dot(dot))
@@ -411,7 +432,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillText(displayText, x, y + NOTE_SIZE - labelHeight / 2 - 2)
   }
 
-  public renderNote = async (note: Note.Type) => {
+  public renderNote = (note: Note.Type) => {
     const timestamp = Note.Entity.timestamp(note)
     const x = this.getPixelPosition(timestamp) + NOTE_OFFSET
     const y = Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
@@ -426,25 +447,16 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     // Accent
     this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, 4, note.color, note.color);
 
-    try {
-      const icon = getCanvasIcon({
-        name: Note.Entity.icon(note),
-        color: note.color
-      })
+    const icon = getCanvasIcon({
+      name: Note.Entity.icon(note),
+      color: note.color
+    })
 
-      const iconSize = 16
-      const iconX = x + (NOTE_SIZE - iconSize) / 2
-      const iconY = y + (NOTE_SIZE - iconSize) / 2 - 1
+    const iconSize = 16
+    const iconX = x + (NOTE_SIZE - iconSize) / 2
+    const iconY = y + (NOTE_SIZE - iconSize) / 2 - 1
 
-      this.ctx.drawImage(icon, iconX, iconY, iconSize, iconSize)
-    } catch (error) {
-      Logger.error(`Failed to load image for note ${note.id}. \n${JSON.stringify(error)}`, RenderEngine.name);
-      const iconSize = 8
-      this.ctx.fillStyle = note.color
-      this.ctx.beginPath()
-      this.ctx.arc(x + NOTE_SIZE / 2, y + NOTE_SIZE / 2, iconSize / 2, 0, Math.PI * 2)
-      this.ctx.fill()
-    }
+    this.ctx.drawImage(icon, iconX, iconY, iconSize, iconSize)
 
     this.drawTextLabel(note.name, x + NOTE_SIZE / 2, y + 26, 120, note.color);
 
@@ -600,8 +612,33 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   }
 
 
+  /** Clears a specific render cache (notes, range, or flags). Used to force recalculation. */
   public static reset = (key: keyof typeof RenderEngine[typeof CacheKey]) => {
     RenderEngine[CacheKey][key].clear();
+  }
+
+  /**
+   * Comprehensive memory cleanup — clears ALL render-related caches.
+   * Must be called when switching operations to prevent memory leaks.
+   *
+   * Clears:
+   * - RenderEngine's notes, range, and flags caches
+   * - DefaultEngine and HeightEngine per-source pixel maps (can hold 320k+ entries)
+   * - CanvasIcon SVG-to-bitmap cache
+   */
+  public static clearAllCaches = () => {
+    RenderEngine[CacheKey].notes.clear();
+    RenderEngine[CacheKey].range.clear();
+    RenderEngine[CacheKey].flags.clear();
+
+    if (DefaultEngine.instance) {
+      DefaultEngine.instance.map.clear();
+    }
+    if (HeightEngine.instance) {
+      HeightEngine.instance.map.clear();
+    }
+
+    CanvasIcon.cache.clear();
   }
 
   public notes = (files: Source.Type[]) => {
@@ -612,7 +649,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
         return;
       }
 
-      groups.forEach(async (group) => {
+      groups.forEach((group) => {
         if (!group || group.length < 2 || !notes[group[0]]) return;
 
         if (group[1] === 1 && notes[group[0]]) {

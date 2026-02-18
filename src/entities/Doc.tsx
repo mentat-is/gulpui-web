@@ -52,6 +52,24 @@ export namespace Doc {
   }
 
   export class Entity {
+    /**
+     * Global event lookup index: maps Doc.Id → Doc.Type for O(1) access.
+     *
+     * ARCHITECTURAL DECISION: Previously, `Doc.Entity.id()` used
+     * `Array.from(app.target.events.values()).flat().find(...)` which created
+     * a new flat array of ALL events (up to 320k) on every single call.
+     * With links calling `id()` per doc_id per link, this caused ~6.4M array
+     * operations per render frame. The Map index reduces this to O(1).
+     *
+     * The index is maintained by `add()` and `delete()`, and must be cleared
+     * via `clearIndex()` when switching operations to prevent memory leaks.
+     */
+    private static _index = new Map<Doc.Id, Doc.Type>();
+
+    /** Clears the entire doc lookup index. Called during operation switch to free memory. */
+    public static clearIndex = () => Doc.Entity._index.clear();
+
+    /** Extracts a minimal Doc payload from a full event, keeping only essential fields. */
     public static toDoc = (event: Doc.Type) => ({
       '_id': event._id,
       '@timestamp': event['@timestamp'],
@@ -61,10 +79,19 @@ export namespace Doc {
       'gulp.timestamp': event['gulp.timestamp'],
     })
 
+    /**
+     * Removes all events for the given source files.
+     * Also removes corresponding entries from the `_index` to prevent stale references.
+     */
     public static delete = (app: App.Type, files: Arrayed<Source.Type>) => {
       files = Parser.array(files)
 
       files.forEach((file) => {
+        // Remove from index before deleting
+        const events = app.target.events.get(file.id);
+        if (events) {
+          events.forEach(e => Doc.Entity._index.delete(e._id));
+        }
         app.target.events.delete(file.id)
         app.target.events.set(file.id, [])
       })
@@ -72,27 +99,36 @@ export namespace Doc {
       return app.target.events
     }
 
+    /** Returns the time range (min/max) of a sorted event array. Assumes descending sort order. */
     public static range = (events: Doc.Type[]) => ({
       max: new Date(events[0]['@timestamp']).valueOf(),
       min: new Date(events[events.length - 1]['@timestamp']).valueOf()
     })
 
-    public static id = (app: App.Type, event: Doc.Type['_id']): Doc.Type =>
-      Array.from(app.target.events.values())
-        .flat()
-        .find((e) => e._id === event) as Doc.Type
+    /** Finds a single event by its ID using the O(1) `_index` Map. */
+    public static id = (_app: App.Type, event: Doc.Type['_id']): Doc.Type =>
+      Doc.Entity._index.get(event) as Doc.Type
 
+    /** Retrieves all events for a given source ID. Auto-initializes an empty array if none exist. */
     public static get = (app: App.Type, id: Source.Id): Doc.Type[] =>
       app.target.events.get(id) ||
       (app.target.events.set(id, []).get(id) as Doc.Type[])
 
+    /** Sorts events in descending timestamp order (newest first). Mutates the array in place. */
     public static sort = (events: Doc.Type[]) => events.sort((a, b) => b.timestamp - a.timestamp);
 
+    /** Returns all events from currently selected sources, flattened into a single array. */
     public static selected = (app: App.Type): Doc.Type[] =>
       Source.Entity.selected(app)
         .map((s) => Doc.Entity.get(app, s.id))
         .flat()
 
+    /**
+     * Adds or updates events into the global event store.
+     * Groups incoming events by source for batched processing.
+     * Updates existing events in place, appends new ones, and maintains
+     * the `_index` Map for O(1) lookups. Re-sorts only if changes were made.
+     */
     public static add = (app: App.Type, events: Doc.Type[]) => {
       const sources = new Set<Source.Id>();
 
@@ -117,7 +153,9 @@ export namespace Doc {
         for (let i = 0; i < existingEvents.length; i++) {
           const evt = existingEvents[i];
           if (newEventsMap.has(evt._id)) {
-            existingEvents[i] = newEventsMap.get(evt._id)!;
+            const updated = newEventsMap.get(evt._id)!;
+            existingEvents[i] = updated;
+            Doc.Entity._index.set(updated._id, updated);
             newEventsMap.delete(evt._id);
             hasChanges = true;
           }
@@ -125,6 +163,9 @@ export namespace Doc {
 
         // Add remaining new events
         if (newEventsMap.size > 0) {
+          for (const evt of newEventsMap.values()) {
+            Doc.Entity._index.set(evt._id, evt);
+          }
           existingEvents.push(...newEventsMap.values());
           hasChanges = true;
         }
@@ -140,10 +181,9 @@ export namespace Doc {
 
     public static timestamp = (event: Doc.Type) => Internal.Transformator.toTimestamp(event['@timestamp']);
 
-    public static ids = (app: App.Type, ids: Doc.Type['_id'][]) =>
-      Array.from(app.target.events.values())
-        .flat()
-        .filter((e) => ids.includes(e._id))
+    /** Finds multiple events by their IDs using the O(1) `_index` Map. Filters out missing entries. */
+    public static ids = (_app: App.Type, ids: Doc.Type['_id'][]) =>
+      ids.map(id => Doc.Entity._index.get(id)).filter(Boolean) as Doc.Type[]
 
     public static notes = (app: App.Type, event: Doc.Type) => Note.Entity.findByFile(app, event['gulp.source_id']).filter((n) => n.doc._id === event._id);
 

@@ -87,7 +87,13 @@ export namespace Note {
         return 0;
       }
 
-      return new Date(note.doc['@timestamp']).getTime();
+      if (note._cachedTimestamp !== undefined) {
+        return note._cachedTimestamp;
+      }
+
+      const ts = new Date(note.doc['@timestamp']).getTime();
+      note._cachedTimestamp = ts;
+      return ts;
     }
   }
 

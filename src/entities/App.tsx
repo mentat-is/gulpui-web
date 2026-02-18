@@ -57,6 +57,7 @@ export namespace App {
       isTabularView: boolean;
       dialogSize: number
       pointers: Pointers.Pointer[];
+      renderVersion: number;
     },
     settings: {
       [key: string]: any;
@@ -97,7 +98,8 @@ export namespace App {
       isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
       isTabularView: true,
       dialogSize: window.innerWidth / 3,
-      pointers: []
+      pointers: [],
+      renderVersion: 0,
     },
     target: {
       operations: [],

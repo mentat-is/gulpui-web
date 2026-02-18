@@ -172,13 +172,17 @@ export class RulerDrawer implements RulerDrawerConstructor {
   }
 
   sections() {
-    this.cache.map((c) => this.section(c))
+    for (let i = 0; i < this.cache.length; i++) {
+      const nextPosition = i + 1 < this.cache.length ? this.cache[i + 1].position : this.ctx.canvas.width;
+      this.section(this.cache[i], nextPosition);
+    }
     this.separator()
   }
 
-  section(props: RulerSectionProps) {
+  section(props: RulerSectionProps, nextPosition?: number) {
+    const sectionWidth = (nextPosition ?? this.ctx.canvas.width) - props.position;
     this.ctx.fillStyle = props.even ? Color.Themer.theme.BACKGROUND_ACCENT : Color.Themer.theme.BACKGROUND_SECOND
-    this.ctx.fillRect(props.position, 0, this.ctx.canvas.width, 25)
+    this.ctx.fillRect(props.position, 0, sectionWidth, 25)
     const timeUnit = props.format || 'MMM yyyy'
     const label = formatDate(props.timestamp, timeUnit)
     this.ctx.font = '12px Arial'

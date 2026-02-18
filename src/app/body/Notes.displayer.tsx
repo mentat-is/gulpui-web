@@ -4,7 +4,7 @@ import { XY } from '@/dto/XY.dto'
 import { Note } from '@/entities/Note';
 import { Source } from '@/entities/Source';
 import { NotePoint } from '@/ui/Note';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 interface NotesDisplayerProps {
   getPixelPosition: (num: number) => number;
@@ -17,21 +17,38 @@ export function NotesDisplayer({
 }: NotesDisplayerProps) {
   const { app, scrollY } = Application.use()
   const [notes, setNotes] = useState<Note.Type[]>([]);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce mouse position updates to avoid 60 state updates/sec
+  const debouncedSelf = useRef(self);
 
   useEffect(() => {
-    if (app.hidden.notes) {
-      return setNotes([]);
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
-    const files = Source.Entity.selected(app);
-    const index = Math.floor((self.y + scrollY) / 48);
-    const file = files[index];
+    debounceTimer.current = setTimeout(() => {
+      debouncedSelf.current = self;
 
-    if (!file) {
-      return setNotes([]);
-    }
+      if (app.hidden.notes) {
+        return setNotes([]);
+      }
+      const files = Source.Entity.selected(app);
+      const index = Math.floor((self.y + scrollY) / 48);
+      const file = files[index];
 
-    const notes = RenderEngine.getNotesByX(file, self.x);
-    setNotes(notes);
+      if (!file) {
+        return setNotes([]);
+      }
+
+      const notes = RenderEngine.getNotesByX(file, self.x);
+      setNotes(notes);
+    }, 80);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
   }, [self, app.target.notes, app.target.files, app.hidden.notes]);
 
   return notes.length > 0 ? (

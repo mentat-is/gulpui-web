@@ -11,14 +11,23 @@ import { Source } from '@/entities/Source'
 import { Color } from '@/entities/Color'
 import { Doc } from '@/entities/Doc'
 
+/**
+ * Default render engine: draws individual event bars on the canvas.
+ * Uses a pixel-mapped cache (Map<pixelX, [eventCode, timestamp]>) per source.
+ * Singleton pattern — only one instance exists, reused across frames.
+ */
 export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.target> {
+  /** Singleton instance, shared across all RenderEngine frames. */
   static instance: DefaultEngine | null = null
+  /** Type definition for the per-source pixel map with metadata symbols. */
   static target: Map<number, [number, number]> & {
     [Hardcode.MinHeight]: number,
     [Hardcode.MaxHeight]: number,
     [Hardcode.Scale]: number,
   }
+  /** Reference to the parent RenderEngine — updated each frame via updateRenderer(). */
   private renderer!: RenderEngine
+  /** Per-source cache of computed pixel data. Key: source ID, Value: pixel map. */
   map = new Map<Source.Id, typeof DefaultEngine.target>()
 
   constructor(renderer: Engine.Constructor) {
@@ -31,14 +40,22 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
     DefaultEngine.instance = this
   }
 
+  /** Updates the renderer reference without constructor overhead. Called per frame. */
+  updateRenderer(renderer: Engine.Constructor) {
+    this.renderer = renderer
+  }
+
+  /**
+   * Renders event bars for a source at the given Y position.
+   * Iterates the cached pixel map directly with forEach() (no Array.from() allocation).
+   * Skips events outside the visible time frame for performance.
+   */
   render(file: Source.Type, y: number, force?: boolean) {
     const map = this.get(file, force);
 
     const range = this.getRanges(file);
 
-    const events = Array.from(map.entries())
-
-    events.forEach(([_, [code, timestamp]]) => {
+    map.forEach(([code, timestamp], _x) => {
       timestamp += file.settings.offset;
       if (timestamp > this.renderer.info.app.timeline.frame.max || timestamp < this.renderer.info.app.timeline.frame.min) {
         return;

@@ -44,10 +44,13 @@ export function Canvas({ timeline }: Canvas.Props) {
     useMagnifier(canvas_ref, [
       app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.filter, app.timeline.dialogSize, app.hidden, target]);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
+  const pendingFrame = useRef<number>(0);
 
   useEffect(() => {
     Note.Entity.updateIndexing(app);
-  }, [app.target.notes]);
+    RenderEngine.reset('notes');
+    RenderEngine.reset('flags');
+  }, [app.target.notes, app.timeline.scale, app.target.files]);
 
   const renderCanvas = (
     force?: boolean,
@@ -75,6 +78,10 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     const limits = getLimits(app, Info, timeline, scrollX)
 
+    // Create or reuse the singleton RenderEngine with current frame parameters.
+    // The constructor uses the singleton pattern: if an instance exists, it updates
+    // its properties and reuses existing sub-engine instances (via updateRenderer())
+    // instead of allocating new ones every frame.
     const render = new RenderEngine({
       ctx,
       limits,
@@ -90,8 +97,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     Highlights.list().map(v => render.highlight(...v));
 
+    // Y-AXIS VIEWPORT CULLING: Each source row is 48px tall. With more sources
+    // and vertical scrolling, most rows are off-screen. By checking the Y position
+    // against the canvas bounds (with 48px buffer for partial visibility), we skip
+    // engine rendering, line drawing, local markers, and info labels for invisible rows.
+    const canvasHeight = ctx.canvas.height;
+
     files.forEach((file, i) => {
       const y = Source.Entity.getHeight(app, file, scrollY)
+
+      if (y < -48 || y > canvasHeight + 48) return;
 
       if (
         !throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)
@@ -108,7 +123,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     render.target()
 
-    if (force || Math.random() < 0.05) {
+    if (force) {
       RenderEngine.reset('notes');
       RenderEngine.reset('flags');
     }
@@ -250,22 +265,44 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   const [bounding, setBounding] = useState<DOMRect | null>(null)
 
+  // STABLE REFS: Store scrollX and scale in refs so the handleWheel callback
+  // doesn't need them as dependencies. Without this, every scroll/zoom tick would
+  // recreate handleWheel → recreate debouncedHandleWheel → remove/add the DOM
+  // event listener, causing unnecessary overhead on every single wheel event.
+  const scrollXRef = useRef(scrollX);
+  scrollXRef.current = scrollX;
+  const scaleRef = useRef(app.timeline.scale);
+  scaleRef.current = app.timeline.scale;
+
+  /**
+   * Handles mouse wheel events for both horizontal scrolling and zoom.
+   * - Horizontal scroll: deltaX > deltaY → pan the canvas horizontally.
+   * - Zoom: deltaY dominant → adjust timeline scale around cursor position.
+   *
+   * Uses `scrollXRef` and `scaleRef` instead of direct state to keep the callback
+   * stable across renders (deps: only wrapper_ref, banner, Info, bounding).
+   * This prevents the debounced listener from being re-attached on every frame.
+   */
   const handleWheel = useCallback(
     (event: WheelEvent) => {
       if (!wrapper_ref.current || banner) return
 
+      // Horizontal scroll — pan only, no zoom
       if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
         setScrollX((prev) => prev + event.deltaX)
         return
       }
 
+      // Cache bounding rect to avoid repeated getBoundingClientRect() calls
       const rect = bounding || wrapper_ref.current.getBoundingClientRect()
       if (!bounding) setBounding(rect)
 
-      const oldScale = app.timeline.scale
+      // Read current values from refs (always up-to-date, no dependency needed)
+      const oldScale = scaleRef.current
       const cursorX = event.clientX - rect.left
-      const contentX = scrollX + cursorX
+      const contentX = scrollXRef.current + cursorX
 
+      // Calculate new scale based on scroll direction and user preference
       let newScale = app.timeline.isScrollReversed
         ? event.deltaY < 0
           ? Info.decreasedTimelineScale()
@@ -278,13 +315,15 @@ export function Canvas({ timeline }: Canvas.Props) {
 
       if (newScale === oldScale) return
 
+      // Update scale and recompute scrollX to keep cursor position anchored
       Info.setTimelineScale(newScale)
       setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX))
     },
-    [wrapper_ref, banner, Info, bounding, app.timeline.scale, scrollX],
+    [wrapper_ref, banner, Info, bounding],
   )
 
 
+  /** Debounced wheel handler — coalesces rapid scroll events (5ms window). */
   const debouncedHandleWheel = useMemo(
     () => debounce(handleWheel, 5),
     [handleWheel],
@@ -317,13 +356,20 @@ export function Canvas({ timeline }: Canvas.Props) {
   }, [wrapper_ref, debouncedHandleWheel])
 
   useEffect(() => {
-    renderCanvas()
-
-    const debugInterval = setInterval(() => renderCanvas(true), 300)
+    if (pendingFrame.current) {
+      cancelAnimationFrame(pendingFrame.current);
+    }
+    pendingFrame.current = requestAnimationFrame(() => {
+      pendingFrame.current = 0;
+      renderCanvas();
+    });
 
     return () => {
-      clearInterval(debugInterval)
-    }
+      if (pendingFrame.current) {
+        cancelAnimationFrame(pendingFrame.current);
+        pendingFrame.current = 0;
+      }
+    };
   }, [
     scrollX,
     scrollY,
@@ -335,6 +381,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     app.timeline.target,
     app.timeline.filter,
     app.timeline.dialogSize,
+    app.timeline.renderVersion,
     app.hidden,
     app.target.events.size,
     target,

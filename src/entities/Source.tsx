@@ -72,9 +72,36 @@ export namespace Source {
     // @ts-ignore
     public static icon = Internal.IconExtractor.activate<Source.Type | null>(Default.Icon.FILE)
 
+    /**
+     * Memorization cache for `selected()`. Stores the result keyed by `app.target.files` reference.
+     *
+     * ARCHITECTURAL DECISION: `selected()` is called 5+ times per render frame (from Canvas rendering,
+     * click handlers, context menus, link calculations, etc.). Each call performs a filter → sort → filter
+     * chain on all sources. By caching the intermediate result (pinned + selected sources) and only
+     * re-filtering by search text, we avoid redundant computation. The cache invalidates automatically
+     * when `app.target.files` is reassigned (new reference = new selection state).
+     */
+    private static _selectedCache: { ref: Source.Type[] | null; result: Source.Type[] } = { ref: null, result: [] };
+
+    /**
+     * Returns the list of currently selected and visible sources, sorted by pin status.
+     * Results are memoized by `app.target.files` reference — only the search text filter
+     * is re-applied on cache hit, since it depends on dynamic `app.timeline.filter` state.
+     */
     // ⚠️ UNTOUCHABLE
-    public static selected = (app: App.Type): Source.Type[] =>
-      Source.Entity.pins(app.target.files.filter((s) => s.selected && (app.hidden.filesWithNoEvents ? Doc.Entity.get(app, s.id).length > 0 : true))).filter(s => s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(app.timeline.filter.toLowerCase()))
+    public static selected = (app: App.Type): Source.Type[] => {
+      if (app.target.files === Source.Entity._selectedCache.ref) {
+        // Cache hit: skip filter+sort, only apply search text filter
+        return Source.Entity._selectedCache.result.filter(s =>
+          s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) ||
+          Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(app.timeline.filter.toLowerCase())
+        );
+      }
+      // Cache miss: recompute selected+pinned sources and store
+      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected && (app.hidden.filesWithNoEvents ? Doc.Entity.get(app, s.id).length > 0 : true)));
+      Source.Entity._selectedCache = { ref: app.target.files, result: pins };
+      return pins.filter(s => s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(app.timeline.filter.toLowerCase()));
+    }
 
     public static select = (app: App.Type, selected: Source.Type[] | Source.Id[]): Source.Type[] =>
       app.target.files.map((f) =>

@@ -21,7 +21,43 @@ function _({ children }: { children: ReactNode }) {
   const [scrollX, setScrollX] = useState<number>(0);
   const [scrollY, setScrollY] = useState<number>(-26);
 
-  const instance = new Info({ app, setInfo, timeline, scrollX, scrollY, setScrollX, setScrollY });
+  /**
+   * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
+   * instead of being recreated on every render with `new Info(...)`.
+   *
+   * ARCHITECTURAL DECISION: Previously, `const instance = new Info(...)` ran on
+   * every render of the root Provider — every state change anywhere in the app
+   * created a new Info object. Since `instance` was in the WS useEffect deps,
+   * this also caused WS listeners to be re-registered on every render.
+   * Using useRef avoids this: the instance is created once, and only its
+   * mutable props (app, setInfo, scrollX, etc.) are updated each render.
+   */
+  const infoRef = useRef<Info | null>(null);
+  if (!infoRef.current) {
+    infoRef.current = new Info({ app, setInfo, timeline, scrollX, scrollY, setScrollX, setScrollY });
+  } else {
+    infoRef.current.app = app;
+    infoRef.current.setInfo = setInfo;
+    infoRef.current.scrollX = scrollX;
+    infoRef.current.scrollY = scrollY;
+    infoRef.current.setScrollX = setScrollX;
+    infoRef.current.setScrollY = setScrollY;
+  }
+  const instance = infoRef.current;
+
+  /**
+   * STABLE REFS FOR WS CALLBACKS: These refs hold the latest `app` and `instance`
+   * without being useEffect dependencies. The WS callbacks read `.current` at call
+   * time, ensuring they always access fresh state while the effect itself only
+   * re-runs when the WebSocket connection changes (deps: [ws]).
+   *
+   * Without this pattern, `[ws, app, instance]` as deps caused the WS listeners
+   * to be unregistered and re-registered on every single state update in the entire app.
+   */
+  const appRef = useRef(app);
+  appRef.current = app;
+  const instanceRef = useRef(instance);
+  instanceRef.current = instance;
 
   const ws = useMemo(() => {
     if (!app.general.user) {
@@ -36,55 +72,57 @@ function _({ children }: { children: ReactNode }) {
       return;
 
     const collabUpdateCallback = (message: any) => {
+      const currentApp = appRef.current;
       switch (message.payload.obj.type) {
         case 'note':
           const note: Note.Type = message.payload.obj;
 
-          const isExistingNote = app.target.notes.findIndex(n => n.id === note.id);
+          const isExistingNote = currentApp.target.notes.findIndex(n => n.id === note.id);
           if (isExistingNote >= 0) {
-            app.target.notes[isExistingNote] = note;
-            app.target.notes = [...app.target.notes];
+            currentApp.target.notes[isExistingNote] = note;
+            currentApp.target.notes = [...currentApp.target.notes];
           } else {
-            app.target.notes = [...app.target.notes, note];
+            currentApp.target.notes = [...currentApp.target.notes, note];
           }
 
-          setInfo(app);
+          setInfo(currentApp);
           return;
         case 'link':
           const link: Link.Type = message.payload.obj;
 
-          const isExistingLink = app.target.links.findIndex(n => n.id === link.id);
+          const isExistingLink = currentApp.target.links.findIndex(n => n.id === link.id);
           if (isExistingLink >= 0) {
-            app.target.links[isExistingLink] = link;
-            app.target.links = [...app.target.links];
+            currentApp.target.links[isExistingLink] = link;
+            currentApp.target.links = [...currentApp.target.links];
           } else {
-            app.target.links = [...app.target.links, link];
+            currentApp.target.links = [...currentApp.target.links, link];
           }
 
-          setInfo(app);
+          setInfo(currentApp);
           return;
       }
-      instance.highlights_reload();
+      instanceRef.current.highlights_reload();
     }
 
     const collabDeleteCallback = (message: any) => {
+      const currentApp = appRef.current;
       const id: Link.Id | Note.Id = message.payload.id;
       switch (true) {
-        case app.target.notes.some(n => n.id === id):
-          app.target.notes = Refractor.array(...app.target.notes.filter(n => n.id !== id));
+        case currentApp.target.notes.some(n => n.id === id):
+          currentApp.target.notes = Refractor.array(...currentApp.target.notes.filter(n => n.id !== id));
 
-          setInfo(app);
+          setInfo(currentApp);
           return;
-        case app.target.links.some(l => l.id === id):
-          app.target.links = Refractor.array(...app.target.links.filter(l => l.id !== id));
+        case currentApp.target.links.some(l => l.id === id):
+          currentApp.target.links = Refractor.array(...currentApp.target.links.filter(l => l.id !== id));
 
-          setInfo(app);
+          setInfo(currentApp);
           return;
       }
-      instance.highlights_reload();
+      instanceRef.current.highlights_reload();
     }
 
-    const reqeustStatsCallback = (message: any) => instance.request_add(message.payload.obj);
+    const reqeustStatsCallback = (message: any) => instanceRef.current.request_add(message.payload.obj);
 
     SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
     SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
@@ -95,7 +133,7 @@ function _({ children }: { children: ReactNode }) {
       SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
       SmartSocket.Class.instance.coff(SmartSocket.Message.Type.STATS_UPDATE, sid);
     }
-  }, [ws, app, instance]);
+  }, [ws]);
 
   const spawnBanner = (banner: React.ReactNode) => {
     setBanner(banner)

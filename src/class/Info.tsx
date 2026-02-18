@@ -184,6 +184,8 @@ export class Info implements InfoProps {
 	setScrollX: SetState<number>;
 	setScrollY: SetState<number>;
 
+	private static _latestInstance: Info | null = null;
+
 	constructor({
 		app,
 		setInfo,
@@ -200,6 +202,7 @@ export class Info implements InfoProps {
 		this.scrollY = scrollY;
 		this.setScrollX = setScrollX;
 		this.setScrollY = setScrollY;
+		Info._latestInstance = this;
 	}
 
 	refetch = async ({
@@ -233,6 +236,79 @@ export class Info implements InfoProps {
 				addToHistory,
 			});
 		});
+	};
+
+	private static _realtimeTimer: ReturnType<typeof setInterval> | null = null;
+
+	setRealtime = (enabled: boolean, seconds: number) => {
+		if (Info._realtimeTimer) {
+			clearInterval(Info._realtimeTimer);
+			Info._realtimeTimer = null;
+		}
+
+		this.setInfoByKey(enabled, 'settings', 'realtimeEnabled');
+		this.setInfoByKey(seconds, 'settings', 'realtimeTimeoff');
+
+		if (enabled && seconds >= 10) {
+			Info._realtimeTimer = setInterval(() => {
+				Info._latestInstance?.realtimePoll();
+			}, seconds * 1000);
+		}
+	};
+
+	realtimePoll = async () => {
+		const files = Source.Entity.selected(this.app);
+		if (files.length === 0) return;
+
+		const now = Date.now();
+		const nowNanos = Internal.Transformator.toNanos(now);
+		let filesUpdated = false;
+
+		files.forEach((file) => {
+			const events = Doc.Entity.get(this.app, file.id);
+
+			let fromNanos: bigint;
+			if (events.length > 0) {
+				fromNanos = events[0]['gulp.timestamp'] + 1n;
+			} else {
+				fromNanos = file.nanotimestamp?.max ?? Internal.Transformator.toNanos(file.timestamp.max);
+			}
+
+			if (fromNanos >= nowNanos) return;
+
+			// Extend source timestamp bounds so render engines can draw events beyond the original range
+			if (file.timestamp.max < now) {
+				file.timestamp.max = now;
+				file.nanotimestamp.max = nowNanos;
+				filesUpdated = true;
+			}
+
+			const query: Query.Type = {
+				string: Filter.Entity.base(file, { min: fromNanos as unknown as number, max: nowNanos as unknown as number }),
+				filters: [],
+			};
+
+			this.query_file(query, {
+				id: file.id,
+				preview: false,
+			});
+		});
+
+		if (filesUpdated) {
+			this.setInfoByKey([...this.app.target.files], 'target', 'files');
+		}
+
+		this.realtimePollExtendFrame();
+	};
+
+	realtimePollExtendFrame = () => {
+		const now = Date.now();
+		if (this.app.timeline.frame.max < now) {
+			this.setTimelineFrame({
+				min: this.app.timeline.frame.min,
+				max: now,
+			});
+		}
 	};
 
 	enrichment = (
@@ -595,6 +671,15 @@ export class Info implements InfoProps {
 								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 								sid,
 							);
+							if (id) {
+								const file = Source.Entity.id(this.app, id);
+								const loadedCount = Doc.Entity.get(this.app, id).length;
+								if (file && loadedCount > file.total) {
+									file.total = loadedCount;
+									this.setInfoByKey([...this.app.target.files], 'target', 'files');
+								}
+							}
+							this.render();
 						}
 					},
 				);
@@ -823,7 +908,7 @@ export class Info implements InfoProps {
 
 	render = () => {
 		Logger.log(`Render requested`, Info);
-		this.setTimelineScale(this.app.timeline.scale + 0.000000001);
+		this.setInfoByKey(this.app.timeline.renderVersion + 1, "timeline", "renderVersion");
 	};
 
 	mapping_file_list = async (): Promise<Mapping.Type.Plugin[]> => {
@@ -856,7 +941,31 @@ export class Info implements InfoProps {
 		return sorted_parsed_shit;
 	};
 
+	/**
+	 * Switches to a different operation and performs comprehensive memory cleanup.
+	 *
+	 * MEMORY MANAGEMENT: Clears all caches (render engines, notes, doc index, timeline,
+	 * canvas icons) and resets event data before selecting the new operation.
+	 * This prevents memory leaks when switching between operations with large datasets
+	 * (e.g., 320k events = ~150MB of cached pixel maps, note groups, and doc references).
+	 */
 	operations_select = (id: Operation.Id) => {
+		RenderEngine.clearAllCaches();
+		Note.Entity[CacheKey].clear();
+		Doc.Entity.clearIndex();
+
+		// Clear event data
+		this.app.target.events.clear();
+		this.setInfoByKey(this.app.target.events, "target", "events");
+
+		// Clear timeline cache
+		this.app.timeline.cache.data.clear();
+		this.app.timeline.cache.filters = {};
+
+		// Clear notes and links
+		this.setInfoByKey([], "target", "notes");
+		this.setInfoByKey([], "target", "links");
+
 		this.setInfoByKey(
 			Operation.Entity.select(this.app, id),
 			"target",

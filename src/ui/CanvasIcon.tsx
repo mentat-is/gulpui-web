@@ -1,21 +1,25 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Icon } from '@impactium/icons'
 
-export function getCanvasIcon({ name, ...props }: CanvasIcon.Props) {
+const PLACEHOLDER_CANVAS = document.createElement('canvas');
+PLACEHOLDER_CANVAS.width = 1;
+PLACEHOLDER_CANVAS.height = 1;
+const PLACEHOLDER_IMAGE = new Image(1, 1);
+
+export function getCanvasIcon({ name, ...props }: CanvasIcon.Props): HTMLImageElement {
   const key = JSON.stringify({ name, ...props });
   const icon = CanvasIcon.cache.get(key);
   if (icon) {
     return icon;
   }
 
+  // Start async load but return placeholder instead of throwing
   const svg = renderToStaticMarkup(<Icon name={name} {...props} />);
-
-  const promise = createImageFromSVG(svg);
-  promise.then(image => {
+  createImageFromSVG(svg).then(image => {
     CanvasIcon.cache.set(key, image);
-  })
+  });
 
-  throw void 0;
+  return PLACEHOLDER_IMAGE;
 }
 
 const createImageFromSVG = (svgString: string): Promise<HTMLImageElement> => {

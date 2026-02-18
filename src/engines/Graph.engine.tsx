@@ -4,15 +4,24 @@ import { Dot, RenderEngine } from '../class/RenderEngine'
 import { throwableByTimestamp } from '@/ui/utils'
 import { Color } from '@/entities/Color'
 
+/**
+ * Graph render engine: draws connected line graphs for event density over time.
+ * Caches per-source graph points (Map<timestamp, height>) with scale/range metadata.
+ * Singleton pattern — reused across frames.
+ */
 export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> {
+  /** Reference to the parent RenderEngine. */
   private renderer!: RenderEngine
+  /** Singleton instance. */
   private static instance: GraphEngine | null = null
+  /** Type definition for the per-source graph map with metadata symbols. */
   private static target: Map<number, number> & {
     [Hardcode.Scale]: number
     [Hardcode.MaxHeight]: number
     [Hardcode.Start]: number
     [Hardcode.End]: number
   }
+  /** Per-source cache of graph data. Key: source ID, Value: graph point map. */
   map = new Map<Source.Id, typeof GraphEngine.target>()
 
   constructor(renderer: Engine.Constructor) {
@@ -22,6 +31,11 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     }
     this.renderer = renderer
     GraphEngine.instance = this
+  }
+
+  /** Updates the renderer reference without constructor overhead. Called per frame. */
+  updateRenderer(renderer: Engine.Constructor) {
+    this.renderer = renderer
   }
 
   render(file: Source.Type, y: number, force?: boolean) {
@@ -75,16 +89,16 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
     const entries = Array.from(heightData.entries())
     let lastRenderedX = -Infinity
+    let lastKey: number | undefined = undefined
 
     for (let i = 0; i < entries.length; i++) {
       const [timestamp, height] = entries[i]
       const x = this.renderer.getPixelPosition(timestamp)
 
       if (x - lastRenderedX < 8) {
-        const prevTimestamp = Array.from(result.keys()).pop()
-        if (prevTimestamp !== undefined) {
-          const prevHeight = result.get(prevTimestamp) || 0
-          result.set(prevTimestamp, prevHeight + height)
+        if (lastKey !== undefined) {
+          const prevHeight = result.get(lastKey) || 0
+          result.set(lastKey, prevHeight + height)
         }
         continue
       }
@@ -106,6 +120,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
             if (fillX - lastRenderedX >= 8) {
               result.set(fillTimestamp, 0)
+              lastKey = fillTimestamp
               lastRenderedX = fillX
             }
           }
@@ -113,6 +128,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
       }
 
       result.set(timestamp, height)
+      lastKey = timestamp
       lastRenderedX = x
     }
 
