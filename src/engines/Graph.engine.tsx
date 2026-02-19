@@ -7,12 +7,15 @@ import { Color } from '@/entities/Color'
 /**
  * Graph render engine: draws connected line graphs for event density over time.
  * Caches per-source graph points (Map<timestamp, height>) with scale/range metadata.
+ * Sampling uses a time-based threshold (funkysamples algorithm): events within
+ * `sampleThresholdMs` of each other are accumulated under a single representative
+ * timestamp, producing stable results independent of zoom level.
+ *
  * Singleton pattern — reused across frames.
  */
 export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> {
   /** Reference to the parent RenderEngine. */
   private renderer!: RenderEngine
-  /** Singleton instance. */
   /** Singleton instance, accessible for cache clearing in clearAllCaches(). */
   public static instance: GraphEngine | null = null
   /** Type definition for the per-source graph map with metadata symbols. */
@@ -24,6 +27,14 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
   }
   /** Per-source cache of graph data. Key: source ID, Value: graph point map. */
   map = new Map<Source.Id, typeof GraphEngine.target>()
+
+  /**
+   * Time-based sampling threshold in milliseconds.
+   * Events whose distance from the previous event is ≤ this value are accumulated
+   * under the same sample bucket. Increase to reduce point density; decrease for
+   * higher resolution. Changing this value automatically invalidates the cache.
+   */
+  private sampleThresholdMs: number = Engine.DEFAULT_SAMPLE_SIZE
 
   constructor(renderer: Engine.Constructor) {
     if (GraphEngine.instance) {
@@ -39,22 +50,42 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     this.renderer = renderer
   }
 
+  /**
+   * Sets the time-based sampling threshold. The cache is cleared so the next
+   * render recomputes data with the new resolution.
+   * @param ms - Threshold in milliseconds (e.g. 60000 = 1 minute buckets)
+   */
+  setSampleThreshold(ms: number) {
+    if (ms === this.sampleThresholdMs) return
+    this.sampleThresholdMs = ms
+    this.map.clear()
+  }
+
   render(file: Source.Type, y: number, force?: boolean) {
     const graphs = this.getCachedOrGenerate(file)
     const maxHeight = graphs[Hardcode.MaxHeight]
 
     let lastDot: Dot | null = null
 
+    // Set font once before the loop — not per-dot
+    this.renderer.ctx.font = '8px Arial'
+
     for (const [timestamp, height] of graphs) {
       const x = this.renderer.getPixelPosition(timestamp)
-      if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue;
+      if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue
+
       const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
       const color = Color.Entity.gradient(file.settings.render_color_palette, height, {
         min: 0,
-        max: maxHeight
+        max: maxHeight,
       })
 
-      this.renderer.ctx.font = '8px Arial'
+      // this.renderer.ctx.strokeStyle = color
+      // this.renderer.ctx.beginPath()
+      // this.renderer.ctx.moveTo(x, y)
+      // this.renderer.ctx.lineTo(x, y+48)
+      // this.renderer.ctx.stroke()
+      // this.renderer.ctx.closePath()
       this.renderer.ctx.fillStyle = color
       this.renderer.ctx.fillText(height.toString(), x - 3.5, dotY - 8)
 
@@ -72,77 +103,45 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
   private getCachedOrGenerate(file: Source.Type): typeof GraphEngine.target {
     const cached = this.map.get(file.id)
     const currentScale = this.renderer.info.app.timeline.scale
-    const { min: limitMin, max: limitMax } = this.renderer.limits
 
-    if (cached &&
-      cached[Hardcode.Scale] === currentScale &&
-      cached[Hardcode.Start] <= limitMax &&
-      cached[Hardcode.End] >= limitMin) {
+    if (cached && cached[Hardcode.Scale] === currentScale) {
       return cached
     }
 
     return this.get(file)
   }
 
+  /**
+   * Builds the graph dataset from HeightEngine's pre-bucketed data.
+   *
+   * HeightEngine already groups raw events into fixed time windows
+   * (each entry: timestamp → event count in that window). This method
+   * copies those entries directly into the result map — each bucket becomes
+   * one graph dot positioned at its timestamp, showing the count for that
+   * specific time range only (not cumulative).
+   *
+   * O(N) single pass, maxHeight tracked inline.
+   */
   get(file: Source.Type): typeof GraphEngine.target {
     const heightData = this.renderer.height.get(file)
     const result = new Map() as typeof GraphEngine.target
+    let maxHeight = 0
+    let firstKey: number | undefined
+    let lastKey: number | undefined
 
-    const entries = Array.from(heightData.entries())
-    let lastRenderedX = -Infinity
-    let lastKey: number | undefined = undefined
-
-    for (let i = 0; i < entries.length; i++) {
-      const [timestamp, height] = entries[i]
-      const x = this.renderer.getPixelPosition(timestamp)
-
-      if (x - lastRenderedX < 8) {
-        if (lastKey !== undefined) {
-          const prevHeight = result.get(lastKey) || 0
-          result.set(lastKey, prevHeight + height)
-        }
-        continue
-      }
-
-      const prevEntry = i > 0 ? entries[i - 1] : null
-
-      if (prevEntry) {
-        const [prevTimestamp] = prevEntry
-        const prevX = this.renderer.getPixelPosition(prevTimestamp)
-        const gap = Math.abs(x - prevX)
-
-        if (gap > 16) {
-          const steps = Math.floor(gap / 16)
-          const timestampStep = (timestamp - prevTimestamp) / (steps + 1)
-
-          for (let step = 1; step <= steps; step++) {
-            const fillTimestamp = prevTimestamp + timestampStep * step
-            const fillX = this.renderer.getPixelPosition(fillTimestamp)
-
-            if (fillX - lastRenderedX >= 8) {
-              result.set(fillTimestamp, 0)
-              lastKey = fillTimestamp
-              lastRenderedX = fillX
-            }
-          }
-        }
-      }
-
+    for (const [timestamp, height] of heightData) {
       result.set(timestamp, height)
+      if (height > maxHeight) maxHeight = height
+      if (firstKey === undefined) firstKey = timestamp
       lastKey = timestamp
-      lastRenderedX = x
     }
 
-    const heights = Array.from(result.values())
-    const timestamps = Array.from(result.keys())
-
     result[Hardcode.Scale] = this.renderer.info.app.timeline.scale
-    result[Hardcode.MaxHeight] = Math.max(...heights, 0)
-    result[Hardcode.Start] = timestamps[0] ?? 0
-    result[Hardcode.End] = timestamps[timestamps.length - 1] ?? 0
+    result[Hardcode.MaxHeight] = maxHeight
+    result[Hardcode.Start] = firstKey ?? 0
+    result[Hardcode.End] = lastKey ?? 0
 
     this.map.set(file.id, result)
-
     return result
   }
 

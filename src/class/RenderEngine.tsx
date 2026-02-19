@@ -75,7 +75,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   default!: DefaultEngine
   height!: HeightEngine
   graph!: GraphEngine
-  shifted: Source.Type[] = []
+  /**
+   * Set of source IDs whose rows are currently in "shifted" state.
+   * Using a Set gives O(1) membership tests — `lines()` checks every rendered row,
+   * so avoiding O(n) Array.find() matters at scale.
+   */
+  shifted: Set<Source.Id> = new Set()
 
   // CACHE
   private static [CacheKey] = {
@@ -170,7 +175,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.fill(
       color,
       y,
-      !this.shifted.find((shiftedSource) => shiftedSource.id === file.id),
+      !this.shifted.has(file.id),
     )
   }
 
