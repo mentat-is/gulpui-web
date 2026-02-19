@@ -65,7 +65,8 @@ export class HeightEngine implements Engine.Interface<typeof HeightEngine.target
     }
   }
 
-  private cacheKeys = new Map<Source.Id, string>();
+  /** Per-source cache key strings, cleared via clearAllCaches() on operation switch. */
+  public cacheKeys = new Map<Source.Id, string>();
 
   get(file: Source.Type) {
     const events = Source.Entity.events(this.renderer.info.app, file)

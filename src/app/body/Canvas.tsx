@@ -265,12 +265,19 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   const [bounding, setBounding] = useState<DOMRect | null>(null)
 
+  // Reset cached bounding rect when files change (e.g. operation switch)
+  useEffect(() => {
+    setBounding(null);
+  }, [app.target.files]);
+
   // STABLE REFS: Store scrollX and scale in refs so the handleWheel callback
   // doesn't need them as dependencies. Without this, every scroll/zoom tick would
   // recreate handleWheel → recreate debouncedHandleWheel → remove/add the DOM
   // event listener, causing unnecessary overhead on every single wheel event.
   const scrollXRef = useRef(scrollX);
   scrollXRef.current = scrollX;
+  const scrollYRef = useRef(scrollY);
+  scrollYRef.current = scrollY;
   const scaleRef = useRef(app.timeline.scale);
   scaleRef.current = app.timeline.scale;
 
@@ -397,12 +404,12 @@ export function Canvas({ timeline }: Canvas.Props) {
       return
     }
 
-    const index = Math.floor((event.clientY + scrollY - timeline.current.getBoundingClientRect().top) / 48);
+    const index = Math.floor((event.clientY + scrollYRef.current - timeline.current.getBoundingClientRect().top) / 48);
 
     const file = Source.Entity.selected(app)[index] ?? null;
 
     setTarget(file);
-  }, [setTarget, timeline, scrollY, app.timeline.filter, ...app.target.files]);
+  }, [setTarget, timeline, app.timeline.filter, ...app.target.files]);
 
   const Menu = useCallback(() => {
     if (!target) {

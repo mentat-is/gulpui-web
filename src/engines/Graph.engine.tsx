@@ -13,7 +13,8 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
   /** Reference to the parent RenderEngine. */
   private renderer!: RenderEngine
   /** Singleton instance. */
-  private static instance: GraphEngine | null = null
+  /** Singleton instance, accessible for cache clearing in clearAllCaches(). */
+  public static instance: GraphEngine | null = null
   /** Type definition for the per-source graph map with metadata symbols. */
   private static target: Map<number, number> & {
     [Hardcode.Scale]: number

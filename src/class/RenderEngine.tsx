@@ -636,6 +636,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
     if (HeightEngine.instance) {
       HeightEngine.instance.map.clear();
+      HeightEngine.instance.cacheKeys.clear();
+    }
+    if (GraphEngine.instance) {
+      GraphEngine.instance.map.clear();
     }
 
     CanvasIcon.cache.clear();

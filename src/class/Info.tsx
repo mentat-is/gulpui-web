@@ -954,6 +954,12 @@ export class Info implements InfoProps {
 		Note.Entity[CacheKey].clear();
 		Doc.Entity.clearIndex();
 
+		// Reset viewport to default position (like first render)
+		this.setScrollX(0);
+		this.setScrollY(-26);
+		this.setTimelineScale(1);
+		this.setInfoByKey(null, "timeline", "target");
+
 		// Clear event data
 		this.app.target.events.clear();
 		this.setInfoByKey(this.app.target.events, "target", "events");
