@@ -185,34 +185,39 @@ export class DefaultEngine implements Engine.Interface<typeof DefaultEngine.targ
       const isSyncedByLength = cache[Hardcode.Length] === events.length;
       if (isSyncedByLength) {
         return cache;
+      } else {
+        this.computeRanges(file, cache[Hardcode.Length]);
       }
-      // Incrementally update from the last known length — no recursion needed
-      this.computeRanges(file, cache[Hardcode.Length]);
-    } else {
-      this.computeRanges(file);
     }
-    return RenderEngine[CacheKey].range.get(file.id)!;
+
+    this.computeRanges(file);
+    return this.getRanges(file);
   }
 
   computeRanges(file: Source.Type, skip: number = 0) {
-    const allEvents = Source.Entity.events(this.renderer.info.app, file);
-    const cache = RenderEngine[CacheKey].range.get(file.id);
+    const events = Source.Entity.events(this.renderer.info.app, file).slice(skip);
 
-    // When skip > 0 we extend an existing range; otherwise start fresh.
-    // Using a for loop from `skip` avoids allocating a slice copy of the array.
-    const range = skip > 0 && cache
-      ? { min: cache.min, max: cache.max, field: cache.field }
-      : { min: Infinity, max: -Infinity, field: file.settings.field };
+    const cache = RenderEngine[CacheKey].range.get(file.id)!;
 
-    for (let i = skip; i < allEvents.length; i++) {
-      const value = Refractor.any.toNumber(allEvents[i][file.settings.field]);
-      if (value > range.max) range.max = value;
-      if (value < range.min) range.min = value;
-    }
+    const range = skip > 0 ? cache : {
+      min: Infinity,
+      max: -Infinity,
+      field: file.settings.field
+    };
+
+    events.forEach(event => {
+      const value = Refractor.any.toNumber(event[file.settings.field]);
+      if (value > range.max) {
+        range.max = value
+      }
+      if (value < range.min) {
+        range.min = value
+      }
+    })
 
     RenderEngine[CacheKey].range.set(file.id, {
       ...range,
-      [Hardcode.Length]: allEvents.length
+      [Hardcode.Length]: events.length
     });
 
     Logger.log(`RenderEngine cache ranges for file ${file.id} has been recalculated`, DefaultEngine.name);

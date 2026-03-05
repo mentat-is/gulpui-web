@@ -6,9 +6,7 @@ import { RenderEngine } from './RenderEngine'
  * Each engine is a singleton that caches per-source pixel data and renders it to the canvas.
  */
 export namespace Engine {
-  export const DEFAULT_SAMPLE_SIZE = 30000;
   export interface Interface<T> {
-    
     /** Renders the given source at the specified Y position on the canvas. */
     render: (file: Source.Type, y: number, force?: boolean) => void
     /** Per-source cache of computed pixel data. Cleared on operation switch. */
