@@ -413,6 +413,49 @@ export class Info implements InfoProps {
 			},
 		});
 
+	download_storage_file = async (storage_id: string, operation_id: string): Promise<void> => {
+		const req_id = generateUUID<string>(Request.Prefix.QUERY);
+		const query = new URLSearchParams({
+			operation_id,
+			storage_id,
+			req_id,
+		});
+
+		const response = await fetch(
+			`${Internal.Settings.server}/storage_get_file_by_id?${query}`,
+			{
+				method: "GET",
+				headers: {
+					token: Internal.Settings.token,
+				},
+			},
+		);
+
+		if (!response.ok) {
+			toast.error("Failed to download log file", { richColors: true });
+			return;
+		}
+
+		const disposition = response.headers.get("Content-Disposition");
+		let filename = `${storage_id}`;
+		if (disposition) {
+			const match = disposition.match(/filename="?(.+?)"?$/);
+			if (match) {
+				filename = match[1];
+			}
+		}
+
+		const blob = await response.blob();
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = filename;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
+
 	query_global = async ({
 		filename,
 		context,

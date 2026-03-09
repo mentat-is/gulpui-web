@@ -156,10 +156,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     spawnBanner(<FilterFileBanner sources={[file]} />);
   }, [selection, Info, event, toKeyValue, spawnBanner, file]);
 
+  const handleDownloadLogFile = useCallback(() => {
+    const storageId = json?.['gulp.storage_id'] || event['gulp.storage_id'];
+    if (storageId && typeof storageId === 'string' && storageId.trim() !== '') {
+      Info.download_storage_file(storageId, event['gulp.operation_id']);
+    }
+  }, [event, Info, json]);
+
   const highlights = useMemo(() => {
     if (!json) {
       return null;
     }
+
+    const storageId = json['gulp.storage_id'] || event['gulp.storage_id'];
 
     const unflattenObject = Object.keys(json).reduce((res, k) => {
       k.split('.').reduce(
@@ -227,10 +236,15 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
           <ContextMenuItem disabled={!selection} icon='GitPullRequestCreate'>Create new link</ContextMenuItem>
           <ContextMenuItem onClick={() => copy(JSON.stringify(json, null, 2))} icon='Copy'>Copy</ContextMenuItem>
           <ContextMenuItem onClick={applySelectionAsFileFilter} icon='Filter'>New filter</ContextMenuItem>
+          {storageId && typeof storageId === 'string' && storageId.trim() !== '' && (
+            <ContextMenuItem onClick={handleDownloadLogFile} icon='Download'>
+              Download log file
+            </ContextMenuItem>
+          )}
         </ContextMenuContent>
       </ContextMenu>
     )
-  }, [json, selection, spawnBanner, event, applySelectionAsFileFilter]);
+  }, [json, selection, spawnBanner, event, applySelectionAsFileFilter, handleDownloadLogFile]);
 
   const handleCreateNote = useCallback(() => {
     spawnBanner(<NoteFunctionality.Create.Banner event={event} />)
