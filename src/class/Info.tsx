@@ -1110,26 +1110,36 @@ export class Info implements InfoProps {
 			offset: settings.offset ?? 0,
 		};
 
-		if (settings.custom_parameters || settings.method || settings.mapping) {
-			payload.plugin_params = {};
+		const pluginParamsPayload: Record<string, any> = {};
 
-			if (
-				settings.custom_parameters &&
-				Object.keys(settings.custom_parameters).length
-			) {
-				payload.plugin_params.custom_parameters = settings.custom_parameters;
-			}
+		if (settings.custom_parameters && Object.keys(settings.custom_parameters).length > 0) {
+			pluginParamsPayload.custom_parameters = settings.custom_parameters;
+		}
 
-			if (settings.method || settings.mapping) {
-				payload.plugin_params.mapping_parameters = {
-					mapping_file: settings.method,
-					mapping_id: settings.mapping,
-					mappings: {},
-				};
-			}
-			if (preview_mode) {
-				payload.plugin_params.preview_mode = true;
-			}
+		const mappingParameters: Record<string, any> = {};
+		if (settings.method) mappingParameters.mapping_file = settings.method;
+		if (settings.mapping) mappingParameters.mapping_id = settings.mapping;
+		
+		if (settings.additional_mapping_files) mappingParameters.additional_mapping_files = settings.additional_mapping_files;
+		if (settings.mappings && Object.keys(settings.mappings).length > 0) mappingParameters.mappings = settings.mappings;
+		if (settings.additional_mappings && Object.keys(settings.additional_mappings).length > 0) mappingParameters.additional_mappings = settings.additional_mappings;
+		if (settings.sigma_mappings && Object.keys(settings.sigma_mappings).length > 0) mappingParameters.sigma_mappings = settings.sigma_mappings;
+
+		if (Object.keys(mappingParameters).length > 0) {
+			if (!mappingParameters.mappings) mappingParameters.mappings = {};
+			pluginParamsPayload.mapping_parameters = mappingParameters;
+		}
+
+		if (settings.override_chunk_size !== undefined) pluginParamsPayload.override_chunk_size = settings.override_chunk_size;
+		if (settings.override_allow_unmapped_fields !== undefined) pluginParamsPayload.override_allow_unmapped_fields = settings.override_allow_unmapped_fields;
+		if (settings.store_file !== undefined) pluginParamsPayload.store_file = settings.store_file;
+
+		if (preview_mode) {
+			pluginParamsPayload.preview_mode = true;
+		}
+
+		if (Object.keys(pluginParamsPayload).length > 0) {
+			payload.plugin_params = pluginParamsPayload;
 		}
 
 		if (frame) {

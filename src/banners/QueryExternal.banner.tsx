@@ -334,9 +334,9 @@ export namespace QueryExternal {
 					setParams={setParams}
 				/>
 				<AdvancedPluginParams
+					plugin={selectedOption}
 					pluginParams={pluginParams}
 					updatePluginParams={updatePluginParams}
-					loadExample={() => Info.fetch_gulp_parameters()}
 				/>
 				<Stack
 					dir="column"

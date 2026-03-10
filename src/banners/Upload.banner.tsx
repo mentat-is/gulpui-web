@@ -48,6 +48,8 @@ export namespace FileEntity {
     offset: number;
     custom_parameters: Record<string, any>;
     plugin_params?: Record<string, any>;
+    store_file?: boolean;
+    [key: string]: any;
   }
 }
 
@@ -241,14 +243,15 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
             
             <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters}/>
             <AdvancedPluginParams
-              pluginParams={settings.plugin_params || {}}
+              plugin={app.target.plugins.find(p => p.filename === settings.plugin)!}
+              pluginParams={settings}
+              showStoreFile={true}
               updatePluginParams={(pluginParams) =>
                 updateSettings({
                   ...settings,
-                  plugin_params: pluginParams
+                  ...pluginParams
                 })
               }
-              loadExample={() => Info.fetch_gulp_parameters()}
             />
           </Stack>
         </Popover.Content>
@@ -301,7 +304,7 @@ const PluginSelector = ({ settings, updateSettings }: {
   )
 }
 
-const MethodSelector = ({ settings, updateSettings, methods }: {
+export const MethodSelector = ({ settings, updateSettings, methods }: {
   settings: FileEntity.Settings
   updateSettings: (update: Partial<FileEntity.Settings>) => void
   methods: string[]
@@ -324,7 +327,7 @@ const MethodSelector = ({ settings, updateSettings, methods }: {
   ) : null
 }
 
-const MappingSelector = ({ settings, updateSettings, mappings }: {
+export const MappingSelector = ({ settings, updateSettings, mappings }: {
   settings: FileEntity.Settings
   updateSettings: (update: Partial<FileEntity.Settings>) => void
   mappings: string[]
