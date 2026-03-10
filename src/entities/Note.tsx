@@ -73,13 +73,15 @@ export namespace Note {
 
     public static findByFile = (app: App.Type, file: Source.Type | Source.Id): Note.Type[] => {
       const id = Parser.useUUID(file) as Source.Id;
-      const notes = Note.Entity[CacheKey].get(id);
+      let notes = Note.Entity[CacheKey].get(id);
+      
       if (notes) {
         return notes;
-      } else {
-        this.updateIndexing(app);
-        return Note.Entity.findByFile(app, file);
       }
+      
+      const fileNotes = app.target.notes.filter((n) => n.source_id === id);
+      Note.Entity[CacheKey].set(id, fileNotes);
+      return fileNotes;
     };
 
     public static timestamp = (note: Note.Type): number => {
