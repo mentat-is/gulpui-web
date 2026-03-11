@@ -80,8 +80,8 @@ export function MappingValueAliasPanel({ initialData, onSave, open, setOpen }: M
           border: '1px solid var(--gray-alpha-400)',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         }}>
-        <Stack dir="column" gap={12} ai="stretch">
-          <Dialog.Title style={{ fontSize: 13, fontWeight: 'normal', margin: 0, color: 'var(--gray-900)' }}>
+        <Stack dir="column" gap={16} ai="stretch">
+          <Dialog.Title style={{ fontSize: 13, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
             {initialData ? 'Update Value Alias' : 'Add Value Alias'}
           </Dialog.Title>
           <Input 

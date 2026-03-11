@@ -107,17 +107,19 @@ export function AdvancedPluginParams({
       setTimestampOffsetMsec(pluginParams?.offset !== undefined && pluginParams?.offset !== 0 ? String(pluginParams.offset) : '')
       setStoreFile(pluginParams?.store_file || false)
       
+      const currentMethods = plugin ? Mapping.Entity.methods(app, plugin.filename) : []
+
       let initMappingFile = pluginParams?.method || ''
-      if (!initMappingFile && methods.length === 1) {
-        initMappingFile = methods[0]
+      if (!initMappingFile && currentMethods.length === 1) {
+        initMappingFile = currentMethods[0]
       }
       setMappingFile(initMappingFile)
 
       let initMappingId = pluginParams?.mapping || ''
       if (!initMappingId) {
-        const tempMappings = plugin && initMappingFile ? Mapping.Entity.mappings(app, plugin.filename, initMappingFile) : []
-        if (tempMappings.length === 1) {
-          initMappingId = tempMappings[0]
+        const currentMappings = plugin && initMappingFile ? Mapping.Entity.mappings(app, plugin.filename, initMappingFile) : []
+        if (currentMappings.length === 1) {
+          initMappingId = currentMappings[0]
         }
       }
       setMappingId(initMappingId)
@@ -141,7 +143,7 @@ export function AdvancedPluginParams({
 
       setCustomParams(pluginParams?.custom_parameters || {})
     }
-  }, [open, pluginParams, plugin, methods, app])
+  }, [open, pluginParams, plugin, app])
 
   const handleSaveMapping = (data: MappingData) => {
     if (editingMappingType === 'mappings') {
@@ -335,25 +337,29 @@ export function AdvancedPluginParams({
             <Label value='Mapping Parameters' style={{ fontWeight: 'bold' }} />
             
             <Stack dir='column' gap={16} ai='stretch'>
-              <MethodSelector 
-                settings={{ method: mappingFile, offset: 0, custom_parameters: {} }} 
-                updateSettings={(update) => {
-                  if (update.method !== undefined) {
-                    setMappingFile(update.method)
-                    setMappingId('')
-                  }
-                }} 
-                methods={methods} 
-              />
-              <MappingSelector 
-                settings={{ mapping: mappingId, offset: 0, custom_parameters: {} }} 
-                updateSettings={(update) => {
-                  if (update.mapping !== undefined) {
-                    setMappingId(update.mapping)
-                  }
-                }} 
-                mappings={mappingsList} 
-              />
+              {methods.length > 0 && (
+                <MethodSelector 
+                  settings={{ method: mappingFile, offset: 0, custom_parameters: {} }} 
+                  updateSettings={(update) => {
+                    if (update.method !== undefined) {
+                      setMappingFile(update.method)
+                      setMappingId('')
+                    }
+                  }} 
+                  methods={methods} 
+                />
+              )}
+              {mappingsList.length > 0 && (
+                <MappingSelector 
+                  settings={{ mapping: mappingId, offset: 0, custom_parameters: {} }} 
+                  updateSettings={(update) => {
+                    if (update.mapping !== undefined) {
+                      setMappingId(update.mapping)
+                    }
+                  }} 
+                  mappings={mappingsList} 
+                />
+              )}
             </Stack>
 
             <Stack dir='row' jc='space-between' ai='center' style={{ marginTop: 8 }}>

@@ -136,8 +136,8 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
           border: '1px solid var(--gray-alpha-400)',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         }}>
-        <Stack dir="column" gap={12} ai="stretch">
-          <Dialog.Title style={{ fontSize: 13, fontWeight: 'normal', margin: 0, color: 'var(--gray-900)' }}>
+        <Stack dir="column" gap={16} ai="stretch">
+          <Dialog.Title style={{ fontSize: 13, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
             {initialData ? 'Update Field' : 'Add Field'}
           </Dialog.Title>
           
@@ -146,6 +146,7 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
             placeholder="e.g. field1" 
             value={name} 
             onChange={(e) => setName(e.target.value)}
+            valid={!!name}
           />
 
           <Stack ai="center" gap={8} style={{ padding: '8px 0' }}>
@@ -221,6 +222,7 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
             placeholder="e.g. file.name, file.hash.sha256" 
             value={ecsStr} 
             onChange={(e) => setEcsStr(e.target.value)} 
+            valid={!!ecsStr}
           />
 
           <Input 
@@ -239,7 +241,7 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
             </Button>
             <Button 
               variant="tertiary" 
-              disabled={!name} 
+              disabled={!name || !ecsStr} 
               onClick={handleSave}
             >
               {initialData ? 'Update' : 'Add'}

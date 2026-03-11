@@ -86,8 +86,8 @@ export function SigmaMappingPanel({ initialData, onSave, open, setOpen }: SigmaM
           border: '1px solid var(--gray-alpha-400)',
           boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         }}>
-        <Stack dir="column" gap={12} ai="stretch">
-          <Dialog.Title style={{ fontSize: 13, fontWeight: 'normal', margin: 0, color: 'var(--gray-900)' }}>
+        <Stack dir="column" gap={16} ai="stretch">
+          <Dialog.Title style={{ fontSize: 13, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
             {initialData ? 'Update Sigma Mapping' : 'Add Sigma Mapping'}
           </Dialog.Title>
           

@@ -210,7 +210,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
           
           <Stack dir="row" gap={16} ai="flex-start">
             <Stack dir="column" gap={12} ai="stretch" style={{ flex: 1 }}>
-              <Input label="Mapping ID" value={id} onChange={(e) => setId(e.target.value)} disabled={!!initialData} />
+              <Input label="Mapping ID" value={id} onChange={(e) => setId(e.target.value)} valid={!!id} disabled={!!initialData} />
               <Input label="Agent Type" value={agentType} onChange={(e) => setAgentType(e.target.value)}  />
               <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)}  />
               <Input label="Event Code" value={eventCode} onChange={(e) => setEventCode(e.target.value)}  />
