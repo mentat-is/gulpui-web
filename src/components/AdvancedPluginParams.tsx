@@ -18,6 +18,8 @@ import { SummaryTable } from './AdvancedPluginParams/SummaryTable'
 import { MappingPanel, MappingData } from './AdvancedPluginParams/MappingPanel'
 import { SigmaMappingPanel, SigmaMappingData } from './AdvancedPluginParams/SigmaMappingPanel'
 
+import { Textarea } from '@/ui/Textarea'
+
 /**
  * AdvancedPluginParams component provides a comprehensive UI for configuring 
  * complex plugin ingestion and query parameters beyond basic settings.
@@ -29,13 +31,25 @@ interface AdvancedPluginParamsProps {
   updatePluginParams: (params: Record<string, any>) => void
   plugin?: any
   showStoreFile?: boolean
+  customParamsMode?: 'auto' | 'textarea'
+  triggerText?: string
+  triggerIcon?: any
+  triggerVariant?: any
+  applyText?: string
+  onReset?: () => void
 }
 
 export function AdvancedPluginParams({
   pluginParams,
   updatePluginParams,
   plugin,
-  showStoreFile
+  showStoreFile,
+  customParamsMode = 'auto',
+  triggerText = 'Advanced',
+  triggerIcon = 'Code',
+  triggerVariant = 'tertiary',
+  applyText = 'Apply Changes',
+  onReset
 }: AdvancedPluginParamsProps) {
   const { app } = Application.use()
   const [open, setOpen] = useState(false)
@@ -58,7 +72,7 @@ export function AdvancedPluginParams({
   const mappingsList = useMemo(() => plugin && mappingFile ? Mapping.Entity.mappings(app, plugin.filename, mappingFile) : [], [app, plugin, mappingFile])
 
   // Custom Parameters
-  const [customParams, setCustomParams] = useState<Record<string, any>>({})
+  const [customParams, setCustomParams] = useState<any>({})
 
   // Panel States
   const [isMappingPanelOpen, setIsMappingPanelOpen] = useState(false)
@@ -141,9 +155,30 @@ export function AdvancedPluginParams({
       }
       setSigmaMappings(parsedSigma)
 
-      setCustomParams(pluginParams?.custom_parameters || {})
+      let initCustomParams = pluginParams?.custom_parameters || {};
+      if (customParamsMode === 'textarea') {
+        if (typeof initCustomParams === 'object' && Object.keys(initCustomParams).length > 0) {
+          initCustomParams = JSON.stringify(initCustomParams, null, 2);
+        } else if (typeof initCustomParams === 'object') {
+          initCustomParams = '';
+        } else {
+          initCustomParams = String(initCustomParams);
+        }
+      }
+      setCustomParams(initCustomParams)
     }
   }, [open, pluginParams, plugin, app])
+
+  const isCustomParamsJsonValid = useMemo(() => {
+    if (customParamsMode !== 'textarea') return true;
+    if (typeof customParams !== 'string' || customParams.trim() === '') return true;
+    try {
+      const parsed = JSON.parse(customParams);
+      return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+    } catch {
+      return false;
+    }
+  }, [customParams, customParamsMode]);
 
   const handleSaveMapping = (data: MappingData) => {
     if (editingMappingType === 'mappings') {
@@ -235,8 +270,20 @@ export function AdvancedPluginParams({
       if (Object.keys(sigmaObj).length > 0) payload.sigma_mappings = sigmaObj
       else delete payload.sigma_mappings
 
-      if (Object.keys(customParams).length > 0) payload.custom_parameters = customParams
-      else delete payload.custom_parameters
+      if (customParamsMode === 'textarea') {
+        let parsed = customParams;
+        if (typeof customParams === 'string' && customParams.trim() !== '') {
+            try { parsed = JSON.parse(customParams) } catch { parsed = customParams; }
+        }
+        if (parsed !== '' && parsed !== undefined && (typeof parsed !== 'object' || Object.keys(parsed).length > 0)) {
+            payload.custom_parameters = parsed;
+        } else {
+            delete payload.custom_parameters;
+        }
+      } else {
+        if (customParams && typeof customParams === 'object' && Object.keys(customParams).length > 0) payload.custom_parameters = customParams
+        else delete payload.custom_parameters
+      }
 
       // Removing legacy/internal keys that might have leaked into the state object.
       delete payload.timestamp_offset_msec
@@ -251,16 +298,20 @@ export function AdvancedPluginParams({
   }
 
   const handleReset = () => {
-    updatePluginParams({})
-    toast.success('Configuration reset successfully')
+    if (onReset) {
+      onReset()
+    } else {
+      updatePluginParams({})
+      toast.success('Configuration reset successfully')
+    }
     setOpen(false)
   }
 
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <Button variant='tertiary' icon='Code' style={{ width: '100%' }}>
-          Advanced
+        <Button variant={triggerVariant as any} icon={triggerIcon as any} style={{ width: '100%' }}>
+          {triggerText}
         </Button>
       </Dialog.Trigger>
 
@@ -419,24 +470,33 @@ export function AdvancedPluginParams({
           <Stack dir='column' gap={8} ai='stretch'>
             <Label value='Custom Parameters' style={{ fontWeight: 'bold' }} />
             <Stack dir='column' gap={8} ai='stretch'>
-            {plugin && (
+            {customParamsMode === 'auto' && plugin && (
               <CustomParameters.Editor 
                 plugin={plugin} 
                 customParameters={customParams} 
                 setCustomParameters={(update) => {
-                  setCustomParams(prev => {
+                  setCustomParams((prev: any) => {
                     const next = typeof update === 'function' ? update(prev) : update;
                     return { ...next };
                   })
                 }} 
               />
             )}
+            {customParamsMode === 'textarea' && (
+              <Textarea 
+                value={typeof customParams === 'string' ? customParams : ''}
+                onChange={e => setCustomParams(e.target.value)}
+                placeholder="Enter custom parameters..."
+                style={{ minHeight: 150 }}
+                error={!isCustomParamsJsonValid}
+              />
+            )}
             </Stack>
           </Stack>
 
           <Stack dir='row' gap={8} style={{ width: '100%', marginTop: 16 }}>
-            <Button variant='glass' style={{ width: '100%' }} onClick={apply} icon="Check">
-              Apply Changes
+            <Button variant='glass' style={{ width: '100%' }} onClick={apply} icon="Check" disabled={!isCustomParamsJsonValid}>
+              {applyText}
             </Button>
           </Stack>
         </Stack>

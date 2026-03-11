@@ -10,3 +10,7 @@
 .fixed {
   resize: none;
 }
+.invalid {
+  border-color: var(--red-500) !important;
+  outline: 1px solid var(--red-500);
+}

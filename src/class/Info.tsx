@@ -456,6 +456,46 @@ export class Info implements InfoProps {
 		URL.revokeObjectURL(url);
 	};
 
+	// Bridge Manager APIs
+	list_bridges = (flt?: any, req_id?: string, options?: any) => 
+		api<any>("/list_bridges", {
+			method: "POST",
+			query: { req_id },
+			body: { flt },
+			...options
+		});
+
+	list_ingestion_tasks = (flt?: any, req_id?: string, options?: any) =>
+		api<any>("/list_ingestion_tasks", {
+			method: "POST",
+			query: { req_id },
+			body: flt,
+			...options
+		});
+
+	create_start_ingestion = (bridge_id: string, operation_id: string, plugin_params: any, req_id?: string, options?: any) =>
+		api<any>("/create_start_ingestion", {
+			method: "POST",
+			query: { bridge_id, operation_id, req_id },
+			body:  plugin_params,
+			...options
+		});
+
+	stop_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
+		api<any>("/stop_ingestion", {
+			method: "POST",
+			query: { req_id },
+			body: { bridge_task_id },
+			...options
+		});
+
+	delete_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
+		api<any>("/delete_ingestion", {
+			method: "DELETE",
+			query: { req_id, bridge_task_id },
+			...options
+		});
+
 	query_global = async ({
 		filename,
 		context,

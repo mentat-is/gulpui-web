@@ -11,14 +11,15 @@ export interface TextareaProps
   revert?: boolean
   loading?: boolean
   fixed?: boolean
+  error?: boolean
 }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, asChild = false, fixed, ...props }, ref) => {
+  ({ className, asChild = false, fixed, error, ...props }, ref) => {
     const Comp = asChild ? Slot : 'textarea'
 
     return (
-      <Comp className={cn(s.textarea, className, fixed && s.fixed)} ref={ref} {...props}></Comp>
+      <Comp className={cn(s.textarea, className, fixed && s.fixed, error && s.invalid)} ref={ref} {...props}></Comp>
     )
   },
 )

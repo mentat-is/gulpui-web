@@ -11,6 +11,7 @@ import { Session } from '@/banners/Session.banner'
 import { Extension } from '@/context/Extension.context'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
 import { Settings } from '@/banners/Settings.banner'
+import { BridgeManager } from '@/banners/BridgeManager.banner'
 import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { Source } from '@/entities/Source'
@@ -55,6 +56,13 @@ export function Menu() {
           icon="ServerCrash"
           size='md'
           onClick={() => spawnBanner(<QueryExternal.Banner />)}
+        />
+        <Button
+          variant="secondary"
+          title="Bridge Manager"
+          icon="Network"
+          size="md"
+          onClick={() => spawnBanner(<BridgeManager.Banner />)}
         />
         <Button
           variant="secondary"

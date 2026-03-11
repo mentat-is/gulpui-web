@@ -12,6 +12,7 @@ export interface SummaryTableColumn<T> {
   key: Extract<keyof T, string> | string
   label: string
   render?: (value: any, item: T) => ReactNode
+  width?: number | string
 }
 
 export interface SummaryTableProps<T> {
@@ -40,7 +41,7 @@ export function SummaryTable<T extends Record<string, any>>({
         <thead>
           <tr>
             {columns.map((c, i) => (
-              <th key={`th-${c.key}-${i}`}>{c.label}</th>
+              <th key={`th-${c.key}-${i}`} style={c.width ? { width: c.width } : undefined}>{c.label}</th>
             ))}
             {onDelete && <th style={{ width: 40 }}></th>}
           </tr>
@@ -67,7 +68,7 @@ export function SummaryTable<T extends Record<string, any>>({
                     : String(value ?? '')
                     
                 return (
-                  <td key={`td-${c.key}-${i}`} className={s.value}>
+                  <td key={`td-${c.key}-${i}`} className={s.value} style={c.width ? { width: c.width } : undefined}>
                     {displayedValue}
                   </td>
                 )
