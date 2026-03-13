@@ -31,11 +31,13 @@ export function Navigation({ event }: Navigation.Props) {
     if (index === -1) return
 
     const CENTER = Math.floor(WINDOW_SIZE / 2)
+    const size = Math.min(WINDOW_SIZE, allEvents.length)
 
     setEvents(
-      Array.from({ length: WINDOW_SIZE }, (_, i) =>
-        allEvents[(index + i - CENTER + allEvents.length) % allEvents.length]
-      ).filter(Boolean) as Doc.Type[]
+      Array.from({ length: size }, (_, i) => {
+        const offset = i - Math.floor(size / 2)
+        return allEvents[(index + offset + allEvents.length) % allEvents.length]
+      }).filter(Boolean) as Doc.Type[]
     )
   }, [event._id, app.target.notes, app.target.links])
 

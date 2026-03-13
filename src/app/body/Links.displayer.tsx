@@ -42,9 +42,6 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
       return;
     }
 
-    // Debounce: recompute positions 500ms after the last scroll/data change.
-    // This ensures the displayer only repositions after timeline movement stops,
-    // avoiding visual noise during active scroll/zoom.
     debounceRef.current = setTimeout(() => {
       const selectedFiles = new Set(
         app.target.files.filter((f) => f.selected).map((f) => f.id)
@@ -84,17 +81,17 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
       }
 
       setPoints(result);
-    }, 1);
+    }, 100);
 
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [app, getPixelPosition, scrollY]);
+  }, [app.target.links, app.target.files, app.hidden.links, getPixelPosition, scrollY]);
 
   return (
     <Fragment>
       {points.map(({ link, x, y }, i) => (
-        <LinkPoint type='link' key={link.id ?? i} link={link} x={x} y={y} />
+        <LinkPoint type='link' key={`${link.id}-${i}`} link={link} x={x} y={y} />
       ))}
     </Fragment>
   )

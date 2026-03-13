@@ -39,6 +39,8 @@ interface RenderEngineConstructor {
   scrollX: number
   scrollY: number
   getPixelPosition: (timestamp: number) => number
+  mouseX?: number;
+  mouseY?: number;
 }
 
 export interface Status {
@@ -69,6 +71,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   getPixelPosition!: (timestamp: number) => number
   scrollX!: number
   scrollY!: number
+  mouseX?: number;
+  mouseY?: number;
   segmentSize = 500
   ruler!: RulerDrawer
   private static instance: RenderEngine | null = null
@@ -76,6 +80,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   height!: HeightEngine
   graph!: GraphEngine
   shifted: Source.Type[] = []
+  
+  // INTERACTIVE ELEMENTS IN CANVAS saved to manage clicks for notes and links
+  public static interactiveNotes: Array<{ 
+    notes: Note.Type[], 
+    rect: { x: number, y: number, w: number, h: number }
+  }> = [];
+
+  public static interactiveLinks: Array<{ 
+    link: Link.Type, 
+    rect: { x: number, y: number, w: number, h: number } 
+  }> = [];
 
   // CACHE
   private static [CacheKey] = {
@@ -111,7 +126,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     info,
     getPixelPosition,
     scrollY,
-    scrollX
+    scrollX,
+    mouseX,
+    mouseY
   }: RenderEngineConstructor) {
     if (RenderEngine.instance) {
       RenderEngine.instance.ruler = new RulerDrawer({
@@ -127,6 +144,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.info = info
       RenderEngine.instance.scrollX = scrollX
       RenderEngine.instance.scrollY = scrollY
+      RenderEngine.instance.mouseX = mouseX;
+      RenderEngine.instance.mouseY = mouseY;
       RenderEngine.instance.getPixelPosition = getPixelPosition
       // Reuse engine singletons — only update their RenderEngine reference.
       // Avoids `new DefaultEngine()` etc. which would enter each constructor,
@@ -136,7 +155,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       RenderEngine.instance.graph.updateRenderer(RenderEngine.instance)
       return RenderEngine.instance
     }
-
+    this.mouseX = mouseX;
+    this.mouseY = mouseY;
     this.ruler = new RulerDrawer({
       ctx,
       getPixelPosition,
@@ -186,7 +206,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     this.ctx.fillRect(0, y - 24, window.innerWidth, 48)
   }
 
+  /* LINK MANAGEMENT */  
+
   public links = () => {
+    RenderEngine.interactiveLinks = [];
     const canvasWidth = this.ctx.canvas.width;
 
     this.info.app.target.links.forEach((link) => {
@@ -195,24 +218,61 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const { dots } = this.calcDots(link)
 
-      // Skip links entirely outside the visible viewport
-      const allOutsideLeft = dots.every(d => d.x < -50);
-      const allOutsideRight = dots.every(d => d.x > canvasWidth + 50);
-      if (allOutsideLeft || allOutsideRight) return;
+    const allOutsideLeft = dots.every(d => d.x < -50);
+    const allOutsideRight = dots.every(d => d.x > canvasWidth + 50);
+    if (allOutsideLeft || allOutsideRight) return;
 
-      this.connection(dots)
-      dots.forEach((dot) => this.dot(dot))
+    this.connection(dots)
+    dots.forEach((dot) => this.dot(dot))
+
+    // NUOVO: Calcoliamo i punti centrali tra i dot e disegniamo il badge del Link
+    if (dots.length >= 2) {
+      for (let i = 0; i < dots.length - 1; i++) {
+        const start = dots[i];
+        const end = dots[i + 1];
+        
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+
+        this.renderLinkBadge(link, midX, midY);
+      }
+    }
     })
   }
 
-  public highlight = (x: number, width: number, index: number, color: string) => {
-    this.ctx.fillStyle = mappedColors[color];
+  public renderLinkBadge = (link: Link.Type, x: number, y: number) => {
+    const size = 24; 
+    const rectX = x - size / 2;
+    const rectY = y - size / 2;
+    const color = link.color || Color.Themer.theme.FONT_ACCENT;
 
-    const y = 32 * (index + 1);
+    const isHovered = this.mouseX !== undefined && this.mouseY !== undefined &&
+                      this.mouseX >= rectX && this.mouseX <= rectX + size &&
+                      this.mouseY >= rectY && this.mouseY <= rectY + size;
 
-    const height = this.ctx.canvas.height - (20 * 2 * (index + 1));
+    this.ctx.save();
+    
+    // EFFETTO HOVER
+    if (isHovered) {
+      this.ctx.shadowColor = color;
+      this.ctx.shadowBlur = 12;
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = '#FFFFFF';
+    }
 
-    this.ctx.fillRect(x, y, width, height);
+    this.drawRect(rectX, rectY, size, size, 4, color, Color.Themer.theme.BACKGROUND_SECOND);
+    if (isHovered) this.ctx.stroke();
+
+    const iconName = Link.Entity.icon(link); 
+    const icon = getCanvasIcon({ name: iconName, color });
+    const iconSize = 16;
+    this.ctx.drawImage(icon, x - iconSize / 2, y - iconSize / 2, iconSize, iconSize);
+    this.ctx.restore();
+
+    RenderEngine.interactiveLinks.push({
+      link,
+      rect: { x: rectX, y: rectY, w: size, h: size }
+    });
   }
 
   public connection = (dots: Dot[]) => {
@@ -242,6 +302,245 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       }
     } catch (_) { }
   }
+
+  /* HIGHLIGHT MANAGEMENT */
+  public highlight = (x: number, width: number, index: number, color: string) => {
+    this.ctx.fillStyle = mappedColors[color];
+
+    const y = 32 * (index + 1);
+
+    const height = this.ctx.canvas.height - (20 * 2 * (index + 1));
+
+    this.ctx.fillRect(x, y, width, height);
+  }
+
+  private getYForDoc = (id: Doc.Id): { y: number, t: number, o: number } => {
+    const e = RenderEngine[CacheKey].flags.get(id);
+    if (!e) {
+      const operation = Operation.Entity.selected(this.info.app);
+      const docs = Doc.Entity.flag.getDocs(this.info.app, operation?.id);
+
+      let result = {
+        y: 0,
+        t: 0,
+        o: 0
+      }
+
+      docs.forEach(doc => {
+        const p = {
+          y: Source.Entity.getHeight(this.info.app, doc['gulp.source_id'], 0),
+          t: doc.timestamp,
+          o: Source.Entity.id(this.info.app, doc['gulp.source_id']).settings.offset ?? 0
+        };
+        if (doc._id === id) {
+          result = p;
+        }
+        RenderEngine[CacheKey].flags.set(doc._id, p);
+      });
+
+      return result;
+    }
+    return e;
+  }
+  /**
+   * Draws green line on position of every flagged event for the current operation
+   */
+  public highlightFlaggedDocuments = () => {
+    const operation = Operation.Entity.selected(this.info.app);
+    const flagged = Doc.Entity.flag.getList(operation?.id);
+
+    for (const id of flagged) {
+      const { y, t, o } = this.getYForDoc(id);
+
+      const x = this.getPixelPosition(t + o);
+      const dy = y - 24 - this.scrollY;
+
+      this.ctx.fillStyle = '#00FF00';
+      this.ctx.fillRect(x - 1, dy - 2, 1, 51);
+      this.ctx.fillRect(x, dy - 4, 1, 55);
+      this.ctx.fillRect(x + 1, dy - 2, 1, 51);
+    }
+  }
+
+  /* NOTE MANAGEMENT */
+  public renderNote = (note: Note.Type, groupNotes: Note.Type[] = [note]) => {
+    const timestamp = Note.Entity.timestamp(note)
+    const x = this.getPixelPosition(timestamp) + NOTE_OFFSET
+    const y = Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
+
+    // Hit detection per l'Hover
+    const isHovered = this.mouseX !== undefined && this.mouseY !== undefined &&
+                      this.mouseX >= x && this.mouseX <= x + NOTE_SIZE &&
+                      this.mouseY >= y && this.mouseY <= y + NOTE_SIZE;
+
+    this.ctx.save()
+
+    if (!note.color) {
+      note.color = Color.Themer.theme.FONT_ACCENT;
+    }
+
+    // EFFETTO HOVER
+    if (isHovered) {
+      this.ctx.shadowColor = note.color;
+      this.ctx.shadowBlur = 12; // Effetto Glow
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = '#FFFFFF';
+    }
+
+    // Main
+    this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, note.color);
+    // Accent
+    this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, 4, note.color, note.color);
+
+    if (isHovered) this.ctx.stroke();
+
+    const icon = getCanvasIcon({ name: Note.Entity.icon(note), color: note.color })
+    const iconSize = 16
+    const iconX = x + (NOTE_SIZE - iconSize) / 2
+    const iconY = y + (NOTE_SIZE - iconSize) / 2 - 1
+
+    this.ctx.drawImage(icon, iconX, iconY, iconSize, iconSize)
+
+    this.drawTextLabel(note.name, x + NOTE_SIZE / 2, y + 26, 120, note.color);
+    this.ctx.restore()
+
+    RenderEngine.interactiveNotes.push({
+      notes: groupNotes,
+      rect: { x, y, w: NOTE_SIZE, h: NOTE_SIZE }
+    });
+  }
+
+  private getVisibleNotes = (file: Source.Id) => {
+    const notes = Note.Entity.findByFile(this.info.app, file);
+    const min = this.getTimestamp(-128)
+    const max = this.getTimestamp(this.ctx.canvas.width + 128)
+
+    // Since notes are sorted in descending order, we need to find:
+    // - first note <= max (leftmost visible note)
+    // - last note >= min (rightmost visible note)
+    const start = this.binarySearchDesc(notes, max, true)  // Find first note <= max
+    const end = this.binarySearchDesc(notes, min, false)   // Find last note >= min
+
+    if (start === -1 || end === -1 || start > end) return [];
+
+    return notes.slice(start, end + 1);
+  }
+
+  private calculateNotesGroups(file: Source.Id): {
+    notes: Note.Type[],
+    groups: Group[]
+  } {
+    const notes = this.getVisibleNotes(file);
+    if (notes.length === 0) {
+      RenderEngine[CacheKey].notes.set(file, [])
+      RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale
+      return {
+        notes: [],
+        groups: []
+      }
+    }
+
+    if (RenderEngine[CacheKey].notes[Hardcode.Scale] === this.info.app.timeline.scale && RenderEngine[CacheKey].notes.has(file)) {
+      return {
+        notes,
+        groups: RenderEngine[CacheKey].notes.get(file)!
+      }
+    }
+
+    const groups: Group[] = []
+
+    for (let i = 0; i < notes.length;) {
+      const groupEndIdx = this.findGroupEndIndexDirect(notes, i)
+      groups.push([i, groupEndIdx - i + 1])
+      i = groupEndIdx + 1
+    }
+
+    RenderEngine[CacheKey].notes.set(file, groups)
+    RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale
+    return { notes, groups };
+  }
+
+   private findGroupEndIndexDirect(notes: Note.Type[], startIdx: number): number {
+    const startTimestamp = Note.Entity.timestamp(notes[startIdx])
+    const startX = this.getPixelPosition(startTimestamp)
+
+    // Since notes are in descending order, we search forward (higher indices = earlier timestamps)
+    // but we want to group notes that are close in pixel position
+    let endIdx = startIdx
+
+    // Linear search forward to find all notes within 24 pixels
+    for (let i = startIdx + 1; i < notes.length; i++) {
+      const currentX = this.getPixelPosition(Note.Entity.timestamp(notes[i]))
+      const distance = Math.abs(currentX - startX)
+
+      if (distance <= 32) {
+        endIdx = i
+      } else {
+        break  // Since we're going in timestamp order, if this one is too far, the rest will be too
+      }
+    }
+
+    return endIdx
+  }
+
+   // Fixed binary search for descending order
+  private binarySearchDesc(notes: Note.Type[], timestamp: number, findFirst: boolean): number {
+    let left = 0, right = notes.length - 1, result = -1
+
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2)
+      const noteTime = Note.Entity.timestamp(notes[mid])
+
+      if (findFirst) {
+        // Finding first note <= timestamp (leftmost)
+        if (noteTime <= timestamp) {
+          result = mid
+          right = mid - 1  // Look for earlier index (smaller timestamp)
+        } else {
+          left = mid + 1   // Current note too large, go right
+        }
+      } else {
+        // Finding last note >= timestamp (rightmost)
+        if (noteTime >= timestamp) {
+          result = mid
+          left = mid + 1   // Look for later index (larger timestamp)
+        } else {
+          right = mid - 1  // Current note too small, go left
+        }
+      }
+    }
+
+    return result
+  }
+
+    public notes = (files: Source.Type[]) => {
+    RenderEngine.interactiveNotes = [];
+    if (!files || !files.length) return;
+    files.forEach(file => {
+      const { notes, groups } = this.calculateNotesGroups(file.id);
+      if (!notes.length) {
+        return;
+      }
+
+      groups.forEach((group) => {
+        if (!group || group.length < 2 || !notes[group[0]]) return;
+        
+        const groupNotes = notes.slice(group[0], group[0] + group[1]);
+        if (group[1] === 1 && notes[group[0]]) {
+          this.renderNote(notes[group[0]])
+        } else {
+          this.renderNote({
+            ...notes[group[0]],
+            name: `${group[1]}`,
+            color: Color.Themer.theme.FONT_ACCENT,
+            glyph_id: Glyph.getIdByName('Status')
+          }, groupNotes)
+        }
+      })
+    })
+  }
+
+  /* CANVAS DRAW Utility*/
 
   public dot = ({ x, y, color }: Dot) => {
     this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
@@ -291,54 +590,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     })
 
     return { dots }
-  }
-
-  private getYForDoc = (id: Doc.Id): { y: number, t: number, o: number } => {
-    const e = RenderEngine[CacheKey].flags.get(id);
-    if (!e) {
-      const operation = Operation.Entity.selected(this.info.app);
-      const docs = Doc.Entity.flag.getDocs(this.info.app, operation?.id);
-
-      let result = {
-        y: 0,
-        t: 0,
-        o: 0
-      }
-
-      docs.forEach(doc => {
-        const p = {
-          y: Source.Entity.getHeight(this.info.app, doc['gulp.source_id'], 0),
-          t: doc.timestamp,
-          o: Source.Entity.id(this.info.app, doc['gulp.source_id']).settings.offset ?? 0
-        };
-        if (doc._id === id) {
-          result = p;
-        }
-        RenderEngine[CacheKey].flags.set(doc._id, p);
-      });
-
-      return result;
-    }
-    return e;
-  }
-  /**
-   * Draws green line on position of every flagged event for the current operation
-   */
-  public highlightFlaggedDocuments = () => {
-    const operation = Operation.Entity.selected(this.info.app);
-    const flagged = Doc.Entity.flag.getList(operation?.id);
-
-    for (const id of flagged) {
-      const { y, t, o } = this.getYForDoc(id);
-
-      const x = this.getPixelPosition(t + o);
-      const dy = y - 24 - this.scrollY;
-
-      this.ctx.fillStyle = '#00FF00';
-      this.ctx.fillRect(x - 1, dy - 2, 1, 51);
-      this.ctx.fillRect(x, dy - 4, 1, 55);
-      this.ctx.fillRect(x + 1, dy - 2, 1, 51);
-    }
   }
 
   public locals = (file: Source.Type) => {
@@ -430,88 +681,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
 
     this.ctx.fillText(displayText, x, y + NOTE_SIZE - labelHeight / 2 - 2)
-  }
-
-  public renderNote = (note: Note.Type) => {
-    const timestamp = Note.Entity.timestamp(note)
-    const x = this.getPixelPosition(timestamp) + NOTE_OFFSET
-    const y = Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY) + NOTE_OFFSET
-
-    this.ctx.save()
-
-    if (!note.color) {
-      note.color = Color.Themer.theme.FONT_ACCENT;
-    }
-    // Main
-    this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, note.color);
-    // Accent
-    this.drawRect(x, y + NOTE_SIZE - 4, NOTE_SIZE, 4, 4, note.color, note.color);
-
-    const icon = getCanvasIcon({
-      name: Note.Entity.icon(note),
-      color: note.color
-    })
-
-    const iconSize = 16
-    const iconX = x + (NOTE_SIZE - iconSize) / 2
-    const iconY = y + (NOTE_SIZE - iconSize) / 2 - 1
-
-    this.ctx.drawImage(icon, iconX, iconY, iconSize, iconSize)
-
-    this.drawTextLabel(note.name, x + NOTE_SIZE / 2, y + 26, 120, note.color);
-
-    this.ctx.restore()
-  }
-
-  private getVisibleNotes = (file: Source.Id) => {
-    const notes = Note.Entity.findByFile(this.info.app, file);
-    const min = this.getTimestamp(-128)
-    const max = this.getTimestamp(this.ctx.canvas.width + 128)
-
-    // Since notes are sorted in descending order, we need to find:
-    // - first note <= max (leftmost visible note)
-    // - last note >= min (rightmost visible note)
-    const start = this.binarySearchDesc(notes, max, true)  // Find first note <= max
-    const end = this.binarySearchDesc(notes, min, false)   // Find last note >= min
-
-    if (start === -1 || end === -1 || start > end) return [];
-
-    return notes.slice(start, end + 1);
-  }
-
-  private calculateNotesGroups(file: Source.Id): {
-    notes: Note.Type[],
-    groups: Group[]
-  } {
-    const notes = this.getVisibleNotes(file);
-    if (notes.length === 0) {
-      RenderEngine[CacheKey].notes.set(file, [])
-      RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale
-      return {
-        notes: [],
-        groups: []
-      }
-    }
-
-    if (RenderEngine[CacheKey].notes[Hardcode.Scale] === this.info.app.timeline.scale && RenderEngine[CacheKey].notes.has(file)) {
-      return {
-        notes,
-        groups: RenderEngine[CacheKey].notes.get(file)!
-      }
-    }
-
-    const groups: Group[] = []
-
-    for (let i = 0; i < notes.length;) {
-      const groupEndIdx = this.findGroupEndIndexDirect(notes, i)
-      groups.push([i, groupEndIdx - i + 1])
-      i = groupEndIdx + 1
-    }
-
-    RenderEngine[CacheKey].notes.set(file, groups)
-    RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale
-    return { notes, groups };
-  }
+  } 
 
   public getTimestamp = (x: number): number => {
     const visibleWidth = this.ctx.canvas.width * this.info.app.timeline.scale;
@@ -519,59 +689,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     return this.info.app.timeline.frame.min + (pixelOffset / visibleWidth) * (this.info.app.timeline.frame.max - this.info.app.timeline.frame.min)
   }
 
-  // Fixed binary search for descending order
-  private binarySearchDesc(notes: Note.Type[], timestamp: number, findFirst: boolean): number {
-    let left = 0, right = notes.length - 1, result = -1
-
-    while (left <= right) {
-      const mid = Math.floor((left + right) / 2)
-      const noteTime = Note.Entity.timestamp(notes[mid])
-
-      if (findFirst) {
-        // Finding first note <= timestamp (leftmost)
-        if (noteTime <= timestamp) {
-          result = mid
-          right = mid - 1  // Look for earlier index (smaller timestamp)
-        } else {
-          left = mid + 1   // Current note too large, go right
-        }
-      } else {
-        // Finding last note >= timestamp (rightmost)
-        if (noteTime >= timestamp) {
-          result = mid
-          left = mid + 1   // Look for later index (larger timestamp)
-        } else {
-          right = mid - 1  // Current note too small, go left
-        }
-      }
-    }
-
-    return result
-  }
-
-  private findGroupEndIndexDirect(notes: Note.Type[], startIdx: number): number {
-    const startTimestamp = Note.Entity.timestamp(notes[startIdx])
-    const startX = this.getPixelPosition(startTimestamp)
-
-    // Since notes are in descending order, we search forward (higher indices = earlier timestamps)
-    // but we want to group notes that are close in pixel position
-    let endIdx = startIdx
-
-    // Linear search forward to find all notes within 24 pixels
-    for (let i = startIdx + 1; i < notes.length; i++) {
-      const currentX = this.getPixelPosition(Note.Entity.timestamp(notes[i]))
-      const distance = Math.abs(currentX - startX)
-
-      if (distance <= 32) {
-        endIdx = i
-      } else {
-        break  // Since we're going in timestamp order, if this one is too far, the rest will be too
-      }
-    }
-
-    return endIdx
-  }
-
+  // TO BE REMOVE USED ONLY IN NOTE.Displayer not used
   public static getNotesByX = (file: Source.Type, x: number, padding = 16): Note.Type[] => {
     if (!RenderEngine.instance) {
       return [];
@@ -609,65 +727,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     }
 
     return [];
-  }
-
-
-  /** Clears a specific render cache (notes, range, or flags). Used to force recalculation. */
-  public static reset = (key: keyof typeof RenderEngine[typeof CacheKey]) => {
-    RenderEngine[CacheKey][key].clear();
-  }
-
-  /**
-   * Comprehensive memory cleanup — clears ALL render-related caches.
-   * Must be called when switching operations to prevent memory leaks.
-   *
-   * Clears:
-   * - RenderEngine's notes, range, and flags caches
-   * - DefaultEngine and HeightEngine per-source pixel maps (can hold 320k+ entries)
-   * - CanvasIcon SVG-to-bitmap cache
-   */
-  public static clearAllCaches = () => {
-    RenderEngine[CacheKey].notes.clear();
-    RenderEngine[CacheKey].range.clear();
-    RenderEngine[CacheKey].flags.clear();
-
-    if (DefaultEngine.instance) {
-      DefaultEngine.instance.map.clear();
-    }
-    if (HeightEngine.instance) {
-      HeightEngine.instance.map.clear();
-      HeightEngine.instance.cacheKeys.clear();
-    }
-    if (GraphEngine.instance) {
-      GraphEngine.instance.map.clear();
-    }
-
-    CanvasIcon.cache.clear();
-  }
-
-  public notes = (files: Source.Type[]) => {
-    if (!files || !files.length) return;
-    files.forEach(file => {
-      const { notes, groups } = this.calculateNotesGroups(file.id);
-      if (!notes.length) {
-        return;
-      }
-
-      groups.forEach((group) => {
-        if (!group || group.length < 2 || !notes[group[0]]) return;
-
-        if (group[1] === 1 && notes[group[0]]) {
-          this.renderNote(notes[group[0]])
-        } else {
-          this.renderNote({
-            ...notes[group[0]],
-            name: `${group[1]}`,
-            color: Color.Themer.theme.FONT_ACCENT,
-            glyph_id: Glyph.getIdByName('Status')
-          })
-        }
-      })
-    })
   }
 
   public loading = (file: Source.Type) => {
@@ -735,5 +794,40 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       1,
       window.innerWidth,
     )
+  }
+
+  /* MEMORY MANAGEMENT */
+
+  /** Clears a specific render cache (notes, range, or flags). Used to force recalculation. */
+  public static reset = (key: keyof typeof RenderEngine[typeof CacheKey]) => {
+    RenderEngine[CacheKey][key].clear();
+  }
+
+  /**
+   * Comprehensive memory cleanup — clears ALL render-related caches.
+   * Must be called when switching operations to prevent memory leaks.
+   *
+   * Clears:
+   * - RenderEngine's notes, range, and flags caches
+   * - DefaultEngine and HeightEngine per-source pixel maps (can hold 320k+ entries)
+   * - CanvasIcon SVG-to-bitmap cache
+   */
+  public static clearAllCaches = () => {
+    RenderEngine[CacheKey].notes.clear();
+    RenderEngine[CacheKey].range.clear();
+    RenderEngine[CacheKey].flags.clear();
+
+    if (DefaultEngine.instance) {
+      DefaultEngine.instance.map.clear();
+    }
+    if (HeightEngine.instance) {
+      HeightEngine.instance.map.clear();
+      HeightEngine.instance.cacheKeys.clear();
+    }
+    if (GraphEngine.instance) {
+      GraphEngine.instance.map.clear();
+    }
+
+    CanvasIcon.cache.clear();
   }
 }

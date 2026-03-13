@@ -6,8 +6,6 @@ import { useMagnifier } from '@/dto/useMagnifier'
 import { Magnifier } from '@/ui/Magnifier'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { RenderEngine } from '@/class/RenderEngine'
-import { LinksDisplayer } from './Links.displayer'
-import { NotesDisplayer } from './Notes.displayer'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { LoggerHandler } from '@/dto/Logger.class'
 import { debounce } from 'lodash'
@@ -45,6 +43,23 @@ export function Canvas({ timeline }: Canvas.Props) {
       app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.filter, app.timeline.dialogSize, app.hidden, target]);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
   const pendingFrame = useRef<number>(0);
+  const scrollXRef = useRef(scrollX);
+  const scrollYRef = useRef(scrollY);
+  const mouseXRef = useRef<number>(-1000);
+  const mouseYRef = useRef<number>(-1000);
+
+  useEffect(() => {
+    scrollXRef.current = scrollX;
+    scrollYRef.current = scrollY;
+  }, [scrollX, scrollY]);
+
+  const syncScrollToContext = useMemo(
+    () => debounce((x: number, y: number) => {
+      setScrollX(x);
+      setScrollY(y);
+    }, 16), // 60fps circa
+    [setScrollX, setScrollY]
+  );
 
   useEffect(() => {
     Note.Entity.updateIndexing(app);
@@ -76,7 +91,9 @@ export function Canvas({ timeline }: Canvas.Props) {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
     }
 
-    const limits = getLimits(app, Info, timeline, scrollX)
+    const currentScrollX = scrollXRef.current;
+    const currentScrollY = scrollYRef.current;
+    const limits = getLimits(app, Info, timeline, currentScrollX);
 
     // Create or reuse the singleton RenderEngine with current frame parameters.
     // The constructor uses the singleton pattern: if an instance exists, it updates
@@ -87,8 +104,10 @@ export function Canvas({ timeline }: Canvas.Props) {
       limits,
       info: Info,
       getPixelPosition,
-      scrollX,
-      scrollY
+      scrollX: currentScrollX,
+      scrollY: currentScrollY,
+      mouseX: mouseXRef.current,
+      mouseY: mouseYRef.current
     })
 
     const files = Source.Entity.selected(app);
@@ -104,7 +123,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     const canvasHeight = ctx.canvas.height;
 
     files.forEach((file, i) => {
-      const y = Source.Entity.getHeight(app, file, scrollY)
+      const y = Source.Entity.getHeight(app, file, currentScrollY, i)
 
       if (y < -48 || y > canvasHeight + 48) return;
 
@@ -186,28 +205,48 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   // [ ] TODO: Move to Info.tsx;
   const getEventsListFromFileByClickX = (x: number, file: Source.Type) => {
-    const events: Doc.Type[] = [];
+    const events = Source.Entity.events(app, file);
+    const result: Doc.Type[] = [];
+    if (events.length === 0) return result;
+    let left = 0;
+    let right = events.length - 1;
+    let foundIdx = -1;
+    while (left <= right) {
+      const mid = Math.floor((left + right) / 2);
+      const pos = getPixelPosition(events[mid].timestamp + file.settings.offset);
+      
+      const isGraph = file.settings.render_engine === 'graph';
+      const isHit = isGraph ? (x >= pos - 16 && x <= pos) : (x === pos);
 
-    for (const event of Source.Entity.events(app, file)) {
-      const pos = getPixelPosition(event.timestamp + file.settings.offset)
-
-      if (file.settings.render_engine === 'graph') {
-        if (x >= pos - 16 && x <= pos) {
-          events.push(event)
-        }
-        continue
-      }
-
-      if (x === pos) {
-        events.push(event)
-      }
-
-      if (x > pos) {
-        break
+      if (isHit) {
+        foundIdx = mid;
+        break;
+      } else if (pos < x) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
       }
     }
 
-    return events;
+    if (foundIdx !== -1) {
+      let i = foundIdx;
+      while (i >= 0) {
+        const p = getPixelPosition(events[i].timestamp + file.settings.offset);
+        if (p === x || (file.settings.render_engine === 'graph' && x >= p - 16 && x <= p)) {
+          result.push(events[i]);
+          i--;
+        } else break;
+      }
+      i = foundIdx + 1;
+      while (i < events.length) {
+        const p = getPixelPosition(events[i].timestamp + file.settings.offset);
+        if (p === x || (file.settings.render_engine === 'graph' && x >= p - 16 && x <= p)) {
+          result.push(events[i]);
+          i++;
+        } else break;
+      }
+    }
+    return result;
   }
 
   const handleClick = (event: MouseEvent) => {
@@ -226,11 +265,52 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
 
     const { top, left } = canvas_ref.current.getBoundingClientRect()
+    
+    
+    if (RenderEngine.interactiveLinks) {
+      const canvasHitX = Math.round(event.clientX - left);
+      const canvasHitY = Math.round(event.clientY - top);
+      for (const item of RenderEngine.interactiveLinks) {
+        if (
+          canvasHitX >= item.rect.x && canvasHitX <= item.rect.x + item.rect.w &&
+          canvasHitY >= item.rect.y && canvasHitY <= item.rect.y + item.rect.h
+        ) {
+         
+          const link = item.link;
+          if (link.doc_ids && link.doc_ids.length > 0) {
+            const dialog = link.doc_ids.length === 1 
+              ? <DisplayEventDialog event={Doc.Entity.id(app, link.doc_id_from)} />
+              : <DisplayGroupDialog events={link.doc_ids.map(id => Doc.Entity.id(app, id))} />;
+            
+            spawnDialog(dialog);
+          }
+          return;
+        }
+      }
+    }
+
+    if (RenderEngine.interactiveNotes) {
+      const canvasHitX = Math.round(event.clientX - left);
+      const canvasHitY = Math.round(event.clientY - top);
+      for (const item of RenderEngine.interactiveNotes) {
+        if (
+          canvasHitX >= item.rect.x && canvasHitX <= item.rect.x + item.rect.w &&
+          canvasHitY >= item.rect.y && canvasHitY <= item.rect.y + item.rect.h
+        ) {
+          
+          const dialog = item.notes.length === 1 
+            ?<DisplayEventDialog event={Doc.Entity.id(app, item.notes[0].doc._id)} />
+            : <DisplayGroupDialog events={item.notes.map(note => Doc.Entity.id(app, note.doc._id))} />
+          
+          return spawnDialog(dialog);
+        }
+      }
+    }
+
     const click: XY = {
       x: Math.round(event.clientX - left),
       y: Math.round(event.clientY - top + scrollY)
     }
-
     const index = Math.floor(click.y / 48)
 
     const file = Source.Entity.selected(app)[index]
@@ -274,10 +354,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   // doesn't need them as dependencies. Without this, every scroll/zoom tick would
   // recreate handleWheel → recreate debouncedHandleWheel → remove/add the DOM
   // event listener, causing unnecessary overhead on every single wheel event.
-  const scrollXRef = useRef(scrollX);
-  scrollXRef.current = scrollX;
-  const scrollYRef = useRef(scrollY);
-  scrollYRef.current = scrollY;
+
   const scaleRef = useRef(app.timeline.scale);
   scaleRef.current = app.timeline.scale;
 
@@ -296,7 +373,14 @@ export function Canvas({ timeline }: Canvas.Props) {
 
       // Horizontal scroll — pan only, no zoom
       if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-        setScrollX((prev) => prev + event.deltaX)
+        scrollXRef.current += event.deltaX;
+        if (!pendingFrame.current) {
+          pendingFrame.current = requestAnimationFrame(() => {
+            pendingFrame.current = 0;
+            renderCanvas(false); 
+          });
+        }
+        syncScrollToContext(scrollXRef.current, scrollYRef.current);
         return
       }
 
@@ -338,6 +422,30 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   useEffect(() => {
     const canvas = wrapper_ref.current
+    
+    const handleNativeHover = (e: MouseEvent) => {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    mouseXRef.current = e.clientX - rect.left;
+    mouseYRef.current = e.clientY - rect.top;
+
+    if (!pendingFrame.current) {
+      pendingFrame.current = requestAnimationFrame(() => {
+        pendingFrame.current = 0;
+        renderCanvas(false); 
+      });
+    }};
+
+    const resetHover = () => {
+    mouseXRef.current = -1000;
+    mouseYRef.current = -1000;
+    if (!pendingFrame.current) {
+      pendingFrame.current = requestAnimationFrame(() => {
+        pendingFrame.current = 0;
+        renderCanvas(false); 
+      });
+    }};
+
     if (canvas) {
       canvas.addEventListener(
         'wheel',
@@ -348,6 +456,8 @@ export function Canvas({ timeline }: Canvas.Props) {
       canvas.addEventListener('contextmenu', handleContextMenu, {
         passive: true,
       })
+      canvas.addEventListener('mousemove', handleNativeHover, { passive: true }) 
+    canvas.addEventListener('mouseleave', resetHover)
     }
     return () => {
       if (canvas) {
@@ -357,6 +467,8 @@ export function Canvas({ timeline }: Canvas.Props) {
         )
         canvas.removeEventListener('mousemove', move as any)
         canvas.removeEventListener('contextmenu', handleContextMenu)
+        canvas.removeEventListener('mousemove', handleNativeHover)
+      canvas.removeEventListener('mouseleave', resetHover)
       }
       debouncedHandleWheel.cancel()
     }
@@ -396,8 +508,8 @@ export function Canvas({ timeline }: Canvas.Props) {
   ])
 
   const getPixelPosition = useCallback((timestamp: number) => {
-    return Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollX
-  }, [scrollX, Info.width, app.timeline.frame])
+    return Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollXRef.current
+  }, [scrollXRef.current, Info.width, app.timeline.frame])
 
   const handleContextMenu = useCallback((event: MouseEvent) => {
     if (!timeline.current) {
@@ -438,9 +550,20 @@ export function Canvas({ timeline }: Canvas.Props) {
       isProgramScroll.current = false;
       return;
     }
-    setScrollY(a.currentTarget.scrollTop - (canvas_ref.current?.height ?? 0));
+    
+    const newScrollY = a.currentTarget.scrollTop - (canvas_ref.current?.height ?? 0);
+    scrollYRef.current = newScrollY;
+
+    if (!pendingFrame.current) {
+      pendingFrame.current = requestAnimationFrame(() => {
+        pendingFrame.current = 0;
+        renderCanvas(false); 
+      });
+    }
+
+    syncScrollToContext(scrollXRef.current, newScrollY);
     isManualScroll.current = true;
-  }, [canvas_ref, setScrollY]);
+  }, [canvas_ref, syncScrollToContext, renderCanvas]);
 
   useLayoutEffect(() => {
     if (isManualScroll.current || !scrollbar.current || !canvas_ref.current) {
@@ -472,18 +595,11 @@ export function Canvas({ timeline }: Canvas.Props) {
         onKeyDown={toggler}
         tabIndex={0}
       >
-        <NotesDisplayer
-          getPixelPosition={getPixelPosition}
-          self={mousePosition}
-        />
-        <LinksDisplayer getPixelPosition={getPixelPosition} />
         <Highlights.List.Overlay />
         <canvas
           className={s.canvas}
           ref={canvas_ref}
           id="canvas"
-          width={wrapper_ref.current?.offsetWidth}
-          height={timeline.current?.clientHeight}
         />
         <Stack pos='absolute' className={s.island}>
           {flaggedEvents.size > 0 && operation && <Button className={s.unflag} variant='glass' onClick={() => Doc.Entity.flag.reset(operation.id)} icon='FlagOff'>Unflag all {flaggedEvents.size} documents</Button>}

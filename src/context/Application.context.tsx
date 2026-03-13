@@ -100,8 +100,10 @@ function _({ children }: { children: ReactNode }) {
 
           setInfo(currentApp);
           return;
+        case 'highlight':
+          instanceRef.current.highlights_reload();
+          return;
       }
-      instanceRef.current.highlights_reload();
     }
 
     const collabDeleteCallback = (message: any) => {
@@ -119,7 +121,6 @@ function _({ children }: { children: ReactNode }) {
           setInfo(currentApp);
           return;
       }
-      instanceRef.current.highlights_reload();
     }
 
     const reqeustStatsCallback = (message: any) => instanceRef.current.request_add(message.payload.obj);

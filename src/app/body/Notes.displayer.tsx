@@ -49,7 +49,7 @@ export function NotesDisplayer({
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [self, app.target.notes, app.target.files, app.hidden.notes]);
+  }, [self, app.target.notes, app.target.files, app.hidden.notes, scrollY]);
 
   return notes.length > 0 ? (
     <NotePoint.Point
@@ -57,7 +57,7 @@ export function NotesDisplayer({
       key={notes[0].id}
       notes={notes}
       x={getPixelPosition(Note.Entity.timestamp(notes[0]))}
-      y={Source.Entity.getHeight(app, notes[0].source_id, scrollY)}
+      y={Source.Entity.getHeight(app, notes[0].source_id, scrollY, Math.floor((self.y + scrollY) / 48))}
     />
   ) : null
 }

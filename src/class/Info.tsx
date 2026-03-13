@@ -1847,7 +1847,7 @@ export class Info implements InfoProps {
 		if (!operation) {
 			return;
 		}
-
+		console.warn(Date.now()+ " - highlights_reload");
 		return api<Highlight.Type[]>(
 			"/highlight_list",
 			{
@@ -2650,8 +2650,10 @@ export class Info implements InfoProps {
 		);
 	};
 
-	toggle_visibility = (key: keyof App.Type["hidden"]) =>
+	toggle_visibility = (key: keyof App.Type["hidden"]) => {
 		this.setInfoByKey(!this.app.hidden[key], "hidden", key);
+		this.render();
+	};
 
 	files_repin = (id: Source.Id) => {
 		const files = this.app.target.files;

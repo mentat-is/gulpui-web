@@ -200,7 +200,12 @@ export namespace Doc {
      * Helper to get all flagged data from localStorage
      * @returns Record<Operation.Id, Doc.Id[]>
      */
+    private static _flaggedCache: Record<string, string[]> | null = null;
     private static getFlaggedData = (): Record<string, string[]> => {
+      if (Doc.Entity._flaggedCache) {
+        return Doc.Entity._flaggedCache;
+      }
+
       const raw = localStorage.getItem(Doc.Entity.flag.KEY);
       if (!raw) {
         return {};
@@ -210,12 +215,14 @@ export namespace Doc {
         const parsed = JSON.parse(raw);
         // Handle migration from old format (array) to new format (object)
         if (Array.isArray(parsed)) {
-          // Old format - return empty, we can't migrate without operation_id
-          return {};
+          Doc.Entity._flaggedCache = {};
+          return Doc.Entity._flaggedCache;
         }
-        return parsed as Record<string, string[]>;
+        Doc.Entity._flaggedCache = parsed as Record<string, string[]>;
+        return Doc.Entity._flaggedCache;
       } catch (_) {
-        return {};
+        Doc.Entity._flaggedCache = {};
+        return Doc.Entity._flaggedCache;
       }
     }
 
@@ -223,10 +230,10 @@ export namespace Doc {
      * Helper to save flagged data to localStorage
      */
     private static saveFlaggedData = (data: Record<string, string[]>) => {
-      // Clean up empty arrays
       const cleaned = Object.fromEntries(
         Object.entries(data).filter(([_, ids]) => ids.length > 0)
       );
+      Doc.Entity._flaggedCache = cleaned;
       localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify(cleaned));
     }
 

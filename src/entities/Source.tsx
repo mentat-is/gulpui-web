@@ -81,26 +81,54 @@ export namespace Source {
      * re-filtering by search text, we avoid redundant computation. The cache invalidates automatically
      * when `app.target.files` is reassigned (new reference = new selection state).
      */
-    private static _selectedCache: { ref: Source.Type[] | null; result: Source.Type[] } = { ref: null, result: [] };
+    private static _selectedCache: { 
+      ref: Source.Type[] | null; 
+      filterText: string; 
+      filesWithNoEvents: boolean;
+      renderVersion: number;
+      result: Source.Type[] 
+    } = { 
+      ref: null, 
+      filterText: '', 
+      filesWithNoEvents: false,
+      renderVersion: 0,
+      result: [] 
+    };
 
     /**
      * Returns the list of currently selected and visible sources, sorted by pin status.
      * Results are memoized by `app.target.files` reference — only the search text filter
      * is re-applied on cache hit, since it depends on dynamic `app.timeline.filter` state.
      */
-    // ⚠️ UNTOUCHABLE
     public static selected = (app: App.Type): Source.Type[] => {
-      if (app.target.files === Source.Entity._selectedCache.ref) {
-        // Cache hit: skip filter+sort, only apply search text filter
-        return Source.Entity._selectedCache.result.filter(s =>
-          s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) ||
-          Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(app.timeline.filter.toLowerCase())
-        );
+      const currentFilter = (app.timeline.filter || '').toLowerCase();
+      const filesWithNoEvents = app.hidden.filesWithNoEvents;
+      const renderVersion = app.timeline.renderVersion;
+
+      if (
+        app.target.files === Source.Entity._selectedCache.ref && 
+        currentFilter === Source.Entity._selectedCache.filterText &&
+        filesWithNoEvents === Source.Entity._selectedCache.filesWithNoEvents &&
+        renderVersion === Source.Entity._selectedCache.renderVersion
+      ) {
+        return Source.Entity._selectedCache.result;
       }
-      // Cache miss: recompute selected+pinned sources and store
-      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected && (app.hidden.filesWithNoEvents ? Doc.Entity.get(app, s.id).length > 0 : true)));
-      Source.Entity._selectedCache = { ref: app.target.files, result: pins };
-      return pins.filter(s => s.name?.toLowerCase().includes(app.timeline.filter.toLowerCase()) || Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(app.timeline.filter.toLowerCase()));
+      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected && (filesWithNoEvents ? s.total > 0 : true)));
+      
+      const result = pins.filter(s => 
+        s.name?.toLowerCase().includes(currentFilter) || 
+        Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(currentFilter)
+      );
+      
+      Source.Entity._selectedCache = { 
+        ref: app.target.files, 
+        filterText: currentFilter, 
+        filesWithNoEvents,
+        renderVersion,
+        result 
+      };
+      
+      return result;
     }
 
     public static select = (app: App.Type, selected: Source.Type[] | Source.Id[]): Source.Type[] =>
@@ -242,7 +270,7 @@ export namespace Source {
 
     public static index = (app: App.Type, file: Source.Type | Source.Id) => Source.Entity.selected(app).findIndex((s) => s.id === Parser.useUUID(file))
 
-    public static getHeight = (app: App.Type, file: Source.Type | Source.Id, scrollY: number) => 48 * this.index(app, file) - scrollY + 24
+    public static getHeight = (app: App.Type, file: Source.Type | Source.Id, scrollY: number, index?: number) => 48 * (typeof index === 'number' ? index : this.index(app, file)) - scrollY + 24
 
     private static _select = (p: Source.Type): Source.Type => ({ ...p, selected: true })
 
