@@ -348,11 +348,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   public highlightFlaggedDocuments = () => {
     const operation = Operation.Entity.selected(this.info.app);
     const flagged = Doc.Entity.flag.getList(operation?.id);
+    const canvasWidth = this.ctx.canvas.width;
 
     for (const id of flagged) {
       const { y, t, o } = this.getYForDoc(id);
 
       const x = this.getPixelPosition(t + o);
+      //if event is outside canvas, skip it
+      if (x < -10 || x > canvasWidth + 10) continue;
       const dy = y - 24 - this.scrollY;
 
       this.ctx.fillStyle = '#00FF00';
