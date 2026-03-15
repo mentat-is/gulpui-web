@@ -1,3 +1,4 @@
+import { debounce } from "lodash";
 import { Default } from "@/dto/Dataset";
 import { generateUUID, NodeFile, Refractor } from "@/ui/utils";
 import { Logger } from "@/dto/Logger.class";
@@ -1842,12 +1843,11 @@ export class Info implements InfoProps {
 			},
 		}).then(this.links_reload);
 
-	highlights_reload = () => {
+	highlights_reload = debounce(() => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) {
 			return;
 		}
-		console.warn(Date.now()+ " - highlights_reload");
 		return api<Highlight.Type[]>(
 			"/highlight_list",
 			{
@@ -1858,7 +1858,7 @@ export class Info implements InfoProps {
 			},
 			(h) => this.setInfoByKey(h, "target", "highlights"),
 		);
-	};
+	}, 500);
 
 	highlight_create = async ({
 		time_range,
