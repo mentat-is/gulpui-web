@@ -75,6 +75,8 @@ export function Canvas({ timeline }: Canvas.Props) {
       return
     }
 
+    const app = Info.app; // Capture current state for this frame
+
     if (canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
       const oldWidth = canvas_ref.current.width
       const newWidth = wrapper_ref.current.clientWidth
@@ -279,8 +281,8 @@ export function Canvas({ timeline }: Canvas.Props) {
           const link = item.link;
           if (link.doc_ids && link.doc_ids.length > 0) {
             const dialog = link.doc_ids.length === 1 
-              ? <DisplayEventDialog event={Doc.Entity.id(app, link.doc_id_from)} />
-              : <DisplayGroupDialog events={link.doc_ids.map(id => Doc.Entity.id(app, id))} />;
+              ? <DisplayEventDialog event={Doc.Entity.id(Info.app, link.doc_id_from)} />
+              : <DisplayGroupDialog events={link.doc_ids.map(id => Doc.Entity.id(Info.app, id))} />;
             
             spawnDialog(dialog);
           }
@@ -299,8 +301,8 @@ export function Canvas({ timeline }: Canvas.Props) {
         ) {
           
           const dialog = item.notes.length === 1 
-            ?<DisplayEventDialog event={Doc.Entity.id(app, item.notes[0].doc._id)} />
-            : <DisplayGroupDialog events={item.notes.map(note => Doc.Entity.id(app, note.doc._id))} />
+            ?<DisplayEventDialog event={Doc.Entity.id(Info.app, item.notes[0].doc._id)} />
+            : <DisplayGroupDialog events={item.notes.map(note => Doc.Entity.id(Info.app, note.doc._id))} />
           
           return spawnDialog(dialog);
         }
@@ -313,7 +315,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     }
     const index = Math.floor(click.y / 48)
 
-    const file = Source.Entity.selected(app)[index]
+    const file = Source.Entity.selected(Info.app)[index]
 
     if (!file) return
 
@@ -394,7 +396,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       const contentX = scrollXRef.current + cursorX
 
       // Calculate new scale based on scroll direction and user preference
-      let newScale = app.timeline.isScrollReversed
+      let newScale = Info.app.timeline.isScrollReversed
         ? event.deltaY < 0
           ? Info.decreasedTimelineScale()
           : Info.increasedTimelineScale()
@@ -508,8 +510,8 @@ export function Canvas({ timeline }: Canvas.Props) {
   ])
 
   const getPixelPosition = useCallback((timestamp: number) => {
-    return Math.round(((timestamp - app.timeline.frame.min) / (app.timeline.frame.max - app.timeline.frame.min)) * Info.width) - scrollXRef.current
-  }, [scrollXRef.current, Info.width, app.timeline.frame])
+    return Math.round(((timestamp - Info.app.timeline.frame.min) / (Info.app.timeline.frame.max - Info.app.timeline.frame.min)) * Info.width) - scrollXRef.current
+  }, [scrollXRef.current, Info.width, Info.app.timeline.frame])
 
   const handleContextMenu = useCallback((event: MouseEvent) => {
     if (!timeline.current) {
@@ -518,10 +520,10 @@ export function Canvas({ timeline }: Canvas.Props) {
 
     const index = Math.floor((event.clientY + scrollYRef.current - timeline.current.getBoundingClientRect().top) / 48);
 
-    const file = Source.Entity.selected(app)[index] ?? null;
+    const file = Source.Entity.selected(Info.app)[index] ?? null;
 
     setTarget(file);
-  }, [setTarget, timeline, app.timeline.filter, ...app.target.files]);
+  }, [setTarget, timeline, Info.app.timeline.filter, ...Info.app.target.files]);
 
   const Menu = useCallback(() => {
     if (!target) {

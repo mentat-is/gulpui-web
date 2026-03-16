@@ -213,7 +213,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const canvasWidth = this.ctx.canvas.width;
 
     this.info.app.target.links.forEach((link) => {
-      if (link.doc_ids.some(id => !Source.Entity.id(this.info.app, Doc.Entity.id(this.info.app, id)?.['gulp.source_id'])?.selected))
+      if (link.doc_ids.some(id => !Source.Entity.selected(this.info.app).find(s => s.id === Doc.Entity.id(this.info.app, id)?.['gulp.source_id'])))
         return
 
       const { dots } = this.calcDots(link)
@@ -351,6 +351,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     const canvasWidth = this.ctx.canvas.width;
 
     for (const id of flagged) {
+      const doc = Doc.Entity.id(this.info.app, id);
+      if (!doc) continue;
+      const source = Source.Entity.selected(this.info.app).find(s => s.id === doc['gulp.source_id']);
+      if (!source) continue;
+
       const { y, t, o } = this.getYForDoc(id);
 
       const x = this.getPixelPosition(t + o);
@@ -578,7 +583,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
       const x = this.getPixelPosition(
         Internal.Transformator.toTimestamp(e['@timestamp']) +
-        (Source.Entity.selected(this.info.app)[index]?.settings.offset || 0),
+        (Source.Entity.id(this.info.app, e['gulp.source_id'])?.settings.offset || 0),
       )
       const y = index * 48 + 20 - this.scrollY || 0
       const color =
@@ -780,10 +785,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
     if (!file) return
 
+    const selected = Source.Entity.selected(this.info.app);
+    const index = selected.findIndex((f) => f.id === file.id);
+
+    if (index === -1) return;
+
     this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     this.ctx.fillRect(
       0,
-      Source.Entity.selected(this.info.app).findIndex((f) => f.id === file.id) * 48 +
+      index * 48 +
       23 -
       this.scrollY,
       window.innerWidth,

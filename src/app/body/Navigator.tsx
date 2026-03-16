@@ -240,7 +240,6 @@ export function Navigator({
   }
 
   const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setScrollY(-26)
     Info.setTimelineFilter(e.target.value)
   }
 
