@@ -57,6 +57,9 @@ export function FilterFileBanner({
   const [manualContent, setManualContent] = useState('')
   const [isManual, setIsManual] = useState<boolean>(!!initQuery?.isManual)
 
+  const [keys, setKeys] = useState<string[]>(initKeys ?? [])
+  const [fieldTypeMap, setFieldTypeMap] = useState<Record<string, string>>({})
+
   // Refs for change tracking
   const isFirstRun = useRef(true)
   const prevFileIds = useRef(files.map(f => f.id).sort().join(','))
@@ -75,7 +78,7 @@ export function FilterFileBanner({
     if (q.raw)
       return JSON.stringify(q.raw, null, 2);
 
-    return JSON.stringify(Filter.Entity.query({ ...q, isManual: false }), null, 2)
+    return JSON.stringify(Filter.Entity.query({ ...q, isManual: false, fieldTypeMap } as any), null, 2)
   }
 
   /**
@@ -85,7 +88,7 @@ export function FilterFileBanner({
   const resetToCleanBase = (targetFiles: Source.Type[]) => {
     const cleanBase = getCleanBase(targetFiles)
     setQuery(cleanBase);
-    setManualContent(JSON.stringify(Filter.Entity.query(cleanBase), null, 2));
+    setManualContent(JSON.stringify(Filter.Entity.query({ ...cleanBase, fieldTypeMap } as any), null, 2));
   }
 
   // -- Event Handlers --
@@ -156,8 +159,6 @@ export function FilterFileBanner({
     // Note: Subsequent updates are handled via handleSourceChange, not here.
   }, [files, initQuery, initSources, Info])
 
-  const [keys, setKeys] = useState<string[]>(initKeys ?? [])
-
   // -- Keys Fetching --
   useEffect(() => {
     if (initKeys?.length) {
@@ -168,13 +169,20 @@ export function FilterFileBanner({
     let cancelled = false
       ; (async () => {
         const set = new Set<string>()
+        const map: Record<string, string> = {}
         await Promise.all(
           files.map(async file => {
             const fileKeys = await Info.event_keys(file)
-            Object.keys(fileKeys).forEach(k => set.add(k))
+            Object.entries(fileKeys).forEach(([k, t]) => {
+              set.add(k)
+              map[k] = t as string
+            })
           })
         )
-        if (!cancelled) setKeys([...set])
+        if (!cancelled) {
+          setKeys([...set])
+          setFieldTypeMap(map)
+        }
       })()
 
     return () => { cancelled = true }
@@ -232,7 +240,7 @@ export function FilterFileBanner({
   // -- Render Components --
 
   const getQueryWithFlaggedEvents = useCallback(() => {
-    const baseQuery = Filter.Entity.query(query)
+    const baseQuery = Filter.Entity.query({ ...query, fieldTypeMap } as any)
     if (flaggedOnly) {
       const operation = Operation.Entity.selected(app);
       const flaggedEvents = Doc.Entity.flag.getDocIds(app, operation?.id);
@@ -243,7 +251,7 @@ export function FilterFileBanner({
       }
     }
     return baseQuery
-  }, [query, flaggedOnly, app])
+  }, [query, flaggedOnly, app, fieldTypeMap])
 
   const Done = useMemo(
     () => (
@@ -291,7 +299,7 @@ export function FilterFileBanner({
     if (!finalQuery) return
 
     setIsPreviewLoading(true)
-    Info.preview_query(finalQuery)
+    Info.preview_query({...finalQuery , fieldTypeMap} as any)
       .then(({ docs, total_hits }) => {
         if (total_hits > 0) {
           spawnBanner(
