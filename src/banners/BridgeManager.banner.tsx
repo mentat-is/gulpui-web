@@ -116,6 +116,22 @@ export namespace BridgeManager {
 				.catch(() => toast.error("Failed to create task"));
 		};
 
+		const handleCheckStatus = (bridge_id: string) => {
+			setLoading(true);
+			Info.check_bridge_status(bridge_id)
+				.then((res: any) => {
+					if (res) {
+						toast.success("Bridge status checked");
+						console.log(`res: ${res}`)
+						setBridges((prev) => prev?.map((b) => (b.id === bridge_id ? { ...b, status: res.bridge_status } : b)) || null);
+					} else {
+						toast.error("Failed to check bridge status");
+					}
+				})
+				.catch(() => toast.error("Failed to check bridge status"))
+				.finally(() => setLoading(false));
+		};
+
 		const taskColumns: SummaryTableColumn<any>[] = [
 			{
 				key: "id",
@@ -203,9 +219,20 @@ export namespace BridgeManager {
 							<Stack dir="column" gap={8} ai="stretch" style={{ padding: 12, backgroundColor: "var(--background-100)", borderRadius: 8, border: "1px solid var(--gray-alpha-400)" }}>
 								<Stack dir="row" jc="space-between" ai="center">
 									<span style={{ fontWeight: 600, color: "var(--gray-900)" }}>Bridge Connection</span>
-									<Badge color={selectedBridge.status === "ready" || selectedBridge.status === "connected" ? "green" : selectedBridge.status === "error" ? "red" : "gray"}>
-										{selectedBridge.status || "Unknown"}
-									</Badge>
+									<Stack dir="row" gap={4} ai="center">
+										<Badge color={selectedBridge.status === "ready" || selectedBridge.status === "connected" ? "green" : selectedBridge.status === "error" ? "red" : "gray"}>
+											{selectedBridge.status || "Unknown"}
+										</Badge>
+										<Button
+											onClick={() => handleCheckStatus(selectedBridge.id)}
+											variant="tertiary"
+											shape="icon"
+											icon="RefreshClockwise"
+											loading={loading}
+											style={{ height: 22, width: 22, minHeight: 22 }}
+											title="Check bridge status"
+										/>
+									</Stack>
 								</Stack>
 								<Stack dir="row" gap={8} ai="center">
 									<Icon name="Link" size={14} style={{ color: "var(--gray-500)" }} />

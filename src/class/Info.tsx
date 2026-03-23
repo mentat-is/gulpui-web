@@ -485,8 +485,14 @@ export class Info implements InfoProps {
 	stop_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
 		api<any>("/stop_ingestion", {
 			method: "POST",
-			query: { req_id },
-			body: { bridge_task_id },
+			query: { req_id, },
+			body:  `"${bridge_task_id}"`,
+			...options
+		});
+	check_bridge_status = (bridge_id: string, req_id?: string, options?: any) =>
+		api<any>("/get_bridge_status", {
+			method: "GET",
+			query: { req_id, bridge_id },
 			...options
 		});
 
