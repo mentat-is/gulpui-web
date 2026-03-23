@@ -77,7 +77,7 @@ export class DefaultEngine implements Engine.Interface<any> {
       if (x === lastRenderedX) continue;
       lastRenderedX = x;
 
-      const code = Refractor.any.toNumber(event[file.settings.field]);
+      const code = Refractor.any.toNumber(Refractor.get(event, file.settings.field));
       this.renderer.ctx.fillStyle = Color.Entity.gradient(file.settings.render_color_palette, code, range);
 
       this.renderer.ctx.fillRect(x, y, 1, 47);
@@ -111,7 +111,7 @@ export class DefaultEngine implements Engine.Interface<any> {
     };
 
     for (let i = skip; i < events.length; i++) {
-      const value = Refractor.any.toNumber(events[i][file.settings.field]);
+      const value = Refractor.any.toNumber(Refractor.get(events[i], file.settings.field));
       if (value > range.max) range.max = value;
       if (value < range.min) range.min = value;
     }

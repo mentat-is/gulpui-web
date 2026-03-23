@@ -395,7 +395,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
 
   const background = useMemo(() => {
     const range = RenderEngine[CacheKey].range.get(event['gulp.source_id']) ?? MinMaxBase;
-    const code = Refractor.any.toNumber(event[file.settings.field]);
+    const code = Refractor.any.toNumber(Refractor.get(event, file.settings.field));
     return Color.Entity.gradient(file.settings.render_color_palette, code, range);
   }, [event, app.target.files]);
 

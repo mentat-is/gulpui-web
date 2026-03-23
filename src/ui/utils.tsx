@@ -165,7 +165,7 @@ export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngin
   file: Source.Type,
   event: Doc.Type,
 ): number {
-  let key: unknown = event[file.settings.field]
+  let key: unknown = Refractor.get(event, file.settings.field)
 
   if (typeof key === 'object' && key !== null) {
     key = Object.values(key).reduce((sum, value) => {
@@ -294,6 +294,33 @@ export class Refractor {
           return result;
       }
     }
+  }
+
+  /**
+   * Safe nested property accessor using dot notation.
+   * @param obj Object to traverse
+   * @param path Dot-separated path (e.g. "gulp.unmapped.rempip")
+   * @returns Value at path or undefined
+   */
+  public static get = (obj: any, path: string): any => {
+    if (!path || !obj) return undefined;
+    if (obj[path] !== undefined) return obj[path];
+
+    const parts = path.split('.');
+    for (let i = parts.length - 1; i > 0; i--) {
+      const head = parts.slice(0, i).join('.');
+      const tail = parts.slice(i).join('.');
+      if (obj[head] !== undefined) {
+        return Refractor.get(obj[head], tail);
+      }
+    }
+
+    let current = obj;
+    for (const part of parts) {
+      if (current === null || current === undefined) return undefined;
+      current = current[part];
+    }
+    return current;
   }
 
   /**

@@ -10,7 +10,7 @@ import { Note } from './Note'
 import { User } from './User'
 import { Glyph } from './Glyph'
 import { Engine } from '@/class/Engine.dto'
-import { generateUUID } from '@/ui/utils'
+import { generateUUID, Refractor } from '@/ui/utils'
 import { Request } from './Request'
 import { Application } from '@/context/Application.context'
 import { Button } from '@/ui/Button'
@@ -148,7 +148,7 @@ export namespace Source {
 
     public static isEventKeyFetched = (app: App.Type, id: Source.Type | Source.Id, keys: Array<keyof Doc.Type> = []) => {
       const file = Source.Entity.id(app, id);
-      return Source.Entity.events(app, file).slice(0, 100).every(e => [...keys, file.settings.field].every(k => typeof e[k] !== 'undefined'));
+      return Source.Entity.events(app, file).slice(0, 100).every(e => [...keys, file.settings.field].every(k => typeof Refractor.get(e, k) !== 'undefined'));
     };
 
     public static context = (app: App.Type, file: Source.Type) =>
