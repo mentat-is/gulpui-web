@@ -65,7 +65,7 @@ function _({ children }: Extension.Provider.Props) {
 };
 
 export namespace Extension {
-  export type Type = 'menu' | 'banner';
+  export type Type = 'menu' | 'banner' | 'send_data';
 
   export interface Interface {
     display_name: string,

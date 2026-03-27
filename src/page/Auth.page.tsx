@@ -30,7 +30,7 @@ export namespace Auth {
     const { spawnBanner, Info, app, spawnDialog } = Application.use()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
-    const [password, setPassword] = useState<string>('admin')
+    const [password, setPassword] = useState<string>('')
     const [loading, setLoading] = useState<boolean>(false)
     const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
@@ -271,7 +271,7 @@ export namespace Auth {
           variant='highlighted'
           icon='KeyRound'
           label='Password'
-          placeholder='admin'
+          placeholder='password'
           type='password'
           value={password}
           disabled={!!app.general.user}

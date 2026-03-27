@@ -13,6 +13,7 @@ import { LinkFunctionality, NoteFunctionality } from '@/banners/Collab.functiona
 import { Collab } from '@/components/CollabList'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/ui/ContextMenu'
 import { FilterFileBanner } from '@/banners/FilterFile.banner'
+import { SendData } from '@/banners/SendData.banner'
 import { toast } from 'sonner'
 import { JsonView, allExpanded, darkStyles } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
@@ -41,6 +42,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     return null;
   }
   const { Info, app, spawnBanner } = Application.use()
+  const { extensions } = Extension.use()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
   const [notes, setNotes] = useState<Note.Type[]>(Doc.Entity.notes(app, event));
@@ -263,6 +265,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     )
   }, [spawnBanner, event, json]);
 
+  const handleSendData = useCallback(() => {
+    spawnBanner(<SendData.Banner event={event} />)
+  }, [spawnBanner, event]);
+
   const handleConnectLink = useCallback(() => {
     spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)
   }, [spawnBanner, event]);
@@ -328,6 +334,15 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
               >
                 Enrich
               </Button>
+              {Object.values(extensions).some(ext => ext.type.includes('send_data')) && (
+                <Button
+                  onClick={handleSendData}
+                  variant="glass"
+                  icon="Send"
+                >
+                  Send Data
+                </Button>
+              )}
               <Button
                 onClick={handleConnectLink}
                 variant="secondary"
