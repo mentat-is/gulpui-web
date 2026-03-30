@@ -300,7 +300,7 @@ export namespace Permissions {
                   )?.[0] as string),
               },
               setLoading,
-              body: permissions.split(',').map((v) => v.trim())
+              body: {"permission": permissions.split(',').map((v) => v.trim().toLowerCase())}
             },
             () => spawnBanner(<Permissions.Banner />),
           )
