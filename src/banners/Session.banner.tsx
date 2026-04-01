@@ -26,7 +26,7 @@ export namespace Session {
       const [name, setName] = useState<string>('')
       const [color, setColor] = useState<string>(Default.Color.OPERATION)
       const [icon, setIcon] = useState<Glyph.Id | null>(null);
-      const { Info, app, scrollX, scrollY } = Application.use();
+      const { Info, app } = Application.use();
       const [loading, setLoading] = useState<boolean>(false)
 
       const changenameHandler = (

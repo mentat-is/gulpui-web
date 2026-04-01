@@ -1,4 +1,5 @@
 import { debounce } from "lodash";
+import { scrollStore } from "@/store/scroll.store";
 import { Default } from "@/dto/Dataset";
 import { generateUUID, NodeFile, Refractor } from "@/ui/utils";
 import { Logger } from "@/dto/Logger.class";
@@ -170,20 +171,12 @@ interface InfoProps {
 	app: App.Type;
 	setInfo: React.Dispatch<React.SetStateAction<App.Type>>;
 	timeline: React.RefObject<HTMLDivElement>;
-	scrollX: number;
-	scrollY: number;
-	setScrollX: SetState<number>;
-	setScrollY: SetState<number>;
 }
 
 export class Info implements InfoProps {
 	app: App.Type;
 	setInfo: SetState<App.Type>;
 	timeline: React.RefObject<HTMLDivElement>;
-	scrollX: number;
-	scrollY: number;
-	setScrollX: SetState<number>;
-	setScrollY: SetState<number>;
 
 	private static _latestInstance: Info | null = null;
 
@@ -191,18 +184,10 @@ export class Info implements InfoProps {
 		app,
 		setInfo,
 		timeline,
-		setScrollX,
-		setScrollY,
-		scrollX,
-		scrollY,
 	}: InfoProps) {
 		this.app = app;
 		this.setInfo = setInfo;
 		this.timeline = timeline;
-		this.scrollX = scrollX;
-		this.scrollY = scrollY;
-		this.setScrollX = setScrollX;
-		this.setScrollY = setScrollY;
 		Info._latestInstance = this;
 	}
 
@@ -1045,8 +1030,8 @@ export class Info implements InfoProps {
 		Doc.Entity.clearIndex();
 
 		// Reset viewport to default position (like first render)
-		this.setScrollX(0);
-		this.setScrollY(-26);
+		scrollStore.setScrollX(0);
+		scrollStore.setScrollY(-26);
 		this.setTimelineScale(1);
 		this.setInfoByKey(null, "timeline", "target");
 
@@ -2048,7 +2033,7 @@ export class Info implements InfoProps {
 				},
 				filter: this.app.timeline.filter,
 				target: this.app.timeline.target,
-				scroll: scroll ?? { x: this.scrollX, y: this.scrollY },
+				scroll: scroll ?? { x: scrollStore.getX(), y: scrollStore.getY() },
 			},
 			filters: this.app.target.filters,
 			hidden: this.app.hidden,
@@ -2132,8 +2117,8 @@ export class Info implements InfoProps {
 		this.setInfoByKey(session.timeline.frame, "timeline", "frame");
 		this.setInfoByKey(session.timeline.filter, "timeline", "filter");
 		setTimeout(() => {
-			this.setScrollX(session.timeline.scroll.x);
-			this.setScrollY(session.timeline.scroll.y);
+			scrollStore.setScrollX(session.timeline.scroll.x);
+			scrollStore.setScrollY(session.timeline.scroll.y);
 			this.setInfoByKey(session.timeline.scale, "timeline", "scale");
 		}, 100);
 		this.setInfoByKey(

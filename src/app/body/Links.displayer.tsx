@@ -1,4 +1,5 @@
 import { Application } from '@/context/Application.context'
+import { useScroll } from '@/store/scroll.store'
 import { Doc } from '@/entities/Doc'
 import { Link } from '@/entities/Link'
 import { Source } from '@/entities/Source'
@@ -27,7 +28,8 @@ interface LinksDisplayerProps {
  * only runs after scroll/zoom movement stops, keeping performance optimal.
  */
 export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
-  const { app, scrollY } = Application.use()
+  const { app } = Application.use()
+  const { y: scrollY } = useScroll()
 
   const [points, setPoints] = useState<Array<{ link: Link.Type; x: number; y: number }>>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);

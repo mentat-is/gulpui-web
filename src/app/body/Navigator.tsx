@@ -1,6 +1,7 @@
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
+import { useScroll, scrollStore } from '@/store/scroll.store'
 import { ChangeEvent, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom'
@@ -35,7 +36,8 @@ export function Navigator({
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, setScrollX, scrollX, setHighlightsOverlay, setScrollY } = Application.use()
+  const { Info, app, spawnDialog, setHighlightsOverlay } = Application.use()
+  const { x: scrollX } = useScroll()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
@@ -182,7 +184,7 @@ export function Navigator({
 
   const resetScaleAndScroll = () => {
     Info.setTimelineScale(1)
-    setScrollX(0)
+    scrollStore.setScrollX(0)
   }
 
   const zoom = (out = false) => {
@@ -200,7 +202,7 @@ export function Navigator({
     const left = scaledOffset - centerOffset
 
     Info.setTimelineScale(clampedScale)
-    setScrollX(x => Math.round(x + left))
+    scrollStore.setScrollX(x => Math.round(x + left))
   }
 
   const handleControllers = (event: KeyboardEvent) => {

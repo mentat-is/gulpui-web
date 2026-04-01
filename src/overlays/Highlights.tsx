@@ -1,4 +1,5 @@
 import s from './Highlights.module.css';
+import { useScroll } from '@/store/scroll.store';
 import { Icon } from '@impactium/icons';
 import { useMemo, useRef, useState } from 'react';
 import { MinMax, Range } from '@/class/Info';
@@ -23,7 +24,8 @@ export namespace Highlights {
     }
 
     export function Overlay({ className, ...props }: Highlights.Create.Overlay.Props) {
-      const { Info, setHighlightsOverlay, scrollX, scrollY } = Application.use();
+      const { Info, setHighlightsOverlay } = Application.use();
+      const { x: scrollX, y: scrollY } = useScroll();
       const [icon, setIcon] = useState<Glyph.Id | null>(Glyph.List.keys().next().value!);
       const [name, setName] = useState<string>('');
       const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
@@ -233,7 +235,8 @@ export namespace Highlights {
   }
 
   export function Component({ highlight, fixed, layoutWidth, frame = {}, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
-    const { Info, app, scrollX } = Application.use();
+    const { Info, app } = Application.use();
+    const { x: scrollX } = useScroll();
 
     if (layoutWidth) {
       native = true;

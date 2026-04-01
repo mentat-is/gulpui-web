@@ -1,5 +1,6 @@
 import { DragDealer } from '@/class/dragDealer.class'
 import { Application } from '@/context/Application.context'
+import { scrollStore } from '@/store/scroll.store'
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto'
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
@@ -33,16 +34,16 @@ export function useKeyHandler(key: string) {
 }
 
 export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
-  const { Info, setScrollX, setScrollY, highlightsOverlay } = Application.use()
+  const { Info, highlightsOverlay } = Application.use()
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 
   const increaseScrollY = (newY: number) => {
-    setScrollY((y) => Math.round(y + newY))
+    scrollStore.setScrollY((y) => Math.round(y + newY))
   }
 
   const dragState = useRef(
-    new DragDealer({ info: Info, timeline, increaseScrollY, setScrollX }),
+    new DragDealer({ info: Info, timeline, increaseScrollY, setScrollX: scrollStore.setScrollX }),
   )
 
   useEffect(() => {
@@ -50,7 +51,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
       info: Info,
       timeline,
       increaseScrollY,
-      setScrollX
+      setScrollX: scrollStore.setScrollX
     })
   }, [timeline])
 
@@ -108,7 +109,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
 
       if (!isFinite(scale)) return toast('Selected frame too small')
 
-      setScrollX(x => (x + min) * (scale / Info.app.timeline.scale))
+      scrollStore.setScrollX(x => (x + min) * (scale / Info.app.timeline.scale))
       setTimeout(() => {
         Info.setTimelineScale(scale)
       }, 10)

@@ -1,4 +1,5 @@
 import { Application } from '@/context/Application.context'
+import { useScroll, scrollStore } from '@/store/scroll.store'
 import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import s from './styles/Canvas.module.css'
@@ -36,7 +37,8 @@ export function Canvas({ timeline }: Canvas.Props) {
   const canvas_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const overlay_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement);
   const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
-  const { app, banner, spawnDialog, scrollX, scrollY, setScrollX, setScrollY, Info, dialog, highlightsOverlay } = Application.use()
+  const { app, banner, spawnDialog, Info, dialog, highlightsOverlay } = Application.use()
+  const { x: scrollX, y: scrollY } = useScroll()
   const [target, setTarget] = useState<Source.Type | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, [
@@ -55,10 +57,10 @@ export function Canvas({ timeline }: Canvas.Props) {
 
   const syncScrollToContext = useMemo(
     () => debounce((x: number, y: number) => {
-      setScrollX(x);
-      setScrollY(y);
+      scrollStore.setScrollX(x);
+      scrollStore.setScrollY(y);
     }, 16), // 60fps circa
-    [setScrollX, setScrollY]
+    []
   );
 
   useEffect(() => {
@@ -87,7 +89,7 @@ export function Canvas({ timeline }: Canvas.Props) {
       const delta = oldWidth / newWidth
 
       Info.setTimelineScale(app.timeline.scale * delta)
-      setScrollX((s) => s - newWidth + oldWidth)
+      scrollStore.setScrollX((s) => s - newWidth + oldWidth)
       return
     } else {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight)
@@ -410,7 +412,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
       // Update scale and recompute scrollX to keep cursor position anchored
       Info.setTimelineScale(newScale)
-      setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX))
+      scrollStore.setScrollX(Math.round(contentX * (newScale / oldScale) - cursorX))
     },
     [wrapper_ref, banner, Info, bounding],
   )

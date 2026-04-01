@@ -18,8 +18,6 @@ function _({ children }: { children: ReactNode }) {
   const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />)
   const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
   const [highlightsOverlay, setHighlightsOverlay] = useState<React.ReactNode>(null);
-  const [scrollX, setScrollX] = useState<number>(0);
-  const [scrollY, setScrollY] = useState<number>(-26);
 
   /**
    * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
@@ -34,14 +32,10 @@ function _({ children }: { children: ReactNode }) {
    */
   const infoRef = useRef<Info | null>(null);
   if (!infoRef.current) {
-    infoRef.current = new Info({ app, setInfo, timeline, scrollX, scrollY, setScrollX, setScrollY });
+    infoRef.current = new Info({ app, setInfo, timeline });
   } else {
     infoRef.current.app = app;
     infoRef.current.setInfo = setInfo;
-    infoRef.current.scrollX = scrollX;
-    infoRef.current.scrollY = scrollY;
-    infoRef.current.setScrollX = setScrollX;
-    infoRef.current.setScrollY = setScrollY;
   }
   const instance = infoRef.current;
 
@@ -160,10 +154,6 @@ function _({ children }: { children: ReactNode }) {
     spawnDialog,
     dialog,
     app,
-    scrollX,
-    scrollY,
-    setScrollX,
-    setScrollY,
     setInfo,
     Info: instance,
     timeline,
@@ -229,10 +219,6 @@ export namespace Application {
       spawnDialog: (dialog: React.ReactNode) => void
       dialog: React.ReactNode
       app: App.Type
-      scrollX: number;
-      scrollY: number;
-      setScrollX: SetState<number>;
-      setScrollY: SetState<number>;
       setInfo: (info: App.Type) => void
       Info: Info
       timeline: React.RefObject<HTMLDivElement>

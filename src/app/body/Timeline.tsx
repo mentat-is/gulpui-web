@@ -1,4 +1,5 @@
 import { Application } from '@/context/Application.context';
+import { useScroll, scrollStore } from '@/store/scroll.store';
 import { Algorhithm, getTimestamp } from '@/ui/utils';
 import { Source } from '@/entities/Source';
 import { Navigator } from './Navigator';
@@ -10,17 +11,18 @@ import { Canvas } from './Canvas';
 import { MINUTE } from '@/dto';
 
 export function Timeline() {
-  const { app, Info, timeline, setScrollX, scrollX, scrollY, setScrollY } = Application.use()
+  const { app, Info, timeline } = Application.use()
+  const { x: scrollX, y: scrollY } = useScroll()
 
   const focusEvent = (timestamp: number, onLeft = false, file_id?: Source.Id) => {
     const instance = getAlgothitmInstance()
 
-    setScrollX(onLeft ? instance.abs_x_from_timestamp(timestamp) : instance.center_scroll_from_timestamp(timestamp))
+    scrollStore.setScrollX(onLeft ? instance.abs_x_from_timestamp(timestamp) : instance.center_scroll_from_timestamp(timestamp))
     if (file_id) {
       const canvas = document.getElementById('canvas') as HTMLCanvasElement
       if (!canvas) return
 
-      setScrollY(Source.Entity.getHeight(app, file_id, 0) - 26 - canvas.clientHeight / 2)
+      scrollStore.setScrollY(Source.Entity.getHeight(app, file_id, 0) - 26 - canvas.clientHeight / 2)
     }
   }
 

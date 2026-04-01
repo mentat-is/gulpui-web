@@ -1,5 +1,6 @@
 import { RenderEngine } from '@/class/RenderEngine'
 import { Application } from '@/context/Application.context'
+import { useScroll } from '@/store/scroll.store'
 import { XY } from '@/dto/XY.dto'
 import { Note } from '@/entities/Note';
 import { Source } from '@/entities/Source';
@@ -15,7 +16,8 @@ export function NotesDisplayer({
   getPixelPosition,
   self
 }: NotesDisplayerProps) {
-  const { app, scrollY } = Application.use()
+  const { app } = Application.use()
+  const { y: scrollY } = useScroll()
   const [notes, setNotes] = useState<Note.Type[]>([]);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
