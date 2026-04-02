@@ -763,10 +763,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       ? ' | Ingesting...'
       : ' | Loading...';
 
+    const context = Source.Entity.context(this.info.app, file);
     const lines: Array<{ text: string; dy: number; color: string }> = [
       { text: file.name + suffix, dy: 0, color: Color.Themer.theme.FONT_ACCENT },
       { text: Source.Entity.events(this.info.app, file).length.toString(), dy: lineHeight, color: Color.Themer.theme.FONT_ACCENT },
-      { text: `${file.total.toString()} | ${Source.Entity.context(this.info.app, file).name}` + suffix, dy: -lineHeight, color: Color.Themer.theme.FONT_SECOND },
+      { text: `${file.total.toString()} | ${context?.name || 'Unknown'}` + suffix, dy: -lineHeight, color: Color.Themer.theme.FONT_SECOND },
     ];
 
     this.ctx.font = '12px sans-serif';

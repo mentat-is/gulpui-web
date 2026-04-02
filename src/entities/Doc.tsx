@@ -10,6 +10,7 @@ import { Internal } from "./addon/Internal";
 import { toast } from "sonner";
 import { Icon } from "@impactium/icons";
 import { Logger } from "@/dto/Logger.class";
+import { DataWorker } from "@/workers/DataWorker.class";
 
 export namespace Doc {
   export const name = 'Doc'
@@ -177,6 +178,57 @@ export namespace Doc {
       })
 
       return app.target.events
+    }
+
+    /**
+     * Asynchronous version of `add` that offloads the heavy sorting to the Web Worker.
+     * Prevents main thread freeze during massive document insertions.
+     */
+    public static addAsync = async (app: App.Type, events: Doc.Type[]) => {
+      const sources = new Set<Source.Id>();
+
+      const eventsBySource = new Map<Source.Id, Map<Doc.Id, Doc.Type>>();
+      events.forEach((e) => {
+        const sourceId = e['gulp.source_id'];
+        sources.add(sourceId);
+        if (!eventsBySource.has(sourceId)) {
+          eventsBySource.set(sourceId, new Map());
+        }
+        eventsBySource.get(sourceId)!.set(e._id, e);
+      });
+
+      const promises = Array.from(sources).map(async (id) => {
+        const existingEvents = Doc.Entity.get(app, id);
+        const newEventsMap = eventsBySource.get(id)!;
+        let hasChanges = false;
+
+        for (let i = 0; i < existingEvents.length; i++) {
+          const evt = existingEvents[i];
+          if (newEventsMap.has(evt._id)) {
+            const updated = newEventsMap.get(evt._id)!;
+            existingEvents[i] = updated;
+            Doc.Entity._index.set(updated._id, updated);
+            newEventsMap.delete(evt._id);
+            hasChanges = true;
+          }
+        }
+
+        if (newEventsMap.size > 0) {
+          for (const evt of newEventsMap.values()) {
+            Doc.Entity._index.set(evt._id, evt);
+          }
+          existingEvents.push(...newEventsMap.values());
+          hasChanges = true;
+        }
+
+        if (hasChanges) {
+          const sorted = await DataWorker.sortEventsAsync(existingEvents);
+          app.target.events.set(id, sorted);
+        }
+      });
+
+      await Promise.all(promises);
+      return app.target.events;
     }
 
     public static timestamp = (event: Doc.Type) => Internal.Transformator.toTimestamp(event['@timestamp']);

@@ -179,6 +179,7 @@ export class Info implements InfoProps {
 	timeline: React.RefObject<HTMLDivElement>;
 
 	private static _latestInstance: Info | null = null;
+	public ingestionProgress = new Map<Source.Id, number>();
 
 	constructor({
 		app,
@@ -331,6 +332,8 @@ export class Info implements InfoProps {
 				this.events_reset_in_file(file);
 				this.setLoading(req_id, file.id);
 			}
+			const bufferedEvents: Doc.Type[] = [];
+
 			const sid = SmartSocket.Class.instance.con(
 				SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 				(m) =>
@@ -338,15 +341,20 @@ export class Info implements InfoProps {
 					this.app.general.loadings.byRequestId.has(req_id),
 				(m) => {
 					const events = Doc.Entity.normalize(m.payload.docs ?? []);
-
-					this.events_add(events);
+					bufferedEvents.push(...events);
 
 					if (m.payload.last) {
-						this.delLoading(req_id);
-						SmartSocket.Class.instance.coff(
-							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-							sid,
-						);
+						(async () => {
+							if (bufferedEvents.length > 0) {
+								await this.events_add_async(bufferedEvents);
+							}
+							
+							this.delLoading(req_id);
+							SmartSocket.Class.instance.coff(
+								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+								sid,
+							);
+						})();
 					}
 				},
 			);
@@ -606,6 +614,8 @@ export class Info implements InfoProps {
 					return;
 				}
 
+				const bufferedEvents: Doc.Type[] = [];
+
 				const sid = SmartSocket.Class.instance.con(
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 					(m) =>
@@ -613,14 +623,19 @@ export class Info implements InfoProps {
 						this.app.general.loadings.byRequestId.has(req_id),
 					(m) => {
 						const events = Doc.Entity.normalize(m.payload.docs ?? []);
+						bufferedEvents.push(...events);
 
-						this.events_add(events);
 						if (m.payload.last) {
-							this.delLoading(req_id);
-							SmartSocket.Class.instance.coff(
-								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-								sid,
-							);
+							(async () => {
+								if (bufferedEvents.length > 0) {
+									await this.events_add_async(bufferedEvents);
+								}
+								this.delLoading(req_id);
+								SmartSocket.Class.instance.coff(
+									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+									sid,
+								);
+							})();
 						}
 					},
 				);
@@ -731,6 +746,8 @@ export class Info implements InfoProps {
 					return;
 				}
 
+				const bufferedEvents: Doc.Type[] = [];
+
 				const sid = SmartSocket.Class.instance.con(
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 					(m) =>
@@ -738,23 +755,29 @@ export class Info implements InfoProps {
 						this.app.general.loadings.byRequestId.has(req_id),
 					(m) => {
 						const events = Doc.Entity.normalize(m.payload.docs ?? []);
+						bufferedEvents.push(...events);
 
-						this.events_add(events);
 						if (m.payload.last) {
-							this.delLoading(req_id);
-							SmartSocket.Class.instance.coff(
-								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-								sid,
-							);
-							if (id) {
-								const file = Source.Entity.id(this.app, id);
-								const loadedCount = Doc.Entity.get(this.app, id).length;
-								if (file && loadedCount > file.total) {
-									file.total = loadedCount;
-									this.setInfoByKey([...this.app.target.files], 'target', 'files');
+							(async () => {
+								if (bufferedEvents.length > 0) {
+									await this.events_add_async(bufferedEvents);
 								}
-							}
-							this.render();
+								
+								this.delLoading(req_id);
+								SmartSocket.Class.instance.coff(
+									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+									sid,
+								);
+								if (id) {
+									const file = Source.Entity.id(this.app, id);
+									const loadedCount = Doc.Entity.get(this.app, id).length;
+									if (file && loadedCount > file.total) {
+										file.total = loadedCount;
+										this.setInfoByKey([...this.app.target.files], 'target', 'files');
+									}
+								}
+								this.render();
+							})();
 						}
 					},
 				);
@@ -1250,14 +1273,12 @@ export class Info implements InfoProps {
 						return;
 					}
 
-					console.log(m.payload, "814");
-					// [λ] Fix
-					const contexts = Refractor.array(
-						...this.app.target.contexts,
-						m.payload.obj as never,
+					console.log(m.payload, "814 context collab create");
+					this.setInfoByKey(
+						(prevContexts) => Refractor.array(...(prevContexts as any), m.payload.obj) as any,
+						"target",
+						"contexts",
 					);
-
-					this.setInfoByKey(contexts, "target", "contexts");
 				},
 			);
 		}
@@ -1272,15 +1293,16 @@ export class Info implements InfoProps {
 
 				this.setLoading(m.req_id, m.payload.obj.id as unknown as Source.Id);
 
-				// @ts-ignore
-				this.app.target.files = Refractor.array(
-					...this.app.target.files,
-					Source.Entity.normalize(this.app, m.payload.obj),
+				this.setInfoByKey(
+					(prevFiles) => Refractor.array(...(prevFiles as any), Source.Entity.normalize(this.app, m.payload.obj)) as any,
+					"target",
+					"files",
 				);
-
-				this.setInfoByKey(this.app.target.files, "target", "files");
 			},
 		);
+
+		const bufferedEvents: Doc.Type[] = [];
+		let accumulatedCount = 0;
 
 		const sid = SmartSocket.Class.instance.con(
 			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -1291,60 +1313,84 @@ export class Info implements InfoProps {
 				}
 
 				const events = Doc.Entity.normalize(m.payload.docs);
+				bufferedEvents.push(...events);
+				accumulatedCount += events.length;
 
 				const files = Refractor.array(...this.app.target.files);
-				const file = Source.Entity.id(files, events[0]["gulp.source_id"]);
+				const fileId = events[0]["gulp.source_id"] as Source.Id;
+				
+				// Update lightweight progress map
+				this.ingestionProgress.set(fileId, (this.ingestionProgress.get(fileId) || 0) + events.length);
 
-				this.events_add(events);
-
-				const all = Source.Entity.events(this.app, file.id);
-
-				const sorted = Doc.Entity.sort(all);
-
-				const exist = files.findIndex((f) => f.id === file.id);
-
-				const timestamp = {
-					min: sorted[sorted.length - 1].timestamp,
-					max: sorted[0].timestamp,
-				};
-
-				files[exist] = Source.Entity.normalize(this.app, {
-					...file,
-					timestamp,
-					nanotimestamp: {
-						min: Internal.Transformator.toNanos(timestamp.min),
-						max: Internal.Transformator.toNanos(timestamp.max),
-					},
-					total: all.length,
-					selected: true,
-				});
-
-				const frame: MinMax = {
-					min: Math.min(...files.map((f) => f.timestamp.min)),
-					max: Math.max(...files.map((f) => f.timestamp.max)),
-				};
-
-				this.setInfoByKey(files, "target", "files");
-				this.setInfoByKey(frame, "timeline", "frame");
+				const exist = files.findIndex((f) => f.id === fileId);
+				const file = files[exist];
 
 				if (m.payload.last) {
-					this.delLoading(m.req_id);
-					SmartSocket.Class.instance.coff(
-						SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-						sid,
-					);
-					toast.success(`Source ${file.name} has been ingested successfully`, {
-						description: `Total amount of documents is: ${Source.Entity.events(this.app, file.id).length}`,
-						richColors: true,
-						icon: <Icon name="Check" />,
-					});
+					(async () => {
+						// Batched addition of all incoming events at the end of ingestion
+						await this.events_add_async(bufferedEvents);
+
+						const all = Source.Entity.events(this.app, fileId);
+						// Worker sorted it in events_add_async
+
+						if (all.length === 0) {
+							this.delLoading(m.req_id);
+							return;
+						}
+
+						const timestamp = {
+							min: all[all.length - 1].timestamp,
+							max: all[0].timestamp,
+						};
+
+						// Finalize progress (clean up map)
+						this.ingestionProgress.delete(fileId);
+
+						if (exist !== -1 && file) {
+							files[exist] = Source.Entity.normalize(this.app, {
+								...file,
+								timestamp,
+								nanotimestamp: {
+									min: Internal.Transformator.toNanos(timestamp.min),
+									max: Internal.Transformator.toNanos(timestamp.max),
+								},
+								total: all.length,
+								selected: true,
+							});
+
+							const frame: MinMax = {
+								min: Math.min(...files.map((f) => f.timestamp.min)),
+								max: Math.max(...files.map((f) => f.timestamp.max)),
+							};
+
+							this.setInfoByKey(files, "target", "files");
+							this.setInfoByKey(frame, "timeline", "frame");
+						}
+
+						this.delLoading(m.req_id);
+						SmartSocket.Class.instance.coff(
+							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+							sid,
+						);
+						
+						if (file) {
+							toast.success(`Source ${file.name} has been ingested successfully`, {
+								description: `Total amount of documents is: ${all.length}`,
+								richColors: true,
+								icon: <Icon name="Check" />,
+							});
+						}
+					})();
 				} else {
-					toast.success(
-						`Has been added ${events.length} events to source ${file.name}`,
-						{
-							description: `There are ${all.length} events at this moment`,
-						},
-					);
+					if (file) {
+						toast.success(
+							`Buffering events...`,
+							{
+								description: `${accumulatedCount} events buffered for source ${file.name}`,
+								id: `ingest-toast-${file.id}`,
+							},
+						);
+					}
 				}
 			},
 		);
@@ -1402,6 +1448,11 @@ export class Info implements InfoProps {
 
 	events_add = (newEvents: Doc.Type[]) =>
 		this.setInfoByKey(Doc.Entity.add(this.app, newEvents), "target", "events");
+
+	events_add_async = async (newEvents: Doc.Type[]) => {
+		const newEventsMap = await Doc.Entity.addAsync(this.app, newEvents);
+		this.setInfoByKey(new Map(newEventsMap), "target", "events");
+	};
 
 	event_keys = async (file: Source.Type): Promise<Filter.Options> => {
 		if (!file) {
@@ -2664,16 +2715,17 @@ export class Info implements InfoProps {
 	}
 
 	setInfoByKey = <K extends keyof App.Type, S extends keyof App.Type[K]>(
-		value: App.Type[K][S],
+		value: App.Type[K][S] | ((prev: App.Type[K][S]) => App.Type[K][S]),
 		section: K,
 		key: S,
 	) => {
 		this.setInfo((_info) => {
+			const resolvedValue = typeof value === 'function' ? (value as any)(_info[section][key]) : value;
 			this.app = {
 				..._info,
 				[section]: {
 					..._info[section],
-					[key]: value,
+					[key]: resolvedValue,
 				},
 			};
 

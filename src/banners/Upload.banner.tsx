@@ -87,6 +87,8 @@ Object.values(FILE_SIGNATURES).forEach((array) => {
   })
 })
 
+import { useVirtualizer } from '@tanstack/react-virtual';
+
 const FilesList = React.memo(function FilesList(props: {
   files: File[]
   setFiles: SetState<File[]>
@@ -95,20 +97,55 @@ const FilesList = React.memo(function FilesList(props: {
   updateSettings: (filename: string, update: Partial<FileEntity.Settings>) => void
 }) {
   const { files, settings, progress, updateSettings } = props
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  const rowVirtualizer = useVirtualizer({
+    count: files.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 40,
+    overscan: 10,
+  })
 
   return (
-    <>
-      {files.map((file, i) => (
-        <FilePreview
-          key={file.name || i}
-          file={file}
-          setFiles={props.setFiles}
-          settings={settings[file.name] || { custom_parameters: {} }}
-          progress={progress[file.name]}
-          updateSettings={update => updateSettings(file.name, update)}
-        />
-      ))}
-    </>
+    <div
+      ref={parentRef}
+      style={{
+        height: '100%',
+        width: '100%',
+        overflow: 'auto',
+      }}
+    >
+      <div
+        style={{
+          height: `${rowVirtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const file = files[virtualRow.index];
+          return (
+            <FilePreview
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+              file={file}
+              setFiles={props.setFiles}
+              settings={settings[file.name] || { custom_parameters: {} }}
+              progress={progress[file.name]}
+              updateSettings={update => updateSettings(file.name, update)}
+            />
+          )
+        })}
+      </div>
+    </div>
   )
 })
 
@@ -140,13 +177,15 @@ export const ContextSelector = ({ app, context, setContext }: {
   )
 }
 
-export const FilePreview = React.memo(({ file, settings, updateSettings, progress, setFiles }: {
+export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
   file: File
   settings: FileEntity.Settings
   updateSettings: (update: Partial<FileEntity.Settings>) => void
   progress: number | undefined
   setFiles: SetState<File[]>
-}) => {
+  style?: React.CSSProperties
+  'data-index'?: number
+}>(({ file, settings, updateSettings, progress, setFiles, style, 'data-index': dataIndex }, ref) => {
   const { Info, app } = Application.use()
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
 
@@ -160,29 +199,38 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
     [app, settings.plugin, settings.method],
   )
 
-  useEffect(() => {
-    if (!settings.plugin) return
+  /**
+   * We removed the useEffects that were calling updateSettings during render.
+   * Plugin, Method, and Mapping defaults are now calculated either at file addition
+   * time or inside the specific selector components to avoid global re-render loops.
+   */
 
-    if (methods.length === 0) {
-      updateSettings({ method: undefined })
-    } else if (methods.length === 1) {
-      updateSettings({ method: methods[0] })
-    } else if (settings.method !== undefined && !methods.includes(settings.method)) {
-      updateSettings({ method: undefined })
+  const handleSettingsUpdate = (update: Partial<FileEntity.Settings>) => {
+    const finalUpdate = { ...update };
+
+    if (update.plugin) {
+      const currentMethods = Mapping.Entity.methods(app, update.plugin);
+      if (currentMethods.length === 1) {
+        finalUpdate.method = currentMethods[0];
+        const currentMappings = Mapping.Entity.mappings(app, update.plugin, currentMethods[0]);
+        if (currentMappings.length === 1) {
+          finalUpdate.mapping = currentMappings[0];
+        }
+      } else {
+        finalUpdate.method = undefined;
+        finalUpdate.mapping = undefined;
+      }
+    } else if (update.method) {
+      const currentMappings = Mapping.Entity.mappings(app, settings.plugin, update.method);
+      if (currentMappings.length === 1) {
+        finalUpdate.mapping = currentMappings[0];
+      } else {
+        finalUpdate.mapping = undefined;
+      }
     }
-  }, [settings.plugin, methods])
 
-  useEffect(() => {
-    if (!settings.plugin) return
-
-    if (mappings.length === 0 || !settings.method) {
-      updateSettings({ mapping: undefined })
-    } else if (mappings.length === 1) {
-      updateSettings({ mapping: mappings[0] })
-    } else if (settings.mapping && !mappings.includes(settings.mapping)) {
-      updateSettings({ mapping: undefined })
-    }
-  }, [settings.method, mappings])
+    updateSettings(finalUpdate);
+  };
 
   const loadPreview = async () => {
     const preview = await Info.file_ingest({
@@ -209,7 +257,7 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
   }
 
   return (
-    <Stack className={s.filePreview} gap={0} flex={0} pos='relative'>
+    <Stack ref={ref} style={style} data-index={dataIndex} className={s.filePreview} gap={0} flex={0} pos={style?.position || 'relative'}>
       {progress && <Progress value={progress} />}
       <Icon name={Default.Icon.SOURCE} />
       <TooltipProvider>
@@ -236,10 +284,10 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
         </Popover.Trigger>
         <Popover.Content style={{ overflow: 'auto', maxHeight: '50vh' }}>
           <Stack dir='column' ai='stretch'>
-            <Input value={settings.offset} onChange={fileOffsetInputChangeHandler} icon='LayoutShift' variant='highlighted' placeholder='0 milliseconds' label='Offset' />
-            <PluginSelector settings={settings} updateSettings={updateSettings} />
-            <MethodSelector settings={settings} updateSettings={updateSettings} methods={methods} />
-            <MappingSelector settings={settings} updateSettings={updateSettings} mappings={mappings} />
+            <Input value={settings.offset ?? 0} onChange={fileOffsetInputChangeHandler} icon='LayoutShift' variant='highlighted' placeholder='0 milliseconds' label='Offset' />
+            <PluginSelector settings={settings} updateSettings={handleSettingsUpdate} />
+            <MethodSelector settings={settings} updateSettings={handleSettingsUpdate} methods={methods} />
+            <MappingSelector settings={settings} updateSettings={handleSettingsUpdate} mappings={mappings} />
             
             <CustomParameters.Editor plugin={app.target.plugins.find(p => p.filename === settings.plugin)!} customParameters={settings.custom_parameters} setCustomParameters={setCustomParameters}/>
             <AdvancedPluginParams
@@ -259,7 +307,7 @@ export const FilePreview = React.memo(({ file, settings, updateSettings, progres
       <Button icon='X' variant='tertiary' shape='icon' onClick={() => setFiles(sources => sources.filter(source => source.name !== file.name))} />
     </Stack>
   )
-})
+}))
 
 const Progress = ({ value }: {
   value: number
@@ -287,7 +335,7 @@ const PluginSelector = ({ settings, updateSettings }: {
     <Stack dir='column' gap={6} ai='flex-start' data-input>
       <Label value='Plugin' />
       <Select.Root
-        value={settings.plugin}
+        value={settings.plugin || ""}
         onValueChange={plugin => updateSettings({ plugin })}
       >
         <Select.Trigger className={s.select}>
@@ -312,7 +360,7 @@ export const MethodSelector = ({ settings, updateSettings, methods }: {
   return methods.length > 0 ? (
     <Stack dir='column' gap={6} ai='flex-start' data-input>
       <Label value='Mapping File' />
-      <Select.Root value={settings.method} onValueChange={method => updateSettings({ method })}>
+      <Select.Root value={settings.method || ""} onValueChange={method => updateSettings({ method })}>
         <Select.Trigger className={s.select}>
           <Icon name='ChevronRight' />
           {settings.method ? settings.method : methods.length > 0 ? 'Select method' : '-'}
@@ -335,7 +383,7 @@ export const MappingSelector = ({ settings, updateSettings, mappings }: {
   <Stack dir='column' gap={6} ai='flex-start' data-input>
     <Label value='Mapping ID' />
     <Select.Root
-      value={settings.mapping}
+      value={settings.mapping || ""}
       onValueChange={mapping => updateSettings({ mapping })}
     >
       <Select.Trigger className={s.select}>
@@ -410,57 +458,40 @@ export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings 
   const { app } = Application.use();
   const [isOpen, setIsOpen] = useState(false);
 
-  useEffect(() => {
-    if (!settings.all) {
-      settings.all = {
-        offset: 0,
-        custom_parameters: {}
-      }
-    }
-  }, [settings]);
+  /**
+   * Initialization of settings.all is now handled in the parent component
+   * to ensure consistency and avoid direct mutations during render.
+   */
 
   const methods = Mapping.Entity.methods(app, settings.all?.plugin)
   const mappings = Mapping.Entity.mappings(app, settings.all?.plugin, settings.all?.method)
 
-  useEffect(() => {
-    if (!settings.all?.plugin) {
-      return
+  const handleAllSettingsUpdate = (update: Partial<FileEntity.Settings>) => {
+    const finalUpdate = { ...update };
+
+    if (update.plugin) {
+      const methods = Mapping.Entity.methods(app, update.plugin);
+      if (methods.length === 1) {
+        finalUpdate.method = methods[0];
+        const mappings = Mapping.Entity.mappings(app, update.plugin, methods[0]);
+        if (mappings.length === 1) {
+          finalUpdate.mapping = mappings[0];
+        }
+      } else {
+        finalUpdate.method = undefined;
+        finalUpdate.mapping = undefined;
+      }
+    } else if (update.method) {
+      const mappings = Mapping.Entity.mappings(app, settings.all?.plugin, update.method);
+      if (mappings.length === 1) {
+        finalUpdate.mapping = mappings[0];
+      } else {
+        finalUpdate.mapping = undefined;
+      }
     }
 
-    if (methods.length === 0) {
-      updateSettings('all', {
-        method: undefined
-      })
-    } else if (methods.length === 1) {
-      updateSettings('all', {
-        method: methods[0]
-      })
-    } else if (settings.all?.method !== undefined && !methods.includes(settings.all?.method)) {
-      updateSettings('all', {
-        method: undefined
-      })
-    }
-  }, [settings.all?.plugin])
-
-  useEffect(() => {
-    if (!settings.all?.plugin) {
-      return
-    }
-
-    if (mappings.length === 0 || !settings.all?.method) {
-      updateSettings('all', {
-        mapping: undefined
-      })
-    } else if (mappings.length === 1) {
-      updateSettings('all', {
-        mapping: mappings[0]
-      })
-    } else if (settings.all?.mapping && !mappings.includes(settings.all?.mapping)) {
-      updateSettings('all', {
-        mapping: undefined
-      })
-    }
-  }, [settings.all?.method])
+    updateSettings('all', finalUpdate);
+  };
 
   return (
     <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
@@ -469,11 +500,11 @@ export const ApplySettinsForAllFiles = ({ settings, updateSettings, setSettings 
       </Popover.Trigger>
       <Popover.Content>
         <Stack className={s.allSettings} gap={0}>
-          <PluginSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} />
+          <PluginSelector settings={settings?.all || {}} updateSettings={handleAllSettingsUpdate} />
           <Separator orientation='vertical' style={{ height: 32 }} />
-          <MethodSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} methods={methods} />
+          <MethodSelector settings={settings?.all || {}} updateSettings={handleAllSettingsUpdate} methods={methods} />
           <Separator orientation='vertical' style={{ height: 32 }} />
-          <MappingSelector settings={settings?.all || {}} updateSettings={(s) => updateSettings('all', s)} mappings={mappings} />
+          <MappingSelector settings={settings?.all || {}} updateSettings={handleAllSettingsUpdate} mappings={mappings} />
           <Separator orientation='vertical' style={{ height: 32 }} />
           <Button
             variant='tertiary'
@@ -506,18 +537,31 @@ export function UploadBanner() {
     setContext('');
   }, [newContext])
 
-  const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({})
+  const [settings, setSettings] = useState<Record<string, FileEntity.Settings>>({
+    all: {
+      offset: 0,
+      custom_parameters: {}
+    }
+  })
 
   const updateSettings = useCallback(
     (filename: string, update: Partial<FileEntity.Settings>) => {
-      setSettings(prev => ({
-        ...prev,
-        [filename]: { ...prev[filename], ...update, ...{} }
-      }))
+      setSettings(prev => {
+        const current = prev[filename] || { offset: 0, custom_parameters: {} };
+        return {
+          ...prev,
+          [filename]: { ...current, ...update }
+        };
+      });
     },
     []
   )
 
+  /**
+   * Reads a small chunk of the file to detect its type based on magic bytes.
+   * @param file The file to analyze.
+   * @returns Promise resolving to the detected plugin filename or null.
+   */
   const detectFileType = useCallback((file: File) => {
     return readFileChunk(file)
       .then(buffer =>
@@ -526,16 +570,26 @@ export function UploadBanner() {
             .some(uint => compareSignature(buffer, uint))))
   }, [])
 
-  useEffect(() => {
-    files.forEach(file => {
-      detectFileType(file).then(plugin => {
-        updateSettings(file.name, {
-          plugin: plugin || 'win_evtx.py',
-          custom_parameters: {}
-        })
-      })
-    })
-  }, [files])
+  /**
+   * Initialize settings for a new file, detecting its type and selecting default methods/mappings.
+   * @param file The file entity.
+   * @param app The current application context for mapping lookups.
+   */
+  const initializeFileSettings = async (file: File, appState: any) => {
+    const plugin = await detectFileType(file) || 'win_evtx.py';
+    const methods = Mapping.Entity.methods(appState, plugin);
+    const method = methods.length === 1 ? methods[0] : undefined;
+    const mappings = method ? Mapping.Entity.mappings(appState, plugin, method) : [];
+    const mapping = mappings.length === 1 ? mappings[0] : undefined;
+
+    return {
+      plugin,
+      method,
+      mapping,
+      offset: 0,
+      custom_parameters: {}
+    };
+  };
 
   const readFileChunk = (file: File): Promise<ArrayBuffer> => {
     return new Promise((resolve, reject) => {
@@ -611,14 +665,22 @@ export function UploadBanner() {
     )
   }, [context, handleSubmit, files, isValidSettings, loading])
 
-  const updateAllSettings = async (newSettings: FileEntity.Settings) => {
-    for (const setting in settings) {
-      await new Promise((res) => {
-        setTimeout(() => {
-          res(updateSettings(setting, newSettings))
-        }, 50);
-      })
-    }
+  /**
+   * Applies a specific set of settings to all selected files in a single batch.
+   * @param newSettings The settings object to apply.
+   */
+  const updateAllSettings = (newSettings: FileEntity.Settings) => {
+    setSettings(prev => {
+      const updated = { ...prev };
+      files.forEach(file => {
+        updated[file.name] = { 
+          ...updated[file.name], 
+          ...newSettings,
+          custom_parameters: { ...(updated[file.name]?.custom_parameters || {}), ...(newSettings.custom_parameters || {}) }
+        };
+      });
+      return updated;
+    });
   }
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -629,20 +691,27 @@ export function UploadBanner() {
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const arr = [...(event.target.files || [])];
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFiles = event.target.files;
+    if (!rawFiles) return;
 
-    setFiles(files => {
-      const sources = Refractor.array(...files);
+    const newFilesList = [...(rawFiles || [])];
+    
+    // We add new files and calculate their settings in one go to avoid O(N^2) loops in useEffects
+    const newSettingsUpdates: Record<string, FileEntity.Settings> = {};
+    const filesToAdd: File[] = [];
 
-      arr.forEach(source => {
-        if (sources.every(s => s.name !== source.name)) {
-          sources.push(source);
-        }
-      });
+    for (const file of newFilesList) {
+      if (files.every(f => f.name !== file.name)) {
+        filesToAdd.push(file);
+        newSettingsUpdates[file.name] = await initializeFileSettings(file, app);
+      }
+    }
 
-      return sources;
-    });
+    if (filesToAdd.length > 0) {
+      setFiles(prev => [...prev, ...filesToAdd]);
+      setSettings(prev => ({ ...prev, ...newSettingsUpdates }));
+    }
   };
 
   return (

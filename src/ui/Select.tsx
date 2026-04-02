@@ -8,7 +8,9 @@ import { Checkbox } from './Checkbox'
 import { Arrayed } from '@/class/Info'
 
 export namespace Select {
-  export const Root = SelectPrimitive.Root
+  export const Root = (props: SelectPrimitive.SelectProps) => {
+    return <SelectPrimitive.Root {...props} value={props.value ?? (props.defaultValue ? undefined : "")} />
+  }
   export const Group = SelectPrimitive.Group
   export const Value = SelectPrimitive.Value
   export namespace Multi {
@@ -38,7 +40,7 @@ export namespace Select {
     }
 
     export const Root = ({
-      value = [],
+      value,
       onValueChange,
       children,
       defaultValue,
@@ -46,11 +48,11 @@ export namespace Select {
       onOpenChange,
       ...props
     }: Select.Multi.Root.Props) => {
-      const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue ?? value)
+      const [selectedValues, setSelectedValues] = useState<string[]>(defaultValue ?? value ?? [])
       const [isOpen, setIsOpen] = useState(false);
 
       useEffect(() => {
-        if (value) {
+        if (value !== undefined) {
           setSelectedValues(value)
         }
       }, [value])
@@ -60,9 +62,11 @@ export namespace Select {
           ? selectedValues.filter(v => v !== newValue)
           : [...selectedValues, newValue]
 
-        setSelectedValues(updatedValues)
+        if (value === undefined) {
+          setSelectedValues(updatedValues)
+        }
         onValueChange?.(updatedValues)
-      }, [selectedValues, onValueChange])
+      }, [selectedValues, onValueChange, value])
 
       const handleOpenChange = useCallback((newOpen: boolean) => {
         setIsOpen(newOpen)
@@ -78,7 +82,7 @@ export namespace Select {
 
       return (
         <Select.Multi.Context.Provider value={contextValue}>
-          <SelectPrimitive.Root open={isOpen} onOpenChange={handleOpenChange} {...props}>
+          <SelectPrimitive.Root open={open ?? isOpen} onOpenChange={onOpenChange ?? handleOpenChange} {...props}>
             {children}
           </SelectPrimitive.Root>
         </Select.Multi.Context.Provider>

@@ -42,7 +42,7 @@ export const useMagnifier = (
 
   useEffect(() => {
     isAltPressed && drawMagnifier()
-  }, [isAltPressed, mousePosition, ...dependencies])
+  }, [isAltPressed, mousePosition, dependencies])
 
   const handleMouseMove = ({
     clientX,

@@ -525,7 +525,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     const file = Source.Entity.selected(Info.app)[index] ?? null;
 
     setTarget(file);
-  }, [setTarget, timeline, Info.app.timeline.filter, ...Info.app.target.files]);
+  }, [setTarget, timeline, Info.app.timeline.filter, Info.app.target.files]);
 
   const Menu = useCallback(() => {
     if (!target) {

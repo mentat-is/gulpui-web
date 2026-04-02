@@ -10,8 +10,7 @@
 
 .wrapper {
   height: 100%;
-  overflow: auto;
-  padding-right: 8px;
+  /* padding-right: 8px; */
 }
 
 .noData {
@@ -22,6 +21,7 @@
   justify-content: center;
   font-family: var(--font-mono);
   font-size: 12px;
+  padding-top: 8px;
 }
 
 .branch {

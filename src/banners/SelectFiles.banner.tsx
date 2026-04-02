@@ -3,7 +3,8 @@ import { Banner as UIBanner } from '@/ui/Banner'
 import { Checkbox } from '@/ui/Checkbox'
 import s from './styles/SelectFilesBanner.module.css'
 import { Label } from '@/ui/Label'
-import { useEffect, useMemo, useReducer, useState } from 'react'
+import { useEffect, useMemo, useReducer, useState, useRef } from 'react'
+import { useVirtualizer, VirtualItem } from '@tanstack/react-virtual'
 import { Frame } from './Frame.banner'
 import { UploadBanner } from './Upload.banner'
 import { Separator } from '@/ui/Separator'
@@ -132,7 +133,12 @@ export namespace SelectFiles {
       setLoading(false);
     };
 
-    const filteredContexts = Operation.Entity.contexts(app).filter((ctx) => Context.Entity.sources(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase())));
+    const filteredContexts = Operation.Entity.contexts(app).filter((ctx) => {
+      if (!filter) return true;
+      const contextMatches = ctx.name.toLowerCase().includes(filter.toLowerCase());
+      const sourceMatches = Context.Entity.sources(app, ctx).some((f) => f.name.toLowerCase().includes(filter.toLowerCase()));
+      return contextMatches || sourceMatches;
+    });
 
     const SearchInput = useMemo(() => {
       return (
@@ -145,6 +151,28 @@ export namespace SelectFiles {
         />
       )
     }, [setFilter, filter]);
+
+    type VirtualItemType = { type: 'context'; context: Context.Type; }
+
+    const items = useMemo(() => {
+      const arr: VirtualItemType[] = [];
+      filteredContexts.forEach(context => {
+        arr.push({ type: 'context', context });
+        // const files = Context.Entity.sources(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
+        // files.forEach((file, index) => {
+        //   arr.push({ type: 'file', context, file, isLast: index === files.length - 1 });
+        // });
+      });
+      return arr;
+    }, [filteredContexts, filter, app.target.files, app.target.contexts]);
+
+    const parentRef = useRef<HTMLDivElement>(null);
+    const rowVirtualizer = useVirtualizer({
+      count: items.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: (index) => items[index].type === 'context' ? 50 : 36,
+      overscan: 10,
+    });
 
     return (
       <UIBanner
@@ -186,19 +214,55 @@ export namespace SelectFiles {
             Unselect all
           </Button>
         </Stack>
-        <Stack className={s.wrapper} dir='column' gap={12} jc='stretch'>
-          <Skeleton show={!hasData} width='full'>
-            {filteredContexts.length > 0 ? (
-              filteredContexts.map((context) => (
-                <ContextComponent key={context.id} context={context} filter={filter} setFile={setFile} setContext={setContext} selectedFiles={selectedFiles} selectedContexts={selectedContexts} />
-              ))
+        <div className={s.wrapper} style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+          <Skeleton show={!hasData} width='full' style={{ height: '100%' }}>
+            {items.length > 0 ? (
+              <div 
+                ref={parentRef}               
+                
+                style={{ 
+                  height: '100%', 
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  paddingRight: 8
+                }}
+              >
+                <div  style={{ 
+                    height: `${rowVirtualizer.getTotalSize()}px`, 
+                    width: '100%', position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 8
+                     }}>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const item = items[virtualRow.index];
+                    if (!item) return null;
+                    return (
+
+                        <ContextHeading  
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                        context={item.context} selectedFiles={selectedFiles} setFile={setFile} selectedContexts={selectedContexts} setContext={setContext} />                         
+
+                    )
+                  })}
+                </div>
+              </div>
             ) : (
               <p className={s.noData}>
                 There is no data to analyze. Click below to upload...
               </p>
             )}
           </Skeleton>
-        </Stack>
+        </div>
         <Stack>
           <Button
             onClick={reloadClickHandler}
@@ -215,26 +279,35 @@ export namespace SelectFiles {
   }
 }
 
-interface ContextComponentProps {
-  context: Context.Type;
-  filter: string;
-  selectedFiles: Set<Source.Id>;
-  setFile: (file: Source.Id, select: boolean) => void;
-  selectedContexts: Set<Context.Id>;
-  setContext: (context: Context.Id, select: boolean) => void;
-};
+function ContextHeading({ context, selectedContexts, selectedFiles, setFile, setContext }: any) {
+  const { app, spawnBanner } = Application.use();
+  type VirtualItemType = { type: 'file'; context: Context.Type; file: Source.Type; isLast: boolean };
+  
+  const items = useMemo(() => {
+    const arr: VirtualItemType[] = [];
+    Context.Entity.sources(app, context).forEach((file, index) => {
+      arr.push({ type: 'file', context, file, isLast: index === Context.Entity.sources(app, context).length - 1 });
+    });
+    return arr;
+  }, [context, app.target.files, app.target.contexts]);
+  
+  const parentRef = useRef<HTMLDivElement>(null);
+  const rowVirtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: (index) => items[index].type === 'file' ? 50 : 36,
+    overscan: 10,
+  });
 
-function ContextComponent({ context, filter, selectedFiles, selectedContexts, setFile, setContext }: ContextComponentProps) {
-  const { app, spawnBanner } = Application.use()
-  const files = Context.Entity.sources(app, context).filter(file => file.name.toLowerCase().includes(filter.toLowerCase()));
-
+  const hasData = items.length > 0;
+  
   return (
     <Stack
       dir='column'
+      gap={0}
       ai='stretch'
       jc='flex-start'
       className={s.branch}
-      key={context.id}
     >
       <Stack className={s.contextHeading}>
         <Checkbox
@@ -261,10 +334,59 @@ function ContextComponent({ context, filter, selectedFiles, selectedContexts, se
           }
         />
       </Stack>
-      <Separator className={s.separator} />
-      {files.map((file) => (
-        <FileComponent key={file.id} file={file} selectedFiles={selectedFiles} setFile={setFile} />
-      ))}
+      <Separator className={s.separator} style={{ marginTop: 8 }} />      
+          {items.length > 0 ? (
+              <div 
+                ref={parentRef}               
+                
+                style={{ 
+                  height: '100%', 
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                }}
+              >
+                <div  style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const item = items[virtualRow.index];
+                    if (!item) return null;
+                    return (
+                      <div
+                        key={virtualRow.key}
+                        data-index={virtualRow.index}
+                        ref={rowVirtualizer.measureElement}                        
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      >
+                         <div style={{ paddingTop: 8 }}>
+                          <FlatFileComponent file={item.file} selectedFiles={selectedFiles} setFile={setFile} isLast={item.isLast} />
+                         </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <p className={s.noData}>
+                There is no data to analyze. Click below to upload...
+              </p>
+            )}
+    </Stack>
+  )
+}
+
+function FlatFileComponent({ file, selectedFiles, setFile, isLast }: any) {
+  return (
+    <Stack 
+      dir='column' 
+      ai='stretch' 
+      jc='flex-start'
+    >
+      <FileComponent file={file} selectedFiles={selectedFiles} setFile={setFile} />
     </Stack>
   )
 }
@@ -285,8 +407,26 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
       .then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button icon='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
   }
 
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const isIngesting = Source.Entity.getRequestType(app, file) === Request.Prefix.INGESTION;
+    if (!isIngesting) {
+      if (progress !== 0) setProgress(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const current = Info.ingestionProgress.get(file.id) || 0;
+      setProgress(current);
+    }, 250);
+
+    return () => clearInterval(interval);
+  }, [app, file.id, Info.ingestionProgress]);
+
   const FileIsTooBig = () => {
-    if (file.total < 500_000) {
+    const total = file.total + progress;
+    if (total < 500_000) {
       return null
     }
 
@@ -309,7 +449,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
         size='sm'
         className={s.amount}
         variant='gray-subtle'
-        value={file.total}
+        value={file.total + progress}
       />
       <Button
         shape='icon'
