@@ -34,6 +34,16 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
   const [points, setPoints] = useState<Array<{ link: Link.Type; x: number; y: number }>>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /**
+   * STABLE REF: getPixelPosition changes identity on every scroll tick because
+   * its useCallback in Canvas.tsx depends on scrollXRef.current. Putting it in
+   * the useEffect deps would cancel the debounce on every scroll pixel and never
+   * let the computation complete. The ref lets us always use the latest version
+   * without triggering the effect.
+   */
+  const getPixelPosRef = useRef(getPixelPosition);
+  getPixelPosRef.current = getPixelPosition;
+
   useEffect(() => {
     // Clear any pending computation
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -45,6 +55,7 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
     }
 
     debounceRef.current = setTimeout(() => {
+      const fn = getPixelPosRef.current;
       const selectedFiles = new Set(
         app.target.files.filter((f) => f.selected).map((f) => f.id)
       );
@@ -63,7 +74,7 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
           const doc = Doc.Entity.id(app, docId);
           if (!doc) continue;
 
-          xs.push(getPixelPosition(doc.timestamp ?? 0));
+          xs.push(fn(doc.timestamp ?? 0));
           ys.push(Source.Entity.getHeight(app, doc['gulp.source_id'], scrollY));
         }
 
@@ -88,7 +99,7 @@ export function LinksDisplayer({ getPixelPosition }: LinksDisplayerProps) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [app.target.links, app.target.files, app.hidden.links, getPixelPosition, scrollY]);
+  }, [app.target.links, app.target.files, app.hidden.links, scrollY]);
 
   return (
     <Fragment>

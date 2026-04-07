@@ -1046,52 +1046,47 @@ export class Info implements InfoProps {
 	 * canvas icons) and resets event data before selecting the new operation.
 	 * This prevents memory leaks when switching between operations with large datasets
 	 * (e.g., 320k events = ~150MB of cached pixel maps, note groups, and doc references).
+	 *
+	 * PERFORMANCE: Uses batchUpdate to consolidate all state changes into a single
+	 * React setState call, preventing 8+ intermediate re-renders.
 	 */
 	operations_select = (id: Operation.Id) => {
+		// External cache cleanup (not part of React state)
 		RenderEngine.clearAllCaches();
-		Note.Entity[CacheKey].clear();
+		Note.Entity.invalidateCache();
 		Doc.Entity.clearIndex();
 
 		// Reset viewport to default position (like first render)
 		scrollStore.setScrollX(0);
 		scrollStore.setScrollY(-26);
-		this.setTimelineScale(1);
-		this.setInfoByKey(null, "timeline", "target");
 
-		// Clear event data
-		this.app.target.events.clear();
-		this.setInfoByKey(this.app.target.events, "target", "events");
+		// Single batched state update instead of 8 separate setInfoByKey calls
+		this.batchUpdate(draft => {
+			// Timeline reset
+			draft.timeline.scale = 1;
+			draft.timeline.target = null;
+			draft.timeline.cache.data.clear();
+			draft.timeline.cache.filters = {};
 
-		// Clear timeline cache
-		this.app.timeline.cache.data.clear();
-		this.app.timeline.cache.filters = {};
+			// Clear event data
+			draft.target.events.clear();
+			draft.target.events = new Map(draft.target.events);
 
-		// Clear notes and links
-		this.setInfoByKey([], "target", "notes");
-		this.setInfoByKey([], "target", "links");
+			// Clear notes and links
+			draft.target.notes = [];
+			draft.target.links = [];
 
-		this.setInfoByKey(
-			Operation.Entity.select(this.app, id),
-			"target",
-			"operations",
-		);
-		this.setInfoByKey(
-			this.app.target.contexts.map((context) => ({
+			// Select operation, deselect contexts and files
+			draft.target.operations = Operation.Entity.select(draft, id);
+			draft.target.contexts = draft.target.contexts.map(context => ({
 				...context,
 				selected: false,
-			})),
-			"target",
-			"contexts",
-		);
-
-		this.setInfoByKey(
-			this.app.target.files.map((file) => ({
+			}));
+			draft.target.files = draft.target.files.map(file => ({
 				...file,
 				selected: false,
-			})),
-			"target",
-			"files",
-		);
+			}));
+		});
 	};
 
 	operations_set = (operations: Operation.Type[]) =>
@@ -1363,11 +1358,24 @@ export class Info implements InfoProps {
 								max: Math.max(...files.map((f) => f.timestamp.max)),
 							};
 
-							this.setInfoByKey(files, "target", "files");
-							this.setInfoByKey(frame, "timeline", "frame");
+							// Batch files + frame + loading cleanup into a single state update
+							const reqId = m.req_id;
+							this.batchUpdate(draft => {
+								draft.target.files = files;
+								draft.timeline.frame = frame;
+								// Inline delLoading to avoid an extra setState
+								draft.general.loadings.byRequestId.delete(reqId);
+								const fileEntry = [...draft.general.loadings.byFileId.entries()].find(
+									(e) => e[1] === reqId,
+								)?.[0];
+								if (fileEntry) {
+									draft.general.loadings.byFileId.delete(fileEntry);
+								}
+							});
+						} else {
+							this.delLoading(m.req_id);
 						}
 
-						this.delLoading(m.req_id);
 						SmartSocket.Class.instance.coff(
 							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 							sid,
@@ -2730,6 +2738,35 @@ export class Info implements InfoProps {
 			};
 
 			return this.app;
+		});
+	};
+
+	/**
+	 * Batches multiple state updates into a single React setState call.
+	 * Use this instead of calling setInfoByKey N times in sequence,
+	 * which would create N intermediate state objects and potentially N re-renders.
+	 *
+	 * The updater receives a shallow-cloned draft of the app state with all
+	 * top-level sections pre-cloned. Modifications to the draft are applied
+	 * as a single immutable update.
+	 *
+	 * @param updater - Function receiving a mutable draft of the current app state.
+	 *                  Modify the draft's sections directly (e.g., draft.target.notes = []).
+	 */
+	batchUpdate = (updater: (draft: App.Type) => void) => {
+		this.setInfo(prev => {
+			// Shallow-clone top-level sections so the updater can safely mutate them
+			const next: App.Type = {
+				...prev,
+				target: { ...prev.target },
+				timeline: { ...prev.timeline },
+				general: { ...prev.general },
+				settings: { ...prev.settings },
+				hidden: { ...prev.hidden },
+			};
+			updater(next);
+			this.app = next;
+			return next;
 		});
 	};
 }

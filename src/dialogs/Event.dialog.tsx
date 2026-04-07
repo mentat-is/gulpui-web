@@ -1,6 +1,6 @@
 import { Application } from '@/context/Application.context'
 import { Dialog } from '@/ui/Dialog'
-import { Fragment, useEffect, useMemo, useState, useCallback } from 'react'
+import { Fragment, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import s from './styles/DisplayEventDialog.module.css'
 import { copy, download, generateUUID, Refractor } from '@/ui/utils'
 import { Stack } from '@/ui/Stack'
@@ -45,22 +45,28 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
   const { extensions } = Extension.use()
   const [json, setJSON] = useState<Record<string, string> | null>(null)
   const [selection, setSelection] = useState<string>('');
-  const [notes, setNotes] = useState<Note.Type[]>(Doc.Entity.notes(app, event));
-  const [links, setLinks] = useState<Link.Type[]>(Doc.Entity.links(app, event));
+
+  /**
+   * DERIVED DATA: Notes and links for this event are computed from app state,
+   * not synced via useState+useEffect. This eliminates 2 unnecessary re-renders
+   * per app.target.notes/links change (the old pattern: useEffect fires → setNotes
+   * + setLinks → 2 state updates → 2 re-renders).
+   */
+  const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event]);
+  const links = useMemo(() => Doc.Entity.links(app, event), [app.target.links, event]);
   const file = useMemo(() => Source.Entity.id(app, event['gulp.source_id']), [app.target.files, event]);
 
+  /**
+   * REF GUARD: Prevents re-calling setTimelineTarget when the same event is
+   * already targeted. Without this, every re-render caused by app state changes
+   * would re-trigger this effect → mutate app → cause another re-render cascade.
+   */
+  const prevTargetRef = useRef<Doc.Id | null>(null);
   useEffect(() => {
-    setLinks(Doc.Entity.links(app, event));
-    setNotes(Doc.Entity.notes(app, event));
-  }, [app.target.links, app.target.notes, event]);
-
-  useEffect(() => {
-    if (!file) {
-      Info.setTimelineTarget(null);
-      return;
-    }
-    Info.setTimelineTarget(event);
-  }, [event, file]);
+    if (prevTargetRef.current === event._id) return;
+    prevTargetRef.current = event._id;
+    Info.setTimelineTarget(file ? event : null);
+  }, [event._id, file]);
 
   const cutEventOriginal = useCallback((obj: Record<string, any>): Record<string, string> => {
     const entries = Object.entries(obj).filter(([k]) => k !== 'event.original')
@@ -289,15 +295,15 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
     }
   }, [json, event._id, event]);
 
-  const [isFlagged, setIsFlagged] = useState(false);
-
-  const updateFlaggedState = useCallback(() => {
-    setIsFlagged(Doc.Entity.flag.isFlagged(event._id, event['gulp.operation_id']));
-  }, [setIsFlagged, event._id, event]);
-
-  useEffect(() => {
-    updateFlaggedState();
-  }, [event]);
+  /**
+   * SIMPLIFIED: Flag state is initialized directly from the entity check.
+   * The old pattern (useState(false) → useCallback → useEffect → setIsFlagged)
+   * caused an unnecessary re-render on every event open.
+   * useState is still needed because the toggle button calls setIsFlagged locally.
+   */
+  const [isFlagged, setIsFlagged] = useState(() =>
+    Doc.Entity.flag.isFlagged(event._id, event['gulp.operation_id'])
+  );
 
   const handleFocusTimeline = useCallback(() => {
     // @ts-ignore
@@ -400,24 +406,26 @@ export namespace EventIndicator {
 
 export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
   const { app } = Application.use();
-  const [notes, setNotes] = useState<Note.Type[]>(Doc.Entity.notes(app, event));
-  const [links, setLinks] = useState<Link.Type[]>(Doc.Entity.links(app, event));
 
   if (!event) return null;
 
   const file = Source.Entity.id(app, event['gulp.source_id']);
   if (!file) return null;
 
+  /**
+   * DERIVED DATA: Same optimization as DisplayEventDialog — notes and links
+   * are computed directly from app state via useMemo instead of synced through
+   * useState+useEffect. This is critical for EventIndicator because many
+   * instances can be mounted simultaneously in list/group views.
+   */
+  const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event._id]);
+  const links = useMemo(() => Doc.Entity.links(app, event), [app.target.links, event._id]);
+
   const background = useMemo(() => {
     const range = RenderEngine[CacheKey].range.get(event['gulp.source_id']) ?? MinMaxBase;
     const code = Refractor.any.toNumber(Refractor.get(event, file.settings.field));
     return Color.Entity.gradient(file.settings.render_color_palette, code, range);
   }, [event, app.target.files]);
-
-  useEffect(() => {
-    setNotes(Doc.Entity.notes(app, event));
-    setLinks(Doc.Entity.links(app, event));
-  }, [app.target.notes, app.target.links, event]);
 
   const NoteIcon = notes.length > 0 ? (
     <Stack ai='center' jc='center' className={cn(s.marker, s.collab)} pos='absolute'>

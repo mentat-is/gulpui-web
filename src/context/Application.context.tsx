@@ -10,7 +10,7 @@ import { Note } from '@/entities/Note';
 import { Link } from '@/entities/Link';
 import { Source } from '@/entities/Source';
 import { App } from '@/entities/App';
-import { Refractor } from '@/ui/utils';
+
 
 function _({ children }: { children: ReactNode }) {
   const [app, setInfo] = useState<App.Type>(App.Base);
@@ -65,56 +65,69 @@ function _({ children }: { children: ReactNode }) {
     if (!SmartSocket.Class.instance)
       return;
 
+    /**
+     * Handles incoming collab update messages (note/link/highlight) from WebSocket.
+     * Uses functional setState to guarantee immutable updates and correct React
+     * change detection. The old approach mutated the app object in-place and passed
+     * the same reference to setInfo(), which could cause React to skip re-renders
+     * or trigger stale cascading updates.
+     */
     const collabUpdateCallback = (message: any) => {
-      const currentApp = appRef.current;
       switch (message.payload.obj.type) {
-        case 'note':
+        case 'note': {
           const note: Note.Type = message.payload.obj;
-
-          const isExistingNote = currentApp.target.notes.findIndex(n => n.id === note.id);
-          if (isExistingNote >= 0) {
-            currentApp.target.notes[isExistingNote] = note;
-            currentApp.target.notes = [...currentApp.target.notes];
-          } else {
-            currentApp.target.notes = [...currentApp.target.notes, note];
-          }
-
-          setInfo(currentApp);
+          setInfo(prev => {
+            const idx = prev.target.notes.findIndex(n => n.id === note.id);
+            const newNotes = idx >= 0
+              ? prev.target.notes.map((n, i) => i === idx ? note : n)
+              : [...prev.target.notes, note];
+            return { ...prev, target: { ...prev.target, notes: newNotes } };
+          });
           return;
-        case 'link':
+        }
+        case 'link': {
           const link: Link.Type = message.payload.obj;
-
-          const isExistingLink = currentApp.target.links.findIndex(n => n.id === link.id);
-          if (isExistingLink >= 0) {
-            currentApp.target.links[isExistingLink] = link;
-            currentApp.target.links = [...currentApp.target.links];
-          } else {
-            currentApp.target.links = [...currentApp.target.links, link];
-          }
-
-          setInfo(currentApp);
+          setInfo(prev => {
+            const idx = prev.target.links.findIndex(l => l.id === link.id);
+            const newLinks = idx >= 0
+              ? prev.target.links.map((l, i) => i === idx ? link : l)
+              : [...prev.target.links, link];
+            return { ...prev, target: { ...prev.target, links: newLinks } };
+          });
           return;
+        }
         case 'highlight':
           instanceRef.current.highlights_reload();
           return;
       }
     }
 
+    /**
+     * Handles collab delete messages from WebSocket.
+     * Uses functional setState to produce an immutable state update.
+     * Returns `prev` unchanged if the id matches neither notes nor links,
+     * preventing unnecessary re-renders.
+     */
     const collabDeleteCallback = (message: any) => {
-      const currentApp = appRef.current;
       const id: Link.Id | Note.Id = message.payload.id;
-      switch (true) {
-        case currentApp.target.notes.some(n => n.id === id):
-          currentApp.target.notes = Refractor.array(...currentApp.target.notes.filter(n => n.id !== id));
-
-          setInfo(currentApp);
-          return;
-        case currentApp.target.links.some(l => l.id === id):
-          currentApp.target.links = Refractor.array(...currentApp.target.links.filter(l => l.id !== id));
-
-          setInfo(currentApp);
-          return;
-      }
+      setInfo(prev => {
+        // Check notes first
+        if (prev.target.notes.some(n => n.id === id)) {
+          return {
+            ...prev,
+            target: { ...prev.target, notes: prev.target.notes.filter(n => n.id !== id) }
+          };
+        }
+        // Then check links
+        if (prev.target.links.some(l => l.id === id)) {
+          return {
+            ...prev,
+            target: { ...prev.target, links: prev.target.links.filter(l => l.id !== id) }
+          };
+        }
+        // Nothing matched — return same reference so React skips re-render
+        return prev;
+      });
     }
 
     const reqeustStatsCallback = (message: any) => instanceRef.current.request_add(message.payload.obj);

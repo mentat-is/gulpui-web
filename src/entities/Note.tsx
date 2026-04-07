@@ -59,16 +59,50 @@ export namespace Note {
 
     public static [CacheKey] = new Map<Source.Id, Note.Type[]>();
 
+    /**
+     * Tracks whether the note-to-source index needs rebuilding.
+     * Set to false by invalidateCache(), checked by ensureIndexing().
+     */
+    private static _cacheValid = false;
+
     public static indexSize = () => [...Note.Entity[CacheKey].values()].flat().length;
 
-    public static updateIndexing = (app: App.Type) => {
+    /**
+     * Marks the note index as stale. This is O(1) — the actual rebuild is
+     * deferred to ensureIndexing() which runs lazily at first access.
+     * Call this whenever app.target.notes or app.target.files changes.
+     */
+    public static invalidateCache = () => {
+      Note.Entity._cacheValid = false;
       Note.Entity[CacheKey].clear();
+    };
 
+    /**
+     * Rebuilds the note-to-source index if it has been invalidated.
+     * Should be called before any render frame that needs note positions.
+     * Skips rebuild if the cache is already valid (no-op on repeated calls).
+     *
+     * @param app - Current application state containing notes and files
+     */
+    public static ensureIndexing = (app: App.Type) => {
+      if (Note.Entity._cacheValid) return;
+
+      Note.Entity[CacheKey].clear();
       app.target.files.forEach(file => {
         Note.Entity[CacheKey].set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
-      })
+      });
 
-      Logger.log(`NOTES_INDEXES_HAS_BEEN_CREATED:${Note.Entity.indexSize()}`, Note);
+      Note.Entity._cacheValid = true;
+      Logger.log(`NOTES_INDEXES_REBUILT:${Note.Entity.indexSize()}`, Note);
+    };
+
+    /**
+     * @deprecated Use invalidateCache() + ensureIndexing() instead.
+     * Kept for backward compatibility with external callers.
+     */
+    public static updateIndexing = (app: App.Type) => {
+      Note.Entity._cacheValid = false;
+      Note.Entity.ensureIndexing(app);
     };
 
     public static findByFile = (app: App.Type, file: Source.Type | Source.Id): Note.Type[] => {

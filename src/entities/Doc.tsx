@@ -167,7 +167,10 @@ export namespace Doc {
           for (const evt of newEventsMap.values()) {
             Doc.Entity._index.set(evt._id, evt);
           }
-          existingEvents.push(...newEventsMap.values());
+          // Same fix as addAsync: avoid push(...spread) to prevent RangeError with 1M+ events
+          for (const evt of newEventsMap.values()) {
+            existingEvents.push(evt);
+          }
           hasChanges = true;
         }
 
@@ -217,7 +220,15 @@ export namespace Doc {
           for (const evt of newEventsMap.values()) {
             Doc.Entity._index.set(evt._id, evt);
           }
-          existingEvents.push(...newEventsMap.values());
+          /**
+           * IMPORTANT: Do NOT use `existingEvents.push(...newEventsMap.values())` here.
+           * The spread operator converts the iterable into individual function arguments,
+           * and JS engines have a hard limit (~65K-500K args depending on engine).
+           * With 1M+ events this triggers: RangeError: too many function arguments.
+           */
+          for (const evt of newEventsMap.values()) {
+            existingEvents.push(evt);
+          }
           hasChanges = true;
         }
 

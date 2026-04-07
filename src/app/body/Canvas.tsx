@@ -49,6 +49,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const scrollYRef = useRef(scrollY);
   const mouseXRef = useRef<number>(-1000);
   const mouseYRef = useRef<number>(-1000);
+  const hoveredItemRef = useRef<string | null>(null);
 
   useEffect(() => {
     scrollXRef.current = scrollX;
@@ -63,8 +64,15 @@ export function Canvas({ timeline }: Canvas.Props) {
     []
   );
 
+  /**
+   * LAZY INDEXING: Instead of eagerly rebuilding the note-to-source index here
+   * (which ran O(n*m) on every WebSocket note update), we only invalidate.
+   * The actual rebuild happens lazily on first access in renderCanvas() via
+   * Note.Entity.ensureIndexing(). This eliminates a cascade where this effect
+   * and the render effect both triggered on the same `app.target.notes` change.
+   */
   useEffect(() => {
-    Note.Entity.updateIndexing(app);
+    Note.Entity.invalidateCache();
     RenderEngine.reset('notes');
     RenderEngine.reset('flags');
   }, [app.target.notes, app.timeline.scale, app.target.files]);
@@ -154,6 +162,8 @@ export function Canvas({ timeline }: Canvas.Props) {
     render.highlightFlaggedDocuments();
 
     if (!app.hidden.notes) {
+      // Lazy rebuild: only runs if cache was invalidated since last render
+      Note.Entity.ensureIndexing(app);
       render.notes(files);
     }
 
@@ -428,27 +438,59 @@ export function Canvas({ timeline }: Canvas.Props) {
     const canvas = wrapper_ref.current
     
     const handleNativeHover = (e: MouseEvent) => {
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    mouseXRef.current = e.clientX - rect.left;
-    mouseYRef.current = e.clientY - rect.top;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const newX = e.clientX - rect.left;
+      const newY = e.clientY - rect.top;
 
-    if (!pendingFrame.current) {
-      pendingFrame.current = requestAnimationFrame(() => {
-        pendingFrame.current = 0;
-        renderCanvas(false); 
-      });
-    }};
+      mouseXRef.current = newX;
+      mouseYRef.current = newY;
+
+      let currentHoveredItemId: string | null = null;
+      for (let i = 0; i < RenderEngine.interactiveLinks.length; i++) {
+        const item = RenderEngine.interactiveLinks[i];
+        if (newX >= item.rect.x && newX <= item.rect.x + item.rect.w &&
+            newY >= item.rect.y && newY <= item.rect.y + item.rect.h) {
+          currentHoveredItemId = `link_${i}`;
+          break;
+        }
+      }
+      if (!currentHoveredItemId) {
+        for (let i = 0; i < RenderEngine.interactiveNotes.length; i++) {
+          const item = RenderEngine.interactiveNotes[i];
+          if (newX >= item.rect.x && newX <= item.rect.x + item.rect.w &&
+              newY >= item.rect.y && newY <= item.rect.y + item.rect.h) {
+            currentHoveredItemId = `note_${i}`;
+            break;
+          }
+        }
+      }
+
+      if (hoveredItemRef.current !== currentHoveredItemId) {
+        hoveredItemRef.current = currentHoveredItemId;
+        if (!pendingFrame.current) {
+          pendingFrame.current = requestAnimationFrame(() => {
+            pendingFrame.current = 0;
+            renderCanvas(false); 
+          });
+        }
+      }
+    };
 
     const resetHover = () => {
-    mouseXRef.current = -1000;
-    mouseYRef.current = -1000;
-    if (!pendingFrame.current) {
-      pendingFrame.current = requestAnimationFrame(() => {
-        pendingFrame.current = 0;
-        renderCanvas(false); 
-      });
-    }};
+      mouseXRef.current = -1000;
+      mouseYRef.current = -1000;
+      
+      if (hoveredItemRef.current !== null) {
+        hoveredItemRef.current = null;
+        if (!pendingFrame.current) {
+          pendingFrame.current = requestAnimationFrame(() => {
+            pendingFrame.current = 0;
+            renderCanvas(false); 
+          });
+        }
+      }
+    };
 
     if (canvas) {
       canvas.addEventListener(

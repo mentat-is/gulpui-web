@@ -5,7 +5,7 @@ import { XY } from '@/dto/XY.dto'
 import { Note } from '@/entities/Note';
 import { Source } from '@/entities/Source';
 import { NotePoint } from '@/ui/Note';
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface NotesDisplayerProps {
   getPixelPosition: (num: number) => number;
