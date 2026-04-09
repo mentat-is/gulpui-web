@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Renderer Stress Benchmark</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "SF Mono", "Geist Mono", monospace;
+        background: #111318;
+        color: #f3f5f7;
+        padding: 24px;
+      }
+
+      .panel {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px;
+        border: 1px solid #2f3742;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #171b22 0%, #111318 100%);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      }
+
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        background: #65b58b;
+        color: #08110d;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      pre {
+        padding: 16px;
+        background: #0b0d11;
+        border-radius: 12px;
+        overflow: auto;
+        min-height: 180px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <h1>Renderer Stress Benchmark</h1>
+      <p>Benchmarks the timeline clustering path for 100 sources, 1M total events, and 60 pan frames.</p>
+      <button id="run">Run benchmark</button>
+      <canvas id="bench" width="1440" height="720" style="display:block;width:100%;height:auto;margin:16px 0;border:1px solid #2f3742;border-radius:12px;background:#0b0d11"></canvas>
+      <pre id="output">waiting…</pre>
+    </div>
+
+    <script>
+      function createTimelineProjector(frame, canvasWidth, scale, scrollX) {
+        const safeCanvasWidth = Math.max(1, canvasWidth)
+        const worldWidth = Math.max(1, Math.round(safeCanvasWidth * Math.max(scale, 0.0001)))
+        const range = Math.max(1, frame.max - frame.min)
+        return {
+          xForTimestamp(timestamp) {
+            return Math.round(((timestamp - frame.min) / range) * worldWidth) - scrollX
+          },
+          timestampForX(x) {
+            return frame.min + ((x + scrollX) / worldWidth) * range
+          },
+          canvasWidth
+        }
+      }
+
+      function findVisibleWindowDescending(events, minTimestamp, maxTimestamp) {
+        if (!events.length) return null
+        let start = events.length
+        let left = 0
+        let right = events.length - 1
+        while (left <= right) {
+          const mid = (left + right) >>> 1
+          if (events[mid].timestamp <= maxTimestamp) {
+            start = mid
+            right = mid - 1
+          } else {
+            left = mid + 1
+          }
+        }
+        if (start === events.length) return null
+
+        let end = -1
+        left = start
+        right = events.length - 1
+        while (left <= right) {
+          const mid = (left + right) >>> 1
+          if (events[mid].timestamp >= minTimestamp) {
+            end = mid
+            left = mid + 1
+          } else {
+            right = mid - 1
+          }
+        }
+        if (end < start) return null
+        return { start, end, count: end - start + 1 }
+      }
+
+      function clusterEventsToColumns(events, projector, visible, overscan) {
+        const columns = []
+        const leftBound = -overscan
+        const rightBound = projector.canvasWidth + overscan
+        const denseThreshold = projector.canvasWidth * 8
+
+        if (visible.count > denseThreshold) {
+          let searchStart = visible.start
+          for (let x = rightBound; x >= leftBound; x--) {
+            const bucketMax = projector.timestampForX(x + 0.5)
+            const bucketMin = projector.timestampForX(x - 0.5)
+            let columnStart = -1
+            let columnEnd = -1
+            let left = searchStart
+            let right = visible.end
+
+            while (left <= right) {
+              const mid = (left + right) >>> 1
+              if (events[mid].timestamp <= bucketMax) {
+                columnStart = mid
+                right = mid - 1
+              } else {
+                left = mid + 1
+              }
+            }
+
+            if (columnStart === -1) continue
+
+            left = columnStart
+            right = visible.end
+            while (left <= right) {
+              const mid = (left + right) >>> 1
+              if (events[mid].timestamp >= bucketMin) {
+                columnEnd = mid
+                left = mid + 1
+              } else {
+                right = mid - 1
+              }
+            }
+
+            if (columnEnd === -1 || columnEnd < columnStart) continue
+
+            columns.push({ x, count: columnEnd - columnStart + 1 })
+            searchStart = columnEnd + 1
+            if (searchStart > visible.end) break
+          }
+          return columns.reverse()
+        }
+
+        let index = visible.start
+        while (index <= visible.end) {
+          const x = projector.xForTimestamp(events[index].timestamp)
+          let end = index
+          while (end + 1 <= visible.end) {
+            const nextX = projector.xForTimestamp(events[end + 1].timestamp)
+            if (nextX !== x) break
+            end += 1
+          }
+          if (x >= leftBound && x <= rightBound) {
+            columns.push({ x, count: end - index + 1 })
+          }
+          index = end + 1
+        }
+        return columns
+      }
+
+      function createDataset(sourceCount, eventsPerSource) {
+        const eventsBySource = []
+        for (let sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++) {
+          const events = new Array(eventsPerSource)
+          for (let eventIndex = 0; eventIndex < eventsPerSource; eventIndex++) {
+            events[eventIndex] = { timestamp: 1000000 - eventIndex }
+          }
+          eventsBySource.push(events)
+        }
+        return eventsBySource
+      }
+
+      async function runBenchmark() {
+        const output = document.getElementById('output')
+        const canvas = document.getElementById('bench')
+        const ctx = canvas.getContext('2d')
+        output.textContent = 'running…'
+
+        const sourceCount = 100
+        const eventsPerSource = 10000
+        const panFrames = 60
+        const frameWidth = 1440
+        const frame = { min: 0, max: 1000000 }
+        const data = createDataset(sourceCount, eventsPerSource)
+        const panStep = Math.max(1, Math.round(frameWidth / 6))
+
+        await new Promise(resolve => requestAnimationFrame(resolve))
+        const start = performance.now()
+        let totalColumns = 0
+        let totalDrawCalls = 0
+
+        for (let panFrame = 0; panFrame < panFrames; panFrame++) {
+          const projector = createTimelineProjector(frame, frameWidth, 1, panFrame * panStep)
+          ctx.clearRect(0, 0, canvas.width, canvas.height)
+          for (let sourceIndex = 0; sourceIndex < sourceCount; sourceIndex++) {
+            const events = data[sourceIndex]
+            const visible = findVisibleWindowDescending(events, projector.timestampForX(-32), projector.timestampForX(frameWidth + 32))
+            if (!visible) continue
+            const columns = clusterEventsToColumns(events, projector, visible, 32)
+            totalColumns += columns.length
+
+            const rowY = (sourceIndex % 15) * 48
+            ctx.fillStyle = sourceIndex % 2 === 0 ? '#54aef3aa' : '#ffbe00aa'
+            for (let columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+              const column = columns[columnIndex]
+              const height = Math.max(1, Math.min(46, column.count))
+              ctx.fillRect(column.x, rowY + 46 - height, 1, height)
+            }
+            totalDrawCalls += columns.length
+          }
+          await new Promise(resolve => requestAnimationFrame(resolve))
+        }
+
+        const elapsed = performance.now() - start
+        const fps = Math.round((panFrames / elapsed) * 1000)
+        output.textContent = JSON.stringify({
+          sourceCount,
+          eventsPerSource,
+          totalEvents: sourceCount * eventsPerSource,
+          panFrames,
+          totalColumns,
+          totalDrawCalls,
+          elapsedMs: Number(elapsed.toFixed(2)),
+          estimatedFps: fps
+        }, null, 2)
+      }
+
+      document.getElementById('run').addEventListener('click', runBenchmark)
+      runBenchmark()
+    </script>
+  </body>
+</html>

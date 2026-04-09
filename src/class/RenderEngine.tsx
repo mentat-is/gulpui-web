@@ -18,6 +18,7 @@ import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
 import { Color } from '@/entities/Color'
 import { Operation } from '@/entities/Operation'
+import { LayeredTimelineRenderer } from '@/render/timeline/LayeredTimelineRenderer'
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = NOTE_SIZE / 2 * -1;
@@ -815,6 +816,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
   /** Clears a specific render cache (notes, range, or flags). Used to force recalculation. */
   public static reset = (key: keyof typeof RenderEngine[typeof CacheKey]) => {
     RenderEngine[CacheKey][key].clear();
+    LayeredTimelineRenderer.getInstance().reset(key);
   }
 
   /**
@@ -830,6 +832,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine[CacheKey].notes.clear();
     RenderEngine[CacheKey].range.clear();
     RenderEngine[CacheKey].flags.clear();
+    LayeredTimelineRenderer.getInstance().clearAllCaches();
 
     if (DefaultEngine.instance) {
       DefaultEngine.instance.map.clear();
