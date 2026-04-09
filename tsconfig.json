@@ -30,6 +30,10 @@
     "src",
     "src/**/*",
     "global.d.ts",
-    "custom.d.ts",
+    "custom.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx"
   ]
 }

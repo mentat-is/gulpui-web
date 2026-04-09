@@ -305,6 +305,18 @@ export function Canvas({ timeline }: Canvas.Props) {
     [handleWheel],
   )
 
+  const handleContextMenu = useCallback((event: MouseEvent) => {
+    if (!timeline.current) {
+      return
+    }
+
+    const index = Math.floor((event.clientY + scrollYRef.current - timeline.current.getBoundingClientRect().top) / 48);
+
+    const file = Source.Entity.selected(Info.app)[index] ?? null;
+
+    setTarget(file);
+  }, [setTarget, timeline, Info.app.timeline.filter, Info.app.target.files]);
+
   useEffect(() => {
     const canvas = wrapper_ref.current
 
@@ -383,17 +395,7 @@ export function Canvas({ timeline }: Canvas.Props) {
     return Math.round(((timestamp - Info.app.timeline.frame.min) / (Info.app.timeline.frame.max - Info.app.timeline.frame.min)) * Info.width) - scrollXRef.current
   }, [Info])
 
-  const handleContextMenu = useCallback((event: MouseEvent) => {
-    if (!timeline.current) {
-      return
-    }
 
-    const index = Math.floor((event.clientY + scrollYRef.current - timeline.current.getBoundingClientRect().top) / 48);
-
-    const file = Source.Entity.selected(Info.app)[index] ?? null;
-
-    setTarget(file);
-  }, [setTarget, timeline, Info.app.timeline.filter, Info.app.target.files]);
 
   const Menu = useCallback(() => {
     if (!target) {
