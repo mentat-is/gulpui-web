@@ -1,4 +1,4 @@
-import { createContext, lazy, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, lazy, ReactNode, useContext, useEffect, useState, useRef } from "react";
 import { Application } from "./Application.context";
 import React from "react";
 import { Logger } from "@/dto/Logger.class";
@@ -7,49 +7,65 @@ import { Icon } from "@impactium/icons";
 
 const __component = Symbol('__extension_component');
 
+let extensionsPromise: Promise<Record<string, Extension.Interface>> | null = null;
+
 function _({ children }: Extension.Provider.Props) {
   const { app } = Application.use();
   const { banner } = Application.use();
   const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
 
   useEffect(() => {
-    api<Extension.Interface[]>('/ui_plugin_list', async (plugins) => {
-      if (!Array.isArray(plugins)) {
-        Logger.error(`Backend returned unexpected type of \${plugins}. Expected array of plugins, but got ${typeof plugins}`, 'Extension.Provider', {
-          richColors: true,
-          icon: <Icon name='Warning' />
-        });
-        return;
-      }
+    if (!extensionsPromise) {
+      extensionsPromise = (async () => {
+        const plugins = await api<Extension.Interface[]>('/ui_plugin_list');
+        if (!Array.isArray(plugins)) {
+          Logger.error(`Backend returned unexpected type of ${plugins}. Expected array of plugins, but got ${typeof plugins}`, 'Extension.Provider', {
+            richColors: true,
+            icon: <Icon name='Warning' />
+          });
+          return {};
+        }
 
-      const new_extensions: typeof extensions = {};
+        const new_extensions: Record<string, Extension.Interface> = {};
 
-      await Promise.all(
-        plugins.map(async (plugin) => {
-          try {
-            const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
-            const component = await Component();
-            
-            if (!component) return;
+        await Promise.all(
+          plugins.map(async (plugin) => {
+            try {
+              const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
+              const component = await Component();
 
-            if (component.default) {
-              Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
+              if (!component) return;
+
+              if (component.default) {
+                Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
+              }
+
+              new_extensions[plugin.filename] = {
+                ...plugin,
+                type: plugin.type ?? [],
+                [__component]: component.default,
+              };
+            } catch (err) {
+              Logger.error(`Failed to load component ${plugin.filename}`);
             }
+          })
+        );
 
-            new_extensions[plugin.filename] = {
-              ...plugin,
-              type: plugin.type ?? [],
-              [__component]: component.default,
-            };
-          } catch (err) {
-            Logger.error(`Failed to load component ${plugin.filename}`);
-          }
-        })
-      );
+        return new_extensions;
+      })();
+    }
 
-      setExtensions(new_extensions);
+    let isMounted = true;
+    extensionsPromise.then((data) => {
+      if (isMounted) {
+        setExtensions(data);
+      }
     });
-  }, [app.target.plugins]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
 
   const extensionProps: Extension.Export = {
