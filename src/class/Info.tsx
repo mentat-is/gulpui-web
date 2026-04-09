@@ -70,12 +70,15 @@ export namespace GulpDataset {
 		interface Operation {
 			name: string;
 			id: string;
+			index?: string;
+			glyph_id?: Glyph.Id;
 			contexts: Context[];
 		}
 
 		interface Context {
 			name: string;
 			id: string;
+			glyph_id?: Glyph.Id;
 			doc_count: number;
 			plugins: Plugin[];
 		}
@@ -88,11 +91,12 @@ export namespace GulpDataset {
 		export interface Source {
 			name: string;
 			id: Source.Id;
+			glyph_id?: Glyph.Id;
 			doc_count: number;
 			"max_event.code": number;
 			"min_event.code": number;
-			"min_gulp.timestamp": bigint;
-			"max_gulp.timestamp": bigint;
+			"min_gulp.timestamp": bigint | { source: string; parsedValue: number };
+			"max_gulp.timestamp": bigint | { source: string; parsedValue: number };
 		}
 
 		export type Summary = Operation[];
@@ -2235,73 +2239,73 @@ export class Info implements InfoProps {
 	sync = async () => {
 		await this.mapping_file_list();
 
-		const operations = await api<Operation.Type[]>("/operation_list", {
-			method: "POST",
-		}).then((operations) =>
-			operations.map((operation) => {
-				// @ts-ignore
-				delete operation.contexts;
-				// @ts-ignore
-				delete operation.operation_data;
+		const operationsData = await api<GulpDataset.QueryOperations.Summary>("/query_operations");
+		if (!operationsData || !Array.isArray(operationsData)) return;
 
-				const exist = Operation.Entity.id(this.app, operation.id) ?? {};
+		const operations: Operation.Type[] = [];
+		const contexts: Context.Type[] = [];
+		const files: Source.Type[] = [];
 
-				operation.selected = exist.selected ?? false;
+		operationsData.forEach((opData) => {
+			const opId = opData.id as Operation.Id;
+			const existOp = Operation.Entity.id(this.app, opId) ?? {};
 
-				return operation;
-			}),
-		);
+			operations.push({
+				id: opId,
+				name: opData.name,
+				index: opData.index ?? opData.id,
+				glyph_id: opData.glyph_id ?? Default.Icon.OPERATION,
+				selected: existOp.selected ?? false,
+			} as Operation.Type);
 
-		const contexts = await Promise.all(
-			operations.map((operation) =>
-				api<Context.Type[]>("/context_list", {
-					query: { operation_id: operation.id },
-				}),
-			),
-		).then((contexts) =>
-			contexts.flat().map((context) => {
-				// @ts-ignore
-				delete context.sources;
+			opData.contexts?.forEach((ctxData) => {
+				const ctxId = ctxData.id as Context.Id;
+				const existCtx = Context.Entity.id(this.app, ctxId) ?? {};
 
-				const exist = Context.Entity.id(this.app, context.id) ?? {};
+				contexts.push({
+					id: ctxId,
+					name: ctxData.name,
+					operation_id: opId,
+					glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
+					color: existCtx.color ?? "#00ff00",
+					type: "context",
+					selected: existCtx.selected ?? false,
+					owner_user_id: this.app.general.user?.id!,
+					time_created: Date.now(),
+					time_updated: Date.now(),
+					granted_user_group_ids: [],
+					granted_user_ids: [],
+				} as Context.Type);
 
-				context.selected = exist.selected ?? false;
-
-				return context;
-			}),
-		);
-
-		const detailedFileInformation = await this.getDetails();
-
-		const files = await Promise.all(
-			contexts.map((context) =>
-				api<Source.Type[]>("/source_list", {
-					query: {
-						operation_id: context.operation_id,
-						context_id: context.id,
-					},
-				}),
-			),
-		)
-			.then((files) =>
-				files.flat().map((file) =>
-					Source.Entity.normalize(
-						this.app,
-						file,
-						detailedFileInformation.find((details) => details.id === file.id),
-					),
-				),
-			)
-			.then((files) => files.filter((file) => file !== null));
+				ctxData.plugins?.forEach((pluginData) => {
+					pluginData.sources?.forEach((srcData) => {
+						const src = Source.Entity.normalize(
+							this.app,
+							{
+								id: (srcData as any).id,
+								name: srcData.name,
+								operation_id: opId,
+								context_id: ctxId,
+								plugin: pluginData.name,
+								glyph_id: srcData.glyph_id ?? Default.Icon.SOURCE,
+								type: "source",
+								owner_user_id: this.app.general.user?.id!,
+								time_created: Date.now(),
+								time_updated: Date.now(),
+							} as Source.Type,
+							srcData
+						);
+						if (src) files.push(src);
+					});
+				});
+			});
+		});
 
 		Logger.log(
 			`${operations.length} operations has been added to application data`,
 			this.sync,
 		);
-		Logger.log(
-			`${contexts.length} contexts has been added to application data`,
-			this.sync,
-		);
+
 		Logger.log(
 			`${files.length} files has been added to application data`,
 			this.sync,

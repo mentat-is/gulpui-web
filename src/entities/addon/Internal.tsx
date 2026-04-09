@@ -110,11 +110,15 @@ export namespace Internal {
       roundTo: keyof Pick<Math, 'ceil' | 'floor' | 'round'> = 'round'
     ): number => new Date(Math[roundTo](Number(this.toNanos(timestamp)) / 1_000_000)).valueOf()
 
-    public static toNanos(value: string | number | Date | bigint): bigint {
+    public static toNanos(value: string | number | Date | bigint | { source: string; parsedValue: number }): bigint {
       try {
         if (typeof value === 'bigint') return value;
 
         if (value instanceof Date) return BigInt(value.getTime()) * 1_000_000n;
+
+        if (typeof value === 'object' && value !== null && 'source' in value) {
+          return BigInt(value.source);
+        }
 
         if (typeof value === 'number') {
           const str = String(Math.floor(value));
