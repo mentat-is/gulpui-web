@@ -10,6 +10,7 @@ import { Note } from '@/entities/Note'
 import { Operation } from '@/entities/Operation'
 import { Source } from '@/entities/Source'
 import { getCanvasIcon } from '@/ui/CanvasIcon'
+import { format } from 'date-fns'
 import { numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, formatTimestampToReadableString, stringToHexColor } from '@/ui/utils'
 import { createTimelineProjector, clusterEventsToColumns, findIndexWindowDescending, findVisibleWindowDescending, TimelineProjector, EventColumn } from './geometry'
 
@@ -514,16 +515,24 @@ export class LayeredTimelineRenderer {
     ctx.textBaseline = 'middle'
     ctx.textAlign = 'left'
     ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
-    ctx.fillText(source.name + suffix, 10, rowY + 4)
-    ctx.fillStyle = Color.Themer.theme.FONT_SECOND
     ctx.fillText(`${source.total.toString()} | ${context?.name || 'Unknown'}`, 10, rowY - 10)
-    ctx.fillStyle = '#0372ef'
+    ctx.fillText(source.name + suffix, 10, rowY + 4)
     ctx.fillText(eventCount.toString(), 10, rowY + 18)
+
+    ctx.textAlign = 'left'
+    ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
+    //draw information 
+    ctx.fillText(source.total.toString(), maxX + 10, rowY - 10)
+    ctx.fillText(format(source.timestamp.max + source.settings.offset, 'dd.MM.yyyy'), maxX + 10, rowY + 4)
+    ctx.fillStyle = '#0372ef'
+    ctx.fillText(eventCount.toString(), maxX + 10, rowY + 18)
 
     ctx.textAlign = 'right'
     ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
-    ctx.fillText(source.total.toString(), maxX + 54, rowY - 4)
-    ctx.fillText(source.total.toString(), minX - 54, rowY - 4)
+    ctx.fillText(source.total.toString(), minX - 10, rowY - 10)
+    ctx.fillText(format(source.timestamp.min + source.settings.offset, 'dd.MM.yyyy'), minX - 10, rowY + 4)
+    ctx.fillStyle = '#0372ef'
+    ctx.fillText(eventCount.toString(), minX - 10, rowY + 18)
   }
 
   private drawSelectionFrame(ctx: CanvasRenderingContext2D, state: TimelineRenderState, projector: TimelineProjector) {
