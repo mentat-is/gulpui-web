@@ -10,8 +10,7 @@ import { Note } from '@/entities/Note'
 import { Operation } from '@/entities/Operation'
 import { Source } from '@/entities/Source'
 import { getCanvasIcon } from '@/ui/CanvasIcon'
-import { numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine } from '@/ui/utils'
-import { stringToHexColor } from '@/ui/utils'
+import { numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine, formatTimestampToReadableString, stringToHexColor } from '@/ui/utils'
 import { createTimelineProjector, clusterEventsToColumns, findIndexWindowDescending, findVisibleWindowDescending, TimelineProjector, EventColumn } from './geometry'
 
 const ROW_HEIGHT = 48
@@ -795,32 +794,87 @@ export class LayeredTimelineRenderer {
       if (x < -64 || x > state.width + 64 || y < -64 || y > state.height + 64) {
         continue
       }
-      this.drawPointer(ctx, x, y, pointer)
+      this.drawPointer(ctx, x, y, pointer, state.width)
     }
   }
 
-  private drawPointer(ctx: CanvasRenderingContext2D, x: number, y: number, pointer: Pointers.Pointer) {
-    const color = pointer.color || Color.Themer.theme.FONT_ACCENT
+  private drawPointer(ctx: CanvasRenderingContext2D, x: number, y: number, pointer: Pointers.Pointer, stateWidth: number) {
+    const isYours = pointer.id === ('You' as never)
+    const isRightSide = x > stateWidth / 2
+    
+    // Resolve CSS variables specifically for Canvas
+    let color = pointer.color || Color.Themer.theme.FONT_ACCENT
+    if (color === 'var(--green-700)') {
+      color = '#46a758' // Resolved from global.css (131, 41%, 46%)
+    }
+
+    ctx.save()
+
+    // 1. Position and render the Icon
+    // Match the original CSS: 
+    // .right (isRightSide) -> translate(0, -2)
+    // .standard (!isRightSide) -> translate(-15, -2)
+    const containerX = x + (isRightSide ? 0 : -15)
+    const containerY = y - 2
+    ctx.translate(containerX, containerY)
+
+    const icon = getCanvasIcon({ name: 'Gps', color, fill: color })
+    if (icon && icon.width > 1) { // icon is loaded
+      ctx.save()
+      ctx.translate(10, 10) // center of 20x20 icon
+      if (!isRightSide) {
+        ctx.rotate(-90 * Math.PI / 180)
+      }
+      ctx.drawImage(icon, -10, -10, 20, 20)
+      ctx.restore()
+    } else {
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.moveTo(0, 0)
+      ctx.lineTo(10, 5)
+      ctx.lineTo(3, 12)
+      ctx.closePath()
+      ctx.fill()
+    }
+
+    // 2. Render the Label
+    const textContent = `${pointer.id}${isYours ? ` on ${formatTimestampToReadableString(pointer.timestamp)}ms` : ''}`
+    ctx.font = '500 11px GeistMono, monospace'
+    const metrics = ctx.measureText(textContent)
+    const padding = 4
+    const labelWidth = metrics.width + padding * 2
+    const labelHeight = 20
+
+    // Flip logic: 
+    // If on the RIGHT half of screen (isRightSide), offset label to the LEFT.
+    // If on the LEFT half of screen (!isRightSide), offset label to the RIGHT.
+    // Consistency check:
+    // If isRightSide=true, containerX=x, local tip is at 0. Label at -labelWidth - 12 (12px gap to left).
+    // If isRightSide=false, containerX=x-15, local tip is at 15. Label at 15 + 12 = 27 (12px gap to right).
+    const gap = 12
+    const labelX = isRightSide ? (-labelWidth - gap) : (15 + gap)
+    const labelY = 18
+
+    // Label background
     ctx.fillStyle = color
-    ctx.beginPath()
-    ctx.moveTo(x, y)
-    ctx.lineTo(x + 10, y + 5)
-    ctx.lineTo(x + 3, y + 12)
-    ctx.closePath()
+    roundRect(ctx, labelX, labelY, labelWidth, labelHeight, 4)
     ctx.fill()
 
-    const label = String(pointer.id)
-    ctx.font = '11px GeistMono, monospace'
-    const width = ctx.measureText(label).width + 12
-    const left = x + 12
-    const top = y - 4
-    ctx.fillStyle = color
-    roundRect(ctx, left, top, width, 18, 5)
-    ctx.fill()
-    ctx.fillStyle = '#000000'
+    // Label border
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)'
+    ctx.lineWidth = 1
+    ctx.stroke()
+
+    // Label text
+    ctx.fillStyle = 'white'
     ctx.textAlign = 'left'
     ctx.textBaseline = 'middle'
-    ctx.fillText(label, left + 6, top + 9)
+    ctx.shadowBlur = 1
+    ctx.shadowColor = 'black'
+    ctx.fillText(textContent, labelX + padding, labelY + labelHeight / 2)
+    ctx.shadowBlur = 0
+
+    ctx.restore()
   }
 
   private composeLayers(width: number, height: number) {
