@@ -335,7 +335,6 @@ export class LayeredTimelineRenderer {
       width: projector.worldWidth
     })
     ruler.draw()
-    ruler.sections()
 
     state.highlights.forEach(([x, width, index, color]) => {
       ctx.fillStyle = `${stringToHexColor(`${color}-${index}`)}22`
@@ -776,6 +775,16 @@ export class LayeredTimelineRenderer {
     }
 
     ctx.clearRect(0, 0, state.width, state.height)
+
+    const ruler = new RulerDrawer({
+      ctx,
+      getPixelPosition: projector.xForTimestamp,
+      scrollX: state.scrollX,
+      scale: state.scale,
+      selected: state.frame,
+      width: projector.worldWidth
+    })
+    ruler.sections()
 
     const points: Pointers.Pointer[] = [
       {
