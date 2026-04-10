@@ -140,7 +140,7 @@ export class LayeredTimelineRenderer {
   private lastState: RendererSnapshot | null = null
   private scratchLayers = new Map<string, HTMLCanvasElement>()
 
-  private constructor() {}
+  private constructor() { }
 
   public attachLayers(layers: CanvasLayers) {
     this.layers = layers
@@ -550,7 +550,7 @@ export class LayeredTimelineRenderer {
       return
     }
 
-    const y = index * ROW_HEIGHT + 23 - state.scrollY
+    const y = index * ROW_HEIGHT - state.scrollY
     const x = projector.xForTimestamp(state.app.timeline.target.timestamp + source.settings.offset)
     ctx.fillStyle = Color.Themer.theme.FONT_ACCENT
     ctx.fillRect(0, y, state.width, 1)
@@ -580,9 +580,9 @@ export class LayeredTimelineRenderer {
       }
       const y = sourceIndex * ROW_HEIGHT - state.scrollY
       ctx.fillStyle = '#00FF00'
-      ctx.fillRect(x - 1, y - 2, 1, 51)
-      ctx.fillRect(x, y - 4, 1, 55)
-      ctx.fillRect(x + 1, y - 2, 1, 51)
+      ctx.fillRect(x - 1, y - 25, 1, 51)
+      ctx.fillRect(x, y - 27, 1, 55)
+      ctx.fillRect(x + 1, y - 25, 1, 51)
     }
   }
 
@@ -712,7 +712,7 @@ export class LayeredTimelineRenderer {
           }
           const source = sources[row]
           const x = projector.xForTimestamp(doc.timestamp + source.settings.offset)
-          const y = row * ROW_HEIGHT + 20 - state.scrollY
+          const y = row * ROW_HEIGHT - state.scrollY
           return { x, y }
         })
         .filter(Boolean) as Array<{ x: number; y: number }>
@@ -801,7 +801,7 @@ export class LayeredTimelineRenderer {
   private drawPointer(ctx: CanvasRenderingContext2D, x: number, y: number, pointer: Pointers.Pointer, stateWidth: number) {
     const isYours = pointer.id === ('You' as never)
     const isRightSide = x > stateWidth / 2
-    
+
     // Resolve CSS variables specifically for Canvas
     let color = pointer.color || Color.Themer.theme.FONT_ACCENT
     if (color === 'var(--green-700)') {
@@ -811,31 +811,29 @@ export class LayeredTimelineRenderer {
     ctx.save()
 
     // 1. Position and render the Icon
-    // Match the original CSS: 
-    // .right (isRightSide) -> translate(0, -2)
-    // .standard (!isRightSide) -> translate(-15, -2)
-    const containerX = x + (isRightSide ? 0 : -15)
-    const containerY = y - 2
-    ctx.translate(containerX, containerY)
+    // Stabilize the hotspot at exactly (x, y)
+    ctx.translate(x, y)
 
-    const icon = getCanvasIcon({ name: 'Gps', color, fill: color })
-    if (icon && icon.width > 1) { // icon is loaded
-      ctx.save()
-      ctx.translate(10, 10) // center of 20x20 icon
-      if (!isRightSide) {
-        ctx.rotate(-90 * Math.PI / 180)
-      }
-      ctx.drawImage(icon, -10, -10, 20, 20)
-      ctx.restore()
-    } else {
-      ctx.fillStyle = color
-      ctx.beginPath()
-      ctx.moveTo(0, 0)
-      ctx.lineTo(10, 5)
-      ctx.lineTo(3, 12)
-      ctx.closePath()
-      ctx.fill()
+    // 1. Render the Arrow (Path-based for absolute precision)
+    ctx.save()
+    if (!isRightSide) {
+      ctx.scale(-1, 1) // Flip orientation around the hotspot (0, 0)
     }
+
+    ctx.fillStyle = color
+    ctx.beginPath()
+    // A standard arrow pointing exactly to (0, 0)
+    ctx.moveTo(0, 0)
+    ctx.lineTo(15, 6)
+    ctx.lineTo(6, 15)
+    ctx.closePath()
+    ctx.fill()
+
+    // Subtle border for visibility
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'
+    ctx.lineWidth = 1
+    ctx.stroke()
+    ctx.restore() // End of Arrow-only flip
 
     // 2. Render the Label
     const textContent = `${pointer.id}${isYours ? ` on ${formatTimestampToReadableString(pointer.timestamp)}ms` : ''}`
@@ -845,15 +843,9 @@ export class LayeredTimelineRenderer {
     const labelWidth = metrics.width + padding * 2
     const labelHeight = 20
 
-    // Flip logic: 
-    // If on the RIGHT half of screen (isRightSide), offset label to the LEFT.
-    // If on the LEFT half of screen (!isRightSide), offset label to the RIGHT.
-    // Consistency check:
-    // If isRightSide=true, containerX=x, local tip is at 0. Label at -labelWidth - 12 (12px gap to left).
-    // If isRightSide=false, containerX=x-15, local tip is at 15. Label at 15 + 12 = 27 (12px gap to right).
-    const gap = 12
-    const labelX = isRightSide ? (-labelWidth - gap) : (15 + gap)
-    const labelY = 18
+    const gap = 18
+    const labelX = !isRightSide ? (-labelWidth - gap) : gap
+    const labelY = 10
 
     // Label background
     ctx.fillStyle = color
@@ -874,7 +866,7 @@ export class LayeredTimelineRenderer {
     ctx.fillText(textContent, labelX + padding, labelY + labelHeight / 2)
     ctx.shadowBlur = 0
 
-    ctx.restore()
+    ctx.restore() // End of coordinate translate(x, y)
   }
 
   private composeLayers(width: number, height: number) {
