@@ -233,9 +233,9 @@ export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
   };
 
   const loadPreview = async () => {
-    const preview = await Info.file_ingest({
+    const preview = await Info.file_ingest_preview({
       preview_mode: true,
-      context: 'context',
+      context: 'preview',
       file,
       settings
     })

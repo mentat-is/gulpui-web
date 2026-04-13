@@ -59,18 +59,34 @@ function _({ children }: { children: ReactNode }) {
     }
 
     return new SmartSocket.Class(app.general.ws_id);
-  }, [app.general, app.general.server, app.general.ws_id, app.general.user]);
+    return new SmartSocket.Class(app.general.ws_id);
+  }, [app.general.server, app.general.ws_id, app.general.user?.id]);
 
   useEffect(() => {
     if (!SmartSocket.Class.instance)
       return;
 
     /**
+     * Handles incoming collab create messages (context/source) from WebSocket.
+     * This ensures the UI is reactive to new items regardless of who created them.
+     */
+    const collabCreateCallback = (message: any) => {
+      const obj = message.payload.obj;
+      if (obj.type === 'context') {
+        setInfo(prev => {
+          if (prev.target.contexts.find(c => c.id === obj.id)) return prev;
+          return { ...prev, target: { ...prev.target, contexts: [...prev.target.contexts, obj] } };
+        });
+      } else if (obj.type === 'source') {
+        setInfo(prev => {
+          if (prev.target.files.find(f => f.id === obj.id)) return prev;
+          return { ...prev, target: { ...prev.target, files: [...prev.target.files, Source.Entity.normalize(prev, obj)] } };
+        });
+      }
+    }
+
+    /**
      * Handles incoming collab update messages (note/link/highlight) from WebSocket.
-     * Uses functional setState to guarantee immutable updates and correct React
-     * change detection. The old approach mutated the app object in-place and passed
-     * the same reference to setInfo(), which could cause React to skip re-renders
-     * or trigger stale cascading updates.
      */
     const collabUpdateCallback = (message: any) => {
       switch (message.payload.obj.type) {
@@ -104,12 +120,9 @@ function _({ children }: { children: ReactNode }) {
 
     /**
      * Handles collab delete messages from WebSocket.
-     * Uses functional setState to produce an immutable state update.
-     * Returns `prev` unchanged if the id matches neither notes nor links,
-     * preventing unnecessary re-renders.
      */
     const collabDeleteCallback = (message: any) => {
-      const id: Link.Id | Note.Id = message.payload.id;
+      const id: any = message.payload.id;
       setInfo(prev => {
         // Check notes first
         if (prev.target.notes.some(n => n.id === id)) {
@@ -125,6 +138,19 @@ function _({ children }: { children: ReactNode }) {
             target: { ...prev.target, links: prev.target.links.filter(l => l.id !== id) }
           };
         }
+        // Context/Source deletion
+        if (prev.target.contexts.some(c => c.id === id)) {
+          return {
+            ...prev,
+            target: { ...prev.target, contexts: prev.target.contexts.filter(c => c.id !== id) }
+          };
+        }
+        if (prev.target.files.some(f => f.id === id)) {
+          return {
+            ...prev,
+            target: { ...prev.target, files: prev.target.files.filter(f => f.id !== id) }
+          };
+        }
         // Nothing matched — return same reference so React skips re-render
         return prev;
       });
@@ -132,11 +158,13 @@ function _({ children }: { children: ReactNode }) {
 
     const reqeustStatsCallback = (message: any) => instanceRef.current.request_add(message.payload.obj);
 
+    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_CREATE, collabCreateCallback);
     SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
     SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
     const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.STATS_UPDATE, m => m.payload.obj.type === 'request_stats', reqeustStatsCallback);
 
     return () => {
+      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_CREATE, collabCreateCallback);
       SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
       SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
       SmartSocket.Class.instance.coff(SmartSocket.Message.Type.STATS_UPDATE, sid);

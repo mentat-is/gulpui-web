@@ -32,6 +32,7 @@ import { Query } from "@/entities/Query";
 import { Highlight } from "@/entities/Highlight";
 import { Mapping } from "@/entities/Mapping";
 import { Internal } from "@/entities/addon/Internal";
+import { ingestWorkerManager } from "@/workers/IngestWorker.manager";
 
 export namespace GulpDataset {
 	export namespace GetAvailableLoginApi {
@@ -1158,145 +1159,71 @@ export class Info implements InfoProps {
 			return;
 		}
 
-		const formData = new FormData();
-		const payload: Record<any, any> = {
-			original_file_path: file.name,
-			offset: settings.offset ?? 0,
-		};
-
-		const pluginParamsPayload: Record<string, any> = {};
-
-		if (settings.custom_parameters && Object.keys(settings.custom_parameters).length > 0) {
-			pluginParamsPayload.custom_parameters = settings.custom_parameters;
-		}
-
-		const mappingParameters: Record<string, any> = {};
-		if (settings.method) mappingParameters.mapping_file = settings.method;
-		if (settings.mapping) mappingParameters.mapping_id = settings.mapping;
-		
-		if (settings.additional_mapping_files) mappingParameters.additional_mapping_files = settings.additional_mapping_files;
-		if (settings.mappings && Object.keys(settings.mappings).length > 0) mappingParameters.mappings = settings.mappings;
-		if (settings.additional_mappings && Object.keys(settings.additional_mappings).length > 0) mappingParameters.additional_mappings = settings.additional_mappings;
-		if (settings.sigma_mappings && Object.keys(settings.sigma_mappings).length > 0) mappingParameters.sigma_mappings = settings.sigma_mappings;
-
-		if (Object.keys(mappingParameters).length > 0) {
-			if (!mappingParameters.mappings) mappingParameters.mappings = {};
-			pluginParamsPayload.mapping_parameters = mappingParameters;
-		}
-
-		if (settings.override_chunk_size !== undefined) pluginParamsPayload.override_chunk_size = settings.override_chunk_size;
-		if (settings.override_allow_unmapped_fields !== undefined) pluginParamsPayload.override_allow_unmapped_fields = settings.override_allow_unmapped_fields;
-		if (settings.store_file !== undefined) pluginParamsPayload.store_file = settings.store_file;
-
 		if (preview_mode) {
-			pluginParamsPayload.preview_mode = true;
+			toast.error("Preview mode not supported in file_ingest, use file_ingest_preview");
+			return;
 		}
-
-		if (Object.keys(pluginParamsPayload).length > 0) {
-			payload.plugin_params = pluginParamsPayload;
-		}
-
-		if (frame) {
-			payload.flt = {
-				int_filter: [frame.min, frame.max],
-			};
-		}
-
-		formData.append(
-			"payload",
-			new Blob([JSON.stringify(payload)], { type: "application/json" }),
-		);
-
-		const query: Record<string, string | boolean> = {
-			plugin: plugin.split(".")[0],
-			operation_id: operation.id,
-			context_name: context,
-			ws_id: this.app.general.ws_id,
-		};
-
-		const ingest = async (
-			start = 0,
-			id?: Request.Id,
-		): Promise<void | Doc.Type[]> => {
-			formData.delete("f");
-
-			const end = Math.min(
-				file.size,
-				preview_mode ? file.size : start + 1024 * 1024 * 8,
-			); // 8MB
-
-			formData.append("f", file.slice(start, end), file.name);
-
-			if (id && !query.req_id) {
-				query.req_id = id;
-			}
-
-			const response = await api<any>("/ingest_file", {
-				method: "POST",
-				body: formData,
-				deassign: true,
-				raw: true,
-				query,
-				headers: {
-					size: file.size.toString(),
-					continue_offset: start.toString(),
-				},
-			});
-
-			if (preview_mode) {
-				return response.data as unknown as Doc.Type[];
-			}
-
-			// resume
-			const nextOffset = response?.data?.continue_offset;
-			if (nextOffset !== undefined && nextOffset !== null) {
-				return ingest(nextOffset, response.req_id);
-			}
-
-			if (setProgress) setProgress((end / file.size) * 100);
-
-			// next
-			if (end < file.size) {
-				return ingest(end, response.req_id);
-			}
-		};
 
 		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
 
-		if (!this.app.target.contexts.find((c) => c.name === context)) {
-			SmartSocket.Class.instance.conce(
-				SmartSocket.Message.Type.COLLAB_CREATE,
-				(m) => m.req_id === id,
-				(m) => {
-					if (m.payload.obj.type !== "context") {
-						return;
-					}
-
-					console.log(m.payload, "814 context collab create");
-					this.setInfoByKey(
-						(prevContexts) => Refractor.array(...(prevContexts as any), m.payload.obj) as any,
-						"target",
-						"contexts",
-					);
-				},
-			);
-		}
+		ingestWorkerManager.enqueue({
+			req_id: id,
+			file,
+			operation_id: operation.id,
+			context_name: context,
+			ws_id: this.app.general.ws_id,
+			settings,
+			server: Internal.Settings.server,
+			token: Internal.Settings.token,
+			frame,
+			onProgress: (progress, bytes) => {
+				this.ingestionProgress.set(id as unknown as Source.Id, progress);
+				// Also try to find by source id if available
+				const sourceIdByReqId = this.app.general.loadings.byRequestId.get(id);
+				if (sourceIdByReqId) {
+					this.ingestionProgress.set(sourceIdByReqId, progress);
+				}
+				
+				if (progress % 5 === 0 || progress === 100) {
+					this.render();
+				}
+				if (setProgress) setProgress(progress);
+			},
+			onError: (err) => {
+				toast.error(`Ingestion of ${file.name} failed: ${err}`);
+				this.delLoading(id);
+			}
+		});
 
 		SmartSocket.Class.instance.conce(
 			SmartSocket.Message.Type.COLLAB_CREATE,
-			(m) => m.req_id === id,
+			(m) => m.payload.obj.type === "context" && (m.req_id === id || m.payload.obj.name === context),
 			(m) => {
-				if (m.payload.obj.type !== "source") {
-					return;
+				// Global listener in Application.context.tsx handles state addition
+				console.log(m.payload, "Context created for ingest", id);
+			},
+		);
+
+		// 2. Progressive addition of files arriving from server
+		SmartSocket.Class.instance.conce(
+			SmartSocket.Message.Type.COLLAB_CREATE,
+			(m) => {
+				if (m.payload.obj.type !== "source") return false;
+				if (m.req_id === id) return true;
+				
+				const mName = m.payload.obj.name || '';
+				const fName = file.name || '';
+				if (mName === fName) return true;
+				try {
+					return decodeURIComponent(mName) === decodeURIComponent(fName);
+				} catch (e) {
+					return false;
 				}
-
-				this.setLoading(m.req_id, m.payload.obj.id as unknown as Source.Id);
-
-				this.setInfoByKey(
-					(prevFiles) => Refractor.array(...(prevFiles as any), Source.Entity.normalize(this.app, m.payload.obj)) as any,
-					"target",
-					"files",
-				);
+			},
+			(m) => {
+				// loading state is local to this ingest
+				this.setLoading(m.req_id || id, m.payload.obj.id as unknown as Source.Id);
+				// Global listener handles state addition
 			},
 		);
 
@@ -1329,64 +1256,61 @@ export class Info implements InfoProps {
 						// Batched addition of all incoming events at the end of ingestion
 						await this.events_add_async(bufferedEvents);
 
+						const fileId = events[0]["gulp.source_id"] as Source.Id;
 						const all = Source.Entity.events(this.app, fileId);
-						// Worker sorted it in events_add_async
 
-						if (all.length === 0) {
-							this.delLoading(m.req_id);
-							return;
-						}
-
-						const timestamp = {
+						const timestamp = all.length > 0 ? {
 							min: all[all.length - 1].timestamp,
 							max: all[0].timestamp,
-						};
+						} : { min: Date.now(), max: Date.now() };
 
 						// Finalize progress (clean up map)
 						this.ingestionProgress.delete(fileId);
 
-						if (exist !== -1 && file) {
-							files[exist] = Source.Entity.normalize(this.app, {
-								...file,
-								timestamp,
-								nanotimestamp: {
-									min: Internal.Transformator.toNanos(timestamp.min),
-									max: Internal.Transformator.toNanos(timestamp.max),
-								},
-								total: all.length,
-								selected: true,
-							});
+						const reqId = m.req_id;
+						this.batchUpdate(draft => {
+							const files = Refractor.array(...draft.target.files);
+							const exist = files.findIndex((f) => f.id === fileId);
+							const file = files[exist];
 
-							const frame: MinMax = {
-								min: Math.min(...files.map((f) => f.timestamp.min)),
-								max: Math.max(...files.map((f) => f.timestamp.max)),
-							};
+							if (exist !== -1 && file) {
+								files[exist] = Source.Entity.normalize(draft, {
+									...file,
+									timestamp,
+									nanotimestamp: {
+										min: Internal.Transformator.toNanos(timestamp.min),
+										max: Internal.Transformator.toNanos(timestamp.max),
+									},
+									total: all.length,
+									selected: true,
+								});
 
-							// Batch files + frame + loading cleanup into a single state update
-							const reqId = m.req_id;
-							this.batchUpdate(draft => {
 								draft.target.files = files;
-								draft.timeline.frame = frame;
-								// Inline delLoading to avoid an extra setState
-								draft.general.loadings.byRequestId.delete(reqId);
-								const fileEntry = [...draft.general.loadings.byFileId.entries()].find(
-									(e) => e[1] === reqId,
-								)?.[0];
-								if (fileEntry) {
-									draft.general.loadings.byFileId.delete(fileEntry);
-								}
-							});
-						} else {
-							this.delLoading(m.req_id);
-						}
+								
+								draft.timeline.frame = {
+									min: Math.min(...files.map((f) => f.timestamp.min)),
+									max: Math.max(...files.map((f) => f.timestamp.max)),
+								};
+							}
+
+							// Inline delLoading logic to avoid extra setState
+							draft.general.loadings.byRequestId.delete(reqId);
+							const fileEntry = [...draft.general.loadings.byFileId.entries()].find(
+								(e) => e[1] === reqId,
+							)?.[0];
+							if (fileEntry) {
+								draft.general.loadings.byFileId.delete(fileEntry);
+							}
+						});
 
 						SmartSocket.Class.instance.coff(
 							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 							sid,
 						);
 						
-						if (file) {
-							toast.success(`Source ${file.name} has been ingested successfully`, {
+						const finalFile = Source.Entity.id(this.app, fileId);
+						if (finalFile) {
+							toast.success(`Source ${finalFile.name} has been ingested successfully`, {
 								description: `Total amount of documents is: ${all.length}`,
 								richColors: true,
 								icon: <Icon name="Check" />,
@@ -1406,8 +1330,42 @@ export class Info implements InfoProps {
 				}
 			},
 		);
+	};
 
-		return ingest(0, id);
+	file_ingest_preview = async (options: FileEntity.IngestOptions): Promise<Doc.Type[]> => {
+		const { file, settings } = options;
+		const operation = Operation.Entity.selected(this.app);
+		if (!operation) return [];
+
+		const formData = new FormData();
+		const payload = {
+			original_file_path: file.name,
+			offset: settings.offset ?? 0,
+			plugin_params: {
+				...settings.custom_parameters,
+				preview_mode: true
+			}
+		};
+
+		formData.append("payload", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+		formData.append("f", file, file.name);
+
+		const query = {
+			plugin: settings.plugin?.split(".")[0],
+			operation_id: operation.id,
+			context_name: 'preview',
+			ws_id: this.app.general.ws_id,
+		};
+
+		const response = await api<any>("/ingest_file", {
+			method: "POST",
+			body: formData,
+			deassign: true,
+			raw: true,
+			query,
+		});
+
+		return response.data as unknown as Doc.Type[];
 	};
 
 	// ⚠️ UNTOUCHABLE
@@ -1583,21 +1541,29 @@ export class Info implements InfoProps {
 		this.setInfoByKey(value, "settings", key);
 
 	setLoading(req_id: Request.Id, file_id: Source.Id) {
-		const loadings = this.app.general.loadings;
-		loadings.byRequestId.set(req_id, file_id);
-		loadings.byFileId.set(file_id, req_id);
+		this.app.general.loadings.byRequestId.set(req_id, file_id);
+		this.app.general.loadings.byFileId.set(file_id, req_id);
+
+		const loadings = {
+			byRequestId: new Map(this.app.general.loadings.byRequestId),
+			byFileId: new Map(this.app.general.loadings.byFileId),
+		};
 		this.setInfoByKey(loadings, "general", "loadings");
 	}
 
 	delLoading(req_id: Request.Id) {
-		const loadings = this.app.general.loadings;
-		loadings.byRequestId.delete(req_id);
-		const file_id = [...loadings.byFileId.entries()].find(
+		this.app.general.loadings.byRequestId.delete(req_id);
+		const file_id = [...this.app.general.loadings.byFileId.entries()].find(
 			(e) => e[1] === req_id,
 		)?.[0];
 		if (file_id) {
-			loadings.byFileId.delete(file_id);
+			this.app.general.loadings.byFileId.delete(file_id);
 		}
+
+		const loadings = {
+			byRequestId: new Map(this.app.general.loadings.byRequestId),
+			byFileId: new Map(this.app.general.loadings.byFileId),
+		};
 		this.setInfoByKey(loadings, "general", "loadings");
 	}
 

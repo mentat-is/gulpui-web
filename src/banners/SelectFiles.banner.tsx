@@ -407,22 +407,24 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
       .then(({ docs, total_hits }) => spawnBanner(<Preview.Banner total={total_hits} values={docs} fixed back={() => spawnBanner(<SelectFiles.Banner />)} done={<Button icon='Check' onClick={() => spawnBanner(<SelectFiles.Banner />)} variant='glass' />} />))
   }
 
-  const [progress, setProgress] = useState(0);
+	const progressDefault = Info.ingestionProgress.get(file.id) || 0;
+	const [progress, setProgress] = useState<number>(progressDefault);
 
-  useEffect(() => {
-    const isIngesting = Source.Entity.getRequestType(app, file) === Request.Prefix.INGESTION;
-    if (!isIngesting) {
-      if (progress !== 0) setProgress(0);
-      return;
-    }
+	useEffect(() => {
+		const interval = setInterval(() => {
+			const isIngesting = Source.Entity.getRequestType(Info.app, file.id) === Request.Prefix.INGESTION;
+			
+			if (isIngesting) {
+				const reqId = Info.app.general.loadings.byFileId.get(file.id);
+				const p = Info.ingestionProgress.get(file.id) || (reqId ? Info.ingestionProgress.get(reqId as any) : 0) || 0;
+				setProgress(prev => (prev !== p ? p : prev));
+			} else {
+				setProgress(prev => (prev !== 0 ? 0 : prev));
+			}
+		}, 1000);
 
-    const interval = setInterval(() => {
-      const current = Info.ingestionProgress.get(file.id) || 0;
-      setProgress(current);
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, [app, file.id, Info.ingestionProgress]);
+		return () => clearInterval(interval);
+	}, [file.id, Info]);
 
   const FileIsTooBig = () => {
     const total = file.total + progress;
