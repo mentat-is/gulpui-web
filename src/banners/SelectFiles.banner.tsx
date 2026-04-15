@@ -48,11 +48,7 @@ export namespace SelectFiles {
 			return () => clearInterval(timer);
 		}, []);
 
-		// @ts-ignore
-		const update = <T extends Set<Source.Id | Context.Id>>(
-			values: T,
-			vault: SetState<T>,
-		) => vault(new Set<T>([...values.values()]));
+		const update = <T,>(values: Set<T>, vault: SetState<Set<T>>) => vault(new Set(values));
 
 		function all(select: boolean) {
 			const operation = Operation.Entity.selected(app);
