@@ -1,92 +1,129 @@
 .banner {
-  max-height: 64vh;
-  height: 64vh;
+	max-height: 64vh;
+	height: 64vh;
 }
 
-.banner>div {
-  overflow-y: hidden;
-  overflow-x: auto;
+.banner > div {
+	overflow-y: hidden;
+	overflow-x: auto;
 }
 
 .wrapper {
-  height: 100%;
-  /* padding-right: 8px; */
+	height: 100%;
+	/* padding-right: 8px; */
 }
 
 .noData {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding-top: 8px;
+	height: 100%;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	padding-top: 8px;
 }
 
-.branch {
-  padding: 8px;
-  background: var(--background-100);
-  border: 1px solid var(--gray-400);
-  border-radius: 6px;
-  width: 100%;
+.branchHeader {
+	padding: 8px 8px 0 8px;
+	background: var(--background-100);
+	border: 1px solid var(--gray-400);
+	border-top-left-radius: 6px;
+	border-top-right-radius: 6px;
+	width: 100%;
+	position: relative;
+	margin-top: 16px;
+}
+
+.branchHeader:not(.noFiles) {
+	border-bottom: none;
+}
+
+.branchHeader.noFiles {
+	border-bottom-left-radius: 6px;
+	border-bottom-right-radius: 6px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--gray-400);
+}
+
+.fileBranch {
+	padding: 0 8px;
+	width: 100%;
+}
+
+.fileBranch.last {
+	padding-bottom: 8px;
+}
+
+.fileWrapper {
+	padding-top: 4px;
+	background: var(--background-100);
+	border-left: 1px solid var(--gray-400);
+	border-right: 1px solid var(--gray-400);
+}
+
+.fileWrapper.last {
+	border-bottom: 1px solid var(--gray-400);
+	border-bottom-left-radius: 6px;
+	border-bottom-right-radius: 6px;
 }
 
 .contextHeading label {
-  font-size: 16px;
-  font-family: var(--font-mono);
-  color: var(--accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 512px;
+	font-size: 16px;
+	font-family: var(--font-mono);
+	color: var(--accent);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 512px;
 }
 
 .file label {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1;
+	font-size: 11px;
+	font-family: var(--font-mono);
+	color: var(--accent);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1;
 }
 
 .separator {
-  width: calc(100% + 16px) !important;
-  left: -8px;
-  position: relative;
+	width: calc(100% + 16px) !important;
+	left: -8px;
+	position: relative;
+	margin-top: 8px;
 }
 
 .smallButton {
-  width: 20px !important;
-  height: 20px;
-  min-height: 20px;
-  min-width: 20px;
-  border-radius: 2px;
+	width: 20px !important;
+	height: 20px;
+	min-height: 20px;
+	min-width: 20px;
+	border-radius: 2px;
 }
 
 .smallButton svg {
-  height: 10px;
-  width: 10px;
+	height: 10px;
+	width: 10px;
 }
 
 .amount {
-  border-radius: 2px !important;
-  background-color: var(--soft-black);
-  border: 1px solid var(--gray-400);
+	border-radius: 2px !important;
+	background-color: var(--soft-black);
+	border: 1px solid var(--gray-400);
 }
 
 .disabled {
-  opacity: 0.5;
-  pointer-events: none;
+	opacity: 0.5;
+	pointer-events: none;
 }
 
 .actionButton {
-  background: var(--background-100);
-  flex: 1;
+	background: var(--background-100);
+	flex: 1;
 }
 
-.smallButton>div {
-  --spinner-size: 14px !important;
+.smallButton > div {
+	--spinner-size: 14px !important;
 }
