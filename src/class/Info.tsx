@@ -1105,7 +1105,7 @@ export class Info implements InfoProps {
 		operation: Operation.Type,
 		setLoading: SetState<boolean>,
 	) => {
-		api(
+		return api(
 			"/operation_delete",
 			{
 				method: "DELETE",
@@ -1113,6 +1113,17 @@ export class Info implements InfoProps {
 					operation_id: operation.id,
 				},
 				setLoading,
+				toast: {
+					onSuccess: () => toast.success(`Operation ${operation.name} has been deleted successfully`, {
+						icon: <Icon name='Check' />,
+						richColors: true,
+					}),
+					onError: response => toast.error(`Failed deleting operation`, {
+						description: `Reason ${response.data.__error.msg}`,
+						icon: <Icon name='Stop' />,
+						richColors: true,
+					})
+				}
 			},
 			this.sync,
 		);

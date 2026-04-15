@@ -219,6 +219,25 @@ export namespace Operation {
           spawnBanner(<Operation.Select.Banner />)
         });
 
+      const DeleteButton = () => {
+        if (!operation.id) return null
+
+        const deleteOperation = () => {
+          Info.deleteOperation(operation, setLoading).then(() => {
+            spawnBanner(<Operation.Select.Banner />)
+          })
+        }
+
+        return (
+          <Button
+            variant='tertiary'
+            onClick={deleteOperation}
+            icon='Trash'
+            loading={loading}
+          />
+        )
+      }
+
       const DoneButton = () => {
         const doneButtonClickHandler = () => {
           if (operation.id) {
@@ -238,7 +257,7 @@ export namespace Operation {
       }
 
       return (
-        <UIBanner title={operation.id ? 'Update operation' : 'Create new operation'} done={<DoneButton />} className={s.wrapper} {...props}>
+        <UIBanner title={operation.id ? 'Update operation' : 'Create new operation'} option={<DeleteButton />} done={<DoneButton />} className={s.wrapper} {...props}>
           {operation.id ? null : <Input
             label='Name'
             value={name}
