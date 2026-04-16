@@ -10,6 +10,8 @@ import { Note } from '@/entities/Note';
 import { Link } from '@/entities/Link';
 import { Source } from '@/entities/Source';
 import { App } from '@/entities/App';
+import { DataStore } from '@/store/DataStore';
+import { RenderEngine } from '@/class/RenderEngine';
 
 
 function _({ children }: { children: ReactNode }) {
@@ -92,24 +94,29 @@ function _({ children }: { children: ReactNode }) {
       switch (message.payload.obj.type) {
         case 'note': {
           const note: Note.Type = message.payload.obj;
-          setInfo(prev => {
-            const idx = prev.target.notes.findIndex(n => n.id === note.id);
-            const newNotes = idx >= 0
-              ? prev.target.notes.map((n, i) => i === idx ? note : n)
-              : [...prev.target.notes, note];
-            return { ...prev, target: { ...prev.target, notes: newNotes } };
-          });
+          const idx = DataStore.notes.findIndex(n => n.id === note.id);
+          if (idx >= 0) {
+            DataStore.notes[idx] = note;
+          } else {
+            DataStore.notes.push(note);
+          }
+          Note.Entity.invalidateCache();
+          RenderEngine.clearAllCaches();
+          DataStore.markDirty();
+          instanceRef.current.render();
           return;
         }
         case 'link': {
           const link: Link.Type = message.payload.obj;
-          setInfo(prev => {
-            const idx = prev.target.links.findIndex(l => l.id === link.id);
-            const newLinks = idx >= 0
-              ? prev.target.links.map((l, i) => i === idx ? link : l)
-              : [...prev.target.links, link];
-            return { ...prev, target: { ...prev.target, links: newLinks } };
-          });
+          const idx = DataStore.links.findIndex(l => l.id === link.id);
+          if (idx >= 0) {
+            DataStore.links[idx] = link;
+          } else {
+            DataStore.links.push(link);
+          }
+          RenderEngine.clearAllCaches();
+          DataStore.markDirty();
+          instanceRef.current.render();
           return;
         }
         case 'highlight':
@@ -123,22 +130,30 @@ function _({ children }: { children: ReactNode }) {
      */
     const collabDeleteCallback = (message: any) => {
       const id: any = message.payload.id;
+
+      // Check notes
+      const noteIdx = DataStore.notes.findIndex(n => n.id === id);
+      if (noteIdx >= 0) {
+        DataStore.notes.splice(noteIdx, 1);
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        instanceRef.current.render();
+        return;
+      }
+
+      // Check links
+      const linkIdx = DataStore.links.findIndex(l => l.id === id);
+      if (linkIdx >= 0) {
+        DataStore.links.splice(linkIdx, 1);
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        instanceRef.current.render();
+        return;
+      }
+
       setInfo(prev => {
-        // Check notes first
-        if (prev.target.notes.some(n => n.id === id)) {
-          return {
-            ...prev,
-            target: { ...prev.target, notes: prev.target.notes.filter(n => n.id !== id) }
-          };
-        }
-        // Then check links
-        if (prev.target.links.some(l => l.id === id)) {
-          return {
-            ...prev,
-            target: { ...prev.target, links: prev.target.links.filter(l => l.id !== id) }
-          };
-        }
-        // Context/Source deletion
+        // Context/Source deletion (Low frequency)
         if (prev.target.contexts.some(c => c.id === id)) {
           return {
             ...prev,
@@ -151,7 +166,6 @@ function _({ children }: { children: ReactNode }) {
             target: { ...prev.target, files: prev.target.files.filter(f => f.id !== id) }
           };
         }
-        // Nothing matched — return same reference so React skips re-render
         return prev;
       });
     }

@@ -10,6 +10,7 @@ import { Context } from './Context'
 import { Operation } from './Operation'
 import { User } from './User'
 import { Glyph } from './Glyph'
+import { DataStore } from '@/store/DataStore'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
 import { Application } from '@/context/Application.context'
@@ -46,13 +47,13 @@ export namespace Note {
   export class Entity {
     public static icon = Internal.IconExtractor.activate<Note.Type | null>(Default.Icon.NOTE)
 
-    public static id = (app: App.Type, id: Note.Id) =>
-      app.target.notes.find((n) => n.id === id) as Note.Type
+    public static id = (_app: App.Type, id: Note.Id) =>
+      DataStore.notes.find((n) => n.id === id) as Note.Type
 
     public static selected = (app: App.Type): Note.Type[] => {
       const files = Source.Entity.selected(app).map(file => file.id);
 
-      return app.target.notes.filter((note) => files.includes(note.doc['gulp.source_id']));
+      return DataStore.notes.filter((note) => files.includes(note.doc['gulp.source_id']));
     }
 
     public static event = (app: App.Type, note: Note.Type): Doc.Type => Doc.Entity.id(app, note.doc._id)
@@ -89,7 +90,7 @@ export namespace Note {
 
       Note.Entity[CacheKey].clear();
       app.target.files.forEach(file => {
-        Note.Entity[CacheKey].set(file.id, app.target.notes.filter((n) => n.source_id === file.id));
+        Note.Entity[CacheKey].set(file.id, DataStore.notes.filter((n) => n.source_id === file.id));
       });
 
       Note.Entity._cacheValid = true;
@@ -113,7 +114,7 @@ export namespace Note {
         return notes;
       }
       
-      const fileNotes = app.target.notes.filter((n) => n.source_id === id);
+      const fileNotes = DataStore.notes.filter((n) => n.source_id === id);
       Note.Entity[CacheKey].set(id, fileNotes);
       return fileNotes;
     };

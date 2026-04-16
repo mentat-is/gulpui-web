@@ -18,6 +18,7 @@ import { Request } from '@/entities/Request'
 import { Internal } from '@/entities/addon/Internal'
 import { Color } from '@/entities/Color'
 import { Operation } from '@/entities/Operation'
+import { DataStore } from '@/store/DataStore'
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = NOTE_SIZE / 2 * -1;
@@ -212,7 +213,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     RenderEngine.interactiveLinks = [];
     const canvasWidth = this.ctx.canvas.width;
 
-    this.info.app.target.links.forEach((link) => {
+    DataStore.links.forEach((link) => {
       if (link.doc_ids.some(id => !Source.Entity.selected(this.info.app).find(s => s.id === Doc.Entity.id(this.info.app, id)?.['gulp.source_id'])))
         return
 
@@ -841,7 +842,5 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
     if (GraphEngine.instance) {
       GraphEngine.instance.map.clear();
     }
-
-    CanvasIcon.cache.clear();
   }
 }

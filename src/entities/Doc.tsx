@@ -10,7 +10,7 @@ import { Internal } from "./addon/Internal";
 import { toast } from "sonner";
 import { Icon } from "@impactium/icons";
 import { Logger } from "@/dto/Logger.class";
-import { DataWorker } from "@/workers/DataWorker.class";
+import { DataStore } from "@/store/DataStore";
 
 export namespace Doc {
   export const name = 'Doc'
@@ -89,15 +89,15 @@ export namespace Doc {
 
       files.forEach((file) => {
         // Remove from index before deleting
-        const events = app.target.events.get(file.id);
+        const events = DataStore.events.get(file.id);
         if (events) {
           events.forEach(e => Doc.Entity._index.delete(e._id));
         }
-        app.target.events.delete(file.id)
-        app.target.events.set(file.id, [])
+        DataStore.events.delete(file.id)
+        DataStore.events.set(file.id, [])
       })
 
-      return app.target.events
+      return DataStore.events
     }
 
     /** Returns the time range (min/max) of a sorted event array. Assumes descending sort order. */
@@ -111,9 +111,9 @@ export namespace Doc {
       Doc.Entity._index.get(event) as Doc.Type
 
     /** Retrieves all events for a given source ID. Auto-initializes an empty array if none exist. */
-    public static get = (app: App.Type, id: Source.Id): Doc.Type[] =>
-      app.target.events.get(id) ||
-      (app.target.events.set(id, []).get(id) as Doc.Type[])
+    public static get = (_app: App.Type, id: Source.Id): Doc.Type[] =>
+      DataStore.events.get(id) ||
+      (DataStore.events.set(id, []).get(id) as Doc.Type[])
 
     /** Sorts events in descending timestamp order (newest first). Mutates the array in place. */
     public static sort = (events: Doc.Type[]) => events.sort((a, b) => b.timestamp - a.timestamp);
@@ -180,66 +180,49 @@ export namespace Doc {
         }
       })
 
-      return app.target.events
+      DataStore.markDirty();
+      return DataStore.events
     }
 
     /**
-     * Asynchronous version of `add` that offloads the heavy sorting to the Web Worker.
-     * Prevents main thread freeze during massive document insertions.
+     * Asynchronous version of `add` that prevents main thread freeze.
+     * Use in-place pushing with Event Loop Yielding (chunking) and native Array.prototype.sort().
      */
     public static addAsync = async (app: App.Type, events: Doc.Type[]) => {
       const sources = new Set<Source.Id>();
-
-      const eventsBySource = new Map<Source.Id, Map<Doc.Id, Doc.Type>>();
+      const eventsBySource = new Map<Source.Id, Doc.Type[]>();
+      
+      // Group events
       events.forEach((e) => {
         const sourceId = e['gulp.source_id'];
         sources.add(sourceId);
         if (!eventsBySource.has(sourceId)) {
-          eventsBySource.set(sourceId, new Map());
+          eventsBySource.set(sourceId, []);
         }
-        eventsBySource.get(sourceId)!.set(e._id, e);
+        eventsBySource.get(sourceId)!.push(e);
       });
 
-      const promises = Array.from(sources).map(async (id) => {
-        const existingEvents = Doc.Entity.get(app, id);
-        const newEventsMap = eventsBySource.get(id)!;
-        let hasChanges = false;
-
-        for (let i = 0; i < existingEvents.length; i++) {
-          const evt = existingEvents[i];
-          if (newEventsMap.has(evt._id)) {
-            const updated = newEventsMap.get(evt._id)!;
-            existingEvents[i] = updated;
-            Doc.Entity._index.set(updated._id, updated);
-            newEventsMap.delete(evt._id);
-            hasChanges = true;
-          }
-        }
-
-        if (newEventsMap.size > 0) {
-          for (const evt of newEventsMap.values()) {
+      for (const id of sources) {
+        const existingEvents = Doc.Entity.get(app, id); // Ensure get() reads from DataStore
+        const newEvents = eventsBySource.get(id)!;
+        
+        // Chunking to prevent Event Loop blocking
+        const chunkSize = 10000;
+        for (let i = 0; i < newEvents.length; i += chunkSize) {
+          const chunk = newEvents.slice(i, i + chunkSize);
+          for (const evt of chunk) {
             Doc.Entity._index.set(evt._id, evt);
-          }
-          /**
-           * IMPORTANT: Do NOT use `existingEvents.push(...newEventsMap.values())` here.
-           * The spread operator converts the iterable into individual function arguments,
-           * and JS engines have a hard limit (~65K-500K args depending on engine).
-           * With 1M+ events this triggers: RangeError: too many function arguments.
-           */
-          for (const evt of newEventsMap.values()) {
             existingEvents.push(evt);
           }
-          hasChanges = true;
+          // Yield to main thread
+          await new Promise(resolve => setTimeout(resolve, 0));
         }
+        // Fast in-place native sort
+        Doc.Entity.sort(existingEvents);
+      }
 
-        if (hasChanges) {
-          const sorted = await DataWorker.sortEventsAsync(existingEvents);
-          app.target.events.set(id, sorted);
-        }
-      });
-
-      await Promise.all(promises);
-      return app.target.events;
+      DataStore.markDirty();
+      return DataStore.events;
     }
 
     public static timestamp = (event: Doc.Type) => Internal.Transformator.toTimestamp(event['@timestamp']);
@@ -250,8 +233,8 @@ export namespace Doc {
 
     public static notes = (app: App.Type, event: Doc.Type) => Note.Entity.findByFile(app, event['gulp.source_id']).filter((n) => n.doc._id === event._id);
 
-    public static links = (app: App.Type, event: Doc.Type) =>
-      app.target.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
+    public static links = (_app: App.Type, event: Doc.Type) =>
+      DataStore.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
 
     public static normalize = (docs: Doc.Type[]) => docs.map((e: Doc.Type) => ({
       ...e,
@@ -339,7 +322,7 @@ export namespace Doc {
         if (!ids.size) return [];
         const result: Doc.Id[] = [];
 
-        for (const events of app.target.events.values()) {
+        for (const events of DataStore.events.values()) {
           for (const event of events) {
             if (ids.has(event._id)) {
               result.push(event._id);
@@ -362,7 +345,7 @@ export namespace Doc {
 
         const result: Doc.Type[] = [];
 
-        for (const events of app.target.events.values()) {
+        for (const events of DataStore.events.values()) {
           for (const event of events) {
             if (ids.has(event._id)) {
               result.push(event);

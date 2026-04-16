@@ -12,6 +12,7 @@ import { Highlights } from "@/overlays/Highlights";
 import { RenderEngine } from "./RenderEngine";
 import { SmartSocket } from "./SmartSocket";
 import { OpenSearchQueryBuilder } from "@/components/QueryBuilder";
+import { DataStore } from "@/store/DataStore";
 import { Spinner } from "@/ui/Spinner";
 import { Badge } from "@/ui/Badge";
 import { Source } from "@/entities/Source";
@@ -214,9 +215,7 @@ export class Info implements InfoProps {
 		}
 
 		this.notes_reload();
-
 		this.links_reload();
-
 		this.highlights_reload();
 
 		files.forEach((file) => {
@@ -1428,11 +1427,10 @@ export class Info implements InfoProps {
 		);
 
 	events_add = (newEvents: Doc.Type[]) =>
-		this.setInfoByKey(Doc.Entity.add(this.app, newEvents), "target", "events");
+		Doc.Entity.add(this.app, newEvents);
 
 	events_add_async = async (newEvents: Doc.Type[]) => {
-		const newEventsMap = await Doc.Entity.addAsync(this.app, newEvents);
-		this.setInfoByKey(new Map(newEventsMap), "target", "events");
+		await Doc.Entity.addAsync(this.app, newEvents);
 	};
 
 	event_keys = async (file: Source.Type): Promise<Filter.Options> => {
@@ -1469,7 +1467,7 @@ export class Info implements InfoProps {
 	};
 
 	events_reset_in_file = (file: Source.Type) => {
-		this.setInfoByKey(Doc.Entity.delete(this.app, file), "target", "events");
+		Doc.Entity.delete(this.app, file);
 	};
 
 	setDialogSize = (number: number) => {
@@ -1516,7 +1514,10 @@ export class Info implements InfoProps {
 					});
 				}
 
-				this.setInfoByKey([...notes], "target", "notes");
+				DataStore.notes = [...notes];
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
 
 				return new Promise((res) => {
 					setTimeout(() => {
@@ -1526,7 +1527,10 @@ export class Info implements InfoProps {
 			} else {
 				const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
 				Logger.log(message, Info);
-				this.setInfoByKey([...notes], "target", "notes"); // Saving data after all requests are completed
+				DataStore.notes = [...notes];
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
 				if (notes.length >= 2500) {
 					toast.success(message, {
 						icon: <Icon name="Check" />,
@@ -1587,17 +1591,13 @@ export class Info implements InfoProps {
 				ws_id: this.app.general.ws_id,
 			},
 		}).then(() => {
-			const index = this.app.target.notes.findIndex((n) => n.id === note.id);
-			const updated = [...this.app.target.notes];
+			const index = DataStore.notes.findIndex((n) => n.id === note.id);
 			if (index !== -1) {
-				updated.splice(index, 1);
-				this.setInfoByKey(
-					updated.sort(
-						(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-					),
-					"target",
-					"notes",
-				);
+				DataStore.notes.splice(index, 1);
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				this.render();
 			}
 		});
 
@@ -1646,15 +1646,21 @@ export class Info implements InfoProps {
 				doc: Doc.Entity.toDoc(event),
 			},
 		}).then((note) => {
-			const updated = [...this.app.target.notes];
-			updated.push(note);
-			this.setInfoByKey(
-				updated.sort(
-					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-				),
-				"target",
-				"notes",
-			);
+			const idx = DataStore.notes.findIndex(n => n.id === note.id);
+			if (idx !== -1) {
+				DataStore.notes[idx] = note;
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				this.render();
+			} else {
+				DataStore.notes.push(note);
+				DataStore.notes.sort((a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a));
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				this.render();
+			}
 		});
 
 	note_edit = ({
@@ -1698,22 +1704,15 @@ export class Info implements InfoProps {
 				doc: Doc.Entity.toDoc(event),
 			},
 		}).then((note) => {
-			const index = this.app.target.notes.findIndex((n) => n.id === note.id);
-			if (index === -1) {
-				Logger.error(
-					`Note with id: ${note.id} was not found in application data`,
-				);
-				return;
+			const index = DataStore.notes.findIndex((n) => n.id === note.id);
+			if (index !== -1) {
+				DataStore.notes[index] = note;
+				DataStore.notes.sort((a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a));
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				this.render();
 			}
-			const updated = [...this.app.target.notes];
-			updated[index] = note;
-			this.setInfoByKey(
-				updated.sort(
-					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-				),
-				"target",
-				"notes",
-			);
 		});
 
 	// ⚠️ UNTOUCHABLE
@@ -1734,7 +1733,12 @@ export class Info implements InfoProps {
 					source_ids: Source.Entity.selected(this.app).map((f) => f.id),
 				},
 			},
-			(links) => this.setInfoByKey(links, "target", "links"),
+			(links) => {
+				DataStore.links = links;
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				this.render();
+			},
 		);
 	};
 
@@ -1887,7 +1891,12 @@ export class Info implements InfoProps {
 					operation_id: operation.id,
 				},
 			},
-			(h) => this.setInfoByKey(h, "target", "highlights"),
+			(h) => {
+				DataStore.highlights = h;
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				this.render();
+			},
 		);
 	}, 500);
 

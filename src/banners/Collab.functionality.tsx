@@ -325,7 +325,7 @@ export namespace LinkFunctionality {
     export function Banner({ event }: LinkFunctionality.Connect.Props) {
       const { app, Info, spawnBanner } = Application.use()
 
-      const links = useMemo(() => Link.Entity.selected(app), [app.target.links]);
+      const links = useMemo(() => Link.Entity.selected(app), [app.timeline.renderVersion]);
 
       const [loading, setLoading] = useState<boolean>(false);
 

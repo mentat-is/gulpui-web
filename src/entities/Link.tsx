@@ -5,6 +5,7 @@ import { App } from './App';
 import { Source } from './Source';
 import { Default } from '@/dto/Dataset';
 import { Glyph } from './Glyph';
+import { DataStore } from '@/store/DataStore';
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Application } from '@/context/Application.context';
 import { Button } from '@/ui/Button';
@@ -37,10 +38,10 @@ export namespace Link {
   export class Entity {
     public static icon = Internal.IconExtractor.activate<Link.Type | null>(Default.Icon.LINK)
 
-    public static id = (app: App.Type, id: Link.Id): Link.Type => app.target.links.find(link => link.id === id)!;
+    public static id = (_app: App.Type, id: Link.Id): Link.Type => DataStore.links.find(link => link.id === id)!;
 
     public static selected = (app: App.Type) =>
-      app.target.links.filter((link) =>
+      DataStore.links.filter((link) =>
         link.doc_ids.every(
           (id) => Source.Entity.id(app, Doc.Entity.id(app, id)?.['gulp.source_id'])?.selected,
         ),

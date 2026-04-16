@@ -214,8 +214,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 
 	// --- DERIVED DATA ---
-	const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event]);
-	const links = useMemo(() => Doc.Entity.links(app, event), [app.target.links, event]);
+	const notes = useMemo(() => Doc.Entity.notes(app, event), [app.timeline.renderVersion, event]);
+	const links = useMemo(() => Doc.Entity.links(app, event), [app.timeline.renderVersion, event]);
 	const file = useMemo(() => Source.Entity.id(app, event["gulp.source_id"]), [app.target.files, event]);
 
 	// --- EFFECTS ---
@@ -515,8 +515,8 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
 	const file = Source.Entity.id(app, event["gulp.source_id"]);
 	if (!file) return null;
 
-	const notes = useMemo(() => Doc.Entity.notes(app, event), [app.target.notes, event._id]);
-	const links = useMemo(() => Doc.Entity.links(app, event), [app.target.links, event._id]);
+	const notes = useMemo(() => Doc.Entity.notes(app, event), [app.timeline.renderVersion, event._id]);
+	const links = useMemo(() => Doc.Entity.links(app, event), [app.timeline.renderVersion, event._id]);
 
 	const background = useMemo(() => {
 		const range = RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;

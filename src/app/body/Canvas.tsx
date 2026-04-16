@@ -1,4 +1,5 @@
 import { Application } from '@/context/Application.context'
+import { DataStore } from '@/store/DataStore'
 import { useScroll, scrollStore } from '@/store/scroll.store'
 import { getLimits, getTimestamp, throwableByTimestamp } from '@/ui/utils'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -42,7 +43,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   const [target, setTarget] = useState<Source.Type | null>(null)
   const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
     useMagnifier(canvas_ref, [
-      app.target.files, app.target.events.size, scrollX, scrollY, app.timeline.frame, app.timeline.scale, app.target.links, dialog, app.timeline.target, app.timeline.filter, app.timeline.dialogSize, app.hidden, target]);
+      app.target.files, scrollX, scrollY, app.timeline.frame, app.timeline.scale, dialog, app.timeline.target, app.timeline.filter, app.timeline.dialogSize, app.hidden, target]);
   const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } = useDrugs(canvas_ref)
   const pendingFrame = useRef<number>(0);
   const scrollXRef = useRef(scrollX);
@@ -435,6 +436,24 @@ export function Canvas({ timeline }: Canvas.Props) {
   )
 
   useEffect(() => {
+    let animationFrameId: number;
+
+    const gameLoop = () => {
+      if (DataStore.isDirty) {
+        renderCanvas(false);
+        DataStore.isDirty = false;
+      }
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    animationFrameId = requestAnimationFrame(gameLoop);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    }
+  }, [theme]);
+
+  useEffect(() => {
     const canvas = wrapper_ref.current
     
     const handleNativeHover = (e: MouseEvent) => {
@@ -521,14 +540,7 @@ export function Canvas({ timeline }: Canvas.Props) {
   }, [wrapper_ref, debouncedHandleWheel])
 
   useEffect(() => {
-    if (pendingFrame.current) {
-      cancelAnimationFrame(pendingFrame.current);
-    }
-    pendingFrame.current = requestAnimationFrame(() => {
-      pendingFrame.current = 0;
-      renderCanvas();
-    });
-
+    renderCanvas();
     return () => {
       if (pendingFrame.current) {
         cancelAnimationFrame(pendingFrame.current);
@@ -539,16 +551,13 @@ export function Canvas({ timeline }: Canvas.Props) {
     scrollX,
     scrollY,
     app.target.files,
-    app.target.notes,
     app.timeline.frame,
     app.timeline.scale,
-    app.target.links,
     app.timeline.target,
     app.timeline.filter,
     app.timeline.dialogSize,
     app.timeline.renderVersion,
     app.hidden,
-    app.target.events.size,
     target,
     theme
   ])

@@ -28,7 +28,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       note.tags.forEach(tag => tags.add(tag.toLowerCase()));
     })
     return [...tags.values()];
-  }, [app.target.notes]);
+  }, [app.timeline.renderVersion]);
 
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
 
@@ -56,7 +56,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       const byContext = a.context_id.localeCompare(b.context_id);
       return byContext !== 0 ? byContext : a.source_id.localeCompare(b.source_id);
     });
-  }, [app.target.notes, search, app, selectedTags]);
+  }, [app.timeline.renderVersion, search, app, selectedTags]);
 
   const virtualizer = useVirtualizer({
     count: sortedNotes.length,
