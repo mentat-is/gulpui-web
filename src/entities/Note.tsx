@@ -140,7 +140,7 @@ export namespace Note {
         return note._cachedTimestamp;
       }
 
-      const ts = new Date(note.doc["@timestamp"]).getTime();
+      const ts = note.doc.timestamp;
       note._cachedTimestamp = ts;
       return ts;
     };

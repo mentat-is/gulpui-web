@@ -21,21 +21,13 @@ export namespace Doc {
 
   export interface Type {
     _id: Doc.Id;
-    "@timestamp": string;
     timestamp: number;
     "gulp.source_id": Source.Id;
-    "gulp.timestamp": bigint;
     "gulp.event_code": number;
     "gulp.storage_id"?: string;
   }
 
-  export type Minified = Pick<
-    Doc.Type,
-    | "_id"
-    | "@timestamp"
-    | "gulp.timestamp"
-    | "gulp.source_id"
-  >;
+  export type Minified = Pick<Doc.Type, "_id" | "gulp.source_id" | "timestamp">;
 
   interface Flag {
     KEY: string;
@@ -69,9 +61,8 @@ export namespace Doc {
     /** Extracts a minimal Doc payload from a full event, keeping only essential fields. */
     public static toDoc = (event: Doc.Type) => ({
       _id: event._id,
-      "@timestamp": event["@timestamp"],
       "gulp.source_id": event["gulp.source_id"],
-      "gulp.timestamp": event["gulp.timestamp"],
+      timestamp: event.timestamp,
     });
 
     /** Returns the Operation.Id for a doc by looking it up through its source. */
@@ -104,8 +95,8 @@ export namespace Doc {
 
     /** Returns the time range (min/max) of a sorted event array. Assumes descending sort order. */
     public static range = (events: Doc.Type[]) => ({
-      max: new Date(events[0]["@timestamp"]).valueOf(),
-      min: new Date(events[events.length - 1]["@timestamp"]).valueOf(),
+      max: events[0].timestamp,
+      min: events[events.length - 1].timestamp,
     });
 
     /** Finds a single event by its ID using the O(1) `_index` Map. */
@@ -121,11 +112,25 @@ export namespace Doc {
     public static sort = (events: Doc.Type[]) =>
       events.sort((a, b) => b.timestamp - a.timestamp);
 
+    private static _selectedCache: Doc.Type[] | null = null;
+    private static _selectedCacheVersion = -1;
+
+    public static invalidateSelectedCache = () => {
+      Doc.Entity._selectedCache = null;
+    };
+
     /** Returns all events from currently selected sources, flattened into a single array. */
-    public static selected = (app: App.Type): Doc.Type[] =>
-      Source.Entity.selected(app)
+    public static selected = (app: App.Type): Doc.Type[] => {
+      if (Doc.Entity._selectedCache !== null && DataStore.renderVersion === Doc.Entity._selectedCacheVersion) {
+        return Doc.Entity._selectedCache;
+      }
+      const result = Source.Entity.selected(app)
         .map((s) => Doc.Entity.get(app, s.id))
         .flat();
+      Doc.Entity._selectedCache = result;
+      Doc.Entity._selectedCacheVersion = DataStore.renderVersion;
+      return result;
+    };
 
     /**
      * Adds or updates events into the global event store.
@@ -184,6 +189,7 @@ export namespace Doc {
       });
 
       DataStore.markDirty();
+      Doc.Entity.invalidateSelectedCache();
       return DataStore.events;
     };
 
@@ -225,11 +231,11 @@ export namespace Doc {
       }
 
       DataStore.markDirty();
+      Doc.Entity.invalidateSelectedCache();
       return DataStore.events;
     };
 
-    public static timestamp = (event: Doc.Type) =>
-      Internal.Transformator.toTimestamp(event["@timestamp"]);
+    public static timestamp = (event: Doc.Type) => event.timestamp;
 
     /** Finds multiple events by their IDs using the O(1) `_index` Map. Filters out missing entries. */
     public static ids = (_app: App.Type, ids: Doc.Type["_id"][]) =>
@@ -243,23 +249,16 @@ export namespace Doc {
     public static links = (_app: App.Type, event: Doc.Type) =>
       DataStore.links.filter((l) => l.doc_ids.some((doc) => doc === event._id));
 
-    /*public static normalize = (docs: Doc.Type[]) =>
-      docs.map((e: Doc.Type) => ({
-        ...e,
-        ["gulp.timestamp"]: BigInt(e["gulp.timestamp"]),
-        timestamp: Internal.Transformator.toTimestamp(
-          e["gulp.timestamp"],
-          "round",
-        ),
-      })) as Doc.Type[];
-    */
     public static normalize = (docs: Doc.Type[]): Doc.Type[] => {
-      for (const e of docs) {
-        (e as any)["gulp.timestamp"] = BigInt((e as any)["gulp.timestamp"]);
-        (e as any).timestamp = Internal.Transformator.toTimestamp(
-          e["gulp.timestamp"],
-          "round",
-        );
+      for (let i = 0; i < docs.length; i++) {
+        const raw = docs[i] as any;
+        docs[i] = {
+          _id: raw._id,
+          timestamp: Math.round(Number(raw['gulp.timestamp']) / 1_000_000),
+          'gulp.source_id': raw['gulp.source_id'],
+          'gulp.event_code': raw['gulp.event_code'],
+          'gulp.storage_id': raw['gulp.storage_id'],
+        } as Doc.Type;
       }
       return docs;
     };

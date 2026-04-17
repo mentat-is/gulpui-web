@@ -25,7 +25,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
           const mid = Math.floor((left + right) / 2);
           // items are Notes. We expect their pre-calculated timestamp or standard structure.
           // Fallback to direct timestamp property if Note.Entity is unavailable
-          const noteTime = items[mid].timestamp || (new Date(items[mid].doc?.['@timestamp'] || 0).valueOf());
+          const noteTime = items[mid].timestamp || items[mid].doc?.timestamp || 0;
 
           if (findFirst) {
             // Finding first note <= timestamp (leftmost)

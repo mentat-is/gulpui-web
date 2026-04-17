@@ -32,7 +32,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
       <Stack className={s.event} onClick={() => spawnDialog(<DisplayEventDialog event={event} />)} key={event._id}>
         <EventIndicator event={event} />
         <Stack dir="column" jc="space-evenly" ai="flex-start" flex className={s.info} gap={2}>
-          <p className={s.id}>{`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss')}.${String(event['gulp.timestamp'] % 1_000_000n).padStart(6, '0')}`} | {event['gulp.event_code']}</p>
+          <p className={s.id}>{`${format(new Date(event.timestamp), 'yyyy-MM-dd HH:mm:ss.SSS')}`} | {event['gulp.event_code']}</p>
           <span className={s.description}>
             {event._id}
           </span>

@@ -58,7 +58,7 @@ export namespace NotePoint {
         }}
         {...props}
       >
-        <p>{timestampToString(note.doc["@timestamp"])}</p>
+        <p>{timestampToString(note.doc.timestamp)}</p>
         <Icon name={Note.Entity.icon(note)} />
         <p>{note.name}</p>
         <span>{note.text}</span>

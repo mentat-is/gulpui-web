@@ -256,7 +256,7 @@ export class Info implements InfoProps {
 
       let fromNanos: bigint;
       if (events.length > 0) {
-        fromNanos = events[0]["gulp.timestamp"] + 1n;
+        fromNanos = BigInt(events[0].timestamp) * 1_000_000n + 1n;
       } else {
         fromNanos =
           file.nanotimestamp?.max ??

@@ -20,8 +20,12 @@ export class DataStore {
   // Atomic flag to signal requestAnimationFrame that data has changed
   static isDirty: boolean = false;
 
+  // Incremented on every markDirty() — used to invalidate derived caches
+  static renderVersion: number = 0;
+
   // Mutation utility
   static markDirty() {
     this.isDirty = true;
+    this.renderVersion++;
   }
 }
