@@ -36,2753 +36,2817 @@ import { Internal } from "@/entities/addon/Internal";
 import { ingestWorkerManager } from "@/workers/IngestWorker.manager";
 
 export namespace GulpDataset {
-	export namespace GetAvailableLoginApi {
-		export type Response = Method[];
+  export namespace GetAvailableLoginApi {
+    export type Response = Method[];
 
-		export interface Method {
-			name: string;
-			login: Struct;
-			logout: Struct;
-		}
+    export interface Method {
+      name: string;
+      login: Struct;
+      logout: Struct;
+    }
 
-		export interface Struct {
-			method: string;
-			url: string;
-			params: Param[];
-		}
+    export interface Struct {
+      method: string;
+      url: string;
+      params: Param[];
+    }
 
-		export interface Param {
-			name: string;
-			type: "str";
-			location: "body";
-			description: string;
-			required?: boolean;
-			default_value?: null;
-		}
-	}
-	export namespace QueryGulp {
-		export interface Options {
-			preview?: boolean;
-			id?: Source.Id;
-			refetchKeys?: Array<keyof Doc.Type>;
-			addToHistory?: boolean;
-		}
-	}
-	export namespace QueryOperations {
-		interface Operation {
-			name: string;
-			id: string;
-			index?: string;
-			glyph_id?: Glyph.Id;
-			contexts: Context[];
-		}
+    export interface Param {
+      name: string;
+      type: "str";
+      location: "body";
+      description: string;
+      required?: boolean;
+      default_value?: null;
+    }
+  }
+  export namespace QueryGulp {
+    export interface Options {
+      preview?: boolean;
+      id?: Source.Id;
+      refetchKeys?: Array<keyof Doc.Type>;
+      addToHistory?: boolean;
+    }
+  }
+  export namespace QueryOperations {
+    interface Operation {
+      name: string;
+      id: string;
+      index?: string;
+      glyph_id?: Glyph.Id;
+      contexts: Context[];
+    }
 
-		interface Context {
-			name: string;
-			id: string;
-			glyph_id?: Glyph.Id;
-			doc_count: number;
-			plugins: Plugin[];
-		}
+    interface Context {
+      name: string;
+      id: string;
+      glyph_id?: Glyph.Id;
+      doc_count: number;
+      plugins: Plugin[];
+    }
 
-		interface Plugin {
-			name: string;
-			sources: Source[];
-		}
+    interface Plugin {
+      name: string;
+      sources: Source[];
+    }
 
-		export interface Source {
-			name: string;
-			id: Source.Id;
-			glyph_id?: Glyph.Id;
-			doc_count: number;
-			"max_event.code": number;
-			"min_event.code": number;
-			"min_gulp.timestamp": bigint | { source: string; parsedValue: number };
-			"max_gulp.timestamp": bigint | { source: string; parsedValue: number };
-		}
+    export interface Source {
+      name: string;
+      id: Source.Id;
+      glyph_id?: Glyph.Id;
+      doc_count: number;
+      "max_event.code": number;
+      "min_event.code": number;
+      "min_gulp.timestamp": bigint | { source: string; parsedValue: number };
+      "max_gulp.timestamp": bigint | { source: string; parsedValue: number };
+    }
 
-		export type Summary = Operation[];
-	}
-	export namespace PluginList {
-		export type Type = "ingestion" | "enrichment" | "external" | "extension";
+    export type Summary = Operation[];
+  }
+  export namespace PluginList {
+    export type Type = "ingestion" | "enrichment" | "external" | "extension";
 
-		export namespace SigmaSupport {
-			export type Type = "backends" | "pipelines" | "output_formats";
+    export namespace SigmaSupport {
+      export type Type = "backends" | "pipelines" | "output_formats";
 
-			export interface Interface {
-				name: string;
-				description: string;
-			}
+      export interface Interface {
+        name: string;
+        description: string;
+      }
 
-			export type Summary = Record<SigmaSupport.Type, SigmaSupport.Interface>[];
-		}
+      export type Summary = Record<SigmaSupport.Type, SigmaSupport.Interface>[];
+    }
 
-		export type DependsOn = "eml";
+    export type DependsOn = "eml";
 
-		export interface Interface {
-			display_name: string;
-			type: Type[];
-			desc: string;
-			path: string;
-			data: {};
-			filename: string;
-			sigma_support: SigmaSupport.Summary;
-			custom_parameters: CustomParameters.Interface[];
-			depends_on: DependsOn[];
-			tags: (string | "extension")[];
-			version: string;
-		}
-	}
-	export namespace QueryHistoryGet {
-		export interface Interface {
-			q: {
-				query: {
-					bool: Record<
-						OpenSearchQueryBuilder.Operator,
-						Record<OpenSearchQueryBuilder.Condition, any>[]
-					>;
-				};
-			};
-			external: boolean;
-			query_options: {
-				loop: boolean;
-				name: string;
-				sort: {
-					"@timestamp": "desc" | "asc";
-				};
-				limit: number;
-				preview_mode: boolean;
-				note_parameters: {
-					note_tags: string[];
-				};
-				ensure_default_fields: boolean;
-			};
-			timestamp_msec: number;
-		}
-		export type Response = Interface[];
-	}
-	export interface SigmaFile {
-		name: string;
-		content: string;
-	}
+    export interface Interface {
+      display_name: string;
+      type: Type[];
+      desc: string;
+      path: string;
+      data: {};
+      filename: string;
+      sigma_support: SigmaSupport.Summary;
+      custom_parameters: CustomParameters.Interface[];
+      depends_on: DependsOn[];
+      tags: (string | "extension")[];
+      version: string;
+    }
+  }
+  export namespace QueryHistoryGet {
+    export interface Interface {
+      q: {
+        query: {
+          bool: Record<
+            OpenSearchQueryBuilder.Operator,
+            Record<OpenSearchQueryBuilder.Condition, any>[]
+          >;
+        };
+      };
+      external: boolean;
+      query_options: {
+        loop: boolean;
+        name: string;
+        sort: {
+          "@timestamp": "desc" | "asc";
+        };
+        limit: number;
+        preview_mode: boolean;
+        note_parameters: {
+          note_tags: string[];
+        };
+        ensure_default_fields: boolean;
+      };
+      timestamp_msec: number;
+    }
+    export type Response = Interface[];
+  }
+  export interface SigmaFile {
+    name: string;
+    content: string;
+  }
 }
 
 interface RefetchOptions {
-	ids?: Arrayed<Source.Id>;
-	refetchKeys?: Record<Source.Id, Array<keyof Doc.Type>>;
-	addToHistory?: boolean;
+  ids?: Arrayed<Source.Id>;
+  refetchKeys?: Record<Source.Id, Array<keyof Doc.Type>>;
+  addToHistory?: boolean;
 }
 
 interface InfoProps {
-	app: App.Type;
-	setInfo: React.Dispatch<React.SetStateAction<App.Type>>;
-	timeline: React.RefObject<HTMLDivElement>;
+  app: App.Type;
+  setInfo: React.Dispatch<React.SetStateAction<App.Type>>;
+  timeline: React.RefObject<HTMLDivElement>;
 }
 
 export class Info implements InfoProps {
-	app: App.Type;
-	setInfo: SetState<App.Type>;
-	timeline: React.RefObject<HTMLDivElement>;
-
-	private static _latestInstance: Info | null = null;
-	public ingestionProgress = new Map<Source.Id, number>();
-
-	constructor({
-		app,
-		setInfo,
-		timeline,
-	}: InfoProps) {
-		this.app = app;
-		this.setInfo = setInfo;
-		this.timeline = timeline;
-		Info._latestInstance = this;
-	}
-
-	refetch = async ({
-		ids: _ids = Source.Entity.selected(this.app).map((f) => f.id),
-		refetchKeys,
-		addToHistory,
-	}: RefetchOptions = {}) => {
-		const files: Source.Type[] = Parser.array(_ids).map((id) =>
-			Source.Entity.id(this.app, id),
-		);
-
-		if (this.app.timeline.frame.min === 0) {
-			this.setTimelineFrame({
-				min: Math.min(...files.map((f) => f.timestamp.min)),
-				max: Math.max(...files.map((f) => f.timestamp.max)),
-			});
-		}
-
-		this.notes_reload();
-		this.links_reload();
-		this.highlights_reload();
-
-		files.forEach((file) => {
-			this.events_reset_in_file(file);
-			this.query_file(this.getQuery(file), {
-				id: file.id,
-				preview: false,
-				refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
-				addToHistory,
-			});
-		});
-	};
-
-	private static _realtimeTimer: ReturnType<typeof setInterval> | null = null;
-
-	setRealtime = (enabled: boolean, seconds: number) => {
-		if (Info._realtimeTimer) {
-			clearInterval(Info._realtimeTimer);
-			Info._realtimeTimer = null;
-		}
-
-		this.setInfoByKey(enabled, 'settings', 'realtimeEnabled');
-		this.setInfoByKey(seconds, 'settings', 'realtimeTimeoff');
-
-		if (enabled && seconds >= 10) {
-			Info._realtimeTimer = setInterval(() => {
-				Info._latestInstance?.realtimePoll();
-			}, seconds * 1000);
-		}
-	};
-
-	realtimePoll = async () => {
-		const files = Source.Entity.selected(this.app);
-		if (files.length === 0) return;
-
-		const now = Date.now();
-		const nowNanos = Internal.Transformator.toNanos(now);
-		let filesUpdated = false;
-
-		files.forEach((file) => {
-			const events = Doc.Entity.get(this.app, file.id);
-
-			let fromNanos: bigint;
-			if (events.length > 0) {
-				fromNanos = events[0]['gulp.timestamp'] + 1n;
-			} else {
-				fromNanos = file.nanotimestamp?.max ?? Internal.Transformator.toNanos(file.timestamp.max);
-			}
-
-			if (fromNanos >= nowNanos) return;
-
-			// Extend source timestamp bounds so render engines can draw events beyond the original range
-			if (file.timestamp.max < now) {
-				file.timestamp.max = now;
-				file.nanotimestamp.max = nowNanos;
-				filesUpdated = true;
-			}
-
-			const query: Query.Type = {
-				string: Filter.Entity.base(file, { min: fromNanos as unknown as number, max: nowNanos as unknown as number }),
-				filters: [],
-			};
-
-			this.query_file(query, {
-				id: file.id,
-				preview: false,
-			});
-		});
-
-		if (filesUpdated) {
-			this.setInfoByKey([...this.app.target.files], 'target', 'files');
-		}
-
-		this.realtimePollExtendFrame();
-	};
-
-	realtimePollExtendFrame = () => {
-		const now = Date.now();
-		if (this.app.timeline.frame.max < now) {
-			this.setTimelineFrame({
-				min: this.app.timeline.frame.min,
-				max: now,
-			});
-		}
-	};
-
-	enrichment = (
-		plugin: string,
-		file: Source.Type,
-		range: MinMax,
-		custom_parameters: Record<string, any>,
-		isShowOnlyEnriched: boolean,
-		fields: Record<string, string | null>,
-	) => {
-		return api("/enrich_documents", {
-			method: "POST",
-			query: {
-				operation_id: file.operation_id,
-				plugin,
-				ws_id: this.app.general.ws_id,
-			},
-			raw: true,
-			body: {
-				flt: {
-					source_ids: [file.id],
-					time_range: [
-						Internal.Transformator.toNanos(range.min).toString(),
-						Internal.Transformator.toNanos(range.max).toString(),
-					],
-				},
-				plugin_params: {
-					custom_parameters,
-				},
-				fields,
-			},
-		}).then(({ req_id }) => {
-			if (isShowOnlyEnriched) {
-				this.events_reset_in_file(file);
-				this.setLoading(req_id, file.id);
-			}
-			const bufferedEvents: Doc.Type[] = [];
-
-			const sid = SmartSocket.Class.instance.con(
-				SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-				(m) =>
-					m.req_id === req_id &&
-					this.app.general.loadings.byRequestId.has(req_id),
-				(m) => {
-					const events = Doc.Entity.normalize(m.payload.docs ?? []);
-					bufferedEvents.push(...events);
-
-					if (m.payload.last) {
-						(async () => {
-							if (bufferedEvents.length > 0) {
-								await this.events_add_async(bufferedEvents);
-							}
-							
-							this.delLoading(req_id);
-							SmartSocket.Class.instance.coff(
-								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-								sid,
-							);
-						})();
-					}
-				},
-			);
-			SmartSocket.Class.instance.conce(
-				SmartSocket.Message.Type.ENRICH_DONE,
-				(m) => m.req_id === req_id,
-				(m) => {
-					if (m.payload.obj.status !== "done") {
-						toast.error("Enrichment failed", {
-							icon: <Icon name="Stop" />,
-							richColors: true,
-						});
-					} else {
-						toast.success("Enrichment finished", {
-							description: `Total processed documents: ${m.payload.obj.data.total_hits ?? 0}`,
-							icon: <Icon name="Check" />,
-						});
-					}
-				},
-			);
-		});
-	};
-
-	enrich_single_id = (
-		plugin: string,
-		event: Doc.Type,
-		custom_parameters: Record<string, any>,
-		fields: Record<string, string | null>,
-	): Promise<Doc.Type> | undefined =>
-		api<Doc.Type>("/enrich_single_id", {
-			method: "POST",
-			query: {
-				plugin,
-				operation_id: event["gulp.operation_id"],
-				ws_id: this.app.general.ws_id,
-				doc_id: event._id,
-			},
-			body: {
-				plugin_params: {
-					custom_parameters,
-				},
-				fields,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success("Document has been enriched successfully", {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-			},
-		});
-
-	download_storage_file = async (storage_id: string, operation_id: string): Promise<void> => {
-		const req_id = generateUUID<string>(Request.Prefix.QUERY);
-		const query = new URLSearchParams({
-			operation_id,
-			storage_id,
-			req_id,
-		});
-
-		const response = await fetch(
-			`${Internal.Settings.server}/storage_get_file_by_id?${query}`,
-			{
-				method: "GET",
-				headers: {
-					token: Internal.Settings.token,
-				},
-			},
-		);
-
-		if (!response.ok) {
-			toast.error("Failed to download log file", { richColors: true });
-			return;
-		}
-
-		const disposition = response.headers.get("Content-Disposition");
-		let filename = `${storage_id}`;
-		if (disposition) {
-			const match = disposition.match(/filename="?(.+?)"?$/);
-			if (match) {
-				filename = match[1];
-			}
-		}
-
-		const blob = await response.blob();
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-	};
-
-	// Bridge Manager APIs
-	list_bridges = (flt?: any, req_id?: string, options?: any) => 
-		api<any>("/list_bridges", {
-			method: "POST",
-			query: { req_id },
-			body: { flt },
-			...options
-		});
-
-	list_ingestion_tasks = (flt?: any, req_id?: string, options?: any) =>
-		api<any>("/list_ingestion_tasks", {
-			method: "POST",
-			query: { req_id },
-			body: flt,
-			...options
-		});
-
-	create_start_ingestion = (bridge_id: string, operation_id: string, plugin_params: any, req_id?: string, options?: any) =>
-		api<any>("/create_start_ingestion", {
-			method: "POST",
-			query: { bridge_id, operation_id, req_id },
-			body:  plugin_params,
-			...options
-		});
-
-	stop_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
-		api<any>("/stop_ingestion", {
-			method: "POST",
-			query: { req_id, },
-			body:  `"${bridge_task_id}"`,
-			...options
-		});
-	check_bridge_status = (bridge_id: string, req_id?: string, options?: any) =>
-		api<any>("/get_bridge_status", {
-			method: "GET",
-			query: { req_id, bridge_id },
-			...options
-		});
-
-	delete_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
-		api<any>("/delete_ingestion", {
-			method: "DELETE",
-			query: { req_id, bridge_task_id },
-			...options
-		});
-
-	query_global = async ({
-		filename,
-		context,
-		query,
-		total,
-		separately,
-	}: {
-		context?: string;
-		filename?: string;
-		query: Query.Type;
-		total: number;
-		separately?: boolean;
-	}) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		if (!filename || !context) {
-			separately = true;
-		}
-
-		if (!separately) {
-			this.query_file(query, {
-				id: this.virtualize(filename!, total, context!),
-				preview: false,
-			});
-		} else {
-			this.query_file(query, {
-				preview: false,
-			});
-		}
-	};
-
-	virtualize = (fileName: string, total: number, contextName: string) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return null!;
-		}
-
-		const context_id = `temp-${contextName}` as Context.Id;
-
-		const file: Source.Type = Source.Entity.virtualize(this.app, {
-			name: fileName,
-			context_id,
-			operation_id: operation.id,
-			total: 999999,
-		});
-
-		const context: Context.Type = {
-			id: context_id,
-			color: "#00ff00",
-			glyph_id: null as unknown as Glyph.Id,
-			granted_user_group_ids: [],
-			granted_user_ids: [],
-			name: contextName,
-			operation_id: operation.id,
-			time_created: Date.now(),
-			time_updated: Date.now(),
-			type: "context",
-			selected: true,
-			owner_user_id: this.app.general.user?.id!,
-		};
-
-		this.setInfo((info) => ({
-			...info,
-			target: {
-				...info.target,
-				files: [...info.target.files, file],
-				contexts: [...info.target.contexts, context],
-			},
-		}));
-
-		return file.id;
-	};
-
-	query_gulp = async (docIds: Doc.Id[], fields: string[], preview: boolean) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		const body: Record<any, any> = {
-			flt: {
-				doc_ids: docIds,
-			},
-			q_options: {
-				limit: 10000,
-			},
-		};
-
-		if (fields.length > 0) {
-			body.q_options.fields = fields;
-		}
-
-		if (preview) {
-			body.q_options.preview_mode = true;
-		}
-
-		const request_query: Record<string, string> = {
-			ws_id: this.app.general.ws_id,
-			operation_id: operation.id,
-			req_id: generateUUID(Request.Prefix.QUERY),
-		};
-
-		const resp = await api<any>(
-			"/query_gulp",
-			{
-				method: "POST",
-				query: request_query,
-				body,
-				raw: true,
-			},
-			({ req_id, status }) => {
-				if (status !== "pending") {
-					return;
-				}
-
-				const bufferedEvents: Doc.Type[] = [];
-
-				const sid = SmartSocket.Class.instance.con(
-					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-					(m) =>
-						m.req_id === req_id &&
-						this.app.general.loadings.byRequestId.has(req_id),
-					(m) => {
-						const events = Doc.Entity.normalize(m.payload.docs ?? []);
-						bufferedEvents.push(...events);
-
-						if (m.payload.last) {
-							(async () => {
-								if (bufferedEvents.length > 0) {
-									await this.events_add_async(bufferedEvents);
-								}
-								this.delLoading(req_id);
-								SmartSocket.Class.instance.coff(
-									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-									sid,
-								);
-							})();
-						}
-					},
-				);
-				SmartSocket.Class.instance.conce(
-					SmartSocket.Message.Type.STATS_UPDATE,
-					(m) => m.req_id === req_id,
-					(m) => {
-						// if (m.payload.obj.status !== 'done') {
-						//   toast.error(`Query ${req_id} failed`, {
-						//     icon: <Icon name='Stop' />,
-						//     description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
-						//     duration: 1000 * 2,
-						//     // [λ] Uncomment next lines if not fixed in backend till 2026
-						//     // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
-						//     // duration: 1000 * 60 * 10,
-						//     richColors: true
-						//   })
-						// } else {
-						//   console.log(m);
-						//   toast.success('Query finished', {
-						//     description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
-						//     icon: <Icon name='Check' />
-						//   })
-						// }
-					},
-				);
-			},
-		);
-
-		if (preview) {
-			if (!resp || (resp || {})?.data?.total_hits === 0) {
-				toast.error(
-					"This filter returned no results. No matching documents were found",
-					{
-						icon: <Icon name="FaceUnhappy" />,
-						richColors: true,
-					},
-				);
-			} else {
-				toast(`Total hits for this filter is ${resp.data?.total_hits}`);
-			}
-		}
-
-		return resp
-			? resp.data
-			: {
-					docs: [],
-					total_hits: 0,
-				};
-	};
-
-	query_file = async (
-		query: Query.Type,
-		{
-			preview = false,
-			id,
-			refetchKeys,
-			addToHistory,
-		}: GulpDataset.QueryGulp.Options,
-	) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		if (id) {
-			const request = this.app.general.loadings.byFileId.get(id);
-			if (request) {
-				this.delLoading(request);
-				this.request_cancel(request);
-			}
-		}
-
-		const body = Filter.Entity.body(query);
-
-		if (preview) {
-			body.q_options.preview_mode = preview;
-		}
-
-		body.q_options.limit = 10000;
-
-		const request_query: Record<string, string> = {
-			ws_id: this.app.general.ws_id,
-			operation_id: operation.id,
-			req_id: generateUUID(Request.Prefix.QUERY),
-		};
-
-		if (id) {
-			body.q_options.fields = refetchKeys ?? [
-				Source.Entity.id(this.app, id).settings.field,
-			];
-		}
-
-		if (addToHistory) {
-			body.q_options.add_to_history = true;
-		}
-
-		const resp = await api<any>(
-			"/query_raw",
-			{
-				method: "POST",
-				query: request_query,
-				body,
-				raw: true,
-			},
-			({ req_id, status }) => {
-				if (status !== "pending") {
-					return;
-				}
-
-				const bufferedEvents: Doc.Type[] = [];
-
-				const sid = SmartSocket.Class.instance.con(
-					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-					(m) =>
-						m.req_id === req_id &&
-						this.app.general.loadings.byRequestId.has(req_id),
-					(m) => {
-						const events = Doc.Entity.normalize(m.payload.docs ?? []);
-						bufferedEvents.push(...events);
-
-						if (m.payload.last) {
-							(async () => {
-								if (bufferedEvents.length > 0) {
-									await this.events_add_async(bufferedEvents);
-								}
-								
-								this.delLoading(req_id);
-								SmartSocket.Class.instance.coff(
-									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-									sid,
-								);
-								if (id) {
-									const file = Source.Entity.id(this.app, id);
-									const loadedCount = Doc.Entity.get(this.app, id).length;
-									if (file && loadedCount > file.total) {
-										file.total = loadedCount;
-										this.setInfoByKey([...this.app.target.files], 'target', 'files');
-									}
-								}
-								this.render();
-							})();
-						}
-					},
-				);
-				SmartSocket.Class.instance.conce(
-					SmartSocket.Message.Type.STATS_UPDATE,
-					(m) => m.req_id === req_id,
-					(m) => {
-						// if (m.payload.obj.status !== 'done') {
-						//   toast.error(`Query ${req_id} failed`, {
-						//     icon: <Icon name='Stop' />,
-						//     description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
-						//     duration: 1000 * 2,
-						//     // [λ] Uncomment next lines if not fixed in backend till 2026
-						//     // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
-						//     // duration: 1000 * 60 * 10,
-						//     richColors: true
-						//   })
-						// } else {
-						//   console.log(m);
-						//   toast.success('Query finished', {
-						//     description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
-						//     icon: <Icon name='Check' />
-						//   })
-						// }
-					},
-				);
-
-				if (id) {
-					this.setLoading(req_id, id);
-				}
-			},
-		);
-
-		if (preview) {
-			if (!resp || (resp || {})?.data?.total_hits === 0) {
-				toast.error(
-					"This filter returned no results. No matching documents were found",
-					{
-						icon: <Icon name="FaceUnhappy" />,
-						richColors: true,
-					},
-				);
-			} else {
-				toast(`Total hits for this filter is ${resp.data?.total_hits}`);
-			}
-		}
-
-		return resp
-			? resp.data
-			: {
-					docs: [],
-					total_hits: 0,
-				};
-	};
-
-	getLastQueries = (): Promise<Query.Type[]> =>
-		api<GulpDataset.QueryHistoryGet.Response>("/query_history_get").then(
-			(list) => {
-				const queries: Query.Type[] = [];
-
-				list.forEach((payload) => {
-					const root = payload.q.query;
-					console.log(root, payload);
-					if (!root) {
-						return;
-					}
-
-					let string = "";
-					const filters: Filter.Type[] = [];
-
-					Object.entries(root.bool).forEach(([key, arr]) => {
-						const operator = key as OpenSearchQueryBuilder.Operator;
-
-						arr.forEach((obj) => {
-							Object.entries(obj).forEach(([type, v]) => {
-								if (type === "query_string") {
-									string = v.query;
-									return;
-								}
-
-								Object.keys(v).forEach((key) => {
-									if (typeof v[key] !== "object") {
-										filters.push({
-											operator,
-											type: type as OpenSearchQueryBuilder.Condition,
-											id: generateUUID(),
-											field: key,
-											value: v[key],
-											enabled: true,
-										});
-									} else {
-										filters.push({
-											operator,
-											type: type as OpenSearchQueryBuilder.Condition,
-											id: generateUUID(),
-											field: key,
-											value: v[key].value,
-											enabled: true,
-										});
-									}
-								});
-							});
-						});
-					});
-
-					if (!string) {
-						Logger.error(
-							`Cannot find query_string part in given object: \n${JSON.stringify(payload, null, 2)}`,
-							"Info.getLastQueries",
-						);
-						string = Filter.Entity.base(Source.Entity.selected(this.app)[0]);
-					}
-
-					queries.push({
-						string,
-						filters,
-					});
-				});
-
-				return queries;
-			},
-		);
-
-	preview_file = (file: Source.Type, query = this.getQuery(file)) =>
-		this.query_file(query, { preview: true });
-
-	preview_query = (query: Query.Type) =>
-		this.query_file(query, { preview: true });
-
-	request_add = (req: Request.Type) => {
-		const exist = this.app.general.requests.findIndex((r) => r.id === req.id);
-		if (exist >= 0) {
-			this.app.general.requests[exist] = req;
-		} else {
-			this.app.general.requests = [...this.app.general.requests, req];
-		}
-
-		this.setInfoByKey(
-			this.app.general.requests.sort((a, b) => b.time_created - a.time_created),
-			"general",
-			"requests",
-		);
-	};
-
-	request_list = () => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		return api<Request.Type[]>(
-			"/request_list",
-			{
-				method: "GET",
-				query: {
-					operation_id: operation.id,
-				},
-			},
-			(requests) => this.setInfoByKey(requests, "general", "requests"),
-		);
-	};
-
-	request_cancel = (req_id_to_cancel: Request.Id) =>
-		api("/request_cancel", {
-			method: "PATCH",
-			query: { req_id_to_cancel },
-		});
-
-	filters_cache = (files: Array<Source.Type | Source.Id>) => {
-		files.forEach((file) => {
-			const id = Parser.useUUID(file) as Source.Id;
-
-			Logger.log(
-				`Caching has been requested for files ${Source.Entity.id(this.app, file).name}`,
-				Info,
-			);
-
-			this.app.timeline.cache.data.set(
-				id,
-				this.app.target.events.get(id) || [],
-			);
-			this.app.timeline.cache.filters[id] = this.app.target.filters[id];
-		});
-
-		this.setInfoByKey(this.app.timeline.cache, "timeline", "cache");
-		this.render();
-	};
-
-	filters_undo = (files: Array<Source.Type | Source.Id>) => {
-		files.forEach((file) => {
-			const id = Parser.useUUID(file) as Source.Id;
-
-			this.app.target.filters = {
-				...this.app.target.filters,
-				[id]: this.app.timeline.cache.filters[id],
-			};
-
-			this.app.target.events.delete(id);
-			this.app.target.events.set(
-				id,
-				this.app.timeline.cache.data.get(id) || [],
-			);
-
-			this.filters_delete_cache(file);
-		});
-
-		this.setInfoByKey(this.app.target.filters, "target", "filters");
-		this.setInfoByKey(this.app.target.events, "target", "events");
-		this.render();
-	};
-
-	filters_delete_cache = (file: Source.Type | Source.Id) => {
-		const id = Parser.useUUID(file) as Source.Id;
-
-		this.app.timeline.cache.data.delete(id);
-
-		this.setInfoByKey(
-			{
-				data: this.app.timeline.cache.data,
-				filters: { ...this.app.timeline.cache.filters, [id]: undefined },
-			},
-			"timeline",
-			"cache",
-		);
-	};
-
-	render = () => {
-		Logger.log(`Render requested`, Info);
-		this.setInfoByKey(this.app.timeline.renderVersion + 1, "timeline", "renderVersion");
-	};
-
-	mapping_file_list = async (): Promise<Mapping.Type.Plugin[]> => {
-		const shit = await api<Mapping.Raw[]>("/mapping_file_list");
-
-		const parsed_shit = Mapping.Entity.parse(shit);
-
-		const another_parsed_shit = await this.plugin_list().then((p) =>
-			p.filter((p) => p.type.includes("ingestion")),
-		);
-
-		another_parsed_shit.forEach((shit) => {
-			const found_shit = parsed_shit.find((ps) => ps.name === shit.filename);
-			if (found_shit) {
-				return;
-			} else {
-				parsed_shit.push({
-					name: shit.filename,
-					methods: [],
-				});
-			}
-		});
-
-		const sorted_parsed_shit = parsed_shit.sort((a, b) =>
-			a.name.localeCompare(b.name),
-		);
-
-		this.setInfoByKey(sorted_parsed_shit, "target", "mappings");
-
-		return sorted_parsed_shit;
-	};
-
-	/**
-	 * Switches to a different operation and performs comprehensive memory cleanup.
-	 *
-	 * MEMORY MANAGEMENT: Clears all caches (render engines, notes, doc index, timeline,
-	 * canvas icons) and resets event data before selecting the new operation.
-	 * This prevents memory leaks when switching between operations with large datasets
-	 * (e.g., 320k events = ~150MB of cached pixel maps, note groups, and doc references).
-	 *
-	 * PERFORMANCE: Uses batchUpdate to consolidate all state changes into a single
-	 * React setState call, preventing 8+ intermediate re-renders.
-	 */
-	operations_select = (id: Operation.Id) => {
-		// External cache cleanup (not part of React state)
-		RenderEngine.clearAllCaches();
-		Note.Entity.invalidateCache();
-		Doc.Entity.clearIndex();
-
-		// Reset viewport to default position (like first render)
-		scrollStore.setScrollX(0);
-		scrollStore.setScrollY(-26);
-
-		// Single batched state update instead of 8 separate setInfoByKey calls
-		this.batchUpdate(draft => {
-			// Timeline reset
-			draft.timeline.scale = 1;
-			draft.timeline.target = null;
-			draft.timeline.cache.data.clear();
-			draft.timeline.cache.filters = {};
-
-			// Clear event data
-			draft.target.events.clear();
-			draft.target.events = new Map(draft.target.events);
-
-			// Clear notes and links
-			draft.target.notes = [];
-			draft.target.links = [];
-
-			// Select operation, deselect contexts and files
-			draft.target.operations = Operation.Entity.select(draft, id);
-			draft.target.contexts = draft.target.contexts.map(context => ({
-				...context,
-				selected: false,
-			}));
-			draft.target.files = draft.target.files.map(file => ({
-				...file,
-				selected: false,
-			}));
-		});
-	};
-
-	operations_set = (operations: Operation.Type[]) =>
-		this.setInfoByKey(
-			Operation.Entity.reload(operations, this.app),
-			"target",
-			"operations",
-		);
-
-	deleteOperation = (
-		operation: Operation.Type,
-		setLoading: SetState<boolean>,
-	) => {
-		return api(
-			"/operation_delete",
-			{
-				method: "DELETE",
-				query: {
-					operation_id: operation.id,
-				},
-				setLoading,
-				toast: {
-					onSuccess: () => toast.success(`Operation ${operation.name} has been deleted successfully`, {
-						icon: <Icon name='Check' />,
-						richColors: true,
-					}),
-					onError: response => toast.error(`Failed deleting operation`, {
-						description: `Reason ${response.data.__error.msg}`,
-						icon: <Icon name='Stop' />,
-						richColors: true,
-					})
-				}
-			},
-			this.sync,
-		);
-	};
-
-	fetch_gulp_parameters = async () => {
-		const res = await fetch("http://localhost:8080/openapi.json");
-		const json = await res.json();
-		const pluginParamsSchema = json.components?.schemas?.GulpPluginParameters;
-		const example = pluginParamsSchema?.examples?.[0];
-		return example;
-	};
-
-	// ⚠️ UNTOUCHABLE
-	file_delete = (source: Source.Type) => {
-		return api(
-			"/source_delete",
-			{
-				method: "DELETE",
-				query: {
-					source_id: source.id,
-					ws_id: this.app.general.ws_id,
-				},
-			},
-			this.sync,
-		);
-	};
-
-	file_ingest = async ({
-		context,
-		file,
-		frame,
-		settings,
-		setProgress,
-		preview_mode,
-	}: FileEntity.IngestOptions) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		const plugin = settings.plugin;
-		if (!plugin) {
-			return;
-		}
-
-		if (preview_mode) {
-			toast.error("Preview mode not supported in file_ingest, use file_ingest_preview");
-			return;
-		}
-
-		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
-
-		ingestWorkerManager.enqueue({
-			req_id: id,
-			file,
-			operation_id: operation.id,
-			context_name: context,
-			ws_id: this.app.general.ws_id,
-			settings,
-			server: Internal.Settings.server,
-			token: Internal.Settings.token,
-			frame,
-			onProgress: (progress, bytes) => {
-				this.ingestionProgress.set(id as unknown as Source.Id, progress);
-				// Also try to find by source id if available
-				const sourceIdByReqId = this.app.general.loadings.byRequestId.get(id);
-				if (sourceIdByReqId) {
-					this.ingestionProgress.set(sourceIdByReqId, progress);
-				}
-				
-				if (progress % 5 === 0 || progress === 100) {
-					this.render();
-				}
-				if (setProgress) setProgress(progress);
-			},
-			onError: (err) => {
-				toast.error(`Ingestion of ${file.name} failed: ${err}`);
-				this.delLoading(id);
-			}
-		});
-
-		SmartSocket.Class.instance.conce(
-			SmartSocket.Message.Type.COLLAB_CREATE,
-			(m) => m.payload.obj.type === "context" && (m.req_id === id || m.payload.obj.name === context),
-			(m) => {
-				// Global listener in Application.context.tsx handles state addition
-				console.log(m.payload, "Context created for ingest", id);
-			},
-		);
-
-		// 2. Progressive addition of files arriving from server
-		SmartSocket.Class.instance.conce(
-			SmartSocket.Message.Type.COLLAB_CREATE,
-			(m) => {
-				if (m.payload.obj.type !== "source") return false;
-				if (m.req_id === id) return true;
-				
-				const mName = m.payload.obj.name || '';
-				const fName = file.name || '';
-				if (mName === fName) return true;
-				try {
-					return decodeURIComponent(mName) === decodeURIComponent(fName);
-				} catch (e) {
-					return false;
-				}
-			},
-			(m) => {
-				// loading state is local to this ingest
-				this.setLoading(m.req_id || id, m.payload.obj.id as unknown as Source.Id);
-				// Global listener handles state addition
-			},
-		);
-
-		const bufferedEvents: Doc.Type[] = [];
-		let accumulatedCount = 0;
-
-		const sid = SmartSocket.Class.instance.con(
-			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-			(m) => m.req_id === id && this.app.general.loadings.byRequestId.has(id),
-			(m) => {
-				if (typeof m.payload.docs === "undefined") {
-					return;
-				}
-
-				const events = Doc.Entity.normalize(m.payload.docs);
-				bufferedEvents.push(...events);
-				accumulatedCount += events.length;
-
-				const files = Refractor.array(...this.app.target.files);
-				const fileId = events[0]["gulp.source_id"] as Source.Id;
-				
-				// Update lightweight progress map
-				this.ingestionProgress.set(fileId, (this.ingestionProgress.get(fileId) || 0) + events.length);
-
-				const exist = files.findIndex((f) => f.id === fileId);
-				const file = files[exist];
-
-				if (m.payload.last) {
-					(async () => {
-						// Batched addition of all incoming events at the end of ingestion
-						await this.events_add_async(bufferedEvents);
-
-						const fileId = events[0]["gulp.source_id"] as Source.Id;
-						const all = Source.Entity.events(this.app, fileId);
-
-						const timestamp = all.length > 0 ? {
-							min: all[all.length - 1].timestamp,
-							max: all[0].timestamp,
-						} : { min: Date.now(), max: Date.now() };
-
-						// Finalize progress (clean up map)
-						this.ingestionProgress.delete(fileId);
-
-						const reqId = m.req_id;
-						this.batchUpdate(draft => {
-							const files = Refractor.array(...draft.target.files);
-							const exist = files.findIndex((f) => f.id === fileId);
-							const file = files[exist];
-
-							if (exist !== -1 && file) {
-								files[exist] = Source.Entity.normalize(draft, {
-									...file,
-									timestamp,
-									nanotimestamp: {
-										min: Internal.Transformator.toNanos(timestamp.min),
-										max: Internal.Transformator.toNanos(timestamp.max),
-									},
-									total: all.length,
-									selected: true,
-								});
-
-								draft.target.files = files;
-								
-								draft.timeline.frame = {
-									min: Math.min(...files.map((f) => f.timestamp.min)),
-									max: Math.max(...files.map((f) => f.timestamp.max)),
-								};
-							}
-
-							// Inline delLoading logic to avoid extra setState
-							draft.general.loadings.byRequestId.delete(reqId);
-							const fileEntry = [...draft.general.loadings.byFileId.entries()].find(
-								(e) => e[1] === reqId,
-							)?.[0];
-							if (fileEntry) {
-								draft.general.loadings.byFileId.delete(fileEntry);
-							}
-						});
-
-						SmartSocket.Class.instance.coff(
-							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-							sid,
-						);
-						
-						const finalFile = Source.Entity.id(this.app, fileId);
-						if (finalFile) {
-							toast.success(`Source ${finalFile.name} has been ingested successfully`, {
-								description: `Total amount of documents is: ${all.length}`,
-								richColors: true,
-								icon: <Icon name="Check" />,
-							});
-						}
-					})();
-				} else {
-					if (file) {
-						toast.success(
-							`Buffering events...`,
-							{
-								description: `${accumulatedCount} events buffered for source ${file.name}`,
-								id: `ingest-toast-${file.id}`,
-							},
-						);
-					}
-				}
-			},
-		);
-	};
-
-	file_ingest_preview = async (options: FileEntity.IngestOptions): Promise<Doc.Type[]> => {
-		const { file, settings } = options;
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) return [];
-
-		const formData = new FormData();
-		const payload = {
-			original_file_path: file.name,
-			offset: settings.offset ?? 0,
-			plugin_params: {
-				...settings.custom_parameters,
-				preview_mode: true
-			}
-		};
-
-		formData.append("payload", new Blob([JSON.stringify(payload)], { type: "application/json" }));
-		formData.append("f", file, file.name);
-
-		const query = {
-			plugin: settings.plugin?.split(".")[0],
-			operation_id: operation.id,
-			context_name: 'preview',
-			ws_id: this.app.general.ws_id,
-		};
-
-		const response = await api<any>("/ingest_file", {
-			method: "POST",
-			body: formData,
-			deassign: true,
-			raw: true,
-			query,
-		});
-
-		return response.data as unknown as Doc.Type[];
-	};
-
-	// ⚠️ UNTOUCHABLE
-	file_set_settings = (
-		id: Source.Id,
-		settings: Partial<Source.Type["settings"]>,
-	) => {
-		const file = Source.Entity.id(this.app, id);
-		const newSettings = {
-			...file.settings,
-			...settings,
-		} satisfies Source.Type["settings"];
-
-		if (!Source.Entity.isEventKeyFetched(this.app, id, [newSettings.field])) {
-			this.refetch({ ids: id, refetchKeys: { [id]: [newSettings.field] } });
-		}
-
-		return this.setInfoByKey(
-			this.app.target.files.map((file) =>
-				id === file.id ? { ...file, settings: newSettings } : file,
-			),
-			"target",
-			"files",
-		);
-	};
-
-	file_set_total = (id: Source.Id, total = 0) =>
-		this.setInfoByKey(
-			this.app.target.files.map((file) =>
-				file.id === id ? { ...file, total } : file,
-			),
-			"target",
-			"files",
-		);
-
-	// ⚠️ UNTOUCHABLE
-	context_delete = (context: Context.Type, delete_data: boolean) =>
-		api<any>(
-			"/context_delete",
-			{
-				method: "DELETE",
-				query: {
-					context_id: context.id,
-					delete_data,
-					ws_id: this.app.general.ws_id,
-				},
-			},
-			this.sync,
-		);
-
-	events_add = (newEvents: Doc.Type[]) =>
-		Doc.Entity.add(this.app, newEvents);
-
-	events_add_async = async (newEvents: Doc.Type[]) => {
-		await Doc.Entity.addAsync(this.app, newEvents);
-	};
-
-	event_keys = async (file: Source.Type): Promise<Filter.Options> => {
-		if (!file) {
-			return Internal.Transformator.toAsync({});
-		}
-
-		if (Source.Entity.isVirtual(file)) {
-			const ids = file.id.split("-").slice(1) as Source.Id[];
-
-			const filterOptionsStack = await Promise.all(
-				ids.map((id) => this.event_keys(Source.Entity.id(this.app, id))),
-			);
-
-			return filterOptionsStack.flat().reduce<Filter.Options>((acc, cur) => {
-				Object.keys(cur).forEach((c) => {
-					if (!acc[c]) {
-						acc[c] = cur[c];
-					}
-				});
-
-				return acc;
-			}, {});
-		}
-
-		return api<Filter.Options>("/query_fields_by_source", {
-			query: {
-				operation_id: file.operation_id,
-				context_id: file.context_id,
-				source_id: file.id,
-				ws_id: this.app.general.ws_id,
-			},
-		});
-	};
-
-	events_reset_in_file = (file: Source.Type) => {
-		Doc.Entity.delete(this.app, file);
-	};
-
-	setDialogSize = (number: number) => {
-		this.setInfoByKey(number, "timeline", "dialogSize");
-	};
-
-	// ⚠️ UNTOUCHABLE
-	notes_reload = async () => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		const files = Source.Entity.selected(this.app).map((f) => f.id);
-		if (files.length === 0) {
-			Logger.warn(
-				"Tried to fetch all notes from all operations. Ignoring",
-				"Info.notes_reload",
-			);
-			return;
-		}
-		let notes: Note.Type[] = [];
-		const fetch = async (offset = 0) => {
-			const fetched = await api<Note.Type[]>("/note_list", {
-				method: "POST",
-				query: {
-					operation_id: operation.id,
-				},
-				body: {
-					source_ids: files,
-					offset,
-					limit: 500,
-				},
-			});
-
-			if (fetched.length) {
-				notes = [...notes, ...fetched].sort(
-					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-				);
-				if (notes.length % 2500 === 0) {
-					toast(`Fetched ${notes.length} notes`, {
-						description: "Continuing...",
-						icon: <Spinner />,
-					});
-				}
-
-				DataStore.notes = [...notes];
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-
-				return new Promise((res) => {
-					setTimeout(() => {
-						res(fetch(offset + 500));
-					});
-				});
-			} else {
-				const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
-				Logger.log(message, Info);
-				DataStore.notes = [...notes];
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				if (notes.length >= 2500) {
-					toast.success(message, {
-						icon: <Icon name="Check" />,
-						richColors: true,
-					});
-				}
-			}
-		};
-
-		await fetch();
-
-		Note.Entity[CacheKey].clear();
-
-		return notes;
-	};
-
-	/**
-	 *
-	 * @param key Key of settings object
-	 * @param value Value to save. Be carreful, it can save any shit
-	 */
-	setSettings = (key: string, value: any) =>
-		this.setInfoByKey(value, "settings", key);
-
-	setLoading(req_id: Request.Id, file_id: Source.Id) {
-		this.app.general.loadings.byRequestId.set(req_id, file_id);
-		this.app.general.loadings.byFileId.set(file_id, req_id);
-
-		const loadings = {
-			byRequestId: new Map(this.app.general.loadings.byRequestId),
-			byFileId: new Map(this.app.general.loadings.byFileId),
-		};
-		this.setInfoByKey(loadings, "general", "loadings");
-	}
-
-	delLoading(req_id: Request.Id) {
-		this.app.general.loadings.byRequestId.delete(req_id);
-		const file_id = [...this.app.general.loadings.byFileId.entries()].find(
-			(e) => e[1] === req_id,
-		)?.[0];
-		if (file_id) {
-			this.app.general.loadings.byFileId.delete(file_id);
-		}
-
-		const loadings = {
-			byRequestId: new Map(this.app.general.loadings.byRequestId),
-			byFileId: new Map(this.app.general.loadings.byFileId),
-		};
-		this.setInfoByKey(loadings, "general", "loadings");
-	}
-
-	// ⚠️ UNTOUCHABLE
-	note_delete = (note: Note.Type) =>
-		api("/note_delete", {
-			method: "DELETE",
-			query: {
-				obj_id: note.id,
-				ws_id: this.app.general.ws_id,
-			},
-		}).then(() => {
-			const index = DataStore.notes.findIndex((n) => n.id === note.id);
-			if (index !== -1) {
-				DataStore.notes.splice(index, 1);
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			}
-		});
-
-	note_create = ({
-		name,
-		text,
-		color = Default.Color.NOTE,
-		glyph_id = Glyph.List.entries().find(
-			(e) => e[1] === Default.Icon.NOTE,
-		)![0]!,
-		event,
-		isPrivate,
-		tags,
-	}: {
-		name: string;
-		text: string;
-		color: string;
-		event: Doc.Type;
-		glyph_id: Glyph.Id;
-		isPrivate: boolean;
-		tags: string[];
-	}) =>
-		api<Note.Type>("/note_create", {
-			method: "POST",
-			query: {
-				operation_id: event["gulp.operation_id"],
-				context_id: event["gulp.context_id"],
-				source_id: event["gulp.source_id"],
-				ws_id: this.app.general.ws_id,
-				name,
-				color,
-				glyph_id,
-				private: isPrivate,
-			},
-
-			toast: {
-				onSuccess: () =>
-					toast.success(`Note ${name} has been created successfully`, {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-			},
-			body: {
-				text,
-				tags,
-				doc: Doc.Entity.toDoc(event),
-			},
-		}).then((note) => {
-			const idx = DataStore.notes.findIndex(n => n.id === note.id);
-			if (idx !== -1) {
-				DataStore.notes[idx] = note;
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			} else {
-				DataStore.notes.push(note);
-				DataStore.notes.sort((a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a));
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			}
-		});
-
-	note_edit = ({
-		id: obj_id,
-		name,
-		text,
-		color,
-		glyph_id = Glyph.List.entries().find(
-			(e) => e[1] === Default.Icon.NOTE,
-		)![0]!,
-		event,
-		tags,
-	}: {
-		id: Note.Id;
-		name: string;
-		text: string;
-		color: string;
-		event: Doc.Type;
-		glyph_id: Glyph.Id;
-		tags: string[];
-	}) =>
-		api<Note.Type>("/note_update", {
-			method: "PATCH",
-			query: {
-				obj_id,
-				ws_id: this.app.general.ws_id,
-				name,
-				glyph_id,
-				color,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success(`Note ${name} has been updated successfully`, {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-			},
-			body: {
-				text,
-				tags,
-				doc: Doc.Entity.toDoc(event),
-			},
-		}).then((note) => {
-			const index = DataStore.notes.findIndex((n) => n.id === note.id);
-			if (index !== -1) {
-				DataStore.notes[index] = note;
-				DataStore.notes.sort((a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a));
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			}
-		});
-
-	// ⚠️ UNTOUCHABLE
-	links_reload = async () => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		return api<Link.Type[]>(
-			"/link_list",
-			{
-				method: "POST",
-				query: {
-					operation_id: operation.id,
-				},
-				body: {
-					source_ids: Source.Entity.selected(this.app).map((f) => f.id),
-				},
-			},
-			(links) => {
-				DataStore.links = links;
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			},
-		);
-	};
-
-	link_delete = (link: Link.Type) =>
-		api(
-			"/link_delete",
-			{
-				method: "DELETE",
-				query: {
-					obj_id: link.id,
-					ws_id: this.app.general.ws_id,
-				},
-			},
-			this.links_reload,
-		);
-
-	link_create = ({
-		name,
-		event,
-		glyph_id = Glyph.List.entries().find(
-			(e) => e[1] === Default.Icon.LINK,
-		)![0]!,
-		color = Default.Color.LINK,
-		description,
-	}: {
-		name: string;
-		event: Doc.Type;
-		glyph_id: Glyph.Id;
-		color: string;
-		description: string;
-	}) => {
-		return api<Link.Type>("/link_create", {
-			method: "POST",
-			query: {
-				doc_id_from: event._id,
-				operation_id: event["gulp.operation_id"],
-				ws_id: this.app.general.ws_id,
-				name,
-				glyph_id,
-				color,
-				description,
-			},
-
-			toast: {
-				onSuccess: () =>
-					toast.success(`Link ${name} has been created successfully`, {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-			},
-			body: {
-				doc_ids: [event._id],
-			},
-		}).then(this.links_reload);
-	};
-
-	link_edit = ({
-		id: obj_id,
-		name,
-		color = Default.Color.LINK,
-		glyph_id,
-		events,
-		description,
-	}: {
-		id: Link.Id;
-		name: string;
-		glyph_id: Glyph.Id;
-		color: string;
-		events: Doc.Type["_id"][];
-		description: string;
-	}) =>
-		api("/link_update", {
-			method: "PATCH",
-			query: {
-				obj_id,
-				name,
-				color,
-				glyph_id,
-				ws_id: this.app.general.ws_id,
-				description,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success(`Link ${name} has been updated successfully`, {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-			},
-			body: {
-				doc_ids: events,
-			},
-		}).then(this.links_reload);
-
-	links_connect = (link: Link.Type, event: Doc.Type) =>
-		api<Link.Type>("/link_update", {
-			method: "PATCH",
-			query: {
-				obj_id: link.id,
-				ws_id: this.app.general.ws_id,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success(
-						`Event ${event._id} has been connected to link ${link.name} successfully`,
-						{
-							richColors: true,
-							icon: <Icon name="Check" />,
-						},
-					),
-			},
-			body: {
-				doc_ids: Refractor.array(...link.doc_ids, event._id),
-			},
-		}).then(this.links_reload);
-
-	links_disconnect = (link: Link.Type, event: Doc.Type) =>
-		api<Link.Type>("/link_update", {
-			method: "PATCH",
-			query: {
-				obj_id: link.id,
-				ws_id: this.app.general.ws_id,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success(
-						`Event ${event._id} has been disconnected from link ${link.name} successfully`,
-						{
-							richColors: true,
-							icon: <Icon name="Check" />,
-						},
-					),
-			},
-			body: {
-				doc_ids: Refractor.array(
-					...link.doc_ids.filter((id) => id !== event._id),
-				),
-			},
-		}).then(this.links_reload);
-
-	highlights_reload = debounce(() => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-		return api<Highlight.Type[]>(
-			"/highlight_list",
-			{
-				method: "POST",
-				query: {
-					operation_id: operation.id,
-				},
-			},
-			(h) => {
-				DataStore.highlights = h;
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			},
-		);
-	}, 500);
-
-	highlight_create = async ({
-		time_range,
-		name,
-		icon: glyph_id = Glyph.List.entries().find(
-			(e) => e[1] === Default.Icon.HIGHLIGHT,
-		)![0]!,
-		color = Default.Color.HIGHLIGHT as NonNullable<Badge.Variant>,
-		tags = [],
-	}: {
-		time_range: Range;
-		name: string;
-		icon: Glyph.Id | null;
-		color: Badge.Variant;
-		tags?: string[];
-	}) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		const files = Source.Entity.selected(this.app);
-		if (!files.length) {
-			return;
-		}
-
-		const source_id = files[0].id;
-
-		return api("/highlight_create", {
-			method: "POST",
-			query: {
-				operation_id: operation.id,
-				ws_id: this.app.general.ws_id,
-				source_id,
-				name,
-				color,
-				glyph_id,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success(`Highlight ${name} has been created successfully`, {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-			},
-			body: {
-				time_range,
-				tags,
-			},
-		}).then(this.highlights_reload);
-	};
-
-	highlight_delete = (obj_id: Highlight.Id) =>
-		api("highlight_delete", {
-			method: "DELETE",
-			query: {
-				obj_id,
-				ws_id: this.app.general.ws_id,
-			},
-		}).then(() => {
-			Highlights.remove(obj_id);
-			this.highlights_reload();
-		});
-
-	glyphs_reload = async () => {
-		Glyph.List.clear();
-
-		const glyphs = await api<Glyph.Type[]>("/glyph_list", {
-			method: "POST",
-		});
-
-		if (!glyphs) {
-			return Logger.error("Failed to sync glyphs", "Info.glyphs_reload");
-		}
-
-		const queue: (() => Promise<void>)[] = [];
-
-		const synced = new Map<string, Glyph.Id>();
-
-		glyphs.forEach((g) => {
-			synced.set(g.name, g.id);
-			Glyph.List.set(g.id, g.name);
-		});
-
-		const notSynced = Glyph.Raw.filter((glyph) => !synced.has(glyph));
-
-		notSynced.forEach((name) => {
-			queue.push(async () => {
-				const formData = new FormData();
-				formData.append("img", new Blob());
-
-				await api<Glyph.Type>(
-					"/glyph_create",
-					{
-						method: "POST",
-						deassign: true,
-						query: { name },
-						body: formData,
-					},
-					(glyph) => {
-						Glyph.List.set(glyph.id, glyph.name);
-					},
-				);
-			});
-		});
-
-		const runQueue = async () => {
-			const tasks = queue.splice(0, 10).map((task) => task());
-			await Promise.all(tasks);
-			if (queue.length > 0) {
-				await runQueue();
-			}
-		};
-
-		await runQueue();
-
-		Logger.log(`Glyphs has been syncronized with gulp-backend`, Info);
-
-		while (Glyph.Entries.length) {
-			Glyph.Entries.pop();
-		}
-		Glyph.Entries.push(...Array.from(Glyph.List.entries()));
-
-		this.setInfoByKey(true, "general", "glyphs_syncronized");
-	};
-
-	setPointers = (pointer: Pointers.Pointer) => {
-		const pointers = this.app.timeline.pointers;
-
-		const target = pointers.find((p) => p.id === pointer.id);
-
-		if (target) {
-			Object.assign(target, pointer);
-		} else {
-			pointers.push(pointer);
-		}
-
-		this.setInfoByKey(pointers, "timeline", "pointers");
-	};
-
-	session_create = async ({
-		name,
-		icon = Default.Icon.SESSION,
-		color = Default.Color.SESSION,
-		scroll,
-		scale,
-	}: {
-		name: string;
-		icon: Icon.Name;
-		color: string;
-		scroll?: { x: number; y: number };
-		scale?: number;
-	}) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		const sessions = await this.session_list();
-		if (sessions.some((s) => s.name === name)) {
-			toast.error("Session with this name is already exist", {
-				richColors: true,
-			});
-			return;
-		}
-
-		sessions.push({
-			name,
-			icon,
-			color,
-			selected: {
-				files: Source.Entity.selected(this.app).map((f) => f.id),
-				contexts: Context.Entity.selected(this.app).map((c) => c.id),
-				operations: operation.id,
-			},
-			timeline: {
-				scale: this.app.timeline.scale,
-				frame: {
-					min: this.app.timeline.frame.min,
-					max: this.app.timeline.frame.max,
-				},
-				filter: this.app.timeline.filter,
-				target: this.app.timeline.target,
-				scroll: scroll ?? { x: scrollStore.getX(), y: scrollStore.getY() },
-			},
-			filters: this.app.target.filters,
-			hidden: this.app.hidden,
-		});
-
-		if (!this.app.general.user) {
-			Logger.warn("Tried to create session before user has been defined");
-			return;
-		}
-
-		return api<undefined>("/user_update", {
-			method: "PATCH",
-			query: {
-				user_id: this.app.general.user?.id,
-			},
-			raw: true,
-			body: {
-				user_data: {
-					sessions,
-				},
-			},
-		});
-	};
-
-	session_autosave = async () => {
-		const prefix = "Autosaved session ";
-		const sessions = await this.session_list();
-		const prev = sessions.filter((session) => session.name.startsWith(prefix));
-		if (prev.length) {
-			await this.sessions_delete(prev.map((s) => s.name));
-		}
-
-		await this.session_create({
-			name: prefix + new Date().toUTCString(),
-			color: "var(--green-700)",
-			icon: "RefreshClockwise",
-		});
-	};
-
-	sessions_delete = async (names: string[]) => {
-		for (const name of names) {
-			try {
-				await this.session_delete(name);
-			} catch (err) {
-				Logger.log(
-					`Failed to delete session ${name}`,
-					"Session.Delete.Banner.deleteSessionButtonClickHandler",
-					{ richColors: true, icon: <Icon name="Warning" /> },
-				);
-			}
-		}
-	};
-
-	session_delete = async (name: string) => {
-		if (!this.app.general.user) {
-			Logger.error(
-				"Tried to delete session but there is no user",
-				this.session_delete,
-			);
-			return;
-		}
-
-		const sessions = await this.session_list();
-
-		return api<undefined>("/user_update", {
-			method: "PATCH",
-			query: {
-				user_id: this.app.general.user.id,
-			},
-			raw: true,
-			body: {
-				user_data: {
-					sessions: sessions.filter((s) => s.name !== name),
-				},
-			},
-		});
-	};
-
-	session_load = async (session: Internal.Session.Data) => {
-		this.setInfoByKey(session.timeline.target, "timeline", "target");
-		this.setInfoByKey(session.timeline.frame, "timeline", "frame");
-		this.setInfoByKey(session.timeline.filter, "timeline", "filter");
-		setTimeout(() => {
-			scrollStore.setScrollX(session.timeline.scroll.x);
-			scrollStore.setScrollY(session.timeline.scroll.y);
-			this.setInfoByKey(session.timeline.scale, "timeline", "scale");
-		}, 100);
-		this.setInfoByKey(
-			Operation.Entity.select(this.app, session.selected.operations),
-			"target",
-			"operations",
-		);
-		this.setInfoByKey(
-			Context.Entity.select(this.app, session.selected.contexts),
-			"target",
-			"contexts",
-		);
-		this.setInfoByKey(
-			Source.Entity.select(this.app, session.selected.files),
-			"target",
-			"files",
-		);
-		this.setInfoByKey(session.filters, "target", "filters");
-		if (session.hidden && typeof session.hidden === "object") {
-			Object.keys(session.hidden).forEach((k) => {
-				const key = k as keyof App.Type["hidden"];
-				this.setInfoByKey(session.hidden[key], "hidden", key);
-			});
-		}
-
-		setTimeout(() => {
-			this.refetch();
-		}, 0);
-	};
-
-	async session_list(
-		user = this.app.general.user,
-	): Promise<Internal.Session.Data[]> {
-		if (!user) {
-			return Internal.Transformator.toAsync([]);
-		}
-
-		return api<any>("/user_get_by_id", {
-			method: "GET",
-			query: { user_id: user.id },
-		})
-			.then((data) => {
-				const sessions = data ? data.user_data.sessions : [];
-
-				return sessions || [];
-			})
-			.catch((error) => {
-				toast.error("Failed to load your sessions", {
-					description: `Error message: ${JSON.stringify(error)}`,
-					icon: <Icon name="FaceSad" />,
-				});
-			});
-	}
-
-	sync = async () => {
-		await this.mapping_file_list();
-
-		const operationsData = await api<GulpDataset.QueryOperations.Summary>("/query_operations");
-		if (!operationsData || !Array.isArray(operationsData)) return;
-
-		const operations: Operation.Type[] = [];
-		const contexts: Context.Type[] = [];
-		const files: Source.Type[] = [];
-
-		operationsData.forEach((opData) => {
-			const opId = opData.id as Operation.Id;
-			const existOp = Operation.Entity.id(this.app, opId) ?? {};
-
-			operations.push({
-				id: opId,
-				name: opData.name,
-				index: opData.index ?? opData.id,
-				glyph_id: opData.glyph_id ?? Default.Icon.OPERATION,
-				selected: existOp.selected ?? false,
-			} as Operation.Type);
-
-			opData.contexts?.forEach((ctxData) => {
-				const ctxId = ctxData.id as Context.Id;
-				const existCtx = Context.Entity.id(this.app, ctxId) ?? {};
-
-				contexts.push({
-					id: ctxId,
-					name: ctxData.name,
-					operation_id: opId,
-					glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
-					color: existCtx.color ?? "#00ff00",
-					type: "context",
-					selected: existCtx.selected ?? false,
-					owner_user_id: this.app.general.user?.id!,
-					time_created: Date.now(),
-					time_updated: Date.now(),
-					granted_user_group_ids: [],
-					granted_user_ids: [],
-				} as Context.Type);
-
-				ctxData.plugins?.forEach((pluginData) => {
-					pluginData.sources?.forEach((srcData) => {
-						const src = Source.Entity.normalize(
-							this.app,
-							{
-								id: (srcData as any).id,
-								name: srcData.name,
-								operation_id: opId,
-								context_id: ctxId,
-								plugin: pluginData.name,
-								glyph_id: srcData.glyph_id ?? Default.Icon.SOURCE,
-								type: "source",
-								owner_user_id: this.app.general.user?.id!,
-								time_created: Date.now(),
-								time_updated: Date.now(),
-							} as Source.Type,
-							srcData
-						);
-						if (src) files.push(src);
-					});
-				});
-			});
-		});
-
-		Logger.log(
-			`${operations.length} operations has been added to application data`,
-			this.sync,
-		);
-
-		Logger.log(
-			`${files.length} files has been added to application data`,
-			this.sync,
-		);
-
-		RenderEngine.reset("range");
-
-		this.setInfoByKey(operations, "target", "operations");
-		this.setInfoByKey(contexts, "target", "contexts");
-		this.setInfoByKey(files, "target", "files");
-
-		return { operations, contexts, files };
-	};
-
-	syncFile = (id: Source.Id) =>
-		api<Source.Type>("/source_get_by_id", {
-			query: { obj_id: id },
-		}).then(async (file) => {
-			const details = await this.getDetails().then((d) =>
-				d.find((f) => f.id === id),
-			);
-			if (!details) {
-				Logger.fatal("No detailed information for file has been provided");
-			}
-
-			const normalized = Source.Entity.normalize(this.app, file, details);
-
-			const exist = this.app.target.files.findIndex((f) => f.id === file.id);
-			if (exist >= 0) {
-				this.app.target.files[exist] = normalized;
-			} else {
-				this.app.target.files = [...this.app.target.files, normalized];
-			}
-
-			this.setInfoByKey(this.app.target.files, "target", "files");
-		});
-
-	getDetails = () =>
-		api<GulpDataset.QueryOperations.Summary>("/query_operations")
-			.then((operations) => {
-				if (!operations || !Array.isArray(operations)) return [];
-				return operations
-					.map(
-						(operation) =>
-							operation.contexts?.map(
-								(context) =>
-									context.plugins?.map((plugin) => plugin.sources ?? []) ?? [],
-							) ?? [],
-					)
-					.flat(3);
-			})
-			.catch((err) => {
-				Logger.error("Failed to fetch /query_operations", err);
-				return [];
-			});
-
-	query_single_id = (doc_id: Doc.Type["_id"], operation_id: Operation.Id) => {
-		return api<Doc.Type>("/query_single_id", {
-			method: "POST",
-			query: {
-				doc_id,
-				operation_id,
-			},
-		});
-	};
-
-	// ⚠️ UNTOUCHABLE
-	plugin_list = async (): Promise<GulpDataset.PluginList.Interface[]> => {
-		const plugins = this.app.target.plugins;
-		if (plugins.length) {
-			return Internal.Transformator.toAsync(plugins);
-		}
-
-		Logger.warn("No plugins found in application data", "plugin_list");
-		Logger.log("Fetching plugins...", "plugin_list");
-
-		const list = await api<GulpDataset.PluginList.Interface[]>(
-			"/plugin_list",
-			(list) => list.sort((a, b) => a.filename.localeCompare(b.filename)),
-		);
-		if (!list) {
-			return [];
-		}
-
-		this.setInfoByKey(list, "target", "plugins");
-
-		Logger.log(
-			`Fetched and sorted ${list.length} plugins. Names:`,
-			"plugin_list",
-		);
-		Logger.log(
-			list.map((l) => l.filename),
-			"plugin_list",
-		);
-
-		return list;
-	};
-
-	setTimelineFrame = (frame: MinMax) =>
-		this.setInfoByKey(frame, "timeline", "frame");
-
-	login = async (credentials: Pick<User.Minified, "id" | "password">) => {
-		const user = await api<User.Type>("/login", {
-			method: "POST",
-			query: {
-				ws_id: this.app.general.ws_id,
-			},
-			toast: {
-				onSuccess: () =>
-					toast.success("Access granted", {
-						richColors: true,
-						icon: <Icon name="Check" />,
-					}),
-				onError: (response) =>
-					toast.error(`Login failed`, {
-						richColors: true,
-						description: `Reason: ${response.data.__error.msg}`,
-						icon: <Icon name="Warning" />,
-					}),
-			},
-			body: {
-				user_id: credentials.id,
-				password: credentials.password,
-			},
-		});
-
-		if (!user) {
-			return null;
-		}
-
-		Internal.Settings.token = user.token;
-
-		await this.plugin_list();
-		await this.glyphs_reload();
-		await this.sync();
-
-		this.setInfoByKey(Object.assign(credentials, user), "general", "user");
-
-		return user;
-	};
-
-	setTimelineScale = (scale: number) => {
-		return this.setInfoByKey(
-			Math.max(0.01, Math.min(9999999, scale)),
-			"timeline",
-			"scale",
-		);
-	};
-
-	setTimelineTarget = (event?: Doc.Type | null | 1 | -1): Doc.Type => {
-		const { target } = this.app.timeline;
-
-		if (typeof event === "number" && target) {
-			const events = Source.Entity.events(this.app, target["gulp.source_id"]);
-			const index =
-				events.findIndex((event) => event._id === target._id) + event;
-			event = events[index];
-		}
-
-		if (typeof event !== "undefined") {
-			this.setInfoByKey(event as Doc.Type, "timeline", "target");
-		}
-
-		return event as Doc.Type;
-	};
-
-	setTimelineFilter = (filter: string) =>
-		this.setInfoByKey(filter, "timeline", "filter");
-
-	increasedTimelineScale = (current: number = this.app.timeline.scale) =>
-		current + current / 8;
-
-	decreasedTimelineScale = () =>
-		this.app.timeline.scale - this.app.timeline.scale / 8;
-
-	query_external = async (
-		plugin: string,
-		plugin_params?: Record<string, any>,
-		preview_mode = false,
-		q?: string,
-		q_options?: Record<string, any>,
-	): Promise<{
-		total_hits: number;
-		docs: Doc.Type[];
-	} | null> => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return { total_hits: 0, docs: [] };
-		}
-
-		return api<{
-			total_hits: number;
-			docs: Doc.Type[];
-		}>("/query_external", {
-			method: "POST",
-			raw: true,
-			query: {
-				ws_id: this.app.general.ws_id,
-				operation_id: operation.id,
-				plugin,
-			},
-			body: {
-				q: q,
-				plugin_params,
-				q_options: {
-					...q_options,
-					preview_mode,
-				},
-			},
-		}).then((response) => {
-			if (response.data) {
-				return response.data;
-			}
-
-			return new Promise((resolve, reject) => {
-				SmartSocket.Class.instance.conce(
-					SmartSocket.Message.Type.INGEST_SOURCE_DONE,
-					(m) => m.req_id === response.req_id,
-					(m) => {
-						if (m.payload.status === "failed") {
-							return reject();
-						}
-
-						// Trust me bro, this is masterpieceofshit
-						// well well well
-						resolve(null);
-					},
-				);
-			});
-		});
-	};
-
-	setQuery = (file: Arrayed<Source.Type>, query: Query.Type): void => {
-		const files = Parser.array(file);
-
-		files.forEach((file) => {
-			const prev = this.app.target.filters[file.id];
-
-			this.app.target.filters[file.id] = {
-				string: query.string || Filter.Entity.base(file),
-				filters:
-					Array.isArray(query.filters) && query.filters.length > 0
-						? query.filters
-						: (prev?.filters ?? []),
-				raw: query.raw,
-				isManual: query.isManual,
-			};
-		});
-
-		this.setInfoByKey(
-			Refractor.object(this.app.target.filters),
-			"target",
-			"filters",
-		);
-	};
-
-	getQuery = (file: Source.Type): Query.Type => {
-		const query = this.app.target.filters[file.id];
-
-		if (!query) {
-			const q = Filter.Entity.default(this.app, file.id);
-
-			this.setQuery(file, q);
-
-			return q;
-		}
-
-		return query;
-	};
-
-	filters_remove = (file: Source.Type | Source.Id) => {
-		const id = Parser.useUUID(file) as Source.Id;
-		const filters = Refractor.object({
-			...this.app.target.filters,
-			[id]: Filter.Entity.default(this.app, file),
-		});
-
-		return this.setInfoByKey(filters, "target", "filters");
-	};
-
-	useReverseScroll = (bool: boolean) => {
-		localStorage.setItem("settings.__isScrollReversed", String(bool));
-		this.setInfoByKey(bool, "timeline", "isScrollReversed");
-	};
-
-	files_reorder_upper = (id: Source.Id) => {
-		const files = this.app.target.files;
-		const index = files.findIndex((file) => file.id === id);
-
-		if (index === 0) return;
-
-		const file = files[index];
-		files[index] = files[index - 1];
-		files[index - 1] = file;
-
-		this.setInfoByKey(files, "target", "files");
-		this.render();
-	};
-
-	files_reorder_lower = (id: Source.Id) => {
-		const files = this.app.target.files;
-		const index = files.findIndex((file) => file.id === id);
-
-		if (index === files.length - 1) return;
-
-		const file = files[index];
-		files[index] = files[index + 1];
-		files[index + 1] = file;
-
-		this.setInfoByKey(files, "target", "files");
-		this.render();
-	};
-
-	query_sigma = async (
-		src_ids: Source.Id[],
-		sigmas: NodeFile[],
-		notes: boolean,
-	) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) {
-			return;
-		}
-
-		return api(
-			"/query_sigma",
-			{
-				method: "POST",
-				query: {
-					ws_id: this.app.general.ws_id,
-					operation_id: operation.id,
-				},
-				raw: true,
-				body: {
-					sigmas: await Promise.all(sigmas.map((s) => s.text())),
-					q_options: {
-						create_notes: notes,
-					},
-					src_ids,
-				},
-				toast: {
-					onSuccess: () =>
-						toast.success("Sigma rule has been successfully applied", {
-							richColors: true,
-							icon: <Icon name="Check" />,
-						}),
-					onError: (response) =>
-						toast.error("Sigma rule has not been applied", {
-							richColors: true,
-							icon: <Icon name="Warning" />,
-						}),
-				},
-			},
-			({ req_id }) => {
-				SmartSocket.Class.instance.conce(
-					SmartSocket.Message.Type.STATS_UPDATE,
-					(m) => m.req_id === req_id,
-					(m) => {
-						console.log(m);
-						if (m.payload.obj.status !== "done") {
-							toast.error("Sigma query failed", {
-								icon: <Icon name="Stop" />,
-								richColors: true,
-							});
-						} else {
-							toast.success(
-								`Sigma query ${m.payload.obj.name} has been successfully finished`,
-								{
-									description: `Total matches: ${m.payload.obj.data.total_hits ?? 0}`,
-									icon: <Icon name="Sigma" />,
-								},
-							);
-						}
-					},
-				);
-				SmartSocket.Class.instance.con(
-					SmartSocket.Message.Type.COLLAB_CREATE,
-					(m) => m.req_id === req_id,
-					(m) => {
-						if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
-							const currentNotes = this.app.target.notes;
-							const newItems = m.payload.obj.filter(
-								(item) => item.type === "note",
-							);
-							this.setInfoByKey(
-								[...currentNotes, ...newItems],
-								"target",
-								"notes",
-							);
-							toast.success(`Fetched ${newItems.length} notes`, {
-								richColors: true,
-							});
-						}
-					},
-				);
-			},
-		);
-	};
-
-	toggle_visibility = (key: keyof App.Type["hidden"]) => {
-		this.setInfoByKey(!this.app.hidden[key], "hidden", key);
-		this.render();
-	};
-
-	files_repin = (id: Source.Id) => {
-		const files = this.app.target.files;
-		const index = files.findIndex((file) => file.id === id);
-
-		files[index].pinned = !files[index].pinned;
-
-		this.setInfoByKey(files, "target", "files");
-		this.render();
-	};
-
-	get width(): number {
-		return (
-			this.app.timeline.scale *
-			(document.getElementById("canvas")?.clientWidth || 1)
-		);
-	}
-
-	setInfoByKey = <K extends keyof App.Type, S extends keyof App.Type[K]>(
-		value: App.Type[K][S] | ((prev: App.Type[K][S]) => App.Type[K][S]),
-		section: K,
-		key: S,
-	) => {
-		this.setInfo((_info) => {
-			const resolvedValue = typeof value === 'function' ? (value as any)(_info[section][key]) : value;
-			this.app = {
-				..._info,
-				[section]: {
-					..._info[section],
-					[key]: resolvedValue,
-				},
-			};
-
-			return this.app;
-		});
-	};
-
-	/**
-	 * Batches multiple state updates into a single React setState call.
-	 * Use this instead of calling setInfoByKey N times in sequence,
-	 * which would create N intermediate state objects and potentially N re-renders.
-	 *
-	 * The updater receives a shallow-cloned draft of the app state with all
-	 * top-level sections pre-cloned. Modifications to the draft are applied
-	 * as a single immutable update.
-	 *
-	 * @param updater - Function receiving a mutable draft of the current app state.
-	 *                  Modify the draft's sections directly (e.g., draft.target.notes = []).
-	 */
-	batchUpdate = (updater: (draft: App.Type) => void) => {
-		this.setInfo(prev => {
-			// Shallow-clone top-level sections so the updater can safely mutate them
-			const next: App.Type = {
-				...prev,
-				target: { ...prev.target },
-				timeline: { ...prev.timeline },
-				general: { ...prev.general },
-				settings: { ...prev.settings },
-				hidden: { ...prev.hidden },
-			};
-			updater(next);
-			this.app = next;
-			return next;
-		});
-	};
+  app: App.Type;
+  setInfo: SetState<App.Type>;
+  timeline: React.RefObject<HTMLDivElement>;
+
+  private static _latestInstance: Info | null = null;
+  public ingestionProgress = new Map<Source.Id, number>();
+
+  constructor({ app, setInfo, timeline }: InfoProps) {
+    this.app = app;
+    this.setInfo = setInfo;
+    this.timeline = timeline;
+    Info._latestInstance = this;
+  }
+
+  refetch = async ({
+    ids: _ids = Source.Entity.selected(this.app).map((f) => f.id),
+    refetchKeys,
+    addToHistory,
+  }: RefetchOptions = {}) => {
+    const files: Source.Type[] = Parser.array(_ids).map((id) =>
+      Source.Entity.id(this.app, id),
+    );
+
+    if (this.app.timeline.frame.min === 0) {
+      this.setTimelineFrame({
+        min: Math.min(...files.map((f) => f.timestamp.min)),
+        max: Math.max(...files.map((f) => f.timestamp.max)),
+      });
+    }
+
+    this.notes_reload();
+    this.links_reload();
+    this.highlights_reload();
+
+    files.forEach((file) => {
+      this.events_reset_in_file(file);
+      this.query_file(this.getQuery(file), {
+        id: file.id,
+        preview: false,
+        refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
+        addToHistory,
+      });
+    });
+  };
+
+  private static _realtimeTimer: ReturnType<typeof setInterval> | null = null;
+
+  setRealtime = (enabled: boolean, seconds: number) => {
+    if (Info._realtimeTimer) {
+      clearInterval(Info._realtimeTimer);
+      Info._realtimeTimer = null;
+    }
+
+    this.setInfoByKey(enabled, "settings", "realtimeEnabled");
+    this.setInfoByKey(seconds, "settings", "realtimeTimeoff");
+
+    if (enabled && seconds >= 10) {
+      Info._realtimeTimer = setInterval(() => {
+        Info._latestInstance?.realtimePoll();
+      }, seconds * 1000);
+    }
+  };
+
+  realtimePoll = async () => {
+    const files = Source.Entity.selected(this.app);
+    if (files.length === 0) return;
+
+    const now = Date.now();
+    const nowNanos = Internal.Transformator.toNanos(now);
+    let filesUpdated = false;
+
+    files.forEach((file) => {
+      const events = Doc.Entity.get(this.app, file.id);
+
+      let fromNanos: bigint;
+      if (events.length > 0) {
+        fromNanos = events[0]["gulp.timestamp"] + 1n;
+      } else {
+        fromNanos =
+          file.nanotimestamp?.max ??
+          Internal.Transformator.toNanos(file.timestamp.max);
+      }
+
+      if (fromNanos >= nowNanos) return;
+
+      // Extend source timestamp bounds so render engines can draw events beyond the original range
+      if (file.timestamp.max < now) {
+        file.timestamp.max = now;
+        file.nanotimestamp.max = nowNanos;
+        filesUpdated = true;
+      }
+
+      const query: Query.Type = {
+        string: Filter.Entity.base(file, {
+          min: fromNanos as unknown as number,
+          max: nowNanos as unknown as number,
+        }),
+        filters: [],
+      };
+
+      this.query_file(query, {
+        id: file.id,
+        preview: false,
+      });
+    });
+
+    if (filesUpdated) {
+      this.setInfoByKey([...this.app.target.files], "target", "files");
+    }
+
+    this.realtimePollExtendFrame();
+  };
+
+  realtimePollExtendFrame = () => {
+    const now = Date.now();
+    if (this.app.timeline.frame.max < now) {
+      this.setTimelineFrame({
+        min: this.app.timeline.frame.min,
+        max: now,
+      });
+    }
+  };
+
+  enrichment = (
+    plugin: string,
+    file: Source.Type,
+    range: MinMax,
+    custom_parameters: Record<string, any>,
+    isShowOnlyEnriched: boolean,
+    fields: Record<string, string | null>,
+  ) => {
+    return api("/enrich_documents", {
+      method: "POST",
+      query: {
+        operation_id: file.operation_id,
+        plugin,
+        ws_id: this.app.general.ws_id,
+      },
+      raw: true,
+      body: {
+        flt: {
+          source_ids: [file.id],
+          time_range: [
+            Internal.Transformator.toNanos(range.min).toString(),
+            Internal.Transformator.toNanos(range.max).toString(),
+          ],
+        },
+        plugin_params: {
+          custom_parameters,
+        },
+        fields,
+      },
+    }).then(({ req_id }) => {
+      if (isShowOnlyEnriched) {
+        this.events_reset_in_file(file);
+        this.setLoading(req_id, file.id);
+      }
+      const bufferedEvents: Doc.Type[] = [];
+
+      const sid = SmartSocket.Class.instance.con(
+        SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+        (m) =>
+          m.req_id === req_id &&
+          this.app.general.loadings.byRequestId.has(req_id),
+        (m) => {
+          const events = Doc.Entity.normalize(m.payload.docs ?? []);
+          bufferedEvents.push(...events);
+
+          if (m.payload.last) {
+            (async () => {
+              if (bufferedEvents.length > 0) {
+                await this.events_add_async(bufferedEvents);
+              }
+
+              this.delLoading(req_id);
+              SmartSocket.Class.instance.coff(
+                SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+                sid,
+              );
+            })();
+          }
+        },
+      );
+      SmartSocket.Class.instance.conce(
+        SmartSocket.Message.Type.ENRICH_DONE,
+        (m) => m.req_id === req_id,
+        (m) => {
+          if (m.payload.obj.status !== "done") {
+            toast.error("Enrichment failed", {
+              icon: <Icon name="Stop" />,
+              richColors: true,
+            });
+          } else {
+            toast.success("Enrichment finished", {
+              description: `Total processed documents: ${m.payload.obj.data.total_hits ?? 0}`,
+              icon: <Icon name="Check" />,
+            });
+          }
+        },
+      );
+    });
+  };
+
+  enrich_single_id = (
+    plugin: string,
+    event: Doc.Type,
+    custom_parameters: Record<string, any>,
+    fields: Record<string, string | null>,
+  ): Promise<Doc.Type> | undefined =>
+    api<Doc.Type>("/enrich_single_id", {
+      method: "POST",
+      query: {
+        plugin,
+        operation_id: event["gulp.operation_id"],
+        ws_id: this.app.general.ws_id,
+        doc_id: event._id,
+      },
+      body: {
+        plugin_params: {
+          custom_parameters,
+        },
+        fields,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success("Document has been enriched successfully", {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+      },
+    });
+
+  download_storage_file = async (
+    storage_id: string,
+    operation_id: string,
+  ): Promise<void> => {
+    const req_id = generateUUID<string>(Request.Prefix.QUERY);
+    const query = new URLSearchParams({
+      operation_id,
+      storage_id,
+      req_id,
+    });
+
+    const response = await fetch(
+      `${Internal.Settings.server}/storage_get_file_by_id?${query}`,
+      {
+        method: "GET",
+        headers: {
+          token: Internal.Settings.token,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      toast.error("Failed to download log file", { richColors: true });
+      return;
+    }
+
+    const disposition = response.headers.get("Content-Disposition");
+    let filename = `${storage_id}`;
+    if (disposition) {
+      const match = disposition.match(/filename="?(.+?)"?$/);
+      if (match) {
+        filename = match[1];
+      }
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // Bridge Manager APIs
+  list_bridges = (flt?: any, req_id?: string, options?: any) =>
+    api<any>("/list_bridges", {
+      method: "POST",
+      query: { req_id },
+      body: { flt },
+      ...options,
+    });
+
+  list_ingestion_tasks = (flt?: any, req_id?: string, options?: any) =>
+    api<any>("/list_ingestion_tasks", {
+      method: "POST",
+      query: { req_id },
+      body: flt,
+      ...options,
+    });
+
+  create_start_ingestion = (
+    bridge_id: string,
+    operation_id: string,
+    plugin_params: any,
+    req_id?: string,
+    options?: any,
+  ) =>
+    api<any>("/create_start_ingestion", {
+      method: "POST",
+      query: { bridge_id, operation_id, req_id },
+      body: plugin_params,
+      ...options,
+    });
+
+  stop_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
+    api<any>("/stop_ingestion", {
+      method: "POST",
+      query: { req_id },
+      body: `"${bridge_task_id}"`,
+      ...options,
+    });
+  check_bridge_status = (bridge_id: string, req_id?: string, options?: any) =>
+    api<any>("/get_bridge_status", {
+      method: "GET",
+      query: { req_id, bridge_id },
+      ...options,
+    });
+
+  delete_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
+    api<any>("/delete_ingestion", {
+      method: "DELETE",
+      query: { req_id, bridge_task_id },
+      ...options,
+    });
+
+  query_global = async ({
+    filename,
+    context,
+    query,
+    total,
+    separately,
+  }: {
+    context?: string;
+    filename?: string;
+    query: Query.Type;
+    total: number;
+    separately?: boolean;
+  }) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    if (!filename || !context) {
+      separately = true;
+    }
+
+    if (!separately) {
+      this.query_file(query, {
+        id: this.virtualize(filename!, total, context!),
+        preview: false,
+      });
+    } else {
+      this.query_file(query, {
+        preview: false,
+      });
+    }
+  };
+
+  virtualize = (fileName: string, total: number, contextName: string) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return null!;
+    }
+
+    const context_id = `temp-${contextName}` as Context.Id;
+
+    const file: Source.Type = Source.Entity.virtualize(this.app, {
+      name: fileName,
+      context_id,
+      operation_id: operation.id,
+      total: 999999,
+    });
+
+    const context: Context.Type = {
+      id: context_id,
+      color: "#00ff00",
+      glyph_id: null as unknown as Glyph.Id,
+      granted_user_group_ids: [],
+      granted_user_ids: [],
+      name: contextName,
+      operation_id: operation.id,
+      time_created: Date.now(),
+      time_updated: Date.now(),
+      type: "context",
+      selected: true,
+      owner_user_id: this.app.general.user?.id!,
+    };
+
+    this.setInfo((info) => ({
+      ...info,
+      target: {
+        ...info.target,
+        files: [...info.target.files, file],
+        contexts: [...info.target.contexts, context],
+      },
+    }));
+
+    return file.id;
+  };
+
+  query_gulp = async (docIds: Doc.Id[], fields: string[], preview: boolean) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const body: Record<any, any> = {
+      flt: {
+        doc_ids: docIds,
+      },
+      q_options: {
+        limit: 10000,
+      },
+    };
+
+    if (fields.length > 0) {
+      body.q_options.fields = fields;
+    }
+
+    if (preview) {
+      body.q_options.preview_mode = true;
+    }
+
+    const request_query: Record<string, string> = {
+      ws_id: this.app.general.ws_id,
+      operation_id: operation.id,
+      req_id: generateUUID(Request.Prefix.QUERY),
+    };
+
+    const resp = await api<any>(
+      "/query_gulp",
+      {
+        method: "POST",
+        query: request_query,
+        body,
+        raw: true,
+      },
+      ({ req_id, status }) => {
+        if (status !== "pending") {
+          return;
+        }
+
+        const bufferedEvents: Doc.Type[] = [];
+
+        const sid = SmartSocket.Class.instance.con(
+          SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+          (m) =>
+            m.req_id === req_id &&
+            this.app.general.loadings.byRequestId.has(req_id),
+          (m) => {
+            const events = Doc.Entity.normalize(m.payload.docs ?? []);
+            bufferedEvents.push(...events);
+
+            if (m.payload.last) {
+              (async () => {
+                if (bufferedEvents.length > 0) {
+                  await this.events_add_async(bufferedEvents);
+                }
+                this.delLoading(req_id);
+                SmartSocket.Class.instance.coff(
+                  SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+                  sid,
+                );
+              })();
+            }
+          },
+        );
+        SmartSocket.Class.instance.conce(
+          SmartSocket.Message.Type.STATS_UPDATE,
+          (m) => m.req_id === req_id,
+          (m) => {
+            // if (m.payload.obj.status !== 'done') {
+            //   toast.error(`Query ${req_id} failed`, {
+            //     icon: <Icon name='Stop' />,
+            //     description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            //     duration: 1000 * 2,
+            //     // [λ] Uncomment next lines if not fixed in backend till 2026
+            //     // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            //     // duration: 1000 * 60 * 10,
+            //     richColors: true
+            //   })
+            // } else {
+            //   console.log(m);
+            //   toast.success('Query finished', {
+            //     description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
+            //     icon: <Icon name='Check' />
+            //   })
+            // }
+          },
+        );
+      },
+    );
+
+    if (preview) {
+      if (!resp || (resp || {})?.data?.total_hits === 0) {
+        toast.error(
+          "This filter returned no results. No matching documents were found",
+          {
+            icon: <Icon name="FaceUnhappy" />,
+            richColors: true,
+          },
+        );
+      } else {
+        toast(`Total hits for this filter is ${resp.data?.total_hits}`);
+      }
+    }
+
+    return resp
+      ? resp.data
+      : {
+          docs: [],
+          total_hits: 0,
+        };
+  };
+
+  query_file = async (
+    query: Query.Type,
+    {
+      preview = false,
+      id,
+      refetchKeys,
+      addToHistory,
+    }: GulpDataset.QueryGulp.Options,
+  ) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    if (id) {
+      const request = this.app.general.loadings.byFileId.get(id);
+      if (request) {
+        this.delLoading(request);
+        this.request_cancel(request);
+      }
+    }
+
+    const body = Filter.Entity.body(query);
+
+    if (preview) {
+      body.q_options.preview_mode = preview;
+    }
+
+    body.q_options.limit = 10000;
+
+    const request_query: Record<string, string> = {
+      ws_id: this.app.general.ws_id,
+      operation_id: operation.id,
+      req_id: generateUUID(Request.Prefix.QUERY),
+    };
+
+    if (id) {
+      body.q_options.fields = refetchKeys ?? [
+        Source.Entity.id(this.app, id).settings.field,
+      ];
+    }
+
+    if (addToHistory) {
+      body.q_options.add_to_history = true;
+    }
+
+    const resp = await api<any>(
+      "/query_raw",
+      {
+        method: "POST",
+        query: request_query,
+        body,
+        raw: true,
+      },
+      ({ req_id, status }) => {
+        if (status !== "pending") {
+          return;
+        }
+
+        const bufferedEvents: Doc.Type[] = [];
+
+        const sid = SmartSocket.Class.instance.con(
+          SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+          (m) =>
+            m.req_id === req_id &&
+            this.app.general.loadings.byRequestId.has(req_id),
+          (m) => {
+            const events = Doc.Entity.normalize(m.payload.docs ?? []);
+            bufferedEvents.push(...events);
+
+            if (m.payload.last) {
+              (async () => {
+                if (bufferedEvents.length > 0) {
+                  await this.events_add_async(bufferedEvents);
+                }
+
+                this.delLoading(req_id);
+                SmartSocket.Class.instance.coff(
+                  SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+                  sid,
+                );
+                if (id) {
+                  const file = Source.Entity.id(this.app, id);
+                  const loadedCount = Doc.Entity.get(this.app, id).length;
+                  if (file && loadedCount > file.total) {
+                    file.total = loadedCount;
+                    this.setInfoByKey(
+                      [...this.app.target.files],
+                      "target",
+                      "files",
+                    );
+                  }
+                }
+                this.render();
+              })();
+            }
+          },
+        );
+        SmartSocket.Class.instance.conce(
+          SmartSocket.Message.Type.STATS_UPDATE,
+          (m) => m.req_id === req_id,
+          (m) => {
+            // if (m.payload.obj.status !== 'done') {
+            //   toast.error(`Query ${req_id} failed`, {
+            //     icon: <Icon name='Stop' />,
+            //     description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            //     duration: 1000 * 2,
+            //     // [λ] Uncomment next lines if not fixed in backend till 2026
+            //     // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
+            //     // duration: 1000 * 60 * 10,
+            //     richColors: true
+            //   })
+            // } else {
+            //   console.log(m);
+            //   toast.success('Query finished', {
+            //     description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
+            //     icon: <Icon name='Check' />
+            //   })
+            // }
+          },
+        );
+
+        if (id) {
+          this.setLoading(req_id, id);
+        }
+      },
+    );
+
+    if (preview) {
+      if (!resp || (resp || {})?.data?.total_hits === 0) {
+        toast.error(
+          "This filter returned no results. No matching documents were found",
+          {
+            icon: <Icon name="FaceUnhappy" />,
+            richColors: true,
+          },
+        );
+      } else {
+        toast(`Total hits for this filter is ${resp.data?.total_hits}`);
+      }
+    }
+
+    return resp
+      ? resp.data
+      : {
+          docs: [],
+          total_hits: 0,
+        };
+  };
+
+  getLastQueries = (): Promise<Query.Type[]> =>
+    api<GulpDataset.QueryHistoryGet.Response>("/query_history_get").then(
+      (list) => {
+        const queries: Query.Type[] = [];
+
+        list.forEach((payload) => {
+          const root = payload.q.query;
+          console.log(root, payload);
+          if (!root) {
+            return;
+          }
+
+          let string = "";
+          const filters: Filter.Type[] = [];
+
+          Object.entries(root.bool).forEach(([key, arr]) => {
+            const operator = key as OpenSearchQueryBuilder.Operator;
+
+            arr.forEach((obj) => {
+              Object.entries(obj).forEach(([type, v]) => {
+                if (type === "query_string") {
+                  string = v.query;
+                  return;
+                }
+
+                Object.keys(v).forEach((key) => {
+                  if (typeof v[key] !== "object") {
+                    filters.push({
+                      operator,
+                      type: type as OpenSearchQueryBuilder.Condition,
+                      id: generateUUID(),
+                      field: key,
+                      value: v[key],
+                      enabled: true,
+                    });
+                  } else {
+                    filters.push({
+                      operator,
+                      type: type as OpenSearchQueryBuilder.Condition,
+                      id: generateUUID(),
+                      field: key,
+                      value: v[key].value,
+                      enabled: true,
+                    });
+                  }
+                });
+              });
+            });
+          });
+
+          if (!string) {
+            Logger.error(
+              `Cannot find query_string part in given object: \n${JSON.stringify(payload, null, 2)}`,
+              "Info.getLastQueries",
+            );
+            string = Filter.Entity.base(Source.Entity.selected(this.app)[0]);
+          }
+
+          queries.push({
+            string,
+            filters,
+          });
+        });
+
+        return queries;
+      },
+    );
+
+  preview_file = (file: Source.Type, query = this.getQuery(file)) =>
+    this.query_file(query, { preview: true });
+
+  preview_query = (query: Query.Type) =>
+    this.query_file(query, { preview: true });
+
+  request_add = (req: Request.Type) => {
+    const exist = this.app.general.requests.findIndex((r) => r.id === req.id);
+    if (exist >= 0) {
+      this.app.general.requests[exist] = req;
+    } else {
+      this.app.general.requests = [...this.app.general.requests, req];
+    }
+
+    this.setInfoByKey(
+      this.app.general.requests.sort((a, b) => b.time_created - a.time_created),
+      "general",
+      "requests",
+    );
+  };
+
+  request_list = () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    return api<Request.Type[]>(
+      "/request_list",
+      {
+        method: "GET",
+        query: {
+          operation_id: operation.id,
+        },
+      },
+      (requests) => this.setInfoByKey(requests, "general", "requests"),
+    );
+  };
+
+  request_cancel = (req_id_to_cancel: Request.Id) =>
+    api("/request_cancel", {
+      method: "PATCH",
+      query: { req_id_to_cancel },
+    });
+
+  filters_cache = (files: Array<Source.Type | Source.Id>) => {
+    files.forEach((file) => {
+      const id = Parser.useUUID(file) as Source.Id;
+
+      Logger.log(
+        `Caching has been requested for files ${Source.Entity.id(this.app, file).name}`,
+        Info,
+      );
+
+      this.app.timeline.cache.data.set(
+        id,
+        this.app.target.events.get(id) || [],
+      );
+      this.app.timeline.cache.filters[id] = this.app.target.filters[id];
+    });
+
+    this.setInfoByKey(this.app.timeline.cache, "timeline", "cache");
+    this.render();
+  };
+
+  filters_undo = (files: Array<Source.Type | Source.Id>) => {
+    files.forEach((file) => {
+      const id = Parser.useUUID(file) as Source.Id;
+
+      this.app.target.filters = {
+        ...this.app.target.filters,
+        [id]: this.app.timeline.cache.filters[id],
+      };
+
+      this.app.target.events.delete(id);
+      this.app.target.events.set(
+        id,
+        this.app.timeline.cache.data.get(id) || [],
+      );
+
+      this.filters_delete_cache(file);
+    });
+
+    this.setInfoByKey(this.app.target.filters, "target", "filters");
+    this.setInfoByKey(this.app.target.events, "target", "events");
+    this.render();
+  };
+
+  filters_delete_cache = (file: Source.Type | Source.Id) => {
+    const id = Parser.useUUID(file) as Source.Id;
+
+    this.app.timeline.cache.data.delete(id);
+
+    this.setInfoByKey(
+      {
+        data: this.app.timeline.cache.data,
+        filters: { ...this.app.timeline.cache.filters, [id]: undefined },
+      },
+      "timeline",
+      "cache",
+    );
+  };
+
+  render = () => {
+    Logger.log(`Render requested`, Info);
+    this.setInfoByKey(
+      this.app.timeline.renderVersion + 1,
+      "timeline",
+      "renderVersion",
+    );
+  };
+
+  mapping_file_list = async (): Promise<Mapping.Type.Plugin[]> => {
+    const shit = await api<Mapping.Raw[]>("/mapping_file_list");
+
+    const parsed_shit = Mapping.Entity.parse(shit);
+
+    const another_parsed_shit = await this.plugin_list().then((p) =>
+      p.filter((p) => p.type.includes("ingestion")),
+    );
+
+    another_parsed_shit.forEach((shit) => {
+      const found_shit = parsed_shit.find((ps) => ps.name === shit.filename);
+      if (found_shit) {
+        return;
+      } else {
+        parsed_shit.push({
+          name: shit.filename,
+          methods: [],
+        });
+      }
+    });
+
+    const sorted_parsed_shit = parsed_shit.sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    this.setInfoByKey(sorted_parsed_shit, "target", "mappings");
+
+    return sorted_parsed_shit;
+  };
+
+  /**
+   * Switches to a different operation and performs comprehensive memory cleanup.
+   *
+   * MEMORY MANAGEMENT: Clears all caches (render engines, notes, doc index, timeline,
+   * canvas icons) and resets event data before selecting the new operation.
+   * This prevents memory leaks when switching between operations with large datasets
+   * (e.g., 320k events = ~150MB of cached pixel maps, note groups, and doc references).
+   *
+   * PERFORMANCE: Uses batchUpdate to consolidate all state changes into a single
+   * React setState call, preventing 8+ intermediate re-renders.
+   */
+  operations_select = (id: Operation.Id) => {
+    // External cache cleanup (not part of React state)
+    RenderEngine.clearAllCaches();
+    Note.Entity.invalidateCache();
+    Doc.Entity.clearIndex();
+
+    // Reset viewport to default position (like first render)
+    scrollStore.setScrollX(0);
+    scrollStore.setScrollY(-26);
+
+    // Single batched state update instead of 8 separate setInfoByKey calls
+    this.batchUpdate((draft) => {
+      // Timeline reset
+      draft.timeline.scale = 1;
+      draft.timeline.target = null;
+      draft.timeline.cache.data.clear();
+      draft.timeline.cache.filters = {};
+
+      // Clear event data
+      draft.target.events.clear();
+      draft.target.events = new Map(draft.target.events);
+
+      // Clear notes and links
+      draft.target.notes = [];
+      draft.target.links = [];
+
+      // Select operation, deselect contexts and files
+      draft.target.operations = Operation.Entity.select(draft, id);
+      draft.target.contexts = draft.target.contexts.map((context) => ({
+        ...context,
+        selected: false,
+      }));
+      draft.target.files = draft.target.files.map((file) => ({
+        ...file,
+        selected: false,
+      }));
+    });
+  };
+
+  operations_set = (operations: Operation.Type[]) =>
+    this.setInfoByKey(
+      Operation.Entity.reload(operations, this.app),
+      "target",
+      "operations",
+    );
+
+  deleteOperation = (
+    operation: Operation.Type,
+    setLoading: SetState<boolean>,
+  ) => {
+    return api(
+      "/operation_delete",
+      {
+        method: "DELETE",
+        query: {
+          operation_id: operation.id,
+        },
+        setLoading,
+        toast: {
+          onSuccess: () =>
+            toast.success(
+              `Operation ${operation.name} has been deleted successfully`,
+              {
+                icon: <Icon name="Check" />,
+                richColors: true,
+              },
+            ),
+          onError: (response) =>
+            toast.error(`Failed deleting operation`, {
+              description: `Reason ${response.data.__error.msg}`,
+              icon: <Icon name="Stop" />,
+              richColors: true,
+            }),
+        },
+      },
+      this.sync,
+    );
+  };
+
+  fetch_gulp_parameters = async () => {
+    const res = await fetch("http://localhost:8080/openapi.json");
+    const json = await res.json();
+    const pluginParamsSchema = json.components?.schemas?.GulpPluginParameters;
+    const example = pluginParamsSchema?.examples?.[0];
+    return example;
+  };
+
+  // ⚠️ UNTOUCHABLE
+  file_delete = (source: Source.Type) => {
+    return api(
+      "/source_delete",
+      {
+        method: "DELETE",
+        query: {
+          source_id: source.id,
+          ws_id: this.app.general.ws_id,
+        },
+      },
+      this.sync,
+    );
+  };
+
+  file_ingest = async ({
+    context,
+    file,
+    frame,
+    settings,
+    setProgress,
+    preview_mode,
+  }: FileEntity.IngestOptions) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const plugin = settings.plugin;
+    if (!plugin) {
+      return;
+    }
+
+    if (preview_mode) {
+      toast.error(
+        "Preview mode not supported in file_ingest, use file_ingest_preview",
+      );
+      return;
+    }
+
+    const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
+
+    ingestWorkerManager.enqueue({
+      req_id: id,
+      file,
+      operation_id: operation.id,
+      context_name: context,
+      ws_id: this.app.general.ws_id,
+      settings,
+      server: Internal.Settings.server,
+      token: Internal.Settings.token,
+      frame,
+      onProgress: (progress, bytes) => {
+        this.ingestionProgress.set(id as unknown as Source.Id, progress);
+        // Also try to find by source id if available
+        const sourceIdByReqId = this.app.general.loadings.byRequestId.get(id);
+        if (sourceIdByReqId) {
+          this.ingestionProgress.set(sourceIdByReqId, progress);
+        }
+
+        if (progress % 5 === 0 || progress === 100) {
+          this.render();
+        }
+        if (setProgress) setProgress(progress);
+      },
+      onError: (err) => {
+        toast.error(`Ingestion of ${file.name} failed: ${err}`);
+        this.delLoading(id);
+      },
+    });
+
+    SmartSocket.Class.instance.conce(
+      SmartSocket.Message.Type.COLLAB_CREATE,
+      (m) =>
+        m.payload.obj.type === "context" &&
+        (m.req_id === id || m.payload.obj.name === context),
+      (m) => {
+        // Global listener in Application.context.tsx handles state addition
+        console.log(m.payload, "Context created for ingest", id);
+      },
+    );
+
+    // 2. Progressive addition of files arriving from server
+    SmartSocket.Class.instance.conce(
+      SmartSocket.Message.Type.COLLAB_CREATE,
+      (m) => {
+        if (m.payload.obj.type !== "source") return false;
+        if (m.req_id === id) return true;
+
+        const mName = m.payload.obj.name || "";
+        const fName = file.name || "";
+        if (mName === fName) return true;
+        try {
+          return decodeURIComponent(mName) === decodeURIComponent(fName);
+        } catch (e) {
+          return false;
+        }
+      },
+      (m) => {
+        // loading state is local to this ingest
+        this.setLoading(
+          m.req_id || id,
+          m.payload.obj.id as unknown as Source.Id,
+        );
+        // Global listener handles state addition
+      },
+    );
+
+    const bufferedEvents: Doc.Type[] = [];
+    let accumulatedCount = 0;
+
+    const sid = SmartSocket.Class.instance.con(
+      SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+      (m) => m.req_id === id && this.app.general.loadings.byRequestId.has(id),
+      (m) => {
+        if (typeof m.payload.docs === "undefined") {
+          return;
+        }
+
+        const events = Doc.Entity.normalize(m.payload.docs);
+        bufferedEvents.push(...events);
+        accumulatedCount += events.length;
+
+        const files = Refractor.array(...this.app.target.files);
+        const fileId = events[0]["gulp.source_id"] as Source.Id;
+
+        // Update lightweight progress map
+        this.ingestionProgress.set(
+          fileId,
+          (this.ingestionProgress.get(fileId) || 0) + events.length,
+        );
+
+        const exist = files.findIndex((f) => f.id === fileId);
+        const file = files[exist];
+
+        if (m.payload.last) {
+          (async () => {
+            // Batched addition of all incoming events at the end of ingestion
+            await this.events_add_async(bufferedEvents);
+
+            const fileId = events[0]["gulp.source_id"] as Source.Id;
+            const all = Source.Entity.events(this.app, fileId);
+
+            const timestamp =
+              all.length > 0
+                ? {
+                    min: all[all.length - 1].timestamp,
+                    max: all[0].timestamp,
+                  }
+                : { min: Date.now(), max: Date.now() };
+
+            // Finalize progress (clean up map)
+            this.ingestionProgress.delete(fileId);
+
+            const reqId = m.req_id;
+            this.batchUpdate((draft) => {
+              const files = Refractor.array(...draft.target.files);
+              const exist = files.findIndex((f) => f.id === fileId);
+              const file = files[exist];
+
+              if (exist !== -1 && file) {
+                files[exist] = Source.Entity.normalize(draft, {
+                  ...file,
+                  timestamp,
+                  nanotimestamp: {
+                    min: Internal.Transformator.toNanos(timestamp.min),
+                    max: Internal.Transformator.toNanos(timestamp.max),
+                  },
+                  total: all.length,
+                  selected: true,
+                });
+
+                draft.target.files = files;
+
+                draft.timeline.frame = {
+                  min: Math.min(...files.map((f) => f.timestamp.min)),
+                  max: Math.max(...files.map((f) => f.timestamp.max)),
+                };
+              }
+
+              // Inline delLoading logic to avoid extra setState
+              draft.general.loadings.byRequestId.delete(reqId);
+              const fileEntry = [
+                ...draft.general.loadings.byFileId.entries(),
+              ].find((e) => e[1] === reqId)?.[0];
+              if (fileEntry) {
+                draft.general.loadings.byFileId.delete(fileEntry);
+              }
+            });
+
+            SmartSocket.Class.instance.coff(
+              SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+              sid,
+            );
+
+            const finalFile = Source.Entity.id(this.app, fileId);
+            if (finalFile) {
+              toast.success(
+                `Source ${finalFile.name} has been ingested successfully`,
+                {
+                  description: `Total amount of documents is: ${all.length}`,
+                  richColors: true,
+                  icon: <Icon name="Check" />,
+                },
+              );
+            }
+          })();
+        } else {
+          if (file) {
+            toast.success(`Buffering events...`, {
+              description: `${accumulatedCount} events buffered for source ${file.name}`,
+              id: `ingest-toast-${file.id}`,
+            });
+          }
+        }
+      },
+    );
+  };
+
+  file_ingest_preview = async (
+    options: FileEntity.IngestOptions,
+  ): Promise<Doc.Type[]> => {
+    const { file, settings } = options;
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) return [];
+
+    const formData = new FormData();
+    const payload = {
+      original_file_path: file.name,
+      offset: settings.offset ?? 0,
+      plugin_params: {
+        ...settings.custom_parameters,
+        preview_mode: true,
+      },
+    };
+
+    formData.append(
+      "payload",
+      new Blob([JSON.stringify(payload)], { type: "application/json" }),
+    );
+    formData.append("f", file, file.name);
+
+    const query = {
+      plugin: settings.plugin?.split(".")[0],
+      operation_id: operation.id,
+      context_name: "preview",
+      ws_id: this.app.general.ws_id,
+    };
+
+    const response = await api<any>("/ingest_file", {
+      method: "POST",
+      body: formData,
+      deassign: true,
+      raw: true,
+      query,
+    });
+
+    return response.data as unknown as Doc.Type[];
+  };
+
+  // ⚠️ UNTOUCHABLE
+  file_set_settings = (
+    id: Source.Id,
+    settings: Partial<Source.Type["settings"]>,
+  ) => {
+    const file = Source.Entity.id(this.app, id);
+    const newSettings = {
+      ...file.settings,
+      ...settings,
+    } satisfies Source.Type["settings"];
+
+    if (!Source.Entity.isEventKeyFetched(this.app, id, [newSettings.field])) {
+      this.refetch({ ids: id, refetchKeys: { [id]: [newSettings.field] } });
+    }
+
+    return this.setInfoByKey(
+      this.app.target.files.map((file) =>
+        id === file.id ? { ...file, settings: newSettings } : file,
+      ),
+      "target",
+      "files",
+    );
+  };
+
+  file_set_total = (id: Source.Id, total = 0) =>
+    this.setInfoByKey(
+      this.app.target.files.map((file) =>
+        file.id === id ? { ...file, total } : file,
+      ),
+      "target",
+      "files",
+    );
+
+  // ⚠️ UNTOUCHABLE
+  context_delete = (context: Context.Type, delete_data: boolean) =>
+    api<any>(
+      "/context_delete",
+      {
+        method: "DELETE",
+        query: {
+          context_id: context.id,
+          delete_data,
+          ws_id: this.app.general.ws_id,
+        },
+      },
+      this.sync,
+    );
+
+  events_add = (newEvents: Doc.Type[]) => Doc.Entity.add(this.app, newEvents);
+
+  events_add_async = async (newEvents: Doc.Type[]) => {
+    await Doc.Entity.addAsync(this.app, newEvents);
+  };
+
+  event_keys = async (file: Source.Type): Promise<Filter.Options> => {
+    if (!file) {
+      return Internal.Transformator.toAsync({});
+    }
+
+    if (Source.Entity.isVirtual(file)) {
+      const ids = file.id.split("-").slice(1) as Source.Id[];
+
+      const filterOptionsStack = await Promise.all(
+        ids.map((id) => this.event_keys(Source.Entity.id(this.app, id))),
+      );
+
+      return filterOptionsStack.flat().reduce<Filter.Options>((acc, cur) => {
+        Object.keys(cur).forEach((c) => {
+          if (!acc[c]) {
+            acc[c] = cur[c];
+          }
+        });
+
+        return acc;
+      }, {});
+    }
+
+    return api<Filter.Options>("/query_fields_by_source", {
+      query: {
+        operation_id: file.operation_id,
+        context_id: file.context_id,
+        source_id: file.id,
+        ws_id: this.app.general.ws_id,
+      },
+    });
+  };
+
+  events_reset_in_file = (file: Source.Type) => {
+    Doc.Entity.delete(this.app, file);
+  };
+
+  setDialogSize = (number: number) => {
+    this.setInfoByKey(number, "timeline", "dialogSize");
+  };
+
+  // ⚠️ UNTOUCHABLE
+  notes_reload = async () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const files = Source.Entity.selected(this.app).map((f) => f.id);
+    if (files.length === 0) {
+      Logger.warn(
+        "Tried to fetch all notes from all operations. Ignoring",
+        "Info.notes_reload",
+      );
+      return;
+    }
+    let notes: Note.Type[] = [];
+    const fetch = async (offset = 0) => {
+      const fetched = await api<Note.Type[]>("/note_list", {
+        method: "POST",
+        query: {
+          operation_id: operation.id,
+        },
+        body: {
+          source_ids: files,
+          offset,
+          limit: 500,
+        },
+      });
+
+      if (fetched.length) {
+        //notes = [...notes, ...fetched].sort(
+        //	(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+        //);
+
+        for (const note of fetched) {
+          // binary-search insert to maintain sorted order
+          let lo = 0,
+            hi = notes.length;
+          const ts = Note.Entity.timestamp(note);
+          while (lo < hi) {
+            const mid = (lo + hi) >>> 1;
+            if (Note.Entity.timestamp(notes[mid]) > ts) lo = mid + 1;
+            else hi = mid;
+          }
+          notes.splice(lo, 0, note);
+        }
+
+        if (notes.length % 2500 === 0) {
+          toast(`Fetched ${notes.length} notes`, {
+            description: "Continuing...",
+            icon: <Spinner />,
+          });
+        }
+
+        //DataStore.notes = [...notes];
+        DataStore.notes = notes;
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+
+        return new Promise((res) => {
+          setTimeout(() => {
+            res(fetch(offset + 500));
+          });
+        });
+      } else {
+        const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
+        Logger.log(message, Info);
+        //DataStore.notes = [...notes];
+        DataStore.notes = notes;
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        if (notes.length >= 2500) {
+          toast.success(message, {
+            icon: <Icon name="Check" />,
+            richColors: true,
+          });
+        }
+      }
+    };
+
+    await fetch();
+
+    Note.Entity[CacheKey].clear();
+
+    return notes;
+  };
+
+  /**
+   *
+   * @param key Key of settings object
+   * @param value Value to save. Be carreful, it can save any shit
+   */
+  setSettings = (key: string, value: any) =>
+    this.setInfoByKey(value, "settings", key);
+
+  setLoading(req_id: Request.Id, file_id: Source.Id) {
+    this.app.general.loadings.byRequestId.set(req_id, file_id);
+    this.app.general.loadings.byFileId.set(file_id, req_id);
+
+    const loadings = {
+      byRequestId: new Map(this.app.general.loadings.byRequestId),
+      byFileId: new Map(this.app.general.loadings.byFileId),
+    };
+    this.setInfoByKey(loadings, "general", "loadings");
+  }
+
+  delLoading(req_id: Request.Id) {
+    this.app.general.loadings.byRequestId.delete(req_id);
+    const file_id = [...this.app.general.loadings.byFileId.entries()].find(
+      (e) => e[1] === req_id,
+    )?.[0];
+    if (file_id) {
+      this.app.general.loadings.byFileId.delete(file_id);
+    }
+
+    const loadings = {
+      byRequestId: new Map(this.app.general.loadings.byRequestId),
+      byFileId: new Map(this.app.general.loadings.byFileId),
+    };
+    this.setInfoByKey(loadings, "general", "loadings");
+  }
+
+  // ⚠️ UNTOUCHABLE
+  note_delete = (note: Note.Type) =>
+    api("/note_delete", {
+      method: "DELETE",
+      query: {
+        obj_id: note.id,
+        ws_id: this.app.general.ws_id,
+      },
+    }).then(() => {
+      const index = DataStore.notes.findIndex((n) => n.id === note.id);
+      if (index !== -1) {
+        DataStore.notes.splice(index, 1);
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        this.render();
+      }
+    });
+
+  note_create = ({
+    name,
+    text,
+    color = Default.Color.NOTE,
+    glyph_id = Glyph.List.entries().find(
+      (e) => e[1] === Default.Icon.NOTE,
+    )![0]!,
+    event,
+    isPrivate,
+    tags,
+  }: {
+    name: string;
+    text: string;
+    color: string;
+    event: Doc.Type;
+    glyph_id: Glyph.Id;
+    isPrivate: boolean;
+    tags: string[];
+  }) =>
+    api<Note.Type>("/note_create", {
+      method: "POST",
+      query: {
+        operation_id: event["gulp.operation_id"],
+        context_id: event["gulp.context_id"],
+        source_id: event["gulp.source_id"],
+        ws_id: this.app.general.ws_id,
+        name,
+        color,
+        glyph_id,
+        private: isPrivate,
+      },
+
+      toast: {
+        onSuccess: () =>
+          toast.success(`Note ${name} has been created successfully`, {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+      },
+      body: {
+        text,
+        tags,
+        doc: Doc.Entity.toDoc(event),
+      },
+    }).then((note) => {
+      const idx = DataStore.notes.findIndex((n) => n.id === note.id);
+      if (idx !== -1) {
+        DataStore.notes[idx] = note;
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        this.render();
+      } else {
+        DataStore.notes.push(note);
+        DataStore.notes.sort(
+          (a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+        );
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        this.render();
+      }
+    });
+
+  note_edit = ({
+    id: obj_id,
+    name,
+    text,
+    color,
+    glyph_id = Glyph.List.entries().find(
+      (e) => e[1] === Default.Icon.NOTE,
+    )![0]!,
+    event,
+    tags,
+  }: {
+    id: Note.Id;
+    name: string;
+    text: string;
+    color: string;
+    event: Doc.Type;
+    glyph_id: Glyph.Id;
+    tags: string[];
+  }) =>
+    api<Note.Type>("/note_update", {
+      method: "PATCH",
+      query: {
+        obj_id,
+        ws_id: this.app.general.ws_id,
+        name,
+        glyph_id,
+        color,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success(`Note ${name} has been updated successfully`, {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+      },
+      body: {
+        text,
+        tags,
+        doc: Doc.Entity.toDoc(event),
+      },
+    }).then((note) => {
+      const index = DataStore.notes.findIndex((n) => n.id === note.id);
+      if (index !== -1) {
+        DataStore.notes[index] = note;
+        DataStore.notes.sort(
+          (a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+        );
+        Note.Entity.invalidateCache();
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        this.render();
+      }
+    });
+
+  // ⚠️ UNTOUCHABLE
+  links_reload = async () => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    return api<Link.Type[]>(
+      "/link_list",
+      {
+        method: "POST",
+        query: {
+          operation_id: operation.id,
+        },
+        body: {
+          source_ids: Source.Entity.selected(this.app).map((f) => f.id),
+        },
+      },
+      (links) => {
+        DataStore.links = links;
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        this.render();
+      },
+    );
+  };
+
+  link_delete = (link: Link.Type) =>
+    api(
+      "/link_delete",
+      {
+        method: "DELETE",
+        query: {
+          obj_id: link.id,
+          ws_id: this.app.general.ws_id,
+        },
+      },
+      this.links_reload,
+    );
+
+  link_create = ({
+    name,
+    event,
+    glyph_id = Glyph.List.entries().find(
+      (e) => e[1] === Default.Icon.LINK,
+    )![0]!,
+    color = Default.Color.LINK,
+    description,
+  }: {
+    name: string;
+    event: Doc.Type;
+    glyph_id: Glyph.Id;
+    color: string;
+    description: string;
+  }) => {
+    return api<Link.Type>("/link_create", {
+      method: "POST",
+      query: {
+        doc_id_from: event._id,
+        operation_id: event["gulp.operation_id"],
+        ws_id: this.app.general.ws_id,
+        name,
+        glyph_id,
+        color,
+        description,
+      },
+
+      toast: {
+        onSuccess: () =>
+          toast.success(`Link ${name} has been created successfully`, {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+      },
+      body: {
+        doc_ids: [event._id],
+      },
+    }).then(this.links_reload);
+  };
+
+  link_edit = ({
+    id: obj_id,
+    name,
+    color = Default.Color.LINK,
+    glyph_id,
+    events,
+    description,
+  }: {
+    id: Link.Id;
+    name: string;
+    glyph_id: Glyph.Id;
+    color: string;
+    events: Doc.Type["_id"][];
+    description: string;
+  }) =>
+    api("/link_update", {
+      method: "PATCH",
+      query: {
+        obj_id,
+        name,
+        color,
+        glyph_id,
+        ws_id: this.app.general.ws_id,
+        description,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success(`Link ${name} has been updated successfully`, {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+      },
+      body: {
+        doc_ids: events,
+      },
+    }).then(this.links_reload);
+
+  links_connect = (link: Link.Type, event: Doc.Type) =>
+    api<Link.Type>("/link_update", {
+      method: "PATCH",
+      query: {
+        obj_id: link.id,
+        ws_id: this.app.general.ws_id,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success(
+            `Event ${event._id} has been connected to link ${link.name} successfully`,
+            {
+              richColors: true,
+              icon: <Icon name="Check" />,
+            },
+          ),
+      },
+      body: {
+        doc_ids: Refractor.array(...link.doc_ids, event._id), // VIEWED
+      },
+    }).then(this.links_reload);
+
+  links_disconnect = (link: Link.Type, event: Doc.Type) =>
+    api<Link.Type>("/link_update", {
+      method: "PATCH",
+      query: {
+        obj_id: link.id,
+        ws_id: this.app.general.ws_id,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success(
+            `Event ${event._id} has been disconnected from link ${link.name} successfully`,
+            {
+              richColors: true,
+              icon: <Icon name="Check" />,
+            },
+          ),
+      },
+      body: {
+        doc_ids: Refractor.array(
+          ...link.doc_ids.filter((id) => id !== event._id), // VIEWED
+        ),
+      },
+    }).then(this.links_reload);
+
+  highlights_reload = debounce(() => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+    return api<Highlight.Type[]>(
+      "/highlight_list",
+      {
+        method: "POST",
+        query: {
+          operation_id: operation.id,
+        },
+      },
+      (h) => {
+        DataStore.highlights = h;
+        RenderEngine.clearAllCaches();
+        DataStore.markDirty();
+        this.render();
+      },
+    );
+  }, 500);
+
+  highlight_create = async ({
+    time_range,
+    name,
+    icon: glyph_id = Glyph.List.entries().find(
+      (e) => e[1] === Default.Icon.HIGHLIGHT,
+    )![0]!,
+    color = Default.Color.HIGHLIGHT as NonNullable<Badge.Variant>,
+    tags = [],
+  }: {
+    time_range: Range;
+    name: string;
+    icon: Glyph.Id | null;
+    color: Badge.Variant;
+    tags?: string[];
+  }) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const files = Source.Entity.selected(this.app);
+    if (!files.length) {
+      return;
+    }
+
+    const source_id = files[0].id;
+
+    return api("/highlight_create", {
+      method: "POST",
+      query: {
+        operation_id: operation.id,
+        ws_id: this.app.general.ws_id,
+        source_id,
+        name,
+        color,
+        glyph_id,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success(`Highlight ${name} has been created successfully`, {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+      },
+      body: {
+        time_range,
+        tags,
+      },
+    }).then(this.highlights_reload);
+  };
+
+  highlight_delete = (obj_id: Highlight.Id) =>
+    api("highlight_delete", {
+      method: "DELETE",
+      query: {
+        obj_id,
+        ws_id: this.app.general.ws_id,
+      },
+    }).then(() => {
+      Highlights.remove(obj_id);
+      this.highlights_reload();
+    });
+
+  glyphs_reload = async () => {
+    Glyph.List.clear();
+
+    const glyphs = await api<Glyph.Type[]>("/glyph_list", {
+      method: "POST",
+    });
+
+    if (!glyphs) {
+      return Logger.error("Failed to sync glyphs", "Info.glyphs_reload");
+    }
+
+    const queue: (() => Promise<void>)[] = [];
+
+    const synced = new Map<string, Glyph.Id>();
+
+    glyphs.forEach((g) => {
+      synced.set(g.name, g.id);
+      Glyph.List.set(g.id, g.name);
+    });
+
+    const notSynced = Glyph.Raw.filter((glyph) => !synced.has(glyph));
+
+    notSynced.forEach((name) => {
+      queue.push(async () => {
+        const formData = new FormData();
+        formData.append("img", new Blob());
+
+        await api<Glyph.Type>(
+          "/glyph_create",
+          {
+            method: "POST",
+            deassign: true,
+            query: { name },
+            body: formData,
+          },
+          (glyph) => {
+            Glyph.List.set(glyph.id, glyph.name);
+          },
+        );
+      });
+    });
+
+    const runQueue = async () => {
+      const tasks = queue.splice(0, 10).map((task) => task());
+      await Promise.all(tasks);
+      if (queue.length > 0) {
+        await runQueue();
+      }
+    };
+
+    await runQueue();
+
+    Logger.log(`Glyphs has been syncronized with gulp-backend`, Info);
+
+    while (Glyph.Entries.length) {
+      Glyph.Entries.pop();
+    }
+    Glyph.Entries.push(...Array.from(Glyph.List.entries()));
+
+    this.setInfoByKey(true, "general", "glyphs_syncronized");
+  };
+
+  setPointers = (pointer: Pointers.Pointer) => {
+    const pointers = this.app.timeline.pointers;
+
+    const target = pointers.find((p) => p.id === pointer.id);
+
+    if (target) {
+      Object.assign(target, pointer);
+    } else {
+      pointers.push(pointer);
+    }
+
+    this.setInfoByKey(pointers, "timeline", "pointers");
+  };
+
+  session_create = async ({
+    name,
+    icon = Default.Icon.SESSION,
+    color = Default.Color.SESSION,
+    scroll,
+    scale,
+  }: {
+    name: string;
+    icon: Icon.Name;
+    color: string;
+    scroll?: { x: number; y: number };
+    scale?: number;
+  }) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    const sessions = await this.session_list();
+    if (sessions.some((s) => s.name === name)) {
+      toast.error("Session with this name is already exist", {
+        richColors: true,
+      });
+      return;
+    }
+
+    sessions.push({
+      name,
+      icon,
+      color,
+      selected: {
+        files: Source.Entity.selected(this.app).map((f) => f.id),
+        contexts: Context.Entity.selected(this.app).map((c) => c.id),
+        operations: operation.id,
+      },
+      timeline: {
+        scale: this.app.timeline.scale,
+        frame: {
+          min: this.app.timeline.frame.min,
+          max: this.app.timeline.frame.max,
+        },
+        filter: this.app.timeline.filter,
+        target: this.app.timeline.target,
+        scroll: scroll ?? { x: scrollStore.getX(), y: scrollStore.getY() },
+      },
+      filters: this.app.target.filters,
+      hidden: this.app.hidden,
+    });
+
+    if (!this.app.general.user) {
+      Logger.warn("Tried to create session before user has been defined");
+      return;
+    }
+
+    return api<undefined>("/user_update", {
+      method: "PATCH",
+      query: {
+        user_id: this.app.general.user?.id,
+      },
+      raw: true,
+      body: {
+        user_data: {
+          sessions,
+        },
+      },
+    });
+  };
+
+  session_autosave = async () => {
+    const prefix = "Autosaved session ";
+    const sessions = await this.session_list();
+    const prev = sessions.filter((session) => session.name.startsWith(prefix));
+    if (prev.length) {
+      await this.sessions_delete(prev.map((s) => s.name));
+    }
+
+    await this.session_create({
+      name: prefix + new Date().toUTCString(),
+      color: "var(--green-700)",
+      icon: "RefreshClockwise",
+    });
+  };
+
+  sessions_delete = async (names: string[]) => {
+    for (const name of names) {
+      try {
+        await this.session_delete(name);
+      } catch (err) {
+        Logger.log(
+          `Failed to delete session ${name}`,
+          "Session.Delete.Banner.deleteSessionButtonClickHandler",
+          { richColors: true, icon: <Icon name="Warning" /> },
+        );
+      }
+    }
+  };
+
+  session_delete = async (name: string) => {
+    if (!this.app.general.user) {
+      Logger.error(
+        "Tried to delete session but there is no user",
+        this.session_delete,
+      );
+      return;
+    }
+
+    const sessions = await this.session_list();
+
+    return api<undefined>("/user_update", {
+      method: "PATCH",
+      query: {
+        user_id: this.app.general.user.id,
+      },
+      raw: true,
+      body: {
+        user_data: {
+          sessions: sessions.filter((s) => s.name !== name),
+        },
+      },
+    });
+  };
+
+  session_load = async (session: Internal.Session.Data) => {
+    this.setInfoByKey(session.timeline.target, "timeline", "target");
+    this.setInfoByKey(session.timeline.frame, "timeline", "frame");
+    this.setInfoByKey(session.timeline.filter, "timeline", "filter");
+    setTimeout(() => {
+      scrollStore.setScrollX(session.timeline.scroll.x);
+      scrollStore.setScrollY(session.timeline.scroll.y);
+      this.setInfoByKey(session.timeline.scale, "timeline", "scale");
+    }, 100);
+    this.setInfoByKey(
+      Operation.Entity.select(this.app, session.selected.operations),
+      "target",
+      "operations",
+    );
+    this.setInfoByKey(
+      Context.Entity.select(this.app, session.selected.contexts),
+      "target",
+      "contexts",
+    );
+    this.setInfoByKey(
+      Source.Entity.select(this.app, session.selected.files),
+      "target",
+      "files",
+    );
+    this.setInfoByKey(session.filters, "target", "filters");
+    if (session.hidden && typeof session.hidden === "object") {
+      Object.keys(session.hidden).forEach((k) => {
+        const key = k as keyof App.Type["hidden"];
+        this.setInfoByKey(session.hidden[key], "hidden", key);
+      });
+    }
+
+    setTimeout(() => {
+      this.refetch();
+    }, 0);
+  };
+
+  async session_list(
+    user = this.app.general.user,
+  ): Promise<Internal.Session.Data[]> {
+    if (!user) {
+      return Internal.Transformator.toAsync([]);
+    }
+
+    return api<any>("/user_get_by_id", {
+      method: "GET",
+      query: { user_id: user.id },
+    })
+      .then((data) => {
+        const sessions = data ? data.user_data.sessions : [];
+
+        return sessions || [];
+      })
+      .catch((error) => {
+        toast.error("Failed to load your sessions", {
+          description: `Error message: ${JSON.stringify(error)}`,
+          icon: <Icon name="FaceSad" />,
+        });
+      });
+  }
+
+  sync = async () => {
+    await this.mapping_file_list();
+
+    const operationsData =
+      await api<GulpDataset.QueryOperations.Summary>("/query_operations");
+    if (!operationsData || !Array.isArray(operationsData)) return;
+
+    const operations: Operation.Type[] = [];
+    const contexts: Context.Type[] = [];
+    const files: Source.Type[] = [];
+
+    operationsData.forEach((opData) => {
+      const opId = opData.id as Operation.Id;
+      const existOp = Operation.Entity.id(this.app, opId) ?? {};
+
+      operations.push({
+        id: opId,
+        name: opData.name,
+        index: opData.index ?? opData.id,
+        glyph_id: opData.glyph_id ?? Default.Icon.OPERATION,
+        selected: existOp.selected ?? false,
+      } as Operation.Type);
+
+      opData.contexts?.forEach((ctxData) => {
+        const ctxId = ctxData.id as Context.Id;
+        const existCtx = Context.Entity.id(this.app, ctxId) ?? {};
+
+        contexts.push({
+          id: ctxId,
+          name: ctxData.name,
+          operation_id: opId,
+          glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
+          color: existCtx.color ?? "#00ff00",
+          type: "context",
+          selected: existCtx.selected ?? false,
+          owner_user_id: this.app.general.user?.id!,
+          time_created: Date.now(),
+          time_updated: Date.now(),
+          granted_user_group_ids: [],
+          granted_user_ids: [],
+        } as Context.Type);
+
+        ctxData.plugins?.forEach((pluginData) => {
+          pluginData.sources?.forEach((srcData) => {
+            const src = Source.Entity.normalize(
+              this.app,
+              {
+                id: (srcData as any).id,
+                name: srcData.name,
+                operation_id: opId,
+                context_id: ctxId,
+                plugin: pluginData.name,
+                glyph_id: srcData.glyph_id ?? Default.Icon.SOURCE,
+                type: "source",
+                owner_user_id: this.app.general.user?.id!,
+                time_created: Date.now(),
+                time_updated: Date.now(),
+              } as Source.Type,
+              srcData,
+            );
+            if (src) files.push(src);
+          });
+        });
+      });
+    });
+
+    Logger.log(
+      `${operations.length} operations has been added to application data`,
+      this.sync,
+    );
+
+    Logger.log(
+      `${files.length} files has been added to application data`,
+      this.sync,
+    );
+
+    RenderEngine.reset("range");
+
+    this.setInfoByKey(operations, "target", "operations");
+    this.setInfoByKey(contexts, "target", "contexts");
+    this.setInfoByKey(files, "target", "files");
+
+    return { operations, contexts, files };
+  };
+
+  syncFile = (id: Source.Id) =>
+    api<Source.Type>("/source_get_by_id", {
+      query: { obj_id: id },
+    }).then(async (file) => {
+      const details = await this.getDetails().then((d) =>
+        d.find((f) => f.id === id),
+      );
+      if (!details) {
+        Logger.fatal("No detailed information for file has been provided");
+      }
+
+      const normalized = Source.Entity.normalize(this.app, file, details);
+
+      const exist = this.app.target.files.findIndex((f) => f.id === file.id);
+      if (exist >= 0) {
+        this.app.target.files[exist] = normalized;
+      } else {
+        this.app.target.files = [...this.app.target.files, normalized];
+      }
+
+      this.setInfoByKey(this.app.target.files, "target", "files");
+    });
+
+  getDetails = () =>
+    api<GulpDataset.QueryOperations.Summary>("/query_operations")
+      .then((operations) => {
+        if (!operations || !Array.isArray(operations)) return [];
+        return operations
+          .map(
+            (operation) =>
+              operation.contexts?.map(
+                (context) =>
+                  context.plugins?.map((plugin) => plugin.sources ?? []) ?? [],
+              ) ?? [],
+          )
+          .flat(3);
+      })
+      .catch((err) => {
+        Logger.error("Failed to fetch /query_operations", err);
+        return [];
+      });
+
+  query_single_id = (doc_id: Doc.Type["_id"], operation_id: Operation.Id) => {
+    return api<Doc.Type>("/query_single_id", {
+      method: "POST",
+      query: {
+        doc_id,
+        operation_id,
+      },
+    });
+  };
+
+  // ⚠️ UNTOUCHABLE
+  plugin_list = async (): Promise<GulpDataset.PluginList.Interface[]> => {
+    const plugins = this.app.target.plugins;
+    if (plugins.length) {
+      return Internal.Transformator.toAsync(plugins);
+    }
+
+    Logger.warn("No plugins found in application data", "plugin_list");
+    Logger.log("Fetching plugins...", "plugin_list");
+
+    const list = await api<GulpDataset.PluginList.Interface[]>(
+      "/plugin_list",
+      (list) => list.sort((a, b) => a.filename.localeCompare(b.filename)),
+    );
+    if (!list) {
+      return [];
+    }
+
+    this.setInfoByKey(list, "target", "plugins");
+
+    Logger.log(
+      `Fetched and sorted ${list.length} plugins. Names:`,
+      "plugin_list",
+    );
+    Logger.log(
+      list.map((l) => l.filename),
+      "plugin_list",
+    );
+
+    return list;
+  };
+
+  setTimelineFrame = (frame: MinMax) =>
+    this.setInfoByKey(frame, "timeline", "frame");
+
+  login = async (credentials: Pick<User.Minified, "id" | "password">) => {
+    const user = await api<User.Type>("/login", {
+      method: "POST",
+      query: {
+        ws_id: this.app.general.ws_id,
+      },
+      toast: {
+        onSuccess: () =>
+          toast.success("Access granted", {
+            richColors: true,
+            icon: <Icon name="Check" />,
+          }),
+        onError: (response) =>
+          toast.error(`Login failed`, {
+            richColors: true,
+            description: `Reason: ${response.data.__error.msg}`,
+            icon: <Icon name="Warning" />,
+          }),
+      },
+      body: {
+        user_id: credentials.id,
+        password: credentials.password,
+      },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    Internal.Settings.token = user.token;
+
+    await this.plugin_list();
+    await this.glyphs_reload();
+    await this.sync();
+
+    this.setInfoByKey(Object.assign(credentials, user), "general", "user");
+
+    return user;
+  };
+
+  setTimelineScale = (scale: number) => {
+    return this.setInfoByKey(
+      Math.max(0.01, Math.min(9999999, scale)),
+      "timeline",
+      "scale",
+    );
+  };
+
+  setTimelineTarget = (event?: Doc.Type | null | 1 | -1): Doc.Type => {
+    const { target } = this.app.timeline;
+
+    if (typeof event === "number" && target) {
+      const events = Source.Entity.events(this.app, target["gulp.source_id"]);
+      const index =
+        events.findIndex((event) => event._id === target._id) + event;
+      event = events[index];
+    }
+
+    if (typeof event !== "undefined") {
+      this.setInfoByKey(event as Doc.Type, "timeline", "target");
+    }
+
+    return event as Doc.Type;
+  };
+
+  setTimelineFilter = (filter: string) =>
+    this.setInfoByKey(filter, "timeline", "filter");
+
+  increasedTimelineScale = (current: number = this.app.timeline.scale) =>
+    current + current / 8;
+
+  decreasedTimelineScale = () =>
+    this.app.timeline.scale - this.app.timeline.scale / 8;
+
+  query_external = async (
+    plugin: string,
+    plugin_params?: Record<string, any>,
+    preview_mode = false,
+    q?: string,
+    q_options?: Record<string, any>,
+  ): Promise<{
+    total_hits: number;
+    docs: Doc.Type[];
+  } | null> => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return { total_hits: 0, docs: [] };
+    }
+
+    return api<{
+      total_hits: number;
+      docs: Doc.Type[];
+    }>("/query_external", {
+      method: "POST",
+      raw: true,
+      query: {
+        ws_id: this.app.general.ws_id,
+        operation_id: operation.id,
+        plugin,
+      },
+      body: {
+        q: q,
+        plugin_params,
+        q_options: {
+          ...q_options,
+          preview_mode,
+        },
+      },
+    }).then((response) => {
+      if (response.data) {
+        return response.data;
+      }
+
+      return new Promise((resolve, reject) => {
+        SmartSocket.Class.instance.conce(
+          SmartSocket.Message.Type.INGEST_SOURCE_DONE,
+          (m) => m.req_id === response.req_id,
+          (m) => {
+            if (m.payload.status === "failed") {
+              return reject();
+            }
+
+            // Trust me bro, this is masterpieceofshit
+            // well well well
+            resolve(null);
+          },
+        );
+      });
+    });
+  };
+
+  setQuery = (file: Arrayed<Source.Type>, query: Query.Type): void => {
+    const files = Parser.array(file);
+
+    files.forEach((file) => {
+      const prev = this.app.target.filters[file.id];
+
+      this.app.target.filters[file.id] = {
+        string: query.string || Filter.Entity.base(file),
+        filters:
+          Array.isArray(query.filters) && query.filters.length > 0
+            ? query.filters
+            : (prev?.filters ?? []),
+        raw: query.raw,
+        isManual: query.isManual,
+      };
+    });
+
+    this.setInfoByKey(
+      Refractor.object(this.app.target.filters),
+      "target",
+      "filters",
+    );
+  };
+
+  getQuery = (file: Source.Type): Query.Type => {
+    const query = this.app.target.filters[file.id];
+
+    if (!query) {
+      const q = Filter.Entity.default(this.app, file.id);
+
+      this.setQuery(file, q);
+
+      return q;
+    }
+
+    return query;
+  };
+
+  filters_remove = (file: Source.Type | Source.Id) => {
+    const id = Parser.useUUID(file) as Source.Id;
+    const filters = Refractor.object({
+      ...this.app.target.filters,
+      [id]: Filter.Entity.default(this.app, file),
+    });
+
+    return this.setInfoByKey(filters, "target", "filters");
+  };
+
+  useReverseScroll = (bool: boolean) => {
+    localStorage.setItem("settings.__isScrollReversed", String(bool));
+    this.setInfoByKey(bool, "timeline", "isScrollReversed");
+  };
+
+  files_reorder_upper = (id: Source.Id) => {
+    const files = this.app.target.files;
+    const index = files.findIndex((file) => file.id === id);
+
+    if (index === 0) return;
+
+    const file = files[index];
+    files[index] = files[index - 1];
+    files[index - 1] = file;
+
+    this.setInfoByKey(files, "target", "files");
+    this.render();
+  };
+
+  files_reorder_lower = (id: Source.Id) => {
+    const files = this.app.target.files;
+    const index = files.findIndex((file) => file.id === id);
+
+    if (index === files.length - 1) return;
+
+    const file = files[index];
+    files[index] = files[index + 1];
+    files[index + 1] = file;
+
+    this.setInfoByKey(files, "target", "files");
+    this.render();
+  };
+
+  query_sigma = async (
+    src_ids: Source.Id[],
+    sigmas: NodeFile[],
+    notes: boolean,
+  ) => {
+    const operation = Operation.Entity.selected(this.app);
+    if (!operation) {
+      return;
+    }
+
+    return api(
+      "/query_sigma",
+      {
+        method: "POST",
+        query: {
+          ws_id: this.app.general.ws_id,
+          operation_id: operation.id,
+        },
+        raw: true,
+        body: {
+          sigmas: await Promise.all(sigmas.map((s) => s.text())),
+          q_options: {
+            create_notes: notes,
+          },
+          src_ids,
+        },
+        toast: {
+          onSuccess: () =>
+            toast.success("Sigma rule has been successfully applied", {
+              richColors: true,
+              icon: <Icon name="Check" />,
+            }),
+          onError: (response) =>
+            toast.error("Sigma rule has not been applied", {
+              richColors: true,
+              icon: <Icon name="Warning" />,
+            }),
+        },
+      },
+      ({ req_id }) => {
+        SmartSocket.Class.instance.conce(
+          SmartSocket.Message.Type.STATS_UPDATE,
+          (m) => m.req_id === req_id,
+          (m) => {
+            console.log(m);
+            if (m.payload.obj.status !== "done") {
+              toast.error("Sigma query failed", {
+                icon: <Icon name="Stop" />,
+                richColors: true,
+              });
+            } else {
+              toast.success(
+                `Sigma query ${m.payload.obj.name} has been successfully finished`,
+                {
+                  description: `Total matches: ${m.payload.obj.data.total_hits ?? 0}`,
+                  icon: <Icon name="Sigma" />,
+                },
+              );
+            }
+          },
+        );
+        SmartSocket.Class.instance.con(
+          SmartSocket.Message.Type.COLLAB_CREATE,
+          (m) => m.req_id === req_id,
+          (m) => {
+            if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
+              const currentNotes = this.app.target.notes;
+              const newItems = m.payload.obj.filter(
+                (item) => item.type === "note",
+              );
+              this.setInfoByKey(
+                [...currentNotes, ...newItems],
+                "target",
+                "notes",
+              );
+              toast.success(`Fetched ${newItems.length} notes`, {
+                richColors: true,
+              });
+            }
+          },
+        );
+      },
+    );
+  };
+
+  toggle_visibility = (key: keyof App.Type["hidden"]) => {
+    this.setInfoByKey(!this.app.hidden[key], "hidden", key);
+    this.render();
+  };
+
+  files_repin = (id: Source.Id) => {
+    const files = this.app.target.files;
+    const index = files.findIndex((file) => file.id === id);
+
+    files[index].pinned = !files[index].pinned;
+
+    this.setInfoByKey(files, "target", "files");
+    this.render();
+  };
+
+  get width(): number {
+    return (
+      this.app.timeline.scale *
+      (document.getElementById("canvas")?.clientWidth || 1)
+    );
+  }
+
+  setInfoByKey = <K extends keyof App.Type, S extends keyof App.Type[K]>(
+    value: App.Type[K][S] | ((prev: App.Type[K][S]) => App.Type[K][S]),
+    section: K,
+    key: S,
+  ) => {
+    this.setInfo((_info) => {
+      const resolvedValue =
+        typeof value === "function"
+          ? (value as any)(_info[section][key])
+          : value;
+      this.app = {
+        ..._info,
+        [section]: {
+          ..._info[section],
+          [key]: resolvedValue,
+        },
+      };
+
+      return this.app;
+    });
+  };
+
+  /**
+   * Batches multiple state updates into a single React setState call.
+   * Use this instead of calling setInfoByKey N times in sequence,
+   * which would create N intermediate state objects and potentially N re-renders.
+   *
+   * The updater receives a shallow-cloned draft of the app state with all
+   * top-level sections pre-cloned. Modifications to the draft are applied
+   * as a single immutable update.
+   *
+   * @param updater - Function receiving a mutable draft of the current app state.
+   *                  Modify the draft's sections directly (e.g., draft.target.notes = []).
+   */
+  batchUpdate = (updater: (draft: App.Type) => void) => {
+    this.setInfo((prev) => {
+      // Shallow-clone top-level sections so the updater can safely mutate them
+      const next: App.Type = {
+        ...prev,
+        target: { ...prev.target },
+        timeline: { ...prev.timeline },
+        general: { ...prev.general },
+        settings: { ...prev.settings },
+        hidden: { ...prev.hidden },
+      };
+      updater(next);
+      this.app = next;
+      return next;
+    });
+  };
 }
 
 export type Arrayed<K> = K | K[];
 
 export type UUIDED<
-	K extends Context.Type | Source.Type | Source.Type | Filter.Type,
+  K extends Context.Type | Source.Type | Source.Type | Filter.Type,
 > = K | K["id"];
 
 export const Pattern = {
-	Server: new RegExp(
-		/https?:\/\/(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})?(:\d+)?(\/[^\s]*)?/,
-	),
-	Username: /^[\s\S]{3,48}$/,
-	Password: /^[\s\S]{3,48}$/,
+  Server: new RegExp(
+    /https?:\/\/(?:[a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+(?:\.[a-zA-Z]{2,})?(:\d+)?(\/[^\s]*)?/,
+  ),
+  Username: /^[\s\S]{3,48}$/,
+  Password: /^[\s\S]{3,48}$/,
 };
 
 export interface MinMax<T extends number | bigint = number> {
-	min: T;
-	max: T;
+  min: T;
+  max: T;
 }
 
 export type Range = [number, number];
 
 export const MinMaxBase = {
-	min: 0,
-	max: 0,
+  min: 0,
+  max: 0,
 };

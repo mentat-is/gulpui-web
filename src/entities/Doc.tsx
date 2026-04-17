@@ -13,33 +13,35 @@ import { Logger } from "@/dto/Logger.class";
 import { DataStore } from "@/store/DataStore";
 
 export namespace Doc {
-  export const name = 'Doc'
-  const _ = Symbol(Doc.name)
+  export const name = "Doc";
+  const _ = Symbol(Doc.name);
   export type Id = UUID & {
-    readonly [_]: unique symbol
-  }
+    readonly [_]: unique symbol;
+  };
 
   export interface Type {
-    _id: Doc.Id
-    '@timestamp': string;
-    'timestamp': number;
-    'gulp.operation_id': Operation.Id;
-    'gulp.context_id': Context.Id;
-    'gulp.source_id': Source.Id;
-    'gulp.timestamp': bigint;
-    'gulp.event_code': number;
-    [key: `${string}.${string}`]: any,
-    [key: `${string}.${string}.${string}`]: any
+    _id: Doc.Id;
+    "@timestamp": string;
+    timestamp: number;
+    "gulp.operation_id": Operation.Id;
+    "gulp.context_id": Context.Id;
+    "gulp.source_id": Source.Id;
+    "gulp.timestamp": bigint;
+    "gulp.event_code": number;
+    "gulp.storage_id"?: string;
+    //[key: `${string}.${string}`]: any,
+    //[key: `${string}.${string}.${string}`]: any
   }
 
-  export type Minified = Pick<Doc.Type,
-    | '_id'
-    | '@timestamp'
-    | 'gulp.timestamp'
-    | 'gulp.source_id'
-    | 'gulp.context_id'
-    | 'gulp.operation_id'
-  >
+  export type Minified = Pick<
+    Doc.Type,
+    | "_id"
+    | "@timestamp"
+    | "gulp.timestamp"
+    | "gulp.source_id"
+    | "gulp.context_id"
+    | "gulp.operation_id"
+  >;
 
   interface Flag {
     KEY: string;
@@ -72,57 +74,58 @@ export namespace Doc {
 
     /** Extracts a minimal Doc payload from a full event, keeping only essential fields. */
     public static toDoc = (event: Doc.Type) => ({
-      '_id': event._id,
-      '@timestamp': event['@timestamp'],
-      'gulp.context_id': event['gulp.context_id'],
-      'gulp.operation_id': event['gulp.operation_id'],
-      'gulp.source_id': event['gulp.source_id'],
-      'gulp.timestamp': event['gulp.timestamp'],
-    })
+      _id: event._id,
+      "@timestamp": event["@timestamp"],
+      "gulp.context_id": event["gulp.context_id"],
+      "gulp.operation_id": event["gulp.operation_id"],
+      "gulp.source_id": event["gulp.source_id"],
+      "gulp.timestamp": event["gulp.timestamp"],
+    });
 
     /**
      * Removes all events for the given source files.
      * Also removes corresponding entries from the `_index` to prevent stale references.
      */
     public static delete = (app: App.Type, files: Arrayed<Source.Type>) => {
-      files = Parser.array(files)
+      files = Parser.array(files);
 
       files.forEach((file) => {
         // Remove from index before deleting
         const events = DataStore.events.get(file.id);
         if (events) {
-          events.forEach(e => Doc.Entity._index.delete(e._id));
+          events.forEach((e) => Doc.Entity._index.delete(e._id));
         }
-        DataStore.events.delete(file.id)
-        DataStore.events.set(file.id, [])
-      })
+        DataStore.events.delete(file.id);
+        DataStore.events.set(file.id, []);
+      });
 
-      return DataStore.events
-    }
+      return DataStore.events;
+    };
 
     /** Returns the time range (min/max) of a sorted event array. Assumes descending sort order. */
     public static range = (events: Doc.Type[]) => ({
-      max: new Date(events[0]['@timestamp']).valueOf(),
-      min: new Date(events[events.length - 1]['@timestamp']).valueOf()
-    })
+      max: new Date(events[0]["@timestamp"]).valueOf(),
+      min: new Date(events[events.length - 1]["@timestamp"]).valueOf(),
+    });
 
     /** Finds a single event by its ID using the O(1) `_index` Map. */
-    public static id = (_app: App.Type, event: Doc.Type['_id']): Doc.Type =>
-      Doc.Entity._index.get(event) as Doc.Type
+    public static id = (_app: App.Type, event: Doc.Type["_id"]): Doc.Type =>
+      Doc.Entity._index.get(event) as Doc.Type;
 
     /** Retrieves all events for a given source ID. Auto-initializes an empty array if none exist. */
     public static get = (_app: App.Type, id: Source.Id): Doc.Type[] =>
       DataStore.events.get(id) ||
-      (DataStore.events.set(id, []).get(id) as Doc.Type[])
+      (DataStore.events.set(id, []).get(id) as Doc.Type[]);
 
     /** Sorts events in descending timestamp order (newest first). Mutates the array in place. */
-    public static sort = (events: Doc.Type[]) => events.sort((a, b) => b.timestamp - a.timestamp);
+    public static sort = (events: Doc.Type[]) =>
+      events.sort((a, b) => b.timestamp - a.timestamp);
 
     /** Returns all events from currently selected sources, flattened into a single array. */
     public static selected = (app: App.Type): Doc.Type[] =>
       Source.Entity.selected(app)
         .map((s) => Doc.Entity.get(app, s.id))
-        .flat()
+        .flat();
 
     /**
      * Adds or updates events into the global event store.
@@ -136,7 +139,7 @@ export namespace Doc {
       // Group events by source to optimize processing
       const eventsBySource = new Map<Source.Id, Map<Doc.Id, Doc.Type>>();
       events.forEach((e) => {
-        const sourceId = e['gulp.source_id'];
+        const sourceId = e["gulp.source_id"];
         sources.add(sourceId);
         if (!eventsBySource.has(sourceId)) {
           eventsBySource.set(sourceId, new Map());
@@ -178,11 +181,11 @@ export namespace Doc {
         if (hasChanges) {
           Doc.Entity.sort(existingEvents);
         }
-      })
+      });
 
       DataStore.markDirty();
-      return DataStore.events
-    }
+      return DataStore.events;
+    };
 
     /**
      * Asynchronous version of `add` that prevents main thread freeze.
@@ -191,10 +194,10 @@ export namespace Doc {
     public static addAsync = async (app: App.Type, events: Doc.Type[]) => {
       const sources = new Set<Source.Id>();
       const eventsBySource = new Map<Source.Id, Doc.Type[]>();
-      
+
       // Group events
       events.forEach((e) => {
-        const sourceId = e['gulp.source_id'];
+        const sourceId = e["gulp.source_id"];
         sources.add(sourceId);
         if (!eventsBySource.has(sourceId)) {
           eventsBySource.set(sourceId, []);
@@ -205,7 +208,7 @@ export namespace Doc {
       for (const id of sources) {
         const existingEvents = Doc.Entity.get(app, id); // Ensure get() reads from DataStore
         const newEvents = eventsBySource.get(id)!;
-        
+
         // Chunking to prevent Event Loop blocking
         const chunkSize = 10000;
         for (let i = 0; i < newEvents.length; i += chunkSize) {
@@ -215,7 +218,7 @@ export namespace Doc {
             existingEvents.push(evt);
           }
           // Yield to main thread
-          await new Promise(resolve => setTimeout(resolve, 0));
+          await new Promise((resolve) => setTimeout(resolve, 0));
         }
         // Fast in-place native sort
         Doc.Entity.sort(existingEvents);
@@ -223,24 +226,43 @@ export namespace Doc {
 
       DataStore.markDirty();
       return DataStore.events;
-    }
+    };
 
-    public static timestamp = (event: Doc.Type) => Internal.Transformator.toTimestamp(event['@timestamp']);
+    public static timestamp = (event: Doc.Type) =>
+      Internal.Transformator.toTimestamp(event["@timestamp"]);
 
     /** Finds multiple events by their IDs using the O(1) `_index` Map. Filters out missing entries. */
-    public static ids = (_app: App.Type, ids: Doc.Type['_id'][]) =>
-      ids.map(id => Doc.Entity._index.get(id)).filter(Boolean) as Doc.Type[]
+    public static ids = (_app: App.Type, ids: Doc.Type["_id"][]) =>
+      ids.map((id) => Doc.Entity._index.get(id)).filter(Boolean) as Doc.Type[];
 
-    public static notes = (app: App.Type, event: Doc.Type) => Note.Entity.findByFile(app, event['gulp.source_id']).filter((n) => n.doc._id === event._id);
+    public static notes = (app: App.Type, event: Doc.Type) =>
+      Note.Entity.findByFile(app, event["gulp.source_id"]).filter(
+        (n) => n.doc._id === event._id,
+      );
 
     public static links = (_app: App.Type, event: Doc.Type) =>
-      DataStore.links.filter((l) => l.doc_ids.some(doc => doc === event._id))
+      DataStore.links.filter((l) => l.doc_ids.some((doc) => doc === event._id));
 
-    public static normalize = (docs: Doc.Type[]) => docs.map((e: Doc.Type) => ({
-      ...e,
-      ['gulp.timestamp']: BigInt(e['gulp.timestamp']),
-      timestamp: Internal.Transformator.toTimestamp(e['gulp.timestamp'], 'round')
-    })) as Doc.Type[];
+    /*public static normalize = (docs: Doc.Type[]) =>
+      docs.map((e: Doc.Type) => ({
+        ...e,
+        ["gulp.timestamp"]: BigInt(e["gulp.timestamp"]),
+        timestamp: Internal.Transformator.toTimestamp(
+          e["gulp.timestamp"],
+          "round",
+        ),
+      })) as Doc.Type[];
+    */
+    public static normalize = (docs: Doc.Type[]): Doc.Type[] => {
+      for (const e of docs) {
+        (e as any)["gulp.timestamp"] = BigInt((e as any)["gulp.timestamp"]);
+        (e as any).timestamp = Internal.Transformator.toTimestamp(
+          e["gulp.timestamp"],
+          "round",
+        );
+      }
+      return docs;
+    };
 
     /**
      * Helper to get all flagged data from localStorage
@@ -270,21 +292,21 @@ export namespace Doc {
         Doc.Entity._flaggedCache = {};
         return Doc.Entity._flaggedCache;
       }
-    }
+    };
 
     /**
      * Helper to save flagged data to localStorage
      */
     private static saveFlaggedData = (data: Record<string, string[]>) => {
       const cleaned = Object.fromEntries(
-        Object.entries(data).filter(([_, ids]) => ids.length > 0)
+        Object.entries(data).filter(([_, ids]) => ids.length > 0),
       );
       Doc.Entity._flaggedCache = cleaned;
       localStorage.setItem(Doc.Entity.flag.KEY, JSON.stringify(cleaned));
-    }
+    };
 
     public static flag: Flag = {
-      KEY: 'flagged-events',
+      KEY: "flagged-events",
 
       /**
        * Method to get all flagged events from local storage
@@ -301,11 +323,13 @@ export namespace Doc {
           operationIds.forEach((id) => ids.add(id as Doc.Id));
         } else {
           // Return all IDs across all operations
-          Object.values(data).flat().forEach((id) => {
-            if (typeof id === 'string') {
-              ids.add(id as Doc.Id);
-            }
-          });
+          Object.values(data)
+            .flat()
+            .forEach((id) => {
+              if (typeof id === "string") {
+                ids.add(id as Doc.Id);
+              }
+            });
         }
 
         return ids;
@@ -331,7 +355,7 @@ export namespace Doc {
         }
         return result;
       },
-      
+
       /**
        * Method to get all flagged documents for the specified operation
        * @param app - App state
@@ -365,15 +389,15 @@ export namespace Doc {
        * @returns New document flagged state
        */
       toggle: (id: Doc.Id, operationId?: Operation.Id) => {
-        if (typeof id !== 'string') {
+        if (typeof id !== "string") {
           return false;
         }
 
         if (!operationId) {
-          toast.error('Cannot flag document', {
-            description: 'No operation selected',
+          toast.error("Cannot flag document", {
+            description: "No operation selected",
             richColors: true,
-            icon: <Icon name='X' />
+            icon: <Icon name="X" />,
           });
           return false;
         }
@@ -384,23 +408,25 @@ export namespace Doc {
 
         // Check limit for the specific operation
         if (!isFlagged && operationIds.length >= 10) {
-          toast.error('Limit reached', {
-            description: 'Max 10 events can be flagged per operation',
+          toast.error("Limit reached", {
+            description: "Max 10 events can be flagged per operation",
             richColors: true,
-            icon: <Icon name='X' />
+            icon: <Icon name="X" />,
           });
           return isFlagged;
         }
 
         if (isFlagged) {
           // Remove the id
-          data[operationId] = operationIds.filter(docId => docId !== id);
+          data[operationId] = operationIds.filter((docId) => docId !== id);
         } else {
           // Add the id
           data[operationId] = [...operationIds, id];
         }
 
-        toast.info(`Event has been successfully ${isFlagged ? 'unflagged' : 'flagged'}`);
+        toast.info(
+          `Event has been successfully ${isFlagged ? "unflagged" : "flagged"}`,
+        );
 
         Doc.Entity.saveFlaggedData(data);
         return !isFlagged;
@@ -427,13 +453,13 @@ export namespace Doc {
        * @returns Whether the document is flagged
        */
       isFlagged: (id: Doc.Id, operationId?: Operation.Id) => {
-        if (typeof id !== 'string') {
+        if (typeof id !== "string") {
           return false;
         }
 
         const ids = Doc.Entity.flag.getList(operationId);
         return ids.has(id);
-      }
-    }
+      },
+    };
   }
 }
