@@ -393,7 +393,7 @@ export class Info implements InfoProps {
       method: "POST",
       query: {
         plugin,
-        operation_id: event["gulp.operation_id"],
+        operation_id: Doc.Entity.operationId(this.app, event),
         ws_id: this.app.general.ws_id,
         doc_id: event._id,
       },
@@ -1679,8 +1679,8 @@ export class Info implements InfoProps {
     api<Note.Type>("/note_create", {
       method: "POST",
       query: {
-        operation_id: event["gulp.operation_id"],
-        context_id: event["gulp.context_id"],
+        operation_id: Doc.Entity.operationId(this.app, event),
+        context_id: Doc.Entity.contextId(this.app, event),
         source_id: event["gulp.source_id"],
         ws_id: this.app.general.ws_id,
         name,
@@ -1834,7 +1834,7 @@ export class Info implements InfoProps {
       method: "POST",
       query: {
         doc_id_from: event._id,
-        operation_id: event["gulp.operation_id"],
+        operation_id: Doc.Entity.operationId(this.app, event),
         ws_id: this.app.general.ws_id,
         name,
         glyph_id,

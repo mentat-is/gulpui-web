@@ -233,7 +233,7 @@ export namespace AIAssistant {
         }
       }, 0)
 
-      const logs = await Info.query_gulp(docIds, ['event.original', '@timestamp', 'agent.type', 'gulp.source_id', 'gulp.context_id'], true)
+      const logs = await Info.query_gulp(docIds, ['event.original', '@timestamp', 'agent.type', 'gulp.source_id'], true)
 
       await getHint(logs.docs, requestId);
     }

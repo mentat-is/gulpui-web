@@ -114,7 +114,7 @@ export namespace NoteFunctionality {
               variant='highlighted'
               className={s.inp_input}
               disabled
-              value={Context.Entity.id(app, event['gulp.context_id']).name}
+              value={Context.Entity.id(app, Doc.Entity.contextId(app, event)).name}
               icon={Default.Icon.CONTEXT}
             />
             <Input
@@ -190,7 +190,7 @@ export namespace LinkFunctionality {
       const [loading, setLoading] = useState<boolean>(false)
 
       const context = useMemo(() => {
-        return Context.Entity.id(app, event['gulp.context_id'])
+        return Context.Entity.id(app, Doc.Entity.contextId(app, event))
       }, [event])
 
       const file = useMemo(() => {

@@ -583,7 +583,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
       const index = Source.Entity.selected(this.info.app).findIndex(f => f.id === e['gulp.source_id']);
 
       const x = this.getPixelPosition(
-        Internal.Transformator.toTimestamp(e['@timestamp']) +
+        e.timestamp +
         (Source.Entity.id(this.info.app, e['gulp.source_id'])?.settings.offset || 0),
       )
       const y = index * 48 + 20 - this.scrollY || 0

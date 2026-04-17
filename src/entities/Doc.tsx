@@ -23,14 +23,10 @@ export namespace Doc {
     _id: Doc.Id;
     "@timestamp": string;
     timestamp: number;
-    "gulp.operation_id": Operation.Id;
-    "gulp.context_id": Context.Id;
     "gulp.source_id": Source.Id;
     "gulp.timestamp": bigint;
     "gulp.event_code": number;
     "gulp.storage_id"?: string;
-    //[key: `${string}.${string}`]: any,
-    //[key: `${string}.${string}.${string}`]: any
   }
 
   export type Minified = Pick<
@@ -39,8 +35,6 @@ export namespace Doc {
     | "@timestamp"
     | "gulp.timestamp"
     | "gulp.source_id"
-    | "gulp.context_id"
-    | "gulp.operation_id"
   >;
 
   interface Flag {
@@ -76,11 +70,17 @@ export namespace Doc {
     public static toDoc = (event: Doc.Type) => ({
       _id: event._id,
       "@timestamp": event["@timestamp"],
-      "gulp.context_id": event["gulp.context_id"],
-      "gulp.operation_id": event["gulp.operation_id"],
       "gulp.source_id": event["gulp.source_id"],
       "gulp.timestamp": event["gulp.timestamp"],
     });
+
+    /** Returns the Operation.Id for a doc by looking it up through its source. */
+    public static operationId = (app: App.Type, doc: Doc.Type): Operation.Id =>
+      Source.Entity.id(app, doc["gulp.source_id"]).operation_id;
+
+    /** Returns the Context.Id for a doc by looking it up through its source. */
+    public static contextId = (app: App.Type, doc: Doc.Type): Context.Id =>
+      Source.Entity.id(app, doc["gulp.source_id"]).context_id;
 
     /**
      * Removes all events for the given source files.

@@ -208,7 +208,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	const [json, setJSON] = useState<Record<string, string> | null>(null);
 	const [selection, setSelection] = useState<string>("");
 	const [isFlagged, setIsFlagged] = useState(() =>
-		Doc.Entity.flag.isFlagged(event._id, event["gulp.operation_id"]),
+		Doc.Entity.flag.isFlagged(event._id, Doc.Entity.operationId(app, event)),
 	);
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
@@ -229,7 +229,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	// Load detailed event data
 	const loadEvent = useCallback(async () => {
-		const detailed = await Info.query_single_id(event._id, event["gulp.operation_id"]);
+		const detailed = await Info.query_single_id(event._id, Doc.Entity.operationId(app, event));
 		setJSON(prepareEventJson(detailed));
 	}, [event, Info]);
 
@@ -271,7 +271,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	const handleDownloadLogFile = useCallback(() => {
 		const storageId = json?.["gulp.storage_id"] || event["gulp.storage_id"];
 		if (storageId && typeof storageId === "string" && storageId.trim() !== "") {
-			Info.download_storage_file(storageId, event["gulp.operation_id"]);
+			Info.download_storage_file(storageId, Doc.Entity.operationId(app, event));
 		}
 	}, [event, Info, json]);
 
@@ -468,10 +468,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 						<Button variant="secondary" onClick={handleDownloadJson} icon="Download" title="Download JSON">Download JSON</Button>
 						<Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" title="Focus timeline" />
 						<Button
-							onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id, event["gulp.operation_id"]))}
+							onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id, Doc.Entity.operationId(app, event)))}
 							variant={isFlagged ? "tertiary" : "glass"}
 							icon={isFlagged ? "FlagOff" : "Flag"}
-							disabled={Doc.Entity.flag.isLimitReached(Doc.Entity.flag.getList(event["gulp.operation_id"])) && !isFlagged}
+							disabled={Doc.Entity.flag.isLimitReached(Doc.Entity.flag.getList(Doc.Entity.operationId(app, event))) && !isFlagged}
 							title="Flag event"
 						/>
 					</Stack>
@@ -528,7 +528,7 @@ export function EventIndicator({ event, className, style, ...props }: EventIndic
 		<Button shape="icon" className={cn(className, s.indicator)} rounded style={{ ...style, background }} {...props}>
 			<hr />
 			<p>{String(event["gulp.event_code"]).slice(0, 6)}</p>
-			{Doc.Entity.flag.isFlagged(event._id, event["gulp.operation_id"]) && (
+			{Doc.Entity.flag.isFlagged(event._id, file.operation_id) && (
 				<Stack ai="center" jc="center" className={cn(s.marker, s.flagged)} pos="absolute">
 					<Icon size={8} name="Flag" />
 				</Stack>
