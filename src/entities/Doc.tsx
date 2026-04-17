@@ -228,10 +228,10 @@ export namespace Doc {
         }
         // Fast in-place native sort
         Doc.Entity.sort(existingEvents);
+        DataStore.markDirty();
+        Doc.Entity.invalidateSelectedCache();
       }
 
-      DataStore.markDirty();
-      Doc.Entity.invalidateSelectedCache();
       return DataStore.events;
     };
 
