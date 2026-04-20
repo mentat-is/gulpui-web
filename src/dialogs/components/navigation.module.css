@@ -19,3 +19,8 @@
   border: 1px solid var(--geist-border);
   box-shadow: 0px 0px 0px 4px #ffffff3d;
 }
+
+.placeholder {
+  width: 27px;
+  height: 27px;
+}

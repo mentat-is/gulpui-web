@@ -190,35 +190,60 @@ export namespace Doc {
      */
     public static addAsync = async (app: App.Type, events: Doc.Type[]) => {
       const sources = new Set<Source.Id>();
-      const eventsBySource = new Map<Source.Id, Doc.Type[]>();
-      
-      // Group events
+      const eventsBySource = new Map<Source.Id, Map<Doc.Id, Doc.Type>>();
+
+      // Group events by source and ID for O(1) deduplication
       events.forEach((e) => {
         const sourceId = e['gulp.source_id'];
         sources.add(sourceId);
         if (!eventsBySource.has(sourceId)) {
-          eventsBySource.set(sourceId, []);
+          eventsBySource.set(sourceId, new Map());
         }
-        eventsBySource.get(sourceId)!.push(e);
+        eventsBySource.get(sourceId)!.set(e._id, e);
       });
 
       for (const id of sources) {
-        const existingEvents = Doc.Entity.get(app, id); // Ensure get() reads from DataStore
-        const newEvents = eventsBySource.get(id)!;
-        
-        // Chunking to prevent Event Loop blocking
-        const chunkSize = 10000;
-        for (let i = 0; i < newEvents.length; i += chunkSize) {
-          const chunk = newEvents.slice(i, i + chunkSize);
-          for (const evt of chunk) {
-            Doc.Entity._index.set(evt._id, evt);
-            existingEvents.push(evt);
+        const existingEvents = Doc.Entity.get(app, id);
+        const incomingMap = eventsBySource.get(id)!;
+        let hasChanges = false;
+
+        // 1. Update existing events in chunks to keep main thread responsive
+        const updateChunkSize = 25000;
+        for (let i = 0; i < existingEvents.length; i += updateChunkSize) {
+          const limit = Math.min(i + updateChunkSize, existingEvents.length);
+          for (let j = i; j < limit; j++) {
+            const evt = existingEvents[j];
+            if (incomingMap.has(evt._id)) {
+              const updated = incomingMap.get(evt._id)!;
+              existingEvents[j] = updated;
+              Doc.Entity._index.set(updated._id, updated);
+              incomingMap.delete(evt._id);
+              hasChanges = true;
+            }
           }
-          // Yield to main thread
-          await new Promise(resolve => setTimeout(resolve, 0));
+          if (incomingMap.size === 0 && !hasChanges) break; // Optimization
+          await new Promise((resolve) => setTimeout(resolve, 0));
         }
-        // Fast in-place native sort
-        Doc.Entity.sort(existingEvents);
+
+        // 2. Add remaining (truly new) events in chunks
+        if (incomingMap.size > 0) {
+          const trulyNew = Array.from(incomingMap.values());
+          const addChunkSize = 10000;
+          for (let i = 0; i < trulyNew.length; i += addChunkSize) {
+            const chunk = trulyNew.slice(i, i + addChunkSize);
+            for (const evt of chunk) {
+              Doc.Entity._index.set(evt._id, evt);
+              existingEvents.push(evt);
+            }
+            await new Promise((resolve) => setTimeout(resolve, 0));
+          }
+          hasChanges = true;
+        }
+
+        // Fast in-place native sort if changes were made
+        if (hasChanges) {
+          Doc.Entity.sort(existingEvents);
+        }
       }
 
       DataStore.markDirty();

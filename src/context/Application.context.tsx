@@ -1,4 +1,4 @@
-import { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo } from 'react';
+import { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Info } from '@/class/Info';
 import '@/class/API'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
@@ -185,24 +185,24 @@ function _({ children }: { children: ReactNode }) {
     }
   }, [ws]);
 
-  const spawnBanner = (banner: React.ReactNode) => {
+  const spawnBanner = useCallback((banner: React.ReactNode) => {
     setBanner(banner)
     document.querySelector('body')?.classList.add('no-scroll')
-  }
+  }, [])
 
   // @ts-ignore
   window.spawnBanner = spawnBanner;
 
-  const destroyBanner = () => {
+  const destroyBanner = useCallback(() => {
     setBanner(() => null)
     document.querySelector('body')?.classList.remove('no-scroll')
-  }
+  }, [])
 
-  const spawnDialog = (dialog: React.ReactNode) => {
+  const spawnDialog = useCallback((dialog: React.ReactNode) => {
     setDialog(dialog)
-  }
+  }, [])
 
-  const props = {
+  const props = useMemo(() => ({
     spawnBanner,
     destroyBanner,
     banner,
@@ -214,7 +214,7 @@ function _({ children }: { children: ReactNode }) {
     timeline,
     highlightsOverlay,
     setHighlightsOverlay
-  } satisfies Application.Context.Props;
+  }), [spawnBanner, destroyBanner, banner, spawnDialog, dialog, app, setInfo, instance, timeline, highlightsOverlay, setHighlightsOverlay])
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!app.timeline.target || banner) return;
