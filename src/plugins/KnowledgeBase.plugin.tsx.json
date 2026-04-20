@@ -1,0 +1,12 @@
+{
+  "display_name": "Knowledge Base",
+  "plugin": "knowledge_base",
+  "extension": true,
+  "version": "1.0.0",
+  "desc": "Plugin used to research known signatures for data and documents",
+  "path": ".",
+  "filename": "KnowledgeBase.plugin.tsx",
+  "type": [
+    "menu"
+  ]
+}

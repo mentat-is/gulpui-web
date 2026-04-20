@@ -3,5 +3,6 @@ dist
 build
 **/plugins/*
 !**/plugins/coconut.*
+!**/plugins/KnowledgeBase*
 .DS_Store
 .obsidian

@@ -1,0 +1,265 @@
+/* ── Explorer: root container ─────────────────────────────────── */
+.explorer {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+/* ── Navigation header bar ───────────────────────────────────── */
+.header {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px;
+	flex-shrink: 0;
+	min-height: 40px;
+}
+
+/* ── Breadcrumbs ─────────────────────────────────────────────── */
+.breadcrumbs {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	flex: 1;
+	min-width: 0;
+	height: 32px;
+	padding: 0 8px;
+	overflow: hidden;
+	white-space: nowrap;
+	font-size: 13px;
+	color: var(--gray-900);
+	border: 1px solid var(--gray-alpha-400);
+	background-color: var(--background-100);
+	border-radius: 6px;
+	transition: all 0.125s var(--transition);
+}
+
+.breadcrumbs:hover {
+	border-color: var(--gray-alpha-500);
+}
+
+.breadcrumb_segment {
+	cursor: pointer;
+	padding: 2px 4px;
+	border-radius: var(--round);
+	color: var(--gray-1100);
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+	flex-shrink: 0;
+}
+
+.breadcrumb_segment:hover {
+	background: var(--background-200);
+	color: var(--accent);
+}
+
+.breadcrumb_separator {
+	color: var(--gray-700);
+	flex-shrink: 0;
+	user-select: none;
+}
+
+/* ── Search input (replaces breadcrumbs) ─────────────────────── */
+.search_input {
+	flex: 1;
+	min-width: 0;
+}
+
+.search_input [data-input] {
+	width: 100%;
+}
+
+/* ── Scrollable list area ────────────────────────────────────── */
+.list {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 4px 4px 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	border: 1px solid var(--gray-400);
+	border-radius: 6px;
+}
+
+/* ── List item row ───────────────────────────────────────────── */
+.list_item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 8px;
+	font-size: 13px;
+	color: var(--gray-1100);
+	cursor: default;
+	flex-shrink: 0;
+	user-select: none;
+	cursor: pointer;
+}
+
+/* ── List item hover (with increased specificity) ─────────── */
+/* ── List item hover (Aggressive for visibility) ─────────── */
+.list .list_item:hover {
+	background: var(--gray-200) !important;
+	border-radius: 6px;
+	color: var(--accent) !important;
+}
+
+.list .list_item:active {
+	background: var(--background-300) !important;
+}
+
+.list_item_folder {
+	cursor: pointer;
+}
+
+.list_item_name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+
+/* ── Cut state (queued for move) ─────────────────────────────── */
+.list_item_cut {
+	opacity: 0.4;
+	transition: opacity 0.15s ease;
+}
+
+.list_item_cut:hover {
+	opacity: 0.55;
+}
+
+/* ── Rename popover ──────────────────────────────────────────── */
+.rename_popover {
+	min-width: 200px;
+}
+
+.rename_popover [data-input] {
+	width: 100%;
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.empty {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex: 1;
+	width: 100%;
+	height: 100%;
+	padding: 24px;
+}
+
+/* ── Editor ──────────────────────────────────────────────────── */
+.editor {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+}
+
+.editor_body {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.editor_row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.editor_breadcrumbs {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	min-width: 0;
+	height: 32px;
+	overflow: hidden;
+	white-space: nowrap;
+	font-size: 13px;
+	color: var(--gray-900);
+}
+
+.editor_field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+}
+
+.editor_textarea {
+	flex: 1;
+	min-height: 200px;
+}
+
+.editor_footer {
+	display: flex;
+	justify-content: flex-end;
+	padding: 8px 4px 4px;
+	border-top: 1px solid var(--gray-400);
+}
+
+.breadcrumb_container {
+	flex: 1;
+	min-width: 0;
+	height: 32px;
+}
+
+.create_popover {
+	width: 200px;
+	padding: 4px;
+}
+
+.popover_button {
+	justify-content: flex-start;
+}
+
+.attachment_stack {
+	flex-wrap: wrap;
+	align-items: flex-start;
+	align-content: flex-start;
+}
+
+.attachment_badge {
+	cursor: pointer;
+}
+
+.filter_modal_stack {
+	width: 600px;
+}
+
+.editor_name_input {
+	flex: 1;
+}
+
+.attachment_popover {
+	width: 140px;
+	padding: 4px;
+}
+
+.editor_row_with_private {
+	display: flex;
+	align-items: flex-end;
+	gap: 12px;
+}
+
+.private_checkbox_container {
+	padding-bottom: 8px;
+}
+
+.attachment_section {
+	padding: 8px 0;
+}
+
+.attachment_label_main {
+	font-size: 13px;
+}
