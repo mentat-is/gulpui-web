@@ -115,8 +115,18 @@ export function FilterFileBanner({
     // 2. Conditional Reset (only if selection changed)
     const newIdsStr = newIds.sort().join(',')
     if (newIdsStr !== prevFileIds.current) {
-      toast.info('Query reset based on source selection')
-      resetToCleanBase(newFiles)
+      if (isManual) {
+        toast.info('Query reset based on source selection')
+        resetToCleanBase(newFiles)
+      } else {
+        toast.info('Query string updated based on source selection')
+        const newBaseString = Filter.Entity.base(newFiles)
+        setQuery(prev => {
+          const updated = { ...prev, string: newBaseString }
+          setManualContent(JSON.stringify(Filter.Entity.query({ ...updated, fieldTypeMap } as any), null, 2))
+          return updated
+        })
+      }
 
       // Update ref to track this new state
       prevFileIds.current = newIdsStr
