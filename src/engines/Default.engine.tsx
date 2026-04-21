@@ -64,7 +64,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 			right = events.length - 1;
 		while (left <= right) {
 			const mid = (left + right) >>> 1;
-			if (events[mid].timestamp <= maxTimestampVisible) {
+			if (events[mid].gulp_timestamp <= maxTimestampVisible) {
 				startIdx = mid;
 				right = mid - 1; // try smaller index (higher timestamps live at lower indices)
 			} else {
@@ -80,7 +80,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 		right = events.length - 1;
 		while (left <= right) {
 			const mid = (left + right) >>> 1;
-			if (events[mid].timestamp >= minTimestampVisible) {
+			if (events[mid].gulp_timestamp >= minTimestampVisible) {
 				endIdx = mid;
 				left = mid + 1; // try larger index (lower timestamps live at higher indices)
 			} else {
@@ -92,7 +92,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 		let i = startIdx;
 
 		while (i <= endIdx) {
-			const timestamp = events[i].timestamp + offset;
+			const timestamp = events[i].gulp_timestamp + offset;
 
 			// Safety guard: skip events outside the selection frame
 			if (timestamp > frame.max || timestamp < frame.min) {
@@ -120,7 +120,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 				next = endIdx + 1;
 			while (lo <= hi) {
 				const mid = (lo + hi) >>> 1;
-				if (events[mid].timestamp < nextThreshold) {
+				if (events[mid].gulp_timestamp < nextThreshold) {
 					next = mid;
 					hi = mid - 1; // try smaller index to find the first qualifying event
 				} else {

@@ -73,8 +73,16 @@ const parseToKeyValue = (raw: string): Record<string, string> => {
 		const index = line.indexOf(":");
 		if (index === -1) continue;
 
-		const key = line.slice(0, index).trim().replace(/^"+|"+$/g, "");
-		const value = line.slice(index + 1).trim().replace(/^"+|"+$/g, "").replace(/[,"]+$/, "") || "*";
+		const key = line
+			.slice(0, index)
+			.trim()
+			.replace(/^"+|"+$/g, "");
+		const value =
+			line
+				.slice(index + 1)
+				.trim()
+				.replace(/^"+|"+$/g, "")
+				.replace(/[,"]+$/, "") || "*";
 		result[key] = value;
 	}
 	return result;
@@ -88,12 +96,14 @@ const parseToKeyValue = (raw: string): Record<string, string> => {
  */
 const isPointInSelection = (x: number, y: number): boolean => {
 	const selection = window.getSelection();
-	if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return false;
+	if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
+		return false;
 	const range = selection.getRangeAt(0);
 	const rects = range.getClientRects();
 	for (let i = 0; i < rects.length; i++) {
 		const rect = rects[i];
-		if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) return true;
+		if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom)
+			return true;
 	}
 	return false;
 };
@@ -105,7 +115,11 @@ const isPointInSelection = (x: number, y: number): boolean => {
  * @param isRawView Whether the current view is Raw (requires specific caret logic)
  * @returns The string content of the detected line or null
  */
-const detectSelectionAtPoint = (x: number, y: number, isRawView: boolean): string | null => {
+const detectSelectionAtPoint = (
+	x: number,
+	y: number,
+	isRawView: boolean,
+): string | null => {
 	const element = document.elementFromPoint(x, y) as HTMLElement;
 	if (!element) return null;
 
@@ -163,7 +177,11 @@ const detectSelectionAtPoint = (x: number, y: number, isRawView: boolean): strin
 
 		// Fallback for Raw View
 		let current: HTMLElement | null = element;
-		while (current && current !== document.body && !current.classList.contains(s.highlighter)) {
+		while (
+			current &&
+			current !== document.body &&
+			!current.classList.contains(s.highlighter)
+		) {
 			const text = (current.innerText || current.textContent || "").trim();
 			if (text.includes(":") && !text.includes("\n")) {
 				selectElementText(current);
@@ -174,7 +192,11 @@ const detectSelectionAtPoint = (x: number, y: number, isRawView: boolean): strin
 	} else {
 		// 2. Tree/JsonView Handling
 		let current: HTMLElement | null = element;
-		while (current && current !== document.body && !current.classList.contains(s.scrollable)) {
+		while (
+			current &&
+			current !== document.body &&
+			!current.classList.contains(s.scrollable)
+		) {
 			if (current.querySelector(`.${s.label}`)) {
 				const text = (current.innerText || current.textContent || "").trim();
 				if (text.includes(":") && !text.includes("\n")) {
@@ -208,15 +230,24 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	const [json, setJSON] = useState<Record<string, string> | null>(null);
 	const [selection, setSelection] = useState<string>("");
 	const [isFlagged, setIsFlagged] = useState(() =>
-		Doc.Entity.flag.isFlagged(event._id, event["gulp.operation_id"]),
+		Doc.Entity.flag.isFlagged(event._id, Doc.Entity.operationId(app, event)),
 	);
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 
 	// --- DERIVED DATA ---
-	const notes = useMemo(() => Doc.Entity.notes(app, event), [app.timeline.renderVersion, event]);
-	const links = useMemo(() => Doc.Entity.links(app, event), [app.timeline.renderVersion, event]);
-	const file = useMemo(() => Source.Entity.id(app, event["gulp.source_id"]), [app.target.files, event]);
+	const notes = useMemo(
+		() => Doc.Entity.notes(app, event),
+		[app.timeline.renderVersion, event],
+	);
+	const links = useMemo(
+		() => Doc.Entity.links(app, event),
+		[app.timeline.renderVersion, event],
+	);
+	const file = useMemo(
+		() => Source.Entity.id(app, event["gulp.source_id"]),
+		[app.target.files, event],
+	);
 
 	// --- EFFECTS ---
 
@@ -229,7 +260,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	// Load detailed event data
 	const loadEvent = useCallback(async () => {
-		const detailed = await Info.query_single_id(event._id, event["gulp.operation_id"]);
+		const detailed = await Info.query_single_id(
+			event._id,
+			Doc.Entity.operationId(app, event),
+		);
 		setJSON(prepareEventJson(detailed));
 	}, [event, Info]);
 
@@ -243,11 +277,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 			const text = window.getSelection()?.toString().trim();
 			if (text) {
 				setSelection(text);
-				if (text !== lastAutoSelectionRef.current) lastAutoSelectionRef.current = null;
+				if (text !== lastAutoSelectionRef.current)
+					lastAutoSelectionRef.current = null;
 			}
 		};
 		document.addEventListener("selectionchange", handleSelectionChange);
-		return () => document.removeEventListener("selectionchange", handleSelectionChange);
+		return () =>
+			document.removeEventListener("selectionchange", handleSelectionChange);
 	}, []);
 
 	useEffect(() => setSelection(""), [event._id]);
@@ -269,15 +305,15 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	}, [json, event._id, event]);
 
 	const handleDownloadLogFile = useCallback(() => {
-		const storageId = json?.["gulp.storage_id"] || event["gulp.storage_id"];
+		const storageId = json?.["gulp.storage_id"];
 		if (storageId && typeof storageId === "string" && storageId.trim() !== "") {
-			Info.download_storage_file(storageId, event["gulp.operation_id"]);
+			Info.download_storage_file(storageId, Doc.Entity.operationId(app, event));
 		}
 	}, [event, Info, json]);
 
 	const handleFocusTimeline = useCallback(() => {
 		// @ts-ignore
-		return window.focusCanvasOnEvent(event.timestamp, false, event.file_id);
+		return window.focusCanvasOnEvent(event.gulp_timestamp, false);
 	}, [event]);
 
 	// --- HANDLERS: Banners ---
@@ -345,11 +381,16 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	const highlights = useMemo(() => {
 		if (!json) return null;
 
-		const storageId = json["gulp.storage_id"] || event["gulp.storage_id"];
+		const storageId = json["gulp.storage_id"];
 		const unflattenObject = Object.keys(json).reduce((res, k) => {
 			k.split(".").reduce(
 				(acc: any, e, i, keys) =>
-					acc[e] || (acc[e] = isNaN(Number(keys[i + 1])) ? (keys.length - 1 === i ? json[k] : {}) : []),
+					acc[e] ||
+					(acc[e] = isNaN(Number(keys[i + 1]))
+						? keys.length - 1 === i
+							? json[k]
+							: {}
+						: []),
 				res,
 			);
 			return res;
@@ -369,20 +410,49 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 		return (
 			<ContextMenu>
-				<Tabs defaultValue="raw" style={{ overflow: "scroll" }} className={s.tabs_wrapper}>
+				<Tabs
+					defaultValue="raw"
+					style={{ overflow: "scroll" }}
+					className={s.tabs_wrapper}
+				>
 					<TabsList className={s.triggers}>
-						<TabsTrigger value="tree"><Icon name="GitFork" size={14} /> Tree</TabsTrigger>
-						<TabsTrigger value="raw"><Icon name="CodeBracket" size={14} /> Raw</TabsTrigger>
-						<TabsTrigger value="table"><Icon name="Table" size={14} /> Table</TabsTrigger>
+						<TabsTrigger value="tree">
+							<Icon
+								name="GitFork"
+								size={14}
+							/>{" "}
+							Tree
+						</TabsTrigger>
+						<TabsTrigger value="raw">
+							<Icon
+								name="CodeBracket"
+								size={14}
+							/>{" "}
+							Raw
+						</TabsTrigger>
+						<TabsTrigger value="table">
+							<Icon
+								name="Table"
+								size={14}
+							/>{" "}
+							Table
+						</TabsTrigger>
 					</TabsList>
 
 					<ContextMenuTrigger
 						onMouseDown={(e) => {
 							if (e.button === 2 && !isPointInSelection(e.clientX, e.clientY)) {
-								const element = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement;
+								const element = document.elementFromPoint(
+									e.clientX,
+									e.clientY,
+								) as HTMLElement;
 								const isInRawView = element?.closest(`.${s.highlighter}`);
 								window.getSelection()?.removeAllRanges();
-								const detected = detectSelectionAtPoint(e.clientX, e.clientY, !!isInRawView);
+								const detected = detectSelectionAtPoint(
+									e.clientX,
+									e.clientY,
+									!!isInRawView,
+								);
 								if (detected) {
 									lastAutoSelectionRef.current = detected;
 									setSelection(detected);
@@ -394,11 +464,22 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							if (current && current !== selection) setSelection(current);
 						}}
 					>
-						<TabsContent value="tree" className={s.scrollable}>
-							<JsonView data={unflattenObject} clickToExpandNode={true} shouldExpandNode={allExpanded} style={jsonStyles} />
+						<TabsContent
+							value="tree"
+							className={s.scrollable}
+						>
+							<JsonView
+								data={unflattenObject}
+								clickToExpandNode={true}
+								shouldExpandNode={allExpanded}
+								style={jsonStyles}
+							/>
 						</TabsContent>
 						<TabsContent value="raw">
-							<Markdown className={s.highlighter} value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`} />
+							<Markdown
+								className={s.highlighter}
+								value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`}
+							/>
 						</TabsContent>
 						<TabsContent value="table">
 							<Table values={Object.entries(json)} />
@@ -409,34 +490,70 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 				<ContextMenuContent>
 					<ContextMenuItem
 						disabled={!selection}
-						onClick={() => spawnBanner(<NoteFunctionality.Create.Banner event={event} note={{ text: selection } as Note.Type} />)}
+						onClick={() =>
+							spawnBanner(
+								<NoteFunctionality.Create.Banner
+									event={event}
+									note={{ text: selection } as Note.Type}
+								/>,
+							)
+						}
 						icon="StickyNote"
 					>
 						Create new note
 					</ContextMenuItem>
-					<ContextMenuItem disabled={!selection} icon="GitPullRequestCreate">Create new link</ContextMenuItem>
-					<ContextMenuItem onClick={handleCopyJson} icon="Copy">Copy</ContextMenuItem>
-					<ContextMenuItem onClick={applySelectionAsFileFilter} icon="Filter">New filter</ContextMenuItem>
+					<ContextMenuItem
+						disabled={!selection}
+						icon="GitPullRequestCreate"
+					>
+						Create new link
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={handleCopyJson}
+						icon="Copy"
+					>
+						Copy
+					</ContextMenuItem>
+					<ContextMenuItem
+						onClick={applySelectionAsFileFilter}
+						icon="Filter"
+					>
+						New filter
+					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={() => {
 							const object = parseToKeyValue(selection);
 							const keys = Object.keys(object);
-							if (keys.length > 0) handleEnrich({ key: keys[0], value: object[keys[0]] });
+							if (keys.length > 0)
+								handleEnrich({ key: keys[0], value: object[keys[0]] });
 						}}
 						icon="PrismColor"
 					>
 						Enrich
 					</ContextMenuItem>
-					{storageId && typeof storageId === "string" && storageId.trim() !== "" && (
-						<ContextMenuItem onClick={handleDownloadLogFile} icon="Download">Download log file</ContextMenuItem>
-					)}
+					{storageId &&
+						typeof storageId === "string" &&
+						storageId.trim() !== "" && (
+							<ContextMenuItem
+								onClick={handleDownloadLogFile}
+								icon="Download"
+							>
+								Download log file
+							</ContextMenuItem>
+						)}
 				</ContextMenuContent>
 			</ContextMenu>
 		);
 	}, [
-		json, selection, spawnBanner, event, applySelectionAsFileFilter, 
-		handleDownloadLogFile, handleEnrich, handleCopyJson
+		json,
+		selection,
+		spawnBanner,
+		event,
+		applySelectionAsFileFilter,
+		handleDownloadLogFile,
+		handleEnrich,
+		handleCopyJson,
 	]);
 
 	return (
@@ -444,34 +561,115 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 			<Navigation event={event} />
 			{json ? (
 				<Fragment>
-					<Stack dir="column" className={s.group} gap={12} ai="stretch">
-						<Stack gap={12} flex>
-							<Button onClick={handleCreateNote} variant="secondary" icon="StickyNote">New note</Button>
-							<Button onClick={handleCreateLink} variant="secondary" icon="GitPullRequestCreate">Create link</Button>
+					<Stack
+						dir="column"
+						className={s.group}
+						gap={12}
+						ai="stretch"
+					>
+						<Stack
+							gap={12}
+							flex
+						>
+							<Button
+								onClick={handleCreateNote}
+								variant="secondary"
+								icon="StickyNote"
+							>
+								New note
+							</Button>
+							<Button
+								onClick={handleCreateLink}
+								variant="secondary"
+								icon="GitPullRequestCreate"
+							>
+								Create link
+							</Button>
 						</Stack>
-						<Stack gap={12} flex>
-							<Button onClick={() => handleEnrich()} variant="glass" icon="PrismColor">Enrich</Button>
-							{Object.values(extensions).some((ext) => ext.type.includes("send_data")) && (
-								<Button onClick={handleSendData} variant="glass" icon="Send">Send Data</Button>
+						<Stack
+							gap={12}
+							flex
+						>
+							<Button
+								onClick={() => handleEnrich()}
+								variant="glass"
+								icon="PrismColor"
+							>
+								Enrich
+							</Button>
+							{Object.values(extensions).some((ext) =>
+								ext.type.includes("send_data"),
+							) && (
+								<Button
+									onClick={handleSendData}
+									variant="glass"
+									icon="Send"
+								>
+									Send Data
+								</Button>
 							)}
-							<Button onClick={handleConnectLink} variant="secondary" icon="GitPullRequestCreateArrow">Connect link</Button>
+							<Button
+								onClick={handleConnectLink}
+								variant="secondary"
+								icon="GitPullRequestCreateArrow"
+							>
+								Connect link
+							</Button>
 						</Stack>
-						<Extension.Component name="Story.popover.tsx" props={{ doc: event }} />
+						<Extension.Component
+							name="Story.popover.tsx"
+							props={{ doc: event }}
+						/>
 					</Stack>
 
-					<Collab.List notes={notes} links={links} />
-					
+					<Collab.List
+						notes={notes}
+						links={links}
+					/>
+
 					{highlights}
 
-					<Stack className={s.actionButtons} gap={12}>
-						<Button variant="secondary" onClick={handleCopyJson} icon="Copy">Copy JSON</Button>
-						<Button variant="secondary" onClick={handleDownloadJson} icon="Download" title="Download JSON">Download JSON</Button>
-						<Button onClick={handleFocusTimeline} variant="secondary" icon="Crosshair" title="Focus timeline" />
+					<Stack
+						className={s.actionButtons}
+						gap={12}
+					>
 						<Button
-							onClick={() => setIsFlagged(Doc.Entity.flag.toggle(event._id, event["gulp.operation_id"]))}
+							variant="secondary"
+							onClick={handleCopyJson}
+							icon="Copy"
+						>
+							Copy JSON
+						</Button>
+						<Button
+							variant="secondary"
+							onClick={handleDownloadJson}
+							icon="Download"
+							title="Download JSON"
+						>
+							Download JSON
+						</Button>
+						<Button
+							onClick={handleFocusTimeline}
+							variant="secondary"
+							icon="Crosshair"
+							title="Focus timeline"
+						/>
+						<Button
+							onClick={() =>
+								setIsFlagged(
+									Doc.Entity.flag.toggle(
+										event._id,
+										Doc.Entity.operationId(app, event),
+									),
+								)
+							}
 							variant={isFlagged ? "tertiary" : "glass"}
 							icon={isFlagged ? "FlagOff" : "Flag"}
-							disabled={Doc.Entity.flag.isLimitReached(Doc.Entity.flag.getList(event["gulp.operation_id"])) && !isFlagged}
+							disabled={
+								Doc.Entity.flag.isLimitReached(
+									Doc.Entity.flag.getList(Doc.Entity.operationId(app, event)),
+								) && !isFlagged
+							}
 							title="Flag event"
 						/>
 					</Stack>
@@ -488,11 +686,31 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
  */
 function LoadingSkeleton() {
 	return (
-		<Stack style={{ width: "100%", height: "100%" }} flex ai="center" jc="center" dir="column" gap={12}>
-			<Stack style={{ width: "100%" }}><Skeleton width="full" /><Skeleton width="full" /></Stack>
-			<Stack style={{ width: "100%" }}><Skeleton width="full" /><Skeleton width="full" /></Stack>
-			<Skeleton width="full" height="full" />
-			<Stack style={{ width: "100%" }}><Skeleton width="full" /><Skeleton width="full" /><Skeleton width="full" /></Stack>
+		<Stack
+			style={{ width: "100%", height: "100%" }}
+			flex
+			ai="center"
+			jc="center"
+			dir="column"
+			gap={12}
+		>
+			<Stack style={{ width: "100%" }}>
+				<Skeleton width="full" />
+				<Skeleton width="full" />
+			</Stack>
+			<Stack style={{ width: "100%" }}>
+				<Skeleton width="full" />
+				<Skeleton width="full" />
+			</Stack>
+			<Skeleton
+				width="full"
+				height="full"
+			/>
+			<Stack style={{ width: "100%" }}>
+				<Skeleton width="full" />
+				<Skeleton width="full" />
+				<Skeleton width="full" />
+			</Stack>
 		</Stack>
 	);
 }
@@ -508,39 +726,90 @@ export namespace EventIndicator {
 /**
  * Visual indicator button for events in lists or timelines.
  */
-export function EventIndicator({ event, className, style, ...props }: EventIndicator.Props) {
+export function EventIndicator({
+	event,
+	className,
+	style,
+	...props
+}: EventIndicator.Props) {
 	const { app } = Application.use();
 	if (!event) return null;
 
 	const file = Source.Entity.id(app, event["gulp.source_id"]);
 	if (!file) return null;
 
-	const notes = useMemo(() => Doc.Entity.notes(app, event), [app.timeline.renderVersion, event._id]);
-	const links = useMemo(() => Doc.Entity.links(app, event), [app.timeline.renderVersion, event._id]);
+	const notes = useMemo(
+		() => Doc.Entity.notes(app, event),
+		[app.timeline.renderVersion, event._id],
+	);
+	const links = useMemo(
+		() => Doc.Entity.links(app, event),
+		[app.timeline.renderVersion, event._id],
+	);
 
 	const background = useMemo(() => {
-		const range = RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;
-		const code = Refractor.any.toNumber(Refractor.get(event, file.settings.field));
-		return Color.Entity.gradient(file.settings.render_color_palette, code, range);
+		const range =
+			RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;
+		const code = Refractor.any.toNumber(
+			Refractor.get(event, file.settings.field),
+		);
+		return Color.Entity.gradient(
+			file.settings.render_color_palette,
+			code,
+			range,
+		);
 	}, [event, app.target.files, file]);
 
 	return (
-		<Button shape="icon" className={cn(className, s.indicator)} rounded style={{ ...style, background }} {...props}>
+		<Button
+			shape="icon"
+			className={cn(className, s.indicator)}
+			rounded
+			style={{ ...style, background }}
+			{...props}
+		>
 			<hr />
 			<p>{String(event["gulp.event_code"]).slice(0, 6)}</p>
-			{Doc.Entity.flag.isFlagged(event._id, event["gulp.operation_id"]) && (
-				<Stack ai="center" jc="center" className={cn(s.marker, s.flagged)} pos="absolute">
-					<Icon size={8} name="Flag" />
+			{Doc.Entity.flag.isFlagged(
+				event._id,
+				Doc.Entity.operationId(app, event),
+			) && (
+				<Stack
+					ai="center"
+					jc="center"
+					className={cn(s.marker, s.flagged)}
+					pos="absolute"
+				>
+					<Icon
+						size={8}
+						name="Flag"
+					/>
 				</Stack>
 			)}
 			{notes.length > 0 && (
-				<Stack ai="center" jc="center" className={cn(s.marker, s.collab)} pos="absolute">
-					<Icon size={8} name="StickyNote" />
+				<Stack
+					ai="center"
+					jc="center"
+					className={cn(s.marker, s.collab)}
+					pos="absolute"
+				>
+					<Icon
+						size={8}
+						name="StickyNote"
+					/>
 				</Stack>
 			)}
 			{links.length > 0 && (
-				<Stack ai="center" jc="center" className={cn(s.marker, s.collab, s.linkMarker)} pos="absolute">
-					<Icon size={8} name="Link" />
+				<Stack
+					ai="center"
+					jc="center"
+					className={cn(s.marker, s.collab, s.linkMarker)}
+					pos="absolute"
+				>
+					<Icon
+						size={8}
+						name="Link"
+					/>
 				</Stack>
 			)}
 		</Button>

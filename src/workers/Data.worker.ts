@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-type WorkerMessage = 
+type WorkerMessage =
   | { type: 'SORT_EVENTS'; payload: any[]; id: string }
   | { type: 'BINARY_SEARCH_DESC'; payload: { items: any[]; timestamp: number; findFirst: boolean }; id: string }
 
@@ -16,7 +16,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
         self.postMessage({ id, result: sorted });
         break;
       }
-      
+
       case 'BINARY_SEARCH_DESC': {
         const { items, timestamp, findFirst } = payload;
         let left = 0, right = items.length - 1, result = -1;
@@ -25,7 +25,7 @@ self.onmessage = (event: MessageEvent<WorkerMessage>) => {
           const mid = Math.floor((left + right) / 2);
           // items are Notes. We expect their pre-calculated timestamp or standard structure.
           // Fallback to direct timestamp property if Note.Entity is unavailable
-          const noteTime = items[mid].timestamp || (new Date(items[mid].doc?.['@timestamp'] || 0).valueOf());
+          const noteTime = items[mid].timestamp;
 
           if (findFirst) {
             // Finding first note <= timestamp (leftmost)

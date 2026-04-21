@@ -187,11 +187,7 @@ export class Info implements InfoProps {
 	private static _latestInstance: Info | null = null;
 	public ingestionProgress = new Map<Source.Id, number>();
 
-	constructor({
-		app,
-		setInfo,
-		timeline,
-	}: InfoProps) {
+	constructor({ app, setInfo, timeline }: InfoProps) {
 		this.app = app;
 		this.setInfo = setInfo;
 		this.timeline = timeline;
@@ -237,8 +233,8 @@ export class Info implements InfoProps {
 			Info._realtimeTimer = null;
 		}
 
-		this.setInfoByKey(enabled, 'settings', 'realtimeEnabled');
-		this.setInfoByKey(seconds, 'settings', 'realtimeTimeoff');
+		this.setInfoByKey(enabled, "settings", "realtimeEnabled");
+		this.setInfoByKey(seconds, "settings", "realtimeTimeoff");
 
 		if (enabled && seconds >= 10) {
 			Info._realtimeTimer = setInterval(() => {
@@ -260,9 +256,12 @@ export class Info implements InfoProps {
 
 			let fromNanos: bigint;
 			if (events.length > 0) {
-				fromNanos = events[0]['gulp.timestamp'] + 1n;
+				fromNanos =
+					Internal.Transformator.toNanos(events[0].gulp_timestamp) + 1n;
 			} else {
-				fromNanos = file.nanotimestamp?.max ?? Internal.Transformator.toNanos(file.timestamp.max);
+				fromNanos =
+					file.nanotimestamp?.max ??
+					Internal.Transformator.toNanos(file.timestamp.max);
 			}
 
 			if (fromNanos >= nowNanos) return;
@@ -275,7 +274,10 @@ export class Info implements InfoProps {
 			}
 
 			const query: Query.Type = {
-				string: Filter.Entity.base(file, { min: fromNanos as unknown as number, max: nowNanos as unknown as number }),
+				string: Filter.Entity.base(file, {
+					min: fromNanos as unknown as number,
+					max: nowNanos as unknown as number,
+				}),
 				filters: [],
 			};
 
@@ -286,7 +288,7 @@ export class Info implements InfoProps {
 		});
 
 		if (filesUpdated) {
-			this.setInfoByKey([...this.app.target.files], 'target', 'files');
+			this.setInfoByKey([...this.app.target.files], "target", "files");
 		}
 
 		this.realtimePollExtendFrame();
@@ -352,7 +354,7 @@ export class Info implements InfoProps {
 							if (bufferedEvents.length > 0) {
 								await this.events_add_async(bufferedEvents);
 							}
-							
+
 							this.delLoading(req_id);
 							SmartSocket.Class.instance.coff(
 								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -392,7 +394,7 @@ export class Info implements InfoProps {
 			method: "POST",
 			query: {
 				plugin,
-				operation_id: event["gulp.operation_id"],
+				operation_id: Doc.Entity.operationId(this.app, event),
 				ws_id: this.app.general.ws_id,
 				doc_id: event._id,
 			},
@@ -411,7 +413,10 @@ export class Info implements InfoProps {
 			},
 		});
 
-	download_storage_file = async (storage_id: string, operation_id: string): Promise<void> => {
+	download_storage_file = async (
+		storage_id: string,
+		operation_id: string,
+	): Promise<void> => {
 		const req_id = generateUUID<string>(Request.Prefix.QUERY);
 		const query = new URLSearchParams({
 			operation_id,
@@ -455,12 +460,12 @@ export class Info implements InfoProps {
 	};
 
 	// Bridge Manager APIs
-	list_bridges = (flt?: any, req_id?: string, options?: any) => 
+	list_bridges = (flt?: any, req_id?: string, options?: any) =>
 		api<any>("/list_bridges", {
 			method: "POST",
 			query: { req_id },
 			body: { flt },
-			...options
+			...options,
 		});
 
 	list_ingestion_tasks = (flt?: any, req_id?: string, options?: any) =>
@@ -468,36 +473,42 @@ export class Info implements InfoProps {
 			method: "POST",
 			query: { req_id },
 			body: flt,
-			...options
+			...options,
 		});
 
-	create_start_ingestion = (bridge_id: string, operation_id: string, plugin_params: any, req_id?: string, options?: any) =>
+	create_start_ingestion = (
+		bridge_id: string,
+		operation_id: string,
+		plugin_params: any,
+		req_id?: string,
+		options?: any,
+	) =>
 		api<any>("/create_start_ingestion", {
 			method: "POST",
 			query: { bridge_id, operation_id, req_id },
-			body:  plugin_params,
-			...options
+			body: plugin_params,
+			...options,
 		});
 
 	stop_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
 		api<any>("/stop_ingestion", {
 			method: "POST",
-			query: { req_id, },
-			body:  `"${bridge_task_id}"`,
-			...options
+			query: { req_id },
+			body: `"${bridge_task_id}"`,
+			...options,
 		});
 	check_bridge_status = (bridge_id: string, req_id?: string, options?: any) =>
 		api<any>("/get_bridge_status", {
 			method: "GET",
 			query: { req_id, bridge_id },
-			...options
+			...options,
 		});
 
 	delete_ingestion = (bridge_task_id: string, req_id?: string, options?: any) =>
 		api<any>("/delete_ingestion", {
 			method: "DELETE",
 			query: { req_id, bridge_task_id },
-			...options
+			...options,
 		});
 
 	query_global = async ({
@@ -766,7 +777,7 @@ export class Info implements InfoProps {
 								if (bufferedEvents.length > 0) {
 									await this.events_add_async(bufferedEvents);
 								}
-								
+
 								this.delLoading(req_id);
 								SmartSocket.Class.instance.coff(
 									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -777,7 +788,11 @@ export class Info implements InfoProps {
 									const loadedCount = Doc.Entity.get(this.app, id).length;
 									if (file && loadedCount > file.total) {
 										file.total = loadedCount;
-										this.setInfoByKey([...this.app.target.files], 'target', 'files');
+										this.setInfoByKey(
+											[...this.app.target.files],
+											"target",
+											"files",
+										);
 									}
 								}
 								this.render();
@@ -1010,7 +1025,11 @@ export class Info implements InfoProps {
 
 	render = () => {
 		Logger.log(`Render requested`, Info);
-		this.setInfoByKey(this.app.timeline.renderVersion + 1, "timeline", "renderVersion");
+		this.setInfoByKey(
+			this.app.timeline.renderVersion + 1,
+			"timeline",
+			"renderVersion",
+		);
 	};
 
 	mapping_file_list = async (): Promise<Mapping.Type.Plugin[]> => {
@@ -1065,7 +1084,7 @@ export class Info implements InfoProps {
 		scrollStore.setScrollY(-26);
 
 		// Single batched state update instead of 8 separate setInfoByKey calls
-		this.batchUpdate(draft => {
+		this.batchUpdate((draft) => {
 			// Timeline reset
 			draft.timeline.scale = 1;
 			draft.timeline.target = null;
@@ -1082,11 +1101,11 @@ export class Info implements InfoProps {
 
 			// Select operation, deselect contexts and files
 			draft.target.operations = Operation.Entity.select(draft, id);
-			draft.target.contexts = draft.target.contexts.map(context => ({
+			draft.target.contexts = draft.target.contexts.map((context) => ({
 				...context,
 				selected: false,
 			}));
-			draft.target.files = draft.target.files.map(file => ({
+			draft.target.files = draft.target.files.map((file) => ({
 				...file,
 				selected: false,
 			}));
@@ -1113,16 +1132,21 @@ export class Info implements InfoProps {
 				},
 				setLoading,
 				toast: {
-					onSuccess: () => toast.success(`Operation ${operation.name} has been deleted successfully`, {
-						icon: <Icon name='Check' />,
-						richColors: true,
-					}),
-					onError: response => toast.error(`Failed deleting operation`, {
-						description: `Reason ${response.data.__error.msg}`,
-						icon: <Icon name='Stop' />,
-						richColors: true,
-					})
-				}
+					onSuccess: () =>
+						toast.success(
+							`Operation ${operation.name} has been deleted successfully`,
+							{
+								icon: <Icon name="Check" />,
+								richColors: true,
+							},
+						),
+					onError: (response) =>
+						toast.error(`Failed deleting operation`, {
+							description: `Reason ${response.data.__error.msg}`,
+							icon: <Icon name="Stop" />,
+							richColors: true,
+						}),
+				},
 			},
 			this.sync,
 		);
@@ -1170,7 +1194,9 @@ export class Info implements InfoProps {
 		}
 
 		if (preview_mode) {
-			toast.error("Preview mode not supported in file_ingest, use file_ingest_preview");
+			toast.error(
+				"Preview mode not supported in file_ingest, use file_ingest_preview",
+			);
 			return;
 		}
 
@@ -1193,7 +1219,7 @@ export class Info implements InfoProps {
 				if (sourceIdByReqId) {
 					this.ingestionProgress.set(sourceIdByReqId, progress);
 				}
-				
+
 				if (progress % 5 === 0 || progress === 100) {
 					this.render();
 				}
@@ -1202,12 +1228,14 @@ export class Info implements InfoProps {
 			onError: (err) => {
 				toast.error(`Ingestion of ${file.name} failed: ${err}`);
 				this.delLoading(id);
-			}
+			},
 		});
 
 		SmartSocket.Class.instance.conce(
 			SmartSocket.Message.Type.COLLAB_CREATE,
-			(m) => m.payload.obj.type === "context" && (m.req_id === id || m.payload.obj.name === context),
+			(m) =>
+				m.payload.obj.type === "context" &&
+				(m.req_id === id || m.payload.obj.name === context),
 			(m) => {
 				// Global listener in Application.context.tsx handles state addition
 				console.log(m.payload, "Context created for ingest", id);
@@ -1220,9 +1248,9 @@ export class Info implements InfoProps {
 			(m) => {
 				if (m.payload.obj.type !== "source") return false;
 				if (m.req_id === id) return true;
-				
-				const mName = m.payload.obj.name || '';
-				const fName = file.name || '';
+
+				const mName = m.payload.obj.name || "";
+				const fName = file.name || "";
 				if (mName === fName) return true;
 				try {
 					return decodeURIComponent(mName) === decodeURIComponent(fName);
@@ -1232,7 +1260,10 @@ export class Info implements InfoProps {
 			},
 			(m) => {
 				// loading state is local to this ingest
-				this.setLoading(m.req_id || id, m.payload.obj.id as unknown as Source.Id);
+				this.setLoading(
+					m.req_id || id,
+					m.payload.obj.id as unknown as Source.Id,
+				);
 				// Global listener handles state addition
 			},
 		);
@@ -1254,9 +1285,12 @@ export class Info implements InfoProps {
 
 				const files = Refractor.array(...this.app.target.files);
 				const fileId = events[0]["gulp.source_id"] as Source.Id;
-				
+
 				// Update lightweight progress map
-				this.ingestionProgress.set(fileId, (this.ingestionProgress.get(fileId) || 0) + events.length);
+				this.ingestionProgress.set(
+					fileId,
+					(this.ingestionProgress.get(fileId) || 0) + events.length,
+				);
 
 				const exist = files.findIndex((f) => f.id === fileId);
 				const file = files[exist];
@@ -1269,16 +1303,19 @@ export class Info implements InfoProps {
 						const fileId = events[0]["gulp.source_id"] as Source.Id;
 						const all = Source.Entity.events(this.app, fileId);
 
-						const timestamp = all.length > 0 ? {
-							min: all[all.length - 1].timestamp,
-							max: all[0].timestamp,
-						} : { min: Date.now(), max: Date.now() };
+						const timestamp =
+							all.length > 0
+								? {
+										min: all[all.length - 1].gulp_timestamp,
+										max: all[0].gulp_timestamp,
+									}
+								: { min: Date.now(), max: Date.now() };
 
 						// Finalize progress (clean up map)
 						this.ingestionProgress.delete(fileId);
 
 						const reqId = m.req_id;
-						this.batchUpdate(draft => {
+						this.batchUpdate((draft) => {
 							const files = Refractor.array(...draft.target.files);
 							const exist = files.findIndex((f) => f.id === fileId);
 							const file = files[exist];
@@ -1296,7 +1333,7 @@ export class Info implements InfoProps {
 								});
 
 								draft.target.files = files;
-								
+
 								draft.timeline.frame = {
 									min: Math.min(...files.map((f) => f.timestamp.min)),
 									max: Math.max(...files.map((f) => f.timestamp.max)),
@@ -1305,9 +1342,9 @@ export class Info implements InfoProps {
 
 							// Inline delLoading logic to avoid extra setState
 							draft.general.loadings.byRequestId.delete(reqId);
-							const fileEntry = [...draft.general.loadings.byFileId.entries()].find(
-								(e) => e[1] === reqId,
-							)?.[0];
+							const fileEntry = [
+								...draft.general.loadings.byFileId.entries(),
+							].find((e) => e[1] === reqId)?.[0];
 							if (fileEntry) {
 								draft.general.loadings.byFileId.delete(fileEntry);
 							}
@@ -1317,32 +1354,34 @@ export class Info implements InfoProps {
 							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 							sid,
 						);
-						
+
 						const finalFile = Source.Entity.id(this.app, fileId);
 						if (finalFile) {
-							toast.success(`Source ${finalFile.name} has been ingested successfully`, {
-								description: `Total amount of documents is: ${all.length}`,
-								richColors: true,
-								icon: <Icon name="Check" />,
-							});
+							toast.success(
+								`Source ${finalFile.name} has been ingested successfully`,
+								{
+									description: `Total amount of documents is: ${all.length}`,
+									richColors: true,
+									icon: <Icon name="Check" />,
+								},
+							);
 						}
 					})();
 				} else {
 					if (file) {
-						toast.success(
-							`Buffering events...`,
-							{
-								description: `${accumulatedCount} events buffered for source ${file.name}`,
-								id: `ingest-toast-${file.id}`,
-							},
-						);
+						toast.success(`Buffering events...`, {
+							description: `${accumulatedCount} events buffered for source ${file.name}`,
+							id: `ingest-toast-${file.id}`,
+						});
 					}
 				}
 			},
 		);
 	};
 
-	file_ingest_preview = async (options: FileEntity.IngestOptions): Promise<Doc.Type[]> => {
+	file_ingest_preview = async (
+		options: FileEntity.IngestOptions,
+	): Promise<Doc.Type[]> => {
 		const { file, settings } = options;
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) return [];
@@ -1353,17 +1392,20 @@ export class Info implements InfoProps {
 			offset: settings.offset ?? 0,
 			plugin_params: {
 				...settings.custom_parameters,
-				preview_mode: true
-			}
+				preview_mode: true,
+			},
 		};
 
-		formData.append("payload", new Blob([JSON.stringify(payload)], { type: "application/json" }));
+		formData.append(
+			"payload",
+			new Blob([JSON.stringify(payload)], { type: "application/json" }),
+		);
 		formData.append("f", file, file.name);
 
 		const query = {
 			plugin: settings.plugin?.split(".")[0],
 			operation_id: operation.id,
-			context_name: 'preview',
+			context_name: "preview",
 			ws_id: this.app.general.ws_id,
 		};
 
@@ -1426,8 +1468,7 @@ export class Info implements InfoProps {
 			this.sync,
 		);
 
-	events_add = (newEvents: Doc.Type[]) =>
-		Doc.Entity.add(this.app, newEvents);
+	events_add = (newEvents: Doc.Type[]) => Doc.Entity.add(this.app, newEvents);
 
 	events_add_async = async (newEvents: Doc.Type[]) => {
 		await Doc.Entity.addAsync(this.app, newEvents);
@@ -1491,17 +1532,19 @@ export class Info implements InfoProps {
 		}
 		let notes: Note.Type[] = [];
 		const fetch = async (offset = 0) => {
-			const fetched = await api<Note.Type[]>("/note_list", {
-				method: "POST",
-				query: {
-					operation_id: operation.id,
-				},
-				body: {
-					source_ids: files,
-					offset,
-					limit: 500,
-				},
-			});
+			const fetched = Note.Entity.normalize(
+				await api<Note.Type[]>("/note_list", {
+					method: "POST",
+					query: {
+						operation_id: operation.id,
+					},
+					body: {
+						source_ids: files,
+						offset,
+						limit: 500,
+					},
+				}),
+			);
 
 			if (fetched.length) {
 				notes = [...notes, ...fetched].sort(
@@ -1623,8 +1666,8 @@ export class Info implements InfoProps {
 		api<Note.Type>("/note_create", {
 			method: "POST",
 			query: {
-				operation_id: event["gulp.operation_id"],
-				context_id: event["gulp.context_id"],
+				operation_id: Doc.Entity.operationId(this.app, event),
+				context_id: Doc.Entity.contextId(this.app, event),
 				source_id: event["gulp.source_id"],
 				ws_id: this.app.general.ws_id,
 				name,
@@ -1643,24 +1686,23 @@ export class Info implements InfoProps {
 			body: {
 				text,
 				tags,
-				doc: Doc.Entity.toDoc(event),
+				doc: Doc.Entity.toDoc(this.app, event),
 			},
 		}).then((note) => {
-			const idx = DataStore.notes.findIndex(n => n.id === note.id);
+			note = Note.Entity.normalize_note(note);
+			const idx = DataStore.notes.findIndex((n) => n.id === note.id);
 			if (idx !== -1) {
 				DataStore.notes[idx] = note;
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
 			} else {
 				DataStore.notes.push(note);
-				DataStore.notes.sort((a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a));
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
+				DataStore.notes.sort(
+					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+				);
 			}
+			Note.Entity.invalidateCache();
+			RenderEngine.clearAllCaches();
+			DataStore.markDirty();
+			this.render();
 		});
 
 	note_edit = ({
@@ -1701,13 +1743,15 @@ export class Info implements InfoProps {
 			body: {
 				text,
 				tags,
-				doc: Doc.Entity.toDoc(event),
+				doc: Doc.Entity.toDoc(this.app, event),
 			},
 		}).then((note) => {
 			const index = DataStore.notes.findIndex((n) => n.id === note.id);
 			if (index !== -1) {
 				DataStore.notes[index] = note;
-				DataStore.notes.sort((a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a));
+				DataStore.notes.sort(
+					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+				);
 				Note.Entity.invalidateCache();
 				RenderEngine.clearAllCaches();
 				DataStore.markDirty();
@@ -1774,7 +1818,7 @@ export class Info implements InfoProps {
 			method: "POST",
 			query: {
 				doc_id_from: event._id,
-				operation_id: event["gulp.operation_id"],
+				operation_id: Doc.Entity.operationId(this.app, event),
 				ws_id: this.app.general.ws_id,
 				name,
 				glyph_id,
@@ -2225,7 +2269,8 @@ export class Info implements InfoProps {
 	sync = async () => {
 		await this.mapping_file_list();
 
-		const operationsData = await api<GulpDataset.QueryOperations.Summary>("/query_operations");
+		const operationsData =
+			await api<GulpDataset.QueryOperations.Summary>("/query_operations");
 		if (!operationsData || !Array.isArray(operationsData)) return;
 
 		const operations: Operation.Type[] = [];
@@ -2279,7 +2324,7 @@ export class Info implements InfoProps {
 								time_created: Date.now(),
 								time_updated: Date.now(),
 							} as Source.Type,
-							srcData
+							srcData,
 						);
 						if (src) files.push(src);
 					});
@@ -2718,7 +2763,10 @@ export class Info implements InfoProps {
 		key: S,
 	) => {
 		this.setInfo((_info) => {
-			const resolvedValue = typeof value === 'function' ? (value as any)(_info[section][key]) : value;
+			const resolvedValue =
+				typeof value === "function"
+					? (value as any)(_info[section][key])
+					: value;
 			this.app = {
 				..._info,
 				[section]: {
@@ -2744,7 +2792,7 @@ export class Info implements InfoProps {
 	 *                  Modify the draft's sections directly (e.g., draft.target.notes = []).
 	 */
 	batchUpdate = (updater: (draft: App.Type) => void) => {
-		this.setInfo(prev => {
+		this.setInfo((prev) => {
 			// Shallow-clone top-level sections so the updater can safely mutate them
 			const next: App.Type = {
 				...prev,
