@@ -220,8 +220,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const canvasWidth = this.ctx.canvas.width;
 
 		DataStore.links.forEach((link) => {
+			const linkedDocIds = [link.doc_id_from, ...link.doc_ids];
 			if (
-				link.doc_ids.some(
+				linkedDocIds.some(
 					(id) =>
 						!Source.Entity.selected(this.info.app).find(
 							(s) =>
@@ -333,7 +334,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 				this.ctx.lineTo(end.x, end.y);
 				this.ctx.stroke();
 			}
-		} catch (_) {}
+		} catch (_) { }
 	};
 
 	/* HIGHLIGHT MANAGEMENT */
@@ -510,7 +511,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		if (
 			RenderEngine[CacheKey].notes[Hardcode.Scale] ===
-				this.info.app.timeline.scale &&
+			this.info.app.timeline.scale &&
 			RenderEngine[CacheKey].notes.has(file)
 		) {
 			return {
@@ -521,7 +522,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		const groups: Group[] = [];
 
-		for (let i = 0; i < notes.length; ) {
+		for (let i = 0; i < notes.length;) {
 			const groupEndIdx = this.findGroupEndIndexDirect(notes, i);
 			groups.push([i, groupEndIdx - i + 1]);
 			i = groupEndIdx + 1;
@@ -649,8 +650,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		dots: Dot[];
 	} => {
 		const dots: Dot[] = [];
+		const linkedDocIds = [link.doc_id_from, ...link.doc_ids];
 
-		link.doc_ids.forEach((id) => {
+		linkedDocIds.forEach((id) => {
 			const e = Doc.Entity.id(this.info.app, id);
 			if (!e) {
 				return;
@@ -661,14 +663,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 			const x = this.getPixelPosition(
 				e.gulp_timestamp +
-					(Source.Entity.id(this.info.app, e["gulp.source_id"])?.settings
-						.offset || 0),
+				(Source.Entity.id(this.info.app, e["gulp.source_id"])?.settings
+					.offset || 0),
 			);
 			const y = index * 48 + 20 - this.scrollY || 0;
 			const color =
 				link.color ||
 				stringToHexColor(
-					link.doc_ids
+					linkedDocIds
 						.map((id) =>
 							Source.Entity.id(
 								this.info.app,
@@ -806,7 +808,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		if (textWidth > maxWidth - padding * 2) {
 			while (
 				this.ctx.measureText(displayText + "...").width >
-					maxWidth - padding * 2 &&
+				maxWidth - padding * 2 &&
 				displayText.length > 0
 			) {
 				displayText = displayText.slice(0, -1);
@@ -823,7 +825,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		return (
 			this.info.app.timeline.frame.min +
 			(pixelOffset / visibleWidth) *
-				(this.info.app.timeline.frame.max - this.info.app.timeline.frame.min)
+			(this.info.app.timeline.frame.max - this.info.app.timeline.frame.min)
 		);
 	};
 

@@ -18,6 +18,7 @@ import { Boundary } from './context/Boundary.context'
 import { Theme } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
+import { RendererTest } from './page/RendererTest.page'
 
 const root = document.getElementById('root')
 
@@ -53,6 +54,8 @@ function Root() {
     }
   };
 
+  const isRendererTest = window.location.pathname === '/renderer-test';
+
   return (
     <>
       <Theme.Provider>
@@ -60,7 +63,7 @@ function Root() {
         <Application.Provider>
           <Boundary.Provider>
             <Extension.Provider>
-              <Main />
+              {isRendererTest ? <RendererTest.Page /> : <Main />}
             </Extension.Provider>
           </Boundary.Provider>
         </Application.Provider>
