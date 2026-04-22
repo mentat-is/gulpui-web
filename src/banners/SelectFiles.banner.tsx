@@ -20,6 +20,13 @@ import { Button } from "@/ui/Button";
 import { Input } from "@/ui/Input";
 import { Spinner } from "@/ui/Spinner";
 import { Skeleton } from "@/ui/Skeleton";
+import { Progress } from "@/ui/Progress";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/ui/Tooltip";
 import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { Operation } from "@/entities/Operation";
@@ -48,7 +55,14 @@ export namespace SelectFiles {
 			return () => clearInterval(timer);
 		}, []);
 
-		const update = <T,>(values: Set<T>, vault: SetState<Set<T>>) => vault(new Set(values));
+		useEffect(() => {
+			const operation = Operation.Entity.selected(app);
+			if (!operation) return;
+			Info.resync_ingestion_state(operation.id);
+		}, []);
+
+		const update = <T,>(values: Set<T>, vault: SetState<Set<T>>) =>
+			vault(new Set(values));
 
 		function all(select: boolean) {
 			const operation = Operation.Entity.selected(app);
@@ -278,6 +292,25 @@ export namespace SelectFiles {
 						Unselect all
 					</Button>
 				</Stack>
+				{Info.activeUploads.size > 0 && (
+					<div className={s.uploadingSection}>
+						{[...Info.activeUploads.entries()].map(
+							([reqId, { filename, percent }]) => (
+								<Stack
+									key={reqId}
+									className={s.uploadingRow}
+								>
+									<Spinner size={16} />
+									<Label value={filename} />
+									<Progress
+										value={percent}
+										className={s.uploadProgress}
+									/>
+								</Stack>
+							),
+						)}
+					</div>
+				)}
 				<div
 					className={s.wrapper}
 					style={{ flex: 1, minHeight: 0, position: "relative" }}
@@ -528,7 +561,16 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 				onCheckedChange={(checked) => setFile(file.id, !!checked)}
 			/>
 			{Source.Entity.getRequestType(app, file) === Request.Prefix.INGESTION && (
-				<Spinner size={16} />
+				<TooltipProvider>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<span>
+								<Spinner size={16} />
+							</span>
+						</TooltipTrigger>
+						<TooltipContent>Processing</TooltipContent>
+					</Tooltip>
+				</TooltipProvider>
 			)}
 			<Label value={file.name} />
 			<FileIsTooBig />

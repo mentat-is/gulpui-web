@@ -186,6 +186,11 @@ export class Info implements InfoProps {
 
 	private static _latestInstance: Info | null = null;
 	public ingestionProgress = new Map<Source.Id, number>();
+	public activeUploads = new Map<
+		Request.Id,
+		{ filename: string; percent: number }
+	>();
+	private _resyncPollTimer: ReturnType<typeof setInterval> | null = null;
 
 	constructor({ app, setInfo, timeline }: InfoProps) {
 		this.app = app;
@@ -475,6 +480,69 @@ export class Info implements InfoProps {
 			body: flt,
 			...options,
 		});
+
+	resync_ingestion_state = async (
+		_operationId: Operation.Id,
+	): Promise<void> => {
+		// INGEST_SOURCE_DONE is broadcast — all connected clients receive it.
+		// Register cleanup FIRST so it fires even if the source is marked loading after this point.
+		SmartSocket.Class.instance.con(
+			SmartSocket.Message.Type.INGEST_SOURCE_DONE,
+			(m) => {
+				const sourceId = m.payload?.["gulp.source_id"] as Source.Id | undefined;
+				return !!(sourceId && this.app.general.loadings.byFileId.has(sourceId));
+			},
+			(m) => {
+				const sourceId = m.payload?.["gulp.source_id"] as Source.Id;
+				const reqId = this.app.general.loadings.byFileId.get(sourceId);
+				if (reqId) this.delLoading(reqId);
+				this.ingestionProgress.delete(sourceId);
+				// Final poll to surface the definitive source total
+				this.sync().catch(() => {});
+			},
+		);
+
+		try {
+			const requests = (await this.request_list()) as any[] | undefined;
+			const ongoing = (requests || []).filter(
+				(r) => r.status === Request.Status.ONGOING,
+			);
+
+			// Track whether we're a reconnecting watcher (not the original uploader)
+			let watcherSources = 0;
+
+			for (const req of ongoing) {
+				const sources: [string, string][] | undefined = req.data?.sources;
+				const sourceId = sources?.[0]?.[1] as Source.Id | undefined;
+				if (!sourceId) continue;
+
+				if (!this.app.general.loadings.byFileId.has(sourceId)) {
+					this.setLoading(req.id as Request.Id, sourceId);
+					watcherSources++;
+				}
+			}
+
+			// Only poll if we had to register loading state ourselves (reconnect scenario)
+			if (watcherSources === 0) return;
+
+			// sync() fetches live source totals from OpenSearch — the same thing Reload does
+			if (this._resyncPollTimer) clearInterval(this._resyncPollTimer);
+			this._resyncPollTimer = setInterval(async () => {
+				if (this.app.general.loadings.byFileId.size === 0) {
+					clearInterval(this._resyncPollTimer!);
+					this._resyncPollTimer = null;
+					return;
+				}
+				try {
+					await this.sync();
+				} catch {
+					/* best-effort */
+				}
+			}, 5000);
+		} catch (_) {
+			// Best-effort — failure is non-fatal
+		}
+	};
 
 	create_start_ingestion = (
 		bridge_id: string,
@@ -1201,6 +1269,9 @@ export class Info implements InfoProps {
 		}
 
 		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
+		this.activeUploads.set(id, { filename: file.name, percent: 0 });
+
+		let isCompletedOrError = false;
 
 		ingestWorkerManager.enqueue({
 			req_id: id,
@@ -1213,12 +1284,8 @@ export class Info implements InfoProps {
 			token: Internal.Settings.token,
 			frame,
 			onProgress: (progress, bytes) => {
-				this.ingestionProgress.set(id as unknown as Source.Id, progress);
-				// Also try to find by source id if available
-				const sourceIdByReqId = this.app.general.loadings.byRequestId.get(id);
-				if (sourceIdByReqId) {
-					this.ingestionProgress.set(sourceIdByReqId, progress);
-				}
+				if (isCompletedOrError) return;
+				this.activeUploads.set(id, { filename: file.name, percent: progress });
 
 				if (progress % 5 === 0 || progress === 100) {
 					this.render();
@@ -1226,8 +1293,11 @@ export class Info implements InfoProps {
 				if (setProgress) setProgress(progress);
 			},
 			onError: (err) => {
+				isCompletedOrError = true;
 				toast.error(`Ingestion of ${file.name} failed: ${err}`);
+				this.activeUploads.delete(id);
 				this.delLoading(id);
+				this.render();
 			},
 		});
 
@@ -1259,6 +1329,10 @@ export class Info implements InfoProps {
 				}
 			},
 			(m) => {
+				isCompletedOrError = true;
+				// Upload is confirmed done once the backend creates the source object
+				this.activeUploads.delete(id);
+				this.render();
 				// loading state is local to this ingest
 				this.setLoading(
 					m.req_id || id,

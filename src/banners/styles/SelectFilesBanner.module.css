@@ -127,3 +127,32 @@
 .smallButton > div {
 	--spinner-size: 14px !important;
 }
+
+.uploadingSection {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 4px 0;
+}
+
+.uploadingRow {
+	padding: 4px 8px;
+	background: var(--background-100);
+	border: 1px solid var(--gray-400);
+	border-radius: 6px;
+}
+
+.uploadingRow label {
+	font-size: 11px;
+	font-family: var(--font-mono);
+	color: var(--accent);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	flex: 1;
+}
+
+.uploadProgress {
+	width: 80px;
+	flex-shrink: 0;
+}

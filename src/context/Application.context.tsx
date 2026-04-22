@@ -1,290 +1,362 @@
-import { useState, createContext, useContext, ReactNode, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Info } from '@/class/Info';
-import '@/class/API'
-import { DisplayEventDialog } from '@/dialogs/Event.dialog'
-import { toast } from 'sonner'
-import { SetState } from '@/class/API'
-import { Hint } from '@/dialogs/Hint.dialog';
-import { SmartSocket } from '@/class/SmartSocket';
-import { Note } from '@/entities/Note';
-import { Link } from '@/entities/Link';
-import { Source } from '@/entities/Source';
-import { App } from '@/entities/App';
-import { DataStore } from '@/store/DataStore';
-import { RenderEngine } from '@/class/RenderEngine';
-
+import {
+	useState,
+	createContext,
+	useContext,
+	ReactNode,
+	useRef,
+	useEffect,
+	useMemo,
+	useCallback,
+} from "react";
+import { Info } from "@/class/Info";
+import "@/class/API";
+import { DisplayEventDialog } from "@/dialogs/Event.dialog";
+import { toast } from "sonner";
+import { SetState } from "@/class/API";
+import { Hint } from "@/dialogs/Hint.dialog";
+import { SmartSocket } from "@/class/SmartSocket";
+import { Note } from "@/entities/Note";
+import { Link } from "@/entities/Link";
+import { Source } from "@/entities/Source";
+import { App } from "@/entities/App";
+import { DataStore } from "@/store/DataStore";
+import { RenderEngine } from "@/class/RenderEngine";
 
 function _({ children }: { children: ReactNode }) {
-  const [app, setInfo] = useState<App.Type>(App.Base);
-  const [banner, setBanner] = useState<ReactNode>()
-  const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />)
-  const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
-  const [highlightsOverlay, setHighlightsOverlay] = useState<React.ReactNode>(null);
+	const [app, setInfo] = useState<App.Type>(App.Base);
+	const [banner, setBanner] = useState<ReactNode>();
+	const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />);
+	const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
+	const [highlightsOverlay, setHighlightsOverlay] =
+		useState<React.ReactNode>(null);
 
-  /**
-   * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
-   * instead of being recreated on every render with `new Info(...)`.
-   *
-   * ARCHITECTURAL DECISION: Previously, `const instance = new Info(...)` ran on
-   * every render of the root Provider — every state change anywhere in the app
-   * created a new Info object. Since `instance` was in the WS useEffect deps,
-   * this also caused WS listeners to be re-registered on every render.
-   * Using useRef avoids this: the instance is created once, and only its
-   * mutable props (app, setInfo, scrollX, etc.) are updated each render.
-   */
-  const infoRef = useRef<Info | null>(null);
-  if (!infoRef.current) {
-    infoRef.current = new Info({ app, setInfo, timeline });
-  } else {
-    infoRef.current.app = app;
-    infoRef.current.setInfo = setInfo;
-  }
-  const instance = infoRef.current;
+	/**
+	 * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
+	 * instead of being recreated on every render with `new Info(...)`.
+	 *
+	 * ARCHITECTURAL DECISION: Previously, `const instance = new Info(...)` ran on
+	 * every render of the root Provider — every state change anywhere in the app
+	 * created a new Info object. Since `instance` was in the WS useEffect deps,
+	 * this also caused WS listeners to be re-registered on every render.
+	 * Using useRef avoids this: the instance is created once, and only its
+	 * mutable props (app, setInfo, scrollX, etc.) are updated each render.
+	 */
+	const infoRef = useRef<Info | null>(null);
+	if (!infoRef.current) {
+		infoRef.current = new Info({ app, setInfo, timeline });
+	} else {
+		infoRef.current.app = app;
+		infoRef.current.setInfo = setInfo;
+	}
+	const instance = infoRef.current;
 
-  /**
-   * STABLE REFS FOR WS CALLBACKS: These refs hold the latest `app` and `instance`
-   * without being useEffect dependencies. The WS callbacks read `.current` at call
-   * time, ensuring they always access fresh state while the effect itself only
-   * re-runs when the WebSocket connection changes (deps: [ws]).
-   *
-   * Without this pattern, `[ws, app, instance]` as deps caused the WS listeners
-   * to be unregistered and re-registered on every single state update in the entire app.
-   */
-  const appRef = useRef(app);
-  appRef.current = app;
-  const instanceRef = useRef(instance);
-  instanceRef.current = instance;
+	/**
+	 * STABLE REFS FOR WS CALLBACKS: These refs hold the latest `app` and `instance`
+	 * without being useEffect dependencies. The WS callbacks read `.current` at call
+	 * time, ensuring they always access fresh state while the effect itself only
+	 * re-runs when the WebSocket connection changes (deps: [ws]).
+	 *
+	 * Without this pattern, `[ws, app, instance]` as deps caused the WS listeners
+	 * to be unregistered and re-registered on every single state update in the entire app.
+	 */
+	const appRef = useRef(app);
+	appRef.current = app;
+	const instanceRef = useRef(instance);
 
-  const ws = useMemo(() => {
-    if (!app.general.user) {
-      return;
-    }
+	const ws = useMemo(() => {
+		if (!app.general.user) {
+			return;
+		}
 
-    return new SmartSocket.Class(app.general.ws_id);
-    return new SmartSocket.Class(app.general.ws_id);
-  }, [app.general.server, app.general.ws_id, app.general.user?.id]);
+		return new SmartSocket.Class(app.general.ws_id);
+	}, [app.general.server, app.general.ws_id, app.general.user?.id]);
 
-  useEffect(() => {
-    if (!SmartSocket.Class.instance)
-      return;
+	useEffect(() => {
+		if (!SmartSocket.Class.instance) return;
 
-    /**
-     * Handles incoming collab create messages (context/source) from WebSocket.
-     * This ensures the UI is reactive to new items regardless of who created them.
-     */
-    const collabCreateCallback = (message: any) => {
-      const obj = message.payload.obj;
-      if (obj.type === 'context') {
-        setInfo(prev => {
-          if (prev.target.contexts.find(c => c.id === obj.id)) return prev;
-          return { ...prev, target: { ...prev.target, contexts: [...prev.target.contexts, obj] } };
-        });
-      } else if (obj.type === 'source') {
-        setInfo(prev => {
-          if (prev.target.files.find(f => f.id === obj.id)) return prev;
-          return { ...prev, target: { ...prev.target, files: [...prev.target.files, Source.Entity.normalize(prev, obj)] } };
-        });
-      }
-    }
+		/**
+		 * Handles incoming collab create messages (context/source) from WebSocket.
+		 * This ensures the UI is reactive to new items regardless of who created them.
+		 */
+		const collabCreateCallback = (message: any) => {
+			const obj = message.payload.obj;
+			if (obj.type === "context") {
+				setInfo((prev) => {
+					if (prev.target.contexts.find((c) => c.id === obj.id)) return prev;
+					return {
+						...prev,
+						target: {
+							...prev.target,
+							contexts: [...prev.target.contexts, obj],
+						},
+					};
+				});
+			} else if (obj.type === "source") {
+				setInfo((prev) => {
+					if (prev.target.files.find((f) => f.id === obj.id)) return prev;
+					return {
+						...prev,
+						target: {
+							...prev.target,
+							files: [...prev.target.files, Source.Entity.normalize(prev, obj)],
+						},
+					};
+				});
+			}
+		};
 
-    /**
-     * Handles incoming collab update messages (note/link/highlight) from WebSocket.
-     */
-    const collabUpdateCallback = (message: any) => {
-      switch (message.payload.obj.type) {
-        case 'note': {
-          const note: Note.Type = message.payload.obj;
-          const idx = DataStore.notes.findIndex(n => n.id === note.id);
-          if (idx >= 0) {
-            DataStore.notes[idx] = note;
-          } else {
-            DataStore.notes.push(note);
-          }
-          Note.Entity.invalidateCache();
-          RenderEngine.clearAllCaches();
-          DataStore.markDirty();
-          instanceRef.current.render();
-          return;
-        }
-        case 'link': {
-          const link: Link.Type = message.payload.obj;
-          const idx = DataStore.links.findIndex(l => l.id === link.id);
-          if (idx >= 0) {
-            DataStore.links[idx] = link;
-          } else {
-            DataStore.links.push(link);
-          }
-          RenderEngine.clearAllCaches();
-          DataStore.markDirty();
-          instanceRef.current.render();
-          return;
-        }
-        case 'highlight':
-          instanceRef.current.highlights_reload();
-          return;
-      }
-    }
+		/**
+		 * Handles incoming collab update messages (note/link/highlight) from WebSocket.
+		 */
+		const collabUpdateCallback = (message: any) => {
+			switch (message.payload.obj.type) {
+				case "note": {
+					const note: Note.Type = message.payload.obj;
+					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
+					if (idx >= 0) {
+						DataStore.notes[idx] = note;
+					} else {
+						DataStore.notes.push(note);
+					}
+					Note.Entity.invalidateCache();
+					RenderEngine.clearAllCaches();
+					DataStore.markDirty();
+					instanceRef.current.render();
+					return;
+				}
+				case "link": {
+					const link: Link.Type = message.payload.obj;
+					const idx = DataStore.links.findIndex((l) => l.id === link.id);
+					if (idx >= 0) {
+						DataStore.links[idx] = link;
+					} else {
+						DataStore.links.push(link);
+					}
+					RenderEngine.clearAllCaches();
+					DataStore.markDirty();
+					instanceRef.current.render();
+					return;
+				}
+				case "highlight":
+					instanceRef.current.highlights_reload();
+					return;
+			}
+		};
 
-    /**
-     * Handles collab delete messages from WebSocket.
-     */
-    const collabDeleteCallback = (message: any) => {
-      const id: any = message.payload.id;
+		/**
+		 * Handles collab delete messages from WebSocket.
+		 */
+		const collabDeleteCallback = (message: any) => {
+			const id: any = message.payload.id;
 
-      // Check notes
-      const noteIdx = DataStore.notes.findIndex(n => n.id === id);
-      if (noteIdx >= 0) {
-        DataStore.notes.splice(noteIdx, 1);
-        Note.Entity.invalidateCache();
-        RenderEngine.clearAllCaches();
-        DataStore.markDirty();
-        instanceRef.current.render();
-        return;
-      }
+			// Check notes
+			const noteIdx = DataStore.notes.findIndex((n) => n.id === id);
+			if (noteIdx >= 0) {
+				DataStore.notes.splice(noteIdx, 1);
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				instanceRef.current.render();
+				return;
+			}
 
-      // Check links
-      const linkIdx = DataStore.links.findIndex(l => l.id === id);
-      if (linkIdx >= 0) {
-        DataStore.links.splice(linkIdx, 1);
-        RenderEngine.clearAllCaches();
-        DataStore.markDirty();
-        instanceRef.current.render();
-        return;
-      }
+			// Check links
+			const linkIdx = DataStore.links.findIndex((l) => l.id === id);
+			if (linkIdx >= 0) {
+				DataStore.links.splice(linkIdx, 1);
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				instanceRef.current.render();
+				return;
+			}
 
-      setInfo(prev => {
-        // Context/Source deletion (Low frequency)
-        if (prev.target.contexts.some(c => c.id === id)) {
-          return {
-            ...prev,
-            target: { ...prev.target, contexts: prev.target.contexts.filter(c => c.id !== id) }
-          };
-        }
-        if (prev.target.files.some(f => f.id === id)) {
-          return {
-            ...prev,
-            target: { ...prev.target, files: prev.target.files.filter(f => f.id !== id) }
-          };
-        }
-        return prev;
-      });
-    }
+			setInfo((prev) => {
+				// Context/Source deletion (Low frequency)
+				if (prev.target.contexts.some((c) => c.id === id)) {
+					return {
+						...prev,
+						target: {
+							...prev.target,
+							contexts: prev.target.contexts.filter((c) => c.id !== id),
+						},
+					};
+				}
+				if (prev.target.files.some((f) => f.id === id)) {
+					return {
+						...prev,
+						target: {
+							...prev.target,
+							files: prev.target.files.filter((f) => f.id !== id),
+						},
+					};
+				}
+				return prev;
+			});
+		};
 
-    const reqeustStatsCallback = (message: any) => instanceRef.current.request_add(message.payload.obj);
+		const reqeustStatsCallback = (message: any) =>
+			instanceRef.current.request_add(message.payload.obj);
 
-    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_CREATE, collabCreateCallback);
-    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
-    SmartSocket.Class.instance.on(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
-    const sid = SmartSocket.Class.instance.con(SmartSocket.Message.Type.STATS_UPDATE, m => m.payload.obj.type === 'request_stats', reqeustStatsCallback);
+		SmartSocket.Class.instance.on(
+			SmartSocket.Message.Type.COLLAB_CREATE,
+			collabCreateCallback,
+		);
+		SmartSocket.Class.instance.on(
+			SmartSocket.Message.Type.COLLAB_UPDATE,
+			collabUpdateCallback,
+		);
+		SmartSocket.Class.instance.on(
+			SmartSocket.Message.Type.COLLAB_DELETE,
+			collabDeleteCallback,
+		);
+		const sid = SmartSocket.Class.instance.con(
+			SmartSocket.Message.Type.STATS_UPDATE,
+			(m) => m.payload.obj.type === "request_stats",
+			reqeustStatsCallback,
+		);
 
-    return () => {
-      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_CREATE, collabCreateCallback);
-      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_UPDATE, collabUpdateCallback);
-      SmartSocket.Class.instance.off(SmartSocket.Message.Type.COLLAB_DELETE, collabDeleteCallback);
-      SmartSocket.Class.instance.coff(SmartSocket.Message.Type.STATS_UPDATE, sid);
-    }
-  }, [ws]);
+		return () => {
+			SmartSocket.Class.instance.off(
+				SmartSocket.Message.Type.COLLAB_CREATE,
+				collabCreateCallback,
+			);
+			SmartSocket.Class.instance.off(
+				SmartSocket.Message.Type.COLLAB_UPDATE,
+				collabUpdateCallback,
+			);
+			SmartSocket.Class.instance.off(
+				SmartSocket.Message.Type.COLLAB_DELETE,
+				collabDeleteCallback,
+			);
+			SmartSocket.Class.instance.coff(
+				SmartSocket.Message.Type.STATS_UPDATE,
+				sid,
+			);
+		};
+	}, [ws]);
 
-  const spawnBanner = useCallback((banner: React.ReactNode) => {
-    setBanner(banner)
-    document.querySelector('body')?.classList.add('no-scroll')
-  }, [])
+	const spawnBanner = useCallback((banner: React.ReactNode) => {
+		setBanner(banner);
+		document.querySelector("body")?.classList.add("no-scroll");
+	}, []);
 
-  // @ts-ignore
-  window.spawnBanner = spawnBanner;
+	// @ts-ignore
+	window.spawnBanner = spawnBanner;
 
-  const destroyBanner = useCallback(() => {
-    setBanner(() => null)
-    document.querySelector('body')?.classList.remove('no-scroll')
-  }, [])
+	const destroyBanner = useCallback(() => {
+		setBanner(() => null);
+		document.querySelector("body")?.classList.remove("no-scroll");
+	}, []);
 
-  const spawnDialog = useCallback((dialog: React.ReactNode) => {
-    setDialog(dialog)
-  }, [])
+	const spawnDialog = useCallback((dialog: React.ReactNode) => {
+		setDialog(dialog);
+	}, []);
 
-  const props = useMemo(() => ({
-    spawnBanner,
-    destroyBanner,
-    banner,
-    spawnDialog,
-    dialog,
-    app,
-    setInfo,
-    Info: instance,
-    timeline,
-    highlightsOverlay,
-    setHighlightsOverlay
-  }), [spawnBanner, destroyBanner, banner, spawnDialog, dialog, app, setInfo, instance, timeline, highlightsOverlay, setHighlightsOverlay])
+	const props = useMemo(
+		() => ({
+			spawnBanner,
+			destroyBanner,
+			banner,
+			spawnDialog,
+			dialog,
+			app,
+			setInfo,
+			Info: instance,
+			timeline,
+			highlightsOverlay,
+			setHighlightsOverlay,
+		}),
+		[
+			spawnBanner,
+			destroyBanner,
+			banner,
+			spawnDialog,
+			dialog,
+			app,
+			setInfo,
+			instance,
+			timeline,
+			highlightsOverlay,
+			setHighlightsOverlay,
+		],
+	);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!app.timeline.target || banner) return;
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+		if (!app.timeline.target || banner) return;
 
-    const key = event.key.toLowerCase()
+		const key = event.key.toLowerCase();
 
-    // check for input etc... 
-    const target = event.target as HTMLElement;
-    const tag = target.tagName.toLowerCase();
-    if (['input', 'textarea', 'select'].includes(tag) || target.isContentEditable) return;
+		// check for input etc...
+		const target = event.target as HTMLElement;
+		const tag = target.tagName.toLowerCase();
+		if (
+			["input", "textarea", "select"].includes(tag) ||
+			target.isContentEditable
+		)
+			return;
 
-    const events = Source.Entity.events(app, app.timeline.target['gulp.source_id'])
+		const events = Source.Entity.events(
+			app,
+			app.timeline.target["gulp.source_id"],
+		);
 
-    if (['d', 'a', 'arrowright', 'arrowleft'].includes(key)) {
-      const delta = (key === 'a' || key === 'arrowleft') ? 1 : -1
-      const target = instance.setTimelineTarget(delta)
-      if (target) {
-        spawnDialog(<DisplayEventDialog event={target} />)
-      } else {
-        toast(`Cannot open ${delta > 0 ? 'previous' : 'next'} event`)
-      }
-    } else if (['ф', 'а'].includes(key)) {
-      toast('Use English letters A and D for scrolling');
-    }
-    else if (key === 'end') {
-      event.preventDefault()
-      const target = instance.setTimelineTarget(events[0])
-      spawnDialog(<DisplayEventDialog event={target} />)
-    } else if (key === 'home') {
-      event.preventDefault()
-      const target = instance.setTimelineTarget(events[events.length - 1])
-      spawnDialog(<DisplayEventDialog event={target} />)
-    }
-  }
+		if (["d", "a", "arrowright", "arrowleft"].includes(key)) {
+			const delta = key === "a" || key === "arrowleft" ? 1 : -1;
+			const target = instance.setTimelineTarget(delta);
+			if (target) {
+				spawnDialog(<DisplayEventDialog event={target} />);
+			} else {
+				toast(`Cannot open ${delta > 0 ? "previous" : "next"} event`);
+			}
+		} else if (["ф", "а"].includes(key)) {
+			toast("Use English letters A and D for scrolling");
+		} else if (key === "end") {
+			event.preventDefault();
+			const target = instance.setTimelineTarget(events[0]);
+			spawnDialog(<DisplayEventDialog event={target} />);
+		} else if (key === "home") {
+			event.preventDefault();
+			const target = instance.setTimelineTarget(events[events.length - 1]);
+			spawnDialog(<DisplayEventDialog event={target} />);
+		}
+	};
 
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown as any)
+	useEffect(() => {
+		window.addEventListener("keydown", handleKeyDown as any);
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown as any)
-    }
-  }, [dialog, app.timeline.target, banner])
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown as any);
+		};
+	}, [dialog, app.timeline.target, banner]);
 
-  return (
-    <Application.Context.Provider value={props}>
-      {children}
-    </Application.Context.Provider>
-  )
+	return (
+		<Application.Context.Provider value={props}>
+			{children}
+		</Application.Context.Provider>
+	);
 }
 
 export namespace Application {
-  export namespace Context {
-    export interface Props {
-      spawnBanner: (banner: React.ReactNode) => void
-      destroyBanner: () => void
-      banner: React.ReactNode
-      spawnDialog: (dialog: React.ReactNode) => void
-      dialog: React.ReactNode
-      app: App.Type
-      setInfo: (info: App.Type) => void
-      Info: Info
-      timeline: React.RefObject<HTMLDivElement>
-      highlightsOverlay: React.ReactNode,
-      setHighlightsOverlay: SetState<React.ReactNode>;
-    }
-  }
+	export namespace Context {
+		export interface Props {
+			spawnBanner: (banner: React.ReactNode) => void;
+			destroyBanner: () => void;
+			banner: React.ReactNode;
+			spawnDialog: (dialog: React.ReactNode) => void;
+			dialog: React.ReactNode;
+			app: App.Type;
+			setInfo: (info: App.Type) => void;
+			Info: Info;
+			timeline: React.RefObject<HTMLDivElement>;
+			highlightsOverlay: React.ReactNode;
+			setHighlightsOverlay: SetState<React.ReactNode>;
+		}
+	}
 
-  export const Context = createContext<Application.Context.Props>(null!);
+	export const Context = createContext<Application.Context.Props>(null!);
 
-  export const use = (): Application.Context.Props => useContext(Application.Context);
+	export const use = (): Application.Context.Props =>
+		useContext(Application.Context);
 
-  export const Provider = _;
+	export const Provider = _;
 }
