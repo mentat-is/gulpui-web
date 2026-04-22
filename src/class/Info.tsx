@@ -344,6 +344,9 @@ export class Info implements InfoProps {
 				this.setLoading(req_id, file.id);
 			}
 			const bufferedEvents: Doc.Type[] = [];
+			let lastFlushTime = 0;
+      let flushChain: Promise<void> = Promise.resolve();
+      const FLUSH_INTERVAL_MS = 300;
 
 			const sid = SmartSocket.Class.instance.con(
 				SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -353,19 +356,19 @@ export class Info implements InfoProps {
 				(m) => {
 					const events = Doc.Entity.normalize(m.payload.docs ?? []);
 					bufferedEvents.push(...events);
-
+					if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+            const toFlush = bufferedEvents.splice(0);
+            lastFlushTime = Date.now();
+            flushChain = flushChain.then(() => this.events_add_async(toFlush));
+          }
 					if (m.payload.last) {
-						(async () => {
-							if (bufferedEvents.length > 0) {
-								await this.events_add_async(bufferedEvents);
-							}
-
-							this.delLoading(req_id);
-							SmartSocket.Class.instance.coff(
-								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-								sid,
-							);
-						})();
+						flushChain.then(() => {
+              this.delLoading(req_id);
+              SmartSocket.Class.instance.coff(
+                SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+                sid,
+              );
+						});
 					}
 				},
 			);
@@ -698,6 +701,9 @@ export class Info implements InfoProps {
 				}
 
 				const bufferedEvents: Doc.Type[] = [];
+				let lastFlushTime = 0;
+        let flushChain: Promise<void> = Promise.resolve();
+        const FLUSH_INTERVAL_MS = 300;
 
 				const sid = SmartSocket.Class.instance.con(
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -707,18 +713,20 @@ export class Info implements InfoProps {
 					(m) => {
 						const events = Doc.Entity.normalize(m.payload.docs ?? []);
 						bufferedEvents.push(...events);
+						 if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+              const toFlush = bufferedEvents.splice(0);
+              lastFlushTime = Date.now();
+              flushChain = flushChain.then(() => this.events_add_async(toFlush));
+            }
 
 						if (m.payload.last) {
-							(async () => {
-								if (bufferedEvents.length > 0) {
-									await this.events_add_async(bufferedEvents);
-								}
-								this.delLoading(req_id);
-								SmartSocket.Class.instance.coff(
-									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-									sid,
-								);
-							})();
+							 flushChain.then(() => {
+                this.delLoading(req_id);
+                SmartSocket.Class.instance.coff(
+                  SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+                  sid,
+                );
+							});
 						}
 					},
 				);
@@ -830,6 +838,9 @@ export class Info implements InfoProps {
 				}
 
 				const bufferedEvents: Doc.Type[] = [];
+				let lastFlushTime = 0;
+        let flushChain: Promise<void> = Promise.resolve();
+        const FLUSH_INTERVAL_MS = 300;
 
 				const sid = SmartSocket.Class.instance.con(
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -840,12 +851,13 @@ export class Info implements InfoProps {
 						const events = Doc.Entity.normalize(m.payload.docs ?? []);
 						bufferedEvents.push(...events);
 
+						if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+              const toFlush = bufferedEvents.splice(0);
+              lastFlushTime = Date.now();
+              flushChain = flushChain.then(() => this.events_add_async(toFlush));
+						}
 						if (m.payload.last) {
-							(async () => {
-								if (bufferedEvents.length > 0) {
-									await this.events_add_async(bufferedEvents);
-								}
-
+              flushChain.then(() => {
 								this.delLoading(req_id);
 								SmartSocket.Class.instance.coff(
 									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -864,7 +876,7 @@ export class Info implements InfoProps {
 									}
 								}
 								this.render();
-							})();
+							});
 						}
 					},
 				);
@@ -1344,6 +1356,9 @@ export class Info implements InfoProps {
 
 		const bufferedEvents: Doc.Type[] = [];
 		let accumulatedCount = 0;
+		let lastFlushTime = 0;
+    let flushChain: Promise<void> = Promise.resolve();
+    const FLUSH_INTERVAL_MS = 300;
 
 		const sid = SmartSocket.Class.instance.con(
 			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -1368,14 +1383,16 @@ export class Info implements InfoProps {
 
 				const exist = files.findIndex((f) => f.id === fileId);
 				const file = files[exist];
+        if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+          const toFlush = bufferedEvents.splice(0);
+          lastFlushTime = Date.now();
+          flushChain = flushChain.then(() => this.events_add_async(toFlush));
+        }
 
 				if (m.payload.last) {
-					(async () => {
-						// Batched addition of all incoming events at the end of ingestion
-						await this.events_add_async(bufferedEvents);
-
-						const fileId = events[0]["gulp.source_id"] as Source.Id;
-						const all = Source.Entity.events(this.app, fileId);
+					flushChain.then(() => {
+						const finalFileId = events[0]["gulp.source_id"] as Source.Id;
+            const all = Source.Entity.events(this.app, finalFileId);
 
 						const timestamp =
 							all.length > 0
@@ -1384,14 +1401,12 @@ export class Info implements InfoProps {
 										max: all[0].gulp_timestamp,
 									}
 								: { min: Date.now(), max: Date.now() };
-
-						// Finalize progress (clean up map)
-						this.ingestionProgress.delete(fileId);
+						this.ingestionProgress.delete(finalFileId);
 
 						const reqId = m.req_id;
 						this.batchUpdate((draft) => {
 							const files = Refractor.array(...draft.target.files);
-							const exist = files.findIndex((f) => f.id === fileId);
+							const exist = files.findIndex((f) => f.id === finalFileId);
 							const file = files[exist];
 
 							if (exist !== -1 && file) {
@@ -1429,7 +1444,7 @@ export class Info implements InfoProps {
 							sid,
 						);
 
-						const finalFile = Source.Entity.id(this.app, fileId);
+						const finalFile = Source.Entity.id(this.app, finalFileId);
 						if (finalFile) {
 							toast.success(
 								`Source ${finalFile.name} has been ingested successfully`,
@@ -1440,11 +1455,12 @@ export class Info implements InfoProps {
 								},
 							);
 						}
-					})();
+
+					});
 				} else {
 					if (file) {
-						toast.success(`Buffering events...`, {
-							description: `${accumulatedCount} events buffered for source ${file.name}`,
+						toast.success(`Streaming events...`, {
+							description: `${accumulatedCount} events received for source ${file.name}`,
 							id: `ingest-toast-${file.id}`,
 						});
 					}

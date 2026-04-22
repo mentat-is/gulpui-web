@@ -175,10 +175,10 @@ export namespace Doc {
 				// Sort if we modified the list, optimize performance
 				if (hasChanges) {
 					Doc.Entity.sort(existingEvents);
+					DataStore.markDirty();
 				}
 			});
-
-			DataStore.markDirty();
+			
 			return DataStore.events;
 		};
 
@@ -241,10 +241,9 @@ export namespace Doc {
 				// Fast in-place native sort if changes were made
 				if (hasChanges) {
 					Doc.Entity.sort(existingEvents);
+					DataStore.markDirty();
 				}
 			}
-
-			DataStore.markDirty();
 			return DataStore.events;
 		};
 
