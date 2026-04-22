@@ -38,9 +38,9 @@ import s from './styles/RendererTest.module.css';
 
 /** Total number of synthetic documents to inject. */
 const DEFAULT_TOTAL_DOCS = 1_000_000;
-const MIN_TOTAL_DOCS = 100_000;
+const MIN_TOTAL_DOCS = 0;
 const MAX_TOTAL_DOCS = 100_000_000;
-const DOC_STEP = 250_000;
+const DOC_STEP = 100_000;
 
 /** How many docs to inject per animation frame / tick. */
 const CHUNK_SIZE = 10_000;
@@ -50,9 +50,9 @@ const TIME_WINDOW_MS = 7 * 24 * 60 * 60 * 1000; // 1 week
 
 /** Optional synthetic notes to render on top of docs. */
 const DEFAULT_TOTAL_NOTES = 50;
-const MIN_TOTAL_NOTES = 10;
-const MAX_TOTAL_NOTES = 100_000;
-const NOTE_STEP = 10;
+const MIN_TOTAL_NOTES = 0;
+const MAX_TOTAL_NOTES = 1_000_000;
+const NOTE_STEP = 1;
 
 /** Optional synthetic links to render between docs. */
 const DEFAULT_TOTAL_LINKS = 5;
@@ -64,7 +64,7 @@ const LINK_FOCUS_SCALE = 2.5;
 /** Optional synthetic highlights to render across the timeline. */
 const DEFAULT_TOTAL_HIGHLIGHTS = 5;
 const MIN_TOTAL_HIGHLIGHTS = 0;
-const MAX_TOTAL_HIGHLIGHTS = 1_000;
+const MAX_TOTAL_HIGHLIGHTS = 1_000_000;
 const HIGHLIGHT_STEP = 1;
 
 /** Number of simulated sources. */
@@ -248,13 +248,28 @@ function PerfOverlay({
     onTargetHighlightsChange,
 }: PerfOverlayProps) {
     const pct = stats.total > 0 ? ((stats.injected / stats.total) * 100).toFixed(1) : '0.0';
+    const maxNotesForDocs = Math.max(MIN_TOTAL_NOTES, Math.min(MAX_TOTAL_NOTES, targetDocs));
+    const maxLinksForDocs = Math.max(MIN_TOTAL_LINKS, Math.min(MAX_TOTAL_LINKS, targetDocs));
     return (
         <div className={s.overlay}>
             <div className={s.badge}>RENDERER TEST</div>
             <div className={s.controls}>
-                <label className={s.sliderLabel} htmlFor='renderer-doc-slider'>
-                    Documents: {targetDocs.toLocaleString()}
-                </label>
+                <div className={s.sliderRow}>
+                    <label className={s.sliderLabel} htmlFor='renderer-doc-slider'>Documents</label>
+                    <input
+                        id='renderer-doc-number'
+                        className={s.numberInput}
+                        type='number'
+                        min={MIN_TOTAL_DOCS}
+                        max={MAX_TOTAL_DOCS}
+                        step={DOC_STEP}
+                        value={targetDocs}
+                        onChange={(e) => {
+                            const v = Math.max(MIN_TOTAL_DOCS, Math.min(MAX_TOTAL_DOCS, Number(e.target.value) || MIN_TOTAL_DOCS));
+                            onTargetDocsChange(v);
+                        }}
+                    />
+                </div>
                 <input
                     id='renderer-doc-slider'
                     className={s.slider}
@@ -274,15 +289,32 @@ function PerfOverlay({
                     />
                     Render notes
                 </label>
-                <label className={s.sliderLabel} htmlFor='renderer-note-slider'>
-                    Notes: {targetNotes.toLocaleString()}
-                </label>
+                <div className={s.sliderRow}>
+                    <label className={s.sliderLabel} htmlFor='renderer-note-slider'>Notes</label>
+                    <input
+                        id='renderer-note-number'
+                        className={s.numberInput}
+                        type='number'
+                        min={MIN_TOTAL_NOTES}
+                        max={maxNotesForDocs}
+                        step={NOTE_STEP}
+                        value={targetNotes}
+                        disabled={!renderNotes}
+                        onChange={(e) => {
+                            const v = Math.max(
+                                MIN_TOTAL_NOTES,
+                                Math.min(maxNotesForDocs, Number(e.target.value) || MIN_TOTAL_NOTES),
+                            );
+                            onTargetNotesChange(v);
+                        }}
+                    />
+                </div>
                 <input
                     id='renderer-note-slider'
                     className={s.slider}
                     type='range'
                     min={MIN_TOTAL_NOTES}
-                    max={MAX_TOTAL_NOTES}
+                    max={maxNotesForDocs}
                     step={NOTE_STEP}
                     value={targetNotes}
                     disabled={!renderNotes}
@@ -297,15 +329,32 @@ function PerfOverlay({
                     />
                     Render links
                 </label>
-                <label className={s.sliderLabel} htmlFor='renderer-link-slider'>
-                    Links: {targetLinks.toLocaleString()}
-                </label>
+                <div className={s.sliderRow}>
+                    <label className={s.sliderLabel} htmlFor='renderer-link-slider'>Links</label>
+                    <input
+                        id='renderer-link-number'
+                        className={s.numberInput}
+                        type='number'
+                        min={MIN_TOTAL_LINKS}
+                        max={maxLinksForDocs}
+                        step={LINK_STEP}
+                        value={targetLinks}
+                        disabled={!renderLinks}
+                        onChange={(e) => {
+                            const v = Math.max(
+                                MIN_TOTAL_LINKS,
+                                Math.min(maxLinksForDocs, Number(e.target.value) || MIN_TOTAL_LINKS),
+                            );
+                            onTargetLinksChange(v);
+                        }}
+                    />
+                </div>
                 <input
                     id='renderer-link-slider'
                     className={s.slider}
                     type='range'
                     min={MIN_TOTAL_LINKS}
-                    max={MAX_TOTAL_LINKS}
+                    max={maxLinksForDocs}
                     step={LINK_STEP}
                     value={targetLinks}
                     disabled={!renderLinks}
@@ -320,9 +369,23 @@ function PerfOverlay({
                     />
                     Render highlights
                 </label>
-                <label className={s.sliderLabel} htmlFor='renderer-highlight-slider'>
-                    Highlights: {targetHighlights.toLocaleString()}
-                </label>
+                <div className={s.sliderRow}>
+                    <label className={s.sliderLabel} htmlFor='renderer-highlight-slider'>Highlights</label>
+                    <input
+                        id='renderer-highlight-number'
+                        className={s.numberInput}
+                        type='number'
+                        min={MIN_TOTAL_HIGHLIGHTS}
+                        max={MAX_TOTAL_HIGHLIGHTS}
+                        step={HIGHLIGHT_STEP}
+                        value={targetHighlights}
+                        disabled={!renderHighlights}
+                        onChange={(e) => {
+                            const v = Math.max(MIN_TOTAL_HIGHLIGHTS, Math.min(MAX_TOTAL_HIGHLIGHTS, Number(e.target.value) || MIN_TOTAL_HIGHLIGHTS));
+                            onTargetHighlightsChange(v);
+                        }}
+                    />
+                </div>
                 <input
                     id='renderer-highlight-slider'
                     className={s.slider}
@@ -335,7 +398,7 @@ function PerfOverlay({
                     onChange={(e) => onTargetHighlightsChange(Number(e.target.value))}
                 />
                 <button className={s.restartButton} onClick={onRestart} type='button'>
-                    run!
+                    Run!
                 </button>
             </div>
             <div className={s.row}>
@@ -417,8 +480,8 @@ export namespace RendererTest {
             }
 
             const totalDocs = targetDocs;
-            const totalNotes = targetNotes;
-            const totalLinks = targetLinks;
+            const totalNotes = Math.min(targetNotes, targetDocs);
+            const totalLinks = Math.min(targetLinks, targetDocs);
             const totalHighlights = targetHighlights;
             const nowTs = Date.now();
             const frameMinTs = nowTs - TIME_WINDOW_MS;
@@ -467,7 +530,7 @@ export namespace RendererTest {
             });
             setIsRunning(true);
 
-            setInfo((prev: App.Type) => ({
+            setInfo(((prev: App.Type) => ({
                 ...prev,
                 general: {
                     ...prev.general,
@@ -499,7 +562,7 @@ export namespace RendererTest {
                         max: frameMaxTs,
                     },
                 },
-            }));
+            })) as unknown as App.Type);
 
             const buildSyntheticNotes = (): Note.Type[] => {
                 if (!renderNotes) {
@@ -653,12 +716,18 @@ export namespace RendererTest {
                 const highlights: Highlight.Type[] = [];
 
                 for (let i = 0; i < highlightCount; i++) {
-                    const normalized = highlightCount <= 1 ? 0 : i / (highlightCount - 1);
-                    const maxDuration = Math.max(1, Math.floor(span / 10));
-                    const minDuration = Math.max(1, Math.floor(span / 100));
-                    const duration = minDuration + ((i * 7919) % Math.max(1, maxDuration - minDuration + 1));
-                    const available = Math.max(1, span - duration);
-                    const start = docsMinTs + Math.floor(normalized * available);
+                    const linear = highlightCount <= 1 ? 0 : i / (highlightCount - 1);
+                    const golden = (i * 0.61803398875) % 1;
+                    const centerPercentile = Math.max(0, Math.min(1, (linear * 0.7) + (golden * 0.3)));
+
+                    const minDuration = Math.max(60_000, Math.floor(span / 200));
+                    const maxDuration = Math.max(minDuration, Math.floor(span / 8));
+                    const ratio = 0.05 + ((((i * 2654435761) >>> 0) % 1000) / 1000) * 0.35;
+                    const ratioDuration = Math.floor(span * ratio);
+                    const duration = Math.max(minDuration, Math.min(maxDuration, ratioDuration));
+
+                    const center = docsMinTs + Math.floor(centerPercentile * span);
+                    const start = Math.max(docsMinTs, Math.min(docsMaxTs - 1, center - Math.floor(duration / 2)));
                     const end = Math.min(docsMaxTs, start + duration);
 
                     highlights.push({
@@ -719,7 +788,7 @@ export namespace RendererTest {
                     Note.Entity.invalidateCache();
                     DataStore.markDirty();
 
-                    setInfo((prev: App.Type) => ({
+                    setInfo(((prev: App.Type) => ({
                         ...prev,
                         target: {
                             ...prev.target,
@@ -733,7 +802,7 @@ export namespace RendererTest {
                             scale: nextScale,
                             target: linkFocusDoc ?? prev.timeline.target,
                         },
-                    }));
+                    })) as unknown as App.Type);
 
                     if (linkFocusDoc) {
                         requestAnimationFrame(() => {
@@ -803,23 +872,42 @@ export namespace RendererTest {
             setRunKey((v) => v + 1);
         };
 
+        const handleTargetDocsChange = (docs: number) => {
+            const boundedDocs = Math.max(MIN_TOTAL_DOCS, Math.min(MAX_TOTAL_DOCS, docs));
+            setTargetDocs(boundedDocs);
+            setTargetNotes((prev) => Math.min(prev, Math.max(MIN_TOTAL_NOTES, boundedDocs)));
+            setTargetLinks((prev) => Math.min(prev, Math.max(MIN_TOTAL_LINKS, boundedDocs)));
+        };
+
+        const handleTargetNotesChange = (value: number) => {
+            const notesUpperBound = Math.max(MIN_TOTAL_NOTES, Math.min(MAX_TOTAL_NOTES, targetDocs));
+            const bounded = Math.max(MIN_TOTAL_NOTES, Math.min(notesUpperBound, value));
+            setTargetNotes(bounded);
+        };
+
+        const handleTargetLinksChange = (value: number) => {
+            const linksUpperBound = Math.max(MIN_TOTAL_LINKS, Math.min(MAX_TOTAL_LINKS, targetDocs));
+            const bounded = Math.max(MIN_TOTAL_LINKS, Math.min(linksUpperBound, value));
+            setTargetLinks(bounded);
+        };
+
         return (
             <Stack gap={12} style={{ height: '100vh', width: '100vw', position: 'relative' }} ai='stretch'>
                 <Timeline />
                 <PerfOverlay
                     stats={perfStats}
                     targetDocs={targetDocs}
-                    onTargetDocsChange={setTargetDocs}
+                    onTargetDocsChange={handleTargetDocsChange}
                     onRestart={restartRun}
                     isRunning={isRunning}
                     renderNotes={renderNotes}
                     onRenderNotesChange={setRenderNotes}
                     targetNotes={targetNotes}
-                    onTargetNotesChange={setTargetNotes}
+                    onTargetNotesChange={handleTargetNotesChange}
                     renderLinks={renderLinks}
                     onRenderLinksChange={setRenderLinks}
                     targetLinks={targetLinks}
-                    onTargetLinksChange={setTargetLinks}
+                    onTargetLinksChange={handleTargetLinksChange}
                     renderHighlights={renderHighlights}
                     onRenderHighlightsChange={setRenderHighlights}
                     targetHighlights={targetHighlights}
