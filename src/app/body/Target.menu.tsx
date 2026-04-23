@@ -43,6 +43,15 @@ export function TargetMenu({ source }: TargetMenuProps) {
     }, 300)
   }
 
+  const cancelRequest = (source: Source.Type ) => {
+    const request = app.general.loadings.byFileId.get(source.id);
+    
+    if (request) {
+      Info.request_cancel(request);
+    }
+  }
+  
+
   const showEvent = (last = false) => {
     const events = Source.Entity.events(app, source);
     if (!events.length) {
@@ -76,6 +85,7 @@ export function TargetMenu({ source }: TargetMenuProps) {
       </TooltipProvider>
       <ContextMenuSeparator />
       <ContextMenuItem onClick={() => Info.refetch({ ids: source.id })} icon="RefreshClockwise">Refetch</ContextMenuItem>
+      <ContextMenuItem onClick={() => cancelRequest(source)} icon="StopCircle">Stop</ContextMenuItem>
       <ContextMenuSub>
         <ContextMenuSubTrigger icon="Cpu">Render engine</ContextMenuSubTrigger>
         <ContextMenuSubContent>
