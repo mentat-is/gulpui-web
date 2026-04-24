@@ -66,6 +66,11 @@ export namespace GulpDataset {
 			id?: Source.Id;
 			refetchKeys?: Array<keyof Doc.Type>;
 			addToHistory?: boolean;
+			create_notes?: boolean;
+			notes_color?: string;
+			notes_tags?: string[];
+			notes_glyph_id?: Glyph.Id;
+			name?: string;
 		}
 	}
 	export namespace QueryOperations {
@@ -171,6 +176,11 @@ interface RefetchOptions {
 	ids?: Arrayed<Source.Id>;
 	refetchKeys?: Record<Source.Id, Array<keyof Doc.Type>>;
 	addToHistory?: boolean;
+	create_notes?: boolean;
+	notes_color?: string;
+	notes_tags?: string[];
+	notes_glyph_id?: Glyph.Id;
+	name?: string;
 }
 
 interface InfoProps {
@@ -203,6 +213,11 @@ export class Info implements InfoProps {
 		ids: _ids = Source.Entity.selected(this.app).map((f) => f.id),
 		refetchKeys,
 		addToHistory,
+		create_notes,
+		notes_color,
+		notes_tags,
+		notes_glyph_id,
+		name,
 	}: RefetchOptions = {}) => {
 		const files: Source.Type[] = Parser.array(_ids).map((id) =>
 			Source.Entity.id(this.app, id),
@@ -226,6 +241,11 @@ export class Info implements InfoProps {
 				preview: false,
 				refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
 				addToHistory,
+				create_notes,
+				notes_color,
+				notes_tags,
+				notes_glyph_id,
+				name,
 			});
 		});
 	};
@@ -785,6 +805,11 @@ export class Info implements InfoProps {
 			id,
 			refetchKeys,
 			addToHistory,
+			create_notes,
+			notes_color,
+			notes_tags,
+			notes_glyph_id,
+			name,
 		}: GulpDataset.QueryGulp.Options,
 	) => {
 		const operation = Operation.Entity.selected(this.app);
@@ -822,6 +847,14 @@ export class Info implements InfoProps {
 
 		if (addToHistory) {
 			body.q_options.add_to_history = true;
+		}
+		if (create_notes && !preview) {
+			body.q_options.create_notes = true;
+
+			body.q_options.notes_color= notes_color ?? Default.Color.NOTE;
+			body.q_options.notes_tags= notes_tags;
+			body.q_options.notes_glyph_id= notes_glyph_id;
+			body.q_options.name= name;			
 		}
 
 		const resp = await api<any>(
@@ -903,6 +936,26 @@ export class Info implements InfoProps {
 						// }
 					},
 				);
+
+				if (create_notes) {
+					SmartSocket.Class.instance.con(
+						SmartSocket.Message.Type.COLLAB_CREATE,
+						(m) => m.req_id === req_id,
+						(m) => {
+							if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
+								const newItems = m.payload.obj.filter(
+									(item: any) => item.type === "note",
+								) as Note.Type[];
+								if (newItems.length > 0) {
+									newItems.forEach(note => this.AddNoteToDataStore(note));
+									toast.success(`Fetched ${newItems.length} notes`, {
+										richColors: true,
+									});
+								}
+							}
+						},
+					);
+				}
 
 				if (id) {
 					this.setLoading(req_id, id);
@@ -1779,20 +1832,7 @@ export class Info implements InfoProps {
 				doc: Doc.Entity.toDoc(this.app, event),
 			},
 		}).then((note) => {
-			note = Note.Entity.normalize_note(note);
-			const idx = DataStore.notes.findIndex((n) => n.id === note.id);
-			if (idx !== -1) {
-				DataStore.notes[idx] = note;
-			} else {
-				DataStore.notes.push(note);
-				DataStore.notes.sort(
-					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-				);
-			}
-			Note.Entity.invalidateCache();
-			RenderEngine.clearAllCaches();
-			DataStore.markDirty();
-			this.render();
+			note = this.AddNoteToDataStore(note);
 		});
 
 	note_edit = ({
@@ -2332,6 +2372,24 @@ export class Info implements InfoProps {
 		}, 0);
 	};
 
+	private AddNoteToDataStore(note: Note.Type) {
+		note = Note.Entity.normalize_note(note);
+		const idx = DataStore.notes.findIndex((n) => n.id === note.id);
+		if (idx !== -1) {
+			DataStore.notes[idx] = note;
+		} else {
+			DataStore.notes.push(note);
+			DataStore.notes.sort(
+				(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a)
+			);
+		}
+		Note.Entity.invalidateCache();
+		RenderEngine.clearAllCaches();
+		DataStore.markDirty();
+		this.render();
+		return note;
+	}
+
 	async session_list(
 		user = this.app.general.user,
 	): Promise<Internal.Session.Data[]> {
@@ -2806,15 +2864,10 @@ export class Info implements InfoProps {
 					(m) => m.req_id === req_id,
 					(m) => {
 						if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
-							const currentNotes = this.app.target.notes;
 							const newItems = m.payload.obj.filter(
 								(item) => item.type === "note",
-							);
-							this.setInfoByKey(
-								[...currentNotes, ...newItems],
-								"target",
-								"notes",
-							);
+							) as Note.Type[];
+							newItems.forEach(note => this.AddNoteToDataStore(note));							
 							toast.success(`Fetched ${newItems.length} notes`, {
 								richColors: true,
 							});

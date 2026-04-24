@@ -16,6 +16,7 @@ import { Source } from '@/entities/Source'
 import { Filter } from '@/entities/Filter'
 import { Operation } from '@/entities/Operation'
 import { Doc } from '@/entities/Doc'
+import { Glyph } from '@/entities/Glyph'
 import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Textarea } from '@/ui/Textarea'
@@ -25,6 +26,11 @@ interface FilterFileBannerProps extends Banner.Props {
   sources: Source.Type[]
   query?: Query.Type
   keys?: string[]
+  create_notes?: boolean;
+  notes_color?: string;
+  notes_tags?: string[];
+  notes_glyph_id?: Glyph.Id;
+  name?: string;
 }
 
 /**
@@ -42,6 +48,11 @@ export function FilterFileBanner({
   sources: initSources,
   query: initQuery,
   keys: initKeys,
+  create_notes: initCreateNotes,
+  notes_color,
+  notes_tags,
+  notes_glyph_id,
+  name,
   ...props
 }: FilterFileBannerProps) {
   const { app, Info, spawnBanner, destroyBanner } = Application.use()
@@ -49,6 +60,7 @@ export function FilterFileBanner({
   const [loading, setLoading] = useState(false)
   const [files, setFiles] = useState<Source.Type[]>(initSources)
   const [flaggedOnly, setFlaggedOnly] = useState(false);
+  const [createNotesChecked, setCreateNotesChecked] = useState(!!initCreateNotes);
   // -- State Management --
   // Builder Mode State
   const [query, setQuery] = useState<Query.Type>(initQuery ?? { string: '', filters: [] })
@@ -239,13 +251,21 @@ export function FilterFileBanner({
       Info.filters_cache(files)
       // This saves the query (including mode/raw) to app state
       Info.setQuery(files, finalQuery)
-      await Info.refetch({ ids: files.map(f => f.id), addToHistory: true })
+      await Info.refetch({
+        ids: files.map(f => f.id),
+        addToHistory: true,
+        create_notes: createNotesChecked,
+        notes_color,
+        notes_tags,
+        notes_glyph_id,
+        name,
+      })
       Info.render()
       props.back ? props.back() : destroyBanner()
     } finally {
       setLoading(false)
     }
-  }, [Info, files, getFinalQuery, props, destroyBanner])
+  }, [Info, files, getFinalQuery, createNotesChecked, notes_color, notes_tags, notes_glyph_id, name, props, destroyBanner])
 
   // -- Render Components --
 
@@ -323,6 +343,11 @@ export function FilterFileBanner({
                     sources={files}
                     query={finalQuery}
                     keys={keys}
+                    create_notes={initCreateNotes}
+                    notes_color={notes_color}
+                    notes_tags={notes_tags}
+                    notes_glyph_id={notes_glyph_id}
+                    name={name}
                     {...props}
                   />
                 )
@@ -466,6 +491,23 @@ export function FilterFileBanner({
           </>
         )}
       </Stack>
+      {initCreateNotes !== undefined && initCreateNotes !== null && initCreateNotes !== false && (
+        <>
+          <Separator style={{ margin: '8px 0' }} />
+          <Stack style={{ margin: '8px 0' }}>
+            <Checkbox
+              id='create_notes'
+              checked={createNotesChecked}
+              onCheckedChange={(v) => setCreateNotesChecked(!!v)}
+            />
+            <Label
+              htmlFor='create_notes'
+              value='If flagged for any documents found gulp add a note.'
+              cursor='pointer'
+            />
+          </Stack>
+        </>
+      )}
     </Banner>
   )
 }
