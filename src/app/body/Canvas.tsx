@@ -152,8 +152,6 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 		render.ruler.draw();
 
-		Highlights.list().map((v) => render.highlight(...v));
-
 		// Y-AXIS VIEWPORT CULLING: Each source row is 48px tall. With more sources
 		// and vertical scrolling, most rows are off-screen. By checking the Y position
 		// against the canvas bounds (with 48px buffer for partial visibility), we skip
@@ -179,6 +177,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		});
 
 		render.target();
+		render.drawHighlights();
 
 		if (force) {
 			RenderEngine.reset("notes");

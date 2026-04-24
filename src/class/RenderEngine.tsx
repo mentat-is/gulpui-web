@@ -19,6 +19,7 @@ import { Internal } from "@/entities/addon/Internal";
 import { Color } from "@/entities/Color";
 import { Operation } from "@/entities/Operation";
 import { DataStore } from "@/store/DataStore";
+import { Highlight } from "@/entities/Highlight";
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = (NOTE_SIZE / 2) * -1;
@@ -31,6 +32,7 @@ const mappedColors: Record<string, string> = {
 	teal: "#0d8c7d29",
 	purple: "#763da929",
 	pink: "#df267029",
+	gray: "#80808029",
 };
 
 interface RenderEngineConstructor {
@@ -350,7 +352,20 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		const height = this.ctx.canvas.height - 20 * 2 * (index + 1);
 
-		this.ctx.fillRect(x, y, width, height);
+	this.ctx.fillRect(x, y, width, height);
+	};
+
+	public drawHighlights = () => {
+		const highlights = Highlight.Entity.selected(this.info.app);
+		const depths = Highlight.Entity.computeDepths(highlights);
+
+		highlights.forEach((highlight, i) => {
+			const xStart = this.getPixelPosition(highlight.time_range[0]);
+			const xEnd = this.getPixelPosition(highlight.time_range[1]);
+			const width = xEnd - xStart;
+
+			this.highlight(xStart, width, depths[i], highlight.color);
+		});
 	};
 
 	private getYForDoc = (id: Doc.Id): { y: number; t: number; o: number } => {

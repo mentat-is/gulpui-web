@@ -91,6 +91,7 @@
 .highlight > div {
   width: 100%;
   padding: 2px;
+  pointer-events: auto;
 }
 .highlight > div::after {
   content: '';

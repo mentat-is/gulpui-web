@@ -181,9 +181,9 @@ export namespace Highlights {
     export function Overlay({ frame, fixed, layoutWidth, ...props }: Highlights.List.Overlay.Props) {
       const { app } = Application.use();
 
-      const highlights = useMemo(() => Highlight.Entity.selected(app), [app.target.highlights, app.target.operations]);
+      const highlights = useMemo(() => Highlight.Entity.selected(app), [app.timeline.renderVersion, app.target.operations]);
 
-      const computedDepths = useMemo(() => computeDepths(highlights), [highlights]);
+      const computedDepths = useMemo(() => Highlight.Entity.computeDepths(highlights), [highlights]);
 
       return (
         <Stack pos='absolute' className={cn(s.overlay, s.ignore)} {...props}>
@@ -194,32 +194,6 @@ export namespace Highlights {
           })}
         </Stack>
       )
-    }
-
-    function computeDepths(highlights: Highlight.Type[]): number[] {
-      const depths: number[] = [];
-
-      for (let i = 0; i < highlights.length; i++) {
-        const { time_range: [startA, endA] } = highlights[i];
-
-        const usedDepths = new Set<number>();
-
-        for (let j = 0; j < i; j++) {
-          const { time_range: [startB, endB] } = highlights[j];
-          const overlaps =
-            !(endA <= startB || startA >= endB);
-
-          if (overlaps) {
-            usedDepths.add(depths[j]);
-          }
-        }
-
-        let d = 0;
-        while (usedDepths.has(d)) d++;
-        depths.push(d);
-      }
-
-      return depths;
     }
   }
 
