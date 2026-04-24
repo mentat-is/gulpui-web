@@ -865,7 +865,7 @@ export namespace RendererTest {
                 cancelled = true;
                 cancelAnimationFrame(animFrameRef.current);
             };
-            // eslint-disable-next-line react-hooks/exhaustive-deps
+            // eslint-disable-next-line
         }, [runKey]);
 
         const restartRun = () => {
