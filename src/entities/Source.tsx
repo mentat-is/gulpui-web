@@ -394,39 +394,45 @@ export namespace Source {
         );
       }
 
+      const [isOpen, setIsOpen] = useState(false);
+
       return (
-        <UISelect.Multi.Root value={selected} onValueChange={selected => setSelected(selected as Source.Id[])}>
+        <UISelect.Multi.Root value={selected} onValueChange={selected => setSelected(selected as Source.Id[])} onOpenChange={setIsOpen}>
           <UISelect.Trigger>
             <UISelect.Multi.Value icon={['File', 'Files']} placeholder={placeholder ?? 'Select Sources'} text={len => typeof len === 'number' ? `Selected ${len} files` : Source.Entity.id(app, len as Source.Id).name} />
           </UISelect.Trigger>
           <UISelect.Content>
-            <UISelect.Multi.ToggleAll
-              label={isAllSelected ? "Deselect all" : "Select all"}
-              checked={isAllSelected}
-              onToggle={(val) => setSelected(val ? all.map(s => s.id) : [])}
-            />
-            {availableContexts.map((context, index) => {
-              const contextSources = all.filter(s => s.context_id === context.id);
-              const selectedContextSources = contextSources.filter(s => selected.includes(s.id));
-              const isAllContextSelected = selectedContextSources.length === contextSources.length;
-              const isIndeterminate = selectedContextSources.length > 0 && !isAllContextSelected;
+            {isOpen && (
+              <>
+                <UISelect.Multi.ToggleAll
+                  label={isAllSelected ? "Deselect all" : "Select all"}
+                  checked={isAllSelected}
+                  onToggle={(val) => setSelected(val ? all.map(s => s.id) : [])}
+                />
+                {availableContexts.map((context, index) => {
+                  const contextSources = all.filter(s => s.context_id === context.id);
+                  const selectedContextSources = contextSources.filter(s => selected.includes(s.id));
+                  const isAllContextSelected = selectedContextSources.length === contextSources.length;
+                  const isIndeterminate = selectedContextSources.length > 0 && !isAllContextSelected;
 
-              return (
-                <Fragment key={context.id}>
-                  <ContextGroup
-                    context={context}
-                    all={all}
-                    selected={selected}
-                    toggleContext={toggleContext}
-                    isAllContextSelected={isAllContextSelected}
-                    isIndeterminate={isIndeterminate}
-                    selectedContextSources={selectedContextSources}
-                    contextSources={contextSources}
-                  />
-                  {index < availableContexts.length - 1 && <UISelect.Separator />}
-                </Fragment>
-              )
-            })}
+                  return (
+                    <Fragment key={context.id}>
+                      <ContextGroup
+                        context={context}
+                        all={all}
+                        selected={selected}
+                        toggleContext={toggleContext}
+                        isAllContextSelected={isAllContextSelected}
+                        isIndeterminate={isIndeterminate}
+                        selectedContextSources={selectedContextSources}
+                        contextSources={contextSources}
+                      />
+                      {index < availableContexts.length - 1 && <UISelect.Separator />}
+                    </Fragment>
+                  )
+                })}
+              </>
+            )}
           </UISelect.Content>
         </UISelect.Multi.Root>
       )

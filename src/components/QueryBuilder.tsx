@@ -5,7 +5,7 @@ import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
-import { useMemo, useCallback, ChangeEvent } from "react"
+import { useMemo, useCallback, ChangeEvent, memo, useState, useEffect } from "react"
 import SyntaxHighlighter from "react-syntax-highlighter"
 import s from './styles/QueryBuilder.module.css';
 import { Stack } from "@/ui/Stack"
@@ -66,21 +66,31 @@ export namespace OpenSearchQueryBuilder {
     }
   }
 
-  export const Preview = ({ query, className, ...props }: Preview.Props) => {
-    const string = useMemo(() => JSON.stringify(query, null, 2), [query]);
+  const JsonPreview = memo(({ value }: { value: string }) => (
+    <SyntaxHighlighter language='JSON' style={highlight.vs2015} customStyle={{ background: 'none', height: '100%' }}>
+      {value}
+    </SyntaxHighlighter>
+  ));
 
-    const copyQueryButtonClickHandler = useCallback(() => copy(string), [string]);
+  export const Preview = memo(({ query, className, ...props }: Preview.Props) => {
+    const [debouncedString, setDebouncedString] = useState(() => JSON.stringify(query, null, 2));
+
+    useEffect(() => {
+      const handler = setTimeout(() => {
+        setDebouncedString(JSON.stringify(query, null, 2));
+      }, 800); // Higher debounce for the heavy highlighter
+      return () => clearTimeout(handler);
+    }, [query]);
+
+    const copyQueryButtonClickHandler = useCallback(() => copy(debouncedString), [debouncedString]);
 
     return (
       <Stack pos='relative' className={cn(s.preview, className)} {...props}>
         <Button className={s.copy} icon='Copy' onClick={copyQueryButtonClickHandler} variant='glass' />
-        <SyntaxHighlighter language='JSON' style={highlight.vs2015} customStyle={{ background: 'none', height: '100%' }}>
-          {string}
-        </SyntaxHighlighter>
-
+        <JsonPreview value={debouncedString} />
       </Stack>
     )
-  }
+  });
 
   export namespace Query {
     export namespace String {
@@ -155,129 +165,174 @@ export namespace OpenSearchQueryBuilder {
     export namespace Filters {
       export interface Props extends Stack.Props {
         filters: Filter.Type[];
-        setFilters: (filters: Filter.Type[]) => void;
+        setFilters: (filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => void;
         keys: string[]
       }
     }
 
-    export const Filters = ({ filters, setFilters, keys }: Query.Filters.Props) => {
-      const update = useCallback((id: Filter.Id, key: string, value: any) => {
-        setFilters(filters.map((condition) =>
-          condition.id === id ? { ...condition, [key]: value } : condition,
-        ))
-      }, [filters, setFilters]);
+    const FilterRow = memo(({ 
+      filter, 
+      setFilters, 
+      keys 
+    }: { 
+      filter: Filter.Type; 
+      setFilters: (filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => void; 
+      keys: string[] 
+    }) => {
+      const [isOpen, setIsOpen] = useState(false);
+      const [localField, setLocalField] = useState(filter.field);
 
-      const remove = useCallback((id: Filter.Id) => {
-        setFilters(filters.filter((condition) => condition.id !== id))
-      }, [filters, setFilters]);
+      // Sync local field when external filter changes (e.g. on reset or mount)
+      useEffect(() => {
+        setLocalField(filter.field);
+      }, [filter.field]);
 
+      const update = useCallback((key: string, value: any) => {
+        setFilters((prev) => prev.map((condition) =>
+          condition.id === filter.id ? { ...condition, [key]: value } : condition
+        ));
+      }, [filter.id, setFilters]);
+
+      const remove = useCallback(() => {
+        setFilters((prev) => prev.filter((condition) => condition.id !== filter.id));
+      }, [filter.id, setFilters]);
+
+      const filteredKeys = useMemo(() => {
+        if (!isOpen) return []; // Don't process keys if dropdown is closed
+        const search = localField.toLowerCase();
+        if (!search) return keys.slice(0, 100);
+        return keys
+          .filter(key => key.toLowerCase().includes(search))
+          .slice(0, 100);
+      }, [keys, localField, isOpen]);
+
+      const handleFieldChange = (val: string) => {
+        setLocalField(val);
+        update('field', val);
+      };
+
+      return (
+        <Stack
+          dir='column'
+          ai='stretch'
+          className={cn(s.card, !filter.enabled && s.disabled)}
+        >
+          <Stack style={fws}>
+            <Select.Root
+              value={filter.operator}
+              onValueChange={(value) => update('operator', value)}
+            >
+              <Select.Trigger className={s.value}>
+                <Select.Value placeholder='Operator' />
+              </Select.Trigger>
+              <Select.Content>
+                {OpenSearchQueryBuilder.OPERATORS.map((op) => (
+                  <Select.Item key={op.value} value={op.value}>
+                    <Icon name={op.icon} />
+                    {op.label}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+            <Select.Root
+              value={filter.type}
+              onValueChange={(value) => update('type', value)}
+            >
+              <Select.Trigger className={s.value}>
+                <Select.Value placeholder='Type' />
+              </Select.Trigger>
+              <Select.Content>
+                {OpenSearchQueryBuilder.CONDITIONS.map((type) => (
+                  <Select.Item key={type.value} value={type.value}>
+                    <Icon name={type.icon} />
+                    {type.label}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+            <Switch checked={filter.enabled} onCheckedChange={value => update('enabled', value)} />
+            <Button
+              variant='tertiary'
+              onClick={remove}
+              icon='Trash2'
+            />
+          </Stack>
+          <Stack style={fws}>
+            <Stack pos='relative'>
+              <Input 
+                className={s.key_input} 
+                icon='Dot' 
+                variant='highlighted' 
+                placeholder='Field name' 
+                value={localField} 
+                onChange={(e) => handleFieldChange(e.target.value)} 
+              />
+              <Select.Root value={filter.field} onValueChange={(e) => handleFieldChange(e)} onOpenChange={setIsOpen}>
+                <Select.Trigger className={s.trigger} />
+                <Select.Content style={{ minHeight: 60 }}>
+                  <Input value={localField} disabled icon='MagnifyingGlass' variant='highlighted' />
+                  {isOpen && filteredKeys.map((k) => (
+                    <Select.Item key={k} value={k}>
+                      {k}
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Root>
+            </Stack>
+            {filter.type === 'LTE' ? (
+              <Input
+                variant='highlighted'
+                icon='ChevronRightSmall'
+                placeholder='Min value'
+                value={filter.value}
+                onChange={(e) => update('value', e.target.value)}
+                prefix='<='
+              />
+            ) : filter.type === 'GTE' ? (
+              <Input
+                variant='highlighted'
+                icon='ChevronRightSmall'
+                placeholder='Max value'
+                value={filter.value}
+                onChange={(e) => update('value', e.target.value)}
+                prefix='>='
+              />
+            ) : filter.type === 'range' ? (
+              <Input
+                variant='highlighted'
+                icon='ChevronRightSmall'
+                placeholder='min,max'
+                value={filter.value}
+                onChange={(e) => update('value', e.target.value)}
+              />
+            ) : (
+              <Input
+                variant='highlighted'
+                icon='ChevronRightSmall'
+                placeholder='Value'
+                value={filter.value}
+                onChange={(e) => update('value', e.target.value)}
+              />
+            )}
+          </Stack>
+          {filter.type === 'wildcard' ? <Toggle option={['Case sensitive', 'Case insensitive']} checked={filter.case_insensitive} onCheckedChange={v => update('case_insensitive', v)} /> : null}
+        </Stack>
+      );
+    });
+
+    export const Filters = memo(({ filters, setFilters, keys }: Query.Filters.Props) => {
       return (
         <Stack ai='stretch' dir='column'>
           {filters.map((filter) => (
-            <Stack
-              dir='column'
-              ai='stretch'
-              className={cn(s.card, !filter.enabled && s.disabled)}
-              key={filter.id}
-            >
-              <Stack style={fws}>
-                <Select.Root
-                  value={filter.operator}
-                  onValueChange={(value) =>
-                    update(filter.id, 'operator', value)
-                  }
-                >
-                  <Select.Trigger className={s.value}>
-                    <Select.Value placeholder='Operator' />
-                  </Select.Trigger>
-                  <Select.Content>
-                    {OpenSearchQueryBuilder.OPERATORS.map((op) => (
-                      <Select.Item key={op.value} value={op.value}>
-                        <Icon name={op.icon} />
-                        {op.label}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-                <Select.Root
-                  value={filter.type}
-                  onValueChange={(value) => update(filter.id, 'type', value)}
-                >
-                  <Select.Trigger className={s.value}>
-                    <Select.Value placeholder='Type' />
-                  </Select.Trigger>
-                  <Select.Content>
-                    {OpenSearchQueryBuilder.CONDITIONS.map((type) => (
-                      <Select.Item key={type.value} value={type.value}>
-                        <Icon name={type.icon} />
-                        {type.label}
-                      </Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-                <Switch checked={filter.enabled} onCheckedChange={value => update(filter.id, 'enabled', value)} />
-                <Button
-                  variant='tertiary'
-                  onClick={() => remove(filter.id)}
-                  icon='Trash2'
-                />
-              </Stack>
-              <Stack style={fws}>
-                <Stack pos='relative'>
-                  <Input className={s.key_input} icon='Dot' variant='highlighted' placeholder='Field name' value={filter.field} onChange={(e) => update(filter.id, 'field', e.target.value)} />
-                  <Select.Root value={filter.field} onValueChange={(e) => update(filter.id, 'field', e)}>
-                    <Select.Trigger className={s.trigger} />
-                    <Select.Content style={{ minHeight: 60 }}>
-                      <Input value={filter.field} disabled icon='MagnifyingGlass' variant='highlighted' />
-                      {keys.filter(key => key.toLowerCase().includes(filter.field.toLowerCase())).sort((a, b) => a.localeCompare(b)).map((k) => (
-                        <Select.Item key={k} value={k}>
-                          {k}
-                        </Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Root>
-                </Stack>
-                {filter.type === 'LTE' ? (
-                  <Input
-                    variant='highlighted'
-                    icon='ChevronRightSmall'
-                    placeholder='Min value'
-                    value={filter.value}
-                    onChange={(e) => update(filter.id, 'value', e.target.value)}
-                    prefix='<='
-                  />
-                ) : filter.type === 'GTE' ? (
-                  <Input
-                    variant='highlighted'
-                    icon='ChevronRightSmall'
-                    placeholder='Max value'
-                    value={filter.value}
-                    onChange={(e) => update(filter.id, 'value', e.target.value)}
-                    prefix='>='
-                  />
-                ) : filter.type === 'range' ? (
-                  <Input
-                    variant='highlighted'
-                    icon='ChevronRightSmall'
-                    placeholder='min,max'
-                    value={filter.value}
-                    onChange={(e) => update(filter.id, 'value', e.target.value)}
-                  />
-                ) : (
-                  <Input
-                    variant='highlighted'
-                    icon='ChevronRightSmall'
-                    placeholder='Value'
-                    value={filter.value}
-                    onChange={(e) => update(filter.id, 'value', e.target.value)}
-                  />
-                )}
-              </Stack>
-              {filter.type === 'wildcard' ? <Toggle option={['Case sensitive', 'Case insensitive']} checked={filter.case_insensitive} onCheckedChange={v => update(filter.id, 'case_insensitive', v)} /> : null}
-            </Stack>
+            <FilterRow 
+              key={filter.id} 
+              filter={filter} 
+              setFilters={setFilters} 
+              keys={keys} 
+            />
           ))}
         </Stack>
       )
-    }
+    });
   }
 }

@@ -45,9 +45,14 @@ export namespace Filter {
 			if (q.isManual && q.raw) return q.raw;
 
 			const { filters, string, fieldTypeMap } = q;
-			const query: Record<string, any> = structuredClone(
-				OpenSearchQueryBuilder.INITIAL,
-			);
+			const query: Record<string, any> = {
+				bool: {
+					must: [],
+					should: [],
+					must_not: [],
+					filter: [],
+				},
+			};
 
 			if (string?.trim()) {
 				query.bool.must.push({

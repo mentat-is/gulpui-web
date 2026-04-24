@@ -201,6 +201,7 @@ export class Info implements InfoProps {
 		{ filename: string; percent: number }
 	>();
 	private _resyncPollTimer: ReturnType<typeof setInterval> | null = null;
+	private static _eventKeysCache = new Map<Source.Id, Filter.Options>();
 
 	constructor({ app, setInfo, timeline }: InfoProps) {
 		this.app = app;
@@ -1622,6 +1623,10 @@ export class Info implements InfoProps {
 			return Internal.Transformator.toAsync({});
 		}
 
+		if (Info._eventKeysCache.has(file.id)) {
+			return Info._eventKeysCache.get(file.id)!;
+		}
+
 		if (Source.Entity.isVirtual(file)) {
 			const ids = file.id.split("-").slice(1) as Source.Id[];
 
@@ -1629,7 +1634,7 @@ export class Info implements InfoProps {
 				ids.map((id) => this.event_keys(Source.Entity.id(this.app, id))),
 			);
 
-			return filterOptionsStack.flat().reduce<Filter.Options>((acc, cur) => {
+			const result = filterOptionsStack.flat().reduce<Filter.Options>((acc, cur) => {
 				Object.keys(cur).forEach((c) => {
 					if (!acc[c]) {
 						acc[c] = cur[c];
@@ -1638,9 +1643,12 @@ export class Info implements InfoProps {
 
 				return acc;
 			}, {});
+
+			Info._eventKeysCache.set(file.id, result);
+			return result;
 		}
 
-		return api<Filter.Options>("/query_fields_by_source", {
+		const result = await api<Filter.Options>("/query_fields_by_source", {
 			query: {
 				operation_id: file.operation_id,
 				context_id: file.context_id,
@@ -1648,6 +1656,9 @@ export class Info implements InfoProps {
 				ws_id: this.app.general.ws_id,
 			},
 		});
+
+		Info._eventKeysCache.set(file.id, result);
+		return result;
 	};
 
 	events_reset_in_file = (file: Source.Type) => {

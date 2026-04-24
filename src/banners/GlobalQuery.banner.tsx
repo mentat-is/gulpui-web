@@ -47,10 +47,10 @@ export namespace GlobalQuery {
       )
     }, [query.string, setQuery]);
 
-    const setFilters = useCallback((filters: Filter.Type[]) => {
+    const setFilters = useCallback((filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => {
       setQuery(q => ({
         ...q,
-        filters
+        filters: typeof filters === 'function' ? filters(q.filters) : filters
       }))
     }, [setQuery]);
 

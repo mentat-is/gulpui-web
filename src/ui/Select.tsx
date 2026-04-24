@@ -82,7 +82,7 @@ export namespace Select {
 
       return (
         <Select.Multi.Context.Provider value={contextValue}>
-          <SelectPrimitive.Root open={open ?? isOpen} onOpenChange={onOpenChange ?? handleOpenChange} {...props}>
+          <SelectPrimitive.Root open={open ?? isOpen} onOpenChange={handleOpenChange} {...props}>
             {children}
           </SelectPrimitive.Root>
         </Select.Multi.Context.Provider>
