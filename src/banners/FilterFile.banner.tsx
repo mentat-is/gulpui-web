@@ -190,9 +190,14 @@ export function FilterFileBanner({
       }
 
       if (startingQuery) {
-        setQuery(startingQuery)
+        const cleanBase = getCleanBase(files)
+        const updatedStartingQuery = {
+          ...startingQuery,
+          source_config: cleanBase.source_config
+        }
+        setQuery(updatedStartingQuery)
         setIsManual(!!startingQuery.isManual)
-        setManualContent(getManualContentFromQuery(startingQuery))
+        setManualContent(getManualContentFromQuery(updatedStartingQuery))
         prevFileIds.current = files.map(f => f.id).sort().join(',')
         return
       } else {

@@ -63,7 +63,7 @@ export namespace GulpDataset {
 	export namespace QueryGulp {
 		export interface Options {
 			preview?: boolean;
-			id?: Source.Id;
+			id?: Source.Id | Source.Id[];
 			refetchKeys?: Array<keyof Doc.Type>;
 			addToHistory?: boolean;
 			create_notes?: boolean;
@@ -235,12 +235,24 @@ export class Info implements InfoProps {
 		this.links_reload();
 		this.highlights_reload();
 
+		const groups = new Map<string, { query: Query.Type, files: Source.Type[] }>();
+
 		files.forEach((file) => {
 			this.events_reset_in_file(file);
-			this.query_file(this.getQuery(file), {
-				id: file.id,
+			const query = this.getQuery(file);
+			const key = JSON.stringify(query);
+			
+			if (!groups.has(key)) {
+				groups.set(key, { query, files: [] });
+			}
+			groups.get(key)!.files.push(file);
+		});
+
+		groups.forEach(({ query, files: groupedFiles }) => {
+			this.query_file(query, {
+				id: groupedFiles.map(f => f.id) as Source.Id[],
 				preview: false,
-				refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
+				refetchKeys: refetchKeys ? refetchKeys[groupedFiles[0].id] : undefined,
 				addToHistory,
 				create_notes,
 				notes_color,
@@ -819,11 +831,14 @@ export class Info implements InfoProps {
 		}
 
 		if (id) {
-			const request = this.app.general.loadings.byFileId.get(id);
-			if (request) {
-				this.delLoading(request);
-				this.request_cancel(request);
-			}
+			const ids = Array.isArray(id) ? id : [id];
+			ids.forEach(i => {
+				const request = this.app.general.loadings.byFileId.get(i);
+				if (request) {
+					this.delLoading(request);
+					this.request_cancel(request);
+				}
+			});
 		}
 
 		const body = Filter.Entity.body(query);
@@ -841,9 +856,8 @@ export class Info implements InfoProps {
 		};
 
 		if (id) {
-			body.q_options.fields = refetchKeys ?? [
-				Source.Entity.id(this.app, id).settings.field,
-			];
+			const ids = Array.isArray(id) ? id : [id];
+			body.q_options.fields = refetchKeys ?? Array.from(new Set(ids.map(i => Source.Entity.id(this.app, i).settings.field)));
 		}
 
 		if (addToHistory) {
@@ -898,16 +912,19 @@ export class Info implements InfoProps {
 									sid,
 								);
 								if (id) {
-									const file = Source.Entity.id(this.app, id);
-									const loadedCount = Doc.Entity.get(this.app, id).length;
-									if (file && loadedCount > file.total) {
-										file.total = loadedCount;
-										this.setInfoByKey(
-											[...this.app.target.files],
-											"target",
-											"files",
-										);
-									}
+									const ids = Array.isArray(id) ? id : [id];
+									ids.forEach(i => {
+										const file = Source.Entity.id(this.app, i);
+										const loadedCount = Doc.Entity.get(this.app, i).length;
+										if (file && loadedCount > file.total) {
+											file.total = loadedCount;
+										}
+									});
+									this.setInfoByKey(
+										[...this.app.target.files],
+										"target",
+										"files",
+									);
 								}
 								this.render();
 							});
@@ -959,7 +976,8 @@ export class Info implements InfoProps {
 				}
 
 				if (id) {
-					this.setLoading(req_id, id);
+					const ids = Array.isArray(id) ? id : [id];
+					ids.forEach(i => this.setLoading(req_id, i));
 				}
 			},
 		);
