@@ -62,21 +62,37 @@ const prepareEventJson = (obj: Record<string, any>): Record<string, string> => {
 	};
 };
 
+type OperationType = "ENRICH" | "FILTER";
+
 /**
  * Parses a raw string (e.g., from selection) into a key-value record.
  * @param raw Input string
+ * @param operation The type of operation ("ENRICH" or "FILTER")
+ * @param isManualSelection Whether the selection was manually made by the user
  * @returns parsed record
  */
-const parseToKeyValue = (raw: string, isFilter: boolean = false): Record<string, string> => {
+const parseToKeyValue = (
+	raw: string,
+	operation: OperationType,
+	isManualSelection: boolean
+): Record<string, string> => {
 	const result: Record<string, string> = {};
 	for (const line of raw.split("\n")) {
-		const index = line.indexOf(":");
-		if (index === -1 && isFilter) continue;
-		if (index === -1 && !isFilter) {
-			const cleaned = line.trim()
-			if (cleaned.length === 0) continue;
-			result[`key_${cleaned}`] = cleaned			
+		const cleaned = line.trim();
+		if (cleaned.length === 0) continue;
+
+		if (operation === "ENRICH" && isManualSelection) {
+			result[`enrich_${cleaned}`] = cleaned;
+			continue;
 		}
+
+		const index = line.indexOf(":");
+		if (index === -1) {
+			if (operation === "FILTER") continue;
+			result[`key_${cleaned}`] = cleaned;
+			continue;
+		}
+
 		const key = line
 			.slice(0, index)
 			.trim()
@@ -355,7 +371,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		if (!selection) return;
 		const file = Source.Entity.id(app, event["gulp.source_id"]);
 		const { filters } = Info.getQuery(file);
-		const object = parseToKeyValue(selection, true);
+		
+		const isManualSelection = selection !== lastAutoSelectionRef.current;
+		const object = parseToKeyValue(selection, "FILTER", isManualSelection);
 
 		if (Object.keys(object).length === 0) {
 			toast(`Invalid selection. Unable to add new filters`);
@@ -527,7 +545,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={() => {
-							const object = parseToKeyValue(selection);
+							const isManualSelection = selection !== lastAutoSelectionRef.current;
+							const object = parseToKeyValue(selection, "ENRICH", isManualSelection);
 							const keys = Object.keys(object);
 							if (keys.length > 0)
 								handleEnrich({ key: keys[0], value: object[keys[0]] });
