@@ -67,12 +67,16 @@ const prepareEventJson = (obj: Record<string, any>): Record<string, string> => {
  * @param raw Input string
  * @returns parsed record
  */
-const parseToKeyValue = (raw: string): Record<string, string> => {
+const parseToKeyValue = (raw: string, isFilter: boolean = false): Record<string, string> => {
 	const result: Record<string, string> = {};
 	for (const line of raw.split("\n")) {
 		const index = line.indexOf(":");
-		if (index === -1) continue;
-
+		if (index === -1 && isFilter) continue;
+		if (index === -1 && !isFilter) {
+			const cleaned = line.trim()
+			if (cleaned.length === 0) continue;
+			result[`key_${cleaned}`] = cleaned			
+		}
 		const key = line
 			.slice(0, index)
 			.trim()
@@ -351,7 +355,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		if (!selection) return;
 		const file = Source.Entity.id(app, event["gulp.source_id"]);
 		const { filters } = Info.getQuery(file);
-		const object = parseToKeyValue(selection);
+		const object = parseToKeyValue(selection, true);
 
 		if (Object.keys(object).length === 0) {
 			toast(`Invalid selection. Unable to add new filters`);
