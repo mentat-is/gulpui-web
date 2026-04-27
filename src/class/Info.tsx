@@ -235,24 +235,26 @@ export class Info implements InfoProps {
 		this.links_reload();
 		this.highlights_reload();
 
-		const groups = new Map<string, { query: Query.Type, files: Source.Type[] }>();
-
 		files.forEach((file) => {
 			this.events_reset_in_file(file);
 			const query = this.getQuery(file);
-			const key = JSON.stringify(query);
-			
-			if (!groups.has(key)) {
-				groups.set(key, { query, files: [] });
-			}
-			groups.get(key)!.files.push(file);
-		});
 
-		groups.forEach(({ query, files: groupedFiles }) => {
-			this.query_file(query, {
-				id: groupedFiles.map(f => f.id) as Source.Id[],
+			// Ensure that each query is strictly filtered by its specific source_id to avoid duplicate results
+			// and ensure correct loading state mapping (1 req_id = 1 source_id)
+			const dedicatedQuery = {
+				...query,
+				source_config: query.source_config
+					? {
+							...query.source_config,
+							source_ids: [file.id],
+					  }
+					: undefined,
+			};
+
+			this.query_file(dedicatedQuery, {
+				id: file.id,
 				preview: false,
-				refetchKeys: refetchKeys ? refetchKeys[groupedFiles[0].id] : undefined,
+				refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
 				addToHistory,
 				create_notes,
 				notes_color,
