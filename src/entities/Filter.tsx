@@ -77,23 +77,8 @@ export namespace Filter {
 				});
 			}
 
-			if (text_filter?.trim()) {
-				// Evaluate splitting into multiple wildcard queries if multiple terms are provided
-				const terms = text_filter.trim().split(/\s+/);
-				
-				if (terms.length > 1) {
-					terms.forEach(term => {
-						query.bool.must.push({
-							wildcard: {
-								"event.original": {
-									value: term,
-									case_insensitive: true,
-								},
-							},
-						});
-					});
-				} else {
-					query.bool.must.push({
+			if (text_filter) {
+				query.bool.must.push({
 						wildcard: {
 							"event.original": {
 								value: text_filter.trim(),
@@ -101,7 +86,6 @@ export namespace Filter {
 							},
 						},
 					});
-				}
 			}
 
 			filters.forEach(
