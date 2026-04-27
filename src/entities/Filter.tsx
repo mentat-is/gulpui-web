@@ -44,7 +44,7 @@ export namespace Filter {
 		) => {
 			if (q.isManual && q.raw) return q.raw;
 
-			const { filters, string, fieldTypeMap } = q;
+			const { filters, string, text_filter, source_config, fieldTypeMap } = q;
 			const query: Record<string, any> = {
 				bool: {
 					must: [],
@@ -54,12 +54,54 @@ export namespace Filter {
 				},
 			};
 
-			if (string?.trim()) {
+			if (source_config) {
+				query.bool.must.push({
+					term: { "gulp.operation_id": source_config.operation_id },
+				});
+				query.bool.must.push({
+					terms: { "gulp.source_id": source_config.source_ids },
+				});
+				query.bool.must.push({
+					range: {
+						"gulp.timestamp": {
+							gte: source_config.range.min,
+							lte: source_config.range.max,
+						},
+					},
+				});
+			} else if (string?.trim()) {
 				query.bool.must.push({
 					query_string: {
 						query: string,
 					},
 				});
+			}
+
+			if (text_filter?.trim()) {
+				// Evaluate splitting into multiple wildcard queries if multiple terms are provided
+				const terms = text_filter.trim().split(/\s+/);
+				
+				if (terms.length > 1) {
+					terms.forEach(term => {
+						query.bool.must.push({
+							wildcard: {
+								"event.original": {
+									value: term,
+									case_insensitive: true,
+								},
+							},
+						});
+					});
+				} else {
+					query.bool.must.push({
+						wildcard: {
+							"event.original": {
+								value: text_filter.trim(),
+								case_insensitive: true,
+							},
+						},
+					});
+				}
 			}
 
 			filters.forEach(
@@ -142,19 +184,19 @@ export namespace Filter {
 			range?: MinMax,
 		): Query.Type => {
 			const id = typeof file === "object" ? file.id : file;
+			const targetFile = Source.Entity.id(app, id);
 
 			return {
-				string: Filter.Entity.base(
-					Source.Entity.id(app, id),
-					range ?? {
-						min: Internal.Transformator.toNanos(
-							app.timeline.frame.min,
-						).toString() as unknown as number,
-						max: Internal.Transformator.toNanos(
-							app.timeline.frame.max,
-						).toString() as unknown as number,
-					},
-				),
+				string: "",
+				text_filter: "",
+				source_config: {
+					operation_id: targetFile.operation_id,
+					source_ids: [targetFile.id],
+					range: {
+						min: (range?.min ?? targetFile.nanotimestamp?.min ?? Internal.Transformator.toNanos(targetFile.timestamp.min)).toString(),
+						max: (range?.max ?? targetFile.nanotimestamp?.max ?? Internal.Transformator.toNanos(targetFile.timestamp.max)).toString(),
+					}
+				},
 				filters: [],
 			};
 		};

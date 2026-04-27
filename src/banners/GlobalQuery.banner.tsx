@@ -43,9 +43,9 @@ export namespace GlobalQuery {
 
     const QueryStringBuilder = useMemo(() => {
       return (
-        <OpenSearchQueryBuilder.Query.String string={query.string} setString={string => setQuery(q => ({ ...q, string }))} />
+        <OpenSearchQueryBuilder.Query.String textFilter={query.text_filter || ''} setTextFilter={text_filter => setQuery(q => ({ ...q, text_filter }))} />
       )
-    }, [query.string, setQuery]);
+    }, [query.text_filter, setQuery]);
 
     const setFilters = useCallback((filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => {
       setQuery(q => ({

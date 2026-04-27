@@ -95,30 +95,30 @@ export namespace OpenSearchQueryBuilder {
   export namespace Query {
     export namespace String {
       export interface Props extends Stack.Props {
-        string: string;
-        setString: (string: string) => void;
+        textFilter: string;
+        setTextFilter: (text: string) => void;
         reset?: () => void;
       }
     }
 
-    export const String = ({ string, setString, reset, ...props }: Query.String.Props) => {
-      const queryStringInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => setString(event.target.value);
+    export const String = ({ textFilter, setTextFilter, reset, ...props }: Query.String.Props) => {
+      const queryStringInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => setTextFilter(event.target.value);
 
-      const resetQueryStringButtonClickHandler = () => setString('');
+      const resetQueryStringButtonClickHandler = () => setTextFilter('');
 
-      const copyQueryStringButtonClickHandler = () => copy(string);
+      const copyQueryStringButtonClickHandler = () => copy(textFilter);
 
       return (
         <Stack dir='column' gap={6} style={fws} ai='stretch' {...props}>
-          <Label value='Query String' />
+          <Label value='Search in logs (event.original)' />
           <Stack>
             <Input
               style={{ flex: 1 }}
               variant='highlighted'
               icon='Code'
               className={s.query_string_input}
-              placeholder='Enter query_string part...'
-              value={string}
+              placeholder='Search in raw log content...'
+              value={textFilter}
               onChange={queryStringInputChangeHandler}
             />
             <Button icon='Copy' variant='secondary' onClick={copyQueryStringButtonClickHandler} />

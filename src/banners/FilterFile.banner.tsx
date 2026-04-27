@@ -21,6 +21,7 @@ import { toast } from 'sonner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/ui/Tabs'
 import { Textarea } from '@/ui/Textarea'
 import { Label } from '@/ui/Label'
+import { Internal } from '@/entities/addon/Internal'
 
 interface FilterFileBannerProps extends Banner.Props {
   sources: Source.Type[]
@@ -117,10 +118,23 @@ export function FilterFileBanner({
   const isFirstRun = useRef(true)
   const prevFileIds = useRef(files.map(f => f.id).sort().join(','))
 
-  const getCleanBase = useCallback((targetFiles: Source.Type[]): Query.Type => ({
-    string: Filter.Entity.base(targetFiles),
-    filters: []
-  }), []);
+  const getCleanBase = useCallback((targetFiles: Source.Type[]): Query.Type => {
+    if (targetFiles.length === 0) return { string: '', filters: [] };
+    const first = targetFiles[0];
+    const min = Internal.Transformator.toNanos(app.timeline.frame.min).toString();
+    const max = Internal.Transformator.toNanos(app.timeline.frame.max).toString();
+
+    return {
+      string: '',
+      text_filter: '',
+      source_config: {
+        operation_id: first.operation_id,
+        source_ids: targetFiles.map(f => f.id),
+        range: { min, max }
+      },
+      filters: []
+    }
+  }, [app]);
 
   const getManualContentFromQuery = useCallback((q: Query.Type): string => {
     if (q.raw) return JSON.stringify(q.raw, null, 2);
@@ -152,10 +166,10 @@ export function FilterFileBanner({
         toast.info('Query reset based on source selection')
         resetToCleanBase(newFiles)
       } else {
-        toast.info('Query string updated based on source selection')
-        const newBaseString = Filter.Entity.base(newFiles)
+        toast.info('Query updated based on source selection')
         setQuery(prev => {
-          const updated = { ...prev, string: newBaseString }
+          const cleanBase = getCleanBase(newFiles)
+          const updated = { ...prev, source_config: cleanBase.source_config, string: cleanBase.string }
           setManualContent(JSON.stringify(Filter.Entity.query({ ...updated, fieldTypeMap } as any), null, 2))
           return updated
         })
@@ -292,11 +306,11 @@ export function FilterFileBanner({
   const QueryStringPart = useMemo(() => (
     <OpenSearchQueryBuilder.Query.String
       style={fws}
-      string={query.string}
-      setString={string => setQuery(q => ({ ...q, string }))}
-      reset={() => setQuery(q => ({ ...q, string: Filter.Entity.base(files) }))}
+      textFilter={query.text_filter || ''}
+      setTextFilter={text_filter => setQuery(q => ({ ...q, text_filter }))}
+      reset={() => setQuery(q => ({ ...q, text_filter: '' }))}
     />
-  ), [files, query.string])
+  ), [query.text_filter])
 
   const AddCondition = useMemo(
     () => <OpenSearchQueryBuilder.Query.Add filters={query.filters} setFilters={setFilters} />,

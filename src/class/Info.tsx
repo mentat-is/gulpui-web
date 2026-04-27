@@ -2735,7 +2735,9 @@ export class Info implements InfoProps {
 			const prev = this.app.target.filters[file.id];
 
 			this.app.target.filters[file.id] = {
-				string: query.string || Filter.Entity.base(file),
+				string: query.string || "",
+				text_filter: query.text_filter,
+				source_config: query.source_config,
 				filters:
 					Array.isArray(query.filters) && query.filters.length > 0
 						? query.filters
