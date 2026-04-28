@@ -57,7 +57,7 @@ const detectType = (value: string): string | null => {
   const sha256Regex = /^[a-fA-F0-9]{64}$/
   if (md5Regex.test(v) || sha1Regex.test(v) || sha256Regex.test(v)) return 'hash'
 
-  const urlRegex = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/i
+  const urlRegex = /^(http:\/\/|https:\/\/)?([\da-z\.-]+)\.([a-z0-9\.]{2,10})(:\d+)?([\/\w \.-]*)*\/?$/i
   if (urlRegex.test(v)) return 'url'
 
   return null
@@ -197,8 +197,11 @@ export namespace Enrichment {
     const [file, setFile] = useState<Source.Type | null>(
       event ? Source.Entity.id(app, event['gulp.source_id']) : null,
     )
+    const [allEnrichmentPlugins, setAllEnrichmentPlugins] = useState<GulpDataset.PluginList.Interface[]>()
     const [plugins, setPlugins] = useState<GulpDataset.PluginList.Interface[]>()
     const [plugin, setPlugin] = useState<GulpDataset.PluginList.Interface>()
+    const [availableTypes, setAvailableTypes] = useState<string[]>([])
+    const [selectedType, setSelectedType] = useState<string>('Other')
     const [customParameters, setCustomParameters] = useState<Record<string, any>>({})
     const [loading, setLoading] = useState<boolean>(false)
     const [isShowOnlyEnriched, setIsShowOnlyEnriched] = useState<boolean>(true)
@@ -219,28 +222,80 @@ export namespace Enrichment {
     useEffect(() => {
       Info.plugin_list().then((allPlugins) => {
         const enrichmentPlugins = allPlugins.filter((p) => p.type.includes('enrichment'))
-        if (!enrichmentField) return setPlugins(enrichmentPlugins)
+        setAllEnrichmentPlugins(enrichmentPlugins)
 
-        const detectedType = detectType(enrichmentField.value)
-        const filtered = enrichmentPlugins.filter((p) => {
-          const data = p.data as Record<string, { ecs_fields?: string[]; regexp?: string }>
-          if (!data) return false
-
-          return Object.entries(data).some(([typeName, config]) => {
-            if (config.ecs_fields?.includes(enrichmentField.key)) return true
-            if (config.regexp) {
-              try {
-                if (new RegExp(config.regexp, 'i').test(enrichmentField.value)) return true
-              } catch (e) { /* ignore */ }
-            }
-            const hasNoEcsFields = !config.ecs_fields || config.ecs_fields.filter(f => f !== "").length === 0
-            if (hasNoEcsFields && !config.regexp && detectedType === typeName) return true
-            return false
-          })
+        const types = new Set<string>()
+        enrichmentPlugins.forEach(p => {
+          const data = p.data as Record<string, any>
+          if (data) {
+            Object.keys(data).forEach(k => types.add(k))
+          }
         })
-        setPlugins(filtered)
+        const available = Array.from(types).sort()
+        setAvailableTypes(available)
+
+        if (!enrichmentField) {
+           setSelectedType('Other')
+        } else {
+           let autoDetected: string | null = null
+           const detectedRegexType = detectType(enrichmentField.value)
+
+           for (const p of enrichmentPlugins) {
+             const data = p.data as Record<string, { ecs_fields?: string[]; regexp?: string }>
+             if (!data) continue
+             for (const [typeName, config] of Object.entries(data)) {
+               if (config.ecs_fields?.includes(enrichmentField.key)) {
+                 autoDetected = typeName
+                 break
+               }
+               if (config.regexp) {
+                 try {
+                    if (new RegExp(config.regexp, 'i').test(enrichmentField.value)) {
+                      autoDetected = typeName
+                      break
+                    }
+                 } catch (e) { /* ignore */ }
+               }
+               
+               const hasNoEcsFields = !config.ecs_fields || config.ecs_fields.filter(f => f !== "").length === 0
+               if (hasNoEcsFields && !config.regexp && detectedRegexType === typeName) {
+                 autoDetected = typeName
+                 break
+               }
+             }
+             if (autoDetected) break
+           }
+           
+           if (autoDetected && available.includes(autoDetected)) {
+             setSelectedType(autoDetected)
+           } else {
+             setSelectedType('Other')
+           }
+        }
       })
     }, [enrichmentField, Info])
+
+    // Filter plugins based on selectedType
+    useEffect(() => {
+      if (!allEnrichmentPlugins) return
+
+      let filtered = allEnrichmentPlugins
+      if (selectedType !== 'Other') {
+        filtered = allEnrichmentPlugins.filter((p) => {
+          const data = p.data as Record<string, any>
+          return data && !!data[selectedType]
+        })
+      }
+      
+      setPlugins(filtered)
+      
+      setPlugin(prev => {
+         if (prev && !filtered.find(f => f.filename === prev.filename)) {
+            return undefined
+         }
+         return prev
+      })
+    }, [selectedType, allEnrichmentPlugins])
 
     // Initialize fields from props
     useEffect(() => {
@@ -322,11 +377,32 @@ export namespace Enrichment {
       )
     }, [plugins, file, event, app])
 
+    const TypeSelection = useMemo(() => {
+      if (!allEnrichmentPlugins) return <Skeleton className={s.skeleton} width='full' />
+
+      return (
+        <Select.Root value={selectedType} onValueChange={(val) => setSelectedType(val)}>
+          <Select.Trigger>
+            <Stack gap={16}>
+              <Icon variant='dimmed' name='Filter' />
+              {selectedType === 'Other' ? 'Observable Type: Other (All Plugins)' : `Observable Type: ${selectedType}`}
+            </Stack>
+          </Select.Trigger>
+          <Select.Content>
+            {availableTypes.map((type) => (
+              <Select.Item key={type} value={type}>{type}</Select.Item>
+            ))}
+            <Select.Item value='Other'>Other</Select.Item>
+          </Select.Content>
+        </Select.Root>
+      )
+    }, [selectedType, availableTypes, allEnrichmentPlugins])
+
     const PluginSelection = useMemo(() => {
       if (!plugins) return <Skeleton className={s.skeleton} width='full' />
 
       return (
-        <Select.Root onValueChange={(filename) => setPlugin(plugins.find((p) => p.filename === filename))}>
+        <Select.Root value={plugin?.filename} onValueChange={(filename) => setPlugin(plugins.find((p) => p.filename === filename))}>
           <Select.Trigger>
             <Stack gap={16}>
               <Icon variant='dimmed' name='Puzzle' />
@@ -353,6 +429,7 @@ export namespace Enrichment {
         loading={!plugins}
         {...props}
       >
+        {TypeSelection}
         {PluginSelection}
         {FileSelection}
         <TimeRangeSelector event={event} frame={frame} setFrame={setFrame} isLoaded={!!plugins} />
