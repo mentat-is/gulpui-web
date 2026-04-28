@@ -30,6 +30,7 @@ import { Mapping } from '@/entities/Mapping'
 import React from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 import { AdvancedPluginParams } from '@/components/AdvancedPluginParams'
+import { Internal } from '@/entities/addon/Internal'
 
 export namespace FileEntity {
   export interface IngestOptions {
@@ -95,8 +96,9 @@ const FilesList = React.memo(function FilesList(props: {
   settings: Record<string, FileEntity.Settings>
   progress: Record<string, number>
   updateSettings: (filename: string, update: Partial<FileEntity.Settings>) => void
+  ingestMode: 'FILES' | 'PACKAGE'
 }) {
-  const { files, settings, progress, updateSettings } = props
+  const { files, settings, progress, updateSettings, ingestMode } = props
   const parentRef = useRef<HTMLDivElement>(null)
 
   const rowVirtualizer = useVirtualizer({
@@ -124,7 +126,23 @@ const FilesList = React.memo(function FilesList(props: {
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
           const file = files[virtualRow.index];
-          return (
+          return ingestMode === 'PACKAGE' ? (
+            <PackagePreview
+              key={virtualRow.key}
+              data-index={virtualRow.index}
+              ref={rowVirtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+              file={file}
+              setFiles={props.setFiles}
+              progress={progress[file.name]}
+            />
+          ) : (
             <FilePreview
               key={virtualRow.key}
               data-index={virtualRow.index}
@@ -176,6 +194,33 @@ export const ContextSelector = ({ app, context, setContext }: {
     </Stack>
   )
 }
+
+export const PackagePreview = React.memo(React.forwardRef<HTMLDivElement, {
+  file: File
+  progress: number | undefined
+  setFiles: SetState<File[]>
+  style?: React.CSSProperties
+  'data-index'?: number
+}>(({ file, progress, setFiles, style, 'data-index': dataIndex }, ref) => {
+  return (
+    <Stack ref={ref} style={style} data-index={dataIndex} className={s.filePreview} gap={0} flex={0} pos={style?.position || 'relative'}>
+      {progress !== undefined && <Progress value={progress} />}
+      <Icon name={Default.Icon.SOURCE} />
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <p className={s.filename}>{file.name}</p>
+          </TooltipTrigger>
+          <TooltipContent>
+            {file.name}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+      <div style={{ flex: 1 }} />
+      <Button icon='X' variant='tertiary' shape='icon' onClick={() => setFiles(sources => sources.filter(source => source.name !== file.name))} />
+    </Stack>
+  )
+}))
 
 export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
   file: File
@@ -532,6 +577,7 @@ export function UploadBanner() {
   const [newContext, setNewContext] = useState(true)
   const [customFrame, setCustomFrame] = useState(false)
   const [frame, setFrame] = useState<FileEntity.IngestOptions['frame']>(MinMaxBase)
+  const [ingestMode, setIngestMode] = useState<'FILES' | 'PACKAGE'>('FILES')
 
   useEffect(() => {
     setContext('');
@@ -558,9 +604,9 @@ export function UploadBanner() {
   )
 
   /**
-   * Reads a small chunk of the file to detect its type based on magic bytes.
-   * @param file The file to analyze.
-   * @returns Promise resolving to the detected plugin filename or null.
+   * Performs signature-based file type identification via magic bytes.
+   * @param file Target file for analysis.
+   * @returns Detected plugin identifier or null.
    */
   const detectFileType = useCallback((file: File) => {
     return readFileChunk(file)
@@ -571,9 +617,9 @@ export function UploadBanner() {
   }, [])
 
   /**
-   * Initialize settings for a new file, detecting its type and selecting default methods/mappings.
-   * @param file The file entity.
-   * @param app The current application context for mapping lookups.
+   * Provisions default ingestion parameters based on detected file characteristics.
+   * @param file File entity to initialize.
+   * @param appState Current application context for mapping resolution.
    */
   const initializeFileSettings = async (file: File, appState: any) => {
     const plugin = await detectFileType(file) || 'win_evtx.py';
@@ -614,25 +660,36 @@ export function UploadBanner() {
     }))
   }
 
+  /**
+   * Dispatches ingestion requests for all selected files based on active mode.
+   * [Tech-Note] Strategy pattern used to switch between package and individual file workflows.
+   */
   const handleSubmit = useCallback(async () => {
-    setLoading(true)
+    setLoading(true);
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
+    const frameConfig = customFrame ? frame : undefined;
 
-      Info.file_ingest({
+    for (const file of files) {
+      const baseOptions = {
         context,
         file,
-        settings: settings[file.name],
         setProgress: setFileProgressConstrustor(file),
-        frame: customFrame ? frame : undefined
-      })
+        frame: frameConfig,
+      };
+
+      if (ingestMode === "PACKAGE") {
+        Info.file_ingest_zip(baseOptions);
+      } else {
+        Info.file_ingest({
+          ...baseOptions,
+          settings: settings[file.name],
+        });
+      }
     }
 
-    setLoading(false)
-
-    spawnBanner(<SelectFiles.Banner />)
-  }, [files, settings, context, customFrame, frame])
+    setLoading(false);
+    spawnBanner(<SelectFiles.Banner />);
+  }, [files, settings, context, customFrame, frame, ingestMode, app]);
 
   const isValidSettings = useMemo(() => {
     return Object.keys(settings).every(k => {
@@ -659,11 +716,11 @@ export function UploadBanner() {
         onClick={handleSubmit}
         icon="Check"
         className={s.done}
-        disabled={!context || !files.length || !isValidSettings}
+        disabled={!context || !files.length || (ingestMode === 'FILES' && !isValidSettings)}
         loading={loading}
       />
     )
-  }, [context, handleSubmit, files, isValidSettings, loading])
+  }, [context, handleSubmit, files, isValidSettings, loading, ingestMode])
 
   /**
    * Applies a specific set of settings to all selected files in a single batch.
@@ -720,6 +777,14 @@ export function UploadBanner() {
       title="Ingest files"
       done={DoneButton}>
       <Toggle
+        option={['Files', 'Package']}
+        checked={ingestMode === 'PACKAGE'}
+        onCheckedChange={(c) => {
+          setIngestMode(c ? 'PACKAGE' : 'FILES')
+          setFiles([])
+        }}
+      />
+      <Toggle
         option={['Ingest everything', 'Use limits']}
         checked={customFrame}
         onCheckedChange={setCustomFrame}
@@ -733,6 +798,7 @@ export function UploadBanner() {
             settings={settings}
             progress={progress}
             updateSettings={updateSettings}
+            ingestMode={ingestMode}
           />
         </Stack>
       </Stack> : null}
@@ -741,11 +807,12 @@ export function UploadBanner() {
         type="file"
         multiple
         value={''}
+        accept={ingestMode === 'PACKAGE' ? 'application/zip,.zip' : undefined}
         variant='highlighted'
         onChange={handleFileChange}
       />
       <Stack>
-        <ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />
+        {ingestMode === 'FILES' && <ApplySettinsForAllFiles settings={settings} updateSettings={updateSettings} setSettings={updateAllSettings} />}
         <Button variant="secondary" icon="Cross" onClick={() => setFiles([])}>
           Clear selection
         </Button>

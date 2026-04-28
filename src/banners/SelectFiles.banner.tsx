@@ -535,7 +535,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 	}, [file.id, Info]);
 
 	const FileIsTooBig = () => {
-		const total = file.total + progress;
+		const total = Math.max(file.total, progress);
 		if (total < 500_000) {
 			return null;
 		}
@@ -578,7 +578,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 				size="sm"
 				className={s.amount}
 				variant="gray-subtle"
-				value={file.total + progress}
+				value={Math.max(file.total, progress)}
 			/>
 			<Button
 				shape="icon"

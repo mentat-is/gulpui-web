@@ -14,6 +14,7 @@ export type IngestTask = {
   onProgress?: (progress: number, bytes: number) => void;
   onDone?: () => void;
   onError?: (error: string) => void;
+  endpoint?: 'ingest_file' | 'ingest_zip';
 };
 
 class IngestWorkerManager {
@@ -80,7 +81,8 @@ class IngestWorkerManager {
         settings: task.settings,
         server: task.server,
         token: task.token,
-        frame: task.frame
+        frame: task.frame,
+        endpoint: task.endpoint,
       }
     });
   }
