@@ -102,7 +102,7 @@ export function FilterFileBanner({
   const [loading, setLoading] = useState(false)
   const [files, setFiles] = useState<Source.Type[]>(initSources)
   const [flaggedOnly, setFlaggedOnly] = useState(false);
-  const [createNotesChecked, setCreateNotesChecked] = useState(!!initCreateNotes);
+  const [createNotesChecked, setCreateNotesChecked] = useState(false);
   // -- State Management --
   // Builder Mode State
   const [query, setQuery] = useState<Query.Type>(initQuery ?? { string: '', filters: [] })
