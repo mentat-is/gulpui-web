@@ -15,12 +15,13 @@ interface DisplayGroupDialogProps {
 }
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
+	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
 	const { spawnDialog } = Application.use();
 
 	const parentRef = useRef<HTMLDivElement>(null);
 
 	const virtualizer = useVirtualizer({
-		count: events.length,
+		count: sortedEvents.length,
 		getScrollElement: () => parentRef.current,
 		estimateSize: () => 44,
 		overscan: 5,
@@ -82,7 +83,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 								transform: `translateY(${v.start}px)`,
 							}}
 						>
-							{renderEvent(events[v.index])}
+							{renderEvent(sortedEvents[v.index])}
 						</div>
 					))}
 				</div>
