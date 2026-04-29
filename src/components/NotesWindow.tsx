@@ -10,6 +10,7 @@ import { Select } from '@/ui/Select'
 import { Banner } from '@/ui/Banner'
 import { Stack } from '@/ui/Stack'
 import { Input } from '@/ui/Input'
+import { DataStore } from '@/store/DataStore'
 
 import s from './styles/NotesWindow.module.css'
 
@@ -24,7 +25,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const getAvailableTags = useCallback(() => {
     const tags = new Set<string>();
-    app.target.notes.forEach(note => {
+    DataStore.notes.forEach(note => {
       note.tags.forEach(tag => tags.add(tag.toLowerCase()));
     })
     return [...tags.values()];
@@ -40,7 +41,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
   const sortedNotes = useMemo(() => {
     const lowerSearch = search.toLowerCase();
     
-    const filtered = app.target.notes.filter(n => {
+    const filtered = DataStore.notes.filter(n => {
       return !search || (
         n.name.toLowerCase().includes(lowerSearch) ||
         n.text.toLowerCase().includes(lowerSearch) ||
