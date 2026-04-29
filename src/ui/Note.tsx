@@ -37,7 +37,7 @@ export namespace NotePoint {
 		note,
 		...props
 	}: Combination.Props) {
-		const { app, spawnDialog } = Application.use();
+		const { app, spawnDialog, Info } = Application.use();
 
 		const targetNoteButtonHandler = (note: Note.Type) => {
 			const event = Doc.Entity.id(app, note.doc._id);
@@ -86,7 +86,12 @@ export namespace NotePoint {
 				<Button
 					icon="MagnifyingGlassSmall"
 					onClick={() => targetNoteButtonHandler(note)}
-					variant="tertiary"
+					variant="glass"
+				/>
+				<Button
+					icon="Trash2"
+					onClick={() => Info.note_delete(note)}
+					variant="glass"
 				/>
 			</Stack>
 		);

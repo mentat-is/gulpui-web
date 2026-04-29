@@ -1879,6 +1879,34 @@ export class Info implements InfoProps {
 			}
 		});
 
+	/**
+	 * Deletes multiple notes in a single API call.
+	 * Synchronizes the DataStore and invalidates caches upon success.
+	 * 
+	 * @param ids - Array of Note identifiers to delete.
+	 */
+	notes_delete_bulk = (ids: Note.Id[]) =>
+		api("/object_delete_bulk", {
+			method: "DELETE",
+			query: {
+				obj_type: "note",
+				operation_id: Operation.Entity.selected(this.app)?.id,
+				ws_id: this.app.general.ws_id,
+			},
+			body: { ids },
+		}).then(() => {
+			ids.forEach((id) => {
+				const index = DataStore.notes.findIndex((n) => n.id === id);
+				if (index !== -1) {
+					DataStore.notes.splice(index, 1);
+				}
+			});
+			Note.Entity.invalidateCache();
+			RenderEngine.clearAllCaches();
+			DataStore.markDirty();
+			this.render();
+		});
+
 	note_create = ({
 		name,
 		text,

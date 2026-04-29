@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useCallback } from 'react'
+import '@/global.css'
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { Application } from '@/context/Application.context'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Notification } from '@/ui/Notification'
@@ -11,6 +12,8 @@ import { Banner } from '@/ui/Banner'
 import { Stack } from '@/ui/Stack'
 import { Input } from '@/ui/Input'
 import { DataStore } from '@/store/DataStore'
+import { Checkbox } from '@/ui/Checkbox'
+import { Button } from '@/ui/Button'
 
 import s from './styles/NotesWindow.module.css'
 
@@ -20,8 +23,9 @@ interface FloatingWindowProps {
 }
 
 export function NotesWindow({ onClose }: FloatingWindowProps) {
-  const { app } = Application.use()
+  const { app, Info } = Application.use()
   const [search, setSearch] = useState('');
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<Note.Id>>(new Set());
 
   const getAvailableTags = useCallback(() => {
     const tags = new Set<string>();
@@ -34,6 +38,14 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
 
   const availableTags = useMemo(() => getAvailableTags(), [getAvailableTags]);
+
+  useEffect(() => {
+    const currentAvailable = new Set(availableTags.map(t => t.toLowerCase()));
+    setSelectedTags(prev => {
+      const next = new Set([...prev].filter(tag => currentAvailable.has(tag.toLowerCase())));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [availableTags]);
 
   const parentRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLDivElement>(null);
@@ -58,6 +70,41 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       return byContext !== 0 ? byContext : a.source_id.localeCompare(b.source_id);
     });
   }, [app.timeline.renderVersion, search, app, selectedTags]);
+
+  const isAllSelected = useMemo(() => {
+    return sortedNotes.length > 0 && sortedNotes.every(n => selectedNoteIds.has(n.id));
+  }, [sortedNotes, selectedNoteIds]);
+
+  const selectAllLabel = useMemo(() => {
+    if (isAllSelected) return `Deselect All (${selectedNoteIds.size} selected)`;
+    return `Select All (${sortedNotes.length} visible)`;
+  }, [isAllSelected, selectedNoteIds.size, sortedNotes.length]);
+
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedNoteIds(new Set(sortedNotes.map(n => n.id)));
+    } else {
+      setSelectedNoteIds(new Set());
+    }
+  }, [sortedNotes]);
+
+  const toggleNoteSelection = useCallback((id: Note.Id) => {
+    setSelectedNoteIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBulkDelete = async () => {
+    if (selectedNoteIds.size === 0) return;
+    await Info.notes_delete_bulk([...selectedNoteIds]);
+    setSelectedNoteIds(new Set());
+  };
 
   const virtualizer = useVirtualizer({
     count: sortedNotes.length,
@@ -96,6 +143,19 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
           </Select.Content>
         </Select.Multi.Root>
       </Stack>
+      <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
+          <Checkbox
+            style={{ height: 20, width: 20 }}
+            checked={isAllSelected}
+            onCheckedChange={handleSelectAll as any}
+          />
+          <span 
+            style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => handleSelectAll(!isAllSelected)}
+          >
+            {selectAllLabel}
+          </span>
+        </Stack>
       <div
         ref={parentRef}
         className={s.result}
@@ -112,12 +172,29 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
                 transform: `translateY(${item.start}px)`,
               }}
             >
-              <NotePoint.Combination note={sortedNotes[item.index]} />
+              <Stack gap={12} ai="center" style={{ width: '100%' }}>
+                <Checkbox
+                style={{ height: 20, width: 20 }}
+                  checked={selectedNoteIds.has(sortedNotes[item.index].id)}
+                  onCheckedChange={() => toggleNoteSelection(sortedNotes[item.index].id)}
+                />
+                <NotePoint.Combination note={sortedNotes[item.index]} style={{ flex: 1 }} />
+              </Stack>
             </div>
           ))}
         </div>
       </div>
       <Notification value='You can scroll tags list horizontally' variant='informational' icon='Information' />
+      <Stack jc="flex-end" style={{ padding: '12px 0 0 0' }}>
+        <Button
+          variant="glass"
+          disabled={selectedNoteIds.size === 0}
+          onClick={handleBulkDelete}
+          icon="Trash2"
+        >
+          Delete selected notes ({selectedNoteIds.size})
+        </Button>
+      </Stack>
       <div ref={windowRef} className={s.portalContainer} />
     </Banner>
   )
