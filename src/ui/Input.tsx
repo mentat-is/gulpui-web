@@ -29,6 +29,8 @@ const inputVariants = cva(s.button, {
 export namespace Input {
   export interface Props extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, VariantProps<typeof inputVariants> {
     icon?: Icon.Name | null;
+    onIconClick?: () => void;
+    iconTitle?: string;
     label?: string;
     revert?: boolean;
     skeleton?: boolean;
@@ -39,7 +41,7 @@ export namespace Input {
 
 
 const Input = React.forwardRef<HTMLInputElement, Input.Props>(
-  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, onChange, ...props }, ref) => {
+  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, onIconClick, iconTitle, onChange, ...props }, ref) => {
     const classes = cn(
       inputVariants({ variant, size, className }),
       s.wrapper,
@@ -54,7 +56,22 @@ const Input = React.forwardRef<HTMLInputElement, Input.Props>(
         return null;
       }
 
-      return <Icon variant='dimmed' name={icon ?? 'Upload'} />;
+      const iconElement = <Icon variant='dimmed' name={icon ?? 'Upload'} />;
+
+      if (onIconClick) {
+        return (
+          <button
+            type="button"
+            className={s.iconButton}
+            onClick={onIconClick}
+            title={iconTitle}
+          >
+            {iconElement}
+          </button>
+        );
+      }
+
+      return iconElement;
     }
 
     return (

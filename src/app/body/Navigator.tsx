@@ -1,3 +1,4 @@
+import { debounce } from 'lodash'
 import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
@@ -22,6 +23,8 @@ import { useTheme } from 'next-themes'
 import { AIAssistant } from '@/banners/AIAssistant.banner'
 import { FloatingWindow } from '@/ui/FloatingWindow'
 import { Extension } from '@/context/Extension.context'
+import { Filter } from '@/entities/Filter'
+import { Source } from '@/entities/Source'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -43,6 +46,16 @@ export function Navigator({
   const { theme } = useTheme()
   const [chatOpen, setChatOpen] = useState(false)
   const toggleChatOpen = () => setChatOpen(prev => !prev)
+
+  const [filterMode, setFilterMode] = useState<'files' | 'events'>('files');
+  const EVENT_FILTER_ID = 'navigator-event-filter' as Filter.Id;
+
+  const [localFilterValue, setLocalFilterValue] = useState(app.timeline.filter);
+
+  // Sync local filter value with global app state
+  useEffect(() => {
+    setLocalFilterValue(app.timeline.filter);
+  }, [app.timeline.filter]);
 
   useEffect(() => {
     setTimestamp(_timestamp)
@@ -241,9 +254,154 @@ export function Navigator({
     setHighlightsOverlay(prev => prev ? null : <Highlights.Create.Overlay />)
   }
 
+  /**
+   * Debounced function to handle filter changes.
+   * For 'files' mode, it updates the global timeline filter.
+   * For 'events' mode, it updates OpenSearch filters and triggers a refetch.
+   */
+  const debouncedFilter = useMemo(
+    () =>
+      debounce((value: string, mode: 'files' | 'events') => {
+        if (mode === 'files') {
+          Info.setTimelineFilter(value);
+        } else {
+          let hasChanges = false;
+          const sources = Source.Entity.selected(app);
+          if (sources.length === 0) return;
+
+          sources.forEach((source: Source.Type) => {
+            const query = Info.getQuery(source);
+            const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
+            const trimmedValue = value.trim();
+
+            if (trimmedValue === '') {
+              if (existingFilterIndex !== -1) {
+                query.filters.splice(existingFilterIndex, 1);
+                Info.setQuery(source, query);
+                hasChanges = true;
+              }
+            } else {
+              const existingFilter = existingFilterIndex !== -1 ? query.filters[existingFilterIndex] : null;
+              
+              // Only update if the filter doesn't exist or its value has changed
+              if (!existingFilter || existingFilter.value !== trimmedValue) {
+                const newFilter: Filter.Type = {
+                  id: EVENT_FILTER_ID,
+                  type: 'wildcard' as any,
+                  operator: 'must' as any,
+                  field: 'event.original',
+                  value: trimmedValue,
+                  enabled: true,
+                  case_insensitive: true,
+                };
+
+                if (existingFilterIndex !== -1) {
+                  query.filters[existingFilterIndex] = newFilter;
+                } else {
+                  query.filters.push(newFilter);
+                }
+                Info.setQuery(source, query);
+                hasChanges = true;
+              }
+            }
+          });
+
+          if (hasChanges) {
+            Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
+          }
+        }
+      }, 1000),
+    [app, Info, EVENT_FILTER_ID]
+  );
+
+  // Cleanup debounce on unmount
+  useEffect(() => {
+    return () => {
+      debouncedFilter.cancel();
+    };
+  }, [debouncedFilter]);
+
   const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
-    Info.setTimelineFilter(e.target.value)
+    const value = e.target.value;
+    setLocalFilterValue(value);    
+    debouncedFilter(value, filterMode);
   }
+
+  /**
+   * Applies the input text as a wildcard filter on event.original for all selected sources immediately.
+   * Used when switching modes to ensure the view updates without delay.
+   */
+  const handleEventFilterChange = useCallback((value: string) => {
+
+    const sources = Source.Entity.selected(app);
+    if (sources.length === 0) return;
+
+    sources.forEach((source: Source.Type) => {
+      const query = Info.getQuery(source);
+      const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
+
+      if (value.trim() === '') {
+        // If input is cleared, remove the event filter
+        if (existingFilterIndex !== -1) {
+          query.filters.splice(existingFilterIndex, 1);
+        }
+      } else {
+        // Create or update the wildcard filter on event.original
+        const newFilter: Filter.Type = {
+          id: EVENT_FILTER_ID,
+          type: 'wildcard' as any,
+          operator: 'must' as any,
+          field: 'event.original',
+          value: value.trim(),
+          enabled: true,
+          case_insensitive: true,
+        };
+
+        if (existingFilterIndex !== -1) {
+          query.filters[existingFilterIndex] = newFilter;
+        } else {
+          query.filters.push(newFilter);
+        }
+      }
+      Info.setQuery(source, query);
+    });
+
+    // Refetch events for all selected sources to apply the new filter
+    Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
+  }, [app, Info, EVENT_FILTER_ID]);
+
+  /**
+   * Toggles between 'files' and 'events' filter modes.
+   * When switching back to 'files', it clears any active event filters.
+   */
+  const handleIconClick = useCallback(() => {
+    const nextMode = filterMode === 'files' ? 'events' : 'files';
+
+    // Reset input value when switching modes to provide a clean state for the new mode
+    setLocalFilterValue('');
+    Info.setTimelineFilter('');
+
+    if (filterMode === 'events') {
+      // Cleanup: remove event filters when switching back to file filtering
+      let hasChanges = false;
+      const sources = Source.Entity.selected(app);
+      sources.forEach((source: Source.Type) => {
+        const query = Info.getQuery(source);
+        const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
+        if (existingFilterIndex !== -1) {
+          query.filters.splice(existingFilterIndex, 1);
+          Info.setQuery(source, query);
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges) {
+        Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
+      }
+    }
+
+    setFilterMode(nextMode);
+  }, [filterMode, app, Info, EVENT_FILTER_ID]);
 
   const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
 
@@ -315,10 +473,12 @@ export function Navigator({
       <Input
         className={s.filter}
         variant='highlighted'
-        value={app.timeline.filter}
-        placeholder='Filter by filenames and context'
+        value={localFilterValue}
+        placeholder={filterMode === 'files' ? 'Filter by filenames and context' : 'Filter Events by raw logs'}
         onChange={handleFilterChange}
-        icon="Filter"
+        icon={filterMode === 'files' ? 'Filter' : 'Activity'}
+        onIconClick={handleIconClick}
+        iconTitle={filterMode === 'files' ? 'Switch to Event Filtering' : 'Switch to File Filtering'}
       />
       <Button
         variant="secondary"
