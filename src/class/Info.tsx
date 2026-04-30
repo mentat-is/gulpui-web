@@ -313,11 +313,19 @@ export class Info implements InfoProps {
 				filesUpdated = true;
 			}
 
+			// Build a source_config-based query for real-time polling.
+			// Uses the forward-shifted time range [fromNanos, nowNanos] to fetch
+			// only events newer than the latest known event.
 			const query: Query.Type = {
-				string: Filter.Entity.base(file, {
-					min: fromNanos as unknown as number,
-					max: nowNanos as unknown as number,
-				}),
+				string: '',
+				source_config: {
+					operation_id: file.operation_id,
+					source_ids: [file.id],
+					range: {
+						min: fromNanos.toString(),
+						max: nowNanos.toString(),
+					},
+				},
 				filters: [],
 			};
 
@@ -1029,6 +1037,16 @@ export class Info implements InfoProps {
 				};
 	};
 
+	/**
+	 * Retrieves the list of previously applied queries from the server history.
+	 *
+	 * Reconstructs full Query.Type objects from the raw OpenSearch bool queries
+	 * stored in history. Extracts source_config from term/terms/range clauses,
+	 * text_filter from wildcard on event.original, and individual filter conditions.
+	 * Generates a human-readable label via Filter.Entity.describe().
+	 *
+	 * @returns A promise resolving to an array of reconstructed Query.Type objects.
+	 */
 	getLastQueries = (): Promise<Query.Type[]> =>
 		api<GulpDataset.QueryHistoryGet.Response>("/query_history_get").then(
 			(list) => {
@@ -1036,61 +1054,83 @@ export class Info implements InfoProps {
 
 				list.forEach((payload) => {
 					const root = payload.q.query;
-					console.log(root, payload);
-					if (!root) {
-						return;
-					}
+					if (!root || !root.bool) return;
 
-					let string = "";
+					// Accumulators for reconstructing the Query.Type
 					const filters: Filter.Type[] = [];
+					let text_filter = '';
+					let source_config: Query.Type['source_config'] | undefined;
+
+					// Temporary holders for source_config reconstruction
+					let operationId = '';
+					let sourceIds: string[] = [];
+					let rangeMin: string | number = '';
+					let rangeMax: string | number = '';
 
 					Object.entries(root.bool).forEach(([key, arr]) => {
 						const operator = key as OpenSearchQueryBuilder.Operator;
 
-						arr.forEach((obj) => {
-							Object.entries(obj).forEach(([type, v]) => {
-								if (type === "query_string") {
-									string = v.query;
+						(arr as any[]).forEach((obj) => {
+							Object.entries(obj).forEach(([type, v]: [string, any]) => {
+								// Skip legacy query_string clauses — they are not reconstructable
+								if (type === 'query_string') return;
+
+								// Extract source_config components from known infrastructure fields
+								if (type === 'term' && v['gulp.operation_id'] !== undefined) {
+									operationId = v['gulp.operation_id'];
+									return;
+								}
+								if (type === 'terms' && v['gulp.source_id'] !== undefined) {
+									sourceIds = v['gulp.source_id'];
+									return;
+								}
+								if (type === 'range' && v['gulp.timestamp'] !== undefined) {
+									rangeMin = v['gulp.timestamp'].gte ?? '';
+									rangeMax = v['gulp.timestamp'].lte ?? '';
 									return;
 								}
 
-								Object.keys(v).forEach((key) => {
-									if (typeof v[key] !== "object") {
-										filters.push({
-											operator,
-											type: type as OpenSearchQueryBuilder.Condition,
-											id: generateUUID(),
-											field: key,
-											value: v[key],
-											enabled: true,
-										});
-									} else {
-										filters.push({
-											operator,
-											type: type as OpenSearchQueryBuilder.Condition,
-											id: generateUUID(),
-											field: key,
-											value: v[key].value,
-											enabled: true,
-										});
-									}
+								// Extract text_filter from wildcard on event.original
+								if (type === 'wildcard' && v['event.original'] !== undefined) {
+									text_filter = v['event.original'].value ?? '';
+									return;
+								}
+
+								// Everything else is a user-defined filter condition
+								Object.keys(v).forEach((fieldKey) => {
+									filters.push({
+										operator,
+										type: type as OpenSearchQueryBuilder.Condition,
+										id: generateUUID(),
+										field: fieldKey,
+										value: typeof v[fieldKey] === 'object' ? v[fieldKey].value : v[fieldKey],
+										enabled: true,
+									});
 								});
 							});
 						});
 					});
 
-					if (!string) {
-						Logger.error(
-							`Cannot find query_string part in given object: \n${JSON.stringify(payload, null, 2)}`,
-							"Info.getLastQueries",
-						);
-						string = Filter.Entity.base(Source.Entity.selected(this.app)[0]);
+					// Reconstruct source_config if infrastructure fields were found
+					if (operationId && sourceIds.length > 0) {
+						source_config = {
+							operation_id: operationId,
+							source_ids: sourceIds,
+							range: { min: rangeMin, max: rangeMax },
+						};
 					}
 
-					queries.push({
-						string,
+					const queryObj: Query.Type = {
+						string: '', // will be generated below
+						text_filter,
 						filters,
-					});
+						source_config,
+					};
+
+					// Generate a human-readable label for the popover display
+					queryObj.string = Filter.Entity.describe(queryObj, this.app);
+
+					queries.push(queryObj);
 				});
 
 				return queries;
@@ -2837,20 +2877,34 @@ export class Info implements InfoProps {
 		});
 	};
 
+	/**
+	 * Persists a Query.Type into the application filter cache for one or more source files.
+	 *
+	 * Before persisting, auto-generates the human-readable `string` label via
+	 * `Filter.Entity.describe()` so it always reflects the actual applied state.
+	 * Also preserves `fieldTypeMap` for correct clause generation on re-open.
+	 *
+	 * @param file - One or more source files to associate the query with.
+	 * @param query - The structured query to persist.
+	 */
 	setQuery = (file: Arrayed<Source.Type>, query: Query.Type): void => {
 		const files = Parser.array(file);
 
+		// Auto-generate the display label from the current query state
+		const displayLabel = Filter.Entity.describe(query, this.app);
+
 		files.forEach((file) => {
 			this.app.target.filters[file.id] = {
-				string: query.string || "",
+				string: displayLabel,
 				text_filter: query.text_filter,
 				source_config: query.source_config,
 				// Always use the incoming filters array directly.
 				// An empty array is a valid "cleared" state and must NOT fall back
-				// to the previously stored filters — that was Bug 2.
+				// to the previously stored filters.
 				filters: Array.isArray(query.filters) ? query.filters : [],
 				raw: query.raw,
 				isManual: query.isManual,
+				fieldTypeMap: query.fieldTypeMap,
 			};
 		});
 

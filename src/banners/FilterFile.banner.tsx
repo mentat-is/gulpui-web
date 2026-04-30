@@ -34,6 +34,15 @@ interface FilterFileBannerProps extends Banner.Props {
   name?: string;
 }
 
+/**
+ * Memoized component displaying the list of previously applied queries.
+ *
+ * Shows each query's human-readable `string` label in a popover.
+ * When the user clicks "apply" on a last filter, the full structured
+ * Query.Type (source_config, text_filter, filters) is used — NOT the
+ * display string. The source_config is merged with the current file
+ * selection to ensure correct scoping.
+ */
 const LastQueriesComponent = memo(({ 
   list, 
   onSelect,
@@ -54,38 +63,59 @@ const LastQueriesComponent = memo(({
         </Button>
       </Popover.Trigger>
       <Popover.Content className={s.lastFilters}>
-        <Stack dir="column">
+        <div className={s.lastFiltersList}>
           {list.map((q, i) => (
-            <div key={i}>
+            <div key={i} className={s.lastFilterItem}>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div>
-                      <Stack>
-                        <p>{q.string}</p>
-                        <Button icon="Check" variant="glass" onClick={() => {
+                    <div className={s.lastFilterRow}>
+                      <div className={s.lastFilterText}>
+                        {q.string}
+                      </div>
+                      <Button 
+                        icon="Check" 
+                        variant="glass" 
+                        className={s.lastFilterApplyButton}
+                        onClick={() => {
                           onSelect(q);
                           Info.setQuery(files, q);
-                        }} />
-                      </Stack>
+                        }} 
+                      />
                     </div>
                   </TooltipTrigger>
                   <TooltipContent className={s.tooltip}>
-                    <p>{q.string}</p>
-                    <p>{JSON.stringify(q.filters, null, 2)}</p>
+                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap' }}>{q.string}</pre>
+                    {q.filters.length > 0 && (
+                      <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', marginTop: 4 }}>
+                        {JSON.stringify(q.filters, null, 2)}
+                      </pre>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
 
-              {list.length - 1 > i && <Separator />}
+              {list.length - 1 > i && <Separator className={s.lastFilterSeparator} />}
             </div>
           ))}
-        </Stack>
+        </div>
       </Popover.Content>
     </Popover.Root>
   );
 });
 
+/**
+ * FilterFileBanner — Modal for building and applying OpenSearch queries/filters
+ * to specific source files within an operation.
+ *
+ * Supports two modes:
+ * - **Builder mode**: Structured UI with text filter, conditions, and source selection.
+ * - **Manual mode**: Raw JSON editor for advanced OpenSearch queries.
+ *
+ * The component manages query state locally and persists it to Info's filter cache
+ * on submit. The `Query.Type.string` field is used exclusively as a display label
+ * (generated via `Filter.Entity.describe()`), never for actual filtering.
+ */
 export function FilterFileBanner({
   sources: initSources,
   query: initQuery,
@@ -103,21 +133,28 @@ export function FilterFileBanner({
   const [files, setFiles] = useState<Source.Type[]>(initSources)
   const [flaggedOnly, setFlaggedOnly] = useState(false);
   const [createNotesChecked, setCreateNotesChecked] = useState(false);
+
   // -- State Management --
-  // Builder Mode State
+
+  // Builder Mode State: the structured query object
   const [query, setQuery] = useState<Query.Type>(initQuery ?? { string: '', filters: [] })
 
-  // Manual Mode State (Raw JSON string)
+  // Manual Mode State: raw JSON string for the manual editor
   const [manualContent, setManualContent] = useState('')
   const [isManual, setIsManual] = useState<boolean>(!!initQuery?.isManual)
 
+  // Available field keys and their OpenSearch types for the query builder
   const [keys, setKeys] = useState<string[]>(initKeys ?? [])
   const [fieldTypeMap, setFieldTypeMap] = useState<Record<string, string>>({})
 
-  // Refs for change tracking
+  // Refs for tracking file selection changes
   const isFirstRun = useRef(true)
   const prevFileIds = useRef(files.map(f => f.id).sort().join(','))
 
+  /**
+   * Creates a clean base Query.Type scoped to the given files and current timeline frame.
+   * Used as the starting point when no persisted filter exists, or when resetting.
+   */
   const getCleanBase = useCallback((targetFiles: Source.Type[]): Query.Type => {
     if (targetFiles.length === 0) return { string: '', filters: [] };
     const first = targetFiles[0];
@@ -136,19 +173,33 @@ export function FilterFileBanner({
     }
   }, [app]);
 
+  /**
+   * Converts a Query.Type into a JSON string for the manual editor.
+   * If the query has raw JSON (manual mode), uses that directly.
+   * Otherwise, generates the OpenSearch query via Filter.Entity.query().
+   */
   const getManualContentFromQuery = useCallback((q: Query.Type): string => {
     if (q.raw) return JSON.stringify(q.raw, null, 2);
-    return JSON.stringify(Filter.Entity.query({ ...q, isManual: false, fieldTypeMap } as any), null, 2)
+    return JSON.stringify(Filter.Entity.query({ ...q, fieldTypeMap }), null, 2)
   }, [fieldTypeMap]);
 
+  /**
+   * Resets the query state to a clean base for the given files.
+   * Updates both the builder state and the manual editor content.
+   */
   const resetToCleanBase = useCallback((targetFiles: Source.Type[]) => {
     const cleanBase = getCleanBase(targetFiles)
     setQuery(cleanBase);
-    setManualContent(JSON.stringify(Filter.Entity.query({ ...cleanBase, fieldTypeMap } as any), null, 2));
+    setManualContent(JSON.stringify(Filter.Entity.query({ ...cleanBase, fieldTypeMap }), null, 2));
   }, [getCleanBase, fieldTypeMap]);
 
   const fileIds = useMemo(() => files.map(f => f.id), [files])
 
+  /**
+   * Handles source file selection changes from the multi-select component.
+   * When files change, updates the query's source_config to match the new selection.
+   * In manual mode, resets the query entirely to avoid stale JSON.
+   */
   const handleSourceChange = useCallback((action: SetStateAction<Source.Id[]>) => {
     let newIds: Source.Id[] = []
     if (typeof action === 'function') {
@@ -169,8 +220,8 @@ export function FilterFileBanner({
         toast.info('Query updated based on source selection')
         setQuery(prev => {
           const cleanBase = getCleanBase(newFiles)
-          const updated = { ...prev, source_config: cleanBase.source_config, string: cleanBase.string }
-          setManualContent(JSON.stringify(Filter.Entity.query({ ...updated, fieldTypeMap } as any), null, 2))
+          const updated = { ...prev, source_config: cleanBase.source_config }
+          setManualContent(JSON.stringify(Filter.Entity.query({ ...updated, fieldTypeMap }), null, 2))
           return updated
         })
       }
@@ -178,14 +229,47 @@ export function FilterFileBanner({
     }
   }, [app, files, isManual, resetToCleanBase, fieldTypeMap])
 
+  /**
+   * Initialization effect — runs once on mount.
+   *
+   * Priority order:
+   * 1. If `initQuery` was provided (e.g. from "Last filters" or preview back-navigation),
+   *    merge it with the current files' source_config and use directly.
+   * 2. Otherwise, scan all selected files for a persisted non-empty query in the cache.
+   * 3. If nothing found, start with a clean base.
+   */
   useEffect(() => {
     if (isFirstRun.current) {
       isFirstRun.current = false
-      let startingQuery = initQuery
-      if (!startingQuery && files.length) {
-        const persisted = Info.getQuery(files[0]) as Query.Type & { raw?: any; mode?: 'builder' | 'manual' }
-        if (persisted && (persisted.filters?.length || persisted.string || persisted.raw)) {
+
+      // Case 1: Caller provided a query — honour it directly
+      if (initQuery) {
+        const cleanBase = getCleanBase(files)
+        const merged = { ...initQuery, source_config: cleanBase.source_config }
+        setQuery(merged)
+        setIsManual(!!initQuery.isManual)
+        setManualContent(getManualContentFromQuery(merged))
+        prevFileIds.current = files.map(f => f.id).sort().join(',')
+        return
+      }
+
+      // Case 2: Scan all selected files for a persisted query that has
+      // any user-applied filter state (text_filter, conditions, raw, or fieldTypeMap).
+      // We do NOT check `string` because it's a display-only label.
+      let startingQuery: Query.Type | undefined
+      for (const file of files) {
+        const persisted = Info.getQuery(file) as Query.Type
+        if (
+          persisted && (
+            persisted.filters?.length ||
+            persisted.text_filter ||
+            persisted.raw ||
+            persisted.isManual ||
+            persisted.fieldTypeMap
+          )
+        ) {
           startingQuery = persisted
+          break
         }
       }
 
@@ -193,20 +277,24 @@ export function FilterFileBanner({
         const cleanBase = getCleanBase(files)
         const updatedStartingQuery = {
           ...startingQuery,
-          source_config: cleanBase.source_config
+          source_config: cleanBase.source_config,
         }
         setQuery(updatedStartingQuery)
         setIsManual(!!startingQuery.isManual)
         setManualContent(getManualContentFromQuery(updatedStartingQuery))
         prevFileIds.current = files.map(f => f.id).sort().join(',')
-        return
       } else {
+        // Case 3: No persisted filter found — start clean
         resetToCleanBase(initSources)
         prevFileIds.current = initSources.map(f => f.id).sort().join(',')
       }
     }
-  }, [files, initQuery, initSources, Info, getManualContentFromQuery, resetToCleanBase])
+  }, [files, initQuery, initSources, Info, getManualContentFromQuery, resetToCleanBase, getCleanBase])
 
+  /**
+   * Loads available field keys and their types for the query builder dropdowns.
+   * Fetches from each selected file's event_keys and merges results.
+   */
   useEffect(() => {
     if (initKeys?.length) {
       setKeys(initKeys)
@@ -235,6 +323,7 @@ export function FilterFileBanner({
     return () => { cancelled = true }
   }, [Info, files, initKeys])
 
+  /** Updates the filters array within the query state. */
   const setFilters = useCallback(
     (filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) =>
       setQuery(q => ({
@@ -244,6 +333,14 @@ export function FilterFileBanner({
     []
   )
 
+  /**
+   * Assembles the final Query.Type for submission or preview.
+   *
+   * Merges builder state with manual JSON, attaches fieldTypeMap for correct
+   * clause generation, and generates the human-readable display label.
+   *
+   * @returns The final Query.Type, or null if manual JSON is invalid.
+   */
   const getFinalQuery = useCallback((): Query.Type | null => {
     const builderState = { ...query }
     let manualState = undefined;
@@ -255,9 +352,30 @@ export function FilterFileBanner({
         return null
       }
     }
-    return { ...builderState, raw: manualState, isManual }
-  }, [isManual, manualContent, query])
 
+    const finalQuery: Query.Type = {
+      ...builderState,
+      raw: manualState,
+      isManual,
+      fieldTypeMap,
+    }
+
+    // Generate the display label from the actual query state
+    finalQuery.string = Filter.Entity.describe(finalQuery, app)
+
+    return finalQuery
+  }, [isManual, manualContent, query, fieldTypeMap, app])
+
+  /**
+   * Submit handler — applies the current query to the selected files.
+   *
+   * Steps:
+   * 1. Build the final query (with display label)
+   * 2. Cache current events for undo support
+   * 3. Persist the query via Info.setQuery()
+   * 4. Trigger refetch for all selected files
+   * 5. Re-render and close the banner
+   */
   const submit = useCallback(async () => {
     const finalQuery = getFinalQuery()
     if (!finalQuery) return
@@ -282,8 +400,12 @@ export function FilterFileBanner({
     }
   }, [Info, files, getFinalQuery, createNotesChecked, notes_color, notes_tags, notes_glyph_id, name, props, destroyBanner])
 
+  /**
+   * Builds the OpenSearch query for preview display, optionally adding
+   * a flagged-events filter (terms clause on doc IDs).
+   */
   const queryWithFlaggedEvents = useMemo(() => {
-    const baseQuery = Filter.Entity.query({ ...query, fieldTypeMap } as any)
+    const baseQuery = Filter.Entity.query({ ...query, fieldTypeMap })
     if (flaggedOnly) {
       const operation = Operation.Entity.selected(app);
       const flaggedEvents = Doc.Entity.flag.getDocIds(app, operation?.id);
@@ -335,12 +457,17 @@ export function FilterFileBanner({
 
   const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
+  /**
+   * Preview button handler — executes the current query in preview mode
+   * and opens a results banner. Passes the full query state back so
+   * the user can return to this banner with their configuration intact.
+   */
   const previewCurrentFilterButtonClickHandler = useCallback(() => {
     const finalQuery = getFinalQuery()
     if (!finalQuery) return
 
     setIsPreviewLoading(true)
-    Info.preview_query({...finalQuery , fieldTypeMap} as any)
+    Info.preview_query({...finalQuery, fieldTypeMap})
       .then(({ docs, total_hits }) => {
         if (total_hits > 0) {
           spawnBanner(
@@ -368,19 +495,52 @@ export function FilterFileBanner({
         }
       })
       .finally(() => setIsPreviewLoading(false))
-  }, [Info, getFinalQuery, files, keys, spawnBanner, props, initCreateNotes, name, notes_color, notes_glyph_id, notes_tags])
+  }, [Info, getFinalQuery, files, keys, spawnBanner, props, initCreateNotes, name, notes_color, notes_glyph_id, notes_tags, fieldTypeMap])
 
+  // Load last queries from server history on mount
   const [lastQueriesList, setLastQueriesList] = useState<Query.Type[]>([])
 
   useEffect(() => {
     Info.getLastQueries().then(setLastQueriesList)
   }, [Info])
 
+  /**
+   * Handler for applying a query from the "Last filters" popover.
+   *
+   * Resolves source_ids from the history query against available sources in the app.
+   * If matching sources are found, auto-selects them in the file picker.
+   * Updates query state, manual mode, and editor content to reflect the applied filter.
+   */
+  const handleApplyLastFilter = useCallback((q: Query.Type) => {
+    // Resolve matching source files from the query's source_config
+    if (q.source_config?.source_ids?.length) {
+      const matchedFiles: Source.Type[] = []
+      for (const id of q.source_config.source_ids) {
+        try {
+          const file = Source.Entity.id(app, id as Source.Id)
+          if (file) matchedFiles.push(file)
+        } catch { /* source no longer exists, skip */ }
+      }
+
+      if (matchedFiles.length > 0) {
+        setFiles(matchedFiles)
+        prevFileIds.current = matchedFiles.map(f => f.id).sort().join(',')
+      }
+    }
+
+    // Apply the full query state
+    setQuery(q)
+    setIsManual(!!q.isManual)
+    setManualContent(getManualContentFromQuery(q))
+  }, [app, getManualContentFromQuery])
+
+  /** Resets both builder and manual mode to a clean generated query from current sources. */
   const handleManualReset = () => {
     resetToCleanBase(files)
     toast.success('Reset to generated query from sources')
   }
 
+  /** Formats the manual JSON editor content with proper indentation. */
   const handleBeautify = useCallback(() => {
     try {
       setManualContent(JSON.stringify(JSON.parse(manualContent), null, 2))
@@ -394,7 +554,7 @@ export function FilterFileBanner({
       title="Choose filtering options"
       done={Done}
       side={!isManual ? <OpenSearchQueryBuilder.Preview query={queryWithFlaggedEvents} /> : null}
-      subtitle={<LastQueriesComponent list={lastQueriesList} onSelect={setQuery} Info={Info} files={files} />}
+      subtitle={<LastQueriesComponent list={lastQueriesList} onSelect={handleApplyLastFilter} Info={Info} files={files} />}
       className={s.banner}
       {...props}
     >
