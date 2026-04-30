@@ -256,6 +256,7 @@ export namespace Auth {
           disabled={!!app.general.user}
           tabIndex={1}
           onChange={(e) => setServer(e.currentTarget.value)}
+          onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
         />
         <Input
           variant='highlighted'
@@ -266,6 +267,7 @@ export namespace Auth {
           disabled={!!app.general.user}
           tabIndex={2}
           onChange={(e) => setId(e.currentTarget.value as typeof id)}
+          onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
         />
         <Input
           variant='highlighted'
@@ -277,6 +279,7 @@ export namespace Auth {
           disabled={!!app.general.user}
           tabIndex={3}
           onChange={(e) => setPassword(e.currentTarget.value)}
+          onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
         />
         <LoginMethods />
         <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && s.visible)}>
@@ -446,6 +449,7 @@ export namespace Auth {
             disabled={!!app.general.user}
             tabIndex={1}
             onChange={(e) => setServer(e.currentTarget.value)}
+            onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
           />
           <Input
             variant='highlighted'
@@ -456,6 +460,7 @@ export namespace Auth {
             disabled={!!app.general.user}
             tabIndex={2}
             onChange={(e) => setId(e.currentTarget.value as typeof id)}
+            onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
           />
           <Input
             variant='highlighted'
@@ -467,6 +472,7 @@ export namespace Auth {
             disabled={!!app.general.user}
             tabIndex={3}
             onChange={(e) => setPassword(e.currentTarget.value)}
+            onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
           />
           <LoginMethods />
         </Stack>
