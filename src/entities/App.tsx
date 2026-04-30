@@ -118,7 +118,7 @@ export namespace App {
     hidden: {
       notes: false,
       links: false,
-      filesWithNoEvents: false,
+      filesWithNoEvents: true,
       toasts: false
     }
   }

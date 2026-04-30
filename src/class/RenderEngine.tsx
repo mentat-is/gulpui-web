@@ -44,6 +44,7 @@ interface RenderEngineConstructor {
 	getPixelPosition: (timestamp: number) => number;
 	mouseX?: number;
 	mouseY?: number;
+	visibleSources?: Source.Type[];
 }
 
 export interface Status {
@@ -83,6 +84,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	height!: HeightEngine;
 	graph!: GraphEngine;
 	shifted: Source.Type[] = [];
+	visibleSources: Source.Type[] = [];
 
 	// INTERACTIVE ELEMENTS IN CANVAS saved to manage clicks for notes and links
 	public static interactiveNotes: Array<{
@@ -138,8 +140,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		scrollX,
 		mouseX,
 		mouseY,
+		visibleSources,
 	}: RenderEngineConstructor) {
 		if (RenderEngine.instance) {
+			RenderEngine.instance.visibleSources = visibleSources || [];
 			RenderEngine.instance.ruler = new RulerDrawer({
 				ctx,
 				getPixelPosition,
@@ -166,6 +170,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		}
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
+		this.visibleSources = visibleSources || [];
 		this.ruler = new RulerDrawer({
 			ctx,
 			getPixelPosition,
@@ -189,9 +194,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		return this;
 	}
 
-	public lines = (file: Source.Type) => {
+	public lines = (file: Source.Type, y?: number) => {
 		const color = stringToHexColor(file.context_id);
-		const y = Source.Entity.getHeight(this.info.app, file, this.scrollY);
+		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
 		this.ctx.fillStyle = color;
 		this.ctx.fillRect(0, y + 23, window.innerWidth, 1);
@@ -203,8 +208,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		);
 	};
 
-	public primary = (file: Source.Type) => {
-		const y = Source.Entity.getHeight(this.info.app, file, this.scrollY);
+	public primary = (file: Source.Type, y?: number) => {
+		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
 		this.ctx.fillStyle = stringToHexColor(file.context_id);
 		this.ctx.fillRect(0, y - 25, window.innerWidth, 1);
@@ -382,7 +387,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 			docs.forEach((doc) => {
 				const p = {
-					y: Source.Entity.getHeight(this.info.app, doc["gulp.source_id"], 0),
+					y: Source.Entity.getHeight(this.info.app, doc["gulp.source_id"], 0, this.visibleSources.findIndex(s => s.id === doc["gulp.source_id"])),
 					t: doc.gulp_timestamp,
 					o:
 						Source.Entity.id(this.info.app, doc["gulp.source_id"]).settings
@@ -409,7 +414,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		for (const id of flagged) {
 			const doc = Doc.Entity.id(this.info.app, id);
 			if (!doc) continue;
-			const source = Source.Entity.selected(this.info.app).find(
+			const source = this.visibleSources.find(
 				(s) => s.id === doc["gulp.source_id"],
 			);
 			if (!source) continue;
@@ -433,7 +438,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const timestamp = Note.Entity.timestamp(note);
 		const x = this.getPixelPosition(timestamp) + NOTE_OFFSET;
 		const y =
-			Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY) +
+			Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY, this.visibleSources.findIndex(s => s.id === note.source_id)) +
 			NOTE_OFFSET;
 
 		// Hit detection per l'Hover
@@ -672,7 +677,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			if (!e) {
 				return;
 			}
-			const index = Source.Entity.selected(this.info.app).findIndex(
+			const index = this.visibleSources.findIndex(
 				(f) => f.id === e["gulp.source_id"],
 			);
 
@@ -705,8 +710,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		return { dots };
 	};
 
-	public locals = (file: Source.Type) => {
-		const y = Source.Entity.getHeight(this.info.app, file, this.scrollY);
+	public locals = (file: Source.Type, y?: number) => {
+		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
 		const right =
 			this.getPixelPosition(file.timestamp.max + file.settings.offset) + 12;
@@ -894,14 +899,14 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		return [];
 	};
 
-	public loading = (file: Source.Type) => {
+	public loading = (file: Source.Type, y?: number) => {
 		this.ctx.beginPath();
 		this.ctx.strokeStyle = Color.Themer.theme.FONT_ACCENT;
 		if (this.ctx.setLineDash) {
 			this.ctx.setLineDash([5, 5]);
 		}
 
-		const height = Source.Entity.getHeight(this.info.app, file, this.scrollY);
+		const height = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 		this.ctx.moveTo(0, height);
 		this.ctx.lineTo(2000, height);
 		this.ctx.stroke();
@@ -910,8 +915,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		}
 	};
 
-	public draw_info = (file: Source.Type) => {
-		const y = Source.Entity.getHeight(this.info.app, file, this.scrollY) + 4;
+	public draw_info = (file: Source.Type, y?: number) => {
+		y = (typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id))) + 4;
 		const x = 10;
 		const lineHeight = 14;
 
@@ -961,20 +966,20 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		if (!file) return;
 
-		const selected = Source.Entity.selected(this.info.app);
+		const selected = this.visibleSources;
 		const index = selected.findIndex((f) => f.id === file.id);
 
 		if (index === -1) return;
 
 		this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT;
-		this.ctx.fillRect(0, index * 48 + 23 - this.scrollY, window.innerWidth, 1);
+		this.ctx.fillRect(0, Source.Entity.getHeight(this.info.app, file, this.scrollY, index) - 1, window.innerWidth, 1);
 		this.ctx.fillRect(
 			this.getPixelPosition(
 				this.info.app.timeline.target.gulp_timestamp + file.settings.offset,
 			),
 			0,
 			1,
-			window.innerWidth,
+			this.ctx.canvas.height,
 		);
 	};
 

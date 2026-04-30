@@ -2841,16 +2841,14 @@ export class Info implements InfoProps {
 		const files = Parser.array(file);
 
 		files.forEach((file) => {
-			const prev = this.app.target.filters[file.id];
-
 			this.app.target.filters[file.id] = {
 				string: query.string || "",
 				text_filter: query.text_filter,
 				source_config: query.source_config,
-				filters:
-					Array.isArray(query.filters) && query.filters.length > 0
-						? query.filters
-						: (prev?.filters ?? []),
+				// Always use the incoming filters array directly.
+				// An empty array is a valid "cleared" state and must NOT fall back
+				// to the previously stored filters — that was Bug 2.
+				filters: Array.isArray(query.filters) ? query.filters : [],
 				raw: query.raw,
 				isManual: query.isManual,
 			};

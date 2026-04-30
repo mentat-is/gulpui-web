@@ -146,10 +146,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 			scrollY: currentScrollY,
 			mouseX: mouseXRef.current,
 			mouseY: mouseYRef.current,
+			visibleSources: Source.Entity.selected(app).filter((file) => app.hidden.filesWithNoEvents ? Doc.Entity.get(app, file.id).length > 0 : true),
 		});
 
-		const files = Source.Entity.selected(app);
-
+		const files = render.visibleSources;
+		
 		render.ruler.draw();
 
 		// Y-AXIS VIEWPORT CULLING: Each source row is 48px tall. With more sources
@@ -157,10 +158,9 @@ export function Canvas({ timeline }: Canvas.Props) {
 		// against the canvas bounds (with 48px buffer for partial visibility), we skip
 		// engine rendering, line drawing, local markers, and info labels for invisible rows.
 		const canvasHeight = ctx.canvas.height;
-
+		
 		files.forEach((file, i) => {
 			const y = Source.Entity.getHeight(app, file, currentScrollY, i);
-
 			if (y < -48 || y > canvasHeight + 48) return;
 
 			if (
@@ -169,11 +169,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 				render[file.settings.render_engine].render(file, y - 24, force);
 			}
 
-			if (!i) render.primary(file);
+			if (!i) render.primary(file, y);
 
-			render.lines(file);
-			render.locals(file);
-			render.draw_info(file);
+			render.lines(file, y);
+			render.locals(file, y);
+			render.draw_info(file, y);
 		});
 
 		render.target();
@@ -211,10 +211,8 @@ export function Canvas({ timeline }: Canvas.Props) {
 		);
 
 		render.ruler.sections();
-
-		// @ts-ignore
-		window.__UNSUPORTED_FORCE_RENDER_OF_CANVAS__DONT_USE_IT_OR_YOU_WILL_BE_FIRED____λuthor_ℳark =
-			renderCanvas;
+	
+		renderCanvas;
 	};
 
 	const renderOverlay = () => {
@@ -387,7 +385,8 @@ export function Canvas({ timeline }: Canvas.Props) {
 		};
 		const index = Math.floor(click.y / 48);
 
-		const file = Source.Entity.selected(Info.app)[index];
+		const files = Source.Entity.selected(app).filter((file) => app.hidden.filesWithNoEvents ? Doc.Entity.get(app, file.id).length > 0 : true);
+		const file = files[index];
 
 		if (!file) return;
 
@@ -662,11 +661,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 					48,
 			);
 
-			const file = Source.Entity.selected(Info.app)[index] ?? null;
+			const files = Source.Entity.selected(Info.app).filter((file) => Info.app.hidden.filesWithNoEvents ? Doc.Entity.get(Info.app, file.id).length > 0 : true);
+			const file = files[index] ?? null;
 
 			setTarget(file);
 		},
-		[setTarget, timeline, Info.app.timeline.filter, Info.app.target.files],
+		[setTarget, timeline, app.timeline.filter, app.target.files, app.hidden.filesWithNoEvents],
 	);
 
 	const Menu = useCallback(() => {
@@ -681,8 +681,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		if (!canvas_ref.current) {
 			return 1920;
 		}
-		const files = Source.Entity.selected(app);
-		const amount = files.length;
+		const amount = Source.Entity.selected(app).filter((file) => app.hidden.filesWithNoEvents ? Doc.Entity.get(app, file.id).length > 0 : true).length;
 
 		return canvas_ref.current.height * 2 + amount * 48 - 80;
 	}, [app.target.files, app.timeline.filter, canvas_ref]);

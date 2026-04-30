@@ -102,18 +102,19 @@ export namespace Source {
      */
     public static selected = (app: App.Type): Source.Type[] => {
       const currentFilter = (app.timeline.filter || '').toLowerCase();
-      const filesWithNoEvents = app.hidden.filesWithNoEvents;
+      const hiddenfilesWithNoEvents = app.hidden.filesWithNoEvents;
       const renderVersion = app.timeline.renderVersion;
 
       if (
         app.target.files === Source.Entity._selectedCache.ref && 
         currentFilter === Source.Entity._selectedCache.filterText &&
-        filesWithNoEvents === Source.Entity._selectedCache.filesWithNoEvents &&
+        hiddenfilesWithNoEvents === Source.Entity._selectedCache.filesWithNoEvents &&
         renderVersion === Source.Entity._selectedCache.renderVersion
       ) {
         return Source.Entity._selectedCache.result;
       }
-      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected && (filesWithNoEvents ? s.total > 0 : true)));
+      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected && 
+        (hiddenfilesWithNoEvents ? s.total > 0 : true)));
       
       const result = pins.filter(s => 
         s.name?.toLowerCase().includes(currentFilter) || 
@@ -123,7 +124,7 @@ export namespace Source {
       Source.Entity._selectedCache = { 
         ref: app.target.files, 
         filterText: currentFilter, 
-        filesWithNoEvents,
+        filesWithNoEvents: hiddenfilesWithNoEvents,
         renderVersion,
         result 
       };
@@ -270,7 +271,8 @@ export namespace Source {
 
     public static index = (app: App.Type, file: Source.Type | Source.Id) => Source.Entity.selected(app).findIndex((s) => s.id === Parser.useUUID(file))
 
-    public static getHeight = (app: App.Type, file: Source.Type | Source.Id, scrollY: number, index?: number) => 48 * (typeof index === 'number' ? index : this.index(app, file)) - scrollY + 24
+    public static getHeight = (app: App.Type, file: Source.Type | Source.Id, scrollY: number, index?: number) => 
+      48 * (typeof index === 'number' ? index : this.index(app, file)) - scrollY + 24
 
     private static _select = (p: Source.Type): Source.Type => ({ ...p, selected: true })
 
