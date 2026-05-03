@@ -130,15 +130,18 @@ export namespace OpenSearchQueryBuilder {
       )
     }
 
+    /** Shared type for the setFilters callback accepted by all builder components. */
+    export type SetFilters = (action: Filter.Item[] | ((prev: Filter.Item[]) => Filter.Item[])) => void;
+
     export namespace Add {
       export interface Props extends Stack.Props {
-        filters: Filter.Type[];
-        setFilters: (filters: Filter.Type[]) => void;
+        filters: Filter.Item[];
+        setFilters: SetFilters;
       }
     }
 
     export const Add = ({ filters, setFilters, ...props }: Query.Add.Props) => {
-      const add = useCallback(() => {
+      const addCondition = useCallback(() => {
         const filter: Filter.Type = {
           id: `condition-${Date.now()}` as Filter.Id,
           type: 'wildcard',
@@ -148,41 +151,55 @@ export namespace OpenSearchQueryBuilder {
           operator: 'must',
           enabled: true
         };
-
         setFilters([...filters, filter]);
+      }, [filters, setFilters]);
+
+      const addGroup = useCallback(() => {
+        const group: Filter.Group = {
+          id: `group-${Date.now()}` as Filter.Id,
+          type: 'group',
+          operator: 'must',
+          children: [],
+          enabled: true,
+        };
+        setFilters([...filters, group]);
       }, [filters, setFilters]);
 
       return (
         <Stack jc='space-between' {...props}>
           <p>Query conditions</p>
-          <Button onClick={add} variant='secondary' icon='Plus'>
-            Add condition
-          </Button>
+          <Stack>
+            <Button onClick={addCondition} variant='secondary' icon='Plus'>
+              Add condition
+            </Button>
+            <Button onClick={addGroup} variant='secondary' icon='FolderPlus'>
+              Add group
+            </Button>
+          </Stack>
         </Stack>
       )
     }
 
     export namespace Filters {
       export interface Props extends Stack.Props {
-        filters: Filter.Type[];
-        setFilters: (filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => void;
+        filters: Filter.Item[];
+        setFilters: SetFilters;
         keys: string[]
       }
     }
 
-    const FilterRow = memo(({ 
-      filter, 
-      setFilters, 
-      keys 
-    }: { 
-      filter: Filter.Type; 
-      setFilters: (filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => void; 
-      keys: string[] 
+    const FilterRow = memo(({
+      filter,
+      setFilters,
+      keys,
+    }: {
+      filter: Filter.Type;
+      setFilters: SetFilters;
+      keys: string[];
     }) => {
       const [isOpen, setIsOpen] = useState(false);
       const [localField, setLocalField] = useState(filter.field);
 
-      // Sync local field when external filter changes (e.g. on reset or mount)
       useEffect(() => {
         setLocalField(filter.field);
       }, [filter.field]);
@@ -190,7 +207,7 @@ export namespace OpenSearchQueryBuilder {
       const update = useCallback((key: string, value: any) => {
         setFilters((prev) => prev.map((condition) =>
           condition.id === filter.id ? { ...condition, [key]: value } : condition
-        ));
+        ) as Filter.Item[]);
       }, [filter.id, setFilters]);
 
       const remove = useCallback(() => {
@@ -198,7 +215,7 @@ export namespace OpenSearchQueryBuilder {
       }, [filter.id, setFilters]);
 
       const filteredKeys = useMemo(() => {
-        if (!isOpen) return []; // Don't process keys if dropdown is closed
+        if (!isOpen) return [];
         const search = localField.toLowerCase();
         if (!search) return keys.slice(0, 100);
         return keys
@@ -259,13 +276,13 @@ export namespace OpenSearchQueryBuilder {
           </Stack>
           <Stack style={fws}>
             <Stack pos='relative'>
-              <Input 
-                className={s.key_input} 
-                icon='Dot' 
-                variant='highlighted' 
-                placeholder='Field name' 
-                value={localField} 
-                onChange={(e) => handleFieldChange(e.target.value)} 
+              <Input
+                className={s.key_input}
+                icon='Dot'
+                variant='highlighted'
+                placeholder='Field name'
+                value={localField}
+                onChange={(e) => handleFieldChange(e.target.value)}
               />
               <Select.Root value={filter.field} onValueChange={(e) => handleFieldChange(e)} onOpenChange={setIsOpen}>
                 <Select.Trigger className={s.trigger} />
@@ -320,17 +337,120 @@ export namespace OpenSearchQueryBuilder {
       );
     });
 
+    /**
+     * Renders a nested group of conditions — effectively a parenthesis around its children.
+     *
+     * The group's `operator` controls where the whole group lands in its parent's bool.
+     * Each child carries its own `operator`, so a single group can hold a free mix of
+     * must / should / must_not / filter children.
+     */
+    const GroupRow = memo(({
+      group,
+      setFilters,
+      keys,
+    }: {
+      group: Filter.Group;
+      setFilters: SetFilters;
+      keys: string[];
+    }) => {
+      const updateGroup = useCallback((key: string, value: any) => {
+        setFilters(prev =>
+          prev.map(item => item.id === group.id ? { ...item, [key]: value } : item) as Filter.Item[]
+        );
+      }, [group.id, setFilters]);
+
+      const removeGroup = useCallback(() => {
+        setFilters(prev => prev.filter(item => item.id !== group.id));
+      }, [group.id, setFilters]);
+
+      // Setter that operates on this group's children array
+      const setChildFilters: SetFilters = useCallback(
+        (action) => {
+          setFilters(prev =>
+            prev.map(item =>
+              item.id === group.id
+                ? {
+                  ...item,
+                  children: typeof action === 'function'
+                    ? action((item as Filter.Group).children)
+                    : action,
+                } as Filter.Group
+                : item
+            )
+          );
+        },
+        [group.id, setFilters]
+      );
+
+      const addChildCondition = useCallback(() => {
+        const filter: Filter.Type = {
+          id: `condition-${Date.now()}` as Filter.Id,
+          type: 'wildcard',
+          field: '',
+          case_insensitive: true,
+          value: '',
+          operator: 'must',
+          enabled: true,
+        };
+        setChildFilters(prev => [...prev, filter]);
+      }, [setChildFilters]);
+
+      const addChildGroup = useCallback(() => {
+        const child: Filter.Group = {
+          id: `group-${Date.now()}` as Filter.Id,
+          type: 'group',
+          operator: 'must',
+          children: [],
+          enabled: true,
+        };
+        setChildFilters(prev => [...prev, child]);
+      }, [setChildFilters]);
+
+      return (
+        <Stack dir='column' ai='stretch' className={cn(s.group_container, !group.enabled && s.disabled)}>
+          <Stack style={fws}>
+            {/* Where this group goes in the parent bool */}
+            <Select.Root value={group.operator} onValueChange={v => updateGroup('operator', v)}>
+              <Select.Trigger className={s.value}>
+                <Select.Value placeholder='Operator' />
+              </Select.Trigger>
+              <Select.Content>
+                {OpenSearchQueryBuilder.OPERATORS.map(op => (
+                  <Select.Item key={op.value} value={op.value}>
+                    <Icon name={op.icon} />
+                    {op.label}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
+            <Switch checked={group.enabled} onCheckedChange={v => updateGroup('enabled', v)} />
+            <Button variant='secondary' icon='Plus' onClick={addChildCondition}>
+              Add condition
+            </Button>
+            <Button variant='secondary' icon='FolderPlus' onClick={addChildGroup}>
+              Add group
+            </Button>
+            <Button variant='tertiary' icon='Trash2' onClick={removeGroup} />
+          </Stack>
+          <Stack dir='column' ai='stretch' className={s.group_children}>
+            {group.children.map(child =>
+              Filter.isGroup(child)
+                ? <GroupRow key={child.id} group={child} setFilters={setChildFilters} keys={keys} />
+                : <FilterRow key={child.id} filter={child} setFilters={setChildFilters} keys={keys} />
+            )}
+          </Stack>
+        </Stack>
+      );
+    });
+
     export const Filters = memo(({ filters, setFilters, keys }: Query.Filters.Props) => {
       return (
         <Stack ai='stretch' dir='column'>
-          {filters.map((filter) => (
-            <FilterRow 
-              key={filter.id} 
-              filter={filter} 
-              setFilters={setFilters} 
-              keys={keys} 
-            />
-          ))}
+          {filters.map(item =>
+            Filter.isGroup(item)
+              ? <GroupRow key={item.id} group={item} setFilters={setFilters} keys={keys} />
+              : <FilterRow key={item.id} filter={item} setFilters={setFilters} keys={keys} />
+          )}
         </Stack>
       )
     });

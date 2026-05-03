@@ -47,10 +47,10 @@ export namespace GlobalQuery {
       )
     }, [query.text_filter, setQuery]);
 
-    const setFilters = useCallback((filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) => {
+    const setFilters = useCallback((action: Filter.Item[] | ((prev: Filter.Item[]) => Filter.Item[])) => {
       setQuery(q => ({
         ...q,
-        filters: typeof filters === 'function' ? filters(q.filters) : filters
+        filters: typeof action === 'function' ? action(q.filters) : action
       }))
     }, [setQuery]);
 
@@ -74,12 +74,12 @@ export namespace GlobalQuery {
         preview: true
       });
 
-      await Info.query_global({ 
-        filename, 
-        context, 
-        separately, 
-        query: normalizedQuery, 
-        total 
+      await Info.query_global({
+        filename,
+        context,
+        separately,
+        query: normalizedQuery,
+        total
       });
 
       setIsQueryLoading(false);

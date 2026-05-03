@@ -43,13 +43,13 @@ interface FilterFileBannerProps extends Banner.Props {
  * display string. The source_config is merged with the current file
  * selection to ensure correct scoping.
  */
-const LastQueriesComponent = memo(({ 
-  list, 
+const LastQueriesComponent = memo(({
+  list,
   onSelect,
   Info,
   files
-}: { 
-  list: Query.Type[], 
+}: {
+  list: Query.Type[],
   onSelect: (q: Query.Type) => void,
   Info: any,
   files: Source.Type[]
@@ -73,14 +73,14 @@ const LastQueriesComponent = memo(({
                       <div className={s.lastFilterText}>
                         {q.string}
                       </div>
-                      <Button 
-                        icon="Check" 
-                        variant="glass" 
+                      <Button
+                        icon="Check"
+                        variant="glass"
                         className={s.lastFilterApplyButton}
                         onClick={() => {
                           onSelect(q);
                           Info.setQuery(files, q);
-                        }} 
+                        }}
                       />
                     </div>
                   </TooltipTrigger>
@@ -302,33 +302,33 @@ export function FilterFileBanner({
     }
 
     let cancelled = false
-    ;(async () => {
-      const set = new Set<string>()
-      const map: Record<string, string> = {}
-      await Promise.all(
-        files.map(async file => {
-          const fileKeys = await Info.event_keys(file)
-          Object.entries(fileKeys).forEach(([k, t]) => {
-            set.add(k)
-            map[k] = t as string
+      ; (async () => {
+        const set = new Set<string>()
+        const map: Record<string, string> = {}
+        await Promise.all(
+          files.map(async file => {
+            const fileKeys = await Info.event_keys(file)
+            Object.entries(fileKeys).forEach(([k, t]) => {
+              set.add(k)
+              map[k] = t as string
+            })
           })
-        })
-      )
-      if (!cancelled) {
-        const sortedKeys = [...set].sort((a, b) => a.localeCompare(b));
-        setKeys(sortedKeys)
-        setFieldTypeMap(map)
-      }
-    })()
+        )
+        if (!cancelled) {
+          const sortedKeys = [...set].sort((a, b) => a.localeCompare(b));
+          setKeys(sortedKeys)
+          setFieldTypeMap(map)
+        }
+      })()
     return () => { cancelled = true }
   }, [Info, files, initKeys])
 
   /** Updates the filters array within the query state. */
   const setFilters = useCallback(
-    (filters: Filter.Type[] | ((prev: Filter.Type[]) => Filter.Type[])) =>
+    (action: Filter.Item[] | ((prev: Filter.Item[]) => Filter.Item[])) =>
       setQuery(q => ({
         ...q,
-        filters: typeof filters === 'function' ? filters(q.filters) : filters
+        filters: typeof action === 'function' ? action(q.filters) : action
       })),
     []
   )
@@ -467,7 +467,7 @@ export function FilterFileBanner({
     if (!finalQuery) return
 
     setIsPreviewLoading(true)
-    Info.preview_query({...finalQuery, fieldTypeMap})
+    Info.preview_query({ ...finalQuery, fieldTypeMap })
       .then(({ docs, total_hits }) => {
         if (total_hits > 0) {
           spawnBanner(

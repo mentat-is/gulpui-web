@@ -245,9 +245,9 @@ export class Info implements InfoProps {
 				...query,
 				source_config: query.source_config
 					? {
-							...query.source_config,
-							source_ids: [file.id],
-					  }
+						...query.source_config,
+						source_ids: [file.id],
+					}
 					: undefined,
 			};
 
@@ -388,8 +388,8 @@ export class Info implements InfoProps {
 			}
 			const bufferedEvents: Doc.Type[] = [];
 			let lastFlushTime = 0;
-      let flushChain: Promise<void> = Promise.resolve();
-      const FLUSH_INTERVAL_MS = 300;
+			let flushChain: Promise<void> = Promise.resolve();
+			const FLUSH_INTERVAL_MS = 300;
 
 			const sid = SmartSocket.Class.instance.con(
 				SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -400,17 +400,17 @@ export class Info implements InfoProps {
 					const events = Doc.Entity.normalize(m.payload.docs ?? []);
 					bufferedEvents.push(...events);
 					if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
-            const toFlush = bufferedEvents.splice(0);
-            lastFlushTime = Date.now();
-            flushChain = flushChain.then(() => this.events_add_async(toFlush));
-          }
+						const toFlush = bufferedEvents.splice(0);
+						lastFlushTime = Date.now();
+						flushChain = flushChain.then(() => this.events_add_async(toFlush));
+					}
 					if (m.payload.last) {
 						flushChain.then(() => {
-              this.delLoading(req_id);
-              SmartSocket.Class.instance.coff(
-                SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-                sid,
-              );
+							this.delLoading(req_id);
+							SmartSocket.Class.instance.coff(
+								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+								sid,
+							);
 						});
 					}
 				},
@@ -540,7 +540,7 @@ export class Info implements InfoProps {
 			},
 			(m) => {
 				const sourceId = m.payload?.["gulp.source_id"] as Source.Id;
-				
+
 				// Delete only this source's loading state
 				this.app.general.loadings.byFileId.delete(sourceId);
 
@@ -551,7 +551,7 @@ export class Info implements InfoProps {
 				this.setInfoByKey(loadings, "general", "loadings");
 
 				this.ingestionProgress.delete(sourceId);
-				this.sync().catch(() => {});
+				this.sync().catch(() => { });
 			},
 		);
 
@@ -768,8 +768,8 @@ export class Info implements InfoProps {
 
 				const bufferedEvents: Doc.Type[] = [];
 				let lastFlushTime = 0;
-        let flushChain: Promise<void> = Promise.resolve();
-        const FLUSH_INTERVAL_MS = 300;
+				let flushChain: Promise<void> = Promise.resolve();
+				const FLUSH_INTERVAL_MS = 300;
 
 				const sid = SmartSocket.Class.instance.con(
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -779,19 +779,19 @@ export class Info implements InfoProps {
 					(m) => {
 						const events = Doc.Entity.normalize(m.payload.docs ?? []);
 						bufferedEvents.push(...events);
-						 if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
-              const toFlush = bufferedEvents.splice(0);
-              lastFlushTime = Date.now();
-              flushChain = flushChain.then(() => this.events_add_async(toFlush));
-            }
+						if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+							const toFlush = bufferedEvents.splice(0);
+							lastFlushTime = Date.now();
+							flushChain = flushChain.then(() => this.events_add_async(toFlush));
+						}
 
 						if (m.payload.last) {
-							 flushChain.then(() => {
-                this.delLoading(req_id);
-                SmartSocket.Class.instance.coff(
-                  SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-                  sid,
-                );
+							flushChain.then(() => {
+								this.delLoading(req_id);
+								SmartSocket.Class.instance.coff(
+									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+									sid,
+								);
 							});
 						}
 					},
@@ -839,9 +839,9 @@ export class Info implements InfoProps {
 		return resp
 			? resp.data
 			: {
-					docs: [],
-					total_hits: 0,
-				};
+				docs: [],
+				total_hits: 0,
+			};
 	};
 
 	query_file = async (
@@ -899,10 +899,10 @@ export class Info implements InfoProps {
 		if (create_notes && !preview) {
 			body.q_options.create_notes = true;
 
-			body.q_options.notes_color= notes_color ?? Default.Color.NOTE;
-			body.q_options.notes_tags= notes_tags;
-			body.q_options.notes_glyph_id= notes_glyph_id;
-			body.q_options.name= name;			
+			body.q_options.notes_color = notes_color ?? Default.Color.NOTE;
+			body.q_options.notes_tags = notes_tags;
+			body.q_options.notes_glyph_id = notes_glyph_id;
+			body.q_options.name = name;
 		}
 
 		const resp = await api<any>(
@@ -920,8 +920,8 @@ export class Info implements InfoProps {
 
 				const bufferedEvents: Doc.Type[] = [];
 				let lastFlushTime = 0;
-        let flushChain: Promise<void> = Promise.resolve();
-        const FLUSH_INTERVAL_MS = 300;
+				let flushChain: Promise<void> = Promise.resolve();
+				const FLUSH_INTERVAL_MS = 300;
 
 				const sid = SmartSocket.Class.instance.con(
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -933,12 +933,12 @@ export class Info implements InfoProps {
 						bufferedEvents.push(...events);
 
 						if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
-              const toFlush = bufferedEvents.splice(0);
-              lastFlushTime = Date.now();
-              flushChain = flushChain.then(() => this.events_add_async(toFlush));
+							const toFlush = bufferedEvents.splice(0);
+							lastFlushTime = Date.now();
+							flushChain = flushChain.then(() => this.events_add_async(toFlush));
 						}
 						if (m.payload.last) {
-              flushChain.then(() => {
+							flushChain.then(() => {
 								this.delLoading(req_id);
 								SmartSocket.Class.instance.coff(
 									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
@@ -1032,9 +1032,9 @@ export class Info implements InfoProps {
 		return resp
 			? resp.data
 			: {
-					docs: [],
-					total_hits: 0,
-				};
+				docs: [],
+				total_hits: 0,
+			};
 	};
 
 	/**
@@ -1052,53 +1052,67 @@ export class Info implements InfoProps {
 			(list) => {
 				const queries: Query.Type[] = [];
 
-				list.forEach((payload) => {
-					const root = payload.q.query;
-					if (!root || !root.bool) return;
+				/**
+				 * Recursively walks an OpenSearch bool body `{ must: [...], should: [...], ... }`
+				 * and returns the items belonging to it. Nested `bool` clauses become
+				 * `Filter.Group` items; everything else becomes a leaf `Filter.Type`.
+				 *
+				 * `infra` is mutated to capture source_config / text_filter clauses found at the
+				 * top level — those are extracted into `Query.Type` instead of becoming filters.
+				 */
+				const walkBool = (
+					boolBody: Record<string, any[]>,
+					infra: { topLevel: boolean; operationId: string; sourceIds: string[]; rangeMin: string | number; rangeMax: string | number; textFilter: string },
+				): Filter.Item[] => {
+					const items: Filter.Item[] = [];
 
-					// Accumulators for reconstructing the Query.Type
-					const filters: Filter.Type[] = [];
-					let text_filter = '';
-					let source_config: Query.Type['source_config'] | undefined;
+					Object.entries(boolBody).forEach(([bucket, arr]) => {
+						const operator = bucket as OpenSearchQueryBuilder.Operator;
+						if (!Array.isArray(arr)) return;
 
-					// Temporary holders for source_config reconstruction
-					let operationId = '';
-					let sourceIds: string[] = [];
-					let rangeMin: string | number = '';
-					let rangeMax: string | number = '';
-
-					Object.entries(root.bool).forEach(([key, arr]) => {
-						const operator = key as OpenSearchQueryBuilder.Operator;
-
-						(arr as any[]).forEach((obj) => {
+						arr.forEach((obj) => {
 							Object.entries(obj).forEach(([type, v]: [string, any]) => {
-								// Skip legacy query_string clauses — they are not reconstructable
+								// Nested bool → Filter.Group (recurse)
+								if (type === 'bool' && v && typeof v === 'object') {
+									const groupChildren = walkBool(v, { ...infra, topLevel: false });
+									items.push({
+										id: generateUUID() as Filter.Id,
+										type: 'group',
+										operator,
+										children: groupChildren,
+										enabled: true,
+									});
+									return;
+								}
+
+								// Skip legacy query_string — not reconstructable as a builder row
 								if (type === 'query_string') return;
 
-								// Extract source_config components from known infrastructure fields
-								if (type === 'term' && v['gulp.operation_id'] !== undefined) {
-									operationId = v['gulp.operation_id'];
-									return;
-								}
-								if (type === 'terms' && v['gulp.source_id'] !== undefined) {
-									sourceIds = v['gulp.source_id'];
-									return;
-								}
-								if (type === 'range' && v['gulp.timestamp'] !== undefined) {
-									rangeMin = v['gulp.timestamp'].gte ?? '';
-									rangeMax = v['gulp.timestamp'].lte ?? '';
-									return;
+								// Top-level infrastructure clauses → source_config / text_filter
+								if (infra.topLevel) {
+									if (type === 'term' && v['gulp.operation_id'] !== undefined) {
+										infra.operationId = v['gulp.operation_id'];
+										return;
+									}
+									if (type === 'terms' && v['gulp.source_id'] !== undefined) {
+										infra.sourceIds = v['gulp.source_id'];
+										return;
+									}
+									if (type === 'range' && v['gulp.timestamp'] !== undefined) {
+										infra.rangeMin = v['gulp.timestamp'].gte ?? '';
+										infra.rangeMax = v['gulp.timestamp'].lte ?? '';
+										return;
+									}
+									if (type === 'wildcard' && v['event.original'] !== undefined) {
+										infra.textFilter = v['event.original'].value ?? '';
+										return;
+									}
 								}
 
-								// Extract text_filter from wildcard on event.original
-								if (type === 'wildcard' && v['event.original'] !== undefined) {
-									text_filter = v['event.original'].value ?? '';
-									return;
-								}
-
-								// Everything else is a user-defined filter condition
+								// Leaf condition: clause shape is `{ [fieldName]: value | { value, ... } }`.
+								// In practice there is exactly one field key per clause object.
 								Object.keys(v).forEach((fieldKey) => {
-									filters.push({
+									items.push({
 										operator,
 										type: type as OpenSearchQueryBuilder.Condition,
 										id: generateUUID(),
@@ -1111,25 +1125,41 @@ export class Info implements InfoProps {
 						});
 					});
 
-					// Reconstruct source_config if infrastructure fields were found
-					if (operationId && sourceIds.length > 0) {
-						source_config = {
-							operation_id: operationId,
-							source_ids: sourceIds,
-							range: { min: rangeMin, max: rangeMax },
-						};
-					}
+					return items;
+				};
+
+				list.forEach((payload) => {
+					const root = payload.q.query;
+					if (!root || !root.bool) return;
+
+					const infra = {
+						topLevel: true,
+						operationId: '',
+						sourceIds: [] as string[],
+						rangeMin: '' as string | number,
+						rangeMax: '' as string | number,
+						textFilter: '',
+					};
+
+					const filters = walkBool(root.bool, infra);
+
+					const source_config: Query.Type['source_config'] | undefined =
+						infra.operationId && infra.sourceIds.length > 0
+							? {
+								operation_id: infra.operationId,
+								source_ids: infra.sourceIds,
+								range: { min: infra.rangeMin, max: infra.rangeMax },
+							}
+							: undefined;
 
 					const queryObj: Query.Type = {
-						string: '', // will be generated below
-						text_filter,
+						string: '',
+						text_filter: infra.textFilter,
 						filters,
 						source_config,
 					};
 
-					// Generate a human-readable label for the popover display
 					queryObj.string = Filter.Entity.describe(queryObj, this.app);
-
 					queries.push(queryObj);
 				});
 
@@ -1513,9 +1543,9 @@ export class Info implements InfoProps {
 								const timestamp =
 									all.length > 0
 										? {
-												min: all[all.length - 1].gulp_timestamp,
-												max: all[0].gulp_timestamp,
-											}
+											min: all[all.length - 1].gulp_timestamp,
+											max: all[0].gulp_timestamp,
+										}
 										: { min: Date.now(), max: Date.now() };
 
 								files[exist] = Source.Entity.normalize(draft, {
@@ -3041,7 +3071,7 @@ export class Info implements InfoProps {
 							const newItems = m.payload.obj.filter(
 								(item) => item.type === "note",
 							) as Note.Type[];
-							newItems.forEach(note => this.AddNoteToDataStore(note));							
+							newItems.forEach(note => this.AddNoteToDataStore(note));
 							toast.success(`Fetched ${newItems.length} notes`, {
 								richColors: true,
 							});

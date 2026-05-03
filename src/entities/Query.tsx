@@ -18,8 +18,8 @@ export namespace Query {
     string: string
     /** Wildcard text filter applied to the `event.original` field. */
     text_filter?: string
-    /** Array of structured filter conditions (field/value/operator). */
-    filters: Filter.Type[]
+    /** Array of structured filter conditions and/or nested groups. */
+    filters: Filter.Item[]
     /** Raw OpenSearch JSON used in manual mode. */
     raw?: any
     /** Whether this query was built in manual (JSON) mode. */

@@ -71,3 +71,18 @@
 .query_string_input {
   width: 100%;
 }
+
+.group_container {
+  background: var(--geist-background);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.group_children {
+  margin-top: 6px;
+  margin-left: 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--gray-400);
+  gap: 6px;
+}

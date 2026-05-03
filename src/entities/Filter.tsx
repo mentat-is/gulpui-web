@@ -37,23 +37,102 @@ export namespace Filter {
 		max?: string;
 	}
 
+	/**
+	 * A grouped set of conditions that maps to a nested OpenSearch bool query —
+	 * effectively a parenthesis around its children.
+	 *
+	 * - `operator` — where this group (the wrapping bool) is placed in the **parent's**
+	 *   bool clause.
+	 * - `children` — each child carries its own `operator`, which determines which
+	 *   bucket (must/should/must_not/filter) it lands in inside this group's inner bool.
+	 *   This means a single group can mix AND, OR, and NOT children freely.
+	 */
+	export interface Group {
+		id: Filter.Id;
+		type: 'group';
+		operator: OpenSearchQueryBuilder.Operator;
+		children: Filter.Item[];
+		enabled: boolean;
+	}
+
+	/** Union of a leaf condition and a nested group. Discriminated by `type`. */
+	export type Item = Filter.Type | Filter.Group;
+
+	export function isGroup(item: Filter.Item): item is Filter.Group {
+		return (item as any).type === 'group';
+	}
+
 	export class Entity {
 		/**
-		 * Builds an OpenSearch bool query from a structured Query.Type object.
+		 * Builds a single OpenSearch clause for one `Filter.Item` (leaf or group).
 		 *
-		 * Constructs `must`, `should`, `must_not`, and `filter` clauses from:
-		 * - `source_config`: generates `term` (operation_id), `terms` (source_ids),
-		 *    and `range` (timestamp) clauses for source scoping.
-		 * - `text_filter`: generates a `wildcard` clause on `event.original`.
-		 * - `filters[]`: each enabled filter produces a clause (match, wildcard, regexp,
-		 *    range, etc.) pushed into the appropriate bool bucket based on its operator.
+		 * - Leaf: produces a match/wildcard/regexp/range clause as before.
+		 * - Group: recurses over its children and wraps them in a nested bool whose
+		 *   buckets are populated by each child's own `operator` — so a single group
+		 *   can hold a mix of must / should / must_not / filter children. The group's
+		 *   own `operator` is handled by the caller (placement in the parent bool).
 		 *
-		 * NOTE: `Query.Type.string` is NEVER used for query construction — it is
-		 * a display-only label. See `Filter.Entity.describe()` for label generation.
-		 *
-		 * @param q - The structured query object containing all filter parameters.
-		 * @returns An OpenSearch-compatible query object.
+		 * Returns `null` when the item is disabled or produces no clause.
 		 */
+		static buildItemClause = (
+			item: Filter.Item,
+			fieldTypeMap?: Record<string, string>,
+		): Record<string, any> | null => {
+			if (!item.enabled) return null;
+
+			if (Filter.isGroup(item)) {
+				const inner: Record<string, any[]> = {
+					must: [],
+					should: [],
+					must_not: [],
+					filter: [],
+				};
+				for (const child of item.children) {
+					if (!child.enabled) continue;
+					const clause = Filter.Entity.buildItemClause(child, fieldTypeMap);
+					if (clause) inner[child.operator].push(clause);
+				}
+				Object.keys(inner).forEach(k => {
+					if (inner[k].length === 0) delete inner[k];
+				});
+				if (Object.keys(inner).length === 0) return null;
+				return { bool: inner };
+			}
+
+			const { type, field, value, case_insensitive = false } = item;
+			if (!field || !value) return null;
+
+			const fieldType = fieldTypeMap?.[field];
+			if (
+				(type === "wildcard" || type === "regexp") &&
+				(fieldType === "long" || fieldType === "integer")
+			) {
+				return { query_string: { query: `${field}:${value}` } };
+			}
+
+			switch (type) {
+				case "regexp":
+					return { regexp: { [field]: { value, flags: "ALL" } } };
+				case "wildcard":
+					return { wildcard: { [field]: { value, case_insensitive } } };
+				case "range":
+					return {
+						range: {
+							[field]: {
+								gte: value.split(",")[0]?.trim() || 0,
+								lte: value.split(",")[1]?.trim() || 0,
+							},
+						},
+					};
+				case "LTE":
+					return { range: { [field]: { lte: Number(value) } } };
+				case "GTE":
+					return { range: { [field]: { gte: Number(value) } } };
+				default:
+					return { match: { [field]: value } };
+			}
+		};
+
 		static query = (q: Query.Type) => {
 			// Manual mode: return raw JSON directly
 			if (q.isManual && q.raw) return q.raw;
@@ -89,73 +168,21 @@ export namespace Filter {
 			// Apply wildcard text filter on event.original (case-insensitive)
 			if (text_filter) {
 				query.bool.must.push({
-						wildcard: {
-							"event.original": {
-								value: text_filter.trim(),
-								case_insensitive: true,
-							},
+					wildcard: {
+						"event.original": {
+							value: text_filter.trim(),
+							case_insensitive: true,
 						},
-					});
+					},
+				});
 			}
 
-			// Process each individual filter condition
-			filters.forEach(
-				({
-					type,
-					field,
-					value,
-					operator,
-					enabled,
-					case_insensitive = false,
-				}) => {
-					if (!field || !value || !enabled) return;
-
-					let conditionObj = {};
-
-					// Check field type to handle numeric fields with wildcard/regexp patterns
-					const fieldType = fieldTypeMap?.[field];
-
-					if (
-						(type === "wildcard" || type === "regexp") &&
-						(fieldType === "long" || fieldType === "integer")
-					) {
-						// Numeric fields don't support wildcard/regexp — fall back to query_string
-						conditionObj = { query_string: { query: `${field}:${value}` } };
-					} else {
-						switch (type) {
-							case "regexp":
-								conditionObj = { regexp: { [field]: { value, flags: "ALL" } } };
-								break;
-							case "wildcard":
-								conditionObj = {
-									wildcard: { [field]: { value, case_insensitive } },
-								};
-								break;
-							case "range":
-								conditionObj = {
-									range: {
-										[field]: {
-											gte: value.split(",")[0]?.trim() || 0,
-											lte: value.split(",")[1]?.trim() || 0,
-										},
-									},
-								};
-								break;
-							case "LTE":
-								conditionObj = { range: { [field]: { lte: Number(value) } } };
-								break;
-							case "GTE":
-								conditionObj = { range: { [field]: { gte: Number(value) } } };
-								break;
-							default:
-								conditionObj = { match: { [field]: value } };
-						}
-					}
-
-					// Push the condition into the appropriate bool bucket (must/should/must_not/filter)
-					query.bool[operator].push(conditionObj);
-				},
-			);
+			// Process each item — flat condition or nested group
+			filters.forEach(item => {
+				if (!item.enabled) return;
+				const clause = Filter.Entity.buildItemClause(item, fieldTypeMap);
+				if (clause) query.bool[item.operator].push(clause);
+			});
 
 			// Clean up empty bool buckets to keep the query compact
 			Object.keys(query.bool).forEach((key) => {
@@ -202,11 +229,20 @@ export namespace Filter {
 				lines.push(`Sources: ${names.join(', ')}`);
 			}
 
-			// Show each enabled filter condition with field, type, and value
+			// Show each enabled filter condition/group
 			if (q.filters.length > 0) {
-				const enabled = q.filters.filter(f => f.enabled);
-				enabled.forEach(f => {
-					lines.push(`${f.operator} ${f.type} ${f.field}: ${f.value}`);
+				const describeItem = (item: Filter.Item, indent = ''): string => {
+					if (!item.enabled) return '';
+					if (Filter.isGroup(item)) {
+						const childLines = item.children.map(c => describeItem(c, indent + '  ')).filter(Boolean);
+						const body = childLines.length ? `\n${childLines.join('\n')}` : ' (empty)';
+						return `${indent}${item.operator} group:${body}`;
+					}
+					return `${indent}${item.operator} ${item.type} ${item.field}: ${item.value}`;
+				};
+				q.filters.forEach(item => {
+					const desc = describeItem(item);
+					if (desc) lines.push(desc);
 				});
 			}
 

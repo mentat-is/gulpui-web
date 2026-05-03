@@ -281,8 +281,10 @@ export function Navigator({
                 hasChanges = true;
               }
             } else {
-              const existingFilter = existingFilterIndex !== -1 ? query.filters[existingFilterIndex] : null;
-              
+              const existingItem = existingFilterIndex !== -1 ? query.filters[existingFilterIndex] : null;
+              // EVENT_FILTER_ID is always a leaf filter — narrow away the Group case.
+              const existingFilter = existingItem && !Filter.isGroup(existingItem) ? existingItem : null;
+
               // Only update if the filter doesn't exist or its value has changed
               if (!existingFilter || existingFilter.value !== trimmedValue) {
                 const newFilter: Filter.Type = {
@@ -323,7 +325,7 @@ export function Navigator({
 
   const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setLocalFilterValue(value);    
+    setLocalFilterValue(value);
     debouncedFilter(value, filterMode);
   }
 
@@ -554,16 +556,16 @@ export function Navigator({
             <Stack dir='column' gap={3}>
               <Label value="Select Chat Version" />
               <Stack>
-                <Button 
-                  variant="glass" 
+                <Button
+                  variant="glass"
                   onClick={() => selectChat('free')}
                   icon="Sparkle"
                   title="Use Free Version"
                 >
                   AIAssistant Chat
                 </Button>
-                <Button 
-                  variant="default" 
+                <Button
+                  variant="default"
                   onClick={() => selectChat('pro')}
                   icon="Sparkles"
                   title="Use Pro Version"
@@ -587,7 +589,7 @@ export function Navigator({
       <FloatingWindow
         title={chatMode === 'pro' ? 'AI Assistant Pro' : 'AI Assistant'}
         icon={chatMode === 'pro' ? 'Sparkles' : 'Sparkle'}
-        defaultOpen={chatOpen} 
+        defaultOpen={chatOpen}
         /* FloatingWindow updates internal state when defaultOpen changes */
         onOpenChange={setChatOpen}
         trigger="i"
@@ -596,7 +598,7 @@ export function Navigator({
         className={chatMode === 'pro' ? s.chat : undefined}
       >
         {chatMode === 'pro' ? (
-           <Extension.Component name='AIAssistantPro.banner.tsx' />
+          <Extension.Component name='AIAssistantPro.banner.tsx' />
         ) : (
           <AIAssistant.Panel />
         )}
