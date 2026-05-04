@@ -70,12 +70,12 @@ export namespace Doc {
 		});
 
 		/** Returns the Operation.Id for a doc by looking it up through its source. */
-		public static operationId = (app: App.Type, doc: Doc.Type): Operation.Id =>
-			Source.Entity.id(app, doc["gulp.source_id"]).operation_id;
+		public static operationId = (app: App.Type, doc: Doc.Type): Operation.Id | undefined =>
+			Source.Entity.id(app, doc["gulp.source_id"])?.operation_id;
 
 		/** Returns the Context.Id for a doc by looking it up through its source. */
-		public static contextId = (app: App.Type, doc: Doc.Type): Context.Id =>
-			Source.Entity.id(app, doc["gulp.source_id"]).context_id;
+		public static contextId = (app: App.Type, doc: Doc.Type): Context.Id | undefined =>
+			Source.Entity.id(app, doc["gulp.source_id"])?.context_id;
 
 		/**
 		 * Removes all events for the given source files.

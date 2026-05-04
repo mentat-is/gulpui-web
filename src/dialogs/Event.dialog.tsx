@@ -249,9 +249,10 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	// --- STATE ---
 	const [json, setJSON] = useState<Record<string, string> | null>(null);
 	const [selection, setSelection] = useState<string>("");
-	const [isFlagged, setIsFlagged] = useState(() =>
-		Doc.Entity.flag.isFlagged(event._id, Doc.Entity.operationId(app, event)),
-	);
+	const [isFlagged, setIsFlagged] = useState(() => {
+		const opId = Doc.Entity.operationId(app, event);
+		return opId ? Doc.Entity.flag.isFlagged(event._id, opId) : false;
+	});
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 
@@ -280,12 +281,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	// Load detailed event data
 	const loadEvent = useCallback(async () => {
+		const opId = Doc.Entity.operationId(app, event);
+		if (!opId) return;
 		const detailed = await Info.query_single_id(
 			event._id,
-			Doc.Entity.operationId(app, event),
+			opId,
 		);
 		setJSON(prepareEventJson(detailed));
-	}, [event, Info]);
+	}, [event, app, Info]);
 
 	useEffect(() => {
 		if (!json || json._id !== event._id) loadEvent();
@@ -308,6 +311,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	useEffect(() => setSelection(""), [event._id]);
 
+
 	// --- HANDLERS: Actions ---
 
 	const handleCopyJson = useCallback(() => {
@@ -326,10 +330,11 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	const handleDownloadLogFile = useCallback(() => {
 		const storageId = json?.["gulp.storage_id"];
-		if (storageId && typeof storageId === "string" && storageId.trim() !== "") {
-			Info.download_storage_file(storageId, Doc.Entity.operationId(app, event));
+		const opId = Doc.Entity.operationId(app, event);
+		if (storageId && typeof storageId === "string" && storageId.trim() !== "" && opId) {
+			Info.download_storage_file(storageId, opId);
 		}
-	}, [event, Info, json]);
+	}, [event, app, Info, json]);
 
 	const handleFocusTimeline = useCallback(() => {
 		// @ts-ignore
@@ -579,6 +584,25 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		handleCopyJson,
 	]);
 
+	if (!file) {
+		return (
+			<Dialog>
+				<Stack
+					style={{ width: "100%", height: "300px" }}
+					flex
+					ai="center"
+					jc="center"
+					dir="column"
+					gap={12}
+				>
+					<Icon name="CircleAlert" size={48} style={{ color: "var(--red-500)" }} />
+					<p style={{ color: "var(--red-500)", fontWeight: "bold" }}>Source was deleted</p>
+					<p style={{ opacity: 0.6 }}>This event is no longer available.</p>
+				</Stack>
+			</Dialog>
+		);
+	}
+
 	return (
 		<Dialog>
 			<Navigation event={event} />
@@ -678,20 +702,25 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							title="Focus timeline"
 						/>
 						<Button
-							onClick={() =>
+							onClick={() => {
+								const opId = Doc.Entity.operationId(app, event);
+								if (!opId) return;
 								setIsFlagged(
 									Doc.Entity.flag.toggle(
 										event._id,
-										Doc.Entity.operationId(app, event),
+										opId,
 									),
-								)
-							}
+								);
+							}}
 							variant={isFlagged ? "tertiary" : "glass"}
 							icon={isFlagged ? "FlagOff" : "Flag"}
 							disabled={
-								Doc.Entity.flag.isLimitReached(
-									Doc.Entity.flag.getList(Doc.Entity.operationId(app, event)),
-								) && !isFlagged
+								(() => {
+									const opId = Doc.Entity.operationId(app, event);
+									return (opId && Doc.Entity.flag.isLimitReached(
+										Doc.Entity.flag.getList(opId),
+									) && !isFlagged) || !opId;
+								})()
 							}
 							title="Flag event"
 						/>

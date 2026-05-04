@@ -133,7 +133,10 @@ export namespace NoteFunctionality {
 							className={s.inp_input}
 							disabled
 							value={
-								Context.Entity.id(app, Doc.Entity.contextId(app, event)).name
+								(() => {
+									const contextId = Doc.Entity.contextId(app, event);
+									return contextId ? Context.Entity.id(app, contextId)?.name : "Deleted Context";
+								})()
 							}
 							icon={Default.Icon.CONTEXT}
 						/>
@@ -142,7 +145,7 @@ export namespace NoteFunctionality {
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={Source.Entity.id(app, event["gulp.source_id"]).name}
+							value={Source.Entity.id(app, event["gulp.source_id"])?.name || "Deleted Source"}
 							icon={Default.Icon.SOURCE}
 						/>
 						<Input
@@ -252,12 +255,13 @@ export namespace LinkFunctionality {
 			const [loading, setLoading] = useState<boolean>(false);
 
 			const context = useMemo(() => {
-				return Context.Entity.id(app, Doc.Entity.contextId(app, event));
-			}, [event]);
+				const contextId = Doc.Entity.contextId(app, event);
+				return contextId ? Context.Entity.id(app, contextId) : undefined;
+			}, [app, event]);
 
 			const file = useMemo(() => {
 				return Source.Entity.id(app, event["gulp.source_id"]);
-			}, [event]);
+			}, [app, event]);
 
 			const send = async () => {
 				setLoading(true);
@@ -337,7 +341,7 @@ export namespace LinkFunctionality {
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={context.name}
+							value={context?.name || "Deleted Context"}
 							icon={Default.Icon.CONTEXT}
 						/>
 						<Input
@@ -345,7 +349,7 @@ export namespace LinkFunctionality {
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={file.name}
+							value={file?.name || "Deleted Source"}
 							icon={Default.Icon.SOURCE}
 						/>
 						<Input
