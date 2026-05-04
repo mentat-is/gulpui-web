@@ -333,8 +333,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	const handleFocusTimeline = useCallback(() => {
 		// @ts-ignore
-		return window.focusCanvasOnEvent(event.gulp_timestamp, false);
-	}, [event]);
+		return window.focusCanvasOnEvent(event.gulp_timestamp + (file?.settings.offset || 0), false, event["gulp.source_id"]);
+	}, [event, file]);
 
 	// --- HANDLERS: Banners ---
 

@@ -22,7 +22,7 @@ export function Timeline() {
       const canvas = document.getElementById('canvas') as HTMLCanvasElement
       if (!canvas) return
 
-      scrollStore.setScrollY(Source.Entity.getHeight(app, file_id, 0) - 26 - canvas.clientHeight / 2)
+      scrollStore.setScrollY(Source.Entity.getHeight(app, file_id, 0) - canvas.clientHeight / 2)
     }
   }
 
