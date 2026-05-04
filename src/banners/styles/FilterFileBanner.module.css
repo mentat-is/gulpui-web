@@ -60,59 +60,7 @@
 .skeleton::after {
   z-index: 2;
 }
-.lastFilters,
-.tooltip {
-  max-width: 512px;
-  max-height: 40vh;
-  min-height: 10vh;
-  overflow-y: auto;
-}
 
-.lastFiltersList {
-  display: flex;
-  flex-direction: column;
-}
-
-.lastFilterItem {
-  padding: 8px 12px 0 12px;
-  display: flex;
-  flex-direction: column;
-}
-
-.lastFilterItem:last-child {
-  padding-bottom: 8px;
-}
-
-.lastFilterRow {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-  gap: 8px;
-}
-
-.lastFilterText {
-  flex: 1;
-  text-align: left;
-  white-space: pre-wrap;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--accent);
-  line-height: 1.4;
-}
-
-.lastFilterApplyButton {
-  flex-shrink: 0;
-}
-
-.lastFilterSeparator {
-  margin: 8px 0;
-}
-
-.lastFilters * {
-  text-transform: unset !important;
-}
 
 .manualTextarea {
   min-height: 200px;

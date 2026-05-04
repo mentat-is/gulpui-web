@@ -34,75 +34,7 @@ interface FilterFileBannerProps extends Banner.Props {
   name?: string;
 }
 
-/**
- * Memoized component displaying the list of previously applied queries.
- *
- * Shows each query's human-readable `string` label in a popover.
- * When the user clicks "apply" on a last filter, the full structured
- * Query.Type (source_config, text_filter, filters) is used — NOT the
- * display string. The source_config is merged with the current file
- * selection to ensure correct scoping.
- */
-const LastQueriesComponent = memo(({
-  list,
-  onSelect,
-  Info,
-  files
-}: {
-  list: Query.Type[],
-  onSelect: (q: Query.Type) => void,
-  Info: any,
-  files: Source.Type[]
-}) => {
-  if (list.length === 0) return null;
-  return (
-    <Popover.Root>
-      <Popover.Trigger asChild>
-        <Button icon="ClockFading" variant="secondary">
-          Last filters
-        </Button>
-      </Popover.Trigger>
-      <Popover.Content className={s.lastFilters}>
-        <div className={s.lastFiltersList}>
-          {list.map((q, i) => (
-            <div key={i} className={s.lastFilterItem}>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className={s.lastFilterRow}>
-                      <div className={s.lastFilterText}>
-                        {q.string}
-                      </div>
-                      <Button
-                        icon="Check"
-                        variant="glass"
-                        className={s.lastFilterApplyButton}
-                        onClick={() => {
-                          onSelect(q);
-                          Info.setQuery(files, q);
-                        }}
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className={s.tooltip}>
-                    <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap' }}>{q.string}</pre>
-                    {q.filters.length > 0 && (
-                      <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap', marginTop: 4 }}>
-                        {JSON.stringify(q.filters, null, 2)}
-                      </pre>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {list.length - 1 > i && <Separator className={s.lastFilterSeparator} />}
-            </div>
-          ))}
-        </div>
-      </Popover.Content>
-    </Popover.Root>
-  );
-});
+import { QueriesHistory } from '@/components/QueriesHistory'
 
 /**
  * FilterFileBanner — Modal for building and applying OpenSearch queries/filters
@@ -532,7 +464,8 @@ export function FilterFileBanner({
     setQuery(q)
     setIsManual(!!q.isManual)
     setManualContent(getManualContentFromQuery(q))
-  }, [app, getManualContentFromQuery])
+    Info.setQuery(files, q)
+  }, [app, getManualContentFromQuery, Info, files])
 
   /** Resets both builder and manual mode to a clean generated query from current sources. */
   const handleManualReset = () => {
@@ -554,7 +487,7 @@ export function FilterFileBanner({
       title="Choose filtering options"
       done={Done}
       side={!isManual ? <OpenSearchQueryBuilder.Preview query={queryWithFlaggedEvents} /> : null}
-      subtitle={<LastQueriesComponent list={lastQueriesList} onSelect={handleApplyLastFilter} Info={Info} files={files} />}
+      subtitle={<QueriesHistory list={lastQueriesList} onSelect={handleApplyLastFilter} />}
       className={s.banner}
       {...props}
     >
