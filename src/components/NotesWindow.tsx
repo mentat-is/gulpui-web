@@ -14,6 +14,7 @@ import { Input } from '@/ui/Input'
 import { DataStore } from '@/store/DataStore'
 import { Checkbox } from '@/ui/Checkbox'
 import { Button } from '@/ui/Button'
+import { formatTimestampToReadableString, stringToHexColor } from "../ui/utils";
 
 import s from './styles/NotesWindow.module.css'
 
@@ -52,7 +53,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const sortedNotes = useMemo(() => {
     const lowerSearch = search.toLowerCase();
-    
+
     const filtered = DataStore.notes.filter(n => {
       return !search || (
         n.name.toLowerCase().includes(lowerSearch) ||
@@ -144,44 +145,70 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
         </Select.Multi.Root>
       </Stack>
       <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
-          <Checkbox
-            style={{ height: 20, width: 20 }}
-            checked={isAllSelected}
-            onCheckedChange={handleSelectAll as any}
-          />
-          <span 
-            style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
-            onClick={() => handleSelectAll(!isAllSelected)}
-          >
-            {selectAllLabel}
-          </span>
-        </Stack>
+        <Checkbox
+          style={{ height: 20, width: 20 }}
+          checked={isAllSelected}
+          onCheckedChange={handleSelectAll as any}
+        />
+        <span
+          style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => handleSelectAll(!isAllSelected)}
+        >
+          {selectAllLabel}
+        </span>
+      </Stack>
       <div
         ref={parentRef}
         className={s.result}
         style={{ height: '100%', overflow: 'auto' }}
       >
         <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-          {virtualizer.getVirtualItems().map(item => (
-            <div
-              key={item.key}
-              style={{
-                position: 'absolute',
-                width: '100%',
-                height: `${item.size}px`,
-                transform: `translateY(${item.start}px)`,
-              }}
-            >
-              <Stack gap={12} ai="center" style={{ width: '100%' }}>
-                <Checkbox
-                style={{ height: 20, width: 20 }}
-                  checked={selectedNoteIds.has(sortedNotes[item.index].id)}
-                  onCheckedChange={() => toggleNoteSelection(sortedNotes[item.index].id)}
-                />
-                <NotePoint.Combination note={sortedNotes[item.index]} style={{ flex: 1 }} />
-              </Stack>
-            </div>
-          ))}
+          {virtualizer.getVirtualItems().map(item => {
+            const note = sortedNotes[item.index];
+            const context = Context.Entity.id(app, note.context_id);
+
+            return (
+              <div
+                key={item.key}
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: `${item.size}px`,
+                  transform: `translateY(${item.start}px)`,
+                }}
+              >
+                <Stack
+                  gap={12}
+                  ai="center"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    background: 'transparent',
+                    borderLeft: `4px solid ${stringToHexColor(note.context_id) ?? 'transparent'}`,
+                    paddingLeft: 8,
+                  }}
+                >
+                  <Checkbox
+                    style={{ height: 20, width: 20 }}
+                    checked={selectedNoteIds.has(note.id)}
+                    onCheckedChange={() => toggleNoteSelection(note.id)}
+                  />
+
+                  <span
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: note.color ?? 'transparent',
+                      flexShrink: 0,
+                    }}
+                  />
+
+                  <NotePoint.Combination note={note} style={{ flex: 1 }} />
+                </Stack>
+              </div>
+            );
+          })}
         </div>
       </div>
       <Notification value='You can scroll tags list horizontally' variant='informational' icon='Information' />

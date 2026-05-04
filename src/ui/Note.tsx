@@ -54,7 +54,8 @@ export namespace NotePoint {
 				)}
 				style={{
 					...style,
-					background: stringToHexColor(note.context_id) + "80",
+					//background: stringToHexColor(note.context_id) + "80",
+					background: "transparent",
 				}}
 				{...props}
 			>
