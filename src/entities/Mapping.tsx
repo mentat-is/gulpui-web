@@ -49,23 +49,23 @@ export namespace Mapping {
     }
 
     public static plugins = (app: App.Type): Mapping.Type.Plugin['name'][] =>
-      app.target.mappings.map((p) => p.name)
+      app.target.mappings.map((p) => p.name).sort((a, b) => a.localeCompare(b))
 
     public static methods = (
       app: App.Type,
       plugin?: Mapping.Type.Plugin['name'],
     ): Mapping.Type.Method['name'][] =>
-      app.target.mappings
+      (app.target.mappings
         .find((p) => p.name === plugin)
-        ?.methods.map((m) => m.name) || []
+        ?.methods.map((m) => m.name) || []).sort((a, b) => a.localeCompare(b))
 
     public static mappings = (
       app: App.Type,
       plugin?: Mapping.Type.Plugin['name'],
       method?: Mapping.Type.Method['name'],
     ): string[] =>
-      app.target.mappings
+      (app.target.mappings
         .find((p) => p.name === plugin)
-        ?.methods.find((m) => m.name === method)?.mappings || []
+        ?.methods.find((m) => m.name === method)?.mappings || []).sort((a, b) => a.localeCompare(b))
   }
 }
