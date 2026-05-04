@@ -491,89 +491,91 @@ export function FilterFileBanner({
       className={s.banner}
       {...props}
     >
-      {useMemo(() => (
-        <Source.Select.Multi
-          selected={fileIds}
-          setSelected={handleSourceChange}
-          placeholder="Select files to apply filters"
-        />
-      ), [fileIds, handleSourceChange])}
-
-      <Tabs value={String(isManual)} onValueChange={v => setIsManual(v === 'true')}>
-        <Stack dir='row' jc='space-between'>
-          <TabsList>
-            <TabsTrigger value="false">Builder</TabsTrigger>
-            <TabsTrigger value="true">Manual</TabsTrigger>
-          </TabsList>
-          <Stack style={{ margin: '8px 0' }}>
-            <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
-            <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
-          </Stack>
-        </Stack>
-        <Separator style={{ margin: '8px 0' }} />
-        <TabsContent value="false">
-          <Stack dir='column' ai='stretch'>
-            {QueryStringPart}
-            {AddCondition}
-            <Separator />
-            {QueryConditions}
-          </Stack>
-        </TabsContent>
-        <TabsContent value="true">
-          <Textarea
-            className={s.manualTextarea}
-            value={manualContent}
-            onChange={e => setManualContent(e.target.value)}
-            placeholder="Edit OpenSearch query JSON..."
+      <TooltipProvider>
+        {useMemo(() => (
+          <Source.Select.Multi
+            selected={fileIds}
+            setSelected={handleSourceChange}
+            placeholder="Select files to apply filters"
           />
-        </TabsContent>
-      </Tabs>
-      <Stack ai="center" jc="flex-start" dir="row">
-        <Button
-          variant="glass"
-          loading={isPreviewLoading}
-          onClick={previewCurrentFilterButtonClickHandler}
-          icon="PreviewDocument"
-        >
-          Preview result of current filter
-        </Button>
+        ), [fileIds, handleSourceChange])}
 
-        {isManual && (
+        <Tabs value={String(isManual)} onValueChange={v => setIsManual(v === 'true')}>
+          <Stack dir='row' jc='space-between'>
+            <TabsList>
+              <TabsTrigger value="false">Builder</TabsTrigger>
+              <TabsTrigger value="true">Manual</TabsTrigger>
+            </TabsList>
+            <Stack style={{ margin: '8px 0' }}>
+              <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
+              <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
+            </Stack>
+          </Stack>
+          <Separator style={{ margin: '8px 0' }} />
+          <TabsContent value="false">
+            <Stack dir='column' ai='stretch'>
+              {QueryStringPart}
+              {AddCondition}
+              <Separator />
+              {QueryConditions}
+            </Stack>
+          </TabsContent>
+          <TabsContent value="true">
+            <Textarea
+              className={s.manualTextarea}
+              value={manualContent}
+              onChange={e => setManualContent(e.target.value)}
+              placeholder="Edit OpenSearch query JSON..."
+            />
+          </TabsContent>
+        </Tabs>
+        <Stack ai="center" jc="flex-start" dir="row">
+          <Button
+            variant="glass"
+            loading={isPreviewLoading}
+            onClick={previewCurrentFilterButtonClickHandler}
+            icon="PreviewDocument"
+          >
+            Preview result of current filter
+          </Button>
+
+          {isManual && (
+            <>
+              <Button
+                variant="secondary"
+                icon="RefreshCw"
+                onClick={handleManualReset}
+              >
+                Reset to generated
+              </Button>
+              <Button
+                variant="secondary"
+                icon="Wand"
+                onClick={handleBeautify}
+              >
+                Beautify
+              </Button>
+            </>
+          )}
+        </Stack>
+        {initCreateNotes !== undefined && initCreateNotes !== null && initCreateNotes !== false && (
           <>
-            <Button
-              variant="secondary"
-              icon="RefreshCw"
-              onClick={handleManualReset}
-            >
-              Reset to generated
-            </Button>
-            <Button
-              variant="secondary"
-              icon="Wand"
-              onClick={handleBeautify}
-            >
-              Beautify
-            </Button>
+            <Separator style={{ margin: '8px 0' }} />
+            <Stack style={{ margin: '8px 0' }}>
+              <Checkbox
+                id='create_notes'
+                checked={createNotesChecked}
+                onCheckedChange={(v) => setCreateNotesChecked(!!v)}
+              />
+              <Label
+                htmlFor='create_notes'
+                value='If flagged for any documents found gulp add a note.'
+                cursor='pointer'
+              />
+            </Stack>
           </>
         )}
-      </Stack>
-      {initCreateNotes !== undefined && initCreateNotes !== null && initCreateNotes !== false && (
-        <>
-          <Separator style={{ margin: '8px 0' }} />
-          <Stack style={{ margin: '8px 0' }}>
-            <Checkbox
-              id='create_notes'
-              checked={createNotesChecked}
-              onCheckedChange={(v) => setCreateNotesChecked(!!v)}
-            />
-            <Label
-              htmlFor='create_notes'
-              value='If flagged for any documents found gulp add a note.'
-              cursor='pointer'
-            />
-          </Stack>
-        </>
-      )}
+      </TooltipProvider>
     </Banner>
   )
 }

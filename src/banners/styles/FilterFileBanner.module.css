@@ -1,3 +1,13 @@
+.banner {
+  width: 60vw !important;
+  max-width: 60vw !important;
+  transition: all 0.3s var(--transition);
+}
+.banner[data-expanded="true"] {
+  width: 50vw !important;
+  max-width: 50vw !important;
+  --graph-width: calc(calc(var(--cell-size, 88px) * 3) + 10vw);
+}
 .banner > div {
   gap: 8px !important;
 }
@@ -64,7 +74,8 @@
 
 .manualTextarea {
   min-height: 200px;
-  width: 640px;
+  width: 100%;
+  box-sizing: border-box;
   font-family: var(--font-mono);
   font-size: 14px;
   padding: 12px;
