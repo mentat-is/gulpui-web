@@ -78,6 +78,7 @@ export function Banner({
   return (
     <div className={s.wrapper}>
       <div
+        data-expanded={isExpanded}
         className={cn(s.banner, s.loading, className)}>
         <Cell key="cell-1" className={s.cell} top left>
           {back && <Button variant='tertiary' icon="CornerUpLeft" onClick={back} />}

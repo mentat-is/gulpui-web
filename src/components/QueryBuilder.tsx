@@ -13,6 +13,7 @@ import { Button } from "@/ui/Button"
 import { Input } from "@/ui/Input"
 import { Filter } from "@/entities/Filter"
 import { Label } from "@/ui/Label"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
@@ -275,15 +276,20 @@ export namespace OpenSearchQueryBuilder {
             />
           </Stack>
           <Stack style={fws}>
-            <Stack pos='relative'>
-              <Input
-                className={s.key_input}
-                icon='Dot'
-                variant='highlighted'
-                placeholder='Field name'
-                value={localField}
-                onChange={(e) => handleFieldChange(e.target.value)}
-              />
+            <Stack pos='relative' flex={1}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Input
+                    className={s.key_input}
+                    icon='Dot'
+                    variant='highlighted'
+                    placeholder='Field name'
+                    value={localField}
+                    onChange={(e) => handleFieldChange(e.target.value)}
+                  />
+                </TooltipTrigger>
+                <TooltipContent>{localField}</TooltipContent>
+              </Tooltip>
               <Select.Root value={filter.field} onValueChange={(e) => handleFieldChange(e)} onOpenChange={setIsOpen}>
                 <Select.Trigger className={s.trigger} />
                 <Select.Content style={{ minHeight: 60 }}>
@@ -296,41 +302,63 @@ export namespace OpenSearchQueryBuilder {
                 </Select.Content>
               </Select.Root>
             </Stack>
-            {filter.type === 'LTE' ? (
-              <Input
-                variant='highlighted'
-                icon='ChevronRightSmall'
-                placeholder='Min value'
-                value={filter.value}
-                onChange={(e) => update('value', e.target.value)}
-                prefix='<='
-              />
-            ) : filter.type === 'GTE' ? (
-              <Input
-                variant='highlighted'
-                icon='ChevronRightSmall'
-                placeholder='Max value'
-                value={filter.value}
-                onChange={(e) => update('value', e.target.value)}
-                prefix='>='
-              />
-            ) : filter.type === 'range' ? (
-              <Input
-                variant='highlighted'
-                icon='ChevronRightSmall'
-                placeholder='min,max'
-                value={filter.value}
-                onChange={(e) => update('value', e.target.value)}
-              />
-            ) : (
-              <Input
-                variant='highlighted'
-                icon='ChevronRightSmall'
-                placeholder='Value'
-                value={filter.value}
-                onChange={(e) => update('value', e.target.value)}
-              />
-            )}
+              <Stack flex={1}>
+                {filter.type === 'LTE' ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        variant='highlighted'
+                        icon='ChevronRightSmall'
+                        placeholder='Min value'
+                        value={filter.value}
+                        onChange={(e) => update('value', e.target.value)}
+                        prefix='<='
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{filter.value}</TooltipContent>
+                  </Tooltip>
+                ) : filter.type === 'GTE' ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        variant='highlighted'
+                        icon='ChevronRightSmall'
+                        placeholder='Max value'
+                        value={filter.value}
+                        onChange={(e) => update('value', e.target.value)}
+                        prefix='>='
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{filter.value}</TooltipContent>
+                  </Tooltip>
+                ) : filter.type === 'range' ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        variant='highlighted'
+                        icon='ChevronRightSmall'
+                        placeholder='min,max'
+                        value={filter.value}
+                        onChange={(e) => update('value', e.target.value)}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{filter.value}</TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Input
+                        variant='highlighted'
+                        icon='ChevronRightSmall'
+                        placeholder='Value'
+                        value={filter.value}
+                        onChange={(e) => update('value', e.target.value)}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{filter.value}</TooltipContent>
+                  </Tooltip>
+                )}
+              </Stack>
           </Stack>
           {filter.type === 'wildcard' ? <Toggle option={['Case sensitive', 'Case insensitive']} checked={filter.case_insensitive} onCheckedChange={v => update('case_insensitive', v)} /> : null}
         </Stack>
