@@ -309,6 +309,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	});
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
+	const [treeTooltip, setTreeTooltip] = useState<{ path: string; x: number; y: number } | null>(null);
 	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
@@ -571,6 +572,35 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							<TabsContent
 								value="tree"
 								className={s.scrollable}
+								onMouseMove={(e) => {
+									const target = e.target as Element;
+									const labelEl =
+										target.classList.contains(s.label) || target.classList.contains(s.clickableLabel)
+											? target
+											: (target.closest(`.${s.label}`) ?? target.closest(`.${s.clickableLabel}`));
+									if (!labelEl) {
+										setTreeTooltip(null);
+										return;
+									}
+									const getLabelText = (el: Element) =>
+										(el.textContent ?? "").trim().replace(/^["'\s]+|["':\s,]+$/g, "");
+									const parts: string[] = [getLabelText(labelEl)];
+									let nodeEl: Element | null = labelEl.closest(`.${s.node}`);
+									while (nodeEl) {
+										const parentContainer = nodeEl.parentElement;
+										if (!parentContainer?.classList.contains(s.basic)) break;
+										const parentNode = parentContainer.parentElement;
+										if (!parentNode?.classList.contains(s.node)) break;
+										const parentLabel = Array.from(parentNode.children).find(
+											(c) => c.classList.contains(s.label) || c.classList.contains(s.clickableLabel),
+										);
+										if (!parentLabel) break;
+										parts.unshift(getLabelText(parentLabel));
+										nodeEl = parentNode;
+									}
+									setTreeTooltip({ path: parts.join("."), x: e.clientX, y: e.clientY });
+								}}
+								onMouseLeave={() => setTreeTooltip(null)}
 							>
 								<JsonView
 									data={unflattenObject}
@@ -760,7 +790,29 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 					/>
 
 					{highlights}
-
+				{treeTooltip && (
+					<div
+						style={{
+							position: "fixed",
+							left: treeTooltip.x + 14,
+							top: treeTooltip.y + 14,
+							background: "var(--background-100)",
+							border: "1px solid var(--gray-400)",
+							borderRadius: 4,
+							padding: "2px 8px",
+							fontSize: 10,
+							fontFamily: "var(--font-mono)",
+							color: "var(--second)",
+							pointerEvents: "none",
+							zIndex: 9999,
+							maxWidth: 400,
+							wordBreak: "break-all",
+							boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+						}}
+					>
+						{treeTooltip.path}
+					</div>
+				)}
 					<Stack
 						className={s.actionButtons}
 						gap={12}
