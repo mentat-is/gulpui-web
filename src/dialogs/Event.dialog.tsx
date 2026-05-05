@@ -621,13 +621,15 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							<Button
 								onClick={handleCreateNote}
 								variant="secondary"
+								title="Add a new note to the current event"
 								icon="StickyNote"
 							>
-								New note
+								Create new note
 							</Button>
 							<Button
 								onClick={handleCreateLink}
 								variant="secondary"
+								title="Create link with the current event as origin."
 								icon="GitPullRequestCreate"
 							>
 								Create link
@@ -640,6 +642,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							<Button
 								onClick={() => handleEnrich()}
 								variant="secondary"
+								title="Enrich the current event"
 								icon="PrismColor"
 							>
 								Enrich

@@ -1,12 +1,15 @@
 .wrapper {
   overflow: auto;
-  border: 1px solid var(--gray-400);
+  border: 1px solid var(--gray-500);
   border-radius: 6px;
 }
+
 .table {
   user-select: text;
   -webkit-user-select: text;
+  border-collapse: collapse;
 }
+
 .table * {
   user-select: text;
   -webkit-user-select: text;
@@ -15,25 +18,29 @@
   line-height: 24px;
   white-space: nowrap;
 }
+
 .table th {
   padding: 0 8px;
   text-align: left;
-  border-right: 1px solid var(--gray-400);
+  border-right: 1px solid var(--gray-500);
   font-weight: 800;
 }
+
 .table svg {
   transform: translateY(1px);
   margin-right: 4px;
 }
+
 .value {
   white-space: nowrap;
   padding: 0 8px;
   height: 100%;
-  border-right: 1px solid var(--gray-400);
-  border-top: 1px solid var(--gray-400);
+  border-right: 1px solid var(--gray-500);
+  border-top: 1px solid var(--gray-500);
   color: var(--gray-1000);
   font-weight: 300;
 }
+
 .blank {
   color: var(--second);
   font-weight: 300;
