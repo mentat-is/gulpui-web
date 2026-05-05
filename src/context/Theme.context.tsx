@@ -6,12 +6,12 @@ import { ThemeProvider, useTheme } from 'next-themes'
 import { useCallback, useEffect, useState } from 'react'
 
 const THEMES: { value: string; label: string }[] = [
+  { value: 'light', label: 'Appetizer (Light)' },
   { value: 'dark-old', label: 'Dark (Classic)' },
+  { value: 'dracula', label: 'Dracula (Dark)' },
+  { value: 'forest', label: 'Forest (Dark)' },
   { value: 'light-old', label: 'Light (Classic)' },
-  { value: 'dracula', label: 'Dracula' },
-  { value: 'forest', label: 'Forest' },
-  { value: 'dark', label: 'Solarized Dark' },
-  { value: 'light', label: 'Solarized Light' },
+  { value: 'dark', label: 'Solarized (Dark)' },
 ];
 
 /** Syncs Color.Themer with the active next-themes value on mount and changes. */

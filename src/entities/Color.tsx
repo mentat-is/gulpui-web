@@ -105,6 +105,7 @@ export namespace Color {
           return '#dc322f';
         case 'light-old':
           return '#c73a3a';
+        case 'dark':
         case 'dark-old':
         default:
           return '#ff4d4d';
