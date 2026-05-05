@@ -68,6 +68,7 @@
   gap: 12px;
   max-height: 100%;
   flex: 1;
+  min-height: 0;
   overflow: hidden !important;
   flex-direction: column;
 }
@@ -75,11 +76,15 @@
 .tabs_wrapper>span {
   max-height: calc(100% - 36px);
   display: flex;
+  flex: 1;
+  min-height: 0;
   padding-bottom: 8px;
 }
 
 .scrollable {
-  overflow: scroll;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .triggers {

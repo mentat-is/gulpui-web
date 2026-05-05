@@ -30,9 +30,10 @@ import {
 import { FilterFileBanner } from "@/banners/FilterFile.banner";
 import { SendData } from "@/banners/SendData.banner";
 import { toast } from "sonner";
-import { JsonView, allExpanded, darkStyles } from "react-json-view-lite";
+import { JsonView, allExpanded, darkStyles, defaultStyles } from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { StyleProps } from "react-json-view-lite/dist/DataRenderer";
+import { useTheme } from "next-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
 import { Table } from "@/components/Table";
 import { Markdown } from "@/ui/Markdown";
@@ -255,6 +256,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	});
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
+	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
 	const notes = useMemo(
@@ -423,8 +425,13 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 			return res;
 		}, {});
 
+		const baseJsonStyles =
+			theme === "light" || theme === "light-old"
+				? defaultStyles
+				: darkStyles;
+
 		const jsonStyles: StyleProps = {
-			...darkStyles,
+			...baseJsonStyles,
 			noQuotesForStringValues: true,
 			childFieldsContainer: s.basic,
 			stringValue: s.string,
