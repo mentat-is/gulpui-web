@@ -35,6 +35,7 @@ interface FilterFileBannerProps extends Banner.Props {
 }
 
 import { QueriesHistory } from '@/components/QueriesHistory'
+import { Icon } from '@impactium/icons'
 
 /**
  * FilterFileBanner — Modal for building and applying OpenSearch queries/filters
@@ -496,7 +497,7 @@ export function FilterFileBanner({
           <Source.Select.Multi
             selected={fileIds}
             setSelected={handleSourceChange}
-            placeholder="Select files to apply filters"
+            placeholder="Select sources to apply filters to"
           />
         ), [fileIds, handleSourceChange])}
 
@@ -509,6 +510,7 @@ export function FilterFileBanner({
             <Stack style={{ margin: '8px 0' }}>
               <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
               <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
+              <Icon name='Flag' />
             </Stack>
           </Stack>
           <Separator style={{ margin: '8px 0' }} />

@@ -111,14 +111,14 @@ export namespace OpenSearchQueryBuilder {
 
       return (
         <Stack dir='column' gap={6} style={fws} ai='stretch' {...props}>
-          <Label value='Search in logs (event.original)' />
+          <Label value='Search in event.original' />
           <Stack>
             <Input
               style={{ flex: 1 }}
               variant='highlighted'
               icon='Code'
               className={s.query_string_input}
-              placeholder='Search in raw log content...'
+              placeholder='Search in raw event content.'
               value={textFilter}
               onChange={queryStringInputChangeHandler}
             />
