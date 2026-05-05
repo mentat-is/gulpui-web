@@ -2185,7 +2185,6 @@ export class Info implements InfoProps {
 				color,
 				glyph_id,
 				ws_id: this.app.general.ws_id,
-				description,
 			},
 			toast: {
 				onSuccess: () =>
@@ -2196,6 +2195,7 @@ export class Info implements InfoProps {
 			},
 			body: {
 				doc_ids: events,
+				description: description
 			},
 		}).then(this.links_reload);
 
