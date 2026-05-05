@@ -17,7 +17,6 @@ import { Input } from '@/ui/Input'
 import { Context } from '@/entities/Context'
 import { Note } from '@/entities/Note'
 import { App } from '@/entities/App'
-import { Theme } from '@/context/Theme.context'
 import { useTheme } from 'next-themes'
 import { AIAssistant } from '@/banners/AIAssistant.banner'
 import { FloatingWindow } from '@/ui/FloatingWindow'
@@ -463,7 +462,7 @@ export function Navigator({
           <Button
             size='md'
             variant="secondary"
-            title='Toggle visibility of notes or links'
+            title='Visibility settings'
             icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
             className={cn(s.notes_visibility)}
           />
@@ -478,16 +477,15 @@ export function Navigator({
                 </Stack>
               )
             })}
-            <Stack jc='space-between'>
-              <Label value='Theme' />
-              <Theme.Switcher />
-            </Stack>
           </Stack>
         </Popover.Content>
       </Popover.Root>
       <Popover.Root>
         <Popover.Trigger asChild>
-          <Button size='md' variant="secondary" icon="Crosshair" />
+          <Button size='md'
+            variant="secondary"
+            title="Go to timestamp"
+            icon="Crosshair" />
         </Popover.Trigger>
         <Popover.Content className={s.goto}>
           <Stack dir="column" ai="flex-start">
@@ -515,7 +513,7 @@ export function Navigator({
           <Popover.Trigger asChild>
             <Button
               variant={chatOpen || selectionOpen ? 'default' : 'secondary'}
-              title='Select Chat Version'
+              title='Select chat version'
               icon='Sparkles'
               onClick={handleChatButtonClick}
               size='md'
@@ -523,7 +521,7 @@ export function Navigator({
           </Popover.Trigger>
           <Popover.Content>
             <Stack dir='column' gap={3}>
-              <Label value="Select Chat Version" />
+              <Label value="Select chat version" />
               <Stack>
                 <Button
                   variant="glass"

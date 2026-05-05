@@ -1,8 +1,11 @@
 import { Application } from '@/context/Application.context'
+import { Theme } from '@/context/Theme.context'
 import { Internal } from '@/entities/addon/Internal'
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Toggle } from '@/ui/Toggle'
 import { Input } from '@/ui/Input'
+import { Stack } from '@/ui/Stack'
+import { Label } from '@/ui/Label'
 import { useState } from 'react'
 
 export namespace Settings {
@@ -59,6 +62,10 @@ export namespace Settings {
             }
           }}
         />
+        <Stack jc='space-between' ai='center'>
+          <Label value='Theme' />
+          <Theme.Selector />
+        </Stack>
       </UIBanner>
     )
   }

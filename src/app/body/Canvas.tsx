@@ -33,6 +33,7 @@ import { Doc } from "@/entities/Doc";
 import { Operation } from "@/entities/Operation";
 import { useTheme } from "next-themes";
 import { Button } from "@/ui/Button";
+import { Color } from "@/entities/Color";
 
 export namespace Canvas {
 	export interface Props extends Stack.Props {
@@ -150,7 +151,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		});
 
 		const files = render.visibleSources;
-		
+
 		render.ruler.draw();
 
 		// Y-AXIS VIEWPORT CULLING: Each source row is 48px tall. With more sources
@@ -158,7 +159,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		// against the canvas bounds (with 48px buffer for partial visibility), we skip
 		// engine rendering, line drawing, local markers, and info labels for invisible rows.
 		const canvasHeight = ctx.canvas.height;
-		
+
 		files.forEach((file, i) => {
 			const y = Source.Entity.getHeight(app, file, currentScrollY, i);
 			if (y < -48 || y > canvasHeight + 48) return;
@@ -211,7 +212,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		);
 
 		render.ruler.sections();
-	
+
 		renderCanvas;
 	};
 
@@ -499,6 +500,8 @@ export function Canvas({ timeline }: Canvas.Props) {
 	);
 
 	useEffect(() => {
+		if (theme) Color.Themer.setTheme(theme);
+
 		let animationFrameId: number;
 
 		const gameLoop = () => {
@@ -641,7 +644,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 				Math.round(
 					((timestamp - Info.app.timeline.frame.min) /
 						(Info.app.timeline.frame.max - Info.app.timeline.frame.min)) *
-						Info.width,
+					Info.width,
 				) - scrollXRef.current
 			);
 		},
@@ -658,7 +661,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 				(event.clientY +
 					scrollYRef.current -
 					timeline.current.getBoundingClientRect().top) /
-					48,
+				48,
 			);
 
 			const files = Source.Entity.selected(Info.app).filter((file) => Info.app.hidden.filesWithNoEvents ? Doc.Entity.get(Info.app, file.id).length > 0 : true);

@@ -41,41 +41,57 @@ export namespace Color {
   }
 
   export class Themer {
-    public static readonly PALETTE = {
-      BLACK_ACCENT: '#000',
-      BLACK_SECOND: '#0e0e0e',
-      BLACK_BORDER: '#303030',
-      WHITE_ACCENT: '#fff',
-      WHITE_SECOND: '#f0f0f0',
-      WHITE_BORDER: '#ddd',
-    } as const;
+    /** Per-named-theme canvas color palettes, matching the CSS themes in global.css. */
+    public static readonly THEMES: Record<string, Theme> = {
+      'dark-old': {
+        FONT_ACCENT: '#ededed',
+        FONT_SECOND: '#888888',
+        BACKGROUND_ACCENT: '#000',
+        BACKGROUND_SECOND: '#0e0e0e',
+        BORDER: '#303030',
+      },
+      'light-old': {
+        FONT_ACCENT: '#171717',
+        FONT_SECOND: '#303030',
+        BACKGROUND_ACCENT: '#fff',
+        BACKGROUND_SECOND: '#f0f0f0',
+        BORDER: '#dddddd',
+      },
+      'dracula': {
+        // Dracula: fg=#f8f8f2, comment=#6272a4, selection=#44475a, bg=#282a36
+        FONT_ACCENT: '#f8f8f2',
+        FONT_SECOND: '#6272a4',
+        BACKGROUND_ACCENT: '#282a36',
+        BACKGROUND_SECOND: '#21222c',
+        BORDER: '#44475a',
+      },
+      'dark': {
+        // Solarized Dark: base03=#002b36, base02=#073642, base1=#93a1a1, base0=#839496, base01=#586e75
+        FONT_ACCENT: '#93a1a1',
+        FONT_SECOND: '#839496',
+        BACKGROUND_ACCENT: '#002b36',
+        BACKGROUND_SECOND: '#073642',
+        BORDER: '#586e75',
+      },
+      'light': {
+        // Solarized Light: base3=#fdf6e3, base2=#eee8d5, base01=#586e75, base00=#657b83, base1=#93a1a1
+        FONT_ACCENT: '#586e75',
+        FONT_SECOND: '#657b83',
+        BACKGROUND_ACCENT: '#fdf6e3',
+        BACKGROUND_SECOND: '#eee8d5',
+        BORDER: '#93a1a1',
+      },
+    };
 
-    public static theme: Theme = Themer.getTheme('dark');
+    public static theme: Theme = Themer.THEMES['dark-old'];
 
     public static setTheme(theme: string) {
-      if (!['light', 'dark'].includes(theme)) {
-        theme = 'dark';
-      }
-
-      Themer.theme = Themer.getTheme(theme as 'light' | 'dark');
+      Themer.theme = Themer.THEMES[theme] ?? Themer.THEMES['dark-old'];
     }
+
+    /** @deprecated Use setTheme(name) with named theme keys. Kept for backwards compatibility. */
     public static getTheme(theme: 'light' | 'dark'): Theme {
-      if (theme === 'light') {
-        return {
-          FONT_ACCENT: this.PALETTE.BLACK_ACCENT,
-          FONT_SECOND: this.PALETTE.BLACK_BORDER,
-          BACKGROUND_ACCENT: this.PALETTE.WHITE_ACCENT,
-          BACKGROUND_SECOND: this.PALETTE.WHITE_SECOND,
-          BORDER: this.PALETTE.WHITE_BORDER
-        }
-      }
-      return {
-        FONT_ACCENT: this.PALETTE.WHITE_ACCENT,
-        FONT_SECOND: this.PALETTE.WHITE_BORDER,
-        BACKGROUND_ACCENT: this.PALETTE.BLACK_ACCENT,
-        BACKGROUND_SECOND: this.PALETTE.BLACK_SECOND,
-        BORDER: this.PALETTE.BLACK_BORDER
-      }
+      return theme === 'light' ? Themer.THEMES['light-old'] : Themer.THEMES['dark-old'];
     }
   }
 
