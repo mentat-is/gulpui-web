@@ -234,6 +234,7 @@ export namespace LinkFunctionality {
 				event: Doc.Type;
 				link?: Link.Type;
 				initialDocIds?: Doc.Id[];
+				showBackButton?: boolean;
 			}
 		}
 
@@ -241,6 +242,7 @@ export namespace LinkFunctionality {
 			link,
 			event,
 			initialDocIds,
+			showBackButton = true,
 			...props
 		}: LinkFunctionality.Create.Banner.Props) {
 			const { app, destroyBanner, Info } = Application.use();
@@ -327,7 +329,7 @@ export namespace LinkFunctionality {
 					{...props}
 					title="Create link"
 					done={<Done />}
-					back={props.back ? handleBack : undefined}
+					back={props.back && showBackButton ? handleBack : undefined}
 					onClose={handleClose}
 				>
 					<Stack
@@ -466,6 +468,7 @@ export namespace LinkFunctionality {
 					<LinkFunctionality.Create.Banner
 						event={event}
 						initialDocIds={[]}
+						showBackButton={false}
 						back={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)}
 					/>,
 				);

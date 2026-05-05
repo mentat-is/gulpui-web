@@ -2145,9 +2145,7 @@ export class Info implements InfoProps {
 				name,
 				glyph_id,
 				color,
-				description,
 			},
-
 			toast: {
 				onSuccess: () =>
 					toast.success(`Link ${name} has been created successfully`, {
@@ -2156,7 +2154,10 @@ export class Info implements InfoProps {
 					}),
 			},
 			body: {
-				doc_ids: doc_ids ?? [event._id],
+				// FIXME: this creates a link without destination documents, which is wrong. the backend allows it
+				// just to support this ui ....
+				doc_ids: [],
+				description: description
 			},
 		}).then(this.links_reload);
 	};
