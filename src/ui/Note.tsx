@@ -7,13 +7,18 @@ import { cn } from "@impactium/utils";
 import { formatTimestampToReadableString, stringToHexColor } from "./utils";
 import { Stack } from "./Stack";
 import { Badge } from "./Badge";
+import { Banner as UIBanner } from "./Banner";
 import { Button } from "./Button";
 import { Doc } from "@/entities/Doc";
 import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import { Note } from "@/entities/Note";
+import { DataStore } from "@/store/DataStore";
+import { RenderEngine } from "@/class/RenderEngine";
+import { useMemo, useState } from "react";
 import { useCallback } from "react";
+import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip"
 
 export namespace NotePoint {
@@ -30,16 +35,83 @@ export namespace NotePoint {
 		}
 	}
 
+	export function FetchEventBanner({ note }: { note: Note.Type }) {
+		const { app, Info, spawnDialog, destroyBanner } = Application.use();
+		const [loading, setLoading] = useState<boolean>(false);
+
+		const fetch = async () => {
+			setLoading(true);
+			try {
+				const fetched = await Info.query_single_id(
+					note.doc._id,
+					note.operation_id,
+				);
+				if (!fetched) {
+					toast.error("Event could not be retrieved");
+					return;
+				}
+				const [event] = Doc.Entity.normalize([fetched]);
+				Info.events_add([event]);
+
+				const sourceId = event["gulp.source_id"];
+				const loadedCount = Doc.Entity.get(app, sourceId).length;
+				const updatedFiles = app.target.files.map((f) =>
+					f.id === sourceId
+						? {
+							...f,
+							selected: true,
+							total: Math.max(f.total ?? 0, loadedCount),
+						}
+						: f,
+				);
+				Info.setInfoByKey(updatedFiles, "target", "files");
+
+				Note.Entity.invalidateCache();
+				RenderEngine.clearAllCaches();
+				DataStore.markDirty();
+				Info.render();
+				destroyBanner();
+				spawnDialog(<DisplayEventDialog event={event} />);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		return (
+			<UIBanner
+				title="Fetch event"
+				done={
+					<Button
+						loading={loading}
+						icon="MagnifyingGlass"
+						variant="glass"
+						onClick={fetch}
+					/>
+				}
+			>
+				<p>
+					The event linked to note <code>{note.name}</code> is not currently
+					loaded in the timeline (it may have been filtered out). Fetch it
+					from the server to view its details?
+				</p>
+			</UIBanner>
+		);
+	}
+
 	export function Combination({
 		className,
 		style,
 		note,
 		...props
 	}: Combination.Props) {
-		const { app, spawnDialog, Info } = Application.use();
+		const { app, spawnDialog, spawnBanner, Info } = Application.use();
 
 		const targetNoteButtonHandler = (note: Note.Type) => {
 			const event = Doc.Entity.id(app, note.doc._id);
+
+			if (!event) {
+				return spawnBanner(<FetchEventBanner note={note} />);
+			}
 
 			spawnDialog(<DisplayEventDialog event={event} />);
 		};
@@ -62,7 +134,7 @@ export namespace NotePoint {
 				<p style={{ color: note.color }}>{note.name}</p>
 				<Tooltip>
 					<TooltipTrigger asChild>
-						<span style={{ cursor: "help", opacity: 0.9 }}>{note.text}</span>				
+						<span style={{ cursor: "help", opacity: 0.9 }}>{note.text}</span>
 					</TooltipTrigger>
 					<TooltipContent>{note.text}</TooltipContent>
 				</Tooltip>
@@ -71,7 +143,7 @@ export namespace NotePoint {
 						value={`${Context.Entity.id(app, note.context_id).name} / ${Source.Entity.id(app, note.source_id).name}`}
 						style={{
 							background: stringToHexColor(note.context_id),
-							border: `1px solid ${stringToHexColor(note.context_id)}40`,							
+							border: `1px solid ${stringToHexColor(note.context_id)}40`,
 						}}
 					/>
 					{note.tags.map((t) => (
