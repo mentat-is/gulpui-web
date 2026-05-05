@@ -6,6 +6,7 @@ import { Notification } from '@/ui/Notification'
 import { Context } from '@/entities/Context'
 import { Source } from '@/entities/Source'
 import { Note } from '@/entities/Note'
+import { Doc } from '@/entities/Doc'
 import { NotePoint } from '@/ui/Note'
 import { Select } from '@/ui/Select'
 import { Banner } from '@/ui/Banner'
@@ -26,6 +27,7 @@ interface FloatingWindowProps {
 export function NotesWindow({ onClose }: FloatingWindowProps) {
   const { app, Info } = Application.use()
   const [search, setSearch] = useState('');
+  const [showOnlyVisible, setShowOnlyVisible] = useState<boolean>(false);
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<Note.Id>>(new Set());
 
   const getAvailableTags = useCallback(() => {
@@ -64,13 +66,15 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       );
     }).filter(n =>
       !selectedTags.size || [...selectedTags].every(tag => n.tags.map(t => t.toLowerCase()).includes(tag))
+    ).filter(n =>
+      !showOnlyVisible || !!Doc.Entity.id(app, n.doc._id)
     );
 
     return filtered.sort((a, b) => {
       const byContext = a.context_id.localeCompare(b.context_id);
       return byContext !== 0 ? byContext : a.source_id.localeCompare(b.source_id);
     });
-  }, [app.timeline.renderVersion, search, app, selectedTags]);
+  }, [app.timeline.renderVersion, search, app, selectedTags, showOnlyVisible]);
 
   const isAllSelected = useMemo(() => {
     return sortedNotes.length > 0 && sortedNotes.every(n => selectedNoteIds.has(n.id));
@@ -155,6 +159,19 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
           onClick={() => handleSelectAll(!isAllSelected)}
         >
           {selectAllLabel}
+        </span>
+      </Stack>
+      <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
+        <Checkbox
+          style={{ height: 20, width: 20 }}
+          checked={showOnlyVisible}
+          onCheckedChange={(v: any) => setShowOnlyVisible(!!v)}
+        />
+        <span
+          style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+          onClick={() => setShowOnlyVisible(v => !v)}
+        >
+          Show only notes for visible events
         </span>
       </Stack>
       <div

@@ -2,6 +2,7 @@ import { Application } from '@/context/Application.context';
 import { useScroll, scrollStore } from '@/store/scroll.store';
 import { Algorhithm, getTimestamp } from '@/ui/utils';
 import { Source } from '@/entities/Source';
+import { Doc } from '@/entities/Doc';
 import { Navigator } from './Navigator';
 import { Tabular } from './Tabular';
 import { Stack } from '@/ui/Stack';
@@ -22,7 +23,36 @@ export function Timeline() {
       const canvas = document.getElementById('canvas') as HTMLCanvasElement
       if (!canvas) return
 
-      scrollStore.setScrollY(Source.Entity.getHeight(app, file_id, 0) - canvas.clientHeight / 2)
+      const target = app.target.files.find(f => f.id === file_id)
+      if (!target) return
+
+      // Reveal the source if it's currently unselected or excluded by the
+      // filesWithNoEvents toggle, so focusing always lands on a visible row.
+      const loadedCount = Doc.Entity.get(app, file_id).length
+      const needsReveal = !target.selected || (target.total ?? 0) === 0
+      const files = needsReveal
+        ? app.target.files.map(f =>
+          f.id === file_id
+            ? { ...f, selected: true, total: Math.max(f.total ?? 0, loadedCount, 1) }
+            : f
+        )
+        : app.target.files
+
+      if (needsReveal) Info.setInfoByKey(files, 'target', 'files')
+
+      // Compute the row index against the same list the renderer uses so the
+      // Y centering matches the actual rendered position. Reuse Source.Entity.selected
+      // (which applies pin order and the timeline search filter) on a synthetic app
+      // carrying the just-updated files, then apply the same loaded-events filter
+      // Canvas applies to derive visibleSources.
+      const synthApp = { ...app, target: { ...app.target, files } }
+      const visible = Source.Entity.selected(synthApp).filter(f =>
+        app.hidden.filesWithNoEvents ? Doc.Entity.get(synthApp, f.id).length > 0 : true
+      )
+      const index = visible.findIndex(s => s.id === file_id)
+      if (index === -1) return
+
+      scrollStore.setScrollY(Source.Entity.getHeight(app, file_id, 0, index) - canvas.clientHeight / 2)
     }
   }
 

@@ -357,7 +357,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		const height = this.ctx.canvas.height - 20 * 2 * (index + 1);
 
-	this.ctx.fillRect(x, y, width, height);
+		this.ctx.fillRect(x, y, width, height);
 	};
 
 	public drawHighlights = () => {
@@ -627,14 +627,18 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			groups.forEach((group) => {
 				if (!group || group.length < 2 || !notes[group[0]]) return;
 
-				const groupNotes = notes.slice(group[0], group[0] + group[1]);
-				if (group[1] === 1 && notes[group[0]]) {
-					this.renderNote(notes[group[0]]);
+				const groupNotes = notes
+					.slice(group[0], group[0] + group[1])
+					.filter((n) => Doc.Entity.id(this.info.app, n.doc._id));
+				if (groupNotes.length === 0) return;
+
+				if (groupNotes.length === 1) {
+					this.renderNote(groupNotes[0]);
 				} else {
 					this.renderNote(
 						{
-							...notes[group[0]],
-							name: `${group[1]}`,
+							...groupNotes[0],
+							name: `${groupNotes.length}`,
 							color: Color.Themer.theme.FONT_ACCENT,
 							glyph_id: Glyph.getIdByName("Status"),
 						},
