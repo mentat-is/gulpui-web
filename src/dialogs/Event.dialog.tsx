@@ -256,6 +256,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	});
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
+	const treeScrollRef = useRef<HTMLDivElement | null>(null);
 	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
@@ -342,6 +343,50 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		// @ts-ignore
 		return window.focusCanvasOnEvent(event.gulp_timestamp + (file?.settings.offset || 0), false, event["gulp.source_id"]);
 	}, [event, file]);
+
+	const handleTreeWheelCapture = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+		const container = treeScrollRef.current;
+		if (!container) return;
+
+		container.scrollTop += e.deltaY;
+		container.scrollLeft += e.deltaX;
+		e.preventDefault();
+	}, []);
+
+	const handleTreeKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+		const container = treeScrollRef.current;
+		if (!container) return;
+
+		const step = 40;
+		const page = Math.max(container.clientHeight - 40, step);
+
+		switch (e.key) {
+			case "ArrowDown":
+				container.scrollTop += step;
+				e.preventDefault();
+				break;
+			case "ArrowUp":
+				container.scrollTop -= step;
+				e.preventDefault();
+				break;
+			case "PageDown":
+				container.scrollTop += page;
+				e.preventDefault();
+				break;
+			case "PageUp":
+				container.scrollTop -= page;
+				e.preventDefault();
+				break;
+			case "Home":
+				container.scrollTop = 0;
+				e.preventDefault();
+				break;
+			case "End":
+				container.scrollTop = container.scrollHeight;
+				e.preventDefault();
+				break;
+		}
+	}, []);
 
 	// --- HANDLERS: Banners ---
 
@@ -433,11 +478,19 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		const jsonStyles: StyleProps = {
 			...baseJsonStyles,
 			noQuotesForStringValues: true,
+			basicChildStyle: s.node,
 			childFieldsContainer: s.basic,
+			clickableLabel: s.clickableLabel,
+			punctuation: s.punctuation,
 			stringValue: s.string,
 			numberValue: s.numeric,
 			booleanValue: s.bool,
 			nullValue: s.null,
+			undefinedValue: s.undefined,
+			otherValue: s.other,
+			expandIcon: s.expander,
+			collapseIcon: s.expander,
+			collapsedContent: s.collapsed,
 			container: s.container,
 			label: s.label,
 		};
@@ -446,7 +499,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 			<ContextMenu>
 				<Tabs
 					defaultValue="raw"
-					style={{ overflow: "scroll" }}
+					style={{ overflow: "hidden" }}
 					className={s.tabs_wrapper}
 				>
 					<TabsList className={s.triggers}>
@@ -474,6 +527,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 					</TabsList>
 
 					<ContextMenuTrigger
+						asChild
 						onMouseDown={(e) => {
 							if (e.button === 2 && !isPointInSelection(e.clientX, e.clientY)) {
 								const element = document.elementFromPoint(
@@ -498,26 +552,32 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							if (current && current !== selection) setSelection(current);
 						}}
 					>
-						<TabsContent
-							value="tree"
-							className={s.scrollable}
-						>
-							<JsonView
-								data={unflattenObject}
-								clickToExpandNode={true}
-								shouldExpandNode={allExpanded}
-								style={jsonStyles}
-							/>
-						</TabsContent>
-						<TabsContent value="raw">
-							<Markdown
-								className={s.highlighter}
-								value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`}
-							/>
-						</TabsContent>
-						<TabsContent value="table">
-							<Table values={Object.entries(json)} />
-						</TabsContent>
+						<div className={s.contextTrigger}>
+							<TabsContent
+								value="tree"
+								className={s.scrollable}
+								ref={treeScrollRef}
+								tabIndex={0}
+								onWheelCapture={handleTreeWheelCapture}
+								onKeyDownCapture={handleTreeKeyDownCapture}
+							>
+								<JsonView
+									data={unflattenObject}
+									clickToExpandNode={true}
+									shouldExpandNode={allExpanded}
+									style={jsonStyles}
+								/>
+							</TabsContent>
+							<TabsContent value="raw">
+								<Markdown
+									className={s.highlighter}
+									value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`}
+								/>
+							</TabsContent>
+							<TabsContent value="table">
+								<Table values={Object.entries(json)} />
+							</TabsContent>
+						</div>
 					</ContextMenuTrigger>
 				</Tabs>
 
