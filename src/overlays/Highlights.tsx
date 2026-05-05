@@ -100,7 +100,7 @@ export namespace Highlights {
         return (
           <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
             <Icon name='ChartBarBig' />
-            <code>Select area highlighted</code>
+            <code>Select the area to be highlighted</code>
             <Button className={s.close} variant='secondary' size='sm' icon='Logout' onMouseDown={destroyOverlay}>Exit</Button>
           </Stack>
         )
