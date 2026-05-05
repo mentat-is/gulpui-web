@@ -233,15 +233,17 @@ export namespace LinkFunctionality {
 			export interface Props extends UIBanner.Props {
 				event: Doc.Type;
 				link?: Link.Type;
+				initialDocIds?: Doc.Id[];
 			}
 		}
 
 		export function Banner({
 			link,
 			event,
+			initialDocIds,
 			...props
 		}: LinkFunctionality.Create.Banner.Props) {
-			const { app, spawnBanner, destroyBanner, Info } = Application.use();
+			const { app, destroyBanner, Info } = Application.use();
 			const [color, setColor] = useState<string>(
 				link?.color || Default.Color.LINK,
 			);
@@ -263,6 +265,18 @@ export namespace LinkFunctionality {
 				return Source.Entity.id(app, event["gulp.source_id"]);
 			}, [app, event]);
 
+			const handleBack = useCallback(() => {
+				destroyBanner();
+				props.back?.();
+			}, [destroyBanner, props]);
+
+			const handleClose = useCallback(() => {
+				props.onClose?.();
+				if (props.back) {
+					window.setTimeout(() => props.back?.(), 0);
+				}
+			}, [props]);
+
 			const send = async () => {
 				setLoading(true);
 
@@ -277,10 +291,8 @@ export namespace LinkFunctionality {
 						glyph_id,
 						name,
 					}).then(() => {
-						if (props.back) {
-							props.back();
-						}
 						destroyBanner();
+						props.back?.();
 					});
 				} else {
 					await Info.link_create({
@@ -288,12 +300,11 @@ export namespace LinkFunctionality {
 						glyph_id,
 						color,
 						event,
+						doc_ids: initialDocIds,
 						description,
 					}).then(() => {
-						if (props.back) {
-							props.back();
-						}
 						destroyBanner();
+						props.back?.();
 					});
 				}
 				setLoading(false);
@@ -313,8 +324,11 @@ export namespace LinkFunctionality {
 
 			return (
 				<UIBanner
+					{...props}
 					title="Create link"
 					done={<Done />}
+					back={props.back ? handleBack : undefined}
+					onClose={handleClose}
 				>
 					<Stack
 						className={s.general}
@@ -408,7 +422,7 @@ export namespace LinkFunctionality {
 			event: Doc.Type;
 		}
 		export function Banner({ event }: LinkFunctionality.Connect.Props) {
-			const { app, Info, destroyBanner } = Application.use();
+			const { app, Info, destroyBanner, spawnBanner } = Application.use();
 
 			const links = useMemo(
 				() => Link.Entity.selected(app),
@@ -446,6 +460,16 @@ export namespace LinkFunctionality {
 				},
 				[alreadyConnectedLinks, links],
 			);
+
+			const handleCreateLink = useCallback(() => {
+				spawnBanner(
+					<LinkFunctionality.Create.Banner
+						event={event}
+						initialDocIds={[]}
+						back={() => spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)}
+					/>,
+				);
+			}, [event, spawnBanner]);
 
 			return (
 				<UIBanner
@@ -491,6 +515,14 @@ export namespace LinkFunctionality {
 							</Stack>
 						</Select.Content>
 					</Select.Multi.Root>
+					<Button
+						onClick={handleCreateLink}
+						variant="secondary"
+						icon="GitPullRequestCreate"
+						style={{ width: "100%" }}
+					>
+						Create new link
+					</Button>
 				</UIBanner>
 			);
 		}

@@ -2122,6 +2122,7 @@ export class Info implements InfoProps {
 	link_create = ({
 		name,
 		event,
+		doc_ids,
 		glyph_id = Glyph.List.entries().find(
 			(e) => e[1] === Default.Icon.LINK,
 		)![0]!,
@@ -2130,6 +2131,7 @@ export class Info implements InfoProps {
 	}: {
 		name: string;
 		event: Doc.Type;
+		doc_ids?: Doc.Type["_id"][];
 		glyph_id: Glyph.Id;
 		color: string;
 		description: string;
@@ -2154,7 +2156,7 @@ export class Info implements InfoProps {
 					}),
 			},
 			body: {
-				doc_ids: [event._id],
+				doc_ids: doc_ids ?? [event._id],
 			},
 		}).then(this.links_reload);
 	};
