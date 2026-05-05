@@ -477,7 +477,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 		const jsonStyles: StyleProps = {
 			...baseJsonStyles,
-			noQuotesForStringValues: true,
+			noQuotesForStringValues: false,
+			quotesForFieldNames: true,
+			stringifyStringValues: true,
 			basicChildStyle: s.node,
 			childFieldsContainer: s.basic,
 			clickableLabel: s.clickableLabel,
@@ -488,8 +490,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 			nullValue: s.null,
 			undefinedValue: s.undefined,
 			otherValue: s.other,
-			expandIcon: s.expander,
-			collapseIcon: s.expander,
+			expandIcon: s.expandIcon,
+			collapseIcon: s.collapseIcon,
 			collapsedContent: s.collapsed,
 			container: s.container,
 			label: s.label,
@@ -563,7 +565,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							>
 								<JsonView
 									data={unflattenObject}
-									clickToExpandNode={true}
+									clickToExpandNode={false}
 									shouldExpandNode={allExpanded}
 									style={jsonStyles}
 								/>

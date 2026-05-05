@@ -33,6 +33,10 @@
 
 .node {
   color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 1px 0;
 }
 
 .container {
@@ -41,11 +45,23 @@
   background: color-mix(in srgb, var(--background-100) 82%, transparent);
   padding: 6px;
   margin-right: 8px;
-  overflow: scroll;
+  overflow: auto;
+}
+
+.container,
+.container * {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.basic {
+  margin: 0;
+  padding-left: 18px;
 }
 
 .label {
   color: var(--second);
+  font-weight: 500;
 }
 
 .clickableLabel {
@@ -54,6 +70,7 @@
 
 .punctuation {
   color: var(--gray-700);
+  font-weight: 500;
 }
 
 .numeric {
@@ -80,12 +97,41 @@
   color: var(--teal-900);
 }
 
-.expander {
+.expandIcon,
+.collapseIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border: 1px solid var(--gray-500);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--background-200) 88%, transparent);
   color: var(--gray-900);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  font-size: 0;
+  line-height: 1;
+}
+
+.expandIcon::after {
+  content: "+";
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.collapseIcon::after {
+  content: "-";
+  font-size: 12px;
+  font-weight: 700;
+  transform: translateY(-1px);
 }
 
 .collapsed {
   color: var(--gray-800);
+  font-style: italic;
 }
 
 .tabs_wrapper {
