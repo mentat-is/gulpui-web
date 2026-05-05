@@ -31,6 +31,9 @@ export namespace Input {
     icon?: Icon.Name | null;
     onIconClick?: () => void;
     iconTitle?: string;
+    endIcon?: Icon.Name | null;
+    onEndIconClick?: () => void;
+    endIconTitle?: string;
     label?: string;
     revert?: boolean;
     skeleton?: boolean;
@@ -41,11 +44,12 @@ export namespace Input {
 
 
 const Input = React.forwardRef<HTMLInputElement, Input.Props>(
-  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, onIconClick, iconTitle, onChange, ...props }, ref) => {
+  ({ className, valid = true, revert, label, skeleton, variant, disabled, type, size, icon, onIconClick, iconTitle, endIcon, onEndIconClick, endIconTitle, onChange, ...props }, ref) => {
     const classes = cn(
       inputVariants({ variant, size, className }),
       s.wrapper,
       icon || type === 'file' ? s.image : null,
+      endIcon ? s.hasEndIcon : null,
       revert && s.revert,
       !valid && s.invalid,
       disabled && s.disabled
@@ -74,6 +78,29 @@ const Input = React.forwardRef<HTMLInputElement, Input.Props>(
       return iconElement;
     }
 
+    const EndIcon = () => {
+      if (!endIcon) {
+        return null;
+      }
+
+      const iconElement = <Icon variant='dimmed' name={endIcon} />;
+
+      if (onEndIconClick) {
+        return (
+          <button
+            type="button"
+            className={cn(s.iconButton, s.endIconButton)}
+            onClick={onEndIconClick}
+            title={endIconTitle}
+          >
+            {iconElement}
+          </button>
+        );
+      }
+
+      return <span className={s.endIcon}>{iconElement}</span>;
+    }
+
     return (
       <Skeleton show={skeleton}>
         <Stack dir='column' gap={6} ai='flex-start' data-input style={{ width: '100%' }}>
@@ -81,6 +108,7 @@ const Input = React.forwardRef<HTMLInputElement, Input.Props>(
           <div className={classes}>
             <InputIcon />
             <input id={label} ref={ref} type={variant === 'color' ? 'color' : type} {...props} onChange={onChange || (() => { })} />
+            <EndIcon />
           </div>
         </Stack>
       </Skeleton>

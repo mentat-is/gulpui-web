@@ -205,7 +205,7 @@ export namespace NoteFunctionality {
 						className={s.textarea}
 						value={text}
 						onChange={(e) => setText(String(e.currentTarget.value))}
-						placeholder="Description"
+						placeholder="Note text"
 					/>
 					<Stack
 						gap={4}

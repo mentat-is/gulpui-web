@@ -118,7 +118,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     <Banner title="Notes" onClose={onClose} className={s.main}>
       <Stack>
         <Input
-          placeholder='Context name, source name, note title or note description'
+          placeholder='Context name, source name, note title or text'
           icon='MagnifyingGlass'
           variant='highlighted'
           value={search}

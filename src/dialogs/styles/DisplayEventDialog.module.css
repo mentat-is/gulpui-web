@@ -2,31 +2,39 @@
   padding-right: 8px;
   height: 100%;
 }
+
 .highlighter * {
   font-size: 10px;
   white-space: break-spaces !important;
   user-select: text !important;
 }
-.highlighter > pre {
+
+.highlighter>pre {
   margin: 0 !important;
 }
+
 .group button {
   width: 100%;
 }
+
 .actionButtons {
   flex-wrap: wrap;
 }
+
 .actionButtons button {
   flex: 1;
   height: 36px;
   min-width: 36px;
 }
+
 .basic ul div span {
   margin-left: 6px;
 }
+
 .collapse {
   background: red;
 }
+
 .container {
   border: 1px solid var(--gray-400);
   border-radius: 4px;
@@ -46,6 +54,7 @@
 .string {
   color: var(--amber-900)
 }
+
 .bool {
   color: red
 }
@@ -53,6 +62,7 @@
 .null {
   color: grey
 }
+
 .tabs_wrapper {
   display: flex;
   gap: 12px;
@@ -61,30 +71,38 @@
   overflow: hidden !important;
   flex-direction: column;
 }
-.tabs_wrapper > span {
+
+.tabs_wrapper>span {
   max-height: calc(100% - 36px);
   display: flex;
   padding-bottom: 8px;
 }
+
 .scrollable {
   overflow: scroll;
 }
+
 .triggers {
   width: 100%;
 }
+
 .triggers button[data-state='active'] {
   flex: 1;
 }
+
 .triggers button {
   font-family: var(--font-mono);
 }
+
 .triggers button svg {
   margin-right: 6px;
 }
+
 .indicator {
   padding: 0px !important;
   position: relative;
 }
+
 .indicator hr {
   width: 27px;
   height: 26.5px;
@@ -95,13 +113,21 @@
   backdrop-filter: brightness(0.4);
   z-index: 0;
 }
+
 .indicator p {
   z-index: 1;
   font-size: 8px;
-  color: white;
+  color: currentColor;
   font-family: var(--font-mono);
   text-shadow: 0 0 1px black;
+  max-width: 22px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  line-height: 1;
+  text-align: center;
 }
+
 .indicator .marker {
   border: 1px solid var(--gray-400);
   width: 14px;
@@ -110,8 +136,9 @@
   border-radius: var(--round);
   transform: translate(16.5%, 16.5%);
   z-index: 2;
-  color: var(--accent); 
+  color: var(--accent);
 }
+
 .indicator .collab {
   bottom: 0;
   right: 0;

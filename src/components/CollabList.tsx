@@ -145,7 +145,7 @@ export namespace Collab {
     return (
       <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
         <Markdown className={cn(s.description, inOpen && s.revealed)} value={value} />
-        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} icon='AcronymMarkdown'>{inOpen ? 'Hide' : 'Reveal'} description</Button>
+        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} icon='AcronymMarkdown'>{inOpen ? 'Hide' : 'Show'} text</Button>
       </Stack>
     )
   }

@@ -198,21 +198,33 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const color = stringToHexColor(file.context_id);
 		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
-		this.ctx.fillStyle = color;
-		this.ctx.fillRect(0, y + 23, window.innerWidth, 1);
-
+		// fill() paints fillRect(0, y-24, width, 48) which extends to y+24 — the exact
+		// position of the separator. Draw fill first, then the separator on top so it
+		// is not overwritten. Use reduced opacity so the line is lighter than the
+		// fully-opaque text labels drawn afterwards by draw_info/locals.
 		this.fill(
 			color,
 			y,
 			!this.shifted.find((shiftedSource) => shiftedSource.id === file.id),
 		);
+
+		const savedAlpha = this.ctx.globalAlpha;
+		this.ctx.globalAlpha = 0.35;
+		this.ctx.fillStyle = Color.Themer.theme.BORDER;
+		this.ctx.fillRect(0, y + 24, window.innerWidth, 1);
+		this.ctx.globalAlpha = savedAlpha;
 	};
 
 	public primary = (file: Source.Type, y?: number) => {
 		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
-		this.ctx.fillStyle = stringToHexColor(file.context_id);
+		// Draw top-edge marker at y-25 with reduced opacity so it is visibly lighter
+		// than the fully-opaque text labels drawn below it (topmost text is at ~y-10).
+		const savedAlpha = this.ctx.globalAlpha;
+		this.ctx.globalAlpha = 0.35;
+		this.ctx.fillStyle = Color.Themer.theme.BORDER;
 		this.ctx.fillRect(0, y - 25, window.innerWidth, 1);
+		this.ctx.globalAlpha = savedAlpha;
 	};
 
 	public fill = (color: string, y: number, isShifted: boolean) => {
@@ -357,7 +369,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		const height = this.ctx.canvas.height - 20 * 2 * (index + 1);
 
-	this.ctx.fillRect(x, y, width, height);
+		this.ctx.fillRect(x, y, width, height);
 	};
 
 	public drawHighlights = () => {
@@ -452,20 +464,21 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		this.ctx.save();
 
-		if (!note.color) {
-			note.color = Color.Themer.theme.FONT_ACCENT;
-		}
+		const noteBorder = Color.Themer.theme.BORDER;
+		const noteFill = Color.Themer.theme.BACKGROUND_SECOND;
+		const noteAccent = note.color ?? Color.Themer.theme.BACKGROUND_ACCENT;
+		const noteIcon = Color.Themer.theme.FONT_ACCENT;
 
 		// EFFETTO HOVER
 		if (isHovered) {
-			this.ctx.shadowColor = note.color;
+			this.ctx.shadowColor = noteBorder;
 			this.ctx.shadowBlur = 12; // Effetto Glow
 			this.ctx.lineWidth = 2;
-			this.ctx.strokeStyle = "#FFFFFF";
+			this.ctx.strokeStyle = noteBorder;
 		}
 
 		// Main
-		this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, note.color);
+		this.drawRect(x, y, NOTE_SIZE, NOTE_SIZE, 5, noteBorder, noteFill);
 		// Accent
 		this.drawRect(
 			x,
@@ -473,15 +486,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			NOTE_SIZE,
 			4,
 			4,
-			note.color,
-			note.color,
+			noteBorder,
+			noteAccent,
 		);
 
 		if (isHovered) this.ctx.stroke();
 
 		const icon = getCanvasIcon({
 			name: Note.Entity.icon(note),
-			color: note.color,
+			color: noteIcon,
 		});
 		const iconSize = 16;
 		const iconX = x + (NOTE_SIZE - iconSize) / 2;
@@ -489,7 +502,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		this.ctx.drawImage(icon, iconX, iconY, iconSize, iconSize);
 
-		this.drawTextLabel(note.name, x + NOTE_SIZE / 2, y + 26, 120, note.color);
+		this.drawTextLabel(note.name, x + NOTE_SIZE / 2, y + 26, 120, noteBorder);
 		this.ctx.restore();
 
 		RenderEngine.interactiveNotes.push({
@@ -956,7 +969,35 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		}
 	};
 
-	public target = () => {
+	public target = (targetFile?: Source.Type, targetY?: number) => {
+		if (!this.info.app.timeline.target) return;
+
+		const file = Source.Entity.id(
+			this.info.app,
+			this.info.app.timeline.target["gulp.source_id"],
+		);
+
+		if (!file) return;
+		if (targetFile && targetFile.id !== file.id) return;
+
+		const selected = this.visibleSources;
+		const index = selected.findIndex((f) => f.id === file.id);
+
+		if (index === -1) return;
+
+		const rowY =
+			typeof targetY === "number"
+				? targetY - 1
+				: Source.Entity.getHeight(this.info.app, file, this.scrollY, index) - 1;
+
+		this.ctx.save();
+		this.ctx.globalAlpha = 0.55;
+		this.ctx.fillStyle = Color.Themer.theme.BORDER;
+		this.ctx.fillRect(0, rowY, window.innerWidth, 1);
+		this.ctx.restore();
+	};
+
+	public targetMarker = () => {
 		if (!this.info.app.timeline.target) return;
 
 		const file = Source.Entity.id(
@@ -972,7 +1013,6 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		if (index === -1) return;
 
 		this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT;
-		this.ctx.fillRect(0, Source.Entity.getHeight(this.info.app, file, this.scrollY, index) - 1, window.innerWidth, 1);
 		this.ctx.fillRect(
 			this.getPixelPosition(
 				this.info.app.timeline.target.gulp_timestamp + file.settings.offset,

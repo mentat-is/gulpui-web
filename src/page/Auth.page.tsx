@@ -31,6 +31,7 @@ export namespace Auth {
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('')
+    const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState<boolean>(false)
     const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
@@ -274,8 +275,11 @@ export namespace Auth {
           icon='KeyRound'
           label='Password'
           placeholder='password'
-          type='password'
+          type={showPassword ? 'text' : 'password'}
           value={password}
+          endIcon={showPassword ? 'EyeOff' : 'Eye'}
+          endIconTitle={showPassword ? 'Hide password' : 'Show password'}
+          onEndIconClick={() => setShowPassword((current) => !current)}
           disabled={!!app.general.user}
           tabIndex={3}
           onChange={(e) => setPassword(e.currentTarget.value)}
@@ -347,6 +351,7 @@ export namespace Auth {
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
     const [password, setPassword] = useState<string>('admin')
+    const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState<boolean>(false)
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
 
@@ -467,8 +472,11 @@ export namespace Auth {
             icon='KeyRound'
             label='Password'
             placeholder='admin'
-            type='password'
+            type={showPassword ? 'text' : 'password'}
             value={password}
+            endIcon={showPassword ? 'EyeOff' : 'Eye'}
+            endIconTitle={showPassword ? 'Hide password' : 'Show password'}
+            onEndIconClick={() => setShowPassword((current) => !current)}
             disabled={!!app.general.user}
             tabIndex={3}
             onChange={(e) => setPassword(e.currentTarget.value)}

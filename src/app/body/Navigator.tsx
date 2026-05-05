@@ -444,7 +444,7 @@ export function Navigator({
         iconTitle={filterMode === 'files' ? 'Switch to Event Filtering' : 'Switch to File Filtering'}
       />
       <Button
-        variant="glass"
+        variant="secondary"
         title="Search"
         icon="Search"
         onClick={() => triggerSearch(localFilterValue, filterMode)}
@@ -485,7 +485,7 @@ export function Navigator({
           <Button size='md'
             variant="secondary"
             title="Go to timestamp"
-            icon="Crosshair" />
+            icon="Clock" />
         </Popover.Trigger>
         <Popover.Content className={s.goto}>
           <Stack dir="column" ai="flex-start">
@@ -493,7 +493,7 @@ export function Navigator({
             <Stack>
               <Input
                 variant="highlighted"
-                icon="Crosshair"
+                icon="Clock"
                 value={timestamp}
                 valid={timestampInputValid}
                 onChange={handleTimestampChangeHandler}

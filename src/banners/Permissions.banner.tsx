@@ -199,7 +199,7 @@ export namespace Permissions {
                   const has = user.permission.includes(r)
                   return (
                     <Stack key={r} className={s.role} gap={6}>
-                     {RolesIcons[r] && <Icon name={RolesIcons[r]} size={12} />}
+                      {RolesIcons[r] && <Icon name={RolesIcons[r]} size={12} />}
                       <p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
                       <Switch
                         checked={has}
@@ -300,7 +300,7 @@ export namespace Permissions {
                   )?.[0] as string),
               },
               setLoading,
-              body: {"permission": permissions.split(',').map((v) => v.trim().toLowerCase())}
+              body: { "permission": permissions.split(',').map((v) => v.trim().toLowerCase()) }
             },
             () => spawnBanner(<Permissions.Banner />),
           )
@@ -403,6 +403,7 @@ export namespace Permissions {
         const [id, setId] = useState<string>(user.id)
         const [isIdValid, setIsIdValid] = useState<boolean>(true)
         const [password, setPassword] = useState<string>('')
+        const [showPassword, setShowPassword] = useState(false)
         const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true)
         const [permissions, setPermisisons] = useState<string>(
           user.permission.join(', '),
@@ -438,7 +439,7 @@ export namespace Permissions {
               },
               setLoading,
               body: {
-                permission: permissions.split(',').map((v) => v.trim()),                
+                permission: permissions.split(',').map((v) => v.trim()),
               },
             },
             () => spawnBanner(<Permissions.Banner />),
@@ -496,7 +497,11 @@ export namespace Permissions {
               icon="Key"
               placeholder="Password"
               variant="highlighted"
+              type={showPassword ? 'text' : 'password'}
               value={password}
+              endIcon={showPassword ? 'EyeOff' : 'Eye'}
+              endIconTitle={showPassword ? 'Hide password' : 'Show password'}
+              onEndIconClick={() => setShowPassword((current) => !current)}
               valid={isPasswordValid}
               onChange={inputConstructor(
                 setPassword,

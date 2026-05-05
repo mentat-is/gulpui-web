@@ -29,11 +29,7 @@
 }
 
 .notes_visibility {
-  color: var(--teal-900);
-}
-
-.notes_visibility.dimmed {
-  color: var(--accent) !important;
+  color: var(--accent);
 }
 
 .chat {

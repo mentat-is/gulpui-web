@@ -94,7 +94,7 @@ export function Menu() {
         />
         <Extension.Components type='menu' />
         <Button
-          variant="glass"
+          variant="secondary"
           title="Data enrichment"
           icon="PrismColor"
           size='md'

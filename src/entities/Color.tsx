@@ -65,6 +65,14 @@ export namespace Color {
         BACKGROUND_SECOND: '#21222c',
         BORDER: '#44475a',
       },
+      'forest': {
+        // Forest: deep green background with minty foreground accents.
+        FONT_ACCENT: '#b8d8c8',
+        FONT_SECOND: '#8fb8a6',
+        BACKGROUND_ACCENT: '#0b1b13',
+        BACKGROUND_SECOND: '#10281d',
+        BORDER: '#2f5a45',
+      },
       'dark': {
         // Solarized Dark: base03=#002b36, base02=#073642, base1=#93a1a1, base0=#839496, base01=#586e75
         FONT_ACCENT: '#93a1a1',

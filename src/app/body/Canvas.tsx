@@ -173,11 +173,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 			if (!i) render.primary(file, y);
 
 			render.lines(file, y);
+			render.target(file, y);
 			render.locals(file, y);
 			render.draw_info(file, y);
 		});
 
-		render.target();
+		render.targetMarker();
 		render.drawHighlights();
 
 		if (force) {

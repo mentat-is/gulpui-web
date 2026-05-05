@@ -8,9 +8,10 @@ import { useCallback, useEffect, useState } from 'react'
 const THEMES: { value: string; label: string }[] = [
   { value: 'dark-old', label: 'Dark (Classic)' },
   { value: 'light-old', label: 'Light (Classic)' },
+  { value: 'dracula', label: 'Dracula' },
+  { value: 'forest', label: 'Forest' },
   { value: 'dark', label: 'Solarized Dark' },
   { value: 'light', label: 'Solarized Light' },
-  { value: 'dracula', label: 'Dracula' },
 ];
 
 /** Syncs Color.Themer with the active next-themes value on mount and changes. */
@@ -70,7 +71,7 @@ export namespace Theme {
 
     return (
       <Select.Root value={theme ?? 'dark-old'} onValueChange={handleThemeChange}>
-        <Select.Trigger>
+        <Select.Trigger data-no-icon>
           <Select.Value />
         </Select.Trigger>
         <Select.Content>

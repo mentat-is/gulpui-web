@@ -376,7 +376,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		if (!selection) return;
 		const file = Source.Entity.id(app, event["gulp.source_id"]);
 		const { filters } = Info.getQuery(file);
-		
+
 		const isManualSelection = selection !== lastAutoSelectionRef.current;
 		const object = parseToKeyValue(selection, "FILTER", isManualSelection);
 
@@ -639,7 +639,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 						>
 							<Button
 								onClick={() => handleEnrich()}
-								variant="glass"
+								variant="secondary"
 								icon="PrismColor"
 							>
 								Enrich
@@ -647,14 +647,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							{Object.values(extensions).some((ext) =>
 								ext.type.includes("send_data"),
 							) && (
-								<Button
-									onClick={handleSendData}
-									variant="glass"
-									icon="Send"
-								>
-									Send Data
-								</Button>
-							)}
+									<Button
+										onClick={handleSendData}
+										variant="glass"
+										icon="Send"
+									>
+										Send Data
+									</Button>
+								)}
 							<Button
 								onClick={handleConnectLink}
 								variant="secondary"
@@ -712,7 +712,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 									),
 								);
 							}}
-							variant={isFlagged ? "tertiary" : "glass"}
+							variant="secondary"
 							icon={isFlagged ? "FlagOff" : "Flag"}
 							disabled={
 								(() => {
@@ -775,6 +775,24 @@ export namespace EventIndicator {
 	}
 }
 
+const getReadableIndicatorTextColor = (hexColor: string): string => {
+	const hex = hexColor.replace("#", "");
+	if (hex.length !== 6) {
+		return "var(--accent)";
+	}
+
+	const r = parseInt(hex.slice(0, 2), 16);
+	const g = parseInt(hex.slice(2, 4), 16);
+	const b = parseInt(hex.slice(4, 6), 16);
+
+	if ([r, g, b].some(Number.isNaN)) {
+		return "var(--accent)";
+	}
+
+	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+	return luminance > 0.55 ? "#111827" : "#f8f8f2";
+};
+
 /**
  * Visual indicator button for events in lists or timelines.
  */
@@ -812,32 +830,52 @@ export function EventIndicator({
 		);
 	}, [event, app.target.files, file]);
 
+	const indicatorTextColor = useMemo(
+		() => getReadableIndicatorTextColor(background),
+		[background],
+	);
+	const indicatorLabel = useMemo(
+		() => String(event["gulp.event_code"]).slice(0, 4),
+		[event],
+	);
+	const indicatorTooltip = useMemo(
+		() => String(event["gulp.event_code"]),
+		[event],
+	);
+	const indicatorFontSize = useMemo(() => {
+		return 8;
+	}, [indicatorLabel]);
+
 	return (
 		<Button
 			shape="icon"
 			className={cn(className, s.indicator)}
 			rounded
+			title={indicatorTooltip}
+			aria-label={indicatorTooltip}
 			style={{ ...style, background }}
 			{...props}
 		>
 			<hr />
-			<p>{String(event["gulp.event_code"]).slice(0, 6)}</p>
+			<p style={{ color: indicatorTextColor, fontSize: `${indicatorFontSize}px` }}>
+				{indicatorLabel}
+			</p>
 			{Doc.Entity.flag.isFlagged(
 				event._id,
 				Doc.Entity.operationId(app, event),
 			) && (
-				<Stack
-					ai="center"
-					jc="center"
-					className={cn(s.marker, s.flagged)}
-					pos="absolute"
-				>
-					<Icon
-						size={8}
-						name="Flag"
-					/>
-				</Stack>
-			)}
+					<Stack
+						ai="center"
+						jc="center"
+						className={cn(s.marker, s.flagged)}
+						pos="absolute"
+					>
+						<Icon
+							size={8}
+							name="Flag"
+						/>
+					</Stack>
+				)}
 			{notes.length > 0 && (
 				<Stack
 					ai="center"
