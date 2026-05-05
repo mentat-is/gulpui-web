@@ -117,11 +117,7 @@ export function Navigator({
   const [windowRef, setWindowRef] = useState<Window | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
-  const focus = (note: Note.Type) => {
-    const event = Note.Entity.event(app, note)
 
-    spawnDialog(<DisplayEventDialog event={event} />);
-  }
 
   const openWindow = () => {
     if (windowRef) windowRef.close()
@@ -580,7 +576,7 @@ export function Navigator({
       {windowRef &&
         containerRef.current &&
         ReactDOM.createPortal(
-          <NotesWindow focus={focus} onClose={closeWindow} />,
+          <NotesWindow onClose={closeWindow} />,
           containerRef.current,
         )}
     </Stack>

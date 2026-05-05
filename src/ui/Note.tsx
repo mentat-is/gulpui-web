@@ -13,8 +13,8 @@ import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import { Note } from "@/entities/Note";
-import { useMemo } from "react";
 import { useCallback } from "react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip"
 
 export namespace NotePoint {
 	export interface Props extends Omit<
@@ -27,7 +27,6 @@ export namespace NotePoint {
 	export namespace Combination {
 		export interface Props extends Omit<Stack.Props, "onClick"> {
 			note: Note.Type;
-			withSource?: boolean;
 		}
 	}
 
@@ -54,18 +53,26 @@ export namespace NotePoint {
 				)}
 				style={{
 					...style,
-					//background: stringToHexColor(note.context_id) + "80",
 					background: "transparent",
 				}}
 				{...props}
 			>
 				<p>{formatTimestampToReadableString(note.doc.gulp_timestamp)}</p>
-				<Icon name={Note.Entity.icon(note)} />
-				<p>{note.name}</p>
-				<span>{note.text}</span>
+				<Icon name={Note.Entity.icon(note)} style={{ color: note.color }} size={16} />
+				<p style={{ color: note.color }}>{note.name}</p>
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<span style={{ cursor: "help", opacity: 0.9 }}>{note.text}</span>				
+					</TooltipTrigger>
+					<TooltipContent>{note.text}</TooltipContent>
+				</Tooltip>
 				<Stack className={s.badge_wrapper}>
 					<Badge
 						value={`${Context.Entity.id(app, note.context_id).name} / ${Source.Entity.id(app, note.source_id).name}`}
+						style={{
+							background: stringToHexColor(note.context_id),
+							border: `1px solid ${stringToHexColor(note.context_id)}40`,							
+						}}
 					/>
 					{note.tags.map((t) => (
 						<Badge
