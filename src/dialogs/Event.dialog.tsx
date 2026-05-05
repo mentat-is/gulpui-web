@@ -660,7 +660,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 								variant="secondary"
 								icon="GitPullRequestCreateArrow"
 							>
-								Connect link
+								Connect link to current event
 							</Button>
 						</Stack>
 						<Extension.Component

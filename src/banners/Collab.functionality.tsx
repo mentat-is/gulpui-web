@@ -299,19 +299,6 @@ export namespace LinkFunctionality {
 				setLoading(false);
 			};
 
-			const Option = useCallback(
-				() => (
-					<Button
-						onClick={() =>
-							spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)
-						}
-						variant="tertiary"
-						icon="GitPullRequestCreateArrow"
-					/>
-				),
-				[event],
-			);
-
 			const Done = useCallback(() => {
 				return (
 					<Button
@@ -328,7 +315,6 @@ export namespace LinkFunctionality {
 				<UIBanner
 					title="Create link"
 					done={<Done />}
-					option={<Option />}
 				>
 					<Stack
 						className={s.general}
@@ -422,7 +408,7 @@ export namespace LinkFunctionality {
 			event: Doc.Type;
 		}
 		export function Banner({ event }: LinkFunctionality.Connect.Props) {
-			const { app, Info, spawnBanner } = Application.use();
+			const { app, Info, destroyBanner } = Application.use();
 
 			const links = useMemo(
 				() => Link.Entity.selected(app),
@@ -461,27 +447,9 @@ export namespace LinkFunctionality {
 				[alreadyConnectedLinks, links],
 			);
 
-			const createNewLinkButtonClickHandler = () =>
-				spawnBanner(
-					<LinkFunctionality.Create.Banner
-						event={event}
-						back={() =>
-							spawnBanner(<LinkFunctionality.Connect.Banner event={event} />)
-						}
-					/>,
-				);
-
 			return (
 				<UIBanner
-					title="Connect link"
-					option={
-						<Button
-							variant="tertiary"
-							title="Create link"
-							onClick={createNewLinkButtonClickHandler}
-							icon="GitPullRequestArrow"
-						/>
-					}
+					title="Connect link to event"
 				>
 					<Select.Multi.Root
 						value={alreadyConnectedLinks}
@@ -507,15 +475,20 @@ export namespace LinkFunctionality {
 									{link.name}
 								</Select.Item>
 							))}
-							<Button
-								variant="tertiary"
-								style={{ width: "100%" }}
-								value="create_link"
-								onClick={createNewLinkButtonClickHandler}
+							<Stack
+								gap={6}
+								jc="center"
+								style={{
+									width: "100%",
+									padding: "8px 10px",
+									color: "var(--gray-800)",
+									textAlign: "center",
+									opacity: loading ? 0.6 : 1,
+								}}
 							>
-								<Select.Icon name="GitPullRequestArrow" />
-								Create link
-							</Button>
+								<Select.Icon name="GitMerge" />
+								{`Select links to connect to document ${event._id}`}
+							</Stack>
 						</Select.Content>
 					</Select.Multi.Root>
 				</UIBanner>
