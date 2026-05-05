@@ -92,8 +92,27 @@ export namespace Color {
     };
 
     public static theme: Theme = Themer.THEMES['dark-old'];
+    public static currentThemeName = 'dark-old';
+
+    public static getTargetGuideColor(): string {
+      switch (Themer.currentThemeName) {
+        case 'dracula':
+          return '#ff5555';
+        case 'forest':
+          return '#d17b49';
+        case 'dark':
+        case 'light':
+          return '#dc322f';
+        case 'light-old':
+          return '#c73a3a';
+        case 'dark-old':
+        default:
+          return '#ff4d4d';
+      }
+    }
 
     public static setTheme(theme: string) {
+      Themer.currentThemeName = theme;
       Themer.theme = Themer.THEMES[theme] ?? Themer.THEMES['dark-old'];
     }
 

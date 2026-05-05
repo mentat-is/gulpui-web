@@ -991,9 +991,17 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 				: Source.Entity.getHeight(this.info.app, file, this.scrollY, index) - 1;
 
 		this.ctx.save();
-		this.ctx.globalAlpha = 0.55;
-		this.ctx.fillStyle = Color.Themer.theme.BORDER;
-		this.ctx.fillRect(0, rowY, window.innerWidth, 1);
+		this.ctx.globalAlpha = 0.7;
+		this.ctx.strokeStyle = Color.Themer.getTargetGuideColor();
+		this.ctx.lineWidth = 1;
+		this.ctx.lineCap = "round";
+		if (this.ctx.setLineDash) {
+			this.ctx.setLineDash([1, 3]);
+		}
+		this.ctx.beginPath();
+		this.ctx.moveTo(0, rowY + 0.5);
+		this.ctx.lineTo(window.innerWidth, rowY + 0.5);
+		this.ctx.stroke();
 		this.ctx.restore();
 	};
 
@@ -1012,15 +1020,23 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		if (index === -1) return;
 
-		this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT;
-		this.ctx.fillRect(
-			this.getPixelPosition(
-				this.info.app.timeline.target.gulp_timestamp + file.settings.offset,
-			),
-			0,
-			1,
-			this.ctx.canvas.height,
+		const targetX = this.getPixelPosition(
+			this.info.app.timeline.target.gulp_timestamp + file.settings.offset,
 		);
+
+		this.ctx.save();
+		this.ctx.globalAlpha = 0.7;
+		this.ctx.strokeStyle = Color.Themer.getTargetGuideColor();
+		this.ctx.lineWidth = 1;
+		this.ctx.lineCap = "round";
+		if (this.ctx.setLineDash) {
+			this.ctx.setLineDash([1, 3]);
+		}
+		this.ctx.beginPath();
+		this.ctx.moveTo(targetX + 0.5, 0);
+		this.ctx.lineTo(targetX + 0.5, this.ctx.canvas.height);
+		this.ctx.stroke();
+		this.ctx.restore();
 	};
 
 	/* MEMORY MANAGEMENT */
