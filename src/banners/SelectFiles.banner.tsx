@@ -172,7 +172,7 @@ export namespace SelectFiles {
 			setTimeout(() => {
 				spawnBanner(
 					<Frame.Banner
-						fixed
+						//was fixed //(disable close button)
 						back={() => spawnBanner(<SelectFiles.Banner />)}
 					/>,
 				);
@@ -212,11 +212,11 @@ export namespace SelectFiles {
 		type VirtualItemType =
 			| { type: "context"; context: Context.Type; hasFiles: boolean }
 			| {
-					type: "file";
-					file: Source.Type;
-					context: Context.Type;
-					isLast: boolean;
-			  };
+				type: "file";
+				file: Source.Type;
+				context: Context.Type;
+				isLast: boolean;
+			};
 
 		const items = useMemo(() => {
 			const arr: VirtualItemType[] = [];
