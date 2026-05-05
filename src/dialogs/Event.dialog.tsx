@@ -90,6 +90,32 @@ const flattenTableEntries = (
 	}];
 };
 
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+	Object.prototype.toString.call(value) === "[object Object]";
+
+const sortTreeValueRecursively = (value: unknown): unknown => {
+	if (Array.isArray(value)) {
+		return value.map((item) => sortTreeValueRecursively(item));
+	}
+
+	if (!isPlainObject(value)) {
+		return value;
+	}
+
+	const entries = Object.entries(value)
+		.sort(([leftKey, leftValue], [rightKey, rightValue]) => {
+			const leftIsObject = isPlainObject(leftValue);
+			const rightIsObject = isPlainObject(rightValue);
+			if (leftIsObject !== rightIsObject) {
+				return leftIsObject ? 1 : -1;
+			}
+			return leftKey.localeCompare(rightKey);
+		})
+		.map(([key, nestedValue]) => [key, sortTreeValueRecursively(nestedValue)] as const);
+
+	return Object.fromEntries(entries);
+};
+
 type OperationType = "ENRICH" | "FILTER";
 
 /**
@@ -441,19 +467,21 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		const tableRows = flattenTableEntries(json).sort((a, b) =>
 			a.key.localeCompare(b.key),
 		);
-		const unflattenObject = Object.keys(json).reduce((res, k) => {
-			k.split(".").reduce(
-				(acc: any, e, i, keys) =>
-					acc[e] ||
-					(acc[e] = isNaN(Number(keys[i + 1]))
-						? keys.length - 1 === i
-							? json[k]
-							: {}
-						: []),
-				res,
-			);
-			return res;
-		}, {});
+		const unflattenObject = sortTreeValueRecursively(
+			Object.keys(json).reduce((res, k) => {
+				k.split(".").reduce(
+					(acc: any, e, i, keys) =>
+						acc[e] ||
+						(acc[e] = isNaN(Number(keys[i + 1]))
+							? keys.length - 1 === i
+								? json[k]
+								: {}
+							: []),
+					res,
+				);
+				return res;
+			}, {}),
+		) as Record<string, unknown>;
 
 		const baseJsonStyles =
 			theme === "light" || theme === "light-old"
