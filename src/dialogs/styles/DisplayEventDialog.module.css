@@ -164,6 +164,12 @@
   overflow: auto;
 }
 
+.tableView {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
 .triggers {
   width: 100%;
 }

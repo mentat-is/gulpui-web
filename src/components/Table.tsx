@@ -1,33 +1,62 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import s from './styles/Table.module.css'
 import { cn } from '@impactium/utils'
 import { Icon } from '@impactium/icons'
 import { Stack } from '@/ui/Stack'
 import { Glyph } from '@/entities/Glyph'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 
 export type Object = Record<string, any>
 
 export namespace Table {
   export interface Props<T extends Object> extends Stack.Props {
     values: T[]
+    includeIndex?: boolean
   }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Object.prototype.toString.call(value) === '[object Object]'
+}
+
+function flattenRow(
+  value: Record<string, any>,
+  parentKey = '',
+): Record<string, any> {
+  return Object.entries(value).reduce<Record<string, any>>((acc, [key, entry]) => {
+    const nextKey = parentKey ? `${parentKey}.${key}` : key
+
+    if (isPlainObject(entry)) {
+      Object.assign(acc, flattenRow(entry, nextKey))
+      return acc
+    }
+
+    acc[nextKey] = entry
+    return acc
+  }, {})
 }
 
 export function Table<T extends Object>({
   values: _values = [],
   className,
+  includeIndex = true,
   ...props
 }: Table.Props<T>) {
+  const wrapperRef = useRef<HTMLDivElement | null>(null)
+
   const { values, columns } = useMemo(() => {
     const keys = new Set<string>()
+    const flattenedValues = _values.map((value) => flattenRow(value))
 
-    _values.forEach((v) => {
+    flattenedValues.forEach((v) => {
       Object.keys(v).forEach((k) =>
         k === 'event.original' ? void 0 : keys.add(k),
       )
     })
 
-    keys.add('i')
+    if (includeIndex) {
+      keys.add('i')
+    }
 
     const columns = Array.from(keys.values()).sort((a, b) => {
       if (a.length !== b.length) {
@@ -42,30 +71,49 @@ export function Table<T extends Object>({
     columns.forEach((c) => (example[c] = `<BLANK>`))
 
     return {
-      values: _values.map((v, i) =>
-        Object.assign(JSON.parse(JSON.stringify(example)), v, { i: i }),
+      values: flattenedValues.map((v, i) =>
+        Object.assign(JSON.parse(JSON.stringify(example)), v, includeIndex ? { i: i } : {}),
       ),
       columns,
     }
-  }, [_values])
+  }, [_values, includeIndex])
+
+  const handleWheelCapture = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    const container = wrapperRef.current
+    if (!container) return
+
+    container.scrollTop += e.deltaY
+    container.scrollLeft += e.deltaX
+    e.preventDefault()
+  }, [])
 
   return (
-    <Stack ai="flex-start" jc="flex-start" dir="column" className={cn(s.wrapper, className)} {...props}>
-      <table className={s.table}>
-        <thead>
-          <tr>
-            {columns.map((c, i) => (
-              <Col c={c} key={c + i} />
+    <TooltipProvider>
+      <Stack
+        ai="flex-start"
+        jc="flex-start"
+        dir="column"
+        ref={wrapperRef}
+        onWheelCapture={handleWheelCapture}
+        className={cn(s.wrapper, className)}
+        {...props}
+      >
+        <table className={s.table}>
+          <thead>
+            <tr>
+              {columns.map((c, i) => (
+                <Col c={c} key={c + i} />
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {values.map((i, index) => (
+              <Item columns={columns} key={String(i) + index} i={i} />
             ))}
-          </tr>
-        </thead>
-        <tbody>
-          {values.map((i, index) => (
-            <Item columns={columns} key={String(i) + index} i={i} />
-          ))}
-        </tbody>
-      </table>
-    </Stack>
+          </tbody>
+        </table>
+      </Stack>
+    </TooltipProvider>
   )
 }
 
@@ -123,10 +171,17 @@ function Value({ k, v, ...props }: Value.Props) {
   const icon =
     k === 'glyph_id' && glyph ? <Icon size={12} name={glyph} /> : null
 
+  const tooltip = value == null ? '' : String(value)
+
   return (
-    <td className={cn(s.value, value === '<BLANK>' && s.blank)} {...props}>
-      {icon}
-      {value}
-    </td>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <td className={cn(s.value, value === '<BLANK>' && s.blank)} {...props}>
+          {icon}
+          {value}
+        </td>
+      </TooltipTrigger>
+      <TooltipContent side="top">{tooltip}</TooltipContent>
+    </Tooltip>
   )
 }

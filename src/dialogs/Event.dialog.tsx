@@ -63,6 +63,33 @@ const prepareEventJson = (obj: Record<string, any>): Record<string, string> => {
 	};
 };
 
+const flattenTableEntries = (
+	value: unknown,
+	parentKey = "",
+): Array<{ key: string; value: string }> => {
+	if (Array.isArray(value)) {
+		return value.flatMap((entry, index) =>
+			flattenTableEntries(entry, parentKey ? `${parentKey}.${index}` : String(index)),
+		);
+	}
+
+	if (value && typeof value === "object") {
+		return Object.entries(value as Record<string, unknown>).flatMap(([key, entry]) =>
+			flattenTableEntries(entry, parentKey ? `${parentKey}.${key}` : key),
+		);
+	}
+
+	return [{
+		key: parentKey,
+		value:
+			value == null
+				? String(value)
+				: typeof value === "bigint"
+					? value.toString()
+					: String(value),
+	}];
+};
+
 type OperationType = "ENRICH" | "FILTER";
 
 /**
@@ -257,6 +284,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 	const treeScrollRef = useRef<HTMLDivElement | null>(null);
+	const tableScrollRef = useRef<HTMLDivElement | null>(null);
 	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
@@ -388,6 +416,50 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		}
 	}, []);
 
+	const handleTableWheelCapture = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+		const container = tableScrollRef.current;
+		if (!container) return;
+
+		container.scrollTop += e.deltaY;
+		container.scrollLeft += e.deltaX;
+		e.preventDefault();
+	}, []);
+
+	const handleTableKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+		const container = tableScrollRef.current;
+		if (!container) return;
+
+		const step = 40;
+		const page = Math.max(container.clientHeight - 40, step);
+
+		switch (e.key) {
+			case "ArrowDown":
+				container.scrollTop += step;
+				e.preventDefault();
+				break;
+			case "ArrowUp":
+				container.scrollTop -= step;
+				e.preventDefault();
+				break;
+			case "PageDown":
+				container.scrollTop += page;
+				e.preventDefault();
+				break;
+			case "PageUp":
+				container.scrollTop -= page;
+				e.preventDefault();
+				break;
+			case "Home":
+				container.scrollTop = 0;
+				e.preventDefault();
+				break;
+			case "End":
+				container.scrollTop = container.scrollHeight;
+				e.preventDefault();
+				break;
+		}
+	}, []);
+
 	// --- HANDLERS: Banners ---
 
 	const handleEnrich = useCallback(
@@ -456,6 +528,9 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		if (!json) return null;
 
 		const storageId = json["gulp.storage_id"];
+		const tableRows = flattenTableEntries(json).sort((a, b) =>
+			a.key.localeCompare(b.key),
+		);
 		const unflattenObject = Object.keys(json).reduce((res, k) => {
 			k.split(".").reduce(
 				(acc: any, e, i, keys) =>
@@ -576,8 +651,15 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 									value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`}
 								/>
 							</TabsContent>
-							<TabsContent value="table">
-								<Table values={Object.entries(json)} />
+							<TabsContent
+								value="table"
+								className={s.scrollable}
+								ref={tableScrollRef}
+								tabIndex={0}
+								onWheelCapture={handleTableWheelCapture}
+								onKeyDownCapture={handleTableKeyDownCapture}
+							>
+								<Table className={s.tableView} includeIndex={false} values={tableRows} />
 							</TabsContent>
 						</div>
 					</ContextMenuTrigger>
