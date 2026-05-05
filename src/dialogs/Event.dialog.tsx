@@ -283,8 +283,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	});
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
-	const treeScrollRef = useRef<HTMLDivElement | null>(null);
-	const tableScrollRef = useRef<HTMLDivElement | null>(null);
 	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
@@ -371,94 +369,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		// @ts-ignore
 		return window.focusCanvasOnEvent(event.gulp_timestamp + (file?.settings.offset || 0), false, event["gulp.source_id"]);
 	}, [event, file]);
-
-	const handleTreeWheelCapture = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-		const container = treeScrollRef.current;
-		if (!container) return;
-
-		container.scrollTop += e.deltaY;
-		container.scrollLeft += e.deltaX;
-		e.preventDefault();
-	}, []);
-
-	const handleTreeKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-		const container = treeScrollRef.current;
-		if (!container) return;
-
-		const step = 40;
-		const page = Math.max(container.clientHeight - 40, step);
-
-		switch (e.key) {
-			case "ArrowDown":
-				container.scrollTop += step;
-				e.preventDefault();
-				break;
-			case "ArrowUp":
-				container.scrollTop -= step;
-				e.preventDefault();
-				break;
-			case "PageDown":
-				container.scrollTop += page;
-				e.preventDefault();
-				break;
-			case "PageUp":
-				container.scrollTop -= page;
-				e.preventDefault();
-				break;
-			case "Home":
-				container.scrollTop = 0;
-				e.preventDefault();
-				break;
-			case "End":
-				container.scrollTop = container.scrollHeight;
-				e.preventDefault();
-				break;
-		}
-	}, []);
-
-	const handleTableWheelCapture = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-		const container = tableScrollRef.current;
-		if (!container) return;
-
-		container.scrollTop += e.deltaY;
-		container.scrollLeft += e.deltaX;
-		e.preventDefault();
-	}, []);
-
-	const handleTableKeyDownCapture = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-		const container = tableScrollRef.current;
-		if (!container) return;
-
-		const step = 40;
-		const page = Math.max(container.clientHeight - 40, step);
-
-		switch (e.key) {
-			case "ArrowDown":
-				container.scrollTop += step;
-				e.preventDefault();
-				break;
-			case "ArrowUp":
-				container.scrollTop -= step;
-				e.preventDefault();
-				break;
-			case "PageDown":
-				container.scrollTop += page;
-				e.preventDefault();
-				break;
-			case "PageUp":
-				container.scrollTop -= page;
-				e.preventDefault();
-				break;
-			case "Home":
-				container.scrollTop = 0;
-				e.preventDefault();
-				break;
-			case "End":
-				container.scrollTop = container.scrollHeight;
-				e.preventDefault();
-				break;
-		}
-	}, []);
 
 	// --- HANDLERS: Banners ---
 
@@ -633,10 +543,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							<TabsContent
 								value="tree"
 								className={s.scrollable}
-								ref={treeScrollRef}
-								tabIndex={0}
-								onWheelCapture={handleTreeWheelCapture}
-								onKeyDownCapture={handleTreeKeyDownCapture}
 							>
 								<JsonView
 									data={unflattenObject}
@@ -654,10 +560,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 							<TabsContent
 								value="table"
 								className={s.scrollable}
-								ref={tableScrollRef}
-								tabIndex={0}
-								onWheelCapture={handleTableWheelCapture}
-								onKeyDownCapture={handleTableKeyDownCapture}
 							>
 								<Table className={s.tableView} includeIndex={false} values={tableRows} />
 							</TabsContent>

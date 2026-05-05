@@ -161,7 +161,7 @@
 .scrollable {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: auto !important;
 }
 
 .tableView {
