@@ -18,10 +18,10 @@ import { Button } from '@/ui/Button'
 import { formatTimestampToReadableString, stringToHexColor } from "../ui/utils";
 
 import s from './styles/NotesWindow.module.css'
+import { TooltipProvider } from '@radix-ui/react-tooltip'
 
 interface FloatingWindowProps {
   onClose: () => void
-  focus: (note: Note.Type) => void
 }
 
 export function NotesWindow({ onClose }: FloatingWindowProps) {
@@ -185,6 +185,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             const context = Context.Entity.id(app, note.context_id);
 
             return (
+            <TooltipProvider>
               <div
                 key={item.key}
                 style={{
@@ -201,7 +202,6 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
                     width: '100%',
                     height: '100%',
                     background: 'transparent',
-                    borderLeft: `4px solid ${stringToHexColor(note.context_id) ?? 'transparent'}`,
                     paddingLeft: 8,
                   }}
                 >
@@ -211,19 +211,10 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
                     onCheckedChange={() => toggleNoteSelection(note.id)}
                   />
 
-                  <span
-                    style={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: note.color ?? 'transparent',
-                      flexShrink: 0,
-                    }}
-                  />
-
                   <NotePoint.Combination note={note} style={{ flex: 1 }} />
                 </Stack>
               </div>
+            </TooltipProvider>  
             );
           })}
         </div>
