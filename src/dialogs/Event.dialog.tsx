@@ -116,6 +116,36 @@ const sortTreeValueRecursively = (value: unknown): unknown => {
 	return Object.fromEntries(entries);
 };
 
+/**
+ * Walks the react-json-view-lite DOM from a hovered/clicked label element up to
+ * the container root and returns the full dot-separated key path.
+ */
+const getTreeKeyPath = (
+	labelEl: Element,
+	labelClass: string,
+	clickableLabelClass: string,
+	nodeClass: string,
+	basicClass: string,
+): string => {
+	const clean = (el: Element) =>
+		(el.textContent ?? "").trim().replace(/^["'\s]+|["':\s,]+$/g, "");
+	const parts: string[] = [clean(labelEl)];
+	let nodeEl: Element | null = labelEl.closest(`.${nodeClass}`);
+	while (nodeEl) {
+		const parentContainer = nodeEl.parentElement;
+		if (!parentContainer?.classList.contains(basicClass)) break;
+		const parentNode = parentContainer.parentElement;
+		if (!parentNode?.classList.contains(nodeClass)) break;
+		const parentLabel = Array.from(parentNode.children).find(
+			(c) => c.classList.contains(labelClass) || c.classList.contains(clickableLabelClass),
+		);
+		if (!parentLabel) break;
+		parts.unshift(clean(parentLabel));
+		nodeEl = parentNode;
+	}
+	return parts.join(".");
+};
+
 type OperationType = "ENRICH" | "FILTER";
 
 /**
@@ -309,6 +339,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	});
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
+	const treeContextPathRef = useRef<string | null>(null);
 	const [treeTooltip, setTreeTooltip] = useState<{ path: string; x: number; y: number } | null>(null);
 	const { theme } = useTheme();
 
@@ -371,7 +402,74 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	// --- HANDLERS: Actions ---
 
 	const handleCopyJson = useCallback(() => {
-		if (json) copy(JSON.stringify(json, null, 2));
+		if (!json) return;
+		const path = treeContextPathRef.current;
+		if (!path) {
+			copy(JSON.stringify(json, null, 2));
+			return;
+		}
+
+		// Check for exact leaf match in flat keys
+		if (Object.prototype.hasOwnProperty.call(json, path)) {
+			copy(JSON.stringify({ [path]: json[path] }, null, 2));
+			return;
+		}
+
+		// For nested objects, find all keys starting with path + "."
+		const prefix = path + ".";
+		const nestedEntries = Object.entries(json).filter(([k]) => k.startsWith(prefix));
+
+		if (nestedEntries.length > 0) {
+			// Reconstruct nested structure from matching flat entries
+			const nested: Record<string, any> = {};
+			nestedEntries.forEach(([k, v]) => {
+				const suffix = k.slice(prefix.length);
+				suffix.split(".").reduce(
+					(acc: any, e, i, keys) =>
+						acc[e] ||
+						(acc[e] = i === keys.length - 1 ? v : {}),
+					nested,
+				);
+			});
+			copy(JSON.stringify({ [path]: nested }, null, 2));
+			return;
+		}
+
+		// Try navigating into nested objects; handle flat keys with dots (e.g., gulp.unmapped)
+		const parts = path.split(".");
+
+		// Find the longest matching flat key that is a prefix of path
+		let flatKeyMatch: string | null = null;
+		for (let i = parts.length; i > 0; i--) {
+			const candidate = parts.slice(0, i).join(".");
+			if (Object.prototype.hasOwnProperty.call(json, candidate)) {
+				flatKeyMatch = candidate;
+				break;
+			}
+		}
+
+		if (flatKeyMatch) {
+			// Navigate from the matched flat key
+			let current = json[flatKeyMatch];
+			const remainingParts = parts.slice(flatKeyMatch.split(".").length);
+
+			for (const part of remainingParts) {
+				if (current && typeof current === "object" && part in current) {
+					current = current[part];
+				} else {
+					// Can't navigate further, copy full json
+					copy(JSON.stringify(json, null, 2));
+					return;
+				}
+			}
+
+			// Found value, use flattened path as key
+			copy(JSON.stringify({ [path]: current }, null, 2));
+			return;
+		}
+
+		// No match found, copy full json
+		copy(JSON.stringify(json, null, 2));
 	}, [json]);
 
 	const handleDownloadJson = useCallback(() => {
@@ -561,6 +659,14 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 									lastAutoSelectionRef.current = detected;
 									setSelection(detected);
 								}
+								const labelEl = element
+									? (element.classList.contains(s.label) || element.classList.contains(s.clickableLabel)
+										? element
+										: (element.closest(`.${s.label}`) ?? element.closest(`.${s.clickableLabel}`)))
+									: null;
+								treeContextPathRef.current = labelEl
+									? getTreeKeyPath(labelEl, s.label, s.clickableLabel, s.node, s.basic)
+									: null;
 							}
 						}}
 						onContextMenu={() => {
@@ -582,23 +688,8 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 										setTreeTooltip(null);
 										return;
 									}
-									const getLabelText = (el: Element) =>
-										(el.textContent ?? "").trim().replace(/^["'\s]+|["':\s,]+$/g, "");
-									const parts: string[] = [getLabelText(labelEl)];
-									let nodeEl: Element | null = labelEl.closest(`.${s.node}`);
-									while (nodeEl) {
-										const parentContainer = nodeEl.parentElement;
-										if (!parentContainer?.classList.contains(s.basic)) break;
-										const parentNode = parentContainer.parentElement;
-										if (!parentNode?.classList.contains(s.node)) break;
-										const parentLabel = Array.from(parentNode.children).find(
-											(c) => c.classList.contains(s.label) || c.classList.contains(s.clickableLabel),
-										);
-										if (!parentLabel) break;
-										parts.unshift(getLabelText(parentLabel));
-										nodeEl = parentNode;
-									}
-									setTreeTooltip({ path: parts.join("."), x: e.clientX, y: e.clientY });
+									const path = getTreeKeyPath(labelEl, s.label, s.clickableLabel, s.node, s.basic);
+									setTreeTooltip({ path, x: e.clientX, y: e.clientY });
 								}}
 								onMouseLeave={() => setTreeTooltip(null)}
 							>
@@ -790,29 +881,29 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 					/>
 
 					{highlights}
-				{treeTooltip && (
-					<div
-						style={{
-							position: "fixed",
-							left: treeTooltip.x + 14,
-							top: treeTooltip.y + 14,
-							background: "var(--background-100)",
-							border: "1px solid var(--gray-400)",
-							borderRadius: 4,
-							padding: "2px 8px",
-							fontSize: 10,
-							fontFamily: "var(--font-mono)",
-							color: "var(--second)",
-							pointerEvents: "none",
-							zIndex: 9999,
-							maxWidth: 400,
-							wordBreak: "break-all",
-							boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-						}}
-					>
-						{treeTooltip.path}
-					</div>
-				)}
+					{treeTooltip && (
+						<div
+							style={{
+								position: "fixed",
+								left: treeTooltip.x + 14,
+								top: treeTooltip.y + 14,
+								background: "var(--background-100)",
+								border: "1px solid var(--gray-400)",
+								borderRadius: 4,
+								padding: "2px 8px",
+								fontSize: 10,
+								fontFamily: "var(--font-mono)",
+								color: "var(--second)",
+								pointerEvents: "none",
+								zIndex: 9999,
+								maxWidth: 400,
+								wordBreak: "break-all",
+								boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+							}}
+						>
+							{treeTooltip.path}
+						</div>
+					)}
 					<Stack
 						className={s.actionButtons}
 						gap={12}
