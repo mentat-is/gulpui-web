@@ -501,7 +501,14 @@ export function Canvas({ timeline }: Canvas.Props) {
 	);
 
 	useEffect(() => {
-		if (theme) Color.Themer.setTheme(theme);
+		if (theme) {
+			Color.Themer.setTheme(theme);
+			DataStore.markDirty();
+		}
+
+		const themeRepaintFrameId = requestAnimationFrame(() => {
+			DataStore.markDirty();
+		});
 
 		let animationFrameId: number;
 
@@ -516,6 +523,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		animationFrameId = requestAnimationFrame(gameLoop);
 
 		return () => {
+			cancelAnimationFrame(themeRepaintFrameId);
 			cancelAnimationFrame(animationFrameId);
 		};
 	}, [theme]);

@@ -2066,17 +2066,7 @@ export class Info implements InfoProps {
 				doc: Doc.Entity.toDoc(this.app, event),
 			},
 		}).then((note) => {
-			const index = DataStore.notes.findIndex((n) => n.id === note.id);
-			if (index !== -1) {
-				DataStore.notes[index] = note;
-				DataStore.notes.sort(
-					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-				);
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
-			}
+				this.AddNoteToDataStore(note);
 		});
 
 	// ⚠️ UNTOUCHABLE

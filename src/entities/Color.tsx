@@ -40,8 +40,16 @@ export namespace Color {
     BORDER: string;
   }
 
+  function readCssColor(
+    style: CSSStyleDeclaration,
+    variableName: string,
+  ): string | null {
+    const value = style.getPropertyValue(variableName).trim()
+    return value || null
+  }
+
   export class Themer {
-    /** Per-named-theme canvas color palettes, matching the CSS themes in global.css. */
+    /** Fallback canvas palettes kept for first paint before CSS variables are readable. */
     public static readonly THEMES: Record<string, Theme> = {
       'dark-old': {
         FONT_ACCENT: '#ededed',
@@ -91,35 +99,71 @@ export namespace Color {
       },
     };
 
-    public static theme: Theme = Themer.THEMES['dark-old'];
-    public static currentThemeName = 'dark-old';
+    private static readonly DEFAULT_THEME_NAME = Object.keys(Themer.THEMES)[0];
+    private static readonly DEFAULT_THEME = Themer.THEMES[Themer.DEFAULT_THEME_NAME];
+
+    public static theme: Theme = Themer.DEFAULT_THEME;
+    public static currentThemeName = Themer.DEFAULT_THEME_NAME;
+
+    private static getThemeFromCssVariables(): Theme | null {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return null
+      }
+
+      const style = getComputedStyle(document.documentElement)
+      const FONT_ACCENT = readCssColor(style, '--accent')
+      const FONT_SECOND = readCssColor(style, '--second')
+      const BACKGROUND_ACCENT = readCssColor(style, '--background-200')
+      const BACKGROUND_SECOND = readCssColor(style, '--background-100')
+      const BORDER = readCssColor(style, '--gray-alpha-400') ?? readCssColor(style, '--gray-500')
+
+      if (!FONT_ACCENT || !FONT_SECOND || !BACKGROUND_ACCENT || !BACKGROUND_SECOND || !BORDER) {
+        return null
+      }
+
+      return {
+        FONT_ACCENT,
+        FONT_SECOND,
+        BACKGROUND_ACCENT,
+        BACKGROUND_SECOND,
+        BORDER,
+      }
+    }
+
+    private static syncThemeFromCssVariables(fallbackThemeName?: string) {
+      Themer.theme =
+        Themer.getThemeFromCssVariables() ??
+        (fallbackThemeName ? Themer.THEMES[fallbackThemeName] : null) ??
+        Themer.DEFAULT_THEME
+    }
 
     public static getTargetGuideColor(): string {
-      switch (Themer.currentThemeName) {
-        case 'dracula':
-          return '#ff5555';
-        case 'forest':
-          return '#d17b49';
-        case 'dark':
-        case 'light':
-          return '#dc322f';
-        case 'light-old':
-          return '#c73a3a';
-        case 'dark':
-        case 'dark-old':
-        default:
-          return '#ff4d4d';
+      if (typeof window !== 'undefined') {
+        const red = getComputedStyle(document.documentElement).getPropertyValue('--red-700').trim();
+        if (red) {
+          return red;
+        }
       }
+
+      return '#ff4d4d';
     }
 
     public static setTheme(theme: string) {
       Themer.currentThemeName = theme;
-      Themer.theme = Themer.THEMES[theme] ?? Themer.THEMES['dark-old'];
+
+      // Read the palette from the active CSS theme so canvas colors always match.
+      Themer.syncThemeFromCssVariables(theme)
+
+      if (typeof window !== 'undefined') {
+        window.requestAnimationFrame(() => {
+          Themer.syncThemeFromCssVariables(theme)
+        })
+      }
     }
 
     /** @deprecated Use setTheme(name) with named theme keys. Kept for backwards compatibility. */
-    public static getTheme(theme: 'light' | 'dark'): Theme {
-      return theme === 'light' ? Themer.THEMES['light-old'] : Themer.THEMES['dark-old'];
+    public static getTheme(themeName: string): Theme {
+      return Themer.getThemeFromCssVariables() ?? Themer.THEMES[themeName] ?? Themer.DEFAULT_THEME;
     }
   }
 

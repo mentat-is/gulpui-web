@@ -7,7 +7,6 @@ import { XY } from '@/dto/XY.dto'
 import { formatTimestampToReadableString } from '@/ui/utils'
 import { Stack } from '@/ui/Stack'
 import { User } from '@/entities/User'
-import { useTheme } from 'next-themes'
 
 type RGB = { r: number; g: number; b: number }
 
@@ -117,8 +116,8 @@ const parseToRgb = (value: string): RGB | null => {
   return null
 }
 
-const getReadableTextColor = (backgroundColor: string, theme?: string): string => {
-  const fallback = theme === 'light' || theme === 'light-old' ? '#111827' : '#f8f8f2'
+const getReadableTextColor = (backgroundColor: string): string => {
+  const fallback = resolveCssVariableColor('var(--accent)') || '#f8f8f2'
   const rgb = parseToRgb(backgroundColor)
 
   if (!rgb) return fallback
@@ -153,7 +152,6 @@ export function Pointers({
 }: Pointers.Props) {
   const { app } = Application.use()
   const { y: scrollY } = useScroll()
-  const { theme } = useTheme()
 
   const you: Pointers.Pointer = {
     ...self,
@@ -168,7 +166,7 @@ export function Pointers({
         const isYours = p.id === ('You' as User.Id)
         const x = p.x || getPixelPosition(p.timestamp)
         const isRightSide = x > width / 2
-        const textColor = getReadableTextColor(p.color, theme)
+        const textColor = getReadableTextColor(p.color)
 
         return (
           <Stack

@@ -111,7 +111,7 @@ function _({ children }: { children: ReactNode }) {
 		const collabUpdateCallback = (message: any) => {
 			switch (message.payload.obj.type) {
 				case "note": {
-					const note: Note.Type = message.payload.obj;
+						const note: Note.Type = Note.Entity.normalize_note(message.payload.obj);
 					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
 					if (idx >= 0) {
 						DataStore.notes[idx] = note;

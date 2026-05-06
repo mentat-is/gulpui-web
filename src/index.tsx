@@ -87,8 +87,10 @@ function Main() {
   }, [isPreloaded]);
 
   useEffect(() => {
-    Color.Themer.setTheme(theme ?? 'dark');
-  }, []);
+    if (theme) {
+      Color.Themer.setTheme(theme);
+    }
+  }, [theme]);
 
   useEffect(() => {
     const root = document.getElementById('root');

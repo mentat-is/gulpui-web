@@ -1,25 +1,29 @@
 import { Color } from '@/entities/Color';
 import { Switch } from '@/ui/Switch';
 import { Select } from '@/ui/Select';
+import { loadThemesFromDirectory, getThemeNames } from '@/themes/index';
 import { SwitchProps } from '@radix-ui/react-switch';
 import { ThemeProvider, useTheme } from 'next-themes'
 import { useCallback, useEffect, useState } from 'react'
 
-const THEMES: { value: string; label: string }[] = [
-  { value: 'light', label: 'Appetizer (Light)' },
-  { value: 'dark-old', label: 'Dark (Classic)' },
-  { value: 'dracula', label: 'Dracula (Dark)' },
-  { value: 'forest', label: 'Forest (Dark)' },
-  { value: 'light-old', label: 'Light (Classic)' },
-  { value: 'dark', label: 'Solarized (Dark)' },
-];
+const THEMES: string[] = getThemeNames();
+
+const DEFAULT_THEME = THEMES.includes('solarized-light')
+  ? 'solarized-light'
+  : THEMES[0] ?? 'solarized-light';
 
 /** Syncs Color.Themer with the active next-themes value on mount and changes. */
 function ThemeInitializer() {
   const { theme } = useTheme();
+
+  useEffect(() => {
+    loadThemesFromDirectory();
+  }, []);
+
   useEffect(() => {
     if (theme) Color.Themer.setTheme(theme);
   }, [theme]);
+
   return null;
 }
 
@@ -35,7 +39,7 @@ function _({ children }: any) {
   }
 
   return (
-    <ThemeProvider attribute="data-theme" defaultTheme='dark-old' themes={THEMES.map(t => t.value)}>
+    <ThemeProvider attribute="data-theme" defaultTheme={DEFAULT_THEME} themes={THEMES}>
       <ThemeInitializer />
       {children}
     </ThemeProvider>
@@ -45,15 +49,18 @@ function _({ children }: any) {
 export namespace Theme {
   export function Switcher({ ...props }: Theme.Switcher.Props) {
     const { theme, setTheme } = useTheme();
+    const activeTheme = theme ?? DEFAULT_THEME;
+    const activeIndex = THEMES.indexOf(activeTheme);
+    const safeIndex = activeIndex >= 0 ? activeIndex : 0;
+    const nextTheme = THEMES[(safeIndex + 1) % THEMES.length];
 
-    const themeSwitchHandler = useCallback((isDark: boolean) => {
-      const t = isDark ? 'light-old' : 'dark-old';
-      setTheme(t);
-      Color.Themer.setTheme(t);
-    }, [setTheme]);
+    const themeSwitchHandler = useCallback(() => {
+      setTheme(nextTheme);
+      Color.Themer.setTheme(nextTheme);
+    }, [nextTheme, setTheme]);
 
     return (
-      <Switch onCheckedChange={themeSwitchHandler} checked={theme === 'light' || theme === 'light-old'} icons={['Sun', 'Moon']} {...props} />
+      <Switch onCheckedChange={themeSwitchHandler} checked={safeIndex > 0} icons={['Sun', 'Moon']} {...props} />
     )
   }
 
@@ -70,13 +77,13 @@ export namespace Theme {
     }, [setTheme]);
 
     return (
-      <Select.Root value={theme ?? 'dark-old'} onValueChange={handleThemeChange}>
+      <Select.Root value={theme ?? DEFAULT_THEME} onValueChange={handleThemeChange}>
         <Select.Trigger data-no-icon>
           <Select.Value />
         </Select.Trigger>
         <Select.Content>
-          {THEMES.map(t => (
-            <Select.Item key={t.value} value={t.value}>{t.label}</Select.Item>
+          {THEMES.map(name => (
+            <Select.Item key={name} value={name}>{name}</Select.Item>
           ))}
         </Select.Content>
       </Select.Root>
