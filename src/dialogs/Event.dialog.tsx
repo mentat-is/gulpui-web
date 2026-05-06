@@ -315,6 +315,74 @@ const detectSelectionAtPoint = (
 	return null;
 };
 
+/**
+ * Builds a { key: value } object from selected cells in the table view.
+ * Returns null when the current selection does not intersect the event table.
+ */
+const getSelectedTableKeyValueObject = (): Record<string, string> | null => {
+	const selection = window.getSelection();
+	if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+		return null;
+	}
+
+	const range = selection.getRangeAt(0);
+	const selectedCells = Array.from(
+		document.querySelectorAll(`.${s.tableView} tbody td`),
+	).filter((cell) => {
+		try {
+			return range.intersectsNode(cell);
+		} catch {
+			return false;
+		}
+	}) as HTMLTableCellElement[];
+
+	if (selectedCells.length === 0) {
+		return null;
+	}
+
+	const table = selectedCells[0].closest("table");
+	if (!table) {
+		return null;
+	}
+
+	const headerCells = Array.from(table.querySelectorAll("thead th")).map((header) =>
+		header.textContent?.trim().toLowerCase() ?? "",
+	);
+
+	let keyIndex = headerCells.indexOf("key");
+	let valueIndex = headerCells.indexOf("value");
+
+	if (keyIndex < 0 || valueIndex < 0) {
+		const rowCellCount = selectedCells[0].closest("tr")?.cells.length ?? 0;
+		if (rowCellCount >= 2) {
+			keyIndex = 0;
+			valueIndex = 1;
+		} else {
+			return null;
+		}
+	}
+
+	const output: Record<string, string> = {};
+	const rows = new Set(
+		selectedCells
+			.map((cell) => cell.closest("tr"))
+			.filter((row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement),
+	);
+
+	rows.forEach((row) => {
+		const key = row.cells[keyIndex]?.textContent?.trim();
+		const value = row.cells[valueIndex]?.textContent?.trim();
+
+		if (!key || key === "<BLANK>" || value == null) {
+			return;
+		}
+
+		output[key] = value;
+	});
+
+	return Object.keys(output).length > 0 ? output : null;
+};
+
 // --- MAIN COMPONENT ---
 
 interface DisplayEventDialogProps {
@@ -405,6 +473,12 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		if (!json) return;
 		const path = treeContextPathRef.current;
 		if (!path) {
+			const selectedTableJson = getSelectedTableKeyValueObject();
+			if (selectedTableJson) {
+				copy(JSON.stringify(selectedTableJson, null, 2));
+				return;
+			}
+
 			copy(JSON.stringify(json, null, 2));
 			return;
 		}
