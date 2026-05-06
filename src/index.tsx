@@ -88,7 +88,7 @@ function Main() {
 
   useEffect(() => {
     if (theme) {
-      Color.Themer.setTheme(theme);
+      Color.Themer.setTheme();
     }
   }, [theme]);
 

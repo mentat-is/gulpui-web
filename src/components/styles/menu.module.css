@@ -1,5 +1,6 @@
 .menu {
   height: 100%;
+  min-height: 0;
 }
 .relative {
   position: relative;
@@ -21,7 +22,11 @@
 }
 
 .scroll {
-  overflow: visible auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-width: 0px;
   scrollbar-color: var(--second) var(--background-100);
 }

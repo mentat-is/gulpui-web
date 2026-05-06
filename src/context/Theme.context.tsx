@@ -6,6 +6,8 @@ import { SwitchProps } from '@radix-ui/react-switch';
 import { ThemeProvider, useTheme } from 'next-themes'
 import { useCallback, useEffect, useState } from 'react'
 
+const DEFAULT_THEME_NAME = 'classic-dark';
+
 function getAvailableThemes(): ThemeDefinition[] {
   return getThemeDefinitions();
 }
@@ -21,6 +23,11 @@ function getFallbackMode(): ThemeMode {
 function getDefaultTheme(themes: ThemeDefinition[]): string | undefined {
   if (!themes.length) {
     return undefined;
+  }
+
+  const defaultTheme = themes.find((theme) => theme.name === DEFAULT_THEME_NAME);
+  if (defaultTheme) {
+    return defaultTheme.name;
   }
 
   const preferredMode = getFallbackMode();

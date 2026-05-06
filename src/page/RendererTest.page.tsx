@@ -681,6 +681,7 @@ export namespace RendererTest {
                         operation_id: MOCK_OPERATION_ID,
                         description: `Synthetic link #${i + 1}`,
                         tags: ['renderer-test'],
+                        color: '#3399ff',
                         doc_id_from: docFrom,
                         doc_ids: [docTo],
                         glyph_id: null as any,

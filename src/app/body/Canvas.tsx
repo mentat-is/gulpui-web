@@ -502,7 +502,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 	useEffect(() => {
 		if (theme) {
-			Color.Themer.setTheme(theme);
+			Color.Themer.setTheme();
 			DataStore.markDirty();
 		}
 
