@@ -40,7 +40,7 @@ export namespace SmartSocket {
       SOURCE_FIELDS_CHUNK = "source_fields_chunk",
       AI_ASSISTANT_DONE = "ai_assistant_done",
       AI_ASSISTANT_STREAM = "ai_assistant_stream",
-      AI_ASSISTANT_ERROR = "ai_assistant_error",      
+      AI_ASSISTANT_ERROR = "ai_assistant_error",
     }
 
     export interface Entity<T = any> {
@@ -61,11 +61,21 @@ export namespace SmartSocket {
   }
 
   export class Class extends EventEmitter {
-    public static readonly instance: SmartSocket.Class;
+    public static instance: SmartSocket.Class
 
-    private readonly ws!: WebSocket
+    private ws!: WebSocket
     private readonly conditional: Map<SmartSocket.Message.Type, Conditional[]> = new Map()
     private counter = 0
+
+    private token!: string
+    private ws_id!: string
+
+    private reconnectAttempts = 0
+    private reconnectTimer: any = null
+    private manuallyClosed = false
+
+    private readonly reconnectBaseDelay = 500
+    private readonly reconnectMaxDelay = 10_000
 
     constructor(ws_id: string) {
       super()
@@ -74,44 +84,106 @@ export namespace SmartSocket {
         return SmartSocket.Class.instance
       }
 
-      this.ws = new WebSocket(Internal.Settings.server + "/ws")
-      this.forwarding(Internal.Settings.token, ws_id);
+      this.token = Internal.Settings.token
+      this.ws_id = ws_id
 
-      // @ts-ignore
-      SmartSocket.Class.instance = this;
+      this.connect()
+
+      SmartSocket.Class.instance = this
     }
 
-    private forwarding(token: string, ws_id: string) {
+    private connect() {
+      this.ws = new WebSocket(Internal.Settings.server + "/ws")
+      this.forwarding()
+    }
+
+    private forwarding() {
       this.ws.onopen = (event) => {
-        this.send({ token, ws_id })
+        this.reconnectAttempts = 0
+
+        if (this.reconnectTimer) {
+          clearTimeout(this.reconnectTimer)
+          this.reconnectTimer = null
+        }
+
+        this.send({
+          token: this.token,
+          ws_id: this.ws_id,
+        })
+
         this.once(SmartSocket.Message.Type.WS_CONNECTED, () =>
           Logger.log(`WebSocket has been initialized`, SmartSocket.Class, {
             icon: <Icon name='Rss' />
           })
         )
+
         this.emit('open', event)
       }
 
       this.ws.onclose = (event) => {
         this.emit('close', event)
+
+        if (!this.manuallyClosed) {
+          this.scheduleReconnect()
+        }
       }
 
       this.ws.onerror = (event) => {
         this.emit('error', event)
+
+        /**
+         * Usually the browser will fire `close` after `error`.
+         * Do not reconnect directly here, otherwise we may schedule twice.
+         */
       }
 
       this.ws.onmessage = (event) => {
         let message: any
+
         try {
           message = JSON.parse(event.data)
         } catch (err) {
-          this.emit(SmartSocket.Message.Type.WS_ERROR, { error: err, raw: event.data })
+          this.emit(SmartSocket.Message.Type.WS_ERROR, {
+            error: err,
+            raw: event.data,
+          })
           return
         }
 
         this.emit(message.type, message)
         this.handle(message.type as SmartSocket.Message.Type, message)
       }
+    }
+
+    private scheduleReconnect() {
+      if (this.reconnectTimer) return
+
+      const delay = Math.min(
+        this.reconnectBaseDelay * 2 ** this.reconnectAttempts,
+        this.reconnectMaxDelay
+      )
+
+      this.reconnectAttempts += 1
+
+      Logger.log(
+        `WebSocket disconnected. Reconnecting in ${delay}ms`,
+        SmartSocket.Class
+      )
+
+      this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = null
+
+        try {
+          this.connect()
+        } catch (err) {
+          Logger.log(
+            `Failed to reconnect websocket: ${(err as Error).message}`,
+            SmartSocket.Class
+          )
+
+          this.scheduleReconnect()
+        }
+      }, delay)
     }
 
     private handle(event: SmartSocket.Message.Type, data: any) {
@@ -125,8 +197,10 @@ export namespace SmartSocket {
             if (listener.once) remove.push(listener.id)
           }
         } catch (err) {
-          // swallow handler errors to avoid breaking loop
-          Logger.log(`Handler error for ${event}: ${(err as Error).message}`, SmartSocket.Class)
+          Logger.log(
+            `Handler error for ${event}: ${(err as Error).message}`,
+            SmartSocket.Class
+          )
         }
       }
 
@@ -176,7 +250,10 @@ export namespace SmartSocket {
       this.conditional.delete(event)
     }
 
-    coffWhenCondition<T = any>(event: SmartSocket.Message.Type, condition: Condition<T>): void {
+    coffWhenCondition<T = any>(
+      event: SmartSocket.Message.Type,
+      condition: Condition<T>
+    ): void {
       const listeners = this.conditional.get(event) || []
       const filtered = listeners.filter(l => l.condition !== condition)
 
@@ -217,16 +294,41 @@ export namespace SmartSocket {
           Logger.log('WebSocket not open, cannot send message', SmartSocket.Class)
         }
       } catch (err) {
-        Logger.log(`Failed to send websocket message: ${(err as Error).message}`, SmartSocket.Class)
+        Logger.log(
+          `Failed to send websocket message: ${(err as Error).message}`,
+          SmartSocket.Class
+        )
       }
     }
 
     close(code?: number, reason?: string): void {
+      this.manuallyClosed = true
+
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer)
+        this.reconnectTimer = null
+      }
+
       try {
         this.ws.close(code, reason)
       } catch (err) {
-        Logger.log(`Failed to close websocket: ${(err as Error).message}`, SmartSocket.Class)
+        Logger.log(
+          `Failed to close websocket: ${(err as Error).message}`,
+          SmartSocket.Class
+        )
       }
+    }
+
+    reconnect(): void {
+      this.manuallyClosed = false
+
+      try {
+        this.ws.close()
+      } catch {
+        // ignore
+      }
+
+      this.scheduleReconnect()
     }
   }
 }
