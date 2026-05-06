@@ -4,8 +4,9 @@ import { Application } from '@/context/Application.context'
 import { useScroll, scrollStore } from '@/store/scroll.store'
 import { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
-import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom/client'
 import { NotesWindow } from '@/components/NotesWindow'
+import { TableViewWindow } from '@/components/TableViewWindow'
 import { Popover } from '@/ui/Popover'
 import { Logger } from '@/dto/Logger.class'
 import { Highlights } from '@/overlays/Highlights'
@@ -24,6 +25,10 @@ import { FloatingWindow } from '@/ui/FloatingWindow'
 import { Extension } from '@/context/Extension.context'
 import { Filter } from '@/entities/Filter'
 import { Source } from '@/entities/Source'
+import { WindowBridge } from '@/lib/WindowBridge'
+import { DetachedAppProvider } from '@/context/DetachedApp.provider'
+import { DataStore } from '@/store/DataStore'
+import { RenderEngine } from '@/class/RenderEngine'
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -116,12 +121,125 @@ export function Navigator({
   }
 
   const [windowRef, setWindowRef] = useState<Window | null>(null)
-  const containerRef = useRef<HTMLDivElement | null>(null)
+  const notesRootRef = useRef<ReactDOM.Root | null>(null)
+  const initialOperationRef = useRef<string | null | undefined>(undefined)
 
+  /**
+   * Main-tab BroadcastChannel bridge.
+   * Receives mutations from detached windows (note deletions, flag changes)
+   * and applies them to the main tab's state.
+   */
+  const mainBridgeIdRef = useRef(WindowBridge.generateId())
+  const mainBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null)
 
+  useEffect(() => {
+    const bridge = WindowBridge.create(mainBridgeIdRef.current, (message) => {
+      switch (message.type) {
+        case WindowBridge.MessageType.NOTES_CHANGED: {
+          const payload = message.payload as WindowBridge.NotesChangedPayload
+          if (payload.action === 'created' && payload.notes) {
+            payload.notes.forEach(note => {
+              const idx = DataStore.notes.findIndex(n => n.id === note.id)
+              if (idx >= 0) {
+                DataStore.notes[idx] = note
+              } else {
+                DataStore.notes.push(note)
+              }
+            })
+          } else if (payload.action === 'deleted' && payload.ids) {
+            payload.ids.forEach(id => {
+              const idx = DataStore.notes.findIndex(n => n.id === id)
+              if (idx >= 0) DataStore.notes.splice(idx, 1)
+            })
+          }
+          Note.Entity.invalidateCache()
+          RenderEngine.clearAllCaches()
+          DataStore.markDirty()
+          Info.render()
+          break
+        }
+        case WindowBridge.MessageType.FLAGS_CHANGED: {
+          // Flag changes from detached window — re-render canvas
+          RenderEngine.clearAllCaches()
+          DataStore.markDirty()
+          Info.render()
+          break
+        }
+        case WindowBridge.MessageType.BANNER_ACTION: {
+          const payload = message.payload as WindowBridge.BannerActionPayload
+          if (payload.action === 'destroy') {
+            // No-op for main tab banner system
+          }
+          break
+        }
+      }
+    })
+    mainBridgeRef.current = bridge
+
+    return () => {
+      bridge.destroy()
+      mainBridgeRef.current = null
+    }
+  }, [])
+
+  // Forward theme changes to all detached windows via BroadcastChannel
+  useEffect(() => {
+    mainBridgeRef.current?.send(WindowBridge.MessageType.THEME_CHANGE, { theme: theme ?? 'dark' })
+  }, [theme])
+
+  // Forward renderVersion bumps to detached windows
+  useEffect(() => {
+    mainBridgeRef.current?.send(WindowBridge.MessageType.RENDER_REQUEST, {
+      renderVersion: app.timeline.renderVersion,
+    })
+  }, [app.timeline.renderVersion])
+
+  // Sync operations, contexts, and files to detached windows so they can update their lists
+  useEffect(() => {
+    mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
+      app: {
+        target: {
+          ...app.target,
+          events: new Map(), // Omit events map as it cannot be cloned over BroadcastChannel
+          filters: {}, // Omit filters
+        }
+      } as any
+    })
+  }, [app.target.files, app.target.operations, app.target.contexts])
+
+  /**
+   * Copies stylesheets from the main document into a detached window.
+   * Runs once at window creation time (not reactively).
+   */
+  const copyStylesToWindow = useCallback((targetWindow: Window) => {
+    applyThemeToWindow(document, targetWindow.document, theme)
+
+    Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
+      try {
+        if (styleSheet.href) {
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = styleSheet.href
+          targetWindow.document.head.appendChild(link)
+        } else if (styleSheet.cssRules) {
+          const style = document.createElement('style')
+          Array.from(styleSheet.cssRules).forEach((rule) => {
+            style.appendChild(document.createTextNode(rule.cssText))
+          })
+          targetWindow.document.head.appendChild(style)
+        }
+      } catch (err) {
+        console.warn('error copying style', err)
+      }
+    })
+  }, [theme])
 
   const openWindow = () => {
-    if (windowRef) windowRef.close()
+    if (windowRef) {
+      notesRootRef.current?.unmount()
+      notesRootRef.current = null
+      windowRef.close()
+    }
 
     const newWindow = window.open(
       '',
@@ -132,36 +250,34 @@ export function Navigator({
 
     const container = document.createElement('div')
     newWindow.document.body.appendChild(container)
-    containerRef.current = container
 
-    applyThemeToWindow(document, newWindow.document, theme)
+    copyStylesToWindow(newWindow)
 
-    // copy style from css
-    Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
-      try {
-        if (styleSheet.href) {
-          const link = document.createElement('link')
-          link.rel = 'stylesheet'
-          link.href = styleSheet.href
-          newWindow.document.head.appendChild(link)
-        } else if (styleSheet.cssRules) {
-          const style = document.createElement('style')
-          Array.from(styleSheet.cssRules).forEach((rule) => {
-            style.appendChild(document.createTextNode(rule.cssText))
-          })
-          newWindow.document.head.appendChild(style)
-        }
-      } catch (err) {
-        console.warn('error copyng style', err)
-      }
-    })
-
+    // Create a SEPARATE React root — this is the key performance fix.
+    // The NotesWindow will have its own React reconciliation, completely
+    // independent from the main tab's React tree.
+    const detachedBridgeId = WindowBridge.generateId()
+    const root = ReactDOM.createRoot(container)
+    root.render(
+      <DetachedAppProvider
+        initialApp={app}
+        initialNotes={[...DataStore.notes]}
+        bridgeId={detachedBridgeId}
+      >
+        <NotesWindow onClose={() => {
+          newWindow.close()
+        }} />
+      </DetachedAppProvider>
+    )
+    notesRootRef.current = root
     setWindowRef(newWindow)
   }
 
   useEffect(() => {
     if (windowRef) {
       const handleBeforeUnload = () => {
+        notesRootRef.current?.unmount()
+        notesRootRef.current = null
         setWindowRef(null)
       }
 
@@ -173,18 +289,148 @@ export function Navigator({
     }
   }, [windowRef])
 
-  // sync thems for window
+  // Sync theme to NotesWindow via direct DOM access (same-origin window.open).
+  // TIMING: Deferred via rAF because getComputedStyle() inside applyThemeToWindow
+  // needs the browser to have recalculated CSS variables after next-themes sets
+  // the new data-theme attribute. Without this, we'd read the OLD theme's values.
   useEffect(() => {
     if (!windowRef) return
-    applyThemeToWindow(document, windowRef.document, theme)
+    const id = requestAnimationFrame(() => {
+      applyThemeToWindow(document, windowRef.document, theme)
+    })
+    return () => cancelAnimationFrame(id)
   }, [theme, windowRef])
 
   const closeWindow = () => {
     if (windowRef) {
+      notesRootRef.current?.unmount()
+      notesRootRef.current = null
       windowRef.close()
       setWindowRef(null)
     }
   }
+
+  const [tableWindowRef, setTableWindowRef] = useState<Window | null>(null)
+  const tableRootRef = useRef<ReactDOM.Root | null>(null)
+
+  const openTableWindow = useCallback((sourceId?: Source.Id) => {
+    if (tableWindowRef) {
+      tableRootRef.current?.unmount()
+      tableRootRef.current = null
+      tableWindowRef.close()
+    }
+
+    const newWindow = window.open(
+      '',
+      '',
+      'width=800,height=600,left=150,top=150',
+    )
+    if (!newWindow) return
+
+    const container = document.createElement('div')
+    newWindow.document.body.appendChild(container)
+
+    copyStylesToWindow(newWindow)
+
+    // Create a SEPARATE React root for the table view window.
+    const detachedBridgeId = WindowBridge.generateId()
+    const root = ReactDOM.createRoot(container)
+    root.render(
+      <DetachedAppProvider
+        initialApp={app}
+        initialNotes={[...DataStore.notes]}
+        bridgeId={detachedBridgeId}
+      >
+        <TableViewWindow
+          initialSourceId={sourceId}
+          onClose={() => {
+            newWindow.close()
+          }}
+        />
+      </DetachedAppProvider>
+    )
+    tableRootRef.current = root
+    setTableWindowRef(newWindow)
+  }, [theme, tableWindowRef, app, copyStylesToWindow])
+
+  useEffect(() => {
+    if (tableWindowRef) {
+      const handleBeforeUnload = () => {
+        tableRootRef.current?.unmount()
+        tableRootRef.current = null
+        setTableWindowRef(null)
+      }
+
+      tableWindowRef.addEventListener('beforeunload', handleBeforeUnload)
+
+      return () => {
+        tableWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+      }
+    }
+  }, [tableWindowRef, Info])
+
+  // Sync theme to TableViewWindow via direct DOM access (same-origin window.open).
+  // Same rAF deferral as NotesWindow above.
+  useEffect(() => {
+    if (!tableWindowRef) return
+    const id = requestAnimationFrame(() => {
+      applyThemeToWindow(document, tableWindowRef.document, theme)
+    })
+    return () => cancelAnimationFrame(id)
+  }, [theme, tableWindowRef])
+
+  const closeTableWindow = useCallback(() => {
+    if (tableWindowRef) {
+      tableRootRef.current?.unmount()
+      tableRootRef.current = null
+      tableWindowRef.close()
+      setTableWindowRef(null)
+    }
+  }, [tableWindowRef, Info])
+
+  useEffect(() => {
+    if (app.general.tableViewSource) {
+      if (!tableWindowRef) {
+        openTableWindow(app.general.tableViewSource.id)
+      } else {
+        mainBridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
+          sourceId: app.general.tableViewSource.id
+        })
+      }
+      // Reset the one-shot signal
+      Info.setInfoByKey(null, 'general', 'tableViewSource')
+    }
+  }, [app.general.tableViewSource, tableWindowRef, openTableWindow, Info])
+
+  // Auto-close all detached windows when the user changes operation or logs out.
+  // Notes and source events are operation-scoped, so stale detached tabs would
+  // show incorrect data or trigger React errors with missing entities.
+  const selectedOperationId = app.target.operations.find(o => o.selected)?.id
+  const currentUser = app.general.user
+
+  useEffect(() => {
+    // Skip the initial mount — only react to subsequent changes
+    if (initialOperationRef.current === undefined) {
+      initialOperationRef.current = selectedOperationId ?? null
+      return
+    }
+
+    if (selectedOperationId !== initialOperationRef.current) {
+      // Operation changed — close Notes window, but keep Table window open
+      if (windowRef) closeWindow()
+      // Send APP_SNAPSHOT is already handled natively by Application.provider but DetachedApp
+      // needs to just receive it without closing the window. Table window resets itself.
+      initialOperationRef.current = selectedOperationId ?? null
+    }
+  }, [selectedOperationId])
+
+  useEffect(() => {
+    if (!currentUser) {
+      // User logged out — close all detached windows
+      if (windowRef) closeWindow()
+      if (tableWindowRef) closeTableWindow()
+    }
+  }, [currentUser])
 
   const size_plus = useRef<HTMLButtonElement>(null)
   const size_reset = useRef<HTMLButtonElement>(null)
@@ -362,7 +608,7 @@ export function Navigator({
     setFilterMode(nextMode);
   }, [filterMode, app, Info, EVENT_FILTER_ID]);
 
-  const toggleView = () => Info.setInfoByKey(!app.timeline.isTabularView, 'timeline', 'isTabularView');
+
 
   const { extensions } = Extension.use();
   const hasPro = !!extensions['AIAssistantPro.banner.tsx'];
@@ -570,17 +816,13 @@ export function Navigator({
       </FloatingWindow>
       <Button
         variant='secondary'
-        title='Toggle view between table and canvas'
-        icon={app.timeline.isTabularView ? 'ChartArea' : 'Table'}
-        onClick={toggleView}
+        title='Open table view in new window'
+        icon='Table'
+        onClick={() => openTableWindow()}
         size='md'
       />
-      {windowRef &&
-        containerRef.current &&
-        ReactDOM.createPortal(
-          <NotesWindow onClose={closeWindow} />,
-          containerRef.current,
-        )}
+      {/* Detached windows now use separate React roots via createRoot.
+          They are no longer part of this React tree — see openWindow() and openTableWindow(). */}
     </Stack>
   )
 }

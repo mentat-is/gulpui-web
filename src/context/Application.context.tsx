@@ -24,7 +24,7 @@ import { RenderEngine } from "@/class/RenderEngine";
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
-	const [banner, setBanner] = useState<ReactNode>();
+	const [banner, setBanner] = useState<{ node: ReactNode; target: string } | null>(null);
 	const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />);
 	const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
 	const [highlightsOverlay, setHighlightsOverlay] =
@@ -235,10 +235,13 @@ function _({ children }: { children: ReactNode }) {
 		};
 	}, [ws]);
 
-	const spawnBanner = useCallback((banner: React.ReactNode) => {
-		setBanner(banner);
-		document.querySelector("body")?.classList.add("no-scroll");
-	}, []);
+	const spawnBanner = useCallback(
+		(node: React.ReactNode, target: string = "main") => {
+			setBanner({ node, target });
+			document.querySelector("body")?.classList.add("no-scroll");
+		},
+		[],
+	);
 
 	// @ts-ignore
 	window.spawnBanner = spawnBanner;
@@ -339,9 +342,9 @@ function _({ children }: { children: ReactNode }) {
 export namespace Application {
 	export namespace Context {
 		export interface Props {
-			spawnBanner: (banner: React.ReactNode) => void;
+			spawnBanner: (banner: React.ReactNode, target?: string) => void;
 			destroyBanner: () => void;
-			banner: React.ReactNode;
+			banner: { node: React.ReactNode; target: string } | null;
 			spawnDialog: (dialog: React.ReactNode) => void;
 			dialog: React.ReactNode;
 			app: App.Type;

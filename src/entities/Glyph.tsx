@@ -43,13 +43,13 @@ export namespace Glyph {
       asButton?: boolean;
       icon: Glyph.Id | null;
       setIcon: React.Dispatch<React.SetStateAction<Glyph.Id | null>>;
+      container?: HTMLElement | null;
     }
   }
 
-  export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton }: Chooser.Props) => {
+  export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton, container }: Chooser.Props) => {
     const [search, setSearch] = useState<string>('');
     const parentRef = useRef<HTMLDivElement | null>(null);
-    
     const entities = useMemo(() => {
       return Glyph.Entries.filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
     }, [search]);
@@ -83,7 +83,7 @@ export namespace Glyph {
         <Popover.Trigger asChild>
           {asButton ? <Button className={rootClassName} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} label={label} />}
         </Popover.Trigger>
-        <Popover.Content align='end' forceMount>
+        <Popover.Content align='end' forceMount container={container}>
           <Stack dir='column' className={s.wrapper} ai='stretch'>
             {SearchInput}
             <div ref={parentRef} className={s.list} style={{ width: '300px' }}>

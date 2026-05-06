@@ -1,0 +1,540 @@
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { Application } from '@/context/Application.context'
+import { Input } from '@/ui/Input'
+import { Stack } from '@/ui/Stack'
+import { Checkbox } from '@/ui/Checkbox'
+import { Select } from '@/ui/Select'
+import { Button } from '@/ui/Button'
+import { Popover } from '@/ui/Popover'
+import { Label } from '@/ui/Label'
+import { Table } from '@/components/Table'
+import { Source } from '@/entities/Source'
+import { Context } from '@/entities/Context'
+import { MinMax } from '@/class/Info'
+import { Query } from '@/entities/Query'
+import s from './styles/TableViewWindow.module.css'
+import { cn } from '@impactium/utils'
+import { toast } from 'sonner'
+import { Toggle } from '@/ui/Toggle'
+import { Internal } from '@/entities/addon/Internal'
+import { format } from 'date-fns'
+import { Logger } from '@/dto/Logger.class'
+import { Icon } from '@impactium/icons'
+import { Doc } from '@/entities/Doc'
+import { NoteFunctionality } from '@/banners/Collab.functionality'
+import { WindowBridge } from '@/lib/WindowBridge'
+
+export namespace TableViewWindow {
+  export interface Props {
+    initialSourceId?: Source.Id
+    onClose?: () => void
+  }
+}
+
+/**
+ * Helper component for date selection using datetime-local input
+ */
+function InputDateSelection({ type, value, valid, onChange }: { 
+  type: 'min' | 'max', 
+  value: string, 
+  valid: boolean, 
+  onChange: (val: string) => void 
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  
+  const getFormattedValue = (val: string) => {
+    try {
+      const ms = Number(BigInt(val) / 1000000n)
+      return format(ms, "yyyy-MM-dd'T'HH:mm")
+    } catch {
+      return ""
+    }
+  }
+
+  const [localValue, setLocalValue] = useState(getFormattedValue(value))
+
+  useEffect(() => {
+    setLocalValue(getFormattedValue(value))
+  }, [value])
+
+  useEffect(() => {
+    const input = inputRef.current
+    const icon = input?.parentElement?.querySelector('svg')
+    const clickHandler = () => input?.showPicker?.()
+    icon?.addEventListener('click', clickHandler)
+    return () => icon?.removeEventListener('click', clickHandler)
+  }, [])
+
+  return (
+    <Input
+      ref={inputRef}
+      label={type === 'min' ? 'From' : 'To'}
+      type="datetime-local"
+      valid={valid}
+      variant="highlighted"
+      icon="Calendar"
+      value={localValue}
+      onChange={(e) => {
+        setLocalValue(e.target.value)
+        onChange(e.target.value)
+      }}
+    />
+  )
+}
+
+/**
+ * Helper component for ISO string selection
+ */
+function InputISOSelection({ type, value, valid, onChange }: { 
+  type: 'min' | 'max', 
+  value: string, 
+  valid: boolean, 
+  onChange: (val: string) => void 
+}) {
+  const [localValue, setLocalValue] = useState(Internal.Transformator.toISO(value))
+
+  useEffect(() => {
+    // Only update local value if it's different from the formatted current value
+    // to avoid interrupting user typing
+    const currentISO = Internal.Transformator.toISO(value)
+    if (Internal.Transformator.toNanos(localValue) !== Internal.Transformator.toNanos(currentISO)) {
+       setLocalValue(currentISO)
+    }
+  }, [value])
+
+  return (
+    <Input
+      label={type === 'min' ? 'From' : 'To'}
+      type="text"
+      icon="Calendar"
+      placeholder="Enter date in ISO format"
+      variant="highlighted"
+      valid={valid}
+      value={localValue}
+      onChange={(e) => {
+        setLocalValue(e.target.value)
+        onChange(e.target.value)
+      }}
+    />
+  )
+}
+
+/**
+ * TableViewWindow Component
+ * Opens a paginated table view of raw events for a specific source.
+ */
+export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Props) {
+  const { Info, app, spawnBanner, banner } = Application.use()
+  const [container, setContainer] = useState<HTMLDivElement | null>(null)
+  
+  const [selectedSourceId, setSelectedSourceId] = useState<Source.Id | null>(initialSourceId ?? null)
+  const selectedSource = useMemo(() => 
+    selectedSourceId ? Source.Entity.id(app, selectedSourceId) : null
+  , [app, selectedSourceId])
+
+  const [timeFrame, setTimeFrame] = useState<{ min: string, max: string }>({
+    min: (app.timeline.frame.min * 1000000).toString(),
+    max: (app.timeline.frame.max * 1000000).toString(),
+  })
+  
+  useEffect(() => {
+    if (selectedSource) {
+      setTimeFrame({
+        min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
+        max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
+      })
+      setCurrentPage(1)
+      setSearchQuery('')
+      setLocalSearchQuery('')
+    }
+  }, [selectedSourceId]) // Intentional: Only run when the source ID changes
+
+  // Listen for operation changes to reset the source selection
+  const selectedOperationId = app.target.operations.find(o => o.selected)?.id
+  const initialOperationRef = useRef<string | null>(selectedOperationId ?? null)
+
+  useEffect(() => {
+    if (selectedOperationId !== initialOperationRef.current) {
+      setSelectedSourceId(null)
+      setSearchQuery('')
+      setLocalSearchQuery('')
+      setCurrentPage(1)
+      setData([])
+      setTotalHits(0)
+      setTimeFrame({
+        min: (app.timeline.frame.min * 1000000).toString(),
+        max: (app.timeline.frame.max * 1000000).toString(),
+      })
+      initialOperationRef.current = selectedOperationId ?? null
+    }
+  }, [selectedOperationId, app.timeline.frame])
+
+  // Listen for external source selection commands (from main tab)
+  useEffect(() => {
+    const bridgeId = WindowBridge.generateId()
+    const bridge = WindowBridge.create(bridgeId, (message) => {
+      if (message.type === WindowBridge.MessageType.TABLE_SELECT_SOURCE) {
+        const payload = message.payload as WindowBridge.TableSelectSourcePayload
+        setSelectedSourceId(payload.sourceId as Source.Id)
+      }
+    })
+    return () => bridge.destroy()
+  }, [])
+  
+  const [localSearchQuery, setLocalSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [pageSize, setPageSize] = useState<number>(50)
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [sortField, setSortField] = useState<string>('timestamp')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  
+  const [data, setData] = useState<any[]>([])
+  const [totalHits, setTotalHits] = useState<number>(0)
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
+  const [loading, setLoading] = useState(false)
+  const [manual, setManual] = useState(false)
+  const [isMinValid, setIsMinValid] = useState(true)
+  const [isMaxValid, setIsMaxValid] = useState(true)
+  
+  const totalPages = Math.max(1, Math.ceil(totalHits / pageSize))
+
+  // TC-01: if page size changes and currentPage > totalPages, reset to page 1
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(1)
+    }
+  }, [totalPages, pageSize, currentPage])
+
+  const fetchTableData = useCallback(async () => {
+    if (!selectedSource) return;
+    setLoading(true)
+    try {
+      // Build the Query.Type compliant object for pagination
+      const queryObj: Query.Type = {
+         string: '',
+         filters: [],
+         text_filter: searchQuery,
+         source_config: {
+           operation_id: selectedSource.operation_id,
+           source_ids: [selectedSource.id],
+           range: {
+             min: timeFrame.min,
+             max: timeFrame.max
+           }
+         }
+      } as any; 
+
+      const limit = pageSize
+      const offset = pageSize * (currentPage - 1)
+      const sortOpt = {
+        [sortField === 'timestamp' ? '@timestamp' : sortField]: sortDirection
+      }
+
+      const res = await Info.query_paginate(queryObj, { limit, offset, sort: sortOpt })
+      
+      if (res && res.data) {
+        setData(res.data.docs || [])
+        setTotalHits(res.data.total_hits || 0)
+        // Reset row selection on new fetch
+        setSelectedRows(new Set())
+      }
+    } catch (e) {
+      toast.error('Failed to fetch table data')
+    } finally {
+      setLoading(false)
+    }
+  }, [searchQuery, timeFrame, pageSize, currentPage, sortField, sortDirection, selectedSource, Info])
+
+  useEffect(() => {
+    fetchTableData()
+  }, [fetchTableData])
+
+  const triggerSearch = useCallback(() => {
+    setSearchQuery(localSearchQuery)
+    setCurrentPage(1)
+  }, [localSearchQuery])
+
+  // TC-02: Typing in the Search Bar updates local state; Enter or button click triggers search
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchQuery(e.target.value)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      triggerSearch()
+    }
+  }
+
+  const handleTimeChange = (type: 'min' | 'max', value: string | number) => {
+    try {
+      const nanos = Internal.Transformator.toNanos(value).toString()
+      if (nanos === '0' && value !== '') {
+        if (type === 'min') setIsMinValid(false)
+        else setIsMaxValid(false)
+        return
+      }
+      
+      setTimeFrame(prev => {
+        const next = { ...prev, [type]: nanos }
+        // Simple range validation
+        const min = BigInt(next.min)
+        const max = BigInt(next.max)
+        setIsMinValid(min < max)
+        setIsMaxValid(max > min)
+        return next
+      })
+      setCurrentPage(1)
+    } catch (e) {
+      if (type === 'min') setIsMinValid(false)
+      else setIsMaxValid(false)
+    }
+  }
+
+  const handleSortFieldChange = (val: string) => {
+    setSortField(val)
+    setCurrentPage(1)
+  }
+
+  const toggleSortDirection = () => {
+    setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    setCurrentPage(1)
+  }
+
+  const handleSelectAll = (checked: boolean) => {
+    // TC-04: The "Select All" checkbox only selects the maximum number of rows defined by the current Page Size
+    if (checked) {
+      setSelectedRows(new Set(data.map((_, i) => i)))
+    } else {
+      setSelectedRows(new Set())
+    }
+  }
+
+  const isAllSelected = data.length > 0 && selectedRows.size === data.length
+
+  const handleBulkAction = async (action: string) => {
+    if (!selectedSource) return
+    if (selectedRows.size === 0) {
+      toast.error('No items selected')
+      return
+    }
+    const selectedDocs = Array.from(selectedRows).map(i => data[i])
+    
+    if (action === 'flagged') {
+      for (const doc of selectedDocs) {
+        Doc.Entity.flag.toggle(doc._id, selectedSource.operation_id)
+      }
+      // Notify main tab about flag changes via BroadcastChannel
+      const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+      bridge.send(WindowBridge.MessageType.FLAGS_CHANGED, {
+        docId: selectedDocs[0]._id,
+        operationId: selectedSource.operation_id,
+      })
+      bridge.destroy()
+    } else if (action === 'notes') {
+      spawnBanner(<NoteFunctionality.Create.Banner events={selectedDocs} container={container} />, 'table')
+    }
+  }
+
+  const defaultHidden = ["_id", "gulp.source_id", "gulp.context_id", "gulp.operation_id", "gulp.event_code", "i"]
+
+  return (
+    <div className={s.main} ref={setContainer}>
+      <div className={s.header}>
+        <h2>Table View{selectedSource ? `: ${selectedSource.name}` : ''}</h2>
+      </div>
+
+      <div className={s.row1}>
+        <div className={s.sourceRow}>
+          <Select.Root onValueChange={(val) => setSelectedSourceId(val as Source.Id)} value={selectedSourceId || ''}>
+            <Select.Trigger data-no-icon>
+              <Stack gap={8} ai="center">
+                <Icon name='File' />
+                <Select.Value placeholder="Select a source..." />
+              </Stack>
+            </Select.Trigger>
+            <Select.Content container={container}>
+              {Source.Entity.selected(app).map(f => {
+                const ctx = Context.Entity.id(app, f.context_id)
+                return (
+                  <Select.Item key={f.id} value={f.id}>
+                    {f.name} {ctx ? `(${ctx.name})` : ''}
+                  </Select.Item>
+                )
+              })}
+            </Select.Content>
+          </Select.Root>
+        </div>
+
+        <Stack ai="center" gap={12}>
+          <Toggle
+            checked={manual}
+            onCheckedChange={setManual}
+            option={['Select dates', 'ISO String']}
+            disabled={!selectedSourceId}
+          />
+        </Stack>
+        <div className={s.timeRow}>
+          {manual ? (
+            <>
+              <InputISOSelection
+                type="min"
+                value={timeFrame.min}
+                valid={isMinValid}
+                onChange={(val) => handleTimeChange('min', val)}
+              />
+              <InputISOSelection
+                type="max"
+                value={timeFrame.max}
+                valid={isMaxValid}
+                onChange={(val) => handleTimeChange('max', val)}
+              />
+            </>
+          ) : (
+            <>
+              <InputDateSelection
+                type="min"
+                value={timeFrame.min}
+                valid={isMinValid}
+                onChange={(val) => handleTimeChange('min', val)}
+              />
+              <InputDateSelection
+                type="max"
+                value={timeFrame.max}
+                valid={isMaxValid}
+                onChange={(val) => handleTimeChange('max', val)}
+              />
+            </>
+          )}
+        </div>
+        <div className={s.searchRow}>
+          <Stack gap={8} ai="flex-end">
+            <Input
+              label="Search"
+              placeholder="Search event.original..."
+              icon="MagnifyingGlass"
+              variant="highlighted"
+              value={localSearchQuery}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+            />
+            <Button
+              variant="glass"
+              icon="Search"
+              onClick={triggerSearch}
+              title="Search"
+            />
+          </Stack>
+        </div>
+      </div>
+
+      <div className={s.row2}>
+        <div className={s.row2Left}>
+          <Stack gap={8} ai="center">
+            <Checkbox checked={isAllSelected} onCheckedChange={(c) => handleSelectAll(!!c)} />
+            <span className={cn(s.label, s.pointer)} onClick={() => handleSelectAll(!isAllSelected)}>
+              Select All Visible
+            </span>
+          </Stack>
+          
+          <Popover.Root>
+            <Popover.Trigger asChild>
+              <Button 
+                variant="secondary" 
+                icon="ChevronDown"
+                disabled={selectedRows.size === 0}
+              >
+                Action
+              </Button>
+            </Popover.Trigger>
+            <Popover.Content align="start" sideOffset={4} className={s.popoverContent} container={container}>
+              <div 
+                className={s.menuItem} 
+                onClick={() => handleBulkAction('flagged')}
+              >
+                <Icon name="Flag" size={14} />
+                <span>Flag</span>
+              </div>
+              <div 
+                className={s.menuItem} 
+                onClick={() => handleBulkAction('notes')}
+              >
+                <Icon name="StickyNote" size={14} />
+                <span>New notes</span>
+              </div>
+            </Popover.Content>
+          </Popover.Root>
+
+          <Stack gap={8} ai="center">
+            <Label value="sort:" />
+            <Select.Root onValueChange={handleSortFieldChange} value={sortField}>
+              <Select.Trigger data-no-icon className={s.sortSelect}><Select.Value /></Select.Trigger>
+              <Select.Content container={container}>
+                <Select.Item value="timestamp">timestamp</Select.Item>
+                <Select.Item value="event.sequence">event.sequence</Select.Item>
+              </Select.Content>
+            </Select.Root>
+            <Button 
+              variant="secondary" 
+              icon={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'} 
+              onClick={toggleSortDirection} 
+              title="Toggle Sort Direction" 
+            />
+          </Stack>
+        </div>
+
+        <div className={s.row2Right}>
+          <span className={s.label}>
+            Show {totalHits > 0 ? pageSize * (currentPage - 1) + 1 : 0}-{Math.min(pageSize * currentPage, totalHits)} of {totalHits}
+          </span>
+          
+          <Stack gap={8} ai="center">
+            <Select.Root onValueChange={(val) => setPageSize(Number(val))} value={pageSize.toString()}>
+              <Select.Trigger className={s.pageSelect}><Select.Value placeholder="50" /></Select.Trigger>
+              <Select.Content container={container}>
+                <Select.Item value="20">20</Select.Item>
+                <Select.Item value="50">50</Select.Item>
+                <Select.Item value="100">100</Select.Item>
+              </Select.Content>
+            </Select.Root>
+            <span className={s.label}>/ page</span>
+          </Stack>
+
+          <span className={s.label}>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <Stack gap={4}>
+            <Button variant="secondary" icon="ChevronLeft" disabled={currentPage <= 1 || loading} onClick={() => setCurrentPage(p => Math.max(1, p - 1))} title="Previous Page" />
+            <Button variant="secondary" icon="ChevronRight" disabled={currentPage >= totalPages || loading} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} title="Next Page" />
+          </Stack>
+        </div>
+      </div>
+
+      <div className={s.result}>
+        {!selectedSourceId ? (
+           <div className={s.placeholder}>Select a source to view events</div>
+        ) : loading ? (
+           <p className={s.label}>Loading data...</p>
+        ) : data.length > 0 ? (
+           <Table 
+             values={data} 
+             notshow={defaultHidden} 
+             selectable={true}
+             selectedrows={selectedRows}
+             onrowselect={(index, selected) => {
+               setSelectedRows(prev => {
+                 const next = new Set(prev)
+                 if (selected) next.add(index)
+                 else next.delete(index)
+                 return next
+               })
+             }}
+           />
+        ) : (
+           <p className={s.label}>No data found matching your query.</p>
+        )}
+      </div>
+      {banner?.target === 'table' && banner.node}
+    </div>
+  )
+}

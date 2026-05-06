@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import { Icon } from '@impactium/icons'
 import { Stack } from '@/ui/Stack'
 import { Source } from '@/entities/Source'
+import { TableViewWindow } from '@/components/TableViewWindow'
 
 interface TargetMenuProps {
   source: Source.Type
@@ -131,6 +132,12 @@ export function TargetMenu({ source }: TargetMenuProps) {
       <ContextMenuSeparator />
       <ContextMenuGroup>
         <ContextMenuLabel>Actions</ContextMenuLabel>
+        <ContextMenuItem
+          onClick={() => Info.setInfoByKey(source, 'general', 'tableViewSource')}
+          icon="Table"
+        >
+          Table view
+        </ContextMenuItem>
         <ContextMenuItem
           onClick={() => Info.setInfoByKey(Refractor.array(...app.target.files.map(f => ({ ...f, selected: f.id === source.id ? false : f.selected }))), 'target', 'files')}
           icon="EyeOff"

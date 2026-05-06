@@ -15,6 +15,7 @@ interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   solids?: string[]
   color?: string
   setColor?: React.Dispatch<React.SetStateAction<string>>
+  container?: HTMLElement | null
 }
 
 interface ColorPickerContext {
@@ -90,6 +91,7 @@ export function ColorPickerPopover({
   setColor: _setColor,
   gradients = {},
   solids = Object.values(Color.GEIST).map(s => '#' + s.toString(16).padStart(6, '0')),
+  container,
 }: ColorProps) {
   const { color: newColor, setColor: setNewColor } = useColor() || {}
 
@@ -101,7 +103,7 @@ export function ColorPickerPopover({
   )
 
   return (
-    <Popover.Content className={s.popover}>
+    <Popover.Content className={s.popover} container={container}>
       <Tabs
         onValueChange={(v) => setTab(v as Tab)}
         defaultValue={tab}
