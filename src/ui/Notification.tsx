@@ -32,7 +32,7 @@ export namespace Notification {
 export function Notification({ children, value, icon = 'SquareDashed', className, variant, ...props }: Notification.Props) {
   return (
     <Stack jc='center' className={cn(notificationVariants({ variant }), s.atention, className)} gap={0}>
-      <Icon name={icon} />
+      <Icon name={icon} color='currentColor' />
       {children || <p>{value}</p>}
     </Stack>
   )

@@ -27,11 +27,11 @@ const contextMenuSubTrigger = React.forwardRef<
     className={cn(s.subTrigger, inset && s.subTriggerInset, className)}
     {...props}
   >
-    {icon && <Icon name={icon} className={s.icon} />}
+    {icon && <Icon name={icon} className={s.icon} color='currentColor' />}
     {children}
     <Icon
       name="ChevronRight"
-      variant="white"
+      color="currentColor"
       size={14}
       className={s.subTriggerIcon}
     />
@@ -78,7 +78,7 @@ const contextMenuItem = React.forwardRef<
     className={cn(s.item, inset && s.itemInset, className, revert && s.revert)}
     {...props}
   >
-    {icon && <Icon name={icon} className={s.icon} />}
+    {icon && <Icon name={icon} className={s.icon} color='currentColor' />}
     {children}
   </ContextMenuPrimitive.Item>
 ))
@@ -96,7 +96,7 @@ const contextMenuCheckboxItem = React.forwardRef<
   >
     <span className={s.checkboxItemIndicator}>
       <ContextMenuPrimitive.ItemIndicator>
-        <Icon name="Check" className={s.checkboxItemIcon} />
+        <Icon name="Check" className={s.checkboxItemIcon} color='currentColor' />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -116,7 +116,7 @@ const contextMenuRadioItem = React.forwardRef<
   >
     <span className={s.radioItemIndicator}>
       <ContextMenuPrimitive.ItemIndicator>
-        <Icon name="Circle" className={s.radioItemIcon} />
+        <Icon name="Circle" className={s.radioItemIcon} color='currentColor' />
       </ContextMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -136,7 +136,7 @@ const contextMenuLabel = React.forwardRef<
     className={cn(s.label, inset && s.labelInset, className)}
     {...props}
   >
-    {icon ? <Icon size={12} name={icon} /> : null}
+    {icon ? <Icon size={12} name={icon} color='currentColor' /> : null}
     {children}
   </ContextMenuPrimitive.Label>
 ))

@@ -1,4 +1,5 @@
 :root[data-theme='classic-light'] {
+    --theme-mode: light;
     --gray-100-value: 0, 0%, 95%;
     --gray-200-value: 0, 0%, 92%;
     --gray-300-value: 0, 0%, 90%;
@@ -37,8 +38,8 @@
     --amber-600-value: 36, 90%, 62%;
     --amber-700-value: 39, 100%, 57%;
     --amber-800-value: 35, 100%, 52%;
-    --amber-900-value: 30, 100%, 32%;
-    --amber-1000-value: 20, 79%, 17%;
+    --amber-900-value: 34, 94%, 32%;
+    --amber-1000-value: 32, 82%, 17%;
     --green-100-value: 120, 60%, 96%;
     --green-200-value: 120, 60%, 95%;
     --green-300-value: 120, 60%, 91%;

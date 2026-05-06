@@ -1,5 +1,6 @@
 /* Forest */
 :root[data-theme="forest-dark"] {
+    --theme-mode: dark;
     --gray-100-value: 192, 100%, 7%;
     --gray-200-value: 192, 100%, 9%;
     --gray-300-value: 192, 100%, 11%;
@@ -36,20 +37,20 @@
     --amber-400-value: 43, 92%, 19%;
     --amber-500-value: 44, 96%, 26%;
     --amber-600-value: 45, 100%, 35%;
-    --amber-700-value: 18, 78%, 44%;
+    --amber-700-value: 45, 92%, 44%;
     --amber-800-value: 45, 90%, 29%;
-    --amber-900-value: 18, 78%, 54%;
+    --amber-900-value: 42, 94%, 58%;
     --amber-1000-value: 40, 88%, 92%;
-    --green-100-value: 68, 70%, 7%;
-    --green-200-value: 68, 80%, 10%;
-    --green-300-value: 68, 88%, 13%;
-    --green-400-value: 68, 95%, 17%;
-    --green-500-value: 68, 100%, 21%;
-    --green-600-value: 68, 100%, 26%;
-    --green-700-value: 68, 88%, 34%;
-    --green-800-value: 68, 82%, 27%;
-    --green-900-value: 68, 78%, 45%;
-    --green-1000-value: 68, 70%, 90%;
+    --green-100-value: 145, 55%, 7%;
+    --green-200-value: 145, 58%, 9%;
+    --green-300-value: 145, 60%, 12%;
+    --green-400-value: 145, 62%, 16%;
+    --green-500-value: 145, 64%, 21%;
+    --green-600-value: 145, 66%, 28%;
+    --green-700-value: 145, 58%, 36%;
+    --green-800-value: 145, 54%, 30%;
+    --green-900-value: 145, 62%, 48%;
+    --green-1000-value: 145, 58%, 90%;
     --teal-100-value: 175, 60%, 7%;
     --teal-200-value: 175, 65%, 10%;
     --teal-300-value: 175, 68%, 14%;

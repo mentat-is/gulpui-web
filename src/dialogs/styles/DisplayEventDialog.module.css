@@ -207,7 +207,7 @@
   font-size: 8px;
   color: currentColor;
   font-family: var(--font-mono);
-  text-shadow: 0 0 1px black;
+  text-shadow: 0 0 1px var(--background-100);
   max-width: 22px;
   white-space: nowrap;
   overflow: hidden;

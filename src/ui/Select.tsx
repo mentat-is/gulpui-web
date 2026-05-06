@@ -119,7 +119,7 @@ export namespace Select {
       // icon can be array of icons, icon depends on len. if len > icon.len use icon.last (in fact its simplier than sounds like)
       return (
         <>
-          <Icon name={(Array.isArray(icon) ? icon[Math.min(selectedValues.length, icon.length) - 1] : icon) || 'Status'} />
+          <Icon name={(Array.isArray(icon) ? icon[Math.min(selectedValues.length, icon.length) - 1] : icon) || 'Status'} color='currentColor' />
           {Text}
         </>
       )
@@ -164,9 +164,9 @@ export namespace Select {
     </SelectPrimitive.Trigger>
   ))
 
-  export const Icon = ({ name, className, ...props }: ImpactiumIcon.Props) => (
+  export const Icon = ({ name, className, color = 'currentColor', ...props }: ImpactiumIcon.Props) => (
     <SelectPrimitive.Icon asChild>
-      <ImpactiumIcon name={name} className={cn(s.icon, className)} {...props} />
+      <ImpactiumIcon name={name} className={cn(s.icon, className)} color={color} {...props} />
     </SelectPrimitive.Icon>
   )
 

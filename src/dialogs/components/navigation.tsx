@@ -62,7 +62,7 @@ export function Navigation({ event }: Navigation.Props) {
       <Button
         onClick={changeEvent(false)}
         icon="ArrowLeft"
-        variant="default"
+        variant="glass"
         rounded
         disabled={currentIndex <= 0}
       />
@@ -85,7 +85,7 @@ export function Navigation({ event }: Navigation.Props) {
       <Button
         onClick={changeEvent(true)}
         icon="ArrowRight"
-        variant="default"
+        variant="glass"
         rounded
         disabled={currentIndex === -1 || currentIndex >= allEvents.length - 1}
       />

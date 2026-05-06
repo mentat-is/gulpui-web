@@ -42,7 +42,7 @@ const badgeVariants = cva(s.badge, {
 export function Badge({ className, mono, variant, size, value, icon, border, disabled, radius: borderRadius = 'var(--round)', ...props }: Badge.Props) {
   return (
     <div className={cn(badgeVariants({ variant, size, className }), border && s.bordered, disabled && s.disabled, mono && s.mono)} style={{ borderRadius }} data-badge {...props}>
-      {icon ? <Icon name={icon} size={convertButtonVariantToIconSize(size)} /> : null}
+      {icon ? <Icon name={icon} size={convertButtonVariantToIconSize(size)} color='currentColor' /> : null}
       {value || props.children}
     </div>
   )

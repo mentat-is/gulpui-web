@@ -1,7 +1,148 @@
 import { MinMax } from "@/class/Info"
 
+interface RgbColor {
+  r: number;
+  g: number;
+  b: number;
+}
+
+function parseHexColor(color: string): RgbColor | null {
+  const hex = color.replace('#', '').trim()
+
+  if (hex.length === 3) {
+    const [r, g, b] = hex.split('')
+    return {
+      r: parseInt(`${r}${r}`, 16),
+      g: parseInt(`${g}${g}`, 16),
+      b: parseInt(`${b}${b}`, 16),
+    }
+  }
+
+  if (hex.length !== 6) {
+    return null
+  }
+
+  return {
+    r: parseInt(hex.slice(0, 2), 16),
+    g: parseInt(hex.slice(2, 4), 16),
+    b: parseInt(hex.slice(4, 6), 16),
+  }
+}
+
+function hueToRgb(p: number, q: number, t: number): number {
+  let next = t
+
+  if (next < 0) next += 1
+  if (next > 1) next -= 1
+  if (next < 1 / 6) return p + (q - p) * 6 * next
+  if (next < 1 / 2) return q
+  if (next < 2 / 3) return p + (q - p) * (2 / 3 - next) * 6
+
+  return p
+}
+
+function hslToRgb(h: number, s: number, l: number): RgbColor {
+  const hue = ((h % 360) + 360) % 360 / 360
+  const saturation = Math.max(0, Math.min(100, s)) / 100
+  const lightness = Math.max(0, Math.min(100, l)) / 100
+
+  if (saturation === 0) {
+    const channel = Math.round(lightness * 255)
+    return { r: channel, g: channel, b: channel }
+  }
+
+  const q = lightness < 0.5
+    ? lightness * (1 + saturation)
+    : lightness + saturation - lightness * saturation
+  const p = 2 * lightness - q
+
+  return {
+    r: Math.round(hueToRgb(p, q, hue + 1 / 3) * 255),
+    g: Math.round(hueToRgb(p, q, hue) * 255),
+    b: Math.round(hueToRgb(p, q, hue - 1 / 3) * 255),
+  }
+}
+
+function parseCssColor(color: string): RgbColor | null {
+  const value = color.trim()
+
+  if (!value) {
+    return null
+  }
+
+  if (value.startsWith('#')) {
+    return parseHexColor(value)
+  }
+
+  const rgbMatch = value.match(/^rgba?\(([^)]+)\)$/i)
+  if (rgbMatch) {
+    const [r, g, b] = rgbMatch[1]
+      .split(',')
+      .slice(0, 3)
+      .map((part) => Number.parseFloat(part.trim()))
+
+    if ([r, g, b].some(Number.isNaN)) {
+      return null
+    }
+
+    return { r, g, b }
+  }
+
+  const hslMatch = value.match(/^hsla?\(([^)]+)\)$/i)
+  if (hslMatch) {
+    const [h, s, l] = hslMatch[1]
+      .split(',')
+      .slice(0, 3)
+      .map((part) => Number.parseFloat(part.trim().replace('%', '')))
+
+    if ([h, s, l].some(Number.isNaN)) {
+      return null
+    }
+
+    return hslToRgb(h, s, l)
+  }
+
+  if (typeof window !== 'undefined' && typeof CSS !== 'undefined' && CSS.supports('color', value)) {
+    const probe = document.createElement('span')
+    probe.style.color = value
+    probe.style.display = 'none'
+    document.body.appendChild(probe)
+
+    const resolved = getComputedStyle(probe).color
+    document.body.removeChild(probe)
+
+    const namedColor = resolved.match(/^rgba?\(([^)]+)\)$/i)
+    if (!namedColor) {
+      return null
+    }
+
+    const [r, g, b] = namedColor[1]
+      .split(',')
+      .slice(0, 3)
+      .map((part) => Number.parseFloat(part.trim()))
+
+    if ([r, g, b].some(Number.isNaN)) {
+      return null
+    }
+
+    return { r, g, b }
+  }
+
+  return null
+}
+
+function relativeLuminance({ r, g, b }: RgbColor): number {
+  const normalize = (channel: number): number => {
+    const value = channel / 255
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+  }
+
+  return 0.2126 * normalize(r) + 0.7152 * normalize(g) + 0.0722 * normalize(b)
+}
+
 export namespace Color {
   export type Type = `#${string}`;
+  export type ThemeMode = 'light' | 'dark';
 
   export const GEIST: number[] = [0xa1a1a1, 0x3399ff, 0xff4d4d, 0xc99900, 0x65b58b, 0x009999, 0xc266ff, 0xff408c]
   export const GEIST_STRINGS: string[] = Object.values(Color.GEIST).map(s => '#' + s.toString(16).padStart(6, '0'));
@@ -49,61 +190,39 @@ export namespace Color {
   }
 
   export class Themer {
-    /** Fallback canvas palettes kept for first paint before CSS variables are readable. */
-    public static readonly THEMES: Record<string, Theme> = {
-      'dark-old': {
+    /** Generic fallback palettes used before CSS variables are readable. */
+    public static readonly MODES: Record<ThemeMode, Theme> = {
+      dark: {
         FONT_ACCENT: '#ededed',
         FONT_SECOND: '#888888',
         BACKGROUND_ACCENT: '#000',
         BACKGROUND_SECOND: '#0e0e0e',
         BORDER: '#303030',
       },
-      'light-old': {
+      light: {
         FONT_ACCENT: '#171717',
         FONT_SECOND: '#303030',
         BACKGROUND_ACCENT: '#fff',
         BACKGROUND_SECOND: '#f0f0f0',
         BORDER: '#dddddd',
       },
-      'dracula': {
-        // Dracula: fg=#f8f8f2, comment=#6272a4, selection=#44475a, bg=#282a36
-        FONT_ACCENT: '#f8f8f2',
-        FONT_SECOND: '#6272a4',
-        BACKGROUND_ACCENT: '#282a36',
-        BACKGROUND_SECOND: '#21222c',
-        BORDER: '#44475a',
-      },
-      'forest': {
-        // Forest: deep green background with minty foreground accents.
-        FONT_ACCENT: '#b8d8c8',
-        FONT_SECOND: '#8fb8a6',
-        BACKGROUND_ACCENT: '#0b1b13',
-        BACKGROUND_SECOND: '#10281d',
-        BORDER: '#2f5a45',
-      },
-      'dark': {
-        // Solarized Dark: base03=#002b36, base02=#073642, base1=#93a1a1, base0=#839496, base01=#586e75
-        FONT_ACCENT: '#93a1a1',
-        FONT_SECOND: '#839496',
-        BACKGROUND_ACCENT: '#002b36',
-        BACKGROUND_SECOND: '#073642',
-        BORDER: '#586e75',
-      },
-      'light': {
-        // Solarized Light: base3=#fdf6e3, base2=#eee8d5, base01=#586e75, base00=#657b83, base1=#93a1a1
-        FONT_ACCENT: '#586e75',
-        FONT_SECOND: '#657b83',
-        BACKGROUND_ACCENT: '#fdf6e3',
-        BACKGROUND_SECOND: '#eee8d5',
-        BORDER: '#93a1a1',
-      },
     };
 
-    private static readonly DEFAULT_THEME_NAME = Object.keys(Themer.THEMES)[0];
-    private static readonly DEFAULT_THEME = Themer.THEMES[Themer.DEFAULT_THEME_NAME];
+    private static readonly DEFAULT_MODE: ThemeMode = 'dark';
+    private static readonly DEFAULT_THEME = Themer.MODES[Themer.DEFAULT_MODE];
 
     public static theme: Theme = Themer.DEFAULT_THEME;
-    public static currentThemeName = Themer.DEFAULT_THEME_NAME;
+    public static currentMode: ThemeMode = Themer.DEFAULT_MODE;
+
+    private static getResolvedTheme(fallbackMode?: ThemeMode): Theme {
+      const nextMode = Themer.getModeFromCssVariables() ?? fallbackMode ?? Themer.getPreferredMode()
+      const cssTheme = Themer.getThemeFromCssVariables()
+
+      Themer.currentMode = nextMode
+      Themer.theme = cssTheme ?? Themer.MODES[nextMode] ?? Themer.DEFAULT_THEME
+
+      return Themer.theme
+    }
 
     private static getThemeFromCssVariables(): Theme | null {
       if (typeof window === 'undefined' || typeof document === 'undefined') {
@@ -130,11 +249,25 @@ export namespace Color {
       }
     }
 
-    private static syncThemeFromCssVariables(fallbackThemeName?: string) {
-      Themer.theme =
-        Themer.getThemeFromCssVariables() ??
-        (fallbackThemeName ? Themer.THEMES[fallbackThemeName] : null) ??
-        Themer.DEFAULT_THEME
+    private static getModeFromCssVariables(): ThemeMode | null {
+      if (typeof window === 'undefined' || typeof document === 'undefined') {
+        return null
+      }
+
+      const mode = getComputedStyle(document.documentElement).getPropertyValue('--theme-mode').trim()
+      return mode === 'light' || mode === 'dark' ? mode : null
+    }
+
+    private static getPreferredMode(): ThemeMode {
+      if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: light)').matches) {
+        return 'light'
+      }
+
+      return Themer.currentMode
+    }
+
+    private static syncThemeFromCssVariables(fallbackMode?: ThemeMode) {
+      Themer.getResolvedTheme(fallbackMode)
     }
 
     public static getTargetGuideColor(): string {
@@ -148,22 +281,64 @@ export namespace Color {
       return '#ff4d4d';
     }
 
-    public static setTheme(theme: string) {
-      Themer.currentThemeName = theme;
+    public static getReadablePaletteTextColor(backgroundColor: string): string {
+      const theme = Themer.getResolvedTheme()
+      const background = parseCssColor(backgroundColor)
+
+      if (!background) {
+        return theme.FONT_ACCENT
+      }
+
+      const paletteCandidates = [
+        theme.FONT_ACCENT,
+        theme.FONT_SECOND,
+        theme.BACKGROUND_ACCENT,
+        theme.BACKGROUND_SECOND,
+      ]
+        .map((color) => ({ color, rgb: parseCssColor(color) }))
+        .filter((entry): entry is { color: string; rgb: RgbColor } => entry.rgb !== null)
+        .sort((left, right) => relativeLuminance(left.rgb) - relativeLuminance(right.rgb))
+
+      if (!paletteCandidates.length) {
+        return theme.FONT_ACCENT
+      }
+
+      return relativeLuminance(background) > 0.55
+        ? paletteCandidates[0].color
+        : paletteCandidates[paletteCandidates.length - 1].color
+    }
+
+    public static setTheme(mode?: ThemeMode) {
+      Themer.currentMode = mode ?? Themer.currentMode
 
       // Read the palette from the active CSS theme so canvas colors always match.
-      Themer.syncThemeFromCssVariables(theme)
+      Themer.syncThemeFromCssVariables(mode)
 
       if (typeof window !== 'undefined') {
         window.requestAnimationFrame(() => {
-          Themer.syncThemeFromCssVariables(theme)
+          Themer.syncThemeFromCssVariables(mode)
         })
       }
     }
 
-    /** @deprecated Use setTheme(name) with named theme keys. Kept for backwards compatibility. */
-    public static getTheme(themeName: string): Theme {
-      return Themer.getThemeFromCssVariables() ?? Themer.THEMES[themeName] ?? Themer.DEFAULT_THEME;
+    /** @deprecated Use the active CSS theme palette or setTheme(mode). */
+    public static getTheme(_: string): Theme {
+      return Themer.getResolvedTheme();
+    }
+
+    /**
+     * Returns a deterministic fractional alpha (0.05..0.15) derived from the
+     * given string's hash.  Used to tint row backgrounds with the theme's
+     * FONT_ACCENT colour, keeping monochrome themes fully monochrome.
+     */
+    public static contextTintAlpha(str: string): number {
+      let hash = 0
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i)
+        hash |= 0
+      }
+      // Map to range 0.05..0.15
+      return 0.05 + ((Math.abs(hash) % 100) / 100) * 0.10
     }
   }
 

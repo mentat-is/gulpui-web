@@ -6,14 +6,64 @@ import { MinMax, Range } from '@/class/Info';
 import { Application } from '@/context/Application.context';
 import { Default } from '@/dto/Dataset';
 import { Algorhithm } from '@/ui/utils';
-import { capitalize, cn } from '@impactium/utils';
-import { Select } from '@/ui/Select';
+import { cn } from '@impactium/utils';
 import { Stack } from '@/ui/Stack';
 import { Badge } from '@/ui/Badge';
 import { Input } from '@/ui/Input';
 import { Button } from '@/ui/Button';
 import { Glyph } from '@/entities/Glyph';
 import { Highlight } from '@/entities/Highlight';
+import { Color } from '@/entities/Color';
+import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color';
+import { Label } from '@/ui/Label';
+
+const HIGHLIGHT_VARIANTS = new Set<string>(Badge.Variants);
+
+function isHighlightVariant(color: string): color is NonNullable<Badge.Variant> {
+  return HIGHLIGHT_VARIANTS.has(color);
+}
+
+function isLiteralCssColor(color: string): boolean {
+  const value = color?.trim();
+
+  return Boolean(
+    value
+    && typeof CSS !== 'undefined'
+    && CSS.supports('color', value),
+  );
+}
+
+function getHighlightColors(color: string) {
+  const fallbackColor = 'var(--gray-700)';
+
+  if (isHighlightVariant(color) && !isLiteralCssColor(color)) {
+    return {
+      badgeVariant: color,
+      badgeStyle: undefined,
+      borderColor: `var(--${color}-800)`,
+      fillColor: `color-mix(in srgb, var(--${color}-800) 16%, transparent)`,
+      labelBackground: `var(--${color}-700)`,
+      labelTextColor: 'var(--accent)',
+      fadeColor: `color-mix(in srgb, var(--${color}-700) 68%, transparent)`,
+    };
+  }
+
+  const resolvedColor = color?.trim() || fallbackColor;
+  const readableTextColor = Color.Themer.getReadablePaletteTextColor(resolvedColor);
+
+  return {
+    badgeVariant: undefined,
+    badgeStyle: {
+      backgroundColor: resolvedColor,
+      color: readableTextColor,
+    },
+    borderColor: resolvedColor,
+    fillColor: `color-mix(in srgb, ${resolvedColor} 16%, transparent)`,
+    labelBackground: resolvedColor,
+    labelTextColor: readableTextColor,
+    fadeColor: `color-mix(in srgb, ${resolvedColor} 68%, transparent)`,
+  };
+}
 
 export namespace Highlights {
   export namespace Create {
@@ -28,7 +78,7 @@ export namespace Highlights {
       const { x: scrollX, y: scrollY } = useScroll();
       const [icon, setIcon] = useState<Glyph.Id | null>(Glyph.List.keys().next().value!);
       const [name, setName] = useState<string>('');
-      const [color, setColor] = useState<NonNullable<Badge.Variant>>('blue');
+      const [color, setColor] = useState<string>('#ffa647');
       const [range, setSelection] = useState<[number, number] | null>(null);
       const [isSelected, setIsSelected] = useState<boolean>(false);
       const overlay = useRef<HTMLDivElement>(null);
@@ -75,22 +125,13 @@ export namespace Highlights {
             <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
               <Input className={s.name} variant='highlighted' icon={Glyph.List.get(icon!) ?? Default.Icon.HIGHLIGHT} placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
               <Glyph.Chooser rootClassName={s.icon} asButton icon={icon} setIcon={setIcon} />
-              <Select.Root onValueChange={color => setColor(color as NonNullable<Badge.Variant>)}>
-                <Select.Trigger value={color} className={s.select}>
-                  <Icon name='Status' />
-                  <p>{capitalize(color)}</p>
-                </Select.Trigger>
-                <Select.Content>
-                  {['blue', 'gray', 'green', 'pink', 'purple', 'red', 'teal'].map(color => {
-                    return (
-                      <Select.Item key={color} value={color} style={{ color: `var(--${color}-700)`, background: `var(--${color}-200)` }}>
-                        <Icon name='Status' />
-                        <p>{capitalize(color)}</p>
-                      </Select.Item>
-                    )
-                  })}
-                </Select.Content>
-              </Select.Root>
+              <Stack dir='column' gap={6} ai='flex-start' data-input>
+                <Label value='Pick a color' />
+                <ColorPicker color={color} setColor={setColor}>
+                  <ColorPickerTrigger className={s.select} />
+                  <ColorPickerPopover />
+                </ColorPicker>
+              </Stack>
               <Button variant='glass' disabled={!name} icon='Check' onMouseDown={submit}>Create</Button>
               <Button className={s.x} variant='secondary' icon='X' onMouseDown={unselect} />
             </Stack>
@@ -211,6 +252,7 @@ export namespace Highlights {
   export function Component({ highlight, fixed, layoutWidth, frame = {}, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
     const { Info, app } = Application.use();
     const { x: scrollX } = useScroll();
+    const highlightColors = useMemo(() => getHighlightColors(highlight.color), [highlight.color]);
 
     if (layoutWidth) {
       native = true;
@@ -236,9 +278,31 @@ export namespace Highlights {
     }, [range]);
 
     return (
-      <Stack pos='absolute' className={cn(className, s.highlight)} style={{ ...style, left, width, '--variant': `var(--${highlight.color}-800)`, '--index': index, background: native ? `hsla(var(--${highlight.color}-800-value), 0.16)` : 'transparent' }} jc='flex-end' ai='flex-start' {...props}>
-        <Stack style={{ background: `var(--${highlight.color}-700)` }}>
-          <Badge className={s.title} data-type='badge' variant={highlight.color as Badge.Variant} value={highlight.name || 'Highlight'} icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT} />
+      <Stack
+        pos='absolute'
+        className={cn(className, s.highlight)}
+        style={{
+          ...style,
+          left,
+          width,
+          '--variant': highlightColors.borderColor,
+          '--index': index,
+          '--highlight-fade': highlightColors.fadeColor,
+          background: native ? highlightColors.fillColor : 'transparent',
+        } as React.CSSProperties}
+        jc='flex-end'
+        ai='flex-start'
+        {...props}
+      >
+        <Stack style={{ background: highlightColors.labelBackground, color: highlightColors.labelTextColor }}>
+          <Badge
+            className={s.title}
+            data-type='badge'
+            variant={highlightColors.badgeVariant}
+            style={highlightColors.badgeStyle}
+            value={highlight.name || 'Highlight'}
+            icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT}
+          />
           <Button tabIndex={-1} size='sm' variant='glass' className={s.deleteButton} icon='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />
         </Stack>
       </Stack>

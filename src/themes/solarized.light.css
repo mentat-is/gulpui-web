@@ -1,5 +1,6 @@
 /* Solarized Light */
 :root[data-theme="solarized-light"] {
+    --theme-mode: light;
     --gray-100-value: 44, 87%, 97%;
     --gray-200-value: 44, 72%, 94%;
     --gray-300-value: 44, 49%, 88%;
@@ -38,18 +39,18 @@
     --amber-600-value: 44, 90%, 52%;
     --amber-700-value: 45, 100%, 35%;
     --amber-800-value: 45, 90%, 29%;
-    --amber-900-value: 18, 78%, 35%;
-    --amber-1000-value: 20, 68%, 16%;
-    --green-100-value: 68, 90%, 97%;
-    --green-200-value: 68, 85%, 95%;
-    --green-300-value: 68, 80%, 90%;
-    --green-400-value: 68, 75%, 82%;
-    --green-500-value: 68, 70%, 68%;
-    --green-600-value: 68, 88%, 46%;
-    --green-700-value: 68, 100%, 34%;
-    --green-800-value: 68, 100%, 27%;
-    --green-900-value: 68, 88%, 22%;
-    --green-1000-value: 68, 60%, 12%;
+    --amber-900-value: 35, 82%, 35%;
+    --amber-1000-value: 33, 72%, 16%;
+    --green-100-value: 145, 68%, 97%;
+    --green-200-value: 145, 64%, 95%;
+    --green-300-value: 145, 60%, 90%;
+    --green-400-value: 145, 56%, 82%;
+    --green-500-value: 145, 52%, 68%;
+    --green-600-value: 145, 60%, 46%;
+    --green-700-value: 145, 68%, 34%;
+    --green-800-value: 145, 70%, 27%;
+    --green-900-value: 145, 62%, 22%;
+    --green-1000-value: 145, 46%, 12%;
     --teal-100-value: 175, 85%, 96%;
     --teal-200-value: 175, 78%, 93%;
     --teal-300-value: 175, 72%, 88%;

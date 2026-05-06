@@ -1,6 +1,5 @@
 import { MinMax } from "@/class/Info";
 import { Info } from "./Info";
-import { stringToHexColor } from "@/ui/utils";
 import { format } from "date-fns";
 import { RulerDrawer } from "./Ruler.drawer";
 import { DefaultEngine } from "../engines/Default.engine";
@@ -195,7 +194,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	}
 
 	public lines = (file: Source.Type, y?: number) => {
-		const color = stringToHexColor(file.context_id);
+		// Derive a deterministic per-row tint from the context_id hash, but constrained
+		// to the current theme accent colour so monochrome themes stay monochrome.
+		const tintAlpha = Color.Themer.contextTintAlpha(file.context_id);
 		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
 		// fill() paints fillRect(0, y-24, width, 48) which extends to y+24 — the exact
@@ -203,7 +204,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		// is not overwritten. Use reduced opacity so the line is lighter than the
 		// fully-opaque text labels drawn afterwards by draw_info/locals.
 		this.fill(
-			color,
+			Color.Themer.theme.FONT_ACCENT,
+			tintAlpha,
 			y,
 			!this.shifted.find((shiftedSource) => shiftedSource.id === file.id),
 		);
@@ -227,9 +229,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		this.ctx.globalAlpha = savedAlpha;
 	};
 
-	public fill = (color: string, y: number, isShifted: boolean) => {
-		this.ctx.fillStyle = color + (isShifted ? 12 : 32);
+	public fill = (color: string, alpha: number, y: number, isShifted: boolean) => {
+		const base = isShifted ? alpha * 0.4 : alpha * 0.9;
+		this.ctx.globalAlpha = Math.min(base, 0.18);
+		this.ctx.fillStyle = color;
 		this.ctx.fillRect(0, y - 24, window.innerWidth, 48);
+		this.ctx.globalAlpha = 1;
 	};
 
 	/* LINK MANAGEMENT */
@@ -296,7 +301,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			this.ctx.shadowColor = color;
 			this.ctx.shadowBlur = 12;
 			this.ctx.lineWidth = 2;
-			this.ctx.strokeStyle = "#FFFFFF";
+			this.ctx.strokeStyle = Color.Themer.theme.FONT_ACCENT;
 		}
 
 		this.drawRect(
@@ -438,7 +443,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			if (x < -10 || x > canvasWidth + 10) continue;
 			const dy = y - 24 - this.scrollY;
 
-			this.ctx.fillStyle = "#00FF00";
+			this.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT;
 			this.ctx.fillRect(x - 1, dy - 2, 1, 51);
 			this.ctx.fillRect(x, dy - 4, 1, 55);
 			this.ctx.fillRect(x + 1, dy - 2, 1, 51);
@@ -704,18 +709,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 					.offset || 0),
 			);
 			const y = index * 48 + 20 - this.scrollY || 0;
-			const color =
-				link.color ||
-				stringToHexColor(
-					linkedDocIds
-						.map((id) =>
-							Source.Entity.id(
-								this.info.app,
-								Doc.Entity.id(this.info.app, id)["gulp.source_id"],
-							),
-						)
-						.toString(),
-				);
+			const color = link.color || Color.Themer.theme.FONT_ACCENT;
 
 			dots.push({
 				x,
@@ -767,7 +761,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			right,
 			line.two,
 		);
-		this.ctx.fillStyle = "#0372ef";
+		this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND;
 		this.ctx.fillText(events, right, line.three);
 
 		this.ctx.textAlign = "right";
@@ -779,7 +773,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			left,
 			line.two,
 		);
-		this.ctx.fillStyle = "#0372ef";
+		this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND;
 		this.ctx.fillText(events, left, line.three);
 
 		if (this.info.app.general.loadings.byFileId.has(file.id)) {

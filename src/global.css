@@ -26,11 +26,11 @@ iframe#webpack-dev-server-client-overlay {
   --accent: var(--gray-1000);
   --second: var(--gray-900);
 
-  --geist-border: 1px solid hsla(0, 0%, 100%, .07);
+  --geist-border: 1px solid var(--gray-alpha-400);
   --shadow-border: 0 0 0 1px var(--gray-alpha-400);
-  --ring: 0 0 0 1px var(--accent), 0 0 0 4px hsla(0, 0%, 100%, .24);
+  --ring: 0 0 0 1px var(--accent), 0 0 0 4px var(--gray-alpha-500);
 
-  --focus-border: 0 0 0 1px var(--gray-alpha-600), 0px 0px 0px 4px hsla(0, 0%, 100%, .24);
+  --focus-border: 0 0 0 1px var(--gray-alpha-600), 0px 0px 0px 4px var(--gray-alpha-500);
   --focus-color: var(--blue-900);
   --shadow-border-inset: inset 0 0 0 1px var(--gray-alpha-400);
   --gray-100: hsla(var(--gray-100-value), 1);
@@ -123,7 +123,7 @@ iframe#webpack-dev-server-client-overlay {
   --filter-to-white: brightness(100);
   --filter-to-e8e8e8: brightness(0.58);
 
-  --ring: 0 0 0 1px var(--accent), 0 0 0 2px hsla(0, 0%, 100%, .24);
+  --ring: 0 0 0 1px var(--accent), 0 0 0 2px var(--gray-alpha-500);
 }
 
 *::-webkit-scrollbar {
@@ -157,7 +157,7 @@ img {
   box-sizing: border-box;
   border: none;
   scrollbar-width: 0px;
-  scrollbar-color: var(--background-100);
+  scrollbar-color: var(--second) var(--background-100);
   scroll-behavior: smooth;
   background: none;
   outline: none;
@@ -339,7 +339,7 @@ header {
 }
 
 *::-webkit-scrollbar-track {
-  background-color: transparent;
+  background-color: var(--background-100);
   border-radius: 4px;
 }
 
@@ -349,12 +349,12 @@ body::-webkit-scrollbar-track {
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: var(--gray-1000);
+  background-color: var(--second);
   border-radius: 4px;
 }
 
 *::-webkit-scrollbar-corner {
-  background-color: transparent;
+  background-color: var(--background-100);
 }
 
 
@@ -364,14 +364,14 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 
 */
 .hljs {
-  background: white;
-  color: black;
+  background: var(--background-100);
+  color: var(--accent);
 }
 
 .hljs-comment,
 .hljs-quote,
 .hljs-variable {
-  color: #008000;
+  color: var(--green-800);
 }
 
 .hljs-keyword,
@@ -379,7 +379,7 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 .hljs-built_in,
 .hljs-name,
 .hljs-tag {
-  color: #00f;
+  color: var(--blue-800);
 }
 
 .hljs-string,
@@ -391,28 +391,28 @@ Visual Studio-like style based on original C# coloring by Jason Diamond <jason@d
 .hljs-template-variable,
 .hljs-type,
 .hljs-addition {
-  color: #a31515;
+  color: var(--amber-800);
 }
 
 .hljs-deletion,
 .hljs-selector-attr,
 .hljs-selector-pseudo,
 .hljs-meta {
-  color: #2b91af;
+  color: var(--teal-800);
 }
 
 .hljs-doctag {
-  color: #808080;
+  color: var(--gray-800);
 }
 
 .hljs-attr {
-  color: #f00;
+  color: var(--red-800);
 }
 
 .hljs-symbol,
 .hljs-bullet,
 .hljs-link {
-  color: #00b0e8;
+  color: var(--purple-800);
 }
 
 .hljs-emphasis {

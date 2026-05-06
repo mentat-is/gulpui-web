@@ -1,6 +1,6 @@
 .label {
   cursor: text;
   font-size: 13px;
-  color: var(--gray-900);
+  color: var(--second);
   max-width: 100%;
 }

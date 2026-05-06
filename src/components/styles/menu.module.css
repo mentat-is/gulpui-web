@@ -23,5 +23,5 @@
 .scroll {
   overflow: visible auto;
   scrollbar-width: 0px;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: var(--second) var(--background-100);
 }

@@ -14,7 +14,7 @@
   border-radius: 6px;
   height: 100%;
   padding: 0px 8px;
-  color: var(--gray-800);
+  color: var(--second);
   cursor: pointer;
   transition: all 0.25s var(--transition);
 }
@@ -30,9 +30,10 @@
 
 .trigger[data-state="active"] {
   background: var(--geist-background);
-  color: var(--gray-1000);
+  color: var(--accent);
   border: var(--geist-border);
 }
+
 .list {
   display: inline-flex;
   flex-shrink: 0;
@@ -43,5 +44,5 @@
   background: var(--background-100);
   position: relative;
   box-shadow: inset 0px 0px 0px 1px var(--gray-400);
-  color: var(--gray-900);
+  color: var(--second);
 }

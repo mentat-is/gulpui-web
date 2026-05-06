@@ -1,5 +1,6 @@
 /* Dracula */
 :root[data-theme="dracula-dark"] {
+    --theme-mode: dark;
     --gray-100-value: 231, 15%, 11%;
     --gray-200-value: 231, 15%, 14%;
     --gray-300-value: 231, 15%, 18%;
@@ -38,8 +39,8 @@
     --amber-600-value: 31, 100%, 55%;
     --amber-700-value: 31, 100%, 71%;
     --amber-800-value: 31, 95%, 58%;
-    --amber-900-value: 65, 92%, 76%;
-    --amber-1000-value: 55, 88%, 93%;
+    --amber-900-value: 31, 100%, 78%;
+    --amber-1000-value: 35, 92%, 94%;
     --green-100-value: 135, 40%, 9%;
     --green-200-value: 135, 55%, 12%;
     --green-300-value: 135, 65%, 15%;

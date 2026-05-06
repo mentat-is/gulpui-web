@@ -898,7 +898,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 								zIndex: 9999,
 								maxWidth: 400,
 								wordBreak: "break-all",
-								boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+								boxShadow: "var(--shadow-border), 0 8px 20px var(--gray-alpha-500)",
 							}}
 						>
 							{treeTooltip.path}
@@ -1006,7 +1006,7 @@ export namespace EventIndicator {
 const getReadableIndicatorTextColor = (hexColor: string): string => {
 	const hex = hexColor.replace("#", "");
 	if (hex.length !== 6) {
-		return "var(--accent)";
+		return Color.Themer.getTheme("").FONT_ACCENT;
 	}
 
 	const r = parseInt(hex.slice(0, 2), 16);
@@ -1014,11 +1014,10 @@ const getReadableIndicatorTextColor = (hexColor: string): string => {
 	const b = parseInt(hex.slice(4, 6), 16);
 
 	if ([r, g, b].some(Number.isNaN)) {
-		return "var(--accent)";
+		return Color.Themer.getTheme("").FONT_ACCENT;
 	}
 
-	const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-	return luminance > 0.55 ? "#111827" : "#f8f8f2";
+	return Color.Themer.getReadablePaletteTextColor(hexColor);
 };
 
 /**

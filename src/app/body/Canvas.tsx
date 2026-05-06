@@ -198,7 +198,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 			render.links();
 		}
 
-		ctx.fillStyle = "#ff000080";
+		ctx.fillStyle = Color.Themer.theme.BORDER;
 		ctx.fillRect(
 			getPixelPosition(app.timeline.frame.min || app.timeline.frame?.min) - 2,
 			0,
@@ -232,7 +232,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 			overlay_ref.current.height,
 		);
 
-		overlayCtx.fillStyle = "#ffffff24";
+		overlayCtx.fillStyle = Color.Themer.theme.BORDER;
 		const start = Math.round(resize.start);
 		const end = Math.round(resize.end);
 

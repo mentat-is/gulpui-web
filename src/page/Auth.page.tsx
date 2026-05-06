@@ -187,6 +187,7 @@ export namespace Auth {
             onClick={customLoginConstructor(method.login.url)}
             loading={customLoading === method.login.url}
             style={{ flex: 1 }}
+            variant='glass'
             icon={icon}
           >
             Login with {capitalize(name)}
@@ -426,6 +427,7 @@ export namespace Auth {
             onClick={customLoginConstructor(method.login.url)}
             loading={customLoading === method.login.url}
             style={{ flex: 1 }}
+            variant='glass'
             icon={icon}
           >
             Login with {capitalize(name)}

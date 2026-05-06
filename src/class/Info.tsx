@@ -2066,7 +2066,7 @@ export class Info implements InfoProps {
 				doc: Doc.Entity.toDoc(this.app, event),
 			},
 		}).then((note) => {
-				this.AddNoteToDataStore(note);
+			this.AddNoteToDataStore(note);
 		});
 
 	// ⚠️ UNTOUCHABLE
@@ -2263,13 +2263,13 @@ export class Info implements InfoProps {
 		icon: glyph_id = Glyph.List.entries().find(
 			(e) => e[1] === Default.Icon.HIGHLIGHT,
 		)![0]!,
-		color = Default.Color.HIGHLIGHT as NonNullable<Badge.Variant>,
+		color = Default.Color.HIGHLIGHT,
 		tags = [],
 	}: {
 		time_range: Range;
 		name: string;
 		icon: Glyph.Id | null;
-		color: Badge.Variant;
+		color: string;
 		tags?: string[];
 	}) => {
 		const operation = Operation.Entity.selected(this.app);

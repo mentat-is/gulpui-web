@@ -28,6 +28,7 @@ export namespace Link {
 		description: string;
 		operation_id: Operation.Id;
 		tags: string[];
+		color: string;
 		doc_id_from: Doc.Id;
 		doc_ids: Doc.Id[];
 		glyph_id: Glyph.Id;

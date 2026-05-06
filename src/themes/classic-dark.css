@@ -1,4 +1,5 @@
 :root[data-theme="classic-dark"] {
+    --theme-mode: dark;
     --gray-100-value: 0, 0%, 10%;
     --gray-200-value: 0, 0%, 12%;
     --gray-300-value: 0, 0%, 16%;
