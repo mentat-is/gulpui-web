@@ -651,13 +651,13 @@ export function DisplayEventDialog({
 			enabled: true,
 		}));
 
-		Info.setQuery(file, {
+		const updatedQuery = {
 			...Info.getQuery(file),
 			filters: [...filters, ...newFilters],
-		});
+		};
 
 		toast(`Added ${newFilters.length} new filters`);
-		spawnBanner(<FilterFileBanner sources={[file]} />);
+		spawnBanner(<FilterFileBanner sources={[file]} query={updatedQuery} />);
 	}, [Info, app, event, spawnBanner]);
 
 	// --- UI COMPONENTS: Sub-renders ---
