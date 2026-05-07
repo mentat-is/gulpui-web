@@ -32,6 +32,7 @@ export namespace NotePoint {
 	export namespace Combination {
 		export interface Props extends Omit<Stack.Props, "onClick"> {
 			note: Note.Type;
+			onTargetClick?: (note: Note.Type) => void;
 		}
 	}
 
@@ -102,19 +103,11 @@ export namespace NotePoint {
 		className,
 		style,
 		note,
+		onTargetClick,
 		...props
 	}: Combination.Props) {
-		const { app, spawnDialog, spawnBanner, Info } = Application.use();
+		const { app, Info } = Application.use();
 
-		const targetNoteButtonHandler = (note: Note.Type) => {
-			const event = Doc.Entity.id(app, note.doc._id);
-
-			if (!event) {
-				return spawnBanner(<FetchEventBanner note={note} />);
-			}
-
-			spawnDialog(<DisplayEventDialog event={event} />);
-		};
 
 		return (
 			<Stack
@@ -165,7 +158,7 @@ export namespace NotePoint {
 
 				<Button
 					icon="MagnifyingGlassSmall"
-					onClick={() => targetNoteButtonHandler(note)}
+					onClick={() => onTargetClick?.(note)}
 					variant="glass"
 				/>
 				<Button

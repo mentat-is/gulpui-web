@@ -120,6 +120,15 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     setSelectedNoteIds(new Set());
   };
 
+  const targetNoteButtonHandler = useCallback((note: Note.Type) => {
+    const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+    bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
+      docId: note.doc._id,
+      operationId: note.operation_id,
+    })
+    bridge.destroy()
+  }, []);
+
   const virtualizer = useVirtualizer({
     count: sortedNotes.length,
     getScrollElement: () => parentRef.current,
@@ -220,7 +229,11 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
                     onCheckedChange={() => toggleNoteSelection(note.id)}
                   />
 
-                  <NotePoint.Combination note={note} style={{ flex: 1 }} />
+                  <NotePoint.Combination 
+                    note={note} 
+                    style={{ flex: 1 }} 
+                    onTargetClick={targetNoteButtonHandler}
+                  />
                 </Stack>
               </div>
             </TooltipProvider>  

@@ -10,6 +10,8 @@
  */
 import type { Note } from '@/entities/Note'
 import type { App } from '@/entities/App'
+import type { Doc } from '@/entities/Doc'
+import type { Operation } from '@/entities/Operation'
 
 const CHANNEL_NAME = 'gulp-window-bridge'
 
@@ -32,6 +34,8 @@ export namespace WindowBridge {
     BANNER_ACTION = 'BANNER_ACTION',
     /** Main → Detached: Select specific source in table view */
     TABLE_SELECT_SOURCE = 'TABLE_SELECT_SOURCE',
+    /** Detached → Main: User clicked "target note" button — open event dialog in main tab */
+    TARGET_NOTE = 'TARGET_NOTE',
   }
 
   export interface ThemeChangePayload {
@@ -47,8 +51,8 @@ export namespace WindowBridge {
   }
 
   export interface FlagsChangedPayload {
-    docId: string
-    operationId: string
+    docId: Doc.Id
+    operationId: Operation.Id
   }
 
   export interface RenderRequestPayload {
@@ -67,6 +71,13 @@ export namespace WindowBridge {
     sourceId: string
   }
 
+  export interface TargetNotePayload {
+    /** The document ID associated with the note */
+    docId: Doc.Id
+    /** The operation ID associated with the note */
+    operationId: Operation.Id
+  }
+
   export type MessagePayload = {
     [MessageType.THEME_CHANGE]: ThemeChangePayload
     [MessageType.NOTES_CHANGED]: NotesChangedPayload
@@ -75,6 +86,7 @@ export namespace WindowBridge {
     [MessageType.APP_SNAPSHOT]: AppSnapshotPayload
     [MessageType.BANNER_ACTION]: BannerActionPayload
     [MessageType.TABLE_SELECT_SOURCE]: TableSelectSourcePayload
+    [MessageType.TARGET_NOTE]: TargetNotePayload
   }
 
   export interface Message<T extends MessageType = MessageType> {

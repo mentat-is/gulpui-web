@@ -29,7 +29,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 	}
 
 	render(file: Source.Type, y: number, force?: boolean) {
-		console.log(`render: ${file.name}`);
+		//console.log(`render: ${file.name}`);
 		//console.trace()
 		const events = Source.Entity.events(this.renderer.info.app, file);
 		if (!events || events.length === 0) return;

@@ -2,7 +2,7 @@ import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
 import { useScroll, scrollStore } from '@/store/scroll.store'
-import { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import ReactDOM from 'react-dom/client'
 import { NotesWindow } from '@/components/NotesWindow'
@@ -17,6 +17,8 @@ import { Button } from '@/ui/Button'
 import { Input } from '@/ui/Input'
 import { Context } from '@/entities/Context'
 import { Note } from '@/entities/Note'
+import { Doc } from '@/entities/Doc'
+import { Operation } from '@/entities/Operation'
 import { App } from '@/entities/App'
 import { useTheme } from 'next-themes'
 import { AIAssistant } from '@/banners/AIAssistant.banner'
@@ -28,6 +30,26 @@ import { WindowBridge } from '@/lib/WindowBridge'
 import { DetachedAppProvider } from '@/context/DetachedApp.provider'
 import { DataStore } from '@/store/DataStore'
 import { RenderEngine } from '@/class/RenderEngine'
+import { NotePoint } from '@/ui/Note'
+
+/**
+ * FetchEventBannerMain — fetches a note-linked event from the server and opens its dialog
+ * in the main tab. Triggered when the detached NotesWindow sends TARGET_NOTE for an event
+ * that is not currently loaded in the main tab's timeline.
+ *
+ * @param docId - The document ID of the event to fetch.
+ * @param operationId - The operation ID under which the event was ingested.
+ */
+function FetchEventBannerMain({ docId, operationId }: { docId: Doc.Id; operationId: Operation.Id }) {
+  // Construct a minimal Note.Type shell so we can reuse the existing FetchEventBanner component.
+  const shell = {
+    doc: { _id: docId },
+    operation_id: operationId,
+    name: docId,
+  } as unknown as Note.Type
+
+  return <NotePoint.FetchEventBanner note={shell} />
+}
 
 export namespace Navigator {
   export interface Props extends Stack.Props {
@@ -36,13 +58,14 @@ export namespace Navigator {
   }
 }
 
+
 export function Navigator({
   timeline,
   className,
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, setHighlightsOverlay } = Application.use()
+  const { Info, app, spawnDialog, spawnBanner, setHighlightsOverlay } = Application.use()
   const { x: scrollX } = useScroll()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
@@ -124,10 +147,17 @@ export function Navigator({
   const initialOperationRef = useRef<string | null | undefined>(undefined)
 
   /**
-   * Main-tab BroadcastChannel bridge.
-   * Receives mutations from detached windows (note deletions, flag changes)
-   * and applies them to the main tab's state.
+   * Stable refs for spawnDialog, spawnBanner, and app used inside the BroadcastChannel callback.
+   * The callback is registered once (deps: []) and must not capture stale closures.
+   * Using refs ensures it always calls the latest version of these functions/values.
    */
+  const appRef = useRef<App.Type>(app)
+  appRef.current = app
+  const spawnDialogRef = useRef<(node: ReactNode) => void>(spawnDialog)
+  spawnDialogRef.current = spawnDialog
+  const spawnBannerRef = useRef<(node: ReactNode) => void>(spawnBanner)
+  spawnBannerRef.current = spawnBanner
+
   const mainBridgeIdRef = useRef(WindowBridge.generateId())
   const mainBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null)
 
@@ -168,6 +198,19 @@ export function Navigator({
           const payload = message.payload as WindowBridge.BannerActionPayload
           if (payload.action === 'destroy') {
             // No-op for main tab banner system
+          }
+          break
+        }
+        case WindowBridge.MessageType.TARGET_NOTE: {
+          // Detached NotesWindow requested to open an event dialog in the main tab.
+          // We resolve the event from the main tab's app state at call time via appRef.
+          const { docId, operationId } = message.payload as WindowBridge.TargetNotePayload
+          const event = Doc.Entity.id(appRef.current, docId)
+          if (event) {
+            spawnDialogRef.current(<DisplayEventDialog event={event} />)
+          } else {
+            // Event not loaded in main tab — fetch it from the server
+            spawnBannerRef.current(<FetchEventBannerMain docId={docId} operationId={operationId} />)
           }
           break
         }
