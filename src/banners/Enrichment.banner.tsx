@@ -22,6 +22,8 @@ import { Stack } from '@/ui/Stack'
 import { Doc } from '@/entities/Doc'
 import { Source } from '@/entities/Source'
 import { Internal } from '@/entities/addon/Internal'
+import { toast } from 'sonner'
+
 
 // --- CONSTANTS ---
 
@@ -221,6 +223,7 @@ export namespace Enrichment {
     // Load and filter enrichment plugins
     useEffect(() => {
       Info.plugin_list().then((allPlugins) => {
+        if (!allPlugins) return
         const enrichmentPlugins = allPlugins.filter((p) => p.type.includes('enrichment'))
         setAllEnrichmentPlugins(enrichmentPlugins)
 
@@ -339,11 +342,22 @@ export namespace Enrichment {
       try {
         if (event) {
           const enriched = await Info.enrich_single_id(plugin.filename, event, customParameters, formattedFields)
-          if (enriched && onEnrichment) onEnrichment(enriched)
+          if (enriched) {
+            if (onEnrichment) onEnrichment(enriched)
+            destroyBanner()
+          } else {
+            toast.error('Enrichment failed', {
+              description: 'The API returned an error while enriching the document.'
+            })
+          }
         } else {
           await Info.enrichment(plugin.filename, file, frame, customParameters, isShowOnlyEnriched, formattedFields)
+          destroyBanner()
         }
-        destroyBanner()
+      } catch (error) {
+        toast.error('Enrichment error', {
+          description: error instanceof Error ? error.message : 'An unexpected error occurred'
+        })
       } finally {
         setLoading(false)
       }
