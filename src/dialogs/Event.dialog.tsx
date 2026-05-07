@@ -9,7 +9,7 @@ import {
 	useRef,
 } from "react";
 import s from "./styles/DisplayEventDialog.module.css";
-import { copy, download, generateUUID, Refractor } from "@/ui/utils";
+import { copy, download, generateUUID, Refractor, isPlainObject, sortObjectKeysRecursively as sortTreeValueRecursively, parseLineToKeyValue as parseToKeyValue } from "@/ui/utils";
 import { Stack } from "@/ui/Stack";
 import { Button } from "@/ui/Button";
 import { Skeleton } from "@/ui/Skeleton";
@@ -63,6 +63,11 @@ const prepareEventJson = (obj: Record<string, any>): Record<string, string> => {
 	};
 };
 
+/**
+ * Flattens a nested object into an array of key-value pairs suitable for table display.
+ * @param value The value to flatten
+ * @param parentKey The current accumulated key path
+ */
 const flattenTableEntries = (
 	value: unknown,
 	parentKey = "",
@@ -90,35 +95,13 @@ const flattenTableEntries = (
 	}];
 };
 
-const isPlainObject = (value: unknown): value is Record<string, unknown> =>
-	Object.prototype.toString.call(value) === "[object Object]";
-
-const sortTreeValueRecursively = (value: unknown): unknown => {
-	if (Array.isArray(value)) {
-		return value.map((item) => sortTreeValueRecursively(item));
-	}
-
-	if (!isPlainObject(value)) {
-		return value;
-	}
-
-	const entries = Object.entries(value)
-		.sort(([leftKey, leftValue], [rightKey, rightValue]) => {
-			const leftIsObject = isPlainObject(leftValue);
-			const rightIsObject = isPlainObject(rightValue);
-			if (leftIsObject !== rightIsObject) {
-				return leftIsObject ? 1 : -1;
-			}
-			return leftKey.localeCompare(rightKey);
-		})
-		.map(([key, nestedValue]) => [key, sortTreeValueRecursively(nestedValue)] as const);
-
-	return Object.fromEntries(entries);
-};
-
 /**
- * Walks the react-json-view-lite DOM from a hovered/clicked label element up to
- * the container root and returns the full dot-separated key path.
+ * Reconstructs the full dot-notated key path from a Tree label element.
+ * @param labelEl The label element to start from
+ * @param labelClass CSS class for labels
+ * @param clickableLabelClass CSS class for clickable labels
+ * @param nodeClass CSS class for nodes
+ * @param basicClass CSS class for basic containers
  */
 const getTreeKeyPath = (
 	labelEl: Element,
@@ -127,15 +110,16 @@ const getTreeKeyPath = (
 	nodeClass: string,
 	basicClass: string,
 ): string => {
-	const clean = (el: Element) =>
-		(el.textContent ?? "").trim().replace(/^["'\s]+|["':\s,]+$/g, "");
+	const clean = (el: Element) => (el.textContent || "").trim().replace(/^"+|"+$/g, "");
 	const parts: string[] = [clean(labelEl)];
+
 	let nodeEl: Element | null = labelEl.closest(`.${nodeClass}`);
 	while (nodeEl) {
 		const parentContainer = nodeEl.parentElement;
 		if (!parentContainer?.classList.contains(basicClass)) break;
 		const parentNode = parentContainer.parentElement;
 		if (!parentNode?.classList.contains(nodeClass)) break;
+
 		const parentLabel = Array.from(parentNode.children).find(
 			(c) => c.classList.contains(labelClass) || c.classList.contains(clickableLabelClass),
 		);
@@ -146,50 +130,58 @@ const getTreeKeyPath = (
 	return parts.join(".");
 };
 
-type OperationType = "ENRICH" | "FILTER";
-
 /**
- * Parses a raw string (e.g., from selection) into a key-value record.
- * @param raw Input string
- * @param operation The type of operation ("ENRICH" or "FILTER")
- * @param isManualSelection Whether the selection was manually made by the user
- * @returns parsed record
+ * Resolves a dot-separated path within a JSON object.
+ * Handles both flat maps and nested structures.
+ * @param json Source data object
+ * @param path Dot-separated path to resolve
  */
-const parseToKeyValue = (
-	raw: string,
-	operation: OperationType,
-	isManualSelection: boolean
-): Record<string, string> => {
-	const result: Record<string, string> = {};
-	for (const line of raw.split("\n")) {
-		const cleaned = line.trim();
-		if (cleaned.length === 0) continue;
-
-		if (operation === "ENRICH" && isManualSelection) {
-			result[`enrich_${cleaned}`] = cleaned;
-			continue;
-		}
-
-		const index = line.indexOf(":");
-		if (index === -1) {
-			if (operation === "FILTER") continue;
-			result[`key_${cleaned}`] = cleaned;
-			continue;
-		}
-
-		const key = line
-			.slice(0, index)
-			.trim()
-			.replace(/^"+|"+$/g, "");
-		const value =
-			line
-				.slice(index + 1)
-				.trim()
-				.replace(/^"+|"+$/g, "")
-				.replace(/[,"]+$/, "") || "*";
-		result[key] = value;
+const getValueByPath = (json: Record<string, unknown>, path: string): unknown => {
+	if (Object.prototype.hasOwnProperty.call(json, path)) {
+		return json[path];
 	}
-	return result;
+
+	const prefix = path + ".";
+	const nestedEntries = Object.entries(json).filter(([k]) => k.startsWith(prefix));
+
+	if (nestedEntries.length > 0) {
+		const nested: Record<string, any> = {};
+		nestedEntries.forEach(([k, v]) => {
+			const suffix = k.slice(prefix.length);
+			suffix.split(".").reduce(
+				(acc: Record<string, any>, part, index, parts) =>
+					acc[part] || (acc[part] = index === parts.length - 1 ? v : {}),
+				nested,
+			);
+		});
+		return nested;
+	}
+
+	const parts = path.split(".");
+	let flatKeyMatch: string | null = null;
+	for (let i = parts.length; i > 0; i--) {
+		const candidate = parts.slice(0, i).join(".");
+		if (Object.prototype.hasOwnProperty.call(json, candidate)) {
+			flatKeyMatch = candidate;
+			break;
+		}
+	}
+
+	if (flatKeyMatch) {
+		let current = json[flatKeyMatch];
+		const remainingParts = parts.slice(flatKeyMatch.split(".").length);
+
+		for (const part of remainingParts) {
+			if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
+				current = (current as Record<string, unknown>)[part];
+			} else {
+				return undefined;
+			}
+		}
+		return current;
+	}
+
+	return undefined;
 };
 
 /**
@@ -213,108 +205,201 @@ const isPointInSelection = (x: number, y: number): boolean => {
 };
 
 /**
- * Attempts to detect and select the logical "line" (key-value pair) at a specific point.
- * @param x Client X
- * @param y Client Y
- * @param isRawView Whether the current view is Raw (requires specific caret logic)
- * @returns The string content of the detected line or null
+ * Detects the key-value pair under the cursor in the Table view.
+ * @param element The clicked element
  */
-const detectSelectionAtPoint = (
-	x: number,
-	y: number,
-	isRawView: boolean,
-): string | null => {
-	const element = document.elementFromPoint(x, y) as HTMLElement;
-	if (!element) return null;
-
-	const selectElementText = (el: HTMLElement) => {
-		const selection = window.getSelection();
-		if (selection) {
-			const range = document.createRange();
-			range.selectNodeContents(el);
-			selection.removeAllRanges();
-			selection.addRange(range);
-		}
-	};
-
-	// 1. Table Handling
+const detectTableSelection = (element: HTMLElement): string | null => {
 	const tr = element.closest("tr");
 	if (tr) {
 		const cells = Array.from(tr.querySelectorAll("td"));
 		if (cells.length >= 2) {
-			selectElementText(tr);
-			return `${cells[0].innerText}: ${cells[1].innerText}`;
+			const selection = window.getSelection();
+			if (selection) {
+				const range = document.createRange();
+				range.selectNodeContents(tr);
+				selection.removeAllRanges();
+				selection.addRange(range);
+			}
+			return `"${cells[0].innerText.trim()}": "${cells[1].innerText.trim()}"`;
+		}
+	}
+	return null;
+};
+
+/**
+ * Detects the full key-value path under the cursor in the Tree view.
+ * @param element The clicked element
+ * @param json The source JSON object
+ */
+const detectTreeSelection = (element: HTMLElement, json: Record<string, unknown> | null): string | null => {
+	let treeLabel = element.classList.contains(s.label) || element.classList.contains(s.clickableLabel)
+		? element
+		: (element.closest(`.${s.label}`) ?? element.closest(`.${s.clickableLabel}`));
+
+	if (!treeLabel) {
+		const node = element.closest(`.${s.node}`);
+		if (node) {
+			treeLabel = node.querySelector(`.${s.label}, .${s.clickableLabel}`);
 		}
 	}
 
-	if (isRawView) {
-		const selection = window.getSelection();
-		let range: Range | null = null;
-		// @ts-ignore
-		if (document.caretRangeFromPoint) {
-			// @ts-ignore
-			range = document.caretRangeFromPoint(x, y);
-		} else if (document.caretPositionFromPoint) {
-			// @ts-ignore
-			const pos = document.caretPositionFromPoint(x, y);
-			if (pos) {
-				range = document.createRange();
-				range.setStart(pos.offsetNode, pos.offset);
-				range.setEnd(pos.offsetNode, pos.offset);
-			}
-		}
-
-		if (range && selection) {
-			selection.removeAllRanges();
-			selection.addRange(range);
-			try {
-				// @ts-ignore
-				selection.modify("move", "backward", "lineboundary");
-				// @ts-ignore
-				selection.modify("extend", "forward", "lineboundary");
-				const lineText = selection.toString().trim();
-				if (lineText.includes(":")) return lineText;
-			} catch (e) {
-				console.error("Native selection modify failed", e);
-			}
-		}
-
-		// Fallback for Raw View
-		let current: HTMLElement | null = element;
-		while (
-			current &&
-			current !== document.body &&
-			!current.classList.contains(s.highlighter)
-		) {
-			const text = (current.innerText || current.textContent || "").trim();
-			if (text.includes(":") && !text.includes("\n")) {
-				selectElementText(current);
-				return text;
-			}
-			current = current.parentElement;
-		}
-	} else {
-		// 2. Tree/JsonView Handling
-		let current: HTMLElement | null = element;
-		while (
-			current &&
-			current !== document.body &&
-			!current.classList.contains(s.scrollable)
-		) {
-			if (current.querySelector(`.${s.label}`)) {
-				const text = (current.innerText || current.textContent || "").trim();
-				if (text.includes(":") && !text.includes("\n")) {
-					selectElementText(current);
-					return text;
+	if (treeLabel && json) {
+		const path = getTreeKeyPath(treeLabel, s.label, s.clickableLabel, s.node, s.basic);
+		if (path) {
+			const value = getValueByPath(json, path);
+			if (value !== undefined) {
+				const strValue = typeof value === "object" ? JSON.stringify(value) : String(value);
+				const nodeContainer = treeLabel.closest(`.${s.node}`) as HTMLElement;
+				if (nodeContainer) {
+					const selection = window.getSelection();
+					if (selection) {
+						const range = document.createRange();
+						range.selectNodeContents(nodeContainer);
+						selection.removeAllRanges();
+						selection.addRange(range);
+					}
 				}
+				return `"${path}": "${strValue}"`;
 			}
-			current = current.parentElement;
 		}
+	}
+	return null;
+};
+
+/**
+ * Detects the key-value pair under the cursor in the Raw (JSON) view.
+ * @param element The clicked element
+ * @param x Client X
+ * @param y Client Y
+ */
+const detectRawSelection = (element: HTMLElement, x: number, y: number): string | null => {
+	const highlighter = element.closest(`.${s.highlighter}`) as HTMLElement;
+	const codeEl = highlighter.querySelector("code, pre") as HTMLElement;
+
+	const selection = window.getSelection();
+	let range: Range | null = null;
+	// @ts-ignore
+	if (document.caretRangeFromPoint) {
+		// @ts-ignore
+		range = document.caretRangeFromPoint(x, y);
+	} else if (document.caretPositionFromPoint) {
+		// @ts-ignore
+		const pos = document.caretPositionFromPoint(x, y);
+		if (pos) {
+			range = document.createRange();
+			range.setStart(pos.offsetNode, pos.offset);
+			range.setEnd(pos.offsetNode, pos.offset);
+		}
+	}
+
+	if (range && selection && codeEl) {
+		selection.removeAllRanges();
+		selection.addRange(range);
+		try {
+			// @ts-ignore
+			selection.modify("move", "backward", "lineboundary");
+			// @ts-ignore
+			selection.modify("extend", "forward", "lineboundary");
+			const lineText = selection.toString().trim();
+			if (lineText.includes(":")) {
+				const fullText = codeEl.innerText;
+				const lines = fullText.split("\n");
+
+				const preRange = document.createRange();
+				preRange.selectNodeContents(codeEl);
+				preRange.setEnd(range.startContainer, range.startOffset);
+				const offset = preRange.toString().length;
+				const lineIndex = fullText.substring(0, offset).split("\n").length - 1;
+
+				// Indentation Back-Scanner to resolve nested paths
+				const targetLine = lines[lineIndex];
+				const match = targetLine.match(/^(\s*)"([^"]+)":/);
+				if (match) {
+					let currentPath = match[2];
+					let currentIndent = match[1].length;
+
+					for (let i = lineIndex - 1; i >= 0; i--) {
+						const line = lines[i];
+						const m = line.match(/^(\s*)"([^"]+)":\s*[\{\[]/);
+						if (m) {
+							const indent = m[1].length;
+							if (indent < currentIndent) {
+								currentPath = m[2] + "." + currentPath;
+								currentIndent = indent;
+							}
+						}
+						if (currentIndent === 0) break;
+					}
+					const colonIndex = lineText.indexOf(":");
+					return `"${currentPath}": ${lineText.slice(colonIndex + 1).trim()}`;
+				}
+
+				return lineText;
+			}
+		} catch (e) {
+			console.error("Native selection modify failed", e);
+		}
+	}
+
+	// Fallback for Raw View
+	let current: HTMLElement | null = element;
+	while (
+		current &&
+		current !== document.body &&
+		!current.classList.contains(s.highlighter)
+	) {
+		const text = (current.innerText || current.textContent || "").trim();
+		if (text.includes(":") && !text.includes("\n")) {
+			const sel = window.getSelection();
+			if (sel) {
+				const r = document.createRange();
+				r.selectNodeContents(current);
+				sel.removeAllRanges();
+				sel.addRange(r);
+			}
+			return text;
+		}
+		current = current.parentElement;
+	}
+	return null;
+};
+
+/**
+ * Detects if the user has clicked on a key-value pair in any of the views.
+ * @param x Client X coordinate
+ * @param y Client Y coordinate
+ * @param json The current event JSON
+ */
+const detectSelectionAtPoint = (
+	x: number,
+	y: number,
+	json: Record<string, any> | null,
+): string | null => {
+	const element = document.elementFromPoint(x, y) as HTMLElement;
+	if (!element) return null;
+
+	// 1. Table Handling
+	if (element.closest(`.${s.tableView}`)) {
+		return detectTableSelection(element);
+	}
+
+	// 2. Tree Handling
+	if (element.closest(`.${s.container}`) || element.closest(`.${s.node}`)) {
+		return detectTreeSelection(element, json as Record<string, unknown> | null);
+	}
+
+	// 3. Raw Handling
+	if (element.closest(`.${s.highlighter}`)) {
+		return detectRawSelection(element, x, y);
 	}
 
 	return null;
 };
 
+/**
+ * Builds a { key: value } object from selected cells in the table view.
+ * Returns null when the current selection does not intersect the event table.
+ */
 /**
  * Builds a { key: value } object from selected cells in the table view.
  * Returns null when the current selection does not intersect the event table.
@@ -383,16 +468,17 @@ const getSelectedTableKeyValueObject = (): Record<string, string> | null => {
 	return Object.keys(output).length > 0 ? output : null;
 };
 
-// --- MAIN COMPONENT ---
-
-interface DisplayEventDialogProps {
-	event: Doc.Type;
-}
-
 /**
- * Main dialog for displaying event details in Tree, Raw, and Table formats.
+ * Dialog component for displaying and interacting with a single event's details.
+ * Supports Tree, Raw (JSON), and Table views with rich context menu actions.
  */
-export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
+export function DisplayEventDialog({
+	event,
+	onClose,
+}: {
+	event: Doc.Type;
+	onClose?: () => void;
+}) {
 	if (!event) return null;
 
 	const { Info, app, spawnBanner } = Application.use();
@@ -478,72 +564,16 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 				copy(JSON.stringify(selectedTableJson, null, 2));
 				return;
 			}
-
 			copy(JSON.stringify(json, null, 2));
 			return;
 		}
 
-		// Check for exact leaf match in flat keys
-		if (Object.prototype.hasOwnProperty.call(json, path)) {
-			copy(JSON.stringify({ [path]: json[path] }, null, 2));
-			return;
+		const value = getValueByPath(json, path);
+		if (value !== undefined) {
+			copy(JSON.stringify({ [path]: value }, null, 2));
+		} else {
+			copy(JSON.stringify(json, null, 2));
 		}
-
-		// For nested objects, find all keys starting with path + "."
-		const prefix = path + ".";
-		const nestedEntries = Object.entries(json).filter(([k]) => k.startsWith(prefix));
-
-		if (nestedEntries.length > 0) {
-			// Reconstruct nested structure from matching flat entries
-			const nested: Record<string, any> = {};
-			nestedEntries.forEach(([k, v]) => {
-				const suffix = k.slice(prefix.length);
-				suffix.split(".").reduce(
-					(acc: any, e, i, keys) =>
-						acc[e] ||
-						(acc[e] = i === keys.length - 1 ? v : {}),
-					nested,
-				);
-			});
-			copy(JSON.stringify({ [path]: nested }, null, 2));
-			return;
-		}
-
-		// Try navigating into nested objects; handle flat keys with dots (e.g., gulp.unmapped)
-		const parts = path.split(".");
-
-		// Find the longest matching flat key that is a prefix of path
-		let flatKeyMatch: string | null = null;
-		for (let i = parts.length; i > 0; i--) {
-			const candidate = parts.slice(0, i).join(".");
-			if (Object.prototype.hasOwnProperty.call(json, candidate)) {
-				flatKeyMatch = candidate;
-				break;
-			}
-		}
-
-		if (flatKeyMatch) {
-			// Navigate from the matched flat key
-			let current = json[flatKeyMatch];
-			const remainingParts = parts.slice(flatKeyMatch.split(".").length);
-
-			for (const part of remainingParts) {
-				if (current && typeof current === "object" && part in current) {
-					current = current[part];
-				} else {
-					// Can't navigate further, copy full json
-					copy(JSON.stringify(json, null, 2));
-					return;
-				}
-			}
-
-			// Found value, use flattened path as key
-			copy(JSON.stringify({ [path]: current }, null, 2));
-			return;
-		}
-
-		// No match found, copy full json
-		copy(JSON.stringify(json, null, 2));
 	}, [json]);
 
 	const handleDownloadJson = useCallback(() => {
@@ -600,13 +630,12 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 		spawnBanner(<LinkFunctionality.Connect.Banner event={event} />);
 	}, [spawnBanner, event]);
 
-	const applySelectionAsFileFilter = useCallback(() => {
-		if (!selection) return;
+	const applySelectionAsFileFilter = useCallback((textSelected?:string) => {
+		if (!textSelected) return;
 		const file = Source.Entity.id(app, event["gulp.source_id"]);
 		const { filters } = Info.getQuery(file);
 
-		const isManualSelection = selection !== lastAutoSelectionRef.current;
-		const object = parseToKeyValue(selection, "FILTER", isManualSelection);
+		const object = parseToKeyValue(textSelected);
 
 		if (Object.keys(object).length === 0) {
 			toast(`Invalid selection. Unable to add new filters`);
@@ -629,7 +658,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 		toast(`Added ${newFilters.length} new filters`);
 		spawnBanner(<FilterFileBanner sources={[file]} />);
-	}, [selection, Info, app, event, spawnBanner]);
+	}, [Info, app, event, spawnBanner]);
 
 	// --- UI COMPONENTS: Sub-renders ---
 
@@ -687,7 +716,6 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 			<ContextMenu>
 				<Tabs
 					defaultValue="raw"
-					style={{ overflow: "hidden" }}
 					className={s.tabs_wrapper}
 				>
 					<TabsList className={s.triggers}>
@@ -722,31 +750,50 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 									e.clientX,
 									e.clientY,
 								) as HTMLElement;
-								const isInRawView = element?.closest(`.${s.highlighter}`);
 								window.getSelection()?.removeAllRanges();
 								const detected = detectSelectionAtPoint(
 									e.clientX,
 									e.clientY,
-									!!isInRawView,
+									json,
 								);
 								if (detected) {
 									lastAutoSelectionRef.current = detected;
 									setSelection(detected);
+
+									if (element.closest(`.${s.highlighter}`)) {
+										const colonIndex = detected.indexOf(":");
+										if (colonIndex !== -1) {
+											treeContextPathRef.current = detected.slice(0, colonIndex).trim().replace(/^"+|"+$/g, "");
+											return;
+										}
+									}
+								} else {
+									lastAutoSelectionRef.current = null;
+									setSelection("");
 								}
-								const labelEl = element
+
+								let labelEl = element
 									? (element.classList.contains(s.label) || element.classList.contains(s.clickableLabel)
 										? element
 										: (element.closest(`.${s.label}`) ?? element.closest(`.${s.clickableLabel}`)))
 									: null;
+
+								if (!labelEl && element) {
+									const node = element.closest(`.${s.node}`);
+									if (node) {
+										labelEl = node.querySelector(`.${s.label}, .${s.clickableLabel}`);
+									}
+								}
+
 								treeContextPathRef.current = labelEl
 									? getTreeKeyPath(labelEl, s.label, s.clickableLabel, s.node, s.basic)
 									: null;
 							}
 						}}
-						onContextMenu={() => {
-							const current = window.getSelection()?.toString().trim();
-							if (current && current !== selection) setSelection(current);
-						}}
+						// onContextMenu={() => {
+						// 	const current = window.getSelection()?.toString().trim();
+						// 	if (current && current !== selection) setSelection(current);
+						// }}
 					>
 						<div className={s.contextTrigger}>
 							<TabsContent
@@ -818,7 +865,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 						Copy
 					</ContextMenuItem>
 					<ContextMenuItem
-						onClick={applySelectionAsFileFilter}
+						onClick={() =>applySelectionAsFileFilter(selection)}
 						icon="Filter"
 					>
 						New filter
@@ -827,10 +874,17 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 						disabled={!selection}
 						onClick={() => {
 							const isManualSelection = selection !== lastAutoSelectionRef.current;
-							const object = parseToKeyValue(selection, "ENRICH", isManualSelection);
-							const keys = Object.keys(object);
-							if (keys.length > 0)
-								handleEnrich({ key: keys[0], value: object[keys[0]] });
+							if (isManualSelection) {
+								handleEnrich({ key: "selection", value: selection });
+							} else {
+								const object = parseToKeyValue(selection);
+								const keys = Object.keys(object);
+								if (keys.length > 0) {
+									handleEnrich({ key: keys[0], value: object[keys[0]] });
+								} else {
+									handleEnrich({ key: "selection", value: selection });
+								}
+							}
 						}}
 						icon="PrismColor"
 					>
@@ -862,7 +916,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 
 	if (!file) {
 		return (
-			<Dialog>
+			<Dialog callback={onClose}>
 				<Stack
 					style={{ width: "100%", height: "300px" }}
 					flex
@@ -880,7 +934,7 @@ export function DisplayEventDialog({ event }: DisplayEventDialogProps) {
 	}
 
 	return (
-		<Dialog>
+		<Dialog callback={onClose}>
 			<Navigation event={event} />
 			{json ? (
 				<Fragment>

@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { UUID } from 'crypto'
+type UUID = string
 import { Info, MinMax, MinMaxBase } from '@/class/Info'
 import { ChangeEvent, RefObject } from 'react'
 import { XY, XYBase } from '@/dto/XY.dto'
@@ -392,3 +392,67 @@ export const formatTimestampToReadableString = (value: Date | number | string) =
     return ''
   }
 }
+
+/**
+ * Checks if a value is a plain object.
+ * @param value The value to check
+ */
+export const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+	Object.prototype.toString.call(value) === "[object Object]";
+
+/**
+ * Recursively sorts the keys of an object or array of objects.
+ * @param value The object or array to sort
+ */
+export const sortObjectKeysRecursively = (value: unknown): unknown => {
+	if (Array.isArray(value)) {
+		return value.map((item) => sortObjectKeysRecursively(item));
+	}
+
+	if (!isPlainObject(value)) {
+		return value;
+	}
+
+	const entries = Object.entries(value)
+		.sort(([leftKey, leftValue], [rightKey, rightValue]) => {
+			const leftIsObject = isPlainObject(leftValue);
+			const rightIsObject = isPlainObject(rightValue);
+			if (leftIsObject !== rightIsObject) {
+				return leftIsObject ? 1 : -1;
+			}
+			return leftKey.localeCompare(rightKey);
+		})
+		.map(([key, nestedValue]) => [key, sortObjectKeysRecursively(nestedValue)] as const);
+
+	return Object.fromEntries(entries);
+};
+
+/**
+ * Parses a multi-line string into a key-value record by looking for colons.
+ * @param raw Input string containing "key: value" lines
+ */
+export const parseLineToKeyValue = (
+	raw: string,
+): Record<string, string> => {
+	const result: Record<string, string> = {};
+	for (const line of raw.split("\n")) {
+		const cleaned = line.trim();
+		if (cleaned.length === 0) continue;
+
+		const index = line.indexOf(":");
+		if (index === -1) continue;
+
+		const key = line
+			.slice(0, index)
+			.trim()
+			.replace(/^"+|"+$/g, "");
+		const value =
+			line
+				.slice(index + 1)
+				.trim()
+				.replace(/^"+|"+$/g, "")
+				.replace(/[,"]+$/, "");
+		result[key] = value || "*";
+	}
+	return result;
+};
