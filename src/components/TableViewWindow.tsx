@@ -232,12 +232,10 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
 
       const res = await Info.query_paginate(queryObj, { limit, offset, sort: sortOpt })
       
-      if (res && res.data) {
-        setData(res.data.docs || [])
-        setTotalHits(res.data.total_hits || 0)
-        // Reset row selection on new fetch
-        setSelectedRows(new Set())
-      }
+      setData(res?.docs || [])
+      setTotalHits(res?.total_hits || 0)
+      // Reset row selection on new fetch
+      setSelectedRows(new Set())
     } catch (e) {
       toast.error('Failed to fetch table data')
     } finally {

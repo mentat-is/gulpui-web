@@ -1061,14 +1061,22 @@ export class Info implements InfoProps {
 			req_id: generateUUID(Request.Prefix.QUERY),
 		};
 
-		return api<any>(
+		const resp = await api<any>(
 			"/query_raw_paginate",
-		{
-			method: "POST",
-			body,
-			query: request_query,
-			raw: true,
-		})
+			{
+				method: "POST",
+				body,
+				query: request_query,
+				raw: true,
+			},
+		);
+
+		return resp
+			? resp.data
+			: {
+				docs: [],
+				total_hits: 0,
+			};
 	};
 
 	/**
