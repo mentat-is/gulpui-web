@@ -5,7 +5,7 @@ import {
 	ColorPickerPopover,
 	ColorPickerTrigger,
 } from "@/ui/Color";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import s from "./styles/CreateNoteBanner.module.css";
 import { Separator } from "@/ui/Separator";
 import { Default } from "@/dto/Dataset";
@@ -31,13 +31,17 @@ export namespace NoteFunctionality {
 		export namespace Banner {
 			export interface Props extends UIBanner.Props {
 				note?: Note.Type;
-				event: Doc.Type;
+				event?: Doc.Type;
+				events?: Doc.Type[];
+				container?: HTMLElement | null;
 			}
 		}
 
 		export function Banner({
 			note,
 			event,
+			events,
+			container,
 			...props
 		}: NoteFunctionality.Create.Banner.Props) {
 			const { app, destroyBanner, Info } = Application.use();
@@ -51,7 +55,7 @@ export namespace NoteFunctionality {
 			const [icon, setIcon] = useState<Glyph.Id | null>(
 				note?.glyph_id || Glyph.List.keys().next().value || null,
 			);
-			const [loading, setLoading] = useState<boolean>(false);
+			const [loading, setLoading] = useState<boolean>(false);	
 
 			const Sidebar = useMemo(() => {
 				return (
@@ -86,11 +90,23 @@ export namespace NoteFunctionality {
 						name,
 						text,
 						color,
-						event,
+						event: event!,
 						glyph_id,
 						tags,
 					});
-				} else {
+				} else if (events && events.length > 0) {
+					for (const e of events) {
+						await Info.note_create({
+							color,
+							event: e,
+							glyph_id,
+							name,
+							text,
+							isPrivate,
+							tags,
+						});
+					}
+				} else if (event) {
 					await Info.note_create({
 						color,
 						event,
@@ -134,7 +150,10 @@ export namespace NoteFunctionality {
 							disabled
 							value={
 								(() => {
-									const contextId = Doc.Entity.contextId(app, event);
+									if (events && events.length > 1) return `Multiple Contexts (${new Set(events.map(e => Doc.Entity.contextId(app, e))).size})`;
+									const targetEvent = event || events?.[0];
+									if (!targetEvent) return "Unknown Context";
+									const contextId = Doc.Entity.contextId(app, targetEvent);
 									return contextId ? Context.Entity.id(app, contextId)?.name : "Deleted Context";
 								})()
 							}
@@ -145,7 +164,14 @@ export namespace NoteFunctionality {
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={Source.Entity.id(app, event["gulp.source_id"])?.name || "Deleted Source"}
+							value={
+								(() => {
+									if (events && events.length > 1) return `Multiple Sources (${new Set(events.map(e => e["gulp.source_id"])).size})`;
+									const targetEvent = event || events?.[0];
+									if (!targetEvent) return "Unknown Source";
+									return Source.Entity.id(app, targetEvent["gulp.source_id"])?.name || "Deleted Source";
+								})()
+							}
 							icon={Default.Icon.SOURCE}
 						/>
 						<Input
@@ -153,7 +179,11 @@ export namespace NoteFunctionality {
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={event._id}
+							value={
+								events && events.length > 1 
+									? `${events.length} events selected` 
+									: (event || events?.[0])?._id || "Unknown Event"
+							}
 							icon="Triangle"
 						/>
 					</Stack>
@@ -172,6 +202,7 @@ export namespace NoteFunctionality {
 							label="Glyph"
 							icon={icon}
 							setIcon={setIcon}
+							container={container}
 						/>
 						<Stack
 							dir="column"
@@ -185,7 +216,7 @@ export namespace NoteFunctionality {
 								setColor={setColor}
 							>
 								<ColorPickerTrigger />
-								<ColorPickerPopover />
+								<ColorPickerPopover container={container} />
 							</ColorPicker>
 						</Stack>
 					</Stack>

@@ -41,7 +41,7 @@ export namespace App {
         byRequestId: Map<Request.Id, Source.Id>;
         byFileId: Map<Source.Id, Request.Id>;
       };
-
+      tableViewSource: Source.Type | null;
       skippedAuth?: boolean
     }
     timeline: {
@@ -54,7 +54,6 @@ export namespace App {
         filters: Record<Source.Id, Query.Type>
       }
       isScrollReversed: boolean;
-      isTabularView: boolean;
       dialogSize: number
       pointers: Pointers.Pointer[];
       renderVersion: number;
@@ -81,7 +80,7 @@ export namespace App {
         byRequestId: new Map(),
         byFileId: new Map(),
       },
-
+      tableViewSource: null,
     },
     timeline: {
       scale: 1,
@@ -96,7 +95,6 @@ export namespace App {
         max: Date.now(),
       },
       isScrollReversed: localStorage.getItem('settings.__isScrollReversed') === 'true',
-      isTabularView: true,
       dialogSize: window.innerWidth / 3,
       pointers: [],
       renderVersion: 0,

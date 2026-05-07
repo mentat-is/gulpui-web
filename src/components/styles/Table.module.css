@@ -24,6 +24,13 @@
   text-align: left;
   border-right: 1px solid var(--gray-500);
   font-weight: 800;
+  position: sticky;
+  top: 0;
+  background: var(--background-200);
+  z-index: 10;
+  border-bottom: 1px solid var(--gray-400);
+  resize: horizontal;
+  overflow: hidden;
 }
 
 .table svg {

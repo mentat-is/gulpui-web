@@ -16,6 +16,7 @@ import { DataStore } from '@/store/DataStore'
 import { Checkbox } from '@/ui/Checkbox'
 import { Button } from '@/ui/Button'
 import { formatTimestampToReadableString, stringToHexColor } from "../ui/utils";
+import { WindowBridge } from '@/lib/WindowBridge'
 
 import s from './styles/NotesWindow.module.css'
 import { TooltipProvider } from '@radix-ui/react-tooltip'
@@ -107,7 +108,15 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const handleBulkDelete = async () => {
     if (selectedNoteIds.size === 0) return;
-    await Info.notes_delete_bulk([...selectedNoteIds]);
+    const deletedIds = [...selectedNoteIds];
+    await Info.notes_delete_bulk(deletedIds);
+    // Notify main tab about deleted notes via BroadcastChannel
+    const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+    bridge.send(WindowBridge.MessageType.NOTES_CHANGED, {
+      action: 'deleted',
+      ids: deletedIds,
+    })
+    bridge.destroy()
     setSelectedNoteIds(new Set());
   };
 

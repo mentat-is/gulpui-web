@@ -4,7 +4,6 @@ import { Algorhithm, getTimestamp } from '@/ui/utils';
 import { Source } from '@/entities/Source';
 import { Doc } from '@/entities/Doc';
 import { Navigator } from './Navigator';
-import { Tabular } from './Tabular';
 import { Stack } from '@/ui/Stack';
 import s from '../Gulp.module.css';
 import { useEffect } from 'react';
@@ -90,7 +89,7 @@ export function Timeline() {
       dir="column"
       ref={timeline}
     >
-      {app.timeline.isTabularView ? <Canvas timeline={timeline} /> : <Tabular />}
+      <Canvas timeline={timeline} />
       <Navigator
         timeline={timeline}
         timestamp={getTimestamp(scrollX + (timeline.current?.clientWidth || 0), Info)}

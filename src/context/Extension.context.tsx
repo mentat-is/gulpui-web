@@ -75,7 +75,7 @@ function _({ children }: Extension.Provider.Props) {
   return (
     <Extension.Context.Provider value={extensionProps}>
       {children}
-      {banner}
+      {banner?.target === 'main' && banner.node}
     </Extension.Context.Provider>
   );
 };

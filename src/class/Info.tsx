@@ -1,4 +1,4 @@
-import { debounce } from "lodash";
+import { debounce, Dictionary } from "lodash";
 import { scrollStore } from "@/store/scroll.store";
 import { Default } from "@/dto/Dataset";
 import { generateUUID, NodeFile, Refractor } from "@/ui/utils";
@@ -71,6 +71,9 @@ export namespace GulpDataset {
 			notes_tags?: string[];
 			notes_glyph_id?: Glyph.Id;
 			name?: string;
+			offset?: number;
+			limit?: number;
+			sort?: Record<string, "desc" | "asc">
 		}
 	}
 	export namespace QueryOperations {
@@ -1028,6 +1031,45 @@ export class Info implements InfoProps {
 				toast(`Total hits for this filter is ${resp.data?.total_hits}`);
 			}
 		}
+
+		return resp
+			? resp.data
+			: {
+				docs: [],
+				total_hits: 0,
+			};
+	};
+
+		query_paginate = async (
+		query: Query.Type,
+		{limit = 100, offset = 0, sort = {"@timestamp": "asc"}}: GulpDataset.QueryGulp.Options) => {
+		const operation = Operation.Entity.selected(this.app);
+		if (!operation) {
+			return;
+		}
+		const body: Record<string, any> = {
+			q: { query: Filter.Entity.query(query) },
+			q_options: {
+				limit: limit,
+				offset: offset,
+				sort,
+			},
+		};
+		
+		const request_query: Record<string, string> = {
+			operation_id: operation.id,
+			req_id: generateUUID(Request.Prefix.QUERY),
+		};
+
+		const resp = await api<any>(
+			"/query_raw_paginate",
+			{
+				method: "POST",
+				body,
+				query: request_query,
+				raw: true,
+			},
+		);
 
 		return resp
 			? resp.data

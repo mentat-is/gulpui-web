@@ -58,16 +58,22 @@ export namespace Doc {
 		public static clearIndex = () => Doc.Entity._index.clear();
 
 		/** Extracts a minimal Doc payload from a full event, keeping only essential fields. */
-		public static toDoc = (app: App.Type, event: Doc.Type) => ({
-			_id: event._id,
-			"@timestamp": Internal.Transformator.toISO(
-				event.gulp_timestamp * 1_000_000,
-			),
-			"gulp.operation_id": this.operationId(app, event),
-			"gulp.context_id": this.contextId(app, event),
-			"gulp.source_id": event["gulp.source_id"],
-			"gulp.timestamp": Internal.Transformator.toNanos(event.gulp_timestamp),
-		});
+		public static toDoc = (app: App.Type, event: Doc.Type) => {
+			const raw = event as any;
+			return {
+				_id: event._id,
+				"@timestamp":
+					raw["@timestamp"] ||
+					Internal.Transformator.toISO((event.gulp_timestamp || 0) * 1_000_000),
+				"gulp.operation_id":
+					raw["gulp.operation_id"] || this.operationId(app, event),
+				"gulp.context_id": raw["gulp.context_id"] || this.contextId(app, event),
+				"gulp.source_id": event["gulp.source_id"],
+				"gulp.timestamp":
+					raw["gulp.timestamp"] ||
+					Internal.Transformator.toNanos(event.gulp_timestamp),
+			};
+		};
 
 		/** Returns the Operation.Id for a doc by looking it up through its source. */
 		public static operationId = (app: App.Type, doc: Doc.Type): Operation.Id | undefined =>
