@@ -17,6 +17,7 @@ export function getCanvasIcon({ name, ...props }: CanvasIcon.Props): HTMLImageEl
   const svg = renderToStaticMarkup(<Icon name={name} {...props} />);
   createImageFromSVG(svg).then(image => {
     CanvasIcon.cache.set(key, image);
+    CanvasIcon.onIconLoad?.();
   });
 
   return PLACEHOLDER_IMAGE;
@@ -37,9 +38,12 @@ const createImageFromSVG = (svgString: string): Promise<HTMLImageElement> => {
   })
 }
 
-export namespace CanvasIcon {
-  export const cache = new Map<string, HTMLImageElement>();
+export const CanvasIcon = {
+  cache: new Map<string, HTMLImageElement>(),
+  onIconLoad: null as (() => void) | null,
+};
 
+export namespace CanvasIcon {
   export interface Props extends Icon.Props {
 
   }

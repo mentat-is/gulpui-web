@@ -15,6 +15,7 @@ import { useMagnifier } from "@/dto/useMagnifier";
 import { Magnifier } from "@/ui/Magnifier";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import { RenderEngine } from "@/class/RenderEngine";
+import { CanvasIcon } from "@/ui/CanvasIcon";
 import { DisplayGroupDialog } from "@/dialogs/Group.dialog";
 import { LoggerHandler } from "@/dto/Logger.class";
 import { debounce } from "lodash";
@@ -502,6 +503,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 		() => debounce(handleWheel, 5),
 		[handleWheel],
 	);
+
+	useEffect(() => {
+		CanvasIcon.onIconLoad = () => DataStore.markDirty();
+		return () => {
+			CanvasIcon.onIconLoad = null;
+		};
+	}, []);
 
 	useEffect(() => {
 		if (theme) {
