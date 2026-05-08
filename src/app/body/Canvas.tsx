@@ -395,8 +395,10 @@ export function Canvas({ timeline }: Canvas.Props) {
 		if (
 			click.x < getPixelPosition(file.timestamp.min) ||
 			getPixelPosition(file.timestamp.max) < click.x
-		)
+		) {
+			Info.setTimelineTarget(null);
 			return;
+		}
 
 		let events = getEventsListFromFileByClickX(click.x, file);
 		if (events.length === 0) {
@@ -416,6 +418,8 @@ export function Canvas({ timeline }: Canvas.Props) {
 					<DisplayEventDialog event={events[0]} />
 				),
 			);
+		} else {
+			Info.setTimelineTarget(null);
 		}
 	};
 

@@ -1,7 +1,7 @@
 import { DisplayEventDialog, EventIndicator } from "./Event.dialog";
 import { Application } from "@/context/Application.context";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { Dialog } from "@/ui/Dialog";
 import { Doc } from "@/entities/Doc";
 import { Stack } from "@/ui/Stack";
@@ -16,7 +16,11 @@ interface DisplayGroupDialogProps {
 
 export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
-	const { spawnDialog } = Application.use();
+	const { spawnDialog, Info } = Application.use();
+
+	useEffect(() => {
+		Info.setTimelineTarget(null);
+	}, [Info]);
 
 	const parentRef = useRef<HTMLDivElement>(null);
 
