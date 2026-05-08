@@ -5,6 +5,7 @@ import { Icon } from '@impactium/icons'
 import { Stack } from '@/ui/Stack'
 import { Checkbox } from '@/ui/Checkbox'
 import { Glyph } from '@/entities/Glyph'
+import { Button } from '@/ui/Button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/ui/Tooltip'
 
 export type Object = Record<string, any>
@@ -17,6 +18,8 @@ export namespace Table {
     selectable?: boolean
     selectedrows?: Set<number>
     onrowselect?: (index: number, selected: boolean) => void
+    onrowaction?: (value: T, index: number) => void
+    iconAction?: string
   }
 }
 
@@ -101,6 +104,7 @@ export function Table<T extends Object>({
           <thead>
             <tr>
               {props.selectable && <th style={{ width: '40px', textAlign: 'center' }}></th>}
+              {props.onrowaction && <th style={{ width: '40px', textAlign: 'center' }}></th>}
             {columns.map((c, i) => (
                 <Col c={c} key={c + i} />
               ))}
@@ -116,6 +120,8 @@ export function Table<T extends Object>({
               selectable={props.selectable}
               selected={props.selectedrows?.has(index)}
               onRowSelect={props.onrowselect}
+              onRowAction={props.onrowaction}
+              iconAction={props.iconAction}
             />
             ))}
           </tbody>
@@ -143,19 +149,30 @@ namespace Item {
     selectable?: boolean
     selected?: boolean
     onRowSelect?: (index: number, selected: boolean) => void
+    onRowAction?: (value: T, index: number) => void
+    iconAction?: string
   }
 }
 
-function Item<T extends Object>({ i, columns, index, selectable, selected, onRowSelect, ...props }: Item.Props<T>) {
+function Item<T extends Object>({ i, columns, index, selectable, selected, onRowSelect, onRowAction, iconAction, ...props }: Item.Props<T>) {
   return (
     <tr className={s.item} {...props}>
       {selectable && (
         <td className={s.value}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+          <div className={s.centered}>
             <Checkbox checked={!!selected} onCheckedChange={(c) => onRowSelect?.(index, !!c)} />
           </div>
         </td>
       )}
+      {
+        onRowAction && (
+          <td className={s.value}>
+            <div className={s.centered}>
+              <Button className={s.Button_Icon} icon={iconAction as Icon.Name} variant="glass" onClick={() => onRowAction?.(i, index)} />
+            </div>
+          </td>
+        )
+      }
       {columns.map((c, idx) => (
         <Value k={c} v={i[c]} key={c + i[c] + idx} />
       ))}

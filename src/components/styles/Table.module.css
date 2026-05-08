@@ -14,9 +14,23 @@
   user-select: text;
   -webkit-user-select: text;
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 24px;
+  font-size: 13px;
+  line-height: 32px;
   white-space: nowrap;
+}
+
+.centered {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.Button_Icon {
+  padding: 0px !important;
+  flex-shrink: 0;
 }
 
 .table th {
@@ -33,7 +47,7 @@
   overflow: hidden;
 }
 
-.table svg {
+.table td > svg {
   transform: translateY(1px);
   margin-right: 4px;
 }

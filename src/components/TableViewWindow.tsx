@@ -333,6 +333,19 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
   }
 
+  const handleRowAction = useCallback((doc: any) => {
+    if(!selectedSource)
+    {
+      return;
+    }
+    const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+    bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
+      docId: doc._id,
+      operationId: selectedSource.operation_id,
+    })
+    bridge.destroy()
+  }, [selectedSource])
+
   const defaultHidden = ["_id", "gulp.source_id", "gulp.context_id", "gulp.operation_id", "gulp.event_code"]
 
   return (
@@ -417,7 +430,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
             />
             <Button
               variant="glass"
-              icon="Search"
+              icon="MagnifyingGlassSmall"
               onClick={triggerSearch}
               title="Search"
             />
@@ -528,6 +541,8 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
                  return next
                })
              }}
+             onrowaction={handleRowAction}
+             iconAction="Search"
            />
         ) : (
            <p className={s.label}>No data found matching your query.</p>
