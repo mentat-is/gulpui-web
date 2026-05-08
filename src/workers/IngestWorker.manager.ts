@@ -78,7 +78,7 @@ class IngestWorkerManager {
         operation_id: task.operation_id,
         context_name: task.context_name,
         ws_id: task.ws_id,
-        settings: task.settings,
+        settings: JSON.parse(JSON.stringify(task.settings, (_, v) => typeof v === 'function' ? undefined : v)),
         server: task.server,
         token: task.token,
         frame: task.frame,

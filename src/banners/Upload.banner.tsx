@@ -288,8 +288,9 @@ export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
     setPreview(preview ?? null);
   }
 
-  const setCustomParameters = (custom_parameters: Record<string, any>) => {
-    updateSettings({ custom_parameters });
+  const setCustomParameters = (update: any) => {
+    const next = typeof update === 'function' ? update(settings.custom_parameters) : update;
+    updateSettings({ custom_parameters: next });
   }
 
   const fileOffsetInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => {

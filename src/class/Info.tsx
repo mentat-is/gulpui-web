@@ -1724,18 +1724,31 @@ export class Info implements InfoProps {
 		if (!operation) return [];
 
 		const formData = new FormData();
-		const payload = {
+		const ingestPayload: any = {
 			original_file_path: file.name,
 			offset: settings.offset ?? 0,
-			plugin_params: {
-				...settings.custom_parameters,
-				preview_mode: true,
-			},
 		};
+
+		const pluginParams: any = {
+			preview_mode: true
+		};
+		if (settings.custom_parameters) pluginParams.custom_parameters = settings.custom_parameters;
+
+		const mappingParameters: any = {};
+		if (settings.method) mappingParameters.mapping_file = settings.method;
+		if (settings.mapping) mappingParameters.mapping_id = settings.mapping;
+		if (settings.additional_mapping_files) mappingParameters.additional_mapping_files = settings.additional_mapping_files;
+
+		if (Object.keys(mappingParameters).length > 0) {
+			pluginParams.mapping_parameters = mappingParameters;
+		}
+
+		if (settings.store_file !== undefined) pluginParams.store_file = settings.store_file;
+		ingestPayload.plugin_params = pluginParams;
 
 		formData.append(
 			"payload",
-			new Blob([JSON.stringify(payload)], { type: "application/json" }),
+			new Blob([JSON.stringify(ingestPayload)], { type: "application/json" }),
 		);
 		formData.append("f", file, file.name);
 
@@ -1752,6 +1765,9 @@ export class Info implements InfoProps {
 			deassign: true,
 			raw: true,
 			query,
+			headers: {
+				size: file.size.toString(),
+			}
 		});
 
 		return response.data as unknown as Doc.Type[];
