@@ -28,7 +28,7 @@
 
 .subContent,
 .content {
-  z-index: 50;
+  z-index: 1500;
   min-width: 256px;
   overflow: hidden;
   border-radius: 6px;

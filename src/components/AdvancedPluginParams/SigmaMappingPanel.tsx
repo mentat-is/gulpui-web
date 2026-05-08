@@ -4,6 +4,8 @@ import { Input } from '@/ui/Input'
 import { Button } from '@/ui/Button'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Label } from '@/ui/Label'
+import s from '../styles/AdvancedPluginParams.module.css'
+import { cn } from '@impactium/utils'
 
 /**
  * SigmaMappingData defines the structure for service-specific sigma detection 
@@ -70,24 +72,13 @@ export function SigmaMappingPanel({ initialData, onSave, open, setOpen }: SigmaM
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 52 }} />
+        <Dialog.Overlay className={s.overlayL2} />
         <Dialog.Content 
           aria-describedby={undefined}
-          style={{ 
-          position: 'fixed', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          minWidth: 320, 
-          padding: 16, 
-          zIndex: 53,
-          backgroundColor: 'var(--background-100)',
-          borderRadius: 8,
-          border: '1px solid var(--gray-alpha-400)',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}>
+          className={s.contentL2Small}
+        >
         <Stack dir="column" gap={16} ai="stretch">
-          <Dialog.Title style={{ fontSize: 13, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
+          <Dialog.Title className={cn(s.titleBase, s.titleS)}>
             {initialData ? 'Update Sigma Mapping' : 'Add Sigma Mapping'}
           </Dialog.Title>
           

@@ -8,6 +8,8 @@ import { SummaryTable } from './SummaryTable'
 import { MappingFieldData, MappingFieldPanel } from './MappingFieldPanel'
 import { MappingValueAliasData, MappingValueAliasPanel } from './MappingValueAliasPanel'
 import { Separator } from '@/ui/Separator'
+import s from '../styles/AdvancedPluginParams.module.css'
+import { cn } from '@impactium/utils'
 
 /**
  * MappingData represents the structure of a Gulp mapping configuration object,
@@ -185,26 +187,13 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 52 }} />
+        <Dialog.Overlay className={s.overlayL2} />
         <Dialog.Content 
           aria-describedby={undefined}
-          style={{ 
-          position: 'fixed', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          minWidth: 600, 
-          padding: 24, 
-          maxHeight: '80vh', 
-          overflow: 'auto', 
-          zIndex: 53,
-          backgroundColor: 'var(--background-100)',
-          borderRadius: 8,
-          border: '1px solid var(--gray-alpha-400)',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}>
+          className={s.contentL2}
+        >
           <Stack dir="column" gap={16} ai="stretch">
-          <Dialog.Title style={{ fontSize: 16, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
+          <Dialog.Title className={cn(s.titleBase, s.titleM)}>
             {initialData ? 'Update Mapping Object' : 'Create Mapping Object'}
           </Dialog.Title>
           
@@ -227,7 +216,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
           <Separator style={{ margin: '8px 0' }} />
 
           <Stack dir="row" jc="space-between" ai="center">
-            <Label value="Fields" style={{ fontWeight: 'bold' }} />
+            <Label value="Fields" className={s.labelBold} />
             <Button variant="secondary" onClick={() => { setEditingField(null); setEditingFieldIndex(null); setIsFieldPanelOpen(true) }}>
               Add Field
             </Button>
@@ -257,7 +246,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
           <Separator style={{ margin: '8px 0' }} />
 
           <Stack dir="row" jc="space-between" ai="center">
-            <Label value="Value Aliases" style={{ fontWeight: 'bold' }} />
+            <Label value="Value Aliases" className={s.labelBold} />
             <Button variant="secondary" onClick={() => { setEditingAlias(null); setEditingAliasIndex(null); setIsAliasPanelOpen(true) }}>
               Add Value Alias
             </Button>

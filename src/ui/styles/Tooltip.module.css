@@ -1,5 +1,5 @@
 .tooltip {
-  z-index: 50;
+  z-index: 1500;
   overflow: hidden;
   border-radius: 6px;
   border: 1px solid var(--gray-400);

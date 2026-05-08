@@ -19,6 +19,8 @@ import { MappingPanel, MappingData } from './AdvancedPluginParams/MappingPanel'
 import { SigmaMappingPanel, SigmaMappingData } from './AdvancedPluginParams/SigmaMappingPanel'
 
 import { Textarea } from '@/ui/Textarea'
+import { cn } from '@impactium/utils'
+import s from './styles/AdvancedPluginParams.module.css'
 
 /**
  * AdvancedPluginParams component provides a comprehensive UI for configuring 
@@ -310,45 +312,30 @@ export function AdvancedPluginParams({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
-        <Button variant={triggerVariant as any} icon={triggerIcon as any} style={{ width: '100%' }}>
+        <Button variant={triggerVariant as any} icon={triggerIcon as any} className={s.fullWidth}>
           {triggerText}
         </Button>
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 50 }} />
+        <Dialog.Overlay className={s.overlayL1} />
         <Dialog.Content 
           aria-describedby={undefined}
-          style={{ 
-            position: 'fixed', 
-            top: '50%', 
-            left: '50%', 
-            transform: 'translate(-50%, -50%)',
-            minWidth: 600, 
-            maxWidth: 800, 
-            maxHeight: '80vh', 
-            overflow: 'auto', 
-            padding: 24,
-            backgroundColor: 'var(--background-100)',
-            borderRadius: 8,
-            border: '1px solid var(--gray-alpha-400)',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-            zIndex: 51
-          }}
+          className={s.contentL1}
         >
         <Stack dir='column' gap={24} ai='stretch'>
           <Stack dir='row' jc='space-between' ai='center'>
-            <Dialog.Title style={{ fontSize: 18, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
+            <Dialog.Title className={cn(s.titleBase, s.titleL)}>
               Advanced Plugin Parameters
             </Dialog.Title>
-            <Button variant='tertiary' icon='Trash' onClick={handleReset} style={{ color: 'var(--red-500)' }}>Reset / Delete</Button>
+            <Button variant='tertiary' icon='Trash' onClick={handleReset} className={s.resetButton}>Reset / Delete</Button>
           </Stack>
           
           <Separator />
 
           {/* Global Settings */}
           <Stack dir='column' gap={12} ai='stretch'>
-            <Label value='Global Settings' style={{ fontWeight: 'bold' }} />
+            <Label value='Global Settings' className={s.labelBold} />
             <Stack dir='column' gap={12} ai='stretch'>
               <Input 
                 icon='ChartColumn' 
@@ -369,12 +356,12 @@ export function AdvancedPluginParams({
                 onChange={e => setTimestampOffsetMsec(e.target.value)} 
               />
             </Stack>
-            <Stack ai="center" gap={8} style={{ padding: '8px 0' }}>
+            <Stack ai="center" gap={8} className={s.fullWidth} style={{ padding: '8px 0' }}>
               <Checkbox id="override_allow_unmapped_fields" checked={overrideAllowUnmappedFields} onCheckedChange={(c) => setOverrideAllowUnmappedFields(!!c)} />
               <Label htmlFor="override_allow_unmapped_fields" value="Override Allow Unmapped Fields" cursor="pointer" />
             </Stack>
             {showStoreFile && (
-              <Stack ai="center" gap={8} style={{ padding: '8px 0' }}>
+              <Stack ai="center" gap={8} className={s.fullWidth} style={{ padding: '8px 0' }}>
                 <Checkbox id="store_file" checked={storeFile} onCheckedChange={(c) => setStoreFile(!!c)} />
                 <Label htmlFor="store_file" value="Store File" cursor="pointer" />
               </Stack>
@@ -385,7 +372,7 @@ export function AdvancedPluginParams({
 
           {/* Mapping Parameters */}
           <Stack dir='column' gap={16} ai='stretch'>
-            <Label value='Mapping Parameters' style={{ fontWeight: 'bold' }} />
+            <Label value='Mapping Parameters' className={s.labelBold} />
             
             <Stack dir='column' gap={16} ai='stretch'>
               {methods.length > 0 && (
@@ -413,7 +400,7 @@ export function AdvancedPluginParams({
               )}
             </Stack>
 
-            <Stack dir='row' jc='space-between' ai='center' style={{ marginTop: 8 }}>
+            <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
               <Label value='Mappings' />
               <Button variant='secondary' onClick={() => { setEditingMappingType('mappings'); setEditingMapping(null); setEditingMappingIndex(null); setIsMappingPanelOpen(true) }}>
                 Add Mapping
@@ -433,7 +420,7 @@ export function AdvancedPluginParams({
               onChange={e => setAdditionalMappingFiles(e.target.value)} 
             />
 
-            <Stack dir='row' jc='space-between' ai='center' style={{ marginTop: 8 }}>
+            <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
               <Label value='Additional Mappings' />
               <Button variant='secondary' onClick={() => { setEditingMappingType('additional'); setEditingMapping(null); setEditingMappingIndex(null); setIsMappingPanelOpen(true) }}>
                 Add Additional Mapping
@@ -446,7 +433,7 @@ export function AdvancedPluginParams({
               onDelete={(_, index) => setAdditionalMappings(additionalMappings.filter((__, i) => i !== index))}
             />
 
-            <Stack dir='row' jc='space-between' ai='center' style={{ marginTop: 8 }}>
+            <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
               <Label value='Sigma Mappings' />
               <Button variant='secondary' onClick={() => { setEditingSigma(null); setEditingSigmaIndex(null); setIsSigmaPanelOpen(true) }}>
                 Add Sigma Mapping
@@ -468,7 +455,7 @@ export function AdvancedPluginParams({
 
           {/* Custom Parameters */}
           <Stack dir='column' gap={8} ai='stretch'>
-            <Label value='Custom Parameters' style={{ fontWeight: 'bold' }} />
+            <Label value='Custom Parameters' className={s.labelBold} />
             <Stack dir='column' gap={8} ai='stretch'>
             {customParamsMode === 'auto' && plugin && (
               <CustomParameters.Editor 
@@ -494,8 +481,8 @@ export function AdvancedPluginParams({
             </Stack>
           </Stack>
 
-          <Stack dir='row' gap={8} style={{ width: '100%', marginTop: 16 }}>
-            <Button variant='glass' style={{ width: '100%' }} onClick={apply} icon="Check" disabled={!isCustomParamsJsonValid}>
+          <Stack dir='row' gap={8} className={s.fullWidth} style={{ marginTop: 16 }}>
+            <Button variant='glass' className={s.fullWidth} onClick={apply} icon="Check" disabled={!isCustomParamsJsonValid}>
               {applyText}
             </Button>
           </Stack>

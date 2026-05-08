@@ -7,6 +7,8 @@ import { Label } from '@/ui/Label'
 import { Select } from '@/ui/Select'
 import { Checkbox } from '@/ui/Checkbox'
 import { Icon } from '@impactium/icons'
+import s from '../styles/AdvancedPluginParams.module.css'
+import { cn } from '@impactium/utils'
 
 /**
  * MappingFieldData defines the structure for a single field configuration 
@@ -118,26 +120,13 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', zIndex: 52 }} />
+        <Dialog.Overlay className={s.overlayL3} />
         <Dialog.Content 
           aria-describedby={undefined}
-          style={{ 
-          position: 'fixed', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          minWidth: 400, 
-          padding: 16, 
-          maxHeight: '80vh', 
-          overflow: 'auto', 
-          zIndex: 53,
-          backgroundColor: 'var(--background-100)',
-          borderRadius: 8,
-          border: '1px solid var(--gray-alpha-400)',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-        }}>
+          className={s.contentL3}
+        >
         <Stack dir="column" gap={16} ai="stretch">
-          <Dialog.Title style={{ fontSize: 13, fontWeight: 'bold', margin: 0, color: 'var(--gray-900)' }}>
+          <Dialog.Title className={cn(s.titleBase, s.titleS)}>
             {initialData ? 'Update Field' : 'Add Field'}
           </Dialog.Title>
           
