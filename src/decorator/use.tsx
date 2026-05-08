@@ -61,6 +61,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
     }
 
     dragState.current.clicked = true;
+    dragState.current.dragging = false;
     dragState.current.dragStart(event)
     const rect = timeline.current?.getBoundingClientRect()
     if (!rect) {
@@ -88,10 +89,13 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
   }, [isResizing, highlightsOverlay, dragState])
 
   const handleMouseUpOrLeave = useCallback((event: MouseEvent) => {
-    if (dragState.current.dragging === true) {
-      dragState.current.dragging = false;
-      dragState.current.clicked = false;
-    } else {
+    const wasDragging = dragState.current.dragging;
+    const wasClicked = dragState.current.clicked;
+
+    dragState.current.dragging = false;
+    dragState.current.clicked = false;
+
+    if (event.type === 'mouseup' && wasClicked && !wasDragging && !isResizing) {
       // @ts-ignore
       window.xxc(event);
     }

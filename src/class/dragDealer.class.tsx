@@ -31,7 +31,7 @@ export class DragDealer implements DragDealerProps {
     this.timeline = timeline
     this.setScrollX = setScrollX
     this.increaseScrollY = increaseScrollY
-    this.dragging = true
+    this.dragging = false
   }
 
   dragStart = (ev: React.MouseEvent) => {

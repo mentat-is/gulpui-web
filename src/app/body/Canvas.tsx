@@ -396,7 +396,6 @@ export function Canvas({ timeline }: Canvas.Props) {
 			click.x < getPixelPosition(file.timestamp.min) ||
 			getPixelPosition(file.timestamp.max) < click.x
 		) {
-			Info.setTimelineTarget(null);
 			return;
 		}
 
