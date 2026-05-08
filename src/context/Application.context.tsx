@@ -21,6 +21,7 @@ import { Source } from "@/entities/Source";
 import { App } from "@/entities/App";
 import { DataStore } from "@/store/DataStore";
 import { RenderEngine } from "@/class/RenderEngine";
+import { Operation } from "@/entities/Operation";
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
@@ -29,6 +30,11 @@ function _({ children }: { children: ReactNode }) {
 	const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
 	const [highlightsOverlay, setHighlightsOverlay] =
 		useState<React.ReactNode>(null);
+
+	// Reset dialog when operation changes
+	useEffect(() => {
+		setDialog(<Hint.Dialog />);
+	}, [Operation.Entity.selected(app)?.id]);
 
 	/**
 	 * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
