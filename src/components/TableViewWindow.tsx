@@ -23,6 +23,7 @@ import { Icon } from '@impactium/icons'
 import { Doc } from '@/entities/Doc'
 import { NoteFunctionality } from '@/banners/Collab.functionality'
 import { WindowBridge } from '@/lib/WindowBridge'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
 
 export namespace TableViewWindow {
   export interface Props {
@@ -32,7 +33,8 @@ export namespace TableViewWindow {
 }
 
 /**
- * Helper component for date selection using datetime-local input
+ * Helper component for date selection using datetime-local input.
+ * Converts nanoseconds timestamps to/from browser-compatible date strings.
  */
 function InputDateSelection({ type, value, valid, onChange }: { 
   type: 'min' | 'max', 
@@ -42,6 +44,9 @@ function InputDateSelection({ type, value, valid, onChange }: {
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   
+  /**
+   * Formats a nanosecond timestamp string into a "yyyy-MM-dd'T'HH:mm" format.
+   */
   const getFormattedValue = (val: string) => {
     try {
       const ms = Number(BigInt(val) / 1000000n)
@@ -57,6 +62,7 @@ function InputDateSelection({ type, value, valid, onChange }: {
     setLocalValue(getFormattedValue(value))
   }, [value])
 
+  // Native showPicker support for better UX
   useEffect(() => {
     const input = inputRef.current
     const icon = input?.parentElement?.querySelector('svg')
@@ -83,7 +89,8 @@ function InputDateSelection({ type, value, valid, onChange }: {
 }
 
 /**
- * Helper component for ISO string selection
+ * Helper component for ISO string selection.
+ * Handles manual entry of ISO 8601 strings and synchronizes with nanosecond state.
  */
 function InputISOSelection({ type, value, valid, onChange }: { 
   type: 'min' | 'max', 
@@ -124,63 +131,31 @@ function InputISOSelection({ type, value, valid, onChange }: {
  * Opens a paginated table view of raw events for a specific source.
  */
 export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Props) {
+  
+  // --- Context & Infrastructure ---
   const { Info, app, spawnBanner, banner } = Application.use()
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
   
+  // --- Selection & Sync State ---
+  const [isSynced, setIsSynced] = useState<boolean>(false)
   const [selectedSourceId, setSelectedSourceId] = useState<Source.Id | null>(initialSourceId ?? null)
+  
   const selectedSource = useMemo(() => 
     selectedSourceId ? Source.Entity.id(app, selectedSourceId) : null
   , [app, selectedSourceId])
 
-  const [timeFrame, setTimeFrame] = useState<{ min: string, max: string }>({
-    min: (app.timeline.frame.min * 1000000).toString(),
-    max: (app.timeline.frame.max * 1000000).toString(),
-  })
-  
-  useEffect(() => {
-    if (selectedSource) {
-      setTimeFrame({
-        min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
-        max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
-      })
-      setCurrentPage(1)
-      setSearchQuery('')
-      setLocalSearchQuery('')
-    }
-  }, [selectedSourceId]) // Intentional: Only run when the source ID changes
-
-  // Listen for operation changes to reset the source selection
   const selectedOperationId = app.target.operations.find(o => o.selected)?.id
-  const initialOperationRef = useRef<string | null>(selectedOperationId ?? null)
 
-  useEffect(() => {
-    if (selectedOperationId !== initialOperationRef.current) {
-      setSelectedSourceId(null)
-      setSearchQuery('')
-      setLocalSearchQuery('')
-      setCurrentPage(1)
-      setData([])
-      setTotalHits(0)
-      setTimeFrame({
-        min: (app.timeline.frame.min * 1000000).toString(),
-        max: (app.timeline.frame.max * 1000000).toString(),
-      })
-      initialOperationRef.current = selectedOperationId ?? null
-    }
-  }, [selectedOperationId, app.timeline.frame])
-
-  // Listen for external source selection commands (from main tab)
-  useEffect(() => {
-    const bridgeId = WindowBridge.generateId()
-    const bridge = WindowBridge.create(bridgeId, (message) => {
-      if (message.type === WindowBridge.MessageType.TABLE_SELECT_SOURCE) {
-        const payload = message.payload as WindowBridge.TableSelectSourcePayload
-        setSelectedSourceId(payload.sourceId as Source.Id)
-      }
-    })
-    return () => bridge.destroy()
-  }, [])
+  // --- Filter Derived State ---
+  const syncedSourceFilter = selectedSourceId ? app.target.filters?.[selectedSourceId] : null
   
+  const serializedFilters = useMemo(() => {
+    return JSON.stringify(syncedSourceFilter?.filters || [])
+  }, [syncedSourceFilter])
+  
+  const syncedTextFilter = syncedSourceFilter?.text_filter || '';
+
+  // --- Pagination & Search State ---
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [pageSize, setPageSize] = useState<number>(50)
@@ -188,41 +163,145 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   const [sortField, setSortField] = useState<string>('timestamp')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   
+  // --- Data & Results State ---
   const [data, setData] = useState<any[]>([])
   const [totalHits, setTotalHits] = useState<number>(0)
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
+  
+  // --- Display & Validation State ---
   const [manual, setManual] = useState(false)
   const [isMinValid, setIsMinValid] = useState(true)
   const [isMaxValid, setIsMaxValid] = useState(true)
-  
+  const [timeFrame, setTimeFrame] = useState<{ min: string, max: string }>({
+    min: (app.timeline.frame.min * 1000000).toString(),
+    max: (app.timeline.frame.max * 1000000).toString(),
+  })
+
+  // --- Performance Optimization: State Adjustment during Rendering ---
+  /**
+   * Pattern: Adjusting state while rendering.
+   * This logic detects changes in global state (like filters or timeline) or selection 
+   * and resets local pagination/search state within a single render pass.
+   * This prevents "useEffect cascades" that cause double-fetches.
+   */
+  const [lastSync, setLastSync] = useState({
+    sourceId: selectedSourceId,
+    operationId: selectedOperationId,
+    isSynced,
+    filters: serializedFilters,
+    textFilter: syncedTextFilter,
+    frame: app.timeline.frame
+  })
+
+  if (
+    lastSync.sourceId !== selectedSourceId ||
+    lastSync.operationId !== selectedOperationId ||
+    lastSync.isSynced !== isSynced ||
+    (isSynced && (
+      lastSync.filters !== serializedFilters || 
+      lastSync.textFilter !== syncedTextFilter || 
+      lastSync.frame.min !== app.timeline.frame.min || 
+      lastSync.frame.max !== app.timeline.frame.max
+    ))
+  ) {
+    const sourceChanged = lastSync.sourceId !== selectedSourceId
+    const opChanged = lastSync.operationId !== selectedOperationId
+    
+    setLastSync({
+      sourceId: selectedSourceId,
+      operationId: selectedOperationId,
+      isSynced,
+      filters: serializedFilters,
+      textFilter: syncedTextFilter,
+      frame: app.timeline.frame
+    })
+
+    // Reset parameters to starting state on major changes
+    setCurrentPage(1)
+    setSearchQuery('')
+    setLocalSearchQuery('')
+
+    // Clear data if we switched operations
+    if (opChanged) {
+      setSelectedSourceId(null)
+      setData([])
+      setTotalHits(0)
+    }
+
+    // Synchronize time frame based on mode
+    if (isSynced) {
+      setTimeFrame({
+        min: (app.timeline.frame.min * 1000000).toString(),
+        max: (app.timeline.frame.max * 1000000).toString(),
+      })
+    } else if (sourceChanged && selectedSource) {
+      setTimeFrame({
+        min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
+        max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
+      })
+    }
+  }
+
+  /**
+   * Derived pagination info.
+   */
   const totalPages = Math.max(1, Math.ceil(totalHits / pageSize))
 
-  // TC-01: if page size changes and currentPage > totalPages, reset to page 1
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(1)
-    }
-  }, [totalPages, pageSize, currentPage])
+  /**
+   * Page overflow protection.
+   * If total results decrease, ensure we don't stay on a non-existent page.
+   */
+  if (currentPage > totalPages) {
+    setCurrentPage(1)
+  }
 
+  // --- Derived Query Parameters ---
+  const activeMin = isSynced ? (app.timeline.frame.min * 1000000).toString() : timeFrame.min
+  const activeMax = isSynced ? (app.timeline.frame.max * 1000000).toString() : timeFrame.max
+  const activeFilters = isSynced && selectedSourceId ? app.target.filters[selectedSourceId] : null
+  const activeTextFilter = isSynced ? syncedTextFilter : searchQuery
+
+  // --- Data Fetching ---
+
+  /**
+   * Main function to fetch events from the backend.
+   * Uses query_paginate to retrieve a specific slice of data based on current state.
+   */
   const fetchTableData = useCallback(async () => {
     if (!selectedSource) return;
     setLoading(true)
     try {
-      // Build the Query.Type compliant object for pagination
-      const queryObj: Query.Type = {
-         string: '',
-         filters: [],
-         text_filter: searchQuery,
-         source_config: {
-           operation_id: selectedSource.operation_id,
-           source_ids: [selectedSource.id],
-           range: {
-             min: timeFrame.min,
-             max: timeFrame.max
-           }
-         }
-      } as any; 
+      let queryObj: Query.Type
+      
+      // Branch logic: Determine if we use synced global filters or local search query
+      if (isSynced) {
+        if (activeFilters) {
+          queryObj = { ...activeFilters, text_filter: syncedTextFilter } as any;
+        } else {
+          queryObj = {
+            string: "",
+            filters: [],
+            text_filter: "",
+            source_config: {
+              operation_id: selectedSource.operation_id,
+              source_ids: [selectedSource.id],
+              range: { min: activeMin, max: activeMax },
+            },
+          } as any;
+        }
+      } else {
+        queryObj = {
+          string: '',
+          filters: [],
+          text_filter: searchQuery,
+          source_config: {
+            operation_id: selectedSource.operation_id,
+            source_ids: [selectedSource.id],
+            range: { min: activeMin, max: activeMax }
+          }
+        } as any;
+      }
 
       const limit = pageSize
       const offset = pageSize * (currentPage - 1)
@@ -234,35 +313,52 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       
       setData(res?.docs || [])
       setTotalHits(res?.total_hits || 0)
-      // Reset row selection on new fetch
       setSelectedRows(new Set())
     } catch (e) {
       toast.error('Failed to fetch table data')
     } finally {
       setLoading(false)
     }
-  }, [searchQuery, timeFrame, pageSize, currentPage, sortField, sortDirection, selectedSource, Info])
+    // We use stable primitives (IDs and serialized strings) for dependencies to avoid 
+    // redundant fetches when global object references change.
+  }, [selectedSource?.id, selectedSource?.operation_id, isSynced, activeMin, activeMax, serializedFilters, activeTextFilter, pageSize, currentPage, sortField, sortDirection, Info])
 
+  /**
+   * Effect to trigger fetch whenever logical query parameters change.
+   */
   useEffect(() => {
     fetchTableData()
   }, [fetchTableData])
 
+  // --- Event Handlers ---
+
+  /**
+   * Commits the local search query and resets to page 1.
+   */
   const triggerSearch = useCallback(() => {
     setSearchQuery(localSearchQuery)
     setCurrentPage(1)
   }, [localSearchQuery])
 
-  // TC-02: Typing in the Search Bar updates local state; Enter or button click triggers search
+  /**
+   * Updates local search query state as user types.
+   */
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearchQuery(e.target.value)
   }
 
+  /**
+   * Handles Enter key press in search input.
+   */
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       triggerSearch()
     }
   }
 
+  /**
+   * Validates and updates the time range boundaries.
+   */
   const handleTimeChange = (type: 'min' | 'max', value: string | number) => {
     try {
       const nanos = Internal.Transformator.toNanos(value).toString()
@@ -274,7 +370,6 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       
       setTimeFrame(prev => {
         const next = { ...prev, [type]: nanos }
-        // Simple range validation
         const min = BigInt(next.min)
         const max = BigInt(next.max)
         setIsMinValid(min < max)
@@ -288,18 +383,26 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
   }
 
+  /**
+   * Updates the sort field and resets to page 1.
+   */
   const handleSortFieldChange = (val: string) => {
     setSortField(val)
     setCurrentPage(1)
   }
 
+  /**
+   * Toggles the sort direction and resets to page 1.
+   */
   const toggleSortDirection = () => {
     setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
     setCurrentPage(1)
   }
 
+  /**
+   * Selects or deselects all visible rows.
+   */
   const handleSelectAll = (checked: boolean) => {
-    // TC-04: The "Select All" checkbox only selects the maximum number of rows defined by the current Page Size
     if (checked) {
       setSelectedRows(new Set(data.map((_, i) => i)))
     } else {
@@ -307,9 +410,10 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
   }
 
-  const isAllSelected = data.length > 0 && selectedRows.size === data.length
-
-  const handleBulkAction = async (action: string) => {
+  /**
+   * Performs bulk operations (flagging or notes) on selected rows.
+   */
+  const handleBulkAction = async (action: 'flagged' | 'notes') => {
     if (!selectedSource) return
     if (selectedRows.size === 0) {
       toast.error('No items selected')
@@ -321,7 +425,6 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       for (const doc of selectedDocs) {
         Doc.Entity.flag.toggle(doc._id, selectedSource.operation_id)
       }
-      // Notify main tab about flag changes via BroadcastChannel
       const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
       bridge.send(WindowBridge.MessageType.FLAGS_CHANGED, {
         docId: selectedDocs[0]._id,
@@ -333,25 +436,60 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
   }
 
+  /**
+   * Handles clicking an action on a specific row (usually to target an event in the main view).
+   */
   const handleRowAction = useCallback((doc: any) => {
-    if(!selectedSource)
-    {
-      return;
-    }
+    if(!selectedSource) return;
     const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
     bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
       docId: doc._id,
       operationId: selectedSource.operation_id,
     })
     bridge.destroy()
-  }, [selectedSource])
+  }, [selectedSource?.operation_id])
 
+  // --- Window Bridge Listener ---
+  useEffect(() => {
+    const bridgeId = WindowBridge.generateId()
+    const bridge = WindowBridge.create(bridgeId, (message) => {
+      if (message.type === WindowBridge.MessageType.TABLE_SELECT_SOURCE) {
+        const payload = message.payload as WindowBridge.TableSelectSourcePayload
+        setSelectedSourceId(payload.sourceId as Source.Id)
+      }
+    })
+    return () => bridge.destroy()
+  }, [])
+
+  // --- Constants ---
   const defaultHidden = ["_id", "gulp.source_id", "gulp.context_id", "gulp.operation_id", "gulp.event_code"]
+  const isAllSelected = data.length > 0 && selectedRows.size === data.length
 
   return (
     <div className={s.main} ref={setContainer}>
       <div className={s.header}>
         <h2>Table View{selectedSource ? `: ${selectedSource.name}` : ''}</h2>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span>
+                <Toggle
+                  checked={isSynced}
+                  onCheckedChange={setIsSynced}
+                  option={['Detached', 'Synced']}
+                  disabled={!selectedSourceId}
+                />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <div style={{ maxWidth: 300 }}>
+                {isSynced 
+                  ? "Synced: Following global filters and timeline range. Local search is disabled."
+                  : "Detached: Use local search and independent time range filters."}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       <div className={s.row1}>
@@ -376,15 +514,15 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
           </Select.Root>
         </div>
 
-        <Stack ai="center" gap={12}>
+        {!isSynced && (<Stack ai="center" gap={12}>
           <Toggle
             checked={manual}
             onCheckedChange={setManual}
             option={['Select dates', 'ISO String']}
             disabled={!selectedSourceId}
           />
-        </Stack>
-        <div className={s.timeRow}>
+        </Stack>)}
+        {!isSynced && (<div className={s.timeRow}>
           {manual ? (
             <>
               <InputISOSelection
@@ -416,8 +554,8 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
               />
             </>
           )}
-        </div>
-        <div className={s.searchRow}>
+        </div>)}
+        {!isSynced && (<div className={s.searchRow}>
           <Stack gap={8} ai="flex-end">
             <Input
               label="Search"
@@ -435,7 +573,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
               title="Search"
             />
           </Stack>
-        </div>
+        </div>)}
       </div>
 
       <div className={s.row2}>

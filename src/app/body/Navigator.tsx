@@ -243,11 +243,11 @@ export function Navigator({
         target: {
           ...app.target,
           events: new Map(), // Omit events map as it cannot be cloned over BroadcastChannel
-          filters: {}, // Omit filters
+          filters: app.target.filters,
         }
       } as any
     })
-  }, [app.target.files, app.target.operations, app.target.contexts])
+  }, [app.target.files, app.target.operations, app.target.contexts, app.target.filters])
 
   /**
    * Copies stylesheets from the main document into a detached window.
