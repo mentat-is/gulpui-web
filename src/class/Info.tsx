@@ -908,6 +908,99 @@ export class Info implements InfoProps {
 			body.q_options.name = name;
 		}
 
+		const req_id = request_query.req_id as Request.Id;
+
+		// 1. Set loading state synchronously
+		if (id) {
+			const ids = Array.isArray(id) ? id : [id];
+			ids.forEach(i => this.setLoading(req_id, i as Source.Id));
+		}
+
+		// 2. Define cleanup logic for listeners and loading state
+		let sid: string | undefined;
+		let sidCollab: string | undefined;
+
+		const cleanup = () => {
+			this.delLoading(req_id);
+			if (sid) {
+				SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+			}
+			if (sidCollab) {
+				SmartSocket.Class.instance.coff(SmartSocket.Message.Type.COLLAB_CREATE, sidCollab);
+			}
+		};
+
+		const bufferedEvents: Doc.Type[] = [];
+		let lastFlushTime = 0;
+		let flushChain: Promise<void> = Promise.resolve();
+		const FLUSH_INTERVAL_MS = 300;
+
+		sid = SmartSocket.Class.instance.con(
+			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+			(m) =>
+				m.req_id === req_id &&
+				this.app.general.loadings.byRequestId.has(req_id),
+			(m) => {
+				const events = Doc.Entity.normalize(m.payload.docs ?? []);
+				bufferedEvents.push(...events);
+
+				if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+					const toFlush = bufferedEvents.splice(0);
+					lastFlushTime = Date.now();
+					flushChain = flushChain.then(() => this.events_add_async(toFlush));
+				}
+				if (m.payload.last) {
+					flushChain.then(() => {
+						cleanup();
+						if (id) {
+							const ids = Array.isArray(id) ? id : [id];
+							ids.forEach(i => {
+								const file = Source.Entity.id(this.app, i as Source.Id);
+								const loadedCount = Doc.Entity.get(this.app, i as Source.Id).length;
+								if (file && loadedCount > file.total) {
+									file.total = loadedCount;
+								}
+							});
+							this.setInfoByKey(
+								[...this.app.target.files],
+								"target",
+								"files",
+							);
+						}
+						this.render();
+					});
+				}
+			},
+		);
+
+		SmartSocket.Class.instance.conce(
+			SmartSocket.Message.Type.STATS_UPDATE,
+			(m) => m.req_id === req_id,
+			(m) => {
+				// empty logic from before
+			},
+		);
+
+		if (create_notes) {
+			sidCollab = SmartSocket.Class.instance.con(
+				SmartSocket.Message.Type.COLLAB_CREATE,
+				(m) => m.req_id === req_id,
+				(m) => {
+					if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
+						const newItems = m.payload.obj.filter(
+							(item: any) => item.type === "note",
+						) as Note.Type[];
+						if (newItems.length > 0) {
+							newItems.forEach(note => this.AddNoteToDataStore(note));
+							toast.success(`Fetched ${newItems.length} notes`, {
+								richColors: true,
+							});
+						}
+					}
+				},
+			);
+		}
+
 		const resp = await api<any>(
 			"/query_raw",
 			{
@@ -915,108 +1008,13 @@ export class Info implements InfoProps {
 				query: request_query,
 				body,
 				raw: true,
-			},
-			({ req_id, status }) => {
-				if (status !== "pending") {
-					return;
-				}
-
-				const bufferedEvents: Doc.Type[] = [];
-				let lastFlushTime = 0;
-				let flushChain: Promise<void> = Promise.resolve();
-				const FLUSH_INTERVAL_MS = 300;
-
-				const sid = SmartSocket.Class.instance.con(
-					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-					(m) =>
-						m.req_id === req_id &&
-						this.app.general.loadings.byRequestId.has(req_id),
-					(m) => {
-						const events = Doc.Entity.normalize(m.payload.docs ?? []);
-						bufferedEvents.push(...events);
-
-						if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
-							const toFlush = bufferedEvents.splice(0);
-							lastFlushTime = Date.now();
-							flushChain = flushChain.then(() => this.events_add_async(toFlush));
-						}
-						if (m.payload.last) {
-							flushChain.then(() => {
-								this.delLoading(req_id);
-								SmartSocket.Class.instance.coff(
-									SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-									sid,
-								);
-								if (id) {
-									const ids = Array.isArray(id) ? id : [id];
-									ids.forEach(i => {
-										const file = Source.Entity.id(this.app, i);
-										const loadedCount = Doc.Entity.get(this.app, i).length;
-										if (file && loadedCount > file.total) {
-											file.total = loadedCount;
-										}
-									});
-									this.setInfoByKey(
-										[...this.app.target.files],
-										"target",
-										"files",
-									);
-								}
-								this.render();
-							});
-						}
-					},
-				);
-				SmartSocket.Class.instance.conce(
-					SmartSocket.Message.Type.STATS_UPDATE,
-					(m) => m.req_id === req_id,
-					(m) => {
-						// if (m.payload.obj.status !== 'done') {
-						//   toast.error(`Query ${req_id} failed`, {
-						//     icon: <Icon name='Stop' />,
-						//     description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
-						//     duration: 1000 * 2,
-						//     // [λ] Uncomment next lines if not fixed in backend till 2026
-						//     // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
-						//     // duration: 1000 * 60 * 10,
-						//     richColors: true
-						//   })
-						// } else {
-						//   console.log(m);
-						//   toast.success('Query finished', {
-						//     description: `Total processed documents: ${m.payload.obj.data.total_hits}`,
-						//     icon: <Icon name='Check' />
-						//   })
-						// }
-					},
-				);
-
-				if (create_notes) {
-					SmartSocket.Class.instance.con(
-						SmartSocket.Message.Type.COLLAB_CREATE,
-						(m) => m.req_id === req_id,
-						(m) => {
-							if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
-								const newItems = m.payload.obj.filter(
-									(item: any) => item.type === "note",
-								) as Note.Type[];
-								if (newItems.length > 0) {
-									newItems.forEach(note => this.AddNoteToDataStore(note));
-									toast.success(`Fetched ${newItems.length} notes`, {
-										richColors: true,
-									});
-								}
-							}
-						},
-					);
-				}
-
-				if (id) {
-					const ids = Array.isArray(id) ? id : [id];
-					ids.forEach(i => this.setLoading(req_id, i));
-				}
-			},
+			}
 		);
+
+		// 5. If the API request failed or the job wasn't pending, clean up immediately
+		if (!resp || resp.status !== "pending") {
+			cleanup();
+		}
 
 		if (preview) {
 			if (!resp || (resp || {})?.data?.total_hits === 0) {

@@ -140,7 +140,8 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     "gulp.event_code", 
     "event.original", 
     "gulp.timestamp",
-    "gulp.unmapped"
+    "gulp.unmapped",
+    "gulp.enrich"
   ]
 
   // --- Context & Infrastructure ---
@@ -166,10 +167,22 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   
   const syncedTextFilter = syncedSourceFilter?.text_filter || '';
 
-  const columns = useMemo(() => {
-    if (!syncedSourceFilter?.fieldTypeMap) return undefined
-    return Object.keys(syncedSourceFilter.fieldTypeMap).sort((a, b) => a.localeCompare(b))
+  const [localFieldTypeMap, setLocalFieldTypeMap] = useState<Record<string, string> | null>(null)
+
+  useEffect(() => {
+    setLocalFieldTypeMap(null)
+  }, [selectedSourceId])
+
+  useEffect(() => {
+    if (syncedSourceFilter?.fieldTypeMap && Object.keys(syncedSourceFilter.fieldTypeMap).length > 0) {
+      setLocalFieldTypeMap(syncedSourceFilter.fieldTypeMap)
+    }
   }, [syncedSourceFilter?.fieldTypeMap])
+
+  const columns = useMemo(() => {
+    if (!localFieldTypeMap) return undefined
+    return Object.keys(localFieldTypeMap).sort((a, b) => a.localeCompare(b))
+  }, [localFieldTypeMap])
 
   // --- Pagination & Search State ---
   const [localSearchQuery, setLocalSearchQuery] = useState('')
@@ -191,7 +204,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
    * if no timestamp field survived the filter.
    */
   const sortableFields = useMemo(() => {
-    const map = syncedSourceFilter?.fieldTypeMap
+    const map = localFieldTypeMap
     const fields: string[] = []
 
     if (map) {
@@ -214,7 +227,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
 
     return fields.sort((a, b) => a.localeCompare(b))
-  }, [syncedSourceFilter?.fieldTypeMap])
+  }, [localFieldTypeMap])
 
   /**
    * Resets sort field if it's no longer valid for the selected source.
@@ -232,27 +245,6 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
   }, [sortableFields, sortField])
 
-  /**
-   * Automatically populates the fieldTypeMap for the selected source if it's missing.
-   * 
-   * This ensures the sorting menu and column list are available even if the 
-   * search modal (FilterFileBanner) hasn't been opened for this source yet.
-   */
-  useEffect(() => {
-    const hasMapping = syncedSourceFilter?.fieldTypeMap && Object.keys(syncedSourceFilter.fieldTypeMap).length > 0
-
-    if (selectedSource && !hasMapping) {
-      Info.event_keys(selectedSource)
-        .then(map => {
-          const currentQuery = Info.getQuery(selectedSource)
-          Info.setQuery(selectedSource, { ...currentQuery, fieldTypeMap: map })
-        })
-        .catch(err => {
-          Logger.error('TableViewWindow: Failed to fetch source keys', err)
-        })
-    }
-  }, [selectedSourceId, !!syncedSourceFilter?.fieldTypeMap, Info])
-  
   // --- Data & Results State ---
   const [data, setData] = useState<any[]>([])
   const [totalHits, setTotalHits] = useState<number>(0)
@@ -280,8 +272,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     operationId: selectedOperationId,
     isSynced,
     filters: serializedFilters,
-    textFilter: syncedTextFilter,
-    frame: app.timeline.frame
+    textFilter: syncedTextFilter
   })
 
   if (
@@ -290,9 +281,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     lastSync.isSynced !== isSynced ||
     (isSynced && (
       lastSync.filters !== serializedFilters || 
-      lastSync.textFilter !== syncedTextFilter || 
-      lastSync.frame.min !== app.timeline.frame.min || 
-      lastSync.frame.max !== app.timeline.frame.max
+      lastSync.textFilter !== syncedTextFilter
     ))
   ) {
     const sourceChanged = lastSync.sourceId !== selectedSourceId
@@ -303,8 +292,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       operationId: selectedOperationId,
       isSynced,
       filters: serializedFilters,
-      textFilter: syncedTextFilter,
-      frame: app.timeline.frame
+      textFilter: syncedTextFilter
     })
 
     // Reset parameters to starting state on major changes
@@ -347,9 +335,15 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   }
 
   // --- Derived Query Parameters ---
-  const activeMin = isSynced ? (app.timeline.frame.min * 1000000).toString() : timeFrame.min
-  const activeMax = isSynced ? (app.timeline.frame.max * 1000000).toString() : timeFrame.max
+  const activeMin = isSynced && selectedSource?.nanotimestamp?.min 
+      ? selectedSource.nanotimestamp.min.toString() 
+      : timeFrame.min;
+      
+  const activeMax = isSynced && selectedSource?.nanotimestamp?.max 
+      ? selectedSource.nanotimestamp.max.toString() 
+      : timeFrame.max;
   const activeFilters = isSynced && selectedSourceId ? app.target.filters[selectedSourceId] : null
+  const activeSerializedFilters = isSynced ? serializedFilters : "[]"
   const activeTextFilter = isSynced ? syncedTextFilter : searchQuery
 
   // --- Data Fetching ---
@@ -367,7 +361,9 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       // Branch logic: Determine if we use synced global filters or local search query
       if (isSynced) {
         if (activeFilters) {
-          queryObj = { ...activeFilters, text_filter: syncedTextFilter } as any;
+          let filter = {...activeFilters}
+          if (filter.source_config) {filter.source_config.source_ids=[selectedSource.id]}
+          queryObj = { ...filter, text_filter: syncedTextFilter, } as any;
         } else {
           queryObj = {
             string: "",
@@ -411,7 +407,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     }
     // We use stable primitives (IDs and serialized strings) for dependencies to avoid 
     // redundant fetches when global object references change.
-  }, [selectedSource?.id, selectedSource?.operation_id, isSynced, activeMin, activeMax, serializedFilters, activeTextFilter, pageSize, currentPage, sortField, sortDirection, Info])
+  }, [selectedSource?.id, selectedSource?.operation_id, isSynced, activeMin, activeMax, activeSerializedFilters, activeTextFilter, pageSize, currentPage, sortField, sortDirection, Info])
 
   /**
    * Effect to trigger fetch whenever logical query parameters change.

@@ -39,8 +39,6 @@ export namespace WindowBridge {
     TARGET_NOTE = 'TARGET_NOTE',
     /** Main → Detached: An event was selected in the timeline */
     EVENT_SELECTED = 'EVENT_SELECTED',
-    /** Main → Detached: Timeline frame (time range) changed */
-    FRAME_CHANGED = 'FRAME_CHANGED',
   }
 
   export interface ThemeChangePayload {
@@ -87,9 +85,6 @@ export namespace WindowBridge {
     event: Doc.Type | null
   }
 
-  export interface FrameChangedPayload {
-    frame: MinMax
-  }
 
   export type MessagePayload = {
     [MessageType.THEME_CHANGE]: ThemeChangePayload
@@ -101,7 +96,6 @@ export namespace WindowBridge {
     [MessageType.TABLE_SELECT_SOURCE]: TableSelectSourcePayload
     [MessageType.TARGET_NOTE]: TargetNotePayload
     [MessageType.EVENT_SELECTED]: EventSelectedPayload
-    [MessageType.FRAME_CHANGED]: FrameChangedPayload
   }
 
   export interface Message<T extends MessageType = MessageType> {
