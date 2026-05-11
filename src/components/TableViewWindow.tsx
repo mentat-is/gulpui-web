@@ -155,6 +155,11 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   
   const syncedTextFilter = syncedSourceFilter?.text_filter || '';
 
+  const columns = useMemo(() => {
+    if (!syncedSourceFilter?.fieldTypeMap) return undefined
+    return Object.keys(syncedSourceFilter.fieldTypeMap).sort((a, b) => a.localeCompare(b))
+  }, [syncedSourceFilter?.fieldTypeMap])
+
   // --- Pagination & Search State ---
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -462,7 +467,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   }, [])
 
   // --- Constants ---
-  const defaultHidden = ["_id", "gulp.source_id", "gulp.context_id", "gulp.operation_id", "gulp.event_code"]
+  const defaultHidden = ["_id", "gulp.source_id", "gulp.context_id", "gulp.operation_id", "gulp.event_code", "event.original"]
   const isAllSelected = data.length > 0 && selectedRows.size === data.length
 
   return (
@@ -667,6 +672,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
         ) : data.length > 0 ? (
            <Table 
              values={data}
+             columns={columns}
              includeIndex={false} 
              notshow={defaultHidden} 
              selectable={true}

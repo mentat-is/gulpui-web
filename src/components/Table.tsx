@@ -20,6 +20,7 @@ export namespace Table {
     onrowselect?: (index: number, selected: boolean) => void
     onrowaction?: (value: T, index: number) => void
     iconAction?: string
+    columns?: string[]
   }
 }
 
@@ -49,37 +50,47 @@ export function Table<T extends Object>({
   values: _values = [],
   className,
   includeIndex = true,
+  columns: _columns,
+  notshow,
+  selectable,
+  selectedrows,
+  onrowselect,
+  onrowaction,
+  iconAction,
   ...props
 }: Table.Props<T>) {
   const wrapperRef = useRef<HTMLDivElement | null>(null)
 
   const { values, columns } = useMemo(() => {
-    const keys = new Set<string>()
     const flattenedValues = _values.map((value) => flattenRow(value))
+    let columns: string[]
 
-    flattenedValues.forEach((v) => {
-      Object.keys(v).forEach((k) => {
-        if (props.notshow && props.notshow.includes(k)) return;
-        if (!props.notshow && k === 'event.original') return;
-        keys.add(k);
+    if (_columns) {
+      columns = [..._columns]
+        .filter((k) => !notshow?.includes(k))
+        .sort((a, b) => a.localeCompare(b))
+      if (includeIndex && !columns.includes('i')) {
+        columns.unshift('i')
+      }
+    } else {
+      const keys = new Set<string>()
+      flattenedValues.forEach((v) => {
+        Object.keys(v).forEach((k) => {
+          if (notshow && notshow.includes(k)) return
+          if (!notshow && k === 'event.original') return
+          keys.add(k)
+        })
       })
-    })
 
-    if (includeIndex) {
-      keys.add('i')
-    }
-
-    const columns = Array.from(keys.values()).sort((a, b) => {
-      if (a.length !== b.length) {
-        return a.length - b.length
+      if (includeIndex) {
+        keys.add('i')
       }
 
-      return a.localeCompare(b)
-    })
+      columns = Array.from(keys.values()).sort((a, b) => a.localeCompare(b))
+    }
 
     const example: Record<string, any> = {}
-
-    columns.forEach((c) => (example[c] = `<BLANK>`))
+    columns.forEach((c) => (example[c] = '<BLANK>'))
 
     return {
       values: flattenedValues.map((v, i) =>
@@ -87,7 +98,7 @@ export function Table<T extends Object>({
       ),
       columns,
     }
-  }, [_values, includeIndex])
+  }, [_values, includeIndex, _columns, notshow])
 
 
   return (
@@ -103,8 +114,8 @@ export function Table<T extends Object>({
         <table className={s.table}>
           <thead>
             <tr>
-              {props.selectable && <th style={{ width: '40px', textAlign: 'center' }}></th>}
-              {props.onrowaction && <th style={{ width: '40px', textAlign: 'center' }}></th>}
+              {selectable && <th style={{ width: '40px', textAlign: 'center' }}></th>}
+              {onrowaction && <th style={{ width: '40px', textAlign: 'center' }}></th>}
             {columns.map((c, i) => (
                 <Col c={c} key={c + i} />
               ))}
@@ -117,11 +128,11 @@ export function Table<T extends Object>({
               key={String(i) + index} 
               i={i} 
               index={index}
-              selectable={props.selectable}
-              selected={props.selectedrows?.has(index)}
-              onRowSelect={props.onrowselect}
-              onRowAction={props.onrowaction}
-              iconAction={props.iconAction}
+              selectable={selectable}
+              selected={selectedrows?.has(index)}
+              onRowSelect={onrowselect}
+              onRowAction={onrowaction}
+              iconAction={iconAction}
             />
             ))}
           </tbody>
@@ -158,7 +169,7 @@ function Item<T extends Object>({ i, columns, index, selectable, selected, onRow
   return (
     <tr className={s.item} {...props}>
       {selectable && (
-        <td className={s.value}>
+        <td className={cn(s.value, s.actionCell)}>
           <div className={s.centered}>
             <Checkbox checked={!!selected} onCheckedChange={(c) => onRowSelect?.(index, !!c)} />
           </div>
@@ -166,7 +177,7 @@ function Item<T extends Object>({ i, columns, index, selectable, selected, onRow
       )}
       {
         onRowAction && (
-          <td className={s.value}>
+          <td className={cn(s.value, s.actionCell)}>
             <div className={s.centered}>
               <Button className={s.Button_Icon} icon={iconAction as Icon.Name} variant="glass" onClick={() => onRowAction?.(i, index)} />
             </div>
