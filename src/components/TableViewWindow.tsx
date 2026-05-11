@@ -784,6 +784,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
                  }
                }
              }}
+             highlightedId={app.timeline.target?._id}
            />
         ) : (
            <p className={s.label}>No data found matching your query.</p>

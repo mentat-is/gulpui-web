@@ -7,6 +7,7 @@ import { Checkbox } from '@/ui/Checkbox'
 import { Glyph } from '@/entities/Glyph'
 import { Button } from '@/ui/Button'
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/ui/Tooltip'
+import { Color } from '@/entities/Color'
 
 export type Object = Record<string, any>
 
@@ -36,6 +37,8 @@ export namespace Table {
     sortDirection?: 'asc' | 'desc'
     /** Callback triggered when a column header is clicked to change sorting. */
     onSort?: (field: string) => void
+    /** The ID of the row to highlight (matches _id field). */
+    highlightedId?: string
   }
 }
 
@@ -75,6 +78,7 @@ export function Table<T extends Object>({
   sortField,
   sortDirection,
   onSort,
+  highlightedId,
   ...props
 }: Table.Props<T>) {
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -127,6 +131,10 @@ export function Table<T extends Object>({
         dir="column"
         ref={wrapperRef}
         className={cn(s.wrapper, className)}
+        style={{ 
+          ...props.style,
+          ['--highlight-color' as any]: Color.Themer.getTargetGuideColor() 
+        }}
         {...props}
       >
         <table className={s.table}>
@@ -148,16 +156,17 @@ export function Table<T extends Object>({
           <tbody>
             {values.map((i, index) => (
               <Item 
-              columns={columns} 
-              key={String(i) + index} 
-              i={i} 
-              index={index}
-              selectable={selectable}
-              selected={selectedrows?.has(index)}
-              onRowSelect={onrowselect}
-              onRowAction={onrowaction}
-              iconAction={iconAction}
-            />
+                columns={columns} 
+                key={(i._id || i.id || '') + index} 
+                i={i} 
+                index={index}
+                selectable={selectable}
+                selected={selectedrows?.has(index)}
+                onRowSelect={onrowselect}
+                onRowAction={onrowaction}
+                iconAction={iconAction}
+                highlighted={!!(highlightedId && i._id === highlightedId)}
+              />
             ))}
           </tbody>
         </table>
@@ -207,7 +216,6 @@ function Col({ c, sortField, sortDirection, onSort, ...props }: Col.Props) {
           <Icon 
             name={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'} 
             size={14} 
-            style={{ color: 'var(--brand-500)' }} 
           />
         )}
       </Stack>
@@ -225,12 +233,13 @@ namespace Item {
     onRowSelect?: (index: number, selected: boolean) => void
     onRowAction?: (value: T, index: number) => void
     iconAction?: string
+    highlighted: boolean
   }
 }
 
-function Item<T extends Object>({ i, columns, index, selectable, selected, onRowSelect, onRowAction, iconAction, ...props }: Item.Props<T>) {
+function Item<T extends Object>({ i, columns, index, selectable, selected, onRowSelect, onRowAction, iconAction, highlighted, ...props }: Item.Props<T>) {
   return (
-    <tr className={s.item} {...props}>
+    <tr className={cn(s.item, highlighted && s.highlighted)} {...props}>
       {selectable && (
         <td className={cn(s.value, s.actionCell)}>
           <div className={s.centered}>

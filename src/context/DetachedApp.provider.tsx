@@ -134,6 +134,28 @@ export function DetachedAppProvider({
           }))
           break
         }
+        case WindowBridge.MessageType.EVENT_SELECTED: {
+          const { event } = message.payload as WindowBridge.EventSelectedPayload
+          setInfo(prev => ({
+            ...prev,
+            timeline: {
+              ...prev.timeline,
+              target: event
+            }
+          }))
+          break
+        }
+        case WindowBridge.MessageType.FRAME_CHANGED: {
+          const { frame } = message.payload as WindowBridge.FrameChangedPayload
+          setInfo(prev => ({
+            ...prev,
+            timeline: {
+              ...prev.timeline,
+              frame
+            }
+          }))
+          break
+        }
       }
     })
 

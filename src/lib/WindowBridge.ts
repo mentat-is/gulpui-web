@@ -12,6 +12,7 @@ import type { Note } from '@/entities/Note'
 import type { App } from '@/entities/App'
 import type { Doc } from '@/entities/Doc'
 import type { Operation } from '@/entities/Operation'
+import type { MinMax } from '@/class/Info'
 
 const CHANNEL_NAME = 'gulp-window-bridge'
 
@@ -36,6 +37,10 @@ export namespace WindowBridge {
     TABLE_SELECT_SOURCE = 'TABLE_SELECT_SOURCE',
     /** Detached → Main: User clicked "target note" button — open event dialog in main tab */
     TARGET_NOTE = 'TARGET_NOTE',
+    /** Main → Detached: An event was selected in the timeline */
+    EVENT_SELECTED = 'EVENT_SELECTED',
+    /** Main → Detached: Timeline frame (time range) changed */
+    FRAME_CHANGED = 'FRAME_CHANGED',
   }
 
   export interface ThemeChangePayload {
@@ -78,6 +83,14 @@ export namespace WindowBridge {
     operationId: Operation.Id
   }
 
+  export interface EventSelectedPayload {
+    event: Doc.Type | null
+  }
+
+  export interface FrameChangedPayload {
+    frame: MinMax
+  }
+
   export type MessagePayload = {
     [MessageType.THEME_CHANGE]: ThemeChangePayload
     [MessageType.NOTES_CHANGED]: NotesChangedPayload
@@ -87,6 +100,8 @@ export namespace WindowBridge {
     [MessageType.BANNER_ACTION]: BannerActionPayload
     [MessageType.TABLE_SELECT_SOURCE]: TableSelectSourcePayload
     [MessageType.TARGET_NOTE]: TargetNotePayload
+    [MessageType.EVENT_SELECTED]: EventSelectedPayload
+    [MessageType.FRAME_CHANGED]: FrameChangedPayload
   }
 
   export interface Message<T extends MessageType = MessageType> {

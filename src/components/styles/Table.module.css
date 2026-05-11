@@ -73,3 +73,12 @@
   width: 40px;
   min-width: 40px;
 }
+.item:hover {
+  background: var(--background-300);
+}
+
+.highlighted {
+  background: color-mix(in srgb, var(--highlight-color) 30%, transparent) !important;
+  outline: 1px solid var(--highlight-color);
+  outline-offset: -1px;
+}

@@ -249,6 +249,20 @@ export function Navigator({
     })
   }, [app.target.files, app.target.operations, app.target.contexts, app.target.filters])
 
+  // Sync timeline selection to detached windows
+  useEffect(() => {
+    mainBridgeRef.current?.send(WindowBridge.MessageType.EVENT_SELECTED, {
+      event: app.timeline.target
+    })
+  }, [app.timeline.target])
+
+  // Sync timeline frame to detached windows
+  useEffect(() => {
+    mainBridgeRef.current?.send(WindowBridge.MessageType.FRAME_CHANGED, {
+      frame: app.timeline.frame
+    })
+  }, [app.timeline.frame])
+
   /**
    * Copies stylesheets from the main document into a detached window.
    * Runs once at window creation time (not reactively).
