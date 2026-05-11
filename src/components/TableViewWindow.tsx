@@ -267,59 +267,64 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
    * and resets local pagination/search state within a single render pass.
    * This prevents "useEffect cascades" that cause double-fetches.
    */
-  const [lastSync, setLastSync] = useState({
+  const prevSyncRef = useRef({
     sourceId: selectedSourceId,
     operationId: selectedOperationId,
     isSynced,
     filters: serializedFilters,
     textFilter: syncedTextFilter
-  })
+  });
 
-  if (
-    lastSync.sourceId !== selectedSourceId ||
-    lastSync.operationId !== selectedOperationId ||
-    lastSync.isSynced !== isSynced ||
-    (isSynced && (
-      lastSync.filters !== serializedFilters || 
-      lastSync.textFilter !== syncedTextFilter
-    ))
-  ) {
-    const sourceChanged = lastSync.sourceId !== selectedSourceId
-    const opChanged = lastSync.operationId !== selectedOperationId
+  useEffect(() => {
+    const prev = prevSyncRef.current;
     
-    setLastSync({
-      sourceId: selectedSourceId,
-      operationId: selectedOperationId,
-      isSynced,
-      filters: serializedFilters,
-      textFilter: syncedTextFilter
-    })
+    const hasLogicalChange = 
+      prev.sourceId !== selectedSourceId ||
+      prev.operationId !== selectedOperationId ||
+      prev.isSynced !== isSynced ||
+      (isSynced && (prev.filters !== serializedFilters || prev.textFilter !== syncedTextFilter));
 
-    // Reset parameters to starting state on major changes
-    setCurrentPage(1)
-    setSearchQuery('')
-    setLocalSearchQuery('')
+    if (hasLogicalChange) {
+      const opChanged = prev.operationId !== selectedOperationId;
+      const sourceChanged = prev.sourceId !== selectedSourceId;
 
-    // Clear data if we switched operations
-    if (opChanged) {
-      setSelectedSourceId(null)
-      setData([])
-      setTotalHits(0)
+      // Reset pagination and search
+      setCurrentPage(1);
+      setSearchQuery('');
+      setLocalSearchQuery('');
+
+      if (opChanged) {
+        setSelectedSourceId(null);
+        setData([]);
+        setTotalHits(0);
+      }
+
+      // Sync timeframe
+      if (isSynced) {
+        setTimeFrame({
+          min: (app.timeline.frame.min * 1000000).toString(),
+          max: (app.timeline.frame.max * 1000000).toString(),
+        });
+      } else if (sourceChanged && selectedSource) {
+        setTimeFrame({
+          min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
+          max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
+        });
+      }
+
+      // Update ref
+      prevSyncRef.current = {
+        sourceId: selectedSourceId,
+        operationId: selectedOperationId,
+        isSynced,
+        filters: serializedFilters,
+        textFilter: syncedTextFilter
+      };
+      
+      // Il fetchTableData verrà triggerato automaticamente dall'useEffect 
+      // che ha come dipendenze questi stati (currentPage, sortField, ecc.)
     }
-
-    // Synchronize time frame based on mode
-    if (isSynced) {
-      setTimeFrame({
-        min: (app.timeline.frame.min * 1000000).toString(),
-        max: (app.timeline.frame.max * 1000000).toString(),
-      })
-    } else if (sourceChanged && selectedSource) {
-      setTimeFrame({
-        min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
-        max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
-      })
-    }
-  }
+  }, [selectedSourceId, selectedOperationId, isSynced, serializedFilters, syncedTextFilter, app.timeline.frame, selectedSource]);
 
   /**
    * Derived pagination info.
