@@ -29,6 +29,7 @@ import { WindowBridge } from '@/lib/WindowBridge'
 import { DataStore } from '@/store/DataStore'
 import { Note } from '@/entities/Note'
 import { RenderEngine } from '@/class/RenderEngine'
+import { Color } from '@/entities/Color'
 
 export namespace DetachedApp {
   export interface ProviderProps {
@@ -79,6 +80,15 @@ export function DetachedAppProvider({
           // Set data-theme attribute; full CSS variable sync is handled by
           // direct DOM access via applyThemeToWindow in Navigator.tsx
           document.documentElement.setAttribute('data-theme', theme)
+          Color.Themer.setTheme(theme as any)
+          // Trigger re-render to pick up new colors from getTargetGuideColor()
+          setInfo(prev => ({
+            ...prev,
+            timeline: {
+              ...prev.timeline,
+              renderVersion: prev.timeline.renderVersion + 1,
+            },
+          }))
           break
         }
         case WindowBridge.MessageType.NOTES_CHANGED: {
