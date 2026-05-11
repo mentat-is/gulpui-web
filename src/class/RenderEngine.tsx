@@ -19,6 +19,9 @@ import { Color } from "@/entities/Color";
 import { Operation } from "@/entities/Operation";
 import { DataStore } from "@/store/DataStore";
 import { Highlight } from "@/entities/Highlight";
+import { Context } from "@/entities/Context";
+import { stringToHexColor } from "@/ui/utils";
+
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = (NOTE_SIZE / 2) * -1;
@@ -197,24 +200,24 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		// Derive a deterministic per-row tint from the context_id hash, but constrained
 		// to the current theme accent colour so monochrome themes stay monochrome.
 		const tintAlpha = Color.Themer.contextTintAlpha(file.context_id);
+		const context = Source.Entity.context(this.info.app, file);
+		const color = stringToHexColor(file.context_id);
+		//const color = context.color ? context.color : stringToHexColor(file.context_id);
 		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
 		// fill() paints fillRect(0, y-24, width, 48) which extends to y+24 — the exact
 		// position of the separator. Draw fill first, then the separator on top so it
 		// is not overwritten. Use reduced opacity so the line is lighter than the
 		// fully-opaque text labels drawn afterwards by draw_info/locals.
+		this.ctx.fillStyle = color;
+		this.ctx.fillRect(0, y + 24, window.innerWidth, 1);
+		
 		this.fill(
-			Color.Themer.theme.FONT_ACCENT,
+			color,
 			tintAlpha,
 			y,
 			!this.shifted.find((shiftedSource) => shiftedSource.id === file.id),
 		);
-
-		const savedAlpha = this.ctx.globalAlpha;
-		this.ctx.globalAlpha = 0.35;
-		this.ctx.fillStyle = Color.Themer.theme.BORDER;
-		this.ctx.fillRect(0, y + 24, window.innerWidth, 1);
-		this.ctx.globalAlpha = savedAlpha;
 	};
 
 	public primary = (file: Source.Type, y?: number) => {
