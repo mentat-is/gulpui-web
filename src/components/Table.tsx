@@ -12,15 +12,30 @@ export type Object = Record<string, any>
 
 export namespace Table {
   export interface Props<T extends Object> extends Stack.Props {
+    /** The array of data objects to display in the table. */
     values: T[]
+    /** Whether to include a virtual index column ('i'). Defaults to true. */
     includeIndex?: boolean
+    /** List of fields to explicitly hide from the table columns. */
     notshow?: string[]
+    /** Whether rows are selectable via checkboxes. */
     selectable?: boolean
+    /** Set of indices representing currently selected rows. */
     selectedrows?: Set<number>
+    /** Callback triggered when a row's selection state changes. */
     onrowselect?: (index: number, selected: boolean) => void
+    /** Callback triggered when the action button (iconAction) is clicked for a row. */
     onrowaction?: (value: T, index: number) => void
+    /** The name of the icon to display for the row action button. */
     iconAction?: string
+    /** Optional explicit list of columns to display. If omitted, columns are derived from data. */
     columns?: string[]
+    /** The field currently being used for sorting. */
+    sortField?: string
+    /** The current sorting direction. */
+    sortDirection?: 'asc' | 'desc'
+    /** Callback triggered when a column header is clicked to change sorting. */
+    onSort?: (field: string) => void
   }
 }
 
@@ -57,6 +72,9 @@ export function Table<T extends Object>({
   onrowselect,
   onrowaction,
   iconAction,
+  sortField,
+  sortDirection,
+  onSort,
   ...props
 }: Table.Props<T>) {
   const wrapperRef = useRef<HTMLDivElement | null>(null)
@@ -117,7 +135,13 @@ export function Table<T extends Object>({
               {selectable && <th style={{ width: '40px', textAlign: 'center' }}></th>}
               {onrowaction && <th style={{ width: '40px', textAlign: 'center' }}></th>}
             {columns.map((c, i) => (
-                <Col c={c} key={c + i} />
+                <Col 
+                  c={c} 
+                  key={c + i} 
+                  sortField={sortField} 
+                  sortDirection={sortDirection} 
+                  onSort={onSort} 
+                />
               ))}
             </tr>
           </thead>
@@ -144,12 +168,51 @@ export function Table<T extends Object>({
 
 namespace Col {
   export interface Props extends Stack.Props {
+    /** The column field name. */
     c: string
+    /** The field currently being used for sorting. */
+    sortField?: string
+    /** The current sorting direction. */
+    sortDirection?: 'asc' | 'desc'
+    /** Callback to trigger a sort on this column. */
+    onSort?: (field: string) => void
   }
 }
 
-function Col({ c, ...props }: Col.Props) {
-  return <th {...props}>{c}</th>
+/**
+ * Renders a table header cell with optional sorting interactivity.
+ */
+function Col({ c, sortField, sortDirection, onSort, ...props }: Col.Props) {
+  /**
+   * Determine if this column is the active sort column.
+   * Handles the 'timestamp' / '@timestamp' aliasing.
+   */
+  const isSorted = useMemo(() => {
+    if (!sortField) return false
+    if (sortField === c) return true
+    if (c === 'timestamp' && sortField === '@timestamp') return true
+    if (c === '@timestamp' && sortField === 'timestamp') return true
+    return false
+  }, [c, sortField])
+  
+  return (
+    <th 
+      {...props} 
+      onClick={() => onSort?.(c)} 
+      style={{ cursor: onSort ? 'pointer' : 'default', userSelect: 'none' }}
+    >
+      <Stack gap={4} ai="center" jc="flex-start">
+        <span>{c}</span>
+        {isSorted && onSort && (
+          <Icon 
+            name={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'} 
+            size={14} 
+            style={{ color: 'var(--brand-500)' }} 
+          />
+        )}
+      </Stack>
+    </th>
+  )
 }
 
 namespace Item {

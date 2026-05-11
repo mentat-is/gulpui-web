@@ -131,7 +131,18 @@ function InputISOSelection({ type, value, valid, onChange }: {
  * Opens a paginated table view of raw events for a specific source.
  */
 export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Props) {
-  
+  // --- Constants ---
+  const DEFAULT_HIDDEN_FIELDS = [
+    "_id", 
+    "gulp.source_id", 
+    "gulp.context_id", 
+    "gulp.operation_id", 
+    "gulp.event_code", 
+    "event.original", 
+    "gulp.timestamp",
+    "gulp.unmapped"
+  ]
+
   // --- Context & Infrastructure ---
   const { Info, app, spawnBanner, banner } = Application.use()
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
@@ -167,6 +178,80 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [sortField, setSortField] = useState<string>('timestamp')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
+  /**
+   * Memoized list of fields that are allowed for sorting in OpenSearch.
+   * 
+   * Exclusions:
+   * - Data types: 'text', 'flattened', 'unmapped', 'flat_object'
+   * - Field patterns: 'gulp.unmapped.*', 'gulp.enrich.*'
+   * - Specific hidden fields: DEFAULT_HIDDEN_FIELDS
+   * 
+   * Note: '@timestamp' is preferred, but 'timestamp' is always added as a fallback
+   * if no timestamp field survived the filter.
+   */
+  const sortableFields = useMemo(() => {
+    const map = syncedSourceFilter?.fieldTypeMap
+    const fields: string[] = []
+
+    if (map) {
+      Object.entries(map).forEach(([field, type]) => {
+        const t = String(type).toLowerCase().trim()
+        const f = String(field).toLowerCase().trim()
+
+        const isDisallowedType = ['text', 'flattened', 'unmapped', 'flat_object'].includes(t)
+        const isInternalGulpField = f.startsWith("gulp.unmapped") || f.startsWith("gulp.enrich")
+        const isHiddenField = DEFAULT_HIDDEN_FIELDS.includes(f)
+
+        if (!isDisallowedType && !isInternalGulpField && !isHiddenField) {
+          fields.push(field)
+        }
+      })
+    }
+
+    if (!fields.includes('timestamp') && !fields.includes('@timestamp')) {
+      fields.push('timestamp')
+    }
+
+    return fields.sort((a, b) => a.localeCompare(b))
+  }, [syncedSourceFilter?.fieldTypeMap])
+
+  /**
+   * Resets sort field if it's no longer valid for the selected source.
+   */
+  useEffect(() => {
+    // If current sortField is not in sortableFields, try to find a valid default
+    if (!sortableFields.includes(sortField)) {
+      if (sortField === 'timestamp' && sortableFields.includes('@timestamp')) {
+        setSortField('@timestamp')
+      } else if (sortField === '@timestamp' && sortableFields.includes('timestamp')) {
+        setSortField('timestamp')
+      } else if (sortField !== 'timestamp') {
+        setSortField('timestamp')
+      }
+    }
+  }, [sortableFields, sortField])
+
+  /**
+   * Automatically populates the fieldTypeMap for the selected source if it's missing.
+   * 
+   * This ensures the sorting menu and column list are available even if the 
+   * search modal (FilterFileBanner) hasn't been opened for this source yet.
+   */
+  useEffect(() => {
+    const hasMapping = syncedSourceFilter?.fieldTypeMap && Object.keys(syncedSourceFilter.fieldTypeMap).length > 0
+
+    if (selectedSource && !hasMapping) {
+      Info.event_keys(selectedSource)
+        .then(map => {
+          const currentQuery = Info.getQuery(selectedSource)
+          Info.setQuery(selectedSource, { ...currentQuery, fieldTypeMap: map })
+        })
+        .catch(err => {
+          Logger.error('TableViewWindow: Failed to fetch source keys', err)
+        })
+    }
+  }, [selectedSourceId, !!syncedSourceFilter?.fieldTypeMap, Info])
   
   // --- Data & Results State ---
   const [data, setData] = useState<any[]>([])
@@ -467,7 +552,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   }, [])
 
   // --- Constants ---
-  const defaultHidden = ["_id", "gulp.source_id", "gulp.context_id", "gulp.operation_id", "gulp.event_code", "event.original"]
+  
   const isAllSelected = data.length > 0 && selectedRows.size === data.length
 
   return (
@@ -623,8 +708,9 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
             <Select.Root onValueChange={handleSortFieldChange} value={sortField}>
               <Select.Trigger data-no-icon className={s.sortSelect}><Select.Value /></Select.Trigger>
               <Select.Content container={container}>
-                <Select.Item value="timestamp">timestamp</Select.Item>
-                <Select.Item value="event.sequence">event.sequence</Select.Item>
+                {sortableFields.map(f => (
+                  <Select.Item key={f} value={f}>{f}</Select.Item>
+                ))}
               </Select.Content>
             </Select.Root>
             <Button 
@@ -674,7 +760,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
              values={data}
              columns={columns}
              includeIndex={false} 
-             notshow={defaultHidden} 
+             notshow={DEFAULT_HIDDEN_FIELDS} 
              selectable={true}
              selectedrows={selectedRows}
              onrowselect={(index, selected) => {
@@ -687,6 +773,17 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
              }}
              onrowaction={handleRowAction}
              iconAction="Search"
+             sortField={sortField}
+             sortDirection={sortDirection}
+             onSort={(field) => {
+               if (sortableFields.includes(field)) {
+                 if (sortField === field) {
+                   toggleSortDirection()
+                 } else {
+                   handleSortFieldChange(field)
+                 }
+               }
+             }}
            />
         ) : (
            <p className={s.label}>No data found matching your query.</p>
