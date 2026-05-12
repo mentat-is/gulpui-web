@@ -316,7 +316,9 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     setCurrentPage(1);
     setSearchQuery('');
     setLocalSearchQuery('');
-    setLocalFieldTypeMap(null);
+    if (opChanged || sourceChanged) {
+      setLocalFieldTypeMap(null);
+    }
 
     if (opChanged) {
       setSelectedSourceId(null);
@@ -352,13 +354,8 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   }
 
   // --- Derived Query Parameters ---
-  const activeMin = isSynced && selectedSource?.nanotimestamp?.min 
-      ? selectedSource.nanotimestamp.min.toString() 
-      : timeFrame.min;
-      
-  const activeMax = isSynced && selectedSource?.nanotimestamp?.max 
-      ? selectedSource.nanotimestamp.max.toString() 
-      : timeFrame.max;
+  const activeMin = timeFrame.min;
+  const activeMax = timeFrame.max;
   const activeFilters = isSynced && selectedSourceId ? app.target.filters[selectedSourceId] : null
   const activeSerializedFilters = isSynced ? serializedFilters : "[]"
   const activeTextFilter = isSynced ? syncedTextFilter : searchQuery
@@ -379,7 +376,10 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       if (isSynced) {
         if (activeFilters) {
           let filter = {...activeFilters}
-          if (filter.source_config) {filter.source_config.source_ids=[selectedSource.id]}
+          if (filter.source_config) {
+            filter.source_config.source_ids = [selectedSource.id]
+            filter.source_config.range = { min: activeMin, max: activeMax }
+          }
           queryObj = { ...filter, text_filter: syncedTextFilter, } as any;
         } else {
           queryObj = {
