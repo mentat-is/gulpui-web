@@ -30,6 +30,8 @@ import { DataStore } from '@/store/DataStore'
 import { Note } from '@/entities/Note'
 import { RenderEngine } from '@/class/RenderEngine'
 import { Color } from '@/entities/Color'
+import { Operation } from '@/entities/Operation'
+import { Source } from '@/entities/Source'
 
 export namespace DetachedApp {
   export interface ProviderProps {
@@ -92,16 +94,35 @@ export function DetachedAppProvider({
           break
         }
         case WindowBridge.MessageType.APP_SNAPSHOT: {
-          const { app: snapshot } = message.payload as WindowBridge.AppSnapshotPayload
+          const { app: snapshot, selectedSourceIds } = message.payload as WindowBridge.AppSnapshotPayload
+          selectedSourceIdsRef.current = selectedSourceIds
+
           setInfo(prev => {
-            return { 
+            const oldOpId = prev.target.operations.find((o: Operation.Type) => o.selected)?.id
+            const newOpId = snapshot.target?.operations?.find((o: Operation.Type) => o.selected)?.id
+            const opChanged = newOpId && oldOpId && newOpId !== oldOpId
+
+            const next = { 
               ...prev, 
               ...snapshot,
               target: snapshot.target ? {
                 ...prev.target,
-                ...snapshot.target
+                ...snapshot.target,
+                // Clear stale files/contexts immediately if operation changed
+                files: opChanged ? [] : prev.target.files,
+                contexts: opChanged ? [] : prev.target.contexts,
               } : prev.target
             }
+
+            // Sync selection status for existing files if no op change
+            if (!opChanged && selectedSourceIds) {
+              next.target.files = next.target.files.map((f: Source.Type) => ({
+                ...f,
+                selected: selectedSourceIds.includes(f.id)
+              }))
+            }
+
+            return next
           })
           break
         }
@@ -123,6 +144,36 @@ export function DetachedAppProvider({
       bridge.destroy()
     }
   }, [bridgeId])
+  
+  // Reactively fetch new sources/contexts when the selected operation changes.
+  // This avoids sending large source lists over BroadcastChannel (APP_SNAPSHOT).
+  const selectedOperationId = app.target.operations.find(o => o.selected)?.id
+  const prevOperationIdRef = useRef<string | null | undefined>(undefined)
+  const selectedSourceIdsRef = useRef<string[] | null | undefined>(null)
+
+  useEffect(() => {
+    if (selectedOperationId && prevOperationIdRef.current !== undefined && selectedOperationId !== prevOperationIdRef.current) {
+      // Operation changed and it's not the initial mount -> sync fresh data from server
+      instance.sync().then(() => {
+        // Apply selection status after sync finishes
+        if (selectedSourceIdsRef.current) {
+          setInfo(prev => ({
+            ...prev,
+            target: {
+              ...prev.target,
+              files: prev.target.files.map((f: Source.Type) => ({
+                ...f,
+                selected: selectedSourceIdsRef.current!.includes(f.id)
+              }))
+            }
+          }))
+        }
+      }).catch(err => console.error('Failed to sync detached app', err))
+    }
+    if (selectedOperationId) {
+      prevOperationIdRef.current = selectedOperationId
+    }
+  }, [selectedOperationId, instance])
 
   const spawnBanner = useCallback(
     (node: ReactNode, target: string = 'main') => {

@@ -62,6 +62,7 @@ export namespace WindowBridge {
 
   export interface AppSnapshotPayload {
     app: Partial<App.Type>
+    selectedSourceIds?: string[]
   }
 
   export interface BannerActionPayload {

@@ -208,16 +208,19 @@ export function Navigator({
 
   // Sync operations, contexts, and files to detached windows so they can update their lists
   useEffect(() => {
+    console.warn("APP_SNAPSHOT", app.target.filters)
+    const selectedSourceIds = app.target.files.filter((f: Source.Type) => f.selected).map((f: Source.Type) => f.id);
       mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
         app: {
           target: {
             operations: app.target.operations,
             events: new Map(), // Omit events map as it cannot be cloned over BroadcastChannel
             filters: app.target.filters,
-          }
-        } as any
+          },
+        } as any,
+        selectedSourceIds
       });
-  }, [app.target.files, app.target.operations, app.target.filters]);
+  }, [app.target.files, app.target.operations, app.target.contexts, app.target.filters, app.timeline.filter]);
 
   // Sync timeline selection to detached windows
   useEffect(() => {
