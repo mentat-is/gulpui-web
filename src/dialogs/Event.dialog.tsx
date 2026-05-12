@@ -821,7 +821,7 @@ export function DisplayEventDialog({
 									style={jsonStyles}
 								/>
 							</TabsContent>
-							<TabsContent value="raw">
+							<TabsContent className={s.scrollable} value="raw">
 								<Markdown
 									className={s.highlighter}
 									value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`}
