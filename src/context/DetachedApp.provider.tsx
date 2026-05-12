@@ -135,11 +135,6 @@ export function DetachedAppProvider({
         case WindowBridge.MessageType.APP_SNAPSHOT: {
           const { app: snapshot } = message.payload as WindowBridge.AppSnapshotPayload
           setInfo(prev => {
-            const targetUnchanged = JSON.stringify(prev.target) === JSON.stringify(snapshot)
-            if (targetUnchanged && prev.timeline.renderVersion === snapshot?.timeline?.renderVersion) {
-              return prev; // Nessun re-render se lo snapshot è identico logicamente!
-            }
-
             return { 
               ...prev, 
               ...snapshot,

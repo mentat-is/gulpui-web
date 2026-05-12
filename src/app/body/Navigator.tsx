@@ -241,19 +241,7 @@ export function Navigator({
 
   // Sync operations, contexts, and files to detached windows so they can update their lists
   useEffect(() => {
-    // 1. Creiamo una stringa "leggera" per controllare i reali cambiamenti strutturali.
-    // Mappiamo i file solo per ID per ignorare variazioni ad alta frequenza come 'file.total'
-    const comparisonString = JSON.stringify({
-      operations: app.target.operations.map(o => o.id),
-      contexts: app.target.contexts.map(c => c.id),
-      files: app.target.files.map(f => f.id), 
-      filters: app.target.filters
-    });
-
-    // 2. Serializza e invia il pesante APP_SNAPSHOT *solo* se la struttura è realmente cambiata
-    if (prevSnapshotRef.current !== comparisonString) {
-      prevSnapshotRef.current = comparisonString;
-      console.log("APP_SNAPSHOT")
+    console.log("APP_SNAPSHOT")
       mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
         app: {
           target: {
@@ -263,8 +251,7 @@ export function Navigator({
           }
         } as any
       });
-    }
-  }, [app.target.files, app.target.operations, app.target.contexts, app.target.filters]);
+  }, [app.target.files, app.target.operations, app.target.filters]);
 
   // Sync timeline selection to detached windows
   useEffect(() => {

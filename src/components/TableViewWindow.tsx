@@ -170,14 +170,27 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   const [localFieldTypeMap, setLocalFieldTypeMap] = useState<Record<string, string> | null>(null)
 
   useEffect(() => {
-    setLocalFieldTypeMap(null)
-  }, [selectedSourceId])
-
-  useEffect(() => {
-    if (syncedSourceFilter?.fieldTypeMap && Object.keys(syncedSourceFilter.fieldTypeMap).length > 0) {
-      setLocalFieldTypeMap(syncedSourceFilter.fieldTypeMap)
+    if (!selectedSource) {
+      setLocalFieldTypeMap(null)
+      return
     }
-  }, [syncedSourceFilter?.fieldTypeMap])
+
+    let cancelled = false;
+    (async () => {
+      // We always fetch source-specific keys to avoid displaying merged fields 
+      // from other sources that might be present in the synced filter.
+      const fileKeys = await Info.event_keys(selectedSource);
+      if (!cancelled) {
+        const map: Record<string, string> = {};
+        Object.entries(fileKeys).forEach(([k, t]) => {
+          map[k] = t as string;
+        });
+        setLocalFieldTypeMap(map);
+      }
+    })();
+
+    return () => { cancelled = true };
+  }, [selectedSource, Info])
 
   const columns = useMemo(() => {
     if (!localFieldTypeMap) return undefined
@@ -267,64 +280,63 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
    * and resets local pagination/search state within a single render pass.
    * This prevents "useEffect cascades" that cause double-fetches.
    */
-  const prevSyncRef = useRef({
+  const [prevSync, setPrevSync] = useState({
     sourceId: selectedSourceId,
     operationId: selectedOperationId,
     isSynced,
     filters: serializedFilters,
-    textFilter: syncedTextFilter
+    textFilter: syncedTextFilter,
+    timelineMin: app.timeline.frame.min,
+    timelineMax: app.timeline.frame.max,
   });
 
-  useEffect(() => {
-    const prev = prevSyncRef.current;
-    
-    const hasLogicalChange = 
-      prev.sourceId !== selectedSourceId ||
-      prev.operationId !== selectedOperationId ||
-      prev.isSynced !== isSynced ||
-      (isSynced && (prev.filters !== serializedFilters || prev.textFilter !== syncedTextFilter));
+  const hasLogicalChange = 
+    prevSync.sourceId !== selectedSourceId ||
+    prevSync.operationId !== selectedOperationId ||
+    prevSync.isSynced !== isSynced ||
+    (isSynced && (prevSync.filters !== serializedFilters || prevSync.textFilter !== syncedTextFilter)) ||
+    prevSync.timelineMin !== app.timeline.frame.min ||
+    prevSync.timelineMax !== app.timeline.frame.max;
 
-    if (hasLogicalChange) {
-      const opChanged = prev.operationId !== selectedOperationId;
-      const sourceChanged = prev.sourceId !== selectedSourceId;
+  if (hasLogicalChange) {
+    const opChanged = prevSync.operationId !== selectedOperationId;
+    const sourceChanged = prevSync.sourceId !== selectedSourceId;
 
-      // Reset pagination and search
-      setCurrentPage(1);
-      setSearchQuery('');
-      setLocalSearchQuery('');
+    setPrevSync({
+      sourceId: selectedSourceId,
+      operationId: selectedOperationId,
+      isSynced,
+      filters: serializedFilters,
+      textFilter: syncedTextFilter,
+      timelineMin: app.timeline.frame.min,
+      timelineMax: app.timeline.frame.max,
+    });
 
-      if (opChanged) {
-        setSelectedSourceId(null);
-        setData([]);
-        setTotalHits(0);
-      }
+    // Reset pagination, search and field map
+    setCurrentPage(1);
+    setSearchQuery('');
+    setLocalSearchQuery('');
+    setLocalFieldTypeMap(null);
 
-      // Sync timeframe
-      if (isSynced) {
-        setTimeFrame({
-          min: (app.timeline.frame.min * 1000000).toString(),
-          max: (app.timeline.frame.max * 1000000).toString(),
-        });
-      } else if (sourceChanged && selectedSource) {
-        setTimeFrame({
-          min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
-          max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
-        });
-      }
-
-      // Update ref
-      prevSyncRef.current = {
-        sourceId: selectedSourceId,
-        operationId: selectedOperationId,
-        isSynced,
-        filters: serializedFilters,
-        textFilter: syncedTextFilter
-      };
-      
-      // Il fetchTableData verrà triggerato automaticamente dall'useEffect 
-      // che ha come dipendenze questi stati (currentPage, sortField, ecc.)
+    if (opChanged) {
+      setSelectedSourceId(null);
+      setData([]);
+      setTotalHits(0);
     }
-  }, [selectedSourceId, selectedOperationId, isSynced, serializedFilters, syncedTextFilter, app.timeline.frame, selectedSource]);
+
+    // Sync timeframe
+    if (isSynced) {
+      setTimeFrame({
+        min: (app.timeline.frame.min * 1000000).toString(),
+        max: (app.timeline.frame.max * 1000000).toString(),
+      });
+    } else if (sourceChanged && selectedSource) {
+      setTimeFrame({
+        min: selectedSource.nanotimestamp?.min ? selectedSource.nanotimestamp.min.toString() : (app.timeline.frame.min * 1000000).toString(),
+        max: selectedSource.nanotimestamp?.max ? selectedSource.nanotimestamp.max.toString() : (app.timeline.frame.max * 1000000).toString(),
+      });
+    }
+  }
 
   /**
    * Derived pagination info.
@@ -754,7 +766,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       <div className={s.result}>
         {!selectedSourceId ? (
            <div className={s.placeholder}>Select a source to view events</div>
-        ) : loading ? (
+        ) : loading || !localFieldTypeMap ? (
            <p className={s.label}>Loading data...</p>
         ) : data.length > 0 ? (
            <Table 
