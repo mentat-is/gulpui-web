@@ -33,6 +33,7 @@ export namespace NotePoint {
 		export interface Props extends Omit<Stack.Props, "onClick"> {
 			note: Note.Type;
 			onTargetClick?: (note: Note.Type) => void;
+			onDeleteClick?: (note: Note.Type) => void;
 		}
 	}
 
@@ -104,6 +105,7 @@ export namespace NotePoint {
 		style,
 		note,
 		onTargetClick,
+		onDeleteClick,
 		...props
 	}: Combination.Props) {
 		const { app, Info } = Application.use();
@@ -163,7 +165,7 @@ export namespace NotePoint {
 				/>
 				<Button
 					icon="Trash2"
-					onClick={() => Info.note_delete(note)}
+					onClick= {() => onDeleteClick?.(note)}//{() => Info.note_delete(note)}
 					variant="glass"
 				/>
 			</Stack>

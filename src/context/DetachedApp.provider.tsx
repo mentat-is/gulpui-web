@@ -91,47 +91,6 @@ export function DetachedAppProvider({
           }))
           break
         }
-        case WindowBridge.MessageType.NOTES_CHANGED: {
-          const payload = message.payload as WindowBridge.NotesChangedPayload
-          if (payload.action === 'created' && payload.notes) {
-            payload.notes.forEach(note => {
-              const idx = DataStore.notes.findIndex(n => n.id === note.id)
-              if (idx >= 0) {
-                DataStore.notes[idx] = note
-              } else {
-                DataStore.notes.push(note)
-              }
-            })
-          } else if (payload.action === 'deleted' && payload.ids) {
-            payload.ids.forEach(id => {
-              const idx = DataStore.notes.findIndex(n => n.id === id)
-              if (idx >= 0) DataStore.notes.splice(idx, 1)
-            })
-          }
-          Note.Entity.invalidateCache()
-          RenderEngine.clearAllCaches()
-          DataStore.markDirty()
-          // Trigger re-render in this window
-          setInfo(prev => ({
-            ...prev,
-            timeline: {
-              ...prev.timeline,
-              renderVersion: prev.timeline.renderVersion + 1,
-            },
-          }))
-          break
-        }
-        case WindowBridge.MessageType.RENDER_REQUEST: {
-          const { renderVersion } = message.payload as WindowBridge.RenderRequestPayload
-          setInfo(prev => ({
-            ...prev,
-            timeline: {
-              ...prev.timeline,
-              renderVersion,
-            },
-          }))
-          break
-        }
         case WindowBridge.MessageType.APP_SNAPSHOT: {
           const { app: snapshot } = message.payload as WindowBridge.AppSnapshotPayload
           setInfo(prev => {

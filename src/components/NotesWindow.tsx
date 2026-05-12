@@ -1,5 +1,5 @@
 import '@/global.css'
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useState, useMemo, useRef, useCallback, useEffect, useSyncExternalStore } from 'react'
 import { Application } from '@/context/Application.context'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { Notification } from '@/ui/Notification'
@@ -27,6 +27,7 @@ interface FloatingWindowProps {
 
 export function NotesWindow({ onClose }: FloatingWindowProps) {
   const { app, Info } = Application.use()
+  useSyncExternalStore(DataStore.subscribe, DataStore.getSnapshot);
   const [search, setSearch] = useState('');
   const [showOnlyVisible, setShowOnlyVisible] = useState<boolean>(false);
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<Note.Id>>(new Set());
@@ -41,7 +42,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
 
-  const availableTags = useMemo(() => getAvailableTags(), [getAvailableTags]);
+  const availableTags = useMemo(() => getAvailableTags(), [getAvailableTags, DataStore.notes.length]);
 
   useEffect(() => {
     const currentAvailable = new Set(availableTags.map(t => t.toLowerCase()));
@@ -75,7 +76,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       const byContext = a.context_id.localeCompare(b.context_id);
       return byContext !== 0 ? byContext : a.source_id.localeCompare(b.source_id);
     });
-  }, [app.timeline.renderVersion, search, app, selectedTags, showOnlyVisible]);
+  }, [search, app, selectedTags, showOnlyVisible, DataStore.notes.length]);
 
   const isAllSelected = useMemo(() => {
     return sortedNotes.length > 0 && sortedNotes.every(n => selectedNoteIds.has(n.id));
@@ -110,13 +111,6 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     if (selectedNoteIds.size === 0) return;
     const deletedIds = [...selectedNoteIds];
     await Info.notes_delete_bulk(deletedIds);
-    // Notify main tab about deleted notes via BroadcastChannel
-    const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
-    bridge.send(WindowBridge.MessageType.NOTES_CHANGED, {
-      action: 'deleted',
-      ids: deletedIds,
-    })
-    bridge.destroy()
     setSelectedNoteIds(new Set());
   };
 
@@ -128,6 +122,15 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     })
     bridge.destroy()
   }, []);
+
+  const handleDelete = useCallback(async (note: Note.Type) => {
+    await Info.note_delete(note);
+    setSelectedNoteIds(prev => {
+      const next = new Set(prev);
+      next.delete(note.id);
+      return next;
+    });
+  }, [Info]);
 
   const virtualizer = useVirtualizer({
     count: sortedNotes.length,
@@ -233,6 +236,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
                     note={note} 
                     style={{ flex: 1 }} 
                     onTargetClick={targetNoteButtonHandler}
+                    onDeleteClick={handleDelete}
                   />
                 </Stack>
               </div>

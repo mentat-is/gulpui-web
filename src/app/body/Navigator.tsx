@@ -164,29 +164,6 @@ export function Navigator({
   useEffect(() => {
     const bridge = WindowBridge.create(mainBridgeIdRef.current, (message) => {
       switch (message.type) {
-        case WindowBridge.MessageType.NOTES_CHANGED: {
-          const payload = message.payload as WindowBridge.NotesChangedPayload
-          if (payload.action === 'created' && payload.notes) {
-            payload.notes.forEach(note => {
-              const idx = DataStore.notes.findIndex(n => n.id === note.id)
-              if (idx >= 0) {
-                DataStore.notes[idx] = note
-              } else {
-                DataStore.notes.push(note)
-              }
-            })
-          } else if (payload.action === 'deleted' && payload.ids) {
-            payload.ids.forEach(id => {
-              const idx = DataStore.notes.findIndex(n => n.id === id)
-              if (idx >= 0) DataStore.notes.splice(idx, 1)
-            })
-          }
-          Note.Entity.invalidateCache()
-          RenderEngine.clearAllCaches()
-          DataStore.markDirty()
-          Info.render()
-          break
-        }
         case WindowBridge.MessageType.FLAGS_CHANGED: {
           // Flag changes from detached window — re-render canvas
           RenderEngine.clearAllCaches()
@@ -229,19 +206,8 @@ export function Navigator({
     mainBridgeRef.current?.send(WindowBridge.MessageType.THEME_CHANGE, { theme: theme ?? 'dark' })
   }, [theme])
 
-  // Forward renderVersion bumps to detached windows
-  useEffect(() => {
-    mainBridgeRef.current?.send(WindowBridge.MessageType.RENDER_REQUEST, {
-      renderVersion: app.timeline.renderVersion,
-    })
-  }, [app.timeline.renderVersion])
-
-  // Sync operations, contexts, and files to detached windows so they can update their lists
-  const prevSnapshotRef = useRef<string>('');
-
   // Sync operations, contexts, and files to detached windows so they can update their lists
   useEffect(() => {
-    console.log("APP_SNAPSHOT")
       mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
         app: {
           target: {

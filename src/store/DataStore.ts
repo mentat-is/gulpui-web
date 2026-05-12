@@ -20,8 +20,29 @@ export class DataStore {
   // Atomic flag to signal requestAnimationFrame that data has changed
   static isDirty: boolean = false;
 
-  // Mutation utility
+  private static listeners = new Set<() => void>();
+  private static version = 0;
+
+  /**
+   * Subscribes a listener to DataStore changes.
+   * Returns an unsubscribe function.
+   */
+  static subscribe = (listener: () => void) => {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  };
+
+  /**
+   * Returns the current version of the store for React's useSyncExternalStore.
+   */
+  static getSnapshot = () => this.version;
+
+  /**
+   * Signals that data has changed and notifies all subscribers.
+   */
   static markDirty() {
     this.isDirty = true;
+    this.version++;
+    this.listeners.forEach(listener => listener());
   }
 }

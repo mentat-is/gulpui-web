@@ -23,8 +23,6 @@ export namespace WindowBridge {
   export enum MessageType {
     /** Main → Detached: Theme changed */
     THEME_CHANGE = 'THEME_CHANGE',
-    /** Bidirectional: Notes were created or deleted */
-    NOTES_CHANGED = 'NOTES_CHANGED',
     /** Detached → Main: Document flag toggled */
     FLAGS_CHANGED = 'FLAGS_CHANGED',
     /** Main → Detached: Canvas re-rendered (renderVersion bumped) */
@@ -88,7 +86,6 @@ export namespace WindowBridge {
 
   export type MessagePayload = {
     [MessageType.THEME_CHANGE]: ThemeChangePayload
-    [MessageType.NOTES_CHANGED]: NotesChangedPayload
     [MessageType.FLAGS_CHANGED]: FlagsChangedPayload
     [MessageType.RENDER_REQUEST]: RenderRequestPayload
     [MessageType.APP_SNAPSHOT]: AppSnapshotPayload
