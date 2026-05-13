@@ -125,13 +125,15 @@ export function AdvancedPluginParams({
       
       const currentMethods = plugin ? Mapping.Entity.methods(app, plugin.filename) : []
 
-      let initMappingFile = pluginParams?.method || ''
+      const mappingParams = pluginParams?.mapping_parameters || {}
+
+      let initMappingFile = pluginParams?.method || mappingParams.mapping_file || ''
       if (!initMappingFile && currentMethods.length === 1) {
         initMappingFile = currentMethods[0]
       }
       setMappingFile(initMappingFile)
 
-      let initMappingId = pluginParams?.mapping || ''
+      let initMappingId = pluginParams?.mapping || mappingParams.mapping_id || ''
       if (!initMappingId) {
         const currentMappings = plugin && initMappingFile ? Mapping.Entity.mappings(app, plugin.filename, initMappingFile) : []
         if (currentMappings.length === 1) {
@@ -140,18 +142,19 @@ export function AdvancedPluginParams({
       }
       setMappingId(initMappingId)
       
-      setAdditionalMappingFiles(pluginParams?.additional_mapping_files || '')
+      setAdditionalMappingFiles(pluginParams?.additional_mapping_files || mappingParams.additional_mapping_files || '')
 
       const parseMappings = (obj: Record<string, any> = {}): MappingData[] => {
         return Object.entries(obj).map(([id, data]) => ({ id, ...data } as MappingData))
       }
 
-      setMappings(parseMappings(pluginParams?.mappings))
-      setAdditionalMappings(parseMappings(pluginParams?.additional_mappings))
+      setMappings(parseMappings(pluginParams?.mappings || mappingParams.mappings))
+      setAdditionalMappings(parseMappings(pluginParams?.additional_mappings || mappingParams.additional_mappings))
 
       const parsedSigma: SigmaMappingData[] = []
-      if (pluginParams?.sigma_mappings) {
-        Object.entries(pluginParams.sigma_mappings).forEach(([name, data]: [string, any]) => {
+      const sigmaMappingsSource = pluginParams?.sigma_mappings || mappingParams.sigma_mappings
+      if (sigmaMappingsSource) {
+        Object.entries(sigmaMappingsSource).forEach(([name, data]: [string, any]) => {
           parsedSigma.push({ name, service_field: data.service_field, service_values: data.service_values || [] })
         })
       }

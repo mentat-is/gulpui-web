@@ -701,10 +701,19 @@ export function UploadBanner() {
       const methods = Mapping.Entity.methods(app, s.plugin)
       const mappings = Mapping.Entity.mappings(app, s.plugin, s.method!)
 
+      const hasCustomMapping = !!(
+        (s.mappings && Object.keys(s.mappings).length > 0) ||
+        (s.additional_mappings && Object.keys(s.additional_mappings).length > 0) ||
+        (s.sigma_mappings && Object.keys(s.sigma_mappings).length > 0) ||
+        s.additional_mapping_files
+      );
+
       return (
         !!s.plugin &&
-        (!methods.length || !!s.method) &&
-        (!mappings.length || !!s.mapping)
+        (hasCustomMapping || (
+          (!methods.length || !!s.method) &&
+          (!mappings.length || !!s.mapping)
+        ))
       )
     })
   }, [settings, app])

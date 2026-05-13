@@ -84,11 +84,16 @@ self.onmessage = async (event: MessageEvent<IngestMessage>) => {
 
       const pluginParams: any = {};
       if (settings.custom_parameters) pluginParams.custom_parameters = settings.custom_parameters;
+      if (settings.override_chunk_size) pluginParams.override_chunk_size = settings.override_chunk_size;
+      if (settings.override_allow_unmapped_fields) pluginParams.override_allow_unmapped_fields = settings.override_allow_unmapped_fields;
 
       const mappingParameters: any = {};
       if (settings.method) mappingParameters.mapping_file = settings.method;
       if (settings.mapping) mappingParameters.mapping_id = settings.mapping;
       if (settings.additional_mapping_files) mappingParameters.additional_mapping_files = settings.additional_mapping_files;
+      if (settings.mappings) mappingParameters.mappings = settings.mappings;
+      if (settings.additional_mappings) mappingParameters.additional_mappings = settings.additional_mappings;
+      if (settings.sigma_mappings) mappingParameters.sigma_mappings = settings.sigma_mappings;
 
       if (Object.keys(mappingParameters).length > 0) {
         pluginParams.mapping_parameters = mappingParameters;
