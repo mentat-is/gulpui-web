@@ -1,7 +1,6 @@
 import { createContext, lazy, ReactNode, useContext, useEffect, useState, useRef } from "react";
 import { Application } from "./Application.context";
 import React from "react";
-import { Logger } from "@/dto/Logger.class";
 import { Version } from "@/dto/Dataset";
 import { Icon } from "@impactium/icons";
 
@@ -19,7 +18,7 @@ function _({ children }: Extension.Provider.Props) {
       extensionsPromise = (async () => {
         const plugins = await api<Extension.Interface[]>('/ui_plugin_list');
         if (!Array.isArray(plugins)) {
-          Logger.error(`Backend returned unexpected type of ${plugins}. Expected array of plugins, but got ${typeof plugins}`, 'Extension.Provider', {
+          console.error(`Backend returned unexpected type of ${plugins}. Expected array of plugins, but got ${typeof plugins}`, 'Extension.Provider', {
             richColors: true,
             icon: <Icon name='Warning' />
           });
@@ -31,22 +30,28 @@ function _({ children }: Extension.Provider.Props) {
         await Promise.all(
           plugins.map(async (plugin) => {
             try {
+              console.log(`Loading extension: ${plugin.filename}`, _);
               const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
               const component = await Component();
 
-              if (!component) return;
+              if (!component) {
+                console.error(`Failed to load component ${plugin.filename}: component is null`, _);
+                return;
+              }
 
               if (component.default) {
-                Logger.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
+                console.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
+              } else {
+                console.warn(`Component ${plugin.filename} loaded but has no default export`, _);
               }
 
               new_extensions[plugin.filename] = {
                 ...plugin,
-                type: plugin.type ?? [],
+                type: Array.isArray(plugin.type) ? plugin.type : (plugin.type ? [plugin.type] : []),
                 [__component]: component.default,
               };
             } catch (err) {
-              Logger.error(`Failed to load component ${plugin.filename}`);
+              console.error(`Failed to load component ${plugin.filename}: ${err}`, _);
             }
           })
         );
@@ -119,7 +124,7 @@ export namespace Extension {
     try {
       return await func();
     } catch (error) {
-      Logger.log('Component not found or failed to load:', String(error));
+      console.log('Component not found or failed to load:', String(error));
       return null;
     }
   }
@@ -135,13 +140,13 @@ export namespace Extension {
     const { extensions } = Extension.use();
     const extension = extensions[name];
     if (!extension) {
-      Logger.warn(`Extenstion ${name} not found in plugin list. Skipping...`)
+      console.warn(`Extenstion ${name} not found in plugin list. Skipping...`)
       return null;
     }
 
     const Component = extension[__component];
     if (!Component) {
-      Logger.error(`Extenstion ${name} was found in plugin list, but there is no component. Skipping...`)
+      console.error(`Extenstion ${name} was found in plugin list, but there is no component. Skipping...`)
       return null;
     }
 

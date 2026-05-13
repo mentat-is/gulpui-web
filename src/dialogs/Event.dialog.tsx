@@ -978,11 +978,12 @@ export function DisplayEventDialog({
 								Enrich
 							</Button>
 							{Object.values(extensions).some((ext) =>
-								ext.type.includes("send_data"),
+								Array.isArray(ext.type) ? ext.type.includes("send_data") : (ext.type as any) === "send_data",
 							) && (
 									<Button
 										onClick={handleSendData}
-										variant="glass"
+										variant="secondary"
+										title="Send IOCs to other systems"
 										icon="Send"
 									>
 										Send Data
