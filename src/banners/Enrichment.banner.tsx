@@ -82,8 +82,7 @@ const prepareFormattedFields = (fields: { key: string, value: string | null }[])
 
 interface FieldRowProps {
   field: { id: string, key: string, value: string | null }
-  index: number
-  isReadOnly: boolean
+  index: number  
   onUpdate: (index: number, updates: Partial<FieldRowProps['field']>) => void
   onDelete: (id: string) => void
 }
@@ -91,31 +90,27 @@ interface FieldRowProps {
 /**
  * Renders a single row for field key/value configuration.
  */
-function FieldRow({ field, index, isReadOnly, onUpdate, onDelete }: FieldRowProps) {
+function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
   return (
     <Stack gap={8} ai='center'>
       <Input
         placeholder='Field key'
         value={field.key}
-        readOnly={isReadOnly}
         onChange={e => onUpdate(index, { key: e.target.value })}
       />
       <Input
         placeholder='Field value'
         disabled={field.value === null}
-        readOnly={isReadOnly}
         value={field.value ?? ''}
         onChange={e => onUpdate(index, { value: e.target.value })}
       />
       <Checkbox
         checked={field.value !== null}
-        disabled={isReadOnly}
         onCheckedChange={(checked) => onUpdate(index, { value: checked ? '' : null })}
       />
       <Button
         variant='tertiary'
         icon='Trash'
-        disabled={isReadOnly}
         onClick={() => onDelete(field.id)}
       />
     </Stack>
@@ -467,7 +462,6 @@ export namespace Enrichment {
               key={field.id}
               field={field}
               index={index}
-              isReadOnly={!!enrichmentField}
               onUpdate={handleUpdateField}
               onDelete={handleDeleteField}
             />
