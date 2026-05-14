@@ -3,7 +3,6 @@ import { Application } from '../context/Application.context'
 import s from './styles/Banner.module.css'
 import { cn } from '@impactium/utils'
 import { Stack } from './Stack'
-import { Cell } from './Cell'
 import { Skeleton } from './Skeleton'
 import { Button } from './Button'
 
@@ -79,22 +78,31 @@ export function Banner({
     <div className={s.wrapper}>
       <div
         data-expanded={isExpanded}
-        className={cn(s.banner, s.loading, className)}>
-        <Cell key="cell-1" className={s.cell} top left>
-          {back && <Button variant='tertiary' icon="CornerUpLeft" onClick={back} />}
-        </Cell>
-        <Cell key="cell-2" className={s.cell} top right>
-          {fixed ? null : (
-            <Button
-              variant='tertiary'
-              onClick={close}
-              icon="X"
-              loading={loading}
-              shape='icon'
-            />
-          )}
-        </Cell>
-        <Cell key="cell-3" className={s.cell} bottom left>
+        className={cn(s.banner, s.loading, className)}>                      
+        <Stack dir="row" ai="center" jc="space-between" className={s.header}>
+          {title && <h6>
+                    {loading ? <Skeleton width="long" height={24} /> : title}
+                    
+                  </h6>}
+          <Stack dir="row" ai="center" gap={8}>
+            {subtitle ? loading ? <Skeleton height={24} /> : subtitle : null}
+            {back && <Button variant='tertiary' icon="CornerUpLeft" onClick={back} />}
+            {fixed ? null : (
+              <Button
+                variant='glass'
+                onClick={close}
+                icon="X"
+                loading={loading}
+                shape='icon'
+              />
+            )}   
+          </Stack>
+        </Stack>        
+        <Stack dir="column" ai="unset" gap={12} className={s.content} data-banner-content>
+          {Side}
+          {children}
+        </Stack>
+        <Stack dir="row" ai="center" jc="flex-end" gap={12} className={s.footer}>
           {side ? (
             <Button
               icon={isExpanded ? 'Eye' : 'EyeOff'}
@@ -104,17 +112,7 @@ export function Banner({
           ) : (
             option
           )}
-        </Cell>
-        <Cell key="cell-4" className={cn(s.cell, s.done)} bottom right>
           {done}
-        </Cell>
-        {Side}
-        {title && <h6>
-          {loading ? <Skeleton width="long" height={24} /> : title}
-          {subtitle ? loading ? <Skeleton height={24} /> : subtitle : null}
-        </h6>}
-        <Stack dir="column" ai="unset" gap={12} className={s.content} data-banner-content>
-          {children}
         </Stack>
       </div>
     </div>
