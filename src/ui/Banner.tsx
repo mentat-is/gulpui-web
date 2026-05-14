@@ -102,18 +102,20 @@ export function Banner({
           {Side}
           {children}
         </Stack>
-        <Stack dir="row" ai="center" jc="flex-end" gap={12} className={s.footer}>
-          {side ? (
-            <Button
-              icon={isExpanded ? 'Eye' : 'EyeOff'}
-              onClick={() => setIsExpanded((isExpanded) => !isExpanded)}
-              variant={isExpanded ? 'secondary' : 'tertiary'}
-            />
-          ) : (
-            option
-          )}
-          {done}
-        </Stack>
+        {(side || option || done) && (
+          <Stack dir="row" ai="center" jc="flex-end" gap={12} className={s.footer}>
+            {side ? (
+              <Button
+                icon={isExpanded ? 'Eye' : 'EyeOff'}
+                onClick={() => setIsExpanded((isExpanded) => !isExpanded)}
+                variant={isExpanded ? 'secondary' : 'tertiary'}
+              />
+            ) : (
+              option
+            )}
+            {done}
+          </Stack>
+        )}
       </div>
     </div>
   )
