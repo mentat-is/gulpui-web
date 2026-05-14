@@ -856,6 +856,7 @@ export function DisplayEventDialog({
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!selection}
+						onClick={handleCreateLink}
 						icon="GitPullRequestCreate"
 					>
 						Create new link

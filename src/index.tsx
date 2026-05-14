@@ -83,6 +83,7 @@ function Main() {
     dialog,
     dialogsDocked,
     setDialogsDocked,
+    spawnBanner,
   } = Application.use();
   const [isPreloaded, setIsPreloaded] = useState(false);
   const dialogWindowRef = useRef<Window | null>(null);
@@ -159,11 +160,12 @@ function Main() {
         initialNotes={[...DataStore.notes]}
         bridgeId={dialogBridgeIdRef.current}
         detachedDocument={targetWindow.document}
+        mainSpawnBanner={spawnBanner}
       >
         <DetachedDialogWindowContent dialog={dialog} />
       </DetachedAppProvider>
     );
-  }, [app, dialog]);
+  }, [app, dialog, spawnBanner]);
 
   useEffect(() => {
     if (isPreloaded)
@@ -225,7 +227,8 @@ function Main() {
         dialogRootRef.current = null;
         dialogBridgeIdRef.current = null;
         dialogWindowRef.current = null;
-        setDialogsDocked(true);
+        // Do NOT setDialogsDocked(true) here — the user's "undocked" preference
+        // should persist. The next event click will re-open the popup automatically.
       }, { once: true });
     }
 

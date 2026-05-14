@@ -44,6 +44,8 @@ export namespace DetachedApp {
     bridgeId: string
     /** The detached window's document, used for portal/selection APIs */
     detachedDocument: Document
+    /** Main window's spawnBanner — banners should open in the main window, not the detached one */
+    mainSpawnBanner: (node: ReactNode, target?: string) => void
     /** Children to render inside the provider */
     children: ReactNode
   }
@@ -54,6 +56,7 @@ export function DetachedAppProvider({
   initialNotes,
   bridgeId,
   detachedDocument,
+  mainSpawnBanner,
   children,
 }: DetachedApp.ProviderProps) {
   const [app, setInfo] = useState<App.Type>(initialApp)
@@ -179,13 +182,6 @@ export function DetachedAppProvider({
     }
   }, [selectedOperationId, instance])
 
-  const spawnBanner = useCallback(
-    (node: ReactNode, target: string = 'main') => {
-      setBanner({ node, target })
-    },
-    [],
-  )
-
   const destroyBanner = useCallback(() => {
     setBanner(null)
   }, [])
@@ -210,7 +206,7 @@ export function DetachedAppProvider({
 
   const props = useMemo(
     () => ({
-      spawnBanner,
+      spawnBanner: mainSpawnBanner,
       destroyBanner,
       banner,
       spawnDialog,
@@ -229,7 +225,7 @@ export function DetachedAppProvider({
       currentDocument: detachedDocument,
     }),
     [
-      spawnBanner,
+      mainSpawnBanner,
       destroyBanner,
       banner,
       spawnDialog,
