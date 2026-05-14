@@ -9,7 +9,6 @@ import { Note } from '@/entities/Note'
 import { Doc } from '@/entities/Doc'
 import { NotePoint } from '@/ui/Note'
 import { Select } from '@/ui/Select'
-import { Banner } from '@/ui/Banner'
 import { Stack } from '@/ui/Stack'
 import { Input } from '@/ui/Input'
 import { DataStore } from '@/store/DataStore'
@@ -140,123 +139,129 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
   });
 
   return (
-    <Banner title="Notes" onClose={onClose} className={s.main}>
-      <Stack>
-        <Input
-          placeholder='Context name, source name, note title or text'
-          icon='MagnifyingGlass'
-          variant='highlighted'
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <Select.Multi.Root
-          value={[...selectedTags]}
-          onValueChange={values => setSelectedTags(new Set(values))}
+    <div className={s.main}>
+      <div className={s.header}>
+        <h3>Notes</h3>
+      </div>
+      <div className={s.content}>
+        <Stack dir='column'>
+          <Input
+            placeholder='Context name, source name, note title or text'
+            icon='MagnifyingGlass'
+            variant='highlighted'
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <Select.Multi.Root
+            value={[...selectedTags]}
+            onValueChange={values => setSelectedTags(new Set(values))}
+          >
+            <Select.Trigger>
+              <Select.Multi.Value
+                icon={['DataPointMedium', 'DataPoint']}
+                placeholder='Select tags to be shown'
+                text={len => typeof len === 'number' ? `Selected ${len} tags` : len}
+              />
+            </Select.Trigger>
+            <Select.Content container={windowRef.current ?? undefined}>
+              {availableTags.sort().map(tag => (
+                <Select.Item key={tag} value={tag}>
+                  {tag}
+                </Select.Item>
+              ))}
+            </Select.Content>
+          </Select.Multi.Root>
+        </Stack>
+        <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
+          <Checkbox
+            style={{ height: 20, width: 20 }}
+            checked={isAllSelected}
+            onCheckedChange={handleSelectAll as any}
+          />
+          <span
+            style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => handleSelectAll(!isAllSelected)}
+          >
+            {selectAllLabel}
+          </span>
+        </Stack>
+        <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
+          <Checkbox
+            style={{ height: 20, width: 20 }}
+            checked={showOnlyVisible}
+            onCheckedChange={(v: any) => setShowOnlyVisible(!!v)}
+          />
+          <span
+            style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+            onClick={() => setShowOnlyVisible(v => !v)}
+          >
+            Show only notes for visible events
+          </span>
+        </Stack>
+        <div
+          ref={parentRef}
+          className={s.result}
+          style={{ height: '100%', overflow: 'auto' }}
         >
-          <Select.Trigger>
-            <Select.Multi.Value
-              icon={['DataPointMedium', 'DataPoint']}
-              placeholder='Select tags to be shown'
-              text={len => typeof len === 'number' ? `Selected ${len} tags` : len}
-            />
-          </Select.Trigger>
-          <Select.Content container={windowRef.current ?? undefined}>
-            {availableTags.sort().map(tag => (
-              <Select.Item key={tag} value={tag}>
-                {tag}
-              </Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Multi.Root>
-      </Stack>
-      <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
-        <Checkbox
-          style={{ height: 20, width: 20 }}
-          checked={isAllSelected}
-          onCheckedChange={handleSelectAll as any}
-        />
-        <span
-          style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
-          onClick={() => handleSelectAll(!isAllSelected)}
-        >
-          {selectAllLabel}
-        </span>
-      </Stack>
-      <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
-        <Checkbox
-          style={{ height: 20, width: 20 }}
-          checked={showOnlyVisible}
-          onCheckedChange={(v: any) => setShowOnlyVisible(!!v)}
-        />
-        <span
-          style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
-          onClick={() => setShowOnlyVisible(v => !v)}
-        >
-          Show only notes for visible events
-        </span>
-      </Stack>
-      <div
-        ref={parentRef}
-        className={s.result}
-        style={{ height: '100%', overflow: 'auto' }}
-      >
-        <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-          {virtualizer.getVirtualItems().map(item => {
-            const note = sortedNotes[item.index];
-            const context = Context.Entity.id(app, note.context_id);
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map(item => {
+              const note = sortedNotes[item.index];
+              const context = Context.Entity.id(app, note.context_id);
 
-            return (
-            <TooltipProvider>
-              <div
-                key={item.key}
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: `${item.size}px`,
-                  transform: `translateY(${item.start}px)`,
-                }}
-              >
-                <Stack
-                  gap={12}
-                  ai="center"
+              return (
+              <TooltipProvider>
+                <div
+                  key={item.key}
                   style={{
+                    position: 'absolute',
                     width: '100%',
-                    height: '100%',
-                    background: 'transparent',
-                    paddingLeft: 8,
+                    height: `${item.size}px`,
+                    transform: `translateY(${item.start}px)`,
                   }}
                 >
-                  <Checkbox
-                    style={{ height: 20, width: 20 }}
-                    checked={selectedNoteIds.has(note.id)}
-                    onCheckedChange={() => toggleNoteSelection(note.id)}
-                  />
+                  <Stack
+                    gap={12}
+                    ai="center"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      background: 'transparent',
+                      paddingLeft: 8,
+                    }}
+                  >
+                    <Checkbox
+                      style={{ height: 20, width: 20 }}
+                      checked={selectedNoteIds.has(note.id)}
+                      onCheckedChange={() => toggleNoteSelection(note.id)}
+                    />
 
-                  <NotePoint.Combination 
-                    note={note} 
-                    style={{ flex: 1 }} 
-                    onTargetClick={targetNoteButtonHandler}
-                    onDeleteClick={handleDelete}
-                  />
-                </Stack>
-              </div>
-            </TooltipProvider>  
-            );
-          })}
-        </div>
+                    <NotePoint.Combination 
+                      note={note} 
+                      style={{ flex: 1 }} 
+                      onTargetClick={targetNoteButtonHandler}
+                      onDeleteClick={handleDelete}
+                    />
+                  </Stack>
+                </div>
+              </TooltipProvider>  
+              );
+            })}
+          </div>
+        </div>        
       </div>
-      <Notification value='You can scroll tags list horizontally' variant='informational' icon='Information' />
-      <Stack jc="flex-end" style={{ padding: '12px 0 0 0' }}>
-        <Button
-          variant="glass"
-          disabled={selectedNoteIds.size === 0}
-          onClick={handleBulkDelete}
-          icon="Trash2"
-        >
-          Delete selected notes ({selectedNoteIds.size})
-        </Button>
-      </Stack>
+      <div className={s.footer}>
+        <Stack jc="flex-end">
+          <Button
+            variant="glass"
+            disabled={selectedNoteIds.size === 0}
+            onClick={handleBulkDelete}
+            icon="Trash2"
+          >
+            Delete selected notes ({selectedNoteIds.size})
+          </Button>
+        </Stack>
+      </div>
       <div ref={windowRef} className={s.portalContainer} />
-    </Banner>
+    </div>
   )
 }
