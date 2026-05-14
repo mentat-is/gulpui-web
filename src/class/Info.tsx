@@ -1038,9 +1038,9 @@ export class Info implements InfoProps {
 			};
 	};
 
-		query_paginate = async (
+	query_paginate = async (
 		query: Query.Type,
-		{limit = 100, offset = 0, sort = {"@timestamp": "asc"}}: GulpDataset.QueryGulp.Options) => {
+		{ limit = 100, offset = 0, sort = { "@timestamp": "asc" } }: GulpDataset.QueryGulp.Options) => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) {
 			return;
@@ -1053,7 +1053,7 @@ export class Info implements InfoProps {
 				sort,
 			},
 		};
-		
+
 		const request_query: Record<string, string> = {
 			operation_id: operation.id,
 			req_id: generateUUID(Request.Prefix.QUERY),
@@ -2875,6 +2875,7 @@ export class Info implements InfoProps {
 
 	setTimelineTarget = (event?: Doc.Type | null | 1 | -1): Doc.Type => {
 		const { target } = this.app.timeline;
+		const previousTargetId = target?._id;
 
 		if (typeof event === "number" && target) {
 			const events = Source.Entity.events(this.app, target["gulp.source_id"]);
@@ -2885,6 +2886,9 @@ export class Info implements InfoProps {
 
 		if (typeof event !== "undefined") {
 			this.setInfoByKey(event as Doc.Type, "timeline", "target");
+			if ((event as Doc.Type | null | undefined)?._id !== previousTargetId) {
+				DataStore.markDirty();
+			}
 		}
 
 		return event as Doc.Type;

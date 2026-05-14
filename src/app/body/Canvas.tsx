@@ -525,7 +525,9 @@ export function Canvas({ timeline }: Canvas.Props) {
 		if (!el) return;
 		const observer = new ResizeObserver(() => { DataStore.markDirty(); });
 		observer.observe(el);
-		return () => observer.disconnect();
+		return () =>{
+			observer.disconnect();
+		};
 	}, []);
 
 	useEffect(() => {
