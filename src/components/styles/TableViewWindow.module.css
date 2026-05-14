@@ -8,7 +8,8 @@
   padding: 16px;
   box-sizing: border-box;
   gap: 16px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .header h2 {
@@ -35,10 +36,6 @@
   flex: 1;
 }
 
-.searchRow {
-  width: 100%;
-}
-
 .sourceRow {
   width: 100%;
 }
@@ -47,8 +44,24 @@
   width: 100%;
 }
 
-.searchRow > div {
+.filtersSection {
+  background: var(--background-200);
+  border: 1px solid var(--gray-alpha-400);
+  border-radius: 8px;
+  padding: 8px;
   width: 100%;
+  box-sizing: border-box;
+}
+
+.filtersToggle {
+  width: 100%;
+  justify-content: flex-start !important;
+}
+
+.filtersContent {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gray-alpha-400);
 }
 
 .row2 {
@@ -86,7 +99,7 @@
   flex: 1;
   overflow: hidden; /* Hide overflow here so Table wrapper handles it */
   position: relative;
-  min-height: 0;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
 }

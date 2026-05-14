@@ -138,10 +138,11 @@ export namespace OpenSearchQueryBuilder {
       export interface Props extends Stack.Props {
         filters: Filter.Item[];
         setFilters: SetFilters;
+        container?: HTMLDivElement | null;
       }
     }
 
-    export const Add = ({ filters, setFilters, ...props }: Query.Add.Props) => {
+    export const Add = ({ filters, setFilters, container, ...props }: Query.Add.Props) => {
       const addCondition = useCallback(() => {
         const filter: Filter.Type = {
           id: `condition-${Date.now()}` as Filter.Id,
@@ -186,6 +187,7 @@ export namespace OpenSearchQueryBuilder {
         filters: Filter.Item[];
         setFilters: SetFilters;
         keys: string[]
+        container?: HTMLDivElement | null;
       }
     }
 
@@ -193,10 +195,12 @@ export namespace OpenSearchQueryBuilder {
       filter,
       setFilters,
       keys,
+      container,
     }: {
       filter: Filter.Type;
       setFilters: SetFilters;
       keys: string[];
+      container?: HTMLDivElement | null;
     }) => {
       const [isOpen, setIsOpen] = useState(false);
       const [localField, setLocalField] = useState(filter.field);
@@ -243,7 +247,7 @@ export namespace OpenSearchQueryBuilder {
               <Select.Trigger className={s.value}>
                 <Select.Value placeholder='Operator' />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content container={container}>
                 {OpenSearchQueryBuilder.OPERATORS.map((op) => (
                   <Select.Item key={op.value} value={op.value}>
                     <Icon name={op.icon} />
@@ -259,7 +263,7 @@ export namespace OpenSearchQueryBuilder {
               <Select.Trigger className={s.value}>
                 <Select.Value placeholder='Type' />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content container={container}>
                 {OpenSearchQueryBuilder.CONDITIONS.map((type) => (
                   <Select.Item key={type.value} value={type.value}>
                     <Icon name={type.icon} />
@@ -292,7 +296,7 @@ export namespace OpenSearchQueryBuilder {
               </Tooltip>
               <Select.Root value={filter.field} onValueChange={(e) => handleFieldChange(e)} onOpenChange={setIsOpen}>
                 <Select.Trigger className={s.trigger} />
-                <Select.Content style={{ minHeight: 60 }}>
+                <Select.Content style={{ minHeight: 60 }} container={container}>
                   <Input value={localField} disabled icon='MagnifyingGlass' variant='highlighted' />
                   {isOpen && filteredKeys.map((k) => (
                     <Select.Item key={k} value={k}>
@@ -376,10 +380,12 @@ export namespace OpenSearchQueryBuilder {
       group,
       setFilters,
       keys,
+      container,
     }: {
       group: Filter.Group;
       setFilters: SetFilters;
       keys: string[];
+      container?: HTMLDivElement | null;
     }) => {
       const updateGroup = useCallback((key: string, value: any) => {
         setFilters(prev =>
@@ -442,7 +448,7 @@ export namespace OpenSearchQueryBuilder {
               <Select.Trigger className={s.value}>
                 <Select.Value placeholder='Operator' />
               </Select.Trigger>
-              <Select.Content>
+              <Select.Content container={container}>
                 {OpenSearchQueryBuilder.OPERATORS.map(op => (
                   <Select.Item key={op.value} value={op.value}>
                     <Icon name={op.icon} />
@@ -463,21 +469,21 @@ export namespace OpenSearchQueryBuilder {
           <Stack dir='column' ai='stretch' className={s.group_children}>
             {group.children.map(child =>
               Filter.isGroup(child)
-                ? <GroupRow key={child.id} group={child} setFilters={setChildFilters} keys={keys} />
-                : <FilterRow key={child.id} filter={child} setFilters={setChildFilters} keys={keys} />
+                ? <GroupRow key={child.id} group={child} setFilters={setChildFilters} keys={keys} container={container} />
+                : <FilterRow key={child.id} filter={child} setFilters={setChildFilters} keys={keys} container={container} />
             )}
           </Stack>
         </Stack>
       );
     });
 
-    export const Filters = memo(({ filters, setFilters, keys }: Query.Filters.Props) => {
+    export const Filters = memo(({ filters, setFilters, keys, container }: Query.Filters.Props) => {
       return (
         <Stack ai='stretch' dir='column'>
           {filters.map(item =>
             Filter.isGroup(item)
-              ? <GroupRow key={item.id} group={item} setFilters={setFilters} keys={keys} />
-              : <FilterRow key={item.id} filter={item} setFilters={setFilters} keys={keys} />
+              ? <GroupRow key={item.id} group={item} setFilters={setFilters} keys={keys} container={container} />
+              : <FilterRow key={item.id} filter={item} setFilters={setFilters} keys={keys} container={container} />
           )}
         </Stack>
       )

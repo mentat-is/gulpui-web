@@ -24,6 +24,9 @@ import { Doc } from '@/entities/Doc'
 import { NoteFunctionality } from '@/banners/Collab.functionality'
 import { WindowBridge } from '@/lib/WindowBridge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip'
+import { OpenSearchQueryBuilder } from '@/components/QueryBuilder'
+import { Separator } from '@/ui/Separator'
+import { Filter } from '@/entities/Filter'
 
 export namespace TableViewWindow {
   export interface Props {
@@ -273,6 +276,11 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     max: (app.timeline.frame.max * 1000000).toString(),
   })
 
+  // --- Filter Editing State ---
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  const [localFilters, setLocalFilters] = useState<Filter.Item[]>([])
+  const [appliedFilters, setAppliedFilters] = useState<Filter.Item[]>([])
+
   // --- Performance Optimization: State Adjustment during Rendering ---
   /**
    * Pattern: Adjusting state while rendering.
@@ -357,7 +365,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   const activeMin = timeFrame.min;
   const activeMax = timeFrame.max;
   const activeFilters = isSynced && selectedSourceId ? app.target.filters[selectedSourceId] : null
-  const activeSerializedFilters = isSynced ? serializedFilters : "[]"
+  const activeSerializedFilters = isSynced ? serializedFilters : JSON.stringify(appliedFilters)
   const activeTextFilter = isSynced ? syncedTextFilter : searchQuery
 
   // --- Data Fetching ---
@@ -396,7 +404,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       } else {
         queryObj = {
           string: '',
-          filters: [],
+          filters: appliedFilters,
           text_filter: searchQuery,
           source_config: {
             operation_id: selectedSource.operation_id,
@@ -436,27 +444,30 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   // --- Event Handlers ---
 
   /**
-   * Commits the local search query and resets to page 1.
+   * Commits current local filters and search query, then triggers a fetch.
    */
-  const triggerSearch = useCallback(() => {
+  const applyFilters = useCallback(() => {
+    setAppliedFilters(localFilters)
     setSearchQuery(localSearchQuery)
     setCurrentPage(1)
-  }, [localSearchQuery])
+  }, [localFilters, localSearchQuery])
+
+  /**
+   * Clears all local and applied filter states.
+   */
+  const resetFilters = useCallback(() => {
+    setLocalFilters([])
+    setAppliedFilters([])
+    setLocalSearchQuery('')
+    setSearchQuery('')
+    setCurrentPage(1)
+  }, [])
 
   /**
    * Updates local search query state as user types.
    */
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearchQuery(e.target.value)
-  }
-
-  /**
-   * Handles Enter key press in search input.
-   */
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      triggerSearch()
-    }
   }
 
   /**
@@ -616,67 +627,86 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
             </Select.Content>
           </Select.Root>
         </div>
-
-        {!isSynced && (<Stack ai="center" gap={12}>
-          <Toggle
-            checked={manual}
-            onCheckedChange={setManual}
-            option={['Select dates', 'ISO String']}
-            disabled={!selectedSourceId}
-          />
-        </Stack>)}
-        {!isSynced && (<div className={s.timeRow}>
-          {manual ? (
-            <>
-              <InputISOSelection
-                type="min"
-                value={timeFrame.min}
-                valid={isMinValid}
-                onChange={(val) => handleTimeChange('min', val)}
-              />
-              <InputISOSelection
-                type="max"
-                value={timeFrame.max}
-                valid={isMaxValid}
-                onChange={(val) => handleTimeChange('max', val)}
-              />
-            </>
-          ) : (
-            <>
-              <InputDateSelection
-                type="min"
-                value={timeFrame.min}
-                valid={isMinValid}
-                onChange={(val) => handleTimeChange('min', val)}
-              />
-              <InputDateSelection
-                type="max"
-                value={timeFrame.max}
-                valid={isMaxValid}
-                onChange={(val) => handleTimeChange('max', val)}
-              />
-            </>
-          )}
-        </div>)}
-        {!isSynced && (<div className={s.searchRow}>
-          <Stack gap={8} ai="flex-end">
-            <Input
-              label="Search"
-              placeholder="Search event.original..."
-              icon="MagnifyingGlass"
-              variant="highlighted"
-              value={localSearchQuery}
-              onChange={handleSearchChange}
-              onKeyDown={handleKeyDown}
-            />
-            <Button
-              variant="glass"
-              icon="MagnifyingGlassSmall"
-              onClick={triggerSearch}
-              title="Search"
-            />
-          </Stack>
-        </div>)}
+        {!isSynced && (
+          <TooltipProvider>
+            <div className={s.filtersSection}>
+              <Button 
+                variant="tertiary" 
+                onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                icon={isFiltersOpen ? 'ChevronUp' : 'Filter'}
+                className={s.filtersToggle}
+              >
+                Filters
+              </Button>
+              {isFiltersOpen && (
+                <Stack dir="column" ai="stretch" className={s.filtersContent} gap={16}>
+                  <Stack ai="center" gap={12}>
+                    <Toggle
+                      checked={manual}
+                      onCheckedChange={setManual}
+                      option={['Select dates', 'ISO String']}
+                      disabled={!selectedSourceId}
+                    />
+                  </Stack>
+                  <div className={s.timeRow}>
+                    {manual ? (
+                      <>
+                        <InputISOSelection
+                          type="min"
+                          value={timeFrame.min}
+                          valid={isMinValid}
+                          onChange={(val) => handleTimeChange('min', val)}
+                        />
+                        <InputISOSelection
+                          type="max"
+                          value={timeFrame.max}
+                          valid={isMaxValid}
+                          onChange={(val) => handleTimeChange('max', val)}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <InputDateSelection
+                          type="min"
+                          value={timeFrame.min}
+                          valid={isMinValid}
+                          onChange={(val) => handleTimeChange('min', val)}
+                        />
+                        <InputDateSelection
+                          type="max"
+                          value={timeFrame.max}
+                          valid={isMaxValid}
+                          onChange={(val) => handleTimeChange('max', val)}
+                        />
+                      </>
+                    )}
+                  </div>
+                  <OpenSearchQueryBuilder.Query.String
+                    textFilter={localSearchQuery}
+                    setTextFilter={setLocalSearchQuery}
+                    reset={() => setLocalSearchQuery('')}
+                  />
+                  <OpenSearchQueryBuilder.Query.Add 
+                    filters={localFilters} 
+                    setFilters={setLocalFilters} 
+                    container={container}
+                  />
+                  <Separator />
+                  <OpenSearchQueryBuilder.Query.Filters
+                    filters={localFilters}
+                    setFilters={setLocalFilters}
+                    keys={columns || []}
+                    container={container}
+                  />
+                  <Stack dir="row" jc="flex-end" gap={8}>
+                    <Button variant="secondary" onClick={resetFilters} icon="RotateCcw">Reset</Button>
+                    <Button variant="glass" onClick={applyFilters} icon="Check">Apply</Button>
+                  </Stack>
+                </Stack>
+              )}
+            </div>
+          </TooltipProvider>
+        )}
       </div>
 
       <div className={s.row2}>
