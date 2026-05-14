@@ -158,6 +158,7 @@ function Main() {
         initialApp={app}
         initialNotes={[...DataStore.notes]}
         bridgeId={dialogBridgeIdRef.current}
+        detachedDocument={targetWindow.document}
       >
         <DetachedDialogWindowContent dialog={dialog} />
       </DetachedAppProvider>

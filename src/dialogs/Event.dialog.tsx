@@ -190,8 +190,8 @@ const getValueByPath = (json: Record<string, unknown>, path: string): unknown =>
  * @param y Client Y
  * @returns boolean
  */
-const isPointInSelection = (x: number, y: number): boolean => {
-	const selection = window.getSelection();
+const isPointInSelection = (doc: Document, x: number, y: number): boolean => {
+	const selection = doc.defaultView?.getSelection();
 	if (!selection || selection.rangeCount === 0 || selection.isCollapsed)
 		return false;
 	const range = selection.getRangeAt(0);
@@ -208,14 +208,14 @@ const isPointInSelection = (x: number, y: number): boolean => {
  * Detects the key-value pair under the cursor in the Table view.
  * @param element The clicked element
  */
-const detectTableSelection = (element: HTMLElement): string | null => {
+const detectTableSelection = (doc: Document, element: HTMLElement): string | null => {
 	const tr = element.closest("tr");
 	if (tr) {
 		const cells = Array.from(tr.querySelectorAll("td"));
 		if (cells.length >= 2) {
-			const selection = window.getSelection();
+			const selection = doc.defaultView?.getSelection();
 			if (selection) {
-				const range = document.createRange();
+				const range = doc.createRange();
 				range.selectNodeContents(tr);
 				selection.removeAllRanges();
 				selection.addRange(range);
@@ -231,7 +231,7 @@ const detectTableSelection = (element: HTMLElement): string | null => {
  * @param element The clicked element
  * @param json The source JSON object
  */
-const detectTreeSelection = (element: HTMLElement, json: Record<string, unknown> | null): string | null => {
+const detectTreeSelection = (doc: Document, element: HTMLElement, json: Record<string, unknown> | null): string | null => {
 	let treeLabel = element.classList.contains(s.label) || element.classList.contains(s.clickableLabel)
 		? element
 		: (element.closest(`.${s.label}`) ?? element.closest(`.${s.clickableLabel}`));
@@ -251,9 +251,9 @@ const detectTreeSelection = (element: HTMLElement, json: Record<string, unknown>
 				const strValue = typeof value === "object" ? JSON.stringify(value) : String(value);
 				const nodeContainer = treeLabel.closest(`.${s.node}`) as HTMLElement;
 				if (nodeContainer) {
-					const selection = window.getSelection();
+					const selection = doc.defaultView?.getSelection();
 					if (selection) {
-						const range = document.createRange();
+						const range = doc.createRange();
 						range.selectNodeContents(nodeContainer);
 						selection.removeAllRanges();
 						selection.addRange(range);
@@ -272,21 +272,21 @@ const detectTreeSelection = (element: HTMLElement, json: Record<string, unknown>
  * @param x Client X
  * @param y Client Y
  */
-const detectRawSelection = (element: HTMLElement, x: number, y: number): string | null => {
+const detectRawSelection = (doc: Document, element: HTMLElement, x: number, y: number): string | null => {
 	const highlighter = element.closest(`.${s.highlighter}`) as HTMLElement;
 	const codeEl = highlighter.querySelector("code, pre") as HTMLElement;
 
-	const selection = window.getSelection();
+	const selection = doc.defaultView?.getSelection();
 	let range: Range | null = null;
 	// @ts-ignore
-	if (document.caretRangeFromPoint) {
+	if ((doc as any).caretRangeFromPoint) {
 		// @ts-ignore
-		range = document.caretRangeFromPoint(x, y);
-	} else if (document.caretPositionFromPoint) {
+		range = (doc as any).caretRangeFromPoint(x, y);
+	} else if ((doc as any).caretPositionFromPoint) {
 		// @ts-ignore
-		const pos = document.caretPositionFromPoint(x, y);
+		const pos = (doc as any).caretPositionFromPoint(x, y);
 		if (pos) {
-			range = document.createRange();
+			range = doc.createRange();
 			range.setStart(pos.offsetNode, pos.offset);
 			range.setEnd(pos.offsetNode, pos.offset);
 		}
@@ -305,7 +305,7 @@ const detectRawSelection = (element: HTMLElement, x: number, y: number): string 
 				const fullText = codeEl.innerText;
 				const lines = fullText.split("\n");
 
-				const preRange = document.createRange();
+				const preRange = doc.createRange();
 				preRange.selectNodeContents(codeEl);
 				preRange.setEnd(range.startContainer, range.startOffset);
 				const offset = preRange.toString().length;
@@ -345,14 +345,14 @@ const detectRawSelection = (element: HTMLElement, x: number, y: number): string 
 	let current: HTMLElement | null = element;
 	while (
 		current &&
-		current !== document.body &&
+		current !== doc.body &&
 		!current.classList.contains(s.highlighter)
 	) {
 		const text = (current.innerText || current.textContent || "").trim();
 		if (text.includes(":") && !text.includes("\n")) {
-			const sel = window.getSelection();
+			const sel = doc.defaultView?.getSelection();
 			if (sel) {
-				const r = document.createRange();
+				const r = doc.createRange();
 				r.selectNodeContents(current);
 				sel.removeAllRanges();
 				sel.addRange(r);
@@ -371,26 +371,27 @@ const detectRawSelection = (element: HTMLElement, x: number, y: number): string 
  * @param json The current event JSON
  */
 const detectSelectionAtPoint = (
+	doc: Document,
 	x: number,
 	y: number,
 	json: Record<string, any> | null,
 ): string | null => {
-	const element = document.elementFromPoint(x, y) as HTMLElement;
+	const element = doc.elementFromPoint(x, y) as HTMLElement;
 	if (!element) return null;
 
 	// 1. Table Handling
 	if (element.closest(`.${s.tableView}`)) {
-		return detectTableSelection(element);
+		return detectTableSelection(doc, element);
 	}
 
 	// 2. Tree Handling
 	if (element.closest(`.${s.container}`) || element.closest(`.${s.node}`)) {
-		return detectTreeSelection(element, json as Record<string, unknown> | null);
+		return detectTreeSelection(doc, element, json as Record<string, unknown> | null);
 	}
 
 	// 3. Raw Handling
 	if (element.closest(`.${s.highlighter}`)) {
-		return detectRawSelection(element, x, y);
+		return detectRawSelection(doc, element, x, y);
 	}
 
 	return null;
@@ -404,15 +405,15 @@ const detectSelectionAtPoint = (
  * Builds a { key: value } object from selected cells in the table view.
  * Returns null when the current selection does not intersect the event table.
  */
-const getSelectedTableKeyValueObject = (): Record<string, string> | null => {
-	const selection = window.getSelection();
+const getSelectedTableKeyValueObject = (doc: Document): Record<string, string> | null => {
+	const selection = doc.defaultView?.getSelection();
 	if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
 		return null;
 	}
 
 	const range = selection.getRangeAt(0);
 	const selectedCells = Array.from(
-		document.querySelectorAll(`.${s.tableView} tbody td`),
+		doc.querySelectorAll(`.${s.tableView} tbody td`),
 	).filter((cell) => {
 		try {
 			return range.intersectsNode(cell);
@@ -481,7 +482,7 @@ export function DisplayEventDialog({
 }) {
 	if (!event) return null;
 
-	const { Info, app, spawnBanner } = Application.use();
+	const { Info, app, spawnBanner, currentDocument } = Application.use();
 	const { extensions } = Extension.use();
 
 	// --- STATE ---
@@ -538,17 +539,17 @@ export function DisplayEventDialog({
 	// Global selection tracker
 	useEffect(() => {
 		const handleSelectionChange = () => {
-			const text = window.getSelection()?.toString().trim();
+			const text = currentDocument.defaultView?.getSelection()?.toString().trim();
 			if (text) {
 				setSelection(text);
 				if (text !== lastAutoSelectionRef.current)
 					lastAutoSelectionRef.current = null;
 			}
 		};
-		document.addEventListener("selectionchange", handleSelectionChange);
+		currentDocument.addEventListener("selectionchange", handleSelectionChange);
 		return () =>
-			document.removeEventListener("selectionchange", handleSelectionChange);
-	}, []);
+			currentDocument.removeEventListener("selectionchange", handleSelectionChange);
+	}, [currentDocument]);
 
 	useEffect(() => setSelection(""), [event._id]);
 
@@ -559,7 +560,7 @@ export function DisplayEventDialog({
 		if (!json) return;
 		const path = treeContextPathRef.current;
 		if (!path) {
-			const selectedTableJson = getSelectedTableKeyValueObject();
+			const selectedTableJson = getSelectedTableKeyValueObject(currentDocument);
 			if (selectedTableJson) {
 				copy(JSON.stringify(selectedTableJson, null, 2));
 				return;
@@ -745,13 +746,14 @@ export function DisplayEventDialog({
 					<ContextMenuTrigger
 						asChild
 						onMouseDown={(e) => {
-							if (e.button === 2 && !isPointInSelection(e.clientX, e.clientY)) {
-								const element = document.elementFromPoint(
+							if (e.button === 2 && !isPointInSelection(currentDocument, e.clientX, e.clientY)) {
+								const element = currentDocument.elementFromPoint(
 									e.clientX,
 									e.clientY,
 								) as HTMLElement;
-								window.getSelection()?.removeAllRanges();
+								currentDocument.defaultView?.getSelection()?.removeAllRanges();
 								const detected = detectSelectionAtPoint(
+									currentDocument,
 									e.clientX,
 									e.clientY,
 									json,
@@ -837,7 +839,7 @@ export function DisplayEventDialog({
 					</ContextMenuTrigger>
 				</Tabs>
 
-				<ContextMenuContent>
+				<ContextMenuContent container={currentDocument.body}>
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={() =>
@@ -912,6 +914,7 @@ export function DisplayEventDialog({
 		handleDownloadLogFile,
 		handleEnrich,
 		handleCopyJson,
+		currentDocument,
 	]);
 
 	if (!file) {

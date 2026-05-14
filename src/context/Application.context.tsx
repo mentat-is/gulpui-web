@@ -282,6 +282,7 @@ function _({ children }: { children: ReactNode }) {
 			dialogsDocked,
 			setDialogsDocked,
 			isDetachedWindow: false,
+			currentDocument: globalThis.document,
 		}),
 		[
 			spawnBanner,
@@ -374,6 +375,7 @@ export namespace Application {
 			dialogsDocked: boolean;
 			setDialogsDocked: React.Dispatch<React.SetStateAction<boolean>>;
 			isDetachedWindow: boolean;
+			currentDocument: Document;
 		}
 	}
 

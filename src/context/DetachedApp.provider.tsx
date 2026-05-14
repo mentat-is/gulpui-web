@@ -42,6 +42,8 @@ export namespace DetachedApp {
     initialNotes: Note.Type[]
     /** BroadcastChannel bridge ID (used to create a listener) */
     bridgeId: string
+    /** The detached window's document, used for portal/selection APIs */
+    detachedDocument: Document
     /** Children to render inside the provider */
     children: ReactNode
   }
@@ -51,6 +53,7 @@ export function DetachedAppProvider({
   initialApp,
   initialNotes,
   bridgeId,
+  detachedDocument,
   children,
 }: DetachedApp.ProviderProps) {
   const [app, setInfo] = useState<App.Type>(initialApp)
@@ -223,6 +226,7 @@ export function DetachedAppProvider({
       dialogsDocked: true,
       setDialogsDocked: setDockedState,
       isDetachedWindow: true,
+      currentDocument: detachedDocument,
     }),
     [
       spawnBanner,
