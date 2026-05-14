@@ -200,6 +200,14 @@ export function DetachedAppProvider({
     }
   }, [])
 
+  // Sync timeline target selection back to the main window so the canvas crosshair updates.
+  // Use _id as dep to avoid re-firing when the same event is echoed back as a new object ref.
+  useEffect(() => {
+    outboundBridgeRef.current?.send(WindowBridge.MessageType.EVENT_SELECTED, {
+      event: app.timeline.target ?? null,
+    })
+  }, [app.timeline.target?._id])
+
   const setDockedState = useCallback(() => {
     outboundBridgeRef.current?.send(WindowBridge.MessageType.DOCK_DIALOG, {})
   }, [])

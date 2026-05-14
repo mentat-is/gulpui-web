@@ -190,6 +190,15 @@ export function Navigator({
           }
           break
         }
+        case WindowBridge.MessageType.EVENT_SELECTED: {
+          // Detached dialog window changed the selected event — update the main canvas crosshair.
+          const { event: selectedEvent } = message.payload as WindowBridge.EventSelectedPayload
+          // Guard against echo: only update if the ID actually changed
+          if (selectedEvent?._id !== Info.app.timeline.target?._id) {
+            Info.setTimelineTarget(selectedEvent ?? null)
+          }
+          break
+        }
       }
     })
     mainBridgeRef.current = bridge
@@ -209,16 +218,16 @@ export function Navigator({
   useEffect(() => {
     console.warn("APP_SNAPSHOT", app.target.filters)
     const selectedSourceIds = app.target.files.filter((f: Source.Type) => f.selected).map((f: Source.Type) => f.id);
-      mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
-        app: {
-          target: {
-            operations: app.target.operations,
-            events: new Map(), // Omit events map as it cannot be cloned over BroadcastChannel
-            filters: app.target.filters,
-          },
-        } as any,
-        selectedSourceIds
-      });
+    mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
+      app: {
+        target: {
+          operations: app.target.operations,
+          events: new Map(), // Omit events map as it cannot be cloned over BroadcastChannel
+          filters: app.target.filters,
+        },
+      } as any,
+      selectedSourceIds
+    });
   }, [app.target.files, app.target.operations, app.target.contexts, app.target.filters, app.timeline.filter]);
 
   // Sync timeline selection to detached windows
@@ -284,6 +293,8 @@ export function Navigator({
         initialApp={app}
         initialNotes={[...DataStore.notes]}
         bridgeId={detachedBridgeId}
+        detachedDocument={newWindow.document}
+        mainSpawnBanner={spawnBanner}
       >
         <NotesWindow onClose={() => {
           newWindow.close()
@@ -317,287 +328,291 @@ export function Navigator({
   useEffect(() => {
     if (!windowRef) return
     const id = requestAnimationFrame(() => {
-      applyThemeToWindow(document, windowRef.document, theme)
+    applyThemeToWindow(document, windowRef.document, theme)
     })
     return () => cancelAnimationFrame(id)
   }, [theme, windowRef])
 
-  const closeWindow = () => {
-    if (windowRef) {
-      notesRootRef.current?.unmount()
-      notesRootRef.current = null
-      windowRef.close()
-      setWindowRef(null)
-    }
+const closeWindow = () => {
+  if (windowRef) {
+    notesRootRef.current?.unmount()
+    notesRootRef.current = null
+    windowRef.close()
+    setWindowRef(null)
+  }
+}
+
+const [tableWindowRef, setTableWindowRef] = useState<Window | null>(null)
+const tableRootRef = useRef<ReactDOM.Root | null>(null)
+
+const openTableWindow = useCallback((sourceId?: Source.Id) => {
+  if (tableWindowRef) {
+    tableRootRef.current?.unmount()
+    tableRootRef.current = null
+    tableWindowRef.close()
   }
 
-  const [tableWindowRef, setTableWindowRef] = useState<Window | null>(null)
-  const tableRootRef = useRef<ReactDOM.Root | null>(null)
+  const newWindow = window.open(
+    '',
+    '',
+    'width=800,height=600,left=150,top=150',
+  )
+  if (!newWindow) return
 
-  const openTableWindow = useCallback((sourceId?: Source.Id) => {
-    if (tableWindowRef) {
+  const container = document.createElement('div')
+  newWindow.document.body.appendChild(container)
+
+  copyStylesToWindow(newWindow)
+
+  // Create a SEPARATE React root for the table view window.
+  const detachedBridgeId = WindowBridge.generateId()
+  const root = ReactDOM.createRoot(container)
+  root.render(
+    <DetachedAppProvider
+      initialApp={app}
+      initialNotes={[...DataStore.notes]}
+      bridgeId={detachedBridgeId}
+      detachedDocument={newWindow.document}
+      mainSpawnBanner={spawnBanner}
+    >
+      <TableViewWindow
+        initialSourceId={sourceId}
+        onClose={() => {
+          newWindow.close()
+        }}
+      />
+    </DetachedAppProvider>
+  )
+  tableRootRef.current = root
+  setTableWindowRef(newWindow)
+}, [theme, tableWindowRef, app, copyStylesToWindow])
+
+useEffect(() => {
+  if (tableWindowRef) {
+    const handleBeforeUnload = () => {
       tableRootRef.current?.unmount()
       tableRootRef.current = null
-      tableWindowRef.close()
-    }
-
-    const newWindow = window.open(
-      '',
-      '',
-      'width=800,height=600,left=150,top=150',
-    )
-    if (!newWindow) return
-
-    const container = document.createElement('div')
-    newWindow.document.body.appendChild(container)
-
-    copyStylesToWindow(newWindow)
-
-    // Create a SEPARATE React root for the table view window.
-    const detachedBridgeId = WindowBridge.generateId()
-    const root = ReactDOM.createRoot(container)
-    root.render(
-      <DetachedAppProvider
-        initialApp={app}
-        initialNotes={[...DataStore.notes]}
-        bridgeId={detachedBridgeId}
-      >
-        <TableViewWindow
-          initialSourceId={sourceId}
-          onClose={() => {
-            newWindow.close()
-          }}
-        />
-      </DetachedAppProvider>
-    )
-    tableRootRef.current = root
-    setTableWindowRef(newWindow)
-  }, [theme, tableWindowRef, app, copyStylesToWindow])
-
-  useEffect(() => {
-    if (tableWindowRef) {
-      const handleBeforeUnload = () => {
-        tableRootRef.current?.unmount()
-        tableRootRef.current = null
-        setTableWindowRef(null)
-      }
-
-      tableWindowRef.addEventListener('beforeunload', handleBeforeUnload)
-
-      return () => {
-        tableWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
-      }
-    }
-  }, [tableWindowRef, Info])
-
-  // Sync theme to TableViewWindow via direct DOM access (same-origin window.open).
-  // Same rAF deferral as NotesWindow above.
-  useEffect(() => {
-    if (!tableWindowRef) return
-    const id = requestAnimationFrame(() => {
-      applyThemeToWindow(document, tableWindowRef.document, theme)
-    })
-    return () => cancelAnimationFrame(id)
-  }, [theme, tableWindowRef])
-
-  const closeTableWindow = useCallback(() => {
-    if (tableWindowRef) {
-      tableRootRef.current?.unmount()
-      tableRootRef.current = null
-      tableWindowRef.close()
       setTableWindowRef(null)
     }
-  }, [tableWindowRef, Info])
 
-  const [freeChatWindowRef, setFreeChatWindowRef] = useState<Window | null>(null)
-  const freeChatRootRef = useRef<ReactDOM.Root | null>(null)
+    tableWindowRef.addEventListener('beforeunload', handleBeforeUnload)
 
-  const [proChatWindowRef, setProChatWindowRef] = useState<Window | null>(null)
-  const proChatRootRef = useRef<ReactDOM.Root | null>(null)
-
-  const openChatWindow = useCallback((mode: 'free' | 'pro') => {
-    const isPro = mode === 'pro'
-    const windowRef = isPro ? proChatWindowRef : freeChatWindowRef
-    const rootRef = isPro ? proChatRootRef : freeChatRootRef
-    const setWindowRef = isPro ? setProChatWindowRef : setFreeChatWindowRef
-
-    if (windowRef && !windowRef.closed) {
-      windowRef.focus()
-      return
+    return () => {
+      tableWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
     }
+  }
+}, [tableWindowRef, Info])
 
-    const newWindow = window.open(
-      '',
-      isPro ? 'GulpAIAssistantPro' : 'GulpAIAssistant',
-      'width=480,height=800,left=120,top=120',
-    )
-    if (!newWindow) return
+// Sync theme to TableViewWindow via direct DOM access (same-origin window.open).
+// Same rAF deferral as NotesWindow above.
+useEffect(() => {
+  if (!tableWindowRef) return
+  const id = requestAnimationFrame(() => {
+    applyThemeToWindow(document, tableWindowRef.document, theme)
+  })
+  return () => cancelAnimationFrame(id)
+}, [theme, tableWindowRef])
 
-    const container = document.createElement('div')
-    newWindow.document.body.innerHTML = ''
-    newWindow.document.body.appendChild(container)
+const closeTableWindow = useCallback(() => {
+  if (tableWindowRef) {
+    tableRootRef.current?.unmount()
+    tableRootRef.current = null
+    tableWindowRef.close()
+    setTableWindowRef(null)
+  }
+}, [tableWindowRef, Info])
 
-    copyStylesToWindow(newWindow)
+const [freeChatWindowRef, setFreeChatWindowRef] = useState<Window | null>(null)
+const freeChatRootRef = useRef<ReactDOM.Root | null>(null)
 
-    const detachedBridgeId = WindowBridge.generateId()
-    const root = ReactDOM.createRoot(container)
-    root.render(
-      <DetachedAppProvider
-        initialApp={app}
-        initialNotes={[...DataStore.notes]}
-        bridgeId={detachedBridgeId}
-      >
-        <AIAssistantWindow
-          mode={mode}
-          onClose={() => {
-            newWindow.close()
-          }}
-        />
-      </DetachedAppProvider>
-    )
-    rootRef.current = root
-    setWindowRef(newWindow)
-  }, [theme, freeChatWindowRef, proChatWindowRef, app, copyStylesToWindow])
+const [proChatWindowRef, setProChatWindowRef] = useState<Window | null>(null)
+const proChatRootRef = useRef<ReactDOM.Root | null>(null)
 
-  // Sync theme to AI Assistant windows
-  useEffect(() => {
-    if (freeChatWindowRef && !freeChatWindowRef.closed) {
-      const id = requestAnimationFrame(() => {
-        applyThemeToWindow(document, freeChatWindowRef.document, theme)
+const openChatWindow = useCallback((mode: 'free' | 'pro') => {
+  const isPro = mode === 'pro'
+  const windowRef = isPro ? proChatWindowRef : freeChatWindowRef
+  const rootRef = isPro ? proChatRootRef : freeChatRootRef
+  const setWindowRef = isPro ? setProChatWindowRef : setFreeChatWindowRef
+
+  if (windowRef && !windowRef.closed) {
+    windowRef.focus()
+    return
+  }
+
+  const newWindow = window.open(
+    '',
+    isPro ? 'GulpAIAssistantPro' : 'GulpAIAssistant',
+    'width=480,height=800,left=120,top=120',
+  )
+  if (!newWindow) return
+
+  const container = document.createElement('div')
+  newWindow.document.body.innerHTML = ''
+  newWindow.document.body.appendChild(container)
+
+  copyStylesToWindow(newWindow)
+
+  const detachedBridgeId = WindowBridge.generateId()
+  const root = ReactDOM.createRoot(container)
+  root.render(
+    <DetachedAppProvider
+      initialApp={app}
+      initialNotes={[...DataStore.notes]}
+      bridgeId={detachedBridgeId}
+      detachedDocument={newWindow.document}
+      mainSpawnBanner={spawnBanner}
+    >
+      <AIAssistantWindow
+        mode={mode}
+        onClose={() => {
+          newWindow.close()
+        }}
+      />
+    </DetachedAppProvider>
+  )
+  rootRef.current = root
+  setWindowRef(newWindow)
+}, [theme, freeChatWindowRef, proChatWindowRef, app, copyStylesToWindow])
+
+// Sync theme to AI Assistant windows
+useEffect(() => {
+  if (freeChatWindowRef && !freeChatWindowRef.closed) {
+    const id = requestAnimationFrame(() => {
+      applyThemeToWindow(document, freeChatWindowRef.document, theme)
+    })
+    return () => cancelAnimationFrame(id)
+  }
+}, [theme, freeChatWindowRef])
+
+useEffect(() => {
+  if (proChatWindowRef && !proChatWindowRef.closed) {
+    const id = requestAnimationFrame(() => {
+      applyThemeToWindow(document, proChatWindowRef.document, theme)
+    })
+    return () => cancelAnimationFrame(id)
+  }
+}, [theme, proChatWindowRef])
+
+useEffect(() => {
+  if (freeChatWindowRef) {
+    const handleBeforeUnload = () => {
+      freeChatRootRef.current?.unmount()
+      freeChatRootRef.current = null
+      setFreeChatWindowRef(null)
+    }
+    freeChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
+    return () => freeChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+  }
+}, [freeChatWindowRef])
+
+useEffect(() => {
+  if (proChatWindowRef) {
+    const handleBeforeUnload = () => {
+      proChatRootRef.current?.unmount()
+      proChatRootRef.current = null
+      setProChatWindowRef(null)
+    }
+    proChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
+    return () => proChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+  }
+}, [proChatWindowRef])
+
+useEffect(() => {
+  if (app.general.tableViewSource) {
+    if (!tableWindowRef) {
+      openTableWindow(app.general.tableViewSource.id)
+    } else {
+      tableWindowRef.focus()
+      mainBridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
+        sourceId: app.general.tableViewSource.id
       })
-      return () => cancelAnimationFrame(id)
     }
-  }, [theme, freeChatWindowRef])
+    // Reset the one-shot signal
+    Info.setInfoByKey(null, 'general', 'tableViewSource')
+  }
+}, [app.general.tableViewSource, tableWindowRef, openTableWindow, Info])
 
-  useEffect(() => {
-    if (proChatWindowRef && !proChatWindowRef.closed) {
-      const id = requestAnimationFrame(() => {
-        applyThemeToWindow(document, proChatWindowRef.document, theme)
-      })
-      return () => cancelAnimationFrame(id)
-    }
-  }, [theme, proChatWindowRef])
+// Auto-close all detached windows when the user changes operation or logs out.
+// Notes and source events are operation-scoped, so stale detached tabs would
+// show incorrect data or trigger React errors with missing entities.
+const selectedOperationId = app.target.operations.find(o => o.selected)?.id
+const currentUser = app.general.user
 
-  useEffect(() => {
+useEffect(() => {
+  // Skip the initial mount — only react to subsequent changes
+  if (initialOperationRef.current === undefined) {
+    initialOperationRef.current = selectedOperationId ?? null
+    return
+  }
+
+  if (selectedOperationId !== initialOperationRef.current) {
+    // Operation changed — close Notes window, but keep Table window open
+    if (windowRef) closeWindow()
+    // Send APP_SNAPSHOT is already handled natively by Application.provider but DetachedApp
+    // needs to just receive it without closing the window. Table window resets itself.
+    initialOperationRef.current = selectedOperationId ?? null
+  }
+}, [selectedOperationId])
+
+useEffect(() => {
+  if (!currentUser) {
+    // User logged out — close all detached windows
+    if (windowRef) closeWindow()
+    if (tableWindowRef) closeTableWindow()
     if (freeChatWindowRef) {
-      const handleBeforeUnload = () => {
-        freeChatRootRef.current?.unmount()
-        freeChatRootRef.current = null
-        setFreeChatWindowRef(null)
-      }
-      freeChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
-      return () => freeChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+      freeChatRootRef.current?.unmount()
+      freeChatRootRef.current = null
+      freeChatWindowRef.close()
+      setFreeChatWindowRef(null)
     }
-  }, [freeChatWindowRef])
-
-  useEffect(() => {
     if (proChatWindowRef) {
-      const handleBeforeUnload = () => {
-        proChatRootRef.current?.unmount()
-        proChatRootRef.current = null
-        setProChatWindowRef(null)
-      }
-      proChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
-      return () => proChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+      proChatRootRef.current?.unmount()
+      proChatRootRef.current = null
+      proChatWindowRef.close()
+      setProChatWindowRef(null)
     }
-  }, [proChatWindowRef])
-
-  useEffect(() => {
-    if (app.general.tableViewSource) {
-      if (!tableWindowRef) {
-        openTableWindow(app.general.tableViewSource.id)
-      } else {
-        tableWindowRef.focus()
-        mainBridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
-          sourceId: app.general.tableViewSource.id
-        })
-      }
-      // Reset the one-shot signal
-      Info.setInfoByKey(null, 'general', 'tableViewSource')
-    }
-  }, [app.general.tableViewSource, tableWindowRef, openTableWindow, Info])
-
-  // Auto-close all detached windows when the user changes operation or logs out.
-  // Notes and source events are operation-scoped, so stale detached tabs would
-  // show incorrect data or trigger React errors with missing entities.
-  const selectedOperationId = app.target.operations.find(o => o.selected)?.id
-  const currentUser = app.general.user
-
-  useEffect(() => {
-    // Skip the initial mount — only react to subsequent changes
-    if (initialOperationRef.current === undefined) {
-      initialOperationRef.current = selectedOperationId ?? null
-      return
-    }
-
-    if (selectedOperationId !== initialOperationRef.current) {
-      // Operation changed — close Notes window, but keep Table window open
-      if (windowRef) closeWindow()
-      // Send APP_SNAPSHOT is already handled natively by Application.provider but DetachedApp
-      // needs to just receive it without closing the window. Table window resets itself.
-      initialOperationRef.current = selectedOperationId ?? null
-    }
-  }, [selectedOperationId])
-
-  useEffect(() => {
-    if (!currentUser) {
-      // User logged out — close all detached windows
-      if (windowRef) closeWindow()
-      if (tableWindowRef) closeTableWindow()
-      if (freeChatWindowRef) {
-        freeChatRootRef.current?.unmount()
-        freeChatRootRef.current = null
-        freeChatWindowRef.close()
-        setFreeChatWindowRef(null)
-      }
-      if (proChatWindowRef) {
-        proChatRootRef.current?.unmount()
-        proChatRootRef.current = null
-        proChatWindowRef.close()
-        setProChatWindowRef(null)
-      }
-    }
-  }, [currentUser, freeChatWindowRef, proChatWindowRef, tableWindowRef, windowRef])
-
-  const size_plus = useRef<HTMLButtonElement>(null)
-  const size_reset = useRef<HTMLButtonElement>(null)
-  const size_minus = useRef<HTMLButtonElement>(null)
-
-  const resetScaleAndScroll = () => {
-    Info.setTimelineScale(1)
-    scrollStore.setScrollX(0)
   }
+}, [currentUser, freeChatWindowRef, proChatWindowRef, tableWindowRef, windowRef])
 
-  const zoom = (out = false) => {
-    const timelineWidth = timeline.current?.clientWidth || 1
-    const currentScale = app.timeline.scale
+const size_plus = useRef<HTMLButtonElement>(null)
+const size_reset = useRef<HTMLButtonElement>(null)
+const size_minus = useRef<HTMLButtonElement>(null)
 
-    const newScale = out
-      ? currentScale - currentScale / 4
-      : currentScale + currentScale / 4
+const resetScaleAndScroll = () => {
+  Info.setTimelineScale(1)
+  scrollStore.setScrollX(0)
+}
 
-    const clampedScale = Math.min(Math.max(newScale, 0.01), 9999999)
+const zoom = (out = false) => {
+  const timelineWidth = timeline.current?.clientWidth || 1
+  const currentScale = app.timeline.scale
 
-    const centerOffset = scrollX + timelineWidth / 2
-    const scaledOffset = (centerOffset * clampedScale) / currentScale
-    const left = scaledOffset - centerOffset
+  const newScale = out
+    ? currentScale - currentScale / 4
+    : currentScale + currentScale / 4
 
-    Info.setTimelineScale(clampedScale)
-    scrollStore.setScrollX(x => Math.round(x + left))
-  }
+  const clampedScale = Math.min(Math.max(newScale, 0.01), 9999999)
 
-  const handleControllers = (event: KeyboardEvent) => {
-    const target = event.target as HTMLElement;
-    const tag = target.tagName.toLowerCase();
-    if (['input', 'textarea', 'select'].includes(tag) || target.isContentEditable) return;
+  const centerOffset = scrollX + timelineWidth / 2
+  const scaledOffset = (centerOffset * clampedScale) / currentScale
+  const left = scaledOffset - centerOffset
+
+  Info.setTimelineScale(clampedScale)
+  scrollStore.setScrollX(x => Math.round(x + left))
+}
+
+const handleControllers = (event: KeyboardEvent) => {
+  const target = event.target as HTMLElement;
+  const tag = target.tagName.toLowerCase();
+  if (['input', 'textarea', 'select'].includes(tag) || target.isContentEditable) return;
 
 
-    switch (true) {
-      case event.key === '-':
-        size_plus.current?.click()
-        break
+  switch (true) {
+    case event.key === '-':
+      size_plus.current?.click()
+      break
 
-      case event.key === '=':
+    case event.key === '=':
         size_minus.current?.click()
         break
 
@@ -618,312 +633,312 @@ export function Navigator({
     }
   }, [])
 
-  const createHighlightButtonClickHandler = () => {
-    setHighlightsOverlay(prev => prev ? null : <Highlights.Create.Overlay />)
-  }
+const createHighlightButtonClickHandler = () => {
+  setHighlightsOverlay(prev => prev ? null : <Highlights.Create.Overlay />)
+}
 
-  /**
-   * Triggers the search based on the current mode and value.
-   * For 'files' mode, it updates the global timeline filter.
-   * For 'events' mode, it updates OpenSearch filters and triggers a refetch.
-   * @param value The search term.
-   * @param mode The current filter mode ('files' or 'events').
-   */
-  const triggerSearch = useCallback((value: string, mode: 'files' | 'events') => {
-    if (mode === 'files') {
-      Info.setTimelineFilter(value);
-      scrollStore.setScroll(0, -26);
-    } else {
-      let hasChanges = false;
-      const sources = Source.Entity.selected(app);
-      if (sources.length === 0) return;
+/**
+ * Triggers the search based on the current mode and value.
+ * For 'files' mode, it updates the global timeline filter.
+ * For 'events' mode, it updates OpenSearch filters and triggers a refetch.
+ * @param value The search term.
+ * @param mode The current filter mode ('files' or 'events').
+ */
+const triggerSearch = useCallback((value: string, mode: 'files' | 'events') => {
+  if (mode === 'files') {
+    Info.setTimelineFilter(value);
+    scrollStore.setScroll(0, -26);
+  } else {
+    let hasChanges = false;
+    const sources = Source.Entity.selected(app);
+    if (sources.length === 0) return;
 
-      sources.forEach((source: Source.Type) => {
-        const query = Info.getQuery(source);
-        const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
-        const trimmedValue = value.trim();
+    sources.forEach((source: Source.Type) => {
+      const query = Info.getQuery(source);
+      const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
+      const trimmedValue = value.trim();
 
-        if (trimmedValue === '') {
-          if (existingFilterIndex !== -1) {
-            query.filters.splice(existingFilterIndex, 1);
-            Info.setQuery(source, query);
-            hasChanges = true;
-          }
-        } else {
-          const newFilter: Filter.Type = {
-            id: EVENT_FILTER_ID,
-            type: 'wildcard' as any,
-            operator: 'must' as any,
-            field: 'event.original',
-            value: trimmedValue,
-            enabled: true,
-            case_insensitive: true,
-          };
-
-          if (existingFilterIndex !== -1) {
-            query.filters[existingFilterIndex] = newFilter;
-          } else {
-            query.filters.push(newFilter);
-          }
-          Info.setQuery(source, query);
-          hasChanges = true;
-        }
-      });
-
-      if (hasChanges) {
-        Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
-        scrollStore.setScroll(0, -26);
-      }
-    }
-  }, [app, Info, EVENT_FILTER_ID]);
-
-  /**
-   * Handles filter input changes.
-   * Triggers instant auto-search in 'files' mode, but waits for manual trigger in 'events' mode.
-   * @param e Change event from the input.
-   */
-  const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setLocalFilterValue(value);
-    if (filterMode === 'files') {
-      Info.setTimelineFilter(value);
-      scrollStore.setScroll(0, -26);
-    }
-  }
-
-  /**
-   * Handles key down events on the search input.
-   * Triggers search when 'Enter' is pressed.
-   * @param e Keyboard event from the input.
-   */
-  const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      triggerSearch(localFilterValue, filterMode);
-    }
-  }
-
-  /**
-   * Toggles between 'files' and 'events' filter modes.
-   * When switching back to 'files', it clears any active event filters.
-   */
-  const handleIconClick = useCallback(() => {
-    const nextMode = filterMode === 'files' ? 'events' : 'files';
-
-    // Reset input value when switching modes to provide a clean state for the new mode
-    setLocalFilterValue('');
-    Info.setTimelineFilter('');
-
-    if (filterMode === 'events') {
-      // Cleanup: remove event filters when switching back to file filtering
-      let hasChanges = false;
-      const sources = Source.Entity.selected(app);
-      sources.forEach((source: Source.Type) => {
-        const query = Info.getQuery(source);
-        const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
+      if (trimmedValue === '') {
         if (existingFilterIndex !== -1) {
           query.filters.splice(existingFilterIndex, 1);
           Info.setQuery(source, query);
           hasChanges = true;
         }
-      });
+      } else {
+        const newFilter: Filter.Type = {
+          id: EVENT_FILTER_ID,
+          type: 'wildcard' as any,
+          operator: 'must' as any,
+          field: 'event.original',
+          value: trimmedValue,
+          enabled: true,
+          case_insensitive: true,
+        };
 
-      if (hasChanges) {
-        Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
+        if (existingFilterIndex !== -1) {
+          query.filters[existingFilterIndex] = newFilter;
+        } else {
+          query.filters.push(newFilter);
+        }
+        Info.setQuery(source, query);
+        hasChanges = true;
       }
+    });
+
+    if (hasChanges) {
+      Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
+      scrollStore.setScroll(0, -26);
     }
+  }
+}, [app, Info, EVENT_FILTER_ID]);
 
-    setFilterMode(nextMode);
-  }, [filterMode, app, Info, EVENT_FILTER_ID]);
+/**
+ * Handles filter input changes.
+ * Triggers instant auto-search in 'files' mode, but waits for manual trigger in 'events' mode.
+ * @param e Change event from the input.
+ */
+const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const value = e.target.value;
+  setLocalFilterValue(value);
+  if (filterMode === 'files') {
+    Info.setTimelineFilter(value);
+    scrollStore.setScroll(0, -26);
+  }
+}
 
+/**
+ * Handles key down events on the search input.
+ * Triggers search when 'Enter' is pressed.
+ * @param e Keyboard event from the input.
+ */
+const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+  if (e.key === 'Enter') {
+    triggerSearch(localFilterValue, filterMode);
+  }
+}
 
+/**
+ * Toggles between 'files' and 'events' filter modes.
+ * When switching back to 'files', it clears any active event filters.
+ */
+const handleIconClick = useCallback(() => {
+  const nextMode = filterMode === 'files' ? 'events' : 'files';
 
-  const { extensions } = Extension.use();
-  const hasPro = !!extensions['AIAssistantPro.banner.tsx'];
-  const [chatMode, setChatMode] = useState<'free' | 'pro'>('free'); // Default to free, but will be set by selection
-  const [selectionOpen, setSelectionOpen] = useState(false);
+  // Reset input value when switching modes to provide a clean state for the new mode
+  setLocalFilterValue('');
+  Info.setTimelineFilter('');
 
-  const handleChatButtonClick = () => {
-    if (hasPro) {
-      setSelectionOpen(true);
-    } else {
-      openChatWindow('free');
+  if (filterMode === 'events') {
+    // Cleanup: remove event filters when switching back to file filtering
+    let hasChanges = false;
+    const sources = Source.Entity.selected(app);
+    sources.forEach((source: Source.Type) => {
+      const query = Info.getQuery(source);
+      const existingFilterIndex = query.filters.findIndex(f => f.id === EVENT_FILTER_ID);
+      if (existingFilterIndex !== -1) {
+        query.filters.splice(existingFilterIndex, 1);
+        Info.setQuery(source, query);
+        hasChanges = true;
+      }
+    });
+
+    if (hasChanges) {
+      Info.refetch({ ids: sources.map((s: Source.Type) => s.id) });
     }
-  };
+  }
 
-  const selectChat = (mode: 'free' | 'pro') => {
-    openChatWindow(mode);
-    setSelectionOpen(false);
-  };
+  setFilterMode(nextMode);
+}, [filterMode, app, Info, EVENT_FILTER_ID]);
 
 
-  return (
-    <Stack
-      pos="relative"
-      gap={5}
-      flex={0}
-      className={cn(className, s.navigator)}
-      {...props}
-    >
-      <Button
-        variant="secondary"
-        title='Zoom in'
-        ref={size_minus}
-        onClick={() => zoom(false)}
-        icon="ZoomIn"
-        size='md'
-      />
-      <Button
-        variant="secondary"
-        title='Zoom out'
-        ref={size_plus}
-        onClick={() => zoom(true)}
-        icon="ZoomOut"
-        size='md'
-      />
-      <Button
-        variant="secondary"
-        title='Reset scale'
-        ref={size_reset}
-        onClick={resetScaleAndScroll}
-        icon="AlignHorizontalSpaceBetween"
-        size='md'
-      />
-      <Button
-        variant="secondary"
-        title='Create highlight'
-        icon="ChartBarBig"
-        onClick={createHighlightButtonClickHandler}
-        size='md'
-      />
-      <Input
-        className={s.filter}
-        variant='highlighted'
-        value={localFilterValue}
-        placeholder={filterMode === 'files' ? 'Filter by filenames and context' : 'Filter Events by raw logs'}
-        onChange={handleFilterChange}
-        onKeyDown={handleKeyDown}
-        icon={filterMode === 'files' ? 'Filter' : 'Activity'}
-        onIconClick={handleIconClick}
-        iconTitle={filterMode === 'files' ? 'Switch to Event Filtering' : 'Switch to File Filtering'}
-      />
-      <Button
-        variant="secondary"
-        title="Search"
-        icon="Search"
-        onClick={() => triggerSearch(localFilterValue, filterMode)}
-        size='md'
-      />
-      <Button
-        variant="secondary"
-        title="Open notes banner in new window"
-        icon="PictureInPicture2"
-        onClick={openWindow}
-        size='md'
-      />
-      <Popover.Root>
+
+const { extensions } = Extension.use();
+const hasPro = !!extensions['AIAssistantPro.banner.tsx'];
+const [chatMode, setChatMode] = useState<'free' | 'pro'>('free'); // Default to free, but will be set by selection
+const [selectionOpen, setSelectionOpen] = useState(false);
+
+const handleChatButtonClick = () => {
+  if (hasPro) {
+    setSelectionOpen(true);
+  } else {
+    openChatWindow('free');
+  }
+};
+
+const selectChat = (mode: 'free' | 'pro') => {
+  openChatWindow(mode);
+  setSelectionOpen(false);
+};
+
+
+return (
+  <Stack
+    pos="relative"
+    gap={5}
+    flex={0}
+    className={cn(className, s.navigator)}
+    {...props}
+  >
+    <Button
+      variant="secondary"
+      title='Zoom in'
+      ref={size_minus}
+      onClick={() => zoom(false)}
+      icon="ZoomIn"
+      size='md'
+    />
+    <Button
+      variant="secondary"
+      title='Zoom out'
+      ref={size_plus}
+      onClick={() => zoom(true)}
+      icon="ZoomOut"
+      size='md'
+    />
+    <Button
+      variant="secondary"
+      title='Reset scale'
+      ref={size_reset}
+      onClick={resetScaleAndScroll}
+      icon="AlignHorizontalSpaceBetween"
+      size='md'
+    />
+    <Button
+      variant="secondary"
+      title='Create highlight'
+      icon="ChartBarBig"
+      onClick={createHighlightButtonClickHandler}
+      size='md'
+    />
+    <Input
+      className={s.filter}
+      variant='highlighted'
+      value={localFilterValue}
+      placeholder={filterMode === 'files' ? 'Filter by filenames and context' : 'Filter Events by raw logs'}
+      onChange={handleFilterChange}
+      onKeyDown={handleKeyDown}
+      icon={filterMode === 'files' ? 'Filter' : 'Activity'}
+      onIconClick={handleIconClick}
+      iconTitle={filterMode === 'files' ? 'Switch to Event Filtering' : 'Switch to File Filtering'}
+    />
+    <Button
+      variant="secondary"
+      title="Search"
+      icon="Search"
+      onClick={() => triggerSearch(localFilterValue, filterMode)}
+      size='md'
+    />
+    <Button
+      variant="secondary"
+      title="Open notes banner in new window"
+      icon="PictureInPicture2"
+      onClick={openWindow}
+      size='md'
+    />
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <Button
+          size='md'
+          variant="secondary"
+          title='Visibility settings'
+          icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
+          className={cn(s.notes_visibility)}
+        />
+      </Popover.Trigger>
+      <Popover.Content>
+        <Stack dir='column' gap={4} ai='stretch'>
+          {(Object.keys(app.hidden) as unknown as Array<keyof App.Type['hidden']>).map((key) => {
+            return (
+              <Stack key={key} jc='space-between'>
+                <Label value={`Show ${key.replace(/([A-Z])/g, " $1").toLowerCase()}`} />
+                <Switch checked={!app.hidden[key]} onCheckedChange={() => Info.toggle_visibility(key)} />
+              </Stack>
+            )
+          })}
+        </Stack>
+      </Popover.Content>
+    </Popover.Root>
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <Button size='md'
+          variant="secondary"
+          title="Go to timestamp"
+          icon="Clock" />
+      </Popover.Trigger>
+      <Popover.Content className={s.goto}>
+        <Stack dir="column" ai="flex-start">
+          <p>Go to timestamp:</p>
+          <Stack>
+            <Input
+              variant="highlighted"
+              icon="Clock"
+              value={timestamp}
+              valid={timestampInputValid}
+              onChange={handleTimestampChangeHandler}
+            />
+            <Button
+              icon="Undo2"
+              variant="secondary"
+              onClick={resetTimestampToInitialValue}
+            />
+            <Button icon="Check" variant="glass" onClick={goToTimestamp} />
+          </Stack>
+        </Stack>
+      </Popover.Content>
+    </Popover.Root>
+    {hasPro ? (
+      <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
         <Popover.Trigger asChild>
           <Button
+            variant={selectionOpen ? 'default' : 'secondary'}
+            title='Select chat version'
+            icon='Sparkles'
+            onClick={handleChatButtonClick}
             size='md'
-            variant="secondary"
-            title='Visibility settings'
-            icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
-            className={cn(s.notes_visibility)}
           />
         </Popover.Trigger>
         <Popover.Content>
-          <Stack dir='column' gap={4} ai='stretch'>
-            {(Object.keys(app.hidden) as unknown as Array<keyof App.Type['hidden']>).map((key) => {
-              return (
-                <Stack key={key} jc='space-between'>
-                  <Label value={`Show ${key.replace(/([A-Z])/g, " $1").toLowerCase()}`} />
-                  <Switch checked={!app.hidden[key]} onCheckedChange={() => Info.toggle_visibility(key)} />
-                </Stack>
-              )
-            })}
-          </Stack>
-        </Popover.Content>
-      </Popover.Root>
-      <Popover.Root>
-        <Popover.Trigger asChild>
-          <Button size='md'
-            variant="secondary"
-            title="Go to timestamp"
-            icon="Clock" />
-        </Popover.Trigger>
-        <Popover.Content className={s.goto}>
-          <Stack dir="column" ai="flex-start">
-            <p>Go to timestamp:</p>
+          <Stack dir='column' gap={3}>
+            <Label value="Select chat version" />
             <Stack>
-              <Input
-                variant="highlighted"
-                icon="Clock"
-                value={timestamp}
-                valid={timestampInputValid}
-                onChange={handleTimestampChangeHandler}
-              />
               <Button
-                icon="Undo2"
-                variant="secondary"
-                onClick={resetTimestampToInitialValue}
-              />
-              <Button icon="Check" variant="glass" onClick={goToTimestamp} />
+                variant="glass"
+                onClick={() => selectChat('free')}
+                icon="Sparkle"
+                title="Use Free Version"
+              >
+                AIAssistant Chat
+              </Button>
+              <Button
+                variant="default"
+                onClick={() => selectChat('pro')}
+                icon="Sparkles"
+                title="Use Pro Version"
+              >
+                AIAssistant Pro
+              </Button>
             </Stack>
           </Stack>
         </Popover.Content>
       </Popover.Root>
-      {hasPro ? (
-        <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
-          <Popover.Trigger asChild>
-            <Button
-              variant={selectionOpen ? 'default' : 'secondary'}
-              title='Select chat version'
-              icon='Sparkles'
-              onClick={handleChatButtonClick}
-              size='md'
-            />
-          </Popover.Trigger>
-          <Popover.Content>
-            <Stack dir='column' gap={3}>
-              <Label value="Select chat version" />
-              <Stack>
-                <Button
-                  variant="glass"
-                  onClick={() => selectChat('free')}
-                  icon="Sparkle"
-                  title="Use Free Version"
-                >
-                  AIAssistant Chat
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={() => selectChat('pro')}
-                  icon="Sparkles"
-                  title="Use Pro Version"
-                >
-                  AIAssistant Pro
-                </Button>
-              </Stack>
-            </Stack>
-          </Popover.Content>
-        </Popover.Root>
-      ) : (
-        <Button
-          variant='secondary'
-          title='Open AI Assistant Chat'
-          icon='Sparkle'
-          onClick={handleChatButtonClick}
-          size='md'
-        />
-      )}
+    ) : (
       <Button
         variant='secondary'
-        title='Open table view in new window'
-        icon='Table'
-        onClick={() => openTableWindow()}
+        title='Open AI Assistant Chat'
+        icon='Sparkle'
+        onClick={handleChatButtonClick}
         size='md'
       />
-      {/* Detached windows now use separate React roots via createRoot.
+    )}
+    <Button
+      variant='secondary'
+      title='Open table view in new window'
+      icon='Table'
+      onClick={() => openTableWindow()}
+      size='md'
+    />
+    {/* Detached windows now use separate React roots via createRoot.
           They are no longer part of this React tree — see openWindow() and openTableWindow(). */}
-    </Stack>
-  )
+  </Stack>
+)
 }
