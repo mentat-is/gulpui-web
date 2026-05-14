@@ -37,6 +37,8 @@ export namespace WindowBridge {
     TARGET_NOTE = 'TARGET_NOTE',
     /** Main → Detached: An event was selected in the timeline */
     EVENT_SELECTED = 'EVENT_SELECTED',
+    /** Detached ↔ Main: AI chat history was updated in IndexedDB */
+    AI_HISTORY_UPDATED = 'AI_HISTORY_UPDATED',
   }
 
   export interface ThemeChangePayload {
@@ -94,6 +96,7 @@ export namespace WindowBridge {
     [MessageType.TABLE_SELECT_SOURCE]: TableSelectSourcePayload
     [MessageType.TARGET_NOTE]: TargetNotePayload
     [MessageType.EVENT_SELECTED]: EventSelectedPayload
+    [MessageType.AI_HISTORY_UPDATED]: { senderId?: string }
   }
 
   export interface Message<T extends MessageType = MessageType> {

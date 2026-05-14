@@ -31,6 +31,7 @@ import { DetachedAppProvider } from '@/context/DetachedApp.provider'
 import { DataStore } from '@/store/DataStore'
 import { RenderEngine } from '@/class/RenderEngine'
 import { NotePoint } from '@/ui/Note'
+import { AIAssistantWindow } from '@/components/AIAssistantWindow'
 
 /**
  * FetchEventBannerMain — fetches a note-linked event from the server and opens its dialog
@@ -70,8 +71,6 @@ export function Navigator({
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
-  const [chatOpen, setChatOpen] = useState(false)
-  const toggleChatOpen = () => setChatOpen(prev => !prev)
 
   const [filterMode, setFilterMode] = useState<'files' | 'events'>('files');
   const EVENT_FILTER_ID = 'navigator-event-filter' as Filter.Id;
@@ -410,6 +409,99 @@ export function Navigator({
     }
   }, [tableWindowRef, Info])
 
+  const [freeChatWindowRef, setFreeChatWindowRef] = useState<Window | null>(null)
+  const freeChatRootRef = useRef<ReactDOM.Root | null>(null)
+
+  const [proChatWindowRef, setProChatWindowRef] = useState<Window | null>(null)
+  const proChatRootRef = useRef<ReactDOM.Root | null>(null)
+
+  const openChatWindow = useCallback((mode: 'free' | 'pro') => {
+    const isPro = mode === 'pro'
+    const windowRef = isPro ? proChatWindowRef : freeChatWindowRef
+    const rootRef = isPro ? proChatRootRef : freeChatRootRef
+    const setWindowRef = isPro ? setProChatWindowRef : setFreeChatWindowRef
+
+    if (windowRef && !windowRef.closed) {
+      windowRef.focus()
+      return
+    }
+
+    const newWindow = window.open(
+      '',
+      isPro ? 'GulpAIAssistantPro' : 'GulpAIAssistant',
+      'width=480,height=800,left=120,top=120',
+    )
+    if (!newWindow) return
+
+    const container = document.createElement('div')
+    newWindow.document.body.innerHTML = ''
+    newWindow.document.body.appendChild(container)
+
+    copyStylesToWindow(newWindow)
+
+    const detachedBridgeId = WindowBridge.generateId()
+    const root = ReactDOM.createRoot(container)
+    root.render(
+      <DetachedAppProvider
+        initialApp={app}
+        initialNotes={[...DataStore.notes]}
+        bridgeId={detachedBridgeId}
+      >
+        <AIAssistantWindow
+          mode={mode}
+          onClose={() => {
+            newWindow.close()
+          }}
+        />
+      </DetachedAppProvider>
+    )
+    rootRef.current = root
+    setWindowRef(newWindow)
+  }, [theme, freeChatWindowRef, proChatWindowRef, app, copyStylesToWindow])
+
+  // Sync theme to AI Assistant windows
+  useEffect(() => {
+    if (freeChatWindowRef && !freeChatWindowRef.closed) {
+      const id = requestAnimationFrame(() => {
+        applyThemeToWindow(document, freeChatWindowRef.document, theme)
+      })
+      return () => cancelAnimationFrame(id)
+    }
+  }, [theme, freeChatWindowRef])
+
+  useEffect(() => {
+    if (proChatWindowRef && !proChatWindowRef.closed) {
+      const id = requestAnimationFrame(() => {
+        applyThemeToWindow(document, proChatWindowRef.document, theme)
+      })
+      return () => cancelAnimationFrame(id)
+    }
+  }, [theme, proChatWindowRef])
+
+  useEffect(() => {
+    if (freeChatWindowRef) {
+      const handleBeforeUnload = () => {
+        freeChatRootRef.current?.unmount()
+        freeChatRootRef.current = null
+        setFreeChatWindowRef(null)
+      }
+      freeChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
+      return () => freeChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [freeChatWindowRef])
+
+  useEffect(() => {
+    if (proChatWindowRef) {
+      const handleBeforeUnload = () => {
+        proChatRootRef.current?.unmount()
+        proChatRootRef.current = null
+        setProChatWindowRef(null)
+      }
+      proChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
+      return () => proChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [proChatWindowRef])
+
   useEffect(() => {
     if (app.general.tableViewSource) {
       if (!tableWindowRef) {
@@ -452,8 +544,20 @@ export function Navigator({
       // User logged out — close all detached windows
       if (windowRef) closeWindow()
       if (tableWindowRef) closeTableWindow()
+      if (freeChatWindowRef) {
+        freeChatRootRef.current?.unmount()
+        freeChatRootRef.current = null
+        freeChatWindowRef.close()
+        setFreeChatWindowRef(null)
+      }
+      if (proChatWindowRef) {
+        proChatRootRef.current?.unmount()
+        proChatRootRef.current = null
+        proChatWindowRef.close()
+        setProChatWindowRef(null)
+      }
     }
-  }, [currentUser])
+  }, [currentUser, freeChatWindowRef, proChatWindowRef, tableWindowRef, windowRef])
 
   const size_plus = useRef<HTMLButtonElement>(null)
   const size_reset = useRef<HTMLButtonElement>(null)
@@ -639,22 +743,15 @@ export function Navigator({
   const [selectionOpen, setSelectionOpen] = useState(false);
 
   const handleChatButtonClick = () => {
-    if (chatOpen) {
-      setChatOpen(false);
-      return;
-    }
-
     if (hasPro) {
       setSelectionOpen(true);
     } else {
-      setChatMode('free');
-      setChatOpen(true);
+      openChatWindow('free');
     }
   };
 
   const selectChat = (mode: 'free' | 'pro') => {
-    setChatMode(mode);
-    setChatOpen(true);
+    openChatWindow(mode);
     setSelectionOpen(false);
   };
 
@@ -778,7 +875,7 @@ export function Navigator({
         <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
           <Popover.Trigger asChild>
             <Button
-              variant={chatOpen || selectionOpen ? 'default' : 'secondary'}
+              variant={selectionOpen ? 'default' : 'secondary'}
               title='Select chat version'
               icon='Sparkles'
               onClick={handleChatButtonClick}
@@ -811,31 +908,13 @@ export function Navigator({
         </Popover.Root>
       ) : (
         <Button
-          variant={chatOpen ? 'default' : 'secondary'}
+          variant='secondary'
           title='Open AI Assistant Chat'
           icon='Sparkle'
           onClick={handleChatButtonClick}
           size='md'
         />
       )}
-
-      <FloatingWindow
-        title={chatMode === 'pro' ? 'AI Assistant Pro' : 'AI Assistant'}
-        icon={chatMode === 'pro' ? 'Sparkles' : 'Sparkle'}
-        defaultOpen={chatOpen}
-        /* FloatingWindow updates internal state when defaultOpen changes */
-        onOpenChange={setChatOpen}
-        trigger="i"
-        size={[480, 800]}
-        position={[120, 120]}
-        className={chatMode === 'pro' ? s.chat : undefined}
-      >
-        {chatMode === 'pro' ? (
-          <Extension.Component name='AIAssistantPro.banner.tsx' />
-        ) : (
-          <AIAssistant.Panel />
-        )}
-      </FloatingWindow>
       <Button
         variant='secondary'
         title='Open table view in new window'

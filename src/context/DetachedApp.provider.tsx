@@ -32,6 +32,7 @@ import { RenderEngine } from '@/class/RenderEngine'
 import { Color } from '@/entities/Color'
 import { Operation } from '@/entities/Operation'
 import { Source } from '@/entities/Source'
+import { Extension } from '@/context/Extension.context'
 
 export namespace DetachedApp {
   export interface ProviderProps {
@@ -221,7 +222,9 @@ export function DetachedAppProvider({
 
   return (
     <Application.Context.Provider value={props}>
-      {children}
+      <Extension.Provider>
+        {children}
+      </Extension.Provider>
     </Application.Context.Provider>
   )
 }

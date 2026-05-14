@@ -12,6 +12,7 @@ import s from './styles/AIAssistantBanner.module.css'
 import { cn } from '@impactium/utils'
 import { GulpIndexedDB } from '@/class/IndexedDB'
 import { copy, generateUUID } from '@/ui/utils'
+import { WindowBridge } from '@/lib/WindowBridge'
 
 // initialize indexed db and store if not already initialized
 const chatDB = new GulpIndexedDB('gulp_DB', 'gulp_ai_assistant_history');
@@ -62,6 +63,31 @@ export namespace AIAssistant {
     const mounted = useRef(true)
     const operation = Operation.Entity.selected(app);
 
+    const bridgeId = useRef(WindowBridge.generateId())
+    const bridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null)
+
+    useEffect(() => {
+      const bridge = WindowBridge.create(bridgeId.current, (message) => {
+        if (message.type === WindowBridge.MessageType.AI_HISTORY_UPDATED) {
+          const payload = message.payload as { senderId?: string }
+          if (payload.senderId === bridgeId.current) return;
+
+          if (operation) {
+            chatDB.GetConfiguration(operation.id).then((saved) => {
+              if (mounted.current && saved) {
+                setHistory(saved);
+              }
+            })
+          }
+        }
+      });
+      bridgeRef.current = bridge;
+      return () => {
+        bridge.destroy();
+        bridgeRef.current = null;
+      }
+    }, [operation?.id]);
+
     useEffect(() => {
       mounted.current = true
 
@@ -91,16 +117,23 @@ export namespace AIAssistant {
     }, [operation?.id])
 
     useEffect(() => {
-      if (operation && history.length > 0) {
-        chatDB.UpdateConfiguration(history, operation.id);
-      }
+      if (!operation || history.length === 0) return;
 
-      // Scroll to bottom only on new requests, but here simplified to scroll on history update
-      // We might want to be smarter about this if we are scrolling to specific element
-      if (chatRef.current && loading) { // Only scroll to bottom if loading (new content coming in)
+      // Skip DB updates and broadcasts during streaming to prevent flickering and loops.
+      // The final state will be synced when loading (streaming) finishes.
+      if (loading) return;
+
+      chatDB.UpdateConfiguration(history, operation.id).then(() => {
+        bridgeRef.current?.send(WindowBridge.MessageType.AI_HISTORY_UPDATED, {
+          senderId: bridgeId.current
+        });
+      });
+
+      // Scroll to bottom only on new requests
+      if (chatRef.current && loading) {
         chatRef.current.scrollTop = chatRef.current.scrollHeight
       }
-    }, [history, operation?.id]) // Added loading dependency implicitly by behavior
+    }, [history, operation?.id, loading])
 
     /**
      * Updates the content of the AI message for the most recent analysis request.
@@ -239,8 +272,8 @@ export namespace AIAssistant {
     }
 
     return (
-      <Stack ai='start' jc='center' dir='column' className={s.wrapper} style={{ height: '100%' }}>
-        <Stack ai='center' jc='start' dir='column' gap={8} className={s.chat} ref={chatRef}>
+      <Stack ai='stretch' jc='start' dir='column' className={cn(s.wrapper, s.wrapper_flex)}>
+        <Stack ai='stretch' jc='start' dir='column' gap={8} className={s.chat} ref={chatRef}>
           {history.map((req) => (
             <Stack key={req.id} id={`request-${req.id}`} dir='column' gap={8} style={{ width: '100%' }}>
               <Stack className={cn(s.message, s.user)} dir='column' gap={4} ai='flex-start'>
@@ -255,7 +288,7 @@ export namespace AIAssistant {
             </Stack>
           ))}
         </Stack>
-        <Stack dir='row' ai='end' gap={8} style={{ width: '100%' }}>
+        <Stack dir='row' ai='center' gap={8} className={s.actions}>
           <Button icon='Search' variant='secondary' onClick={analyze} disabled={loading} style={{ width: '100%' }}>
             Analyze Flagged Events
           </Button>
@@ -263,7 +296,13 @@ export namespace AIAssistant {
             const confirmed = window.confirm('Are you sure you want to delete all history?');
             if (!confirmed) return;
             setHistory([]);
-            if (operation) chatDB.DeleteConfiguration(operation.id);
+            if (operation) {
+              chatDB.DeleteConfiguration(operation.id).then(() => {
+                bridgeRef.current?.send(WindowBridge.MessageType.AI_HISTORY_UPDATED, {
+                  senderId: bridgeId.current
+                });
+              });
+            }
             toast.info('History deleted');
           }}>Clear history</Button>
         </Stack>
