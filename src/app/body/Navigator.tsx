@@ -613,11 +613,11 @@ export function Navigator({
         break
 
       case event.key === '=':
-        size_minus.current?.click()
+        resetScaleAndScroll()
         break
 
       case event.key === '+':
-        resetScaleAndScroll()
+        size_minus.current?.click()
         break
 
       default:
