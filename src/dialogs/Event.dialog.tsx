@@ -630,7 +630,7 @@ export function DisplayEventDialog({
 		spawnBanner(<LinkFunctionality.Connect.Banner event={event} />);
 	}, [spawnBanner, event]);
 
-	const applySelectionAsFileFilter = useCallback((textSelected?:string) => {
+	const applySelectionAsFileFilter = useCallback((textSelected?: string) => {
 		if (!textSelected) return;
 		const file = Source.Entity.id(app, event["gulp.source_id"]);
 		const { filters } = Info.getQuery(file);
@@ -790,10 +790,10 @@ export function DisplayEventDialog({
 									: null;
 							}
 						}}
-						// onContextMenu={() => {
-						// 	const current = window.getSelection()?.toString().trim();
-						// 	if (current && current !== selection) setSelection(current);
-						// }}
+					// onContextMenu={() => {
+					// 	const current = window.getSelection()?.toString().trim();
+					// 	if (current && current !== selection) setSelection(current);
+					// }}
 					>
 						<div className={s.contextTrigger}>
 							<TabsContent
@@ -865,7 +865,7 @@ export function DisplayEventDialog({
 						Copy
 					</ContextMenuItem>
 					<ContextMenuItem
-						onClick={() =>applySelectionAsFileFilter(selection)}
+						onClick={() => applySelectionAsFileFilter(selection)}
 						icon="Filter"
 					>
 						New filter
@@ -916,7 +916,7 @@ export function DisplayEventDialog({
 
 	if (!file) {
 		return (
-			<Dialog callback={onClose}>
+			<Dialog callback={onClose} dockable>
 				<Stack
 					style={{ width: "100%", height: "300px" }}
 					flex
@@ -934,7 +934,7 @@ export function DisplayEventDialog({
 	}
 
 	return (
-		<Dialog callback={onClose}>
+		<Dialog callback={onClose} dockable>
 			<Navigation event={event} />
 			{json ? (
 				<Fragment>

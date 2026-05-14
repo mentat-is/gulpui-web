@@ -117,7 +117,7 @@ function _({ children }: { children: ReactNode }) {
 		const collabUpdateCallback = (message: any) => {
 			switch (message.payload.obj.type) {
 				case "note": {
-						const note: Note.Type = Note.Entity.normalize_note(message.payload.obj);
+					const note: Note.Type = Note.Entity.normalize_note(message.payload.obj);
 					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
 					if (idx >= 0) {
 						DataStore.notes[idx] = note;
@@ -261,6 +261,9 @@ function _({ children }: { children: ReactNode }) {
 		setDialog(dialog);
 	}, []);
 
+	const [canvasDocked, setCanvasDocked] = useState(true);
+	const [dialogsDocked, setDialogsDocked] = useState(true);
+
 	const props = useMemo(
 		() => ({
 			spawnBanner,
@@ -274,6 +277,11 @@ function _({ children }: { children: ReactNode }) {
 			timeline,
 			highlightsOverlay,
 			setHighlightsOverlay,
+			canvasDocked,
+			setCanvasDocked,
+			dialogsDocked,
+			setDialogsDocked,
+			isDetachedWindow: false,
 		}),
 		[
 			spawnBanner,
@@ -287,6 +295,8 @@ function _({ children }: { children: ReactNode }) {
 			timeline,
 			highlightsOverlay,
 			setHighlightsOverlay,
+			canvasDocked,
+			dialogsDocked,
 		],
 	);
 
@@ -359,6 +369,11 @@ export namespace Application {
 			timeline: React.RefObject<HTMLDivElement>;
 			highlightsOverlay: React.ReactNode;
 			setHighlightsOverlay: SetState<React.ReactNode>;
+			canvasDocked: boolean;
+			setCanvasDocked: React.Dispatch<React.SetStateAction<boolean>>;
+			dialogsDocked: boolean;
+			setDialogsDocked: React.Dispatch<React.SetStateAction<boolean>>;
+			isDetachedWindow: boolean;
 		}
 	}
 

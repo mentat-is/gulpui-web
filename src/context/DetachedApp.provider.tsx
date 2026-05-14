@@ -103,8 +103,8 @@ export function DetachedAppProvider({
             const newOpId = snapshot.target?.operations?.find((o: Operation.Type) => o.selected)?.id
             const opChanged = newOpId && oldOpId && newOpId !== oldOpId
 
-            const next = { 
-              ...prev, 
+            const next = {
+              ...prev,
               ...snapshot,
               target: snapshot.target ? {
                 ...prev.target,
@@ -137,7 +137,7 @@ export function DetachedAppProvider({
             }
           }))
           break
-        }       
+        }
       }
     })
 
@@ -145,7 +145,7 @@ export function DetachedAppProvider({
       bridge.destroy()
     }
   }, [bridgeId])
-  
+
   // Reactively fetch new sources/contexts when the selected operation changes.
   // This avoids sending large source lists over BroadcastChannel (APP_SNAPSHOT).
   const selectedOperationId = app.target.operations.find(o => o.selected)?.id
@@ -191,6 +191,20 @@ export function DetachedAppProvider({
     setDialog(dialog)
   }, [])
 
+  const outboundBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null)
+  useEffect(() => {
+    const sendId = WindowBridge.generateId()
+    outboundBridgeRef.current = WindowBridge.create(sendId, () => { })
+    return () => {
+      outboundBridgeRef.current?.destroy()
+      outboundBridgeRef.current = null
+    }
+  }, [])
+
+  const setDockedState = useCallback(() => {
+    outboundBridgeRef.current?.send(WindowBridge.MessageType.DOCK_DIALOG, {})
+  }, [])
+
   const props = useMemo(
     () => ({
       spawnBanner,
@@ -204,6 +218,11 @@ export function DetachedAppProvider({
       timeline,
       highlightsOverlay,
       setHighlightsOverlay,
+      canvasDocked: true,
+      setCanvasDocked: setDockedState,
+      dialogsDocked: true,
+      setDialogsDocked: setDockedState,
+      isDetachedWindow: true,
     }),
     [
       spawnBanner,
@@ -217,6 +236,7 @@ export function DetachedAppProvider({
       timeline,
       highlightsOverlay,
       setHighlightsOverlay,
+      setDockedState,
     ],
   )
 

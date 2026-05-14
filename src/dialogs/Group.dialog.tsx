@@ -63,7 +63,7 @@ export function DisplayGroupDialog({ events }: DisplayGroupDialogProps) {
 	);
 
 	return (
-		<Dialog>
+		<Dialog dockable>
 			<div
 				ref={parentRef}
 				style={{ height: "100%", paddingRight: 12, overflow: "auto" }}

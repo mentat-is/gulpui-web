@@ -39,6 +39,8 @@ export namespace WindowBridge {
     EVENT_SELECTED = 'EVENT_SELECTED',
     /** Detached ↔ Main: AI chat history was updated in IndexedDB */
     AI_HISTORY_UPDATED = 'AI_HISTORY_UPDATED',
+    /** Detached → Main: User clicked "Dock" in the detached dialog window */
+    DOCK_DIALOG = 'DOCK_DIALOG',
   }
 
   export interface ThemeChangePayload {
@@ -97,6 +99,7 @@ export namespace WindowBridge {
     [MessageType.TARGET_NOTE]: TargetNotePayload
     [MessageType.EVENT_SELECTED]: EventSelectedPayload
     [MessageType.AI_HISTORY_UPDATED]: { senderId?: string }
+    [MessageType.DOCK_DIALOG]: Record<string, never>
   }
 
   export interface Message<T extends MessageType = MessageType> {

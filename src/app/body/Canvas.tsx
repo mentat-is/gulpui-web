@@ -51,7 +51,14 @@ export function Canvas({ timeline }: Canvas.Props) {
 		null as unknown as HTMLCanvasElement,
 	);
 	const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
-	const { app, banner, spawnDialog, Info, dialog, highlightsOverlay } =
+	const {
+		app,
+		banner,
+		spawnDialog,
+		Info,
+		dialog,
+		highlightsOverlay,
+	} =
 		Application.use();
 	const { x: scrollX, y: scrollY } = useScroll();
 	const [target, setTarget] = useState<Source.Type | null>(null);
@@ -509,6 +516,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 		return () => {
 			CanvasIcon.onIconLoad = null;
 		};
+	}, []);
+
+	// Observe wrapper size changes (e.g. when dialog panel is docked/undocked)
+	// and mark canvas dirty so renderCanvas() detects the size mismatch immediately.
+	useEffect(() => {
+		const el = wrapper_ref.current;
+		if (!el) return;
+		const observer = new ResizeObserver(() => { DataStore.markDirty(); });
+		observer.observe(el);
+		return () => observer.disconnect();
 	}, []);
 
 	useEffect(() => {

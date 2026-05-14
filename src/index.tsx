@@ -3,7 +3,7 @@ import './global.css'
 import { Application } from './context/Application.context'
 import { Toaster } from './ui/Toaster'
 import { Api } from './class/API'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '@impactium/utils'
 import { Extension } from './context/Extension.context'
 import { Logger } from './dto/Logger.class'
@@ -19,6 +19,9 @@ import { Theme } from './context/Theme.context'
 import { Color } from './entities/Color'
 import { useTheme } from 'next-themes'
 import { RendererTest } from './page/RendererTest.page'
+import { DetachedAppProvider } from './context/DetachedApp.provider'
+import { DataStore } from './store/DataStore'
+import { WindowBridge } from './lib/WindowBridge'
 
 const root = document.getElementById('root')
 
@@ -74,8 +77,92 @@ function Root() {
 
 function Main() {
   const { theme } = useTheme();
-  const { Info, app, dialog } = Application.use();
+  const {
+    Info,
+    app,
+    dialog,
+    dialogsDocked,
+    setDialogsDocked,
+  } = Application.use();
   const [isPreloaded, setIsPreloaded] = useState(false);
+  const dialogWindowRef = useRef<Window | null>(null);
+  const dialogRootRef = useRef<ReactDOM.Root | null>(null);
+  const dialogBridgeIdRef = useRef<string | null>(null);
+
+  const applyThemeToWindow = useCallback((sourceDoc: Document, targetDoc: Document, nextTheme: string | undefined) => {
+    const sourceRoot = sourceDoc.documentElement;
+    const targetRoot = targetDoc.documentElement;
+
+    targetRoot.setAttribute('data-theme', nextTheme ?? 'dark');
+
+    const styles = getComputedStyle(sourceRoot);
+    for (let index = 0; index < styles.length; index++) {
+      const key = styles[index];
+      if (key.startsWith('--')) {
+        targetRoot.style.setProperty(key, styles.getPropertyValue(key));
+      }
+    }
+  }, []);
+
+  const copyStylesToWindow = useCallback((targetWindow: Window) => {
+    applyThemeToWindow(document, targetWindow.document, theme);
+
+    Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
+      try {
+        if (styleSheet.href) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = styleSheet.href;
+          targetWindow.document.head.appendChild(link);
+        } else if (styleSheet.cssRules) {
+          const style = document.createElement('style');
+          Array.from(styleSheet.cssRules).forEach((rule) => {
+            style.appendChild(document.createTextNode(rule.cssText));
+          });
+          targetWindow.document.head.appendChild(style);
+        }
+      } catch (error) {
+        console.warn('error copying style', error);
+      }
+    });
+  }, [applyThemeToWindow, theme]);
+
+  const unmountDialogWindow = useCallback(() => {
+    dialogRootRef.current?.unmount();
+    dialogRootRef.current = null;
+    dialogBridgeIdRef.current = null;
+    if (dialogWindowRef.current && !dialogWindowRef.current.closed) {
+      dialogWindowRef.current.close();
+    }
+    dialogWindowRef.current = null;
+  }, []);
+
+  const renderDetachedDialog = useCallback((targetWindow: Window) => {
+    const container = targetWindow.document.getElementById('detached-root') ?? targetWindow.document.createElement('div');
+    if (!container.id) {
+      container.id = 'detached-root';
+      targetWindow.document.body.innerHTML = '';
+      targetWindow.document.body.appendChild(container);
+    }
+
+    if (!dialogRootRef.current) {
+      dialogRootRef.current = ReactDOM.createRoot(container);
+    }
+
+    if (!dialogBridgeIdRef.current) {
+      dialogBridgeIdRef.current = WindowBridge.generateId();
+    }
+
+    dialogRootRef.current.render(
+      <DetachedAppProvider
+        initialApp={app}
+        initialNotes={[...DataStore.notes]}
+        bridgeId={dialogBridgeIdRef.current}
+      >
+        <DetachedDialogWindowContent dialog={dialog} />
+      </DetachedAppProvider>
+    );
+  }, [app, dialog]);
 
   useEffect(() => {
     if (isPreloaded)
@@ -93,6 +180,12 @@ function Main() {
   }, [theme]);
 
   useEffect(() => {
+    if (dialogWindowRef.current && !dialogWindowRef.current.closed) {
+      applyThemeToWindow(document, dialogWindowRef.current.document, theme);
+    }
+  }, [applyThemeToWindow, theme]);
+
+  useEffect(() => {
     const root = document.getElementById('root');
     if (!root) {
       return Logger.error('ROOT_NOT_FOUND');
@@ -100,6 +193,60 @@ function Main() {
 
     root.classList[app.hidden.toasts ? 'add' : 'remove']('hidden_toats');
   }, [app.hidden.toasts]);
+
+  useEffect(() => {
+    return () => {
+      unmountDialogWindow();
+    };
+  }, [unmountDialogWindow]);
+
+  useEffect(() => {
+    if (dialogsDocked) {
+      if (dialogWindowRef.current) {
+        unmountDialogWindow();
+      }
+      return;
+    }
+
+    let nextWindow = dialogWindowRef.current;
+    if (!nextWindow || nextWindow.closed) {
+      nextWindow = window.open('', 'GulpDialogWindow', `width=${Math.max(app.timeline.dialogSize, 480)},height=${Math.max(window.innerHeight - 160, 640)},left=${Math.max(window.innerWidth - Math.max(app.timeline.dialogSize, 480) - 48, 48)},top=60`);
+      if (!nextWindow) {
+        setDialogsDocked(true);
+        return;
+      }
+
+      nextWindow.document.title = 'Gulp Event Details';
+      copyStylesToWindow(nextWindow);
+      dialogWindowRef.current = nextWindow;
+      nextWindow.addEventListener('beforeunload', () => {
+        dialogRootRef.current?.unmount();
+        dialogRootRef.current = null;
+        dialogBridgeIdRef.current = null;
+        dialogWindowRef.current = null;
+        setDialogsDocked(true);
+      }, { once: true });
+    }
+
+    renderDetachedDialog(nextWindow);
+  }, [app.timeline.dialogSize, copyStylesToWindow, dialogsDocked, renderDetachedDialog, setDialogsDocked, unmountDialogWindow]);
+
+  // Listen for redock requests sent from the detached dialog window
+  useEffect(() => {
+    const listenId = WindowBridge.generateId();
+    const bridge = WindowBridge.create(listenId, (message) => {
+      if (message.type === WindowBridge.MessageType.DOCK_DIALOG) {
+        setDialogsDocked(true);
+      }
+    });
+    return () => bridge.destroy();
+  }, [setDialogsDocked]);
+
+  // When dock state changes the canvas layout shifts; trigger a canvas redraw after layout settles
+  useEffect(() => {
+    const id = requestAnimationFrame(() => { DataStore.markDirty(); });
+    return () => cancelAnimationFrame(id);
+  }, [dialogsDocked]);
 
   if (!isPreloaded) {
     return <Preloader />
@@ -111,14 +258,26 @@ function Main() {
     <Stack gap={12} className={s.window} ai='stretch'>
       <Menu />
       <Timeline />
-      <Stack
-        className={cn(s.dialog)}
-        style={{ width: app.timeline.dialogSize }}
-        pos="relative"
-      >
-        <Resizer init={app.timeline.dialogSize} set={Info.setDialogSize} />
-        {dialog}
-      </Stack>
+      {dialogsDocked ? (
+        <Stack
+          className={cn(s.dialog)}
+          style={{ width: app.timeline.dialogSize }}
+          pos="relative"
+        >
+          <Resizer init={app.timeline.dialogSize} set={Info.setDialogSize} />
+          {dialog}
+        </Stack>
+      ) : null}
     </Stack>
   ) : <Auth.Page />
+}
+
+function DetachedDialogWindowContent({ dialog }: { dialog: React.ReactNode }) {
+  const { dialog: detachedDialog, spawnDialog } = Application.use();
+
+  useEffect(() => {
+    spawnDialog(dialog);
+  }, [dialog, spawnDialog]);
+
+  return detachedDialog ?? <Stack style={{ width: '100%', height: '100%', padding: 12 }}>No event selected.</Stack>;
 }
