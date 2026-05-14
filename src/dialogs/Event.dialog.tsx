@@ -482,7 +482,7 @@ export function DisplayEventDialog({
 }) {
 	if (!event) return null;
 
-	const { Info, app, spawnBanner, currentDocument } = Application.use();
+	const { Info, app, spawnBanner, setDialogsDocked, isDetachedWindow, currentDocument } = Application.use();
 	const { extensions } = Extension.use();
 
 	// --- STATE ---
@@ -920,7 +920,7 @@ export function DisplayEventDialog({
 
 	if (!file) {
 		return (
-			<Dialog callback={onClose} dockable>
+			<Dialog callback={onClose}>
 				<Stack
 					style={{ width: "100%", height: "300px" }}
 					flex
@@ -938,7 +938,7 @@ export function DisplayEventDialog({
 	}
 
 	return (
-		<Dialog callback={onClose} dockable>
+		<Dialog callback={onClose}>
 			<Navigation event={event} />
 			{json ? (
 				<Fragment>
@@ -1084,6 +1084,12 @@ export function DisplayEventDialog({
 								})()
 							}
 							title="Flag event"
+						/>
+						<Button
+							onClick={() => setDialogsDocked((value) => !value)}
+							variant="secondary"
+							icon={isDetachedWindow ? "PanelLeftOpen" : "PictureInPicture2"}
+							title={isDetachedWindow ? "Dock dialog panel" : "Undock dialog panel"}
 						/>
 					</Stack>
 				</Fragment>

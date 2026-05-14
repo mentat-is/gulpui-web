@@ -937,6 +937,7 @@ export function Navigator({
         onClick={() => openTableWindow()}
         size='md'
       />
+
       {/* Detached windows now use separate React roots via createRoot.
           They are no longer part of this React tree — see openWindow() and openTableWindow(). */}
     </Stack>

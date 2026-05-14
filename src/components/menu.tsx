@@ -19,7 +19,7 @@ import { Operation } from '@/entities/Operation'
 import { useEffect } from 'react'
 
 export function Menu() {
-  const { app, spawnBanner, Info } = Application.use()
+  const { app, hintOpen, toggleHintOpen, spawnBanner, Info } = Application.use()
 
   useEffect(() => {
     Info.request_list()
@@ -131,6 +131,13 @@ export function Menu() {
         size='md'
         icon="SettingsGear"
         onClick={() => spawnBanner(<Settings.Banner />)}
+      />
+      <Button
+        variant={hintOpen ? 'default' : 'secondary'}
+        title={hintOpen ? 'Hide usage instructions' : 'Show usage instructions'}
+        size='md'
+        icon='Info'
+        onClick={toggleHintOpen}
       />
       <Button
         variant="secondary"

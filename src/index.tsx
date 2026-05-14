@@ -22,6 +22,7 @@ import { RendererTest } from './page/RendererTest.page'
 import { DetachedAppProvider } from './context/DetachedApp.provider'
 import { DataStore } from './store/DataStore'
 import { WindowBridge } from './lib/WindowBridge'
+import { Hint } from './dialogs/Hint.dialog'
 
 const root = document.getElementById('root')
 
@@ -82,6 +83,8 @@ function Main() {
     app,
     dialog,
     dialogsDocked,
+    hintOpen,
+    setHintOpen,
     setDialogsDocked,
     spawnBanner,
   } = Application.use();
@@ -204,7 +207,7 @@ function Main() {
   }, [unmountDialogWindow]);
 
   useEffect(() => {
-    if (dialogsDocked) {
+    if (dialogsDocked || !dialog) {
       if (dialogWindowRef.current) {
         unmountDialogWindow();
       }
@@ -262,7 +265,8 @@ function Main() {
     <Stack gap={12} className={s.window} ai='stretch'>
       <Menu />
       <Timeline />
-      {dialogsDocked ? (
+      {hintOpen ? <Hint.Dialog onClose={() => setHintOpen(false)} /> : null}
+      {dialogsDocked && dialog ? (
         <Stack
           className={cn(s.dialog)}
           style={{ width: app.timeline.dialogSize }}
@@ -283,5 +287,5 @@ function DetachedDialogWindowContent({ dialog }: { dialog: React.ReactNode }) {
     spawnDialog(dialog);
   }, [dialog, spawnDialog]);
 
-  return detachedDialog ?? <Stack style={{ width: '100%', height: '100%', padding: 12 }}>No event selected.</Stack>;
+  return detachedDialog ?? null;
 }

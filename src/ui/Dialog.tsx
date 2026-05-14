@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import s from './styles/Dialog.module.css'
 import { cn } from '@impactium/utils'
 import { Application } from '@/context/Application.context'
-import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { Stack } from './Stack'
 import { Spinner } from './Spinner'
 import { Button } from './Button'
@@ -30,7 +29,7 @@ export function Dialog({
       callback()
     }
 
-    spawnDialog(<DisplayGroupDialog events={[]} />)
+    spawnDialog(null)
     Info.setTimelineTarget(null)
   }
 

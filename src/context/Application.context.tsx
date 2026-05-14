@@ -13,7 +13,6 @@ import "@/class/API";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import { toast } from "sonner";
 import { SetState } from "@/class/API";
-import { Hint } from "@/dialogs/Hint.dialog";
 import { SmartSocket } from "@/class/SmartSocket";
 import { Note } from "@/entities/Note";
 import { Link } from "@/entities/Link";
@@ -26,14 +25,15 @@ import { Operation } from "@/entities/Operation";
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
 	const [banner, setBanner] = useState<{ node: ReactNode; target: string } | null>(null);
-	const [dialog, setDialog] = useState<ReactNode>(<Hint.Dialog />);
+	const [dialog, setDialog] = useState<ReactNode>(null);
+	const [hintOpen, setHintOpen] = useState(false);
 	const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
 	const [highlightsOverlay, setHighlightsOverlay] =
 		useState<React.ReactNode>(null);
 
 	// Reset dialog when operation changes
 	useEffect(() => {
-		setDialog(<Hint.Dialog />);
+		setDialog(null);
 	}, [Operation.Entity.selected(app)?.id]);
 
 	/**
@@ -261,6 +261,10 @@ function _({ children }: { children: ReactNode }) {
 		setDialog(dialog);
 	}, []);
 
+	const toggleHintOpen = useCallback(() => {
+		setHintOpen((value) => !value);
+	}, []);
+
 	const [canvasDocked, setCanvasDocked] = useState(true);
 	const [dialogsDocked, setDialogsDocked] = useState(true);
 
@@ -281,6 +285,9 @@ function _({ children }: { children: ReactNode }) {
 			setCanvasDocked,
 			dialogsDocked,
 			setDialogsDocked,
+			hintOpen,
+			setHintOpen,
+			toggleHintOpen,
 			isDetachedWindow: false,
 			currentDocument: globalThis.document,
 		}),
@@ -298,6 +305,8 @@ function _({ children }: { children: ReactNode }) {
 			setHighlightsOverlay,
 			canvasDocked,
 			dialogsDocked,
+			hintOpen,
+			toggleHintOpen,
 		],
 	);
 
@@ -374,6 +383,9 @@ export namespace Application {
 			setCanvasDocked: React.Dispatch<React.SetStateAction<boolean>>;
 			dialogsDocked: boolean;
 			setDialogsDocked: React.Dispatch<React.SetStateAction<boolean>>;
+			hintOpen: boolean;
+			setHintOpen: React.Dispatch<React.SetStateAction<boolean>>;
+			toggleHintOpen: () => void;
 			isDetachedWindow: boolean;
 			currentDocument: Document;
 		}
