@@ -128,7 +128,6 @@ export namespace NoteFunctionality {
 					done={
 						<Button
 							loading={loading}
-							className={s.save}
 							onClick={send}
 							variant={name && text ? "glass" : "disabled"}
 							icon="Check"
