@@ -3,6 +3,7 @@ import * as ContextMenuPrimitive from '@radix-ui/react-context-menu'
 import s from './styles/ContextMenu.module.css'
 import { Icon } from '@impactium/icons'
 import { cn } from '@impactium/utils'
+import { Application } from '@/context/Application.context'
 const ContextMenu = ContextMenuPrimitive.Root
 
 const ContextMenuTrigger = ContextMenuPrimitive.Trigger
@@ -54,15 +55,20 @@ contextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName
 const contextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content> & { container?: HTMLElement | null }
->(({ className, container, ...props }, ref) => (
-  <ContextMenuPrimitive.Portal container={container}>
-    <ContextMenuPrimitive.Content
-      ref={ref}
-      className={cn(s.content, className)}
-      {...props}
-    />
-  </ContextMenuPrimitive.Portal>
-))
+>(({ className, container, ...props }, ref) => {
+  const ctx = React.useContext(Application.Context);
+  const resolvedContainer = container || ctx?.currentDocument?.body || globalThis.document?.body;
+
+  return (
+    <ContextMenuPrimitive.Portal container={resolvedContainer}>
+      <ContextMenuPrimitive.Content
+        ref={ref}
+        className={cn(s.content, className)}
+        {...props}
+      />
+    </ContextMenuPrimitive.Portal>
+  );
+})
 contextMenuContent.displayName = ContextMenuPrimitive.Content.displayName
 
 const contextMenuItem = React.forwardRef<

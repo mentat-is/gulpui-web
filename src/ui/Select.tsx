@@ -6,6 +6,7 @@ import { ComponentRef, forwardRef, createContext, useContext, useState, useCallb
 import { ComponentPropsWithoutRef } from 'react'
 import { Checkbox } from './Checkbox'
 import { Arrayed } from '@/class/Info'
+import { Application } from '@/context/Application.context'
 
 export namespace Select {
   export const Root = (props: SelectPrimitive.SelectProps) => {
@@ -196,22 +197,27 @@ export namespace Select {
   export const Content = forwardRef<
     ComponentRef<typeof SelectPrimitive.Content>,
     ComponentPropsWithoutRef<typeof SelectPrimitive.Content> & { container?: HTMLElement | null }
-  >(({ className, children, position = 'popper', container, ...props }, ref) => (
-    <SelectPrimitive.Portal container={container}>
-      <SelectPrimitive.Content
-        ref={ref}
-        className={cn(s.content, position === 'popper' && s.popper, className)}
-        position={position}
-        {...props}
-      >
-        <Select.ScrollButton.Up />
-        <SelectPrimitive.Viewport className={cn(s.primitive, position === 'popper' && s.podder)}>
-          {children}
-        </SelectPrimitive.Viewport>
-        <Select.ScrollButton.Down />
-      </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
-  ));
+  >(({ className, children, position = 'popper', container, ...props }, ref) => {
+    const ctx = useContext(Application.Context);
+    const resolvedContainer = container || ctx?.currentDocument?.body || globalThis.document?.body;
+
+    return (
+      <SelectPrimitive.Portal container={resolvedContainer}>
+        <SelectPrimitive.Content
+          ref={ref}
+          className={cn(s.content, position === 'popper' && s.popper, className)}
+          position={position}
+          {...props}
+        >
+          <Select.ScrollButton.Up />
+          <SelectPrimitive.Viewport className={cn(s.primitive, position === 'popper' && s.podder)}>
+            {children}
+          </SelectPrimitive.Viewport>
+          <Select.ScrollButton.Down />
+        </SelectPrimitive.Content>
+      </SelectPrimitive.Portal>
+    );
+  });
 
   export const Label = forwardRef<
     ComponentRef<typeof SelectPrimitive.Label>,
