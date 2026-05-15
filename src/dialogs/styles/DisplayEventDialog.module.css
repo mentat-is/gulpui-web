@@ -25,6 +25,7 @@
   flex: 1;
   height: 36px;
   min-width: 36px;
+  font-size: 11px;
 }
 
 .basic ul div span {

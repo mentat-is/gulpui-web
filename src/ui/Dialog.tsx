@@ -54,7 +54,9 @@ export function Dialog({
     <Stack className={cn(s.dialog, className)} dir="column" ai='stretch' pos='relative' {...props}>
       {dockable && (
         <Stack
-          style={{ position: 'absolute', top: 8, right: 8, zIndex: 2 }}
+          pos='absolute'
+          style={{ top: 8, right: 20, zIndex: 2 }}
+          ai='flex-end'
           gap={8}
         >
           <Button

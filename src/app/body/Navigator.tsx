@@ -831,7 +831,7 @@ export function Navigator({
       <Button
         variant="secondary"
         title="Open notes banner in new window"
-        icon="PictureInPicture2"
+        icon="Notes"
         onClick={openWindow}
         size='md'
       />

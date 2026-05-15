@@ -1052,7 +1052,7 @@ export function DisplayEventDialog({
 							variant="secondary"
 							onClick={handleDownloadJson}
 							icon="Download"
-							title="Download JSON"
+							title="Download JSON"							
 						>
 							Download JSON
 						</Button>
@@ -1090,7 +1090,9 @@ export function DisplayEventDialog({
 							variant="secondary"
 							icon={isDetachedWindow ? "PanelLeftOpen" : "PictureInPicture2"}
 							title={isDetachedWindow ? "Dock dialog panel" : "Undock dialog panel"}
-						/>
+						>
+							{isDetachedWindow ? "Dock" : "Undock"}
+						</Button>
 					</Stack>
 				</Fragment>
 			) : (
