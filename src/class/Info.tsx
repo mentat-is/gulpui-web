@@ -1,7 +1,7 @@
 import { debounce, Dictionary } from "lodash";
 import { scrollStore } from "@/store/scroll.store";
 import { Default } from "@/dto/Dataset";
-import { generateUUID, NodeFile, Refractor } from "@/ui/utils";
+import { generateUUID, NodeFile, Refractor, stringToHexColor } from "@/ui/utils";
 import { Logger } from "@/dto/Logger.class";
 import { SetState } from "./API";
 import { Icon } from "@impactium/icons";
@@ -702,7 +702,7 @@ export class Info implements InfoProps {
 
 		const context: Context.Type = {
 			id: context_id,
-			color: "#00ff00",
+			color: "",
 			glyph_id: null as unknown as Glyph.Id,
 			granted_user_group_ids: [],
 			granted_user_ids: [],
@@ -2685,7 +2685,7 @@ export class Info implements InfoProps {
 					name: ctxData.name,
 					operation_id: opId,
 					glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
-					color: existCtx.color ?? "#00ff00",
+					color: existCtx.color ?? stringToHexColor(ctxData.name ?? ""),
 					type: "context",
 					selected: existCtx.selected ?? false,
 					owner_user_id: this.app.general.user?.id!,

@@ -190,9 +190,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		// Derive a deterministic per-row tint from the context_id hash, but constrained
 		// to the current theme accent colour so monochrome themes stay monochrome.
 		const tintAlpha = Color.Themer.contextTintAlpha(file.context_id);
-		const context = Source.Entity.context(this.info.app, file);
-		const color = stringToHexColor(file.context_id);
-		//const color = context.color ? context.color : stringToHexColor(file.context_id);
+		const context = Source.Entity.context(this.info.app, file);		
+		const color = context.color ? context.color : stringToHexColor(file.context_id);
 		y = typeof y === "number" ? y : Source.Entity.getHeight(this.info.app, file, this.scrollY, this.visibleSources.findIndex(s => s.id === file.id));
 
 		// fill() paints fillRect(0, y-24, width, 48) which extends to y+24 — the exact

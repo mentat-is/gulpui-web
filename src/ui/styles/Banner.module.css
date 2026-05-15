@@ -78,8 +78,7 @@
 
 .footer {
   border-top: 1px solid var(--gray-400);
-
-  margin-top: 16px;
+  margin-top: auto;
   padding: 0px 8px;
 }
 
