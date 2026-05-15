@@ -449,17 +449,27 @@ export namespace Source {
     }
 
     export function Banner({ source }: Settings.Banner.Props) {
-      const { Info, app, spawnBanner } = Application.use()
+      const { Info, app, spawnBanner, destroyBanner } = Application.use()
       const [render_color_palette, setRenderColorPalette] = useState<Color.Gradient>(source.settings.render_color_palette)
       const [offset, setOffset] = useState<number>(source.settings.offset)
       const [render_engine, setEngine] = useState<Engine.List>(source.settings.render_engine)
+      const context = useMemo(() => Context.Entity.id(app, source.context_id), [app.target.contexts, source.context_id])
+      const [contextColor, setContextColor] = useState<string>(context?.color ?? '')
 
-      const save = () => Info.file_set_settings(source.id, {
-        render_color_palette,
-        render_engine,
-        offset,
-        field,
-      })
+      const save = async () => {
+        Info.file_set_settings(source.id, {
+          render_color_palette,
+          render_engine,
+          offset,
+          field,
+        })
+
+        if (contextColor !== context.color) {
+          await Info.context_update(context.id, contextColor)
+        }
+
+        destroyBanner()
+      }
 
       const [eventKeys, setEventKeys] = useState<string[] | null>(null);
 
@@ -547,6 +557,17 @@ export namespace Source {
           <Stack dir='column' gap={6} ai='flex-start'>
             <Label value='Color scheme based on field' />
             {EventFieldsSelection}
+          </Stack>
+          <Separator style={{ margin: '8px 0' }} />
+          <h4>
+            {Context.Entity.id(app, source.context_id)?.name}
+          </h4>
+          <Stack dir='column' gap={6} ai='flex-start'>
+            <Label value='Change context color' />
+            <ColorPicker color={contextColor} setColor={setContextColor}>
+              <ColorPickerTrigger />
+              <ColorPickerPopover solids={Color.GEIST_STRINGS} />
+            </ColorPicker>
           </Stack>
         </UIBanner>
       )

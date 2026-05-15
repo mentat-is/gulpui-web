@@ -1819,6 +1819,26 @@ export class Info implements InfoProps {
 			this.sync,
 		);
 
+	context_update = (id: Context.Id, color: string) => {
+		return api<any>("/context_update", {
+			method: "PATCH",
+			query: {
+				context_id: id,
+				color,
+				ws_id: this.app.general.ws_id,
+			},
+		}).then(() => {
+			this.setInfoByKey(
+				this.app.target.contexts.map((c) =>
+					c.id === id ? { ...c, color } : c,
+				),
+				"target",
+				"contexts",
+			);
+			this.render();
+		});
+	};
+
 	events_add = (newEvents: Doc.Type[]) => Doc.Entity.add(this.app, newEvents);
 
 	events_add_async = async (newEvents: Doc.Type[]) => {
