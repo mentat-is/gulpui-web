@@ -45,14 +45,43 @@ export const parse = (str: string) => parseFloat(str.replace('px', ''))
 export type JsonString<T> = string & { __jsonStringBrand: T }
 
 export const copy = (value: string) => {
-  try {
-    navigator.clipboard.writeText(value)
-    toast('Data copied to clipboard successfully', {
-      description: 'Use CTRL + V to paste.',
-    })
-  } catch (error) {
-    toast.error('Gulp doesn`t have access to clipboard')
+  const performCopy = async () => {
+    try {
+      if (!navigator.clipboard) {
+        throw new Error('Clipboard API not available')
+      }
+      await navigator.clipboard.writeText(value)
+      toast('Data copied to clipboard successfully', {
+        description: 'Use CTRL + V to paste.',
+      })
+    } catch (error) {
+      // Fallback for lack of user activation or missing API
+      try {
+        const textArea = document.createElement('textarea')
+        textArea.value = value
+        textArea.style.position = 'fixed'
+        textArea.style.left = '-9999px'
+        textArea.style.top = '0'
+        document.body.appendChild(textArea)
+        textArea.focus()
+        textArea.select()
+        const successful = document.execCommand('copy')
+        document.body.removeChild(textArea)
+
+        if (successful) {
+          toast('Data copied to clipboard successfully', {
+            description: 'Use CTRL + V to paste.',
+          })
+        } else {
+          throw new Error('Fallback copy failed')
+        }
+      } catch (err) {
+        toast.error('Gulp doesn`t have access to clipboard')
+      }
+    }
   }
+
+  performCopy()
 }
 
 export const ui = (path: string): string =>

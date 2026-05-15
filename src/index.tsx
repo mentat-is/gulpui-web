@@ -132,13 +132,22 @@ function Main() {
   }, [applyThemeToWindow, theme]);
 
   const unmountDialogWindow = useCallback(() => {
-    dialogRootRef.current?.unmount();
+    const root = dialogRootRef.current;
+    const win = dialogWindowRef.current;
+
     dialogRootRef.current = null;
     dialogBridgeIdRef.current = null;
-    if (dialogWindowRef.current && !dialogWindowRef.current.closed) {
-      dialogWindowRef.current.close();
-    }
     dialogWindowRef.current = null;
+
+    if (root) {
+      setTimeout(() => {
+        root.unmount();
+      }, 0);
+    }
+
+    if (win && !win.closed) {
+      win.close();
+    }
   }, []);
 
   const renderDetachedDialog = useCallback((targetWindow: Window) => {
@@ -226,10 +235,15 @@ function Main() {
       copyStylesToWindow(nextWindow);
       dialogWindowRef.current = nextWindow;
       nextWindow.addEventListener('beforeunload', () => {
-        dialogRootRef.current?.unmount();
+        const root = dialogRootRef.current;
         dialogRootRef.current = null;
         dialogBridgeIdRef.current = null;
         dialogWindowRef.current = null;
+        if (root) {
+          setTimeout(() => {
+            root.unmount();
+          }, 0);
+        }
         // Do NOT setDialogsDocked(true) here — the user's "undocked" preference
         // should persist. The next event click will re-open the popup automatically.
       }, { once: true });

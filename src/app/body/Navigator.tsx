@@ -309,8 +309,11 @@ export function Navigator({
   useEffect(() => {
     if (windowRef) {
       const handleBeforeUnload = () => {
-        notesRootRef.current?.unmount()
+        const root = notesRootRef.current
         notesRootRef.current = null
+        if (root) {
+          setTimeout(() => root.unmount(), 0)
+        }
         setWindowRef(null)
       }
 
@@ -336,8 +339,11 @@ export function Navigator({
 
   const closeWindow = () => {
     if (windowRef) {
-      notesRootRef.current?.unmount()
+      const root = notesRootRef.current
       notesRootRef.current = null
+      if (root) {
+        setTimeout(() => root.unmount(), 0)
+      }
       windowRef.close()
       setWindowRef(null)
     }
@@ -395,8 +401,11 @@ export function Navigator({
   useEffect(() => {
     if (tableWindowRef) {
       const handleBeforeUnload = () => {
-        tableRootRef.current?.unmount()
+        const root = tableRootRef.current
         tableRootRef.current = null
+        if (root) {
+          setTimeout(() => root.unmount(), 0)
+        }
         setTableWindowRef(null)
       }
 
@@ -420,8 +429,11 @@ export function Navigator({
 
   const closeTableWindow = useCallback(() => {
     if (tableWindowRef) {
-      tableRootRef.current?.unmount()
+      const root = tableRootRef.current
       tableRootRef.current = null
+      if (root) {
+        setTimeout(() => root.unmount(), 0)
+      }
       tableWindowRef.close()
       setTableWindowRef(null)
     }
@@ -501,8 +513,11 @@ export function Navigator({
   useEffect(() => {
     if (freeChatWindowRef) {
       const handleBeforeUnload = () => {
-        freeChatRootRef.current?.unmount()
+        const root = freeChatRootRef.current
         freeChatRootRef.current = null
+        if (root) {
+          setTimeout(() => root.unmount(), 0)
+        }
         setFreeChatWindowRef(null)
       }
       freeChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
@@ -513,8 +528,11 @@ export function Navigator({
   useEffect(() => {
     if (proChatWindowRef) {
       const handleBeforeUnload = () => {
-        proChatRootRef.current?.unmount()
+        const root = proChatRootRef.current
         proChatRootRef.current = null
+        if (root) {
+          setTimeout(() => root.unmount(), 0)
+        }
         setProChatWindowRef(null)
       }
       proChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
