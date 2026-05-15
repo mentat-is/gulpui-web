@@ -93,6 +93,14 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     });
   }, [availableTags]);
 
+  useEffect(() => {
+    const currentNoteIds = new Set(DataStore.notes.map(note => note.id))
+    setSelectedNoteIds(prev => {
+      const next = new Set([...prev].filter(id => currentNoteIds.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [DataStore.notes.length])
+
   const parentRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLDivElement>(null);
 
@@ -171,16 +179,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const handleDelete = useCallback((note: Note.Type) => {
     spawnBanner(
-      <Note.Delete.Banner
-        note={note}
-        back={() => {
-          setSelectedNoteIds(prev => {
-            const next = new Set(prev)
-            next.delete(note.id)
-            return next
-          })
-        }}
-      />,
+      <Note.Delete.Banner note={note} />,
       'table',
     )
   }, [spawnBanner]);
@@ -249,7 +248,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
             onClick={() => setShowOnlyVisible(v => !v)}
           >
-            Show only notes for visible events
+            Show notes for visible sources only
           </span>
         </Stack>
         <div

@@ -835,8 +835,8 @@ export function Navigator({
       />
       <Button
         variant="secondary"
-        title="Open notes banner in new window"
-        icon="Notes"
+        title="Open notes window"
+        icon="FileText"
         onClick={openWindow}
         size='md'
       />
@@ -937,7 +937,7 @@ export function Navigator({
       )}
       <Button
         variant='secondary'
-        title='Open table view in new window'
+        title='Open table window'
         icon='Table'
         onClick={() => openTableWindow()}
         size='md'
