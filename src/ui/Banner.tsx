@@ -1,4 +1,5 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react'
+import { ReactNode, useContext, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Application } from '../context/Application.context'
 import s from './styles/Banner.module.css'
 import { cn } from '@impactium/utils'
@@ -17,6 +18,7 @@ export namespace Banner {
     onClose?: () => void
     option?: ReactNode | null
     back?: () => void | null
+    container?: HTMLElement | null
   }
 }
 
@@ -32,8 +34,10 @@ export function Banner({
   subtitle = null,
   side = null,
   onClose,
+  container,
 }: Banner.Props) {
-  const { destroyBanner } = Application.use()
+  const ctx = useContext(Application.Context)
+  const { destroyBanner, currentDocument } = ctx
   const [isExpanded, setIsExpanded] = useState<boolean>(false)
 
   const close = () => {
@@ -74,16 +78,20 @@ export function Banner({
     )
   }, [side, isExpanded, setIsExpanded])
 
-  return (
+  const resolvedContainer = container || currentDocument?.body || globalThis.document?.body;
+
+  if (!resolvedContainer) return null;
+
+  return createPortal(
     <div className={s.wrapper}>
       <div
         data-expanded={isExpanded}
-        className={cn(s.banner, s.loading, className)}>                      
+        className={cn(s.banner, s.loading, className)}>
         <Stack dir="row" ai="center" jc="space-between" className={s.header}>
           {title && <h6>
-                    {loading ? <Skeleton width="long" height={24} /> : title}
-                    
-                  </h6>}
+            {loading ? <Skeleton width="long" height={24} /> : title}
+
+          </h6>}
           <Stack dir="row" ai="center" gap={8}>
             {subtitle ? loading ? <Skeleton height={24} /> : subtitle : null}
             {back && <Button variant='tertiary' icon="CornerUpLeft" onClick={back} />}
@@ -95,9 +103,9 @@ export function Banner({
                 loading={loading}
                 shape='icon'
               />
-            )}   
+            )}
           </Stack>
-        </Stack>        
+        </Stack>
         <Stack dir="column" ai="unset" gap={12} className={s.content} data-banner-content>
           {Side}
           {children}
@@ -117,6 +125,7 @@ export function Banner({
           </Stack>
         )}
       </div>
-    </div>
+    </div>,
+    resolvedContainer
   )
 }
