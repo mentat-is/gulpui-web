@@ -2,30 +2,72 @@ import '@/global.css'
 import { useState, useMemo, useRef, useCallback, useEffect, useSyncExternalStore } from 'react'
 import { Application } from '@/context/Application.context'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { Notification } from '@/ui/Notification'
 import { Context } from '@/entities/Context'
 import { Source } from '@/entities/Source'
 import { Note } from '@/entities/Note'
 import { Doc } from '@/entities/Doc'
-import { NotePoint } from '@/ui/Note'
 import { Select } from '@/ui/Select'
 import { Stack } from '@/ui/Stack'
 import { Input } from '@/ui/Input'
+import { Banner as UIBanner } from '@/ui/Banner'
 import { DataStore } from '@/store/DataStore'
 import { Checkbox } from '@/ui/Checkbox'
 import { Button } from '@/ui/Button'
-import { formatTimestampToReadableString, stringToHexColor } from "../ui/utils";
+import { Toggle } from '@/ui/Toggle'
+import { formatTimestampToReadableString } from '../ui/utils'
 import { WindowBridge } from '@/lib/WindowBridge'
 
 import s from './styles/NotesWindow.module.css'
-import { TooltipProvider } from '@radix-ui/react-tooltip'
 
 interface FloatingWindowProps {
   onClose: () => void
 }
 
+interface BulkDeleteNotesBannerProps {
+  noteIds: Note.Id[]
+  onDeleted: () => void
+}
+
+function BulkDeleteNotesBanner({ noteIds, onDeleted }: BulkDeleteNotesBannerProps) {
+  const { Info, destroyBanner } = Application.use()
+  const [loading, setLoading] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
+  const confirmDelete = async () => {
+    setLoading(true)
+    await Info.notes_delete_bulk(noteIds)
+    setLoading(false)
+    onDeleted()
+    destroyBanner()
+  }
+
+  return (
+    <UIBanner
+      title='Delete notes'
+      done={(
+        <Button
+          loading={loading}
+          icon='Trash2'
+          variant='glass'
+          onClick={confirmDelete}
+          disabled={!isSubmitted}
+        />
+      )}
+    >
+      <p>Are you sure you want to delete {noteIds.length} selected notes?</p>
+      <Toggle
+        option={["No, don`t delete", "Yes, i`m sure"]}
+        checked={isSubmitted}
+        onCheckedChange={setIsSubmitted}
+      />
+    </UIBanner>
+  )
+}
+
+const TABLE_ROW_HEIGHT = 44
+
 export function NotesWindow({ onClose }: FloatingWindowProps) {
-  const { app, Info } = Application.use()
+  const { app, Info, spawnBanner, banner } = Application.use()
   useSyncExternalStore(DataStore.subscribe, DataStore.getSnapshot);
   const [search, setSearch] = useState('');
   const [showOnlyVisible, setShowOnlyVisible] = useState<boolean>(false);
@@ -108,13 +150,18 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
   const handleBulkDelete = async () => {
     if (selectedNoteIds.size === 0) return;
-    const deletedIds = [...selectedNoteIds];
-    await Info.notes_delete_bulk(deletedIds);
-    setSelectedNoteIds(new Set());
+    const deletedIds = [...selectedNoteIds]
+    spawnBanner(
+      <BulkDeleteNotesBanner
+        noteIds={deletedIds}
+        onDeleted={() => setSelectedNoteIds(new Set())}
+      />,
+      'table',
+    )
   };
 
   const targetNoteButtonHandler = useCallback((note: Note.Type) => {
-    const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+    const bridge = WindowBridge.create(WindowBridge.generateId(), () => { })
     bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
       docId: note.doc._id,
       operationId: note.operation_id,
@@ -122,19 +169,26 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
     bridge.destroy()
   }, []);
 
-  const handleDelete = useCallback(async (note: Note.Type) => {
-    await Info.note_delete(note);
-    setSelectedNoteIds(prev => {
-      const next = new Set(prev);
-      next.delete(note.id);
-      return next;
-    });
-  }, [Info]);
+  const handleDelete = useCallback((note: Note.Type) => {
+    spawnBanner(
+      <Note.Delete.Banner
+        note={note}
+        back={() => {
+          setSelectedNoteIds(prev => {
+            const next = new Set(prev)
+            next.delete(note.id)
+            return next
+          })
+        }}
+      />,
+      'table',
+    )
+  }, [spawnBanner]);
 
   const virtualizer = useVirtualizer({
     count: sortedNotes.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => TABLE_ROW_HEIGHT,
     overscan: 5,
   });
 
@@ -144,7 +198,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
         <h3>Notes</h3>
       </div>
       <div className={s.content}>
-        <Stack dir='column'>
+        <Stack dir='column' flex={false} ai="stretch">
           <Input
             placeholder='Context name, source name, note title or text'
             icon='MagnifyingGlass'
@@ -172,7 +226,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             </Select.Content>
           </Select.Multi.Root>
         </Stack>
-        <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
+        <Stack gap={10} ai="center" flex={false} style={{ padding: '0 12px' }}>
           <Checkbox
             style={{ height: 20, width: 20 }}
             checked={isAllSelected}
@@ -185,7 +239,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             {selectAllLabel}
           </span>
         </Stack>
-        <Stack gap={10} ai="center" style={{ padding: '0 12px' }}>
+        <Stack gap={10} ai="center" flex={false} style={{ padding: '0 12px' }}>
           <Checkbox
             style={{ height: 20, width: 20 }}
             checked={showOnlyVisible}
@@ -199,55 +253,119 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
           </span>
         </Stack>
         <div
-          ref={parentRef}
           className={s.result}
-          style={{ height: '100%', overflow: 'auto' }}
+          style={{ flex: 1, minHeight: 0 }}
         >
-          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-            {virtualizer.getVirtualItems().map(item => {
-              const note = sortedNotes[item.index];
-              const context = Context.Entity.id(app, note.context_id);
+          <div className={`${s.tableRow} ${s.tableHeaderRow}`}>
+            <div className={`${s.tableCell} ${s.checkboxCell}`}>
+              <span className={s.headerLabel}>Sel</span>
+            </div>
+            <div className={`${s.tableCell} ${s.timestampCell}`}>
+              <span className={s.headerLabel}>Timestamp</span>
+            </div>
+            <div className={`${s.tableCell} ${s.titleCell}`}>
+              <span className={s.headerLabel}>Title</span>
+            </div>
+            <div className={`${s.tableCell} ${s.textCell}`}>
+              <span className={s.headerLabel}>Text</span>
+            </div>
+            <div className={`${s.tableCell} ${s.contextCell}`}>
+              <span className={s.headerLabel}>Context</span>
+            </div>
+            <div className={`${s.tableCell} ${s.sourceCell}`}>
+              <span className={s.headerLabel}>Source</span>
+            </div>
+            <div className={`${s.tableCell} ${s.tagsCell}`}>
+              <span className={s.headerLabel}>Tags</span>
+            </div>
+            <div className={`${s.tableCell} ${s.actionsCell}`}>
+              <span className={s.headerLabel}>Actions</span>
+            </div>
+          </div>
+          <div
+            ref={parentRef}
+            className={s.tableScroll}
+            style={{ height: '100%', overflow: 'auto' }}
+          >
+            <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+              {virtualizer.getVirtualItems().map(item => {
+                const note = sortedNotes[item.index]
+                const context = Context.Entity.id(app, note.context_id)
+                const source = Source.Entity.id(app, note.source_id)
+                const sourceColor = source.color || 'var(--accent)'
 
-              return (
-              <TooltipProvider>
-                <div
-                  key={item.key}
-                  style={{
-                    position: 'absolute',
-                    width: '100%',
-                    height: `${item.size}px`,
-                    transform: `translateY(${item.start}px)`,
-                  }}
-                >
-                  <Stack
-                    gap={12}
-                    ai="center"
+                return (
+                  <div
+                    key={item.key}
+                    className={s.tableRowWrap}
                     style={{
+                      position: 'absolute',
                       width: '100%',
-                      height: '100%',
-                      background: 'transparent',
-                      paddingLeft: 8,
+                      height: `${item.size}px`,
+                      transform: `translateY(${item.start}px)`,
                     }}
                   >
-                    <Checkbox
-                      style={{ height: 20, width: 20 }}
-                      checked={selectedNoteIds.has(note.id)}
-                      onCheckedChange={() => toggleNoteSelection(note.id)}
-                    />
-
-                    <NotePoint.Combination 
-                      note={note} 
-                      style={{ flex: 1 }} 
-                      onTargetClick={targetNoteButtonHandler}
-                      onDeleteClick={handleDelete}
-                    />
-                  </Stack>
-                </div>
-              </TooltipProvider>  
-              );
-            })}
+                    <div className={s.tableRow}>
+                      <div className={`${s.tableCell} ${s.checkboxCell}`}>
+                        <Checkbox
+                          style={{ height: 20, width: 20 }}
+                          checked={selectedNoteIds.has(note.id)}
+                          onCheckedChange={() => toggleNoteSelection(note.id)}
+                        />
+                      </div>
+                      <div
+                        className={`${s.tableCell} ${s.timestampCell}`}
+                        title={formatTimestampToReadableString(note.doc.gulp_timestamp)}
+                      >
+                        {formatTimestampToReadableString(note.doc.gulp_timestamp)}
+                      </div>
+                      <div
+                        className={`${s.tableCell} ${s.titleCell}`}
+                        style={{ color: note.color }}
+                        title={note.name}
+                      >
+                        {note.name}
+                      </div>
+                      <div className={`${s.tableCell} ${s.textCell}`} title={note.text}>
+                        {note.text}
+                      </div>
+                      <div className={`${s.tableCell} ${s.contextCell}`} title={context.name}>
+                        <span className={s.colorValue} style={{ color: context.color }}>
+                          {context.name}
+                        </span>
+                      </div>
+                      <div className={`${s.tableCell} ${s.sourceCell}`} title={source.name}>
+                        <span className={s.colorValue} style={{ color: sourceColor }}>
+                          {source.name}
+                        </span>
+                      </div>
+                      <div
+                        className={`${s.tableCell} ${s.tagsCell}`}
+                        title={note.tags.join(', ')}
+                      >
+                        {note.tags.join(', ') || '-'}
+                      </div>
+                      <div className={`${s.tableCell} ${s.actionsCell}`}>
+                        <Stack gap={8} ai="center" jc="flex-end">
+                          <Button
+                            icon="MagnifyingGlassSmall"
+                            onClick={() => targetNoteButtonHandler(note)}
+                            variant="glass"
+                          />
+                          <Button
+                            icon="Trash2"
+                            onClick={() => handleDelete(note)}
+                            variant="glass"
+                          />
+                        </Stack>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
           </div>
-        </div>        
+        </div>
       </div>
       <div className={s.footer}>
         <Stack jc="flex-end">
@@ -261,6 +379,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
           </Button>
         </Stack>
       </div>
+      {banner?.target === 'table' ? banner.node : null}
       <div ref={windowRef} className={s.portalContainer} />
     </div>
   )

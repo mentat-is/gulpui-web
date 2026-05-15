@@ -44,6 +44,7 @@ export namespace Source {
   export interface Type extends Selectable {
     operation_id: Operation.Id,
     context_id: Context.Id,
+    color?: string,
     plugin: string,
     id: Source.Id,
     type: 'source',
@@ -81,19 +82,19 @@ export namespace Source {
      * re-filtering by search text, we avoid redundant computation. The cache invalidates automatically
      * when `app.target.files` is reassigned (new reference = new selection state).
      */
-    private static _selectedCache: { 
-      ref: Source.Type[] | null; 
-      filterText: string; 
+    private static _selectedCache: {
+      ref: Source.Type[] | null;
+      filterText: string;
       filesWithNoEvents: boolean;
       renderVersion: number;
-      result: Source.Type[] 
-    } = { 
-      ref: null, 
-      filterText: '', 
-      filesWithNoEvents: false,
-      renderVersion: 0,
-      result: [] 
-    };
+      result: Source.Type[]
+    } = {
+        ref: null,
+        filterText: '',
+        filesWithNoEvents: false,
+        renderVersion: 0,
+        result: []
+      };
 
     /**
      * Returns the list of currently selected and visible sources, sorted by pin status.
@@ -106,29 +107,29 @@ export namespace Source {
       const renderVersion = app.timeline.renderVersion;
 
       if (
-        app.target.files === Source.Entity._selectedCache.ref && 
+        app.target.files === Source.Entity._selectedCache.ref &&
         currentFilter === Source.Entity._selectedCache.filterText &&
         hiddenfilesWithNoEvents === Source.Entity._selectedCache.filesWithNoEvents &&
         renderVersion === Source.Entity._selectedCache.renderVersion
       ) {
         return Source.Entity._selectedCache.result;
       }
-      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected && 
+      const pins = Source.Entity.pins(app.target.files.filter((s) => s.selected &&
         (hiddenfilesWithNoEvents ? s.total > 0 : true)));
-      
-      const result = pins.filter(s => 
-        s.name?.toLowerCase().includes(currentFilter) || 
+
+      const result = pins.filter(s =>
+        s.name?.toLowerCase().includes(currentFilter) ||
         Context.Entity.id(app, s.context_id).name?.toLowerCase().includes(currentFilter)
       );
-      
-      Source.Entity._selectedCache = { 
-        ref: app.target.files, 
-        filterText: currentFilter, 
+
+      Source.Entity._selectedCache = {
+        ref: app.target.files,
+        filterText: currentFilter,
         filesWithNoEvents: hiddenfilesWithNoEvents,
         renderVersion,
-        result 
+        result
       };
-      
+
       return result;
     }
 
@@ -243,14 +244,13 @@ export namespace Source {
     public static normalize = (app: App.Type, file: Source.Type, details?: GulpDataset.QueryOperations.Source): Source.Type => {
       // @ts-ignore
       delete file.mapping_parameters;
-      // @ts-ignore
-      delete file.color;
 
       const exist = Source.Entity.id(app, file.id) ?? {};
       const min = details?.['min_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now() - 1);
       const max = details?.['max_gulp.timestamp'] ?? Internal.Transformator.toNanos(Date.now());
 
       return Object.assign(file, {
+        color: file.color ?? exist.color,
         selected: file.selected ?? exist.selected ?? false,
         pinned: file.pinned ?? exist.pinned ?? false,
         settings: file.settings ?? exist.settings ?? Internal.Settings.default,
@@ -271,7 +271,7 @@ export namespace Source {
 
     public static index = (app: App.Type, file: Source.Type | Source.Id) => Source.Entity.selected(app).findIndex((s) => s.id === Parser.useUUID(file))
 
-    public static getHeight = (app: App.Type, file: Source.Type | Source.Id, scrollY: number, index?: number) => 
+    public static getHeight = (app: App.Type, file: Source.Type | Source.Id, scrollY: number, index?: number) =>
       48 * (typeof index === 'number' ? index : this.index(app, file)) - scrollY + 24
 
     private static _select = (p: Source.Type): Source.Type => ({ ...p, selected: true })

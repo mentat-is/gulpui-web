@@ -1,4 +1,9 @@
 .main {
+  --notes-table-row-height: 44px;
+  --notes-table-min-width: 1330px;
+}
+
+.main {
   height: 100%;
   border-radius: 0px;
   gap: 8px;
@@ -60,6 +65,7 @@
   background: var(--geist-background);
   backdrop-filter: brightness(0.075);
 }
+
 .unit {
   position: relative;
   display: flex;
@@ -69,39 +75,129 @@
   width: 100%;
   border-radius: 9px;
 }
+
 .unit * {
   z-index: 1;
 }
+
 .unit svg {
   border-radius: var(--round);
 }
+
 .group {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: space-around;
 }
+
 .group p {
   color: var(--accent);
   font-size: 14px;
   font-weight: 500;
 }
+
 .group p.bottom {
   color: var(--second);
   font-size: 12px;
   font-weight: 400;
 }
+
 .result {
   background: var(--geist-background);
   border: var(--geist-border);
   border-radius: 6px;
-  padding: 12px;
   max-height: 100%;
-  overflow: scroll;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.result > button {
+
+.result>button {
   max-width: 100%;
 }
+
+.tableScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.tableRowWrap {
+  left: 0;
+  min-width: var(--notes-table-min-width);
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 56px 190px 180px minmax(220px, 1.3fr) 160px 180px minmax(180px, 1fr) 110px;
+  align-items: center;
+  min-width: var(--notes-table-min-width);
+  height: var(--notes-table-row-height);
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--gray-400);
+}
+
+.tableHeaderRow {
+  background: color-mix(in srgb, var(--soft-black) 70%, transparent);
+  border-bottom: 1px solid var(--gray-300);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  flex: none;
+}
+
+.tableCell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0 12px;
+  border-right: 1px solid var(--gray-400);
+  font-size: 13px;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tableCell:last-child {
+  border-right: none;
+}
+
+.headerLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--second);
+}
+
+.checkboxCell {
+  justify-content: center;
+}
+
+.timestampCell,
+.titleCell,
+.contextCell,
+.sourceCell,
+.tagsCell,
+.textCell {
+  justify-content: flex-start;
+}
+
+.actionsCell {
+  justify-content: flex-end;
+}
+
+.colorValue {
+  display: inline-block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .portalContainer {
   position: relative;
   z-index: 9999;

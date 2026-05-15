@@ -275,7 +275,7 @@ export function Navigator({
     const newWindow = window.open(
       '',
       'GulpNotes',
-      'width=700,height=600,left=100,top=100',
+      'width=1480,height=760,left=100,top=100',
     )
     if (!newWindow) return
 
