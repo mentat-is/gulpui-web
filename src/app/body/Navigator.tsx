@@ -66,11 +66,13 @@ export function Navigator({
   timestamp: _timestamp,
   ...props
 }: Navigator.Props) {
-  const { Info, app, spawnDialog, spawnBanner, setHighlightsOverlay } = Application.use()
+  const { Info, app, spawnDialog, spawnBanner, setHighlightsOverlay, dialogsDocked, setDialogsDocked, isDetachedWindow } = Application.use()
   const { x: scrollX } = useScroll()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
   const { theme } = useTheme()
+
+  const isDialogPanelDetached = isDetachedWindow || !dialogsDocked
 
   const [filterMode, setFilterMode] = useState<'files' | 'events'>('files');
   const EVENT_FILTER_ID = 'navigator-event-filter' as Filter.Id;
@@ -935,6 +937,13 @@ export function Navigator({
         title='Open table view in new window'
         icon='Table'
         onClick={() => openTableWindow()}
+        size='md'
+      />
+      <Button
+        variant='secondary'
+        title={isDialogPanelDetached ? 'Dock dialog panel' : 'Undock dialog panel'}
+        icon={isDialogPanelDetached ? 'PanelLeftOpen' : 'PictureInPicture2'}
+        onClick={() => setDialogsDocked((value) => !value)}
         size='md'
       />
 

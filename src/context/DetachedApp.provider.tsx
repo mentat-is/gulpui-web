@@ -184,7 +184,18 @@ export function DetachedAppProvider({
 
   const destroyBanner = useCallback(() => {
     setBanner(null)
-  }, [])
+    detachedDocument.body.classList.remove('no-scroll')
+  }, [detachedDocument])
+
+  const spawnBanner = useCallback((node: ReactNode, target: string = 'main') => {
+    if (target === 'table') {
+      setBanner({ node, target })
+      detachedDocument.body.classList.add('no-scroll')
+      return
+    }
+
+    mainSpawnBanner(node, target)
+  }, [detachedDocument, mainSpawnBanner])
 
   const spawnDialog = useCallback((dialog: ReactNode) => {
     setDialog(dialog)
@@ -214,7 +225,7 @@ export function DetachedAppProvider({
 
   const props = useMemo(
     () => ({
-      spawnBanner: mainSpawnBanner,
+      spawnBanner,
       destroyBanner,
       banner,
       spawnDialog,
@@ -236,7 +247,7 @@ export function DetachedAppProvider({
       currentDocument: detachedDocument,
     }),
     [
-      mainSpawnBanner,
+      spawnBanner,
       destroyBanner,
       banner,
       spawnDialog,

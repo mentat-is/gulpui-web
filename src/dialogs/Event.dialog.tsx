@@ -482,7 +482,7 @@ export function DisplayEventDialog({
 }) {
 	if (!event) return null;
 
-	const { Info, app, spawnBanner, setDialogsDocked, isDetachedWindow, currentDocument } = Application.use();
+	const { Info, app, spawnBanner, currentDocument } = Application.use();
 	const { extensions } = Extension.use();
 
 	// --- STATE ---
@@ -1053,7 +1053,7 @@ export function DisplayEventDialog({
 							variant="secondary"
 							onClick={handleDownloadJson}
 							icon="Download"
-							title="Download JSON"							
+							title="Download JSON"
 						>
 							Download JSON
 						</Button>
@@ -1086,14 +1086,6 @@ export function DisplayEventDialog({
 							}
 							title="Flag event"
 						/>
-						<Button
-							onClick={() => setDialogsDocked((value) => !value)}
-							variant="secondary"
-							icon={isDetachedWindow ? "PanelLeftOpen" : "PictureInPicture2"}
-							title={isDetachedWindow ? "Dock dialog panel" : "Undock dialog panel"}
-						>
-							{isDetachedWindow ? "Dock" : "Undock"}
-						</Button>
 					</Stack>
 				</Fragment>
 			) : (
