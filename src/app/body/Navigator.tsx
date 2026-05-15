@@ -267,16 +267,15 @@ export function Navigator({
   }, [theme])
 
   const openWindow = () => {
-    if (windowRef) {
-      notesRootRef.current?.unmount()
-      notesRootRef.current = null
-      windowRef.close()
+    if (windowRef && !windowRef.closed) {
+      windowRef.focus()
+      return
     }
 
     const newWindow = window.open(
       '',
-      '',
-      'width=600,height=450,left=100,top=100',
+      'GulpNotes',
+      'width=700,height=600,left=100,top=100',
     )
     if (!newWindow) return
 
@@ -348,15 +347,19 @@ export function Navigator({
   const tableRootRef = useRef<ReactDOM.Root | null>(null)
 
   const openTableWindow = useCallback((sourceId?: Source.Id) => {
-    if (tableWindowRef) {
-      tableRootRef.current?.unmount()
-      tableRootRef.current = null
-      tableWindowRef.close()
+    if (tableWindowRef && !tableWindowRef.closed) {
+      tableWindowRef.focus()
+      if (sourceId) {
+        mainBridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
+          sourceId
+        })
+      }
+      return
     }
 
     const newWindow = window.open(
       '',
-      '',
+      'GulpTableView',
       'width=800,height=600,left=150,top=150',
     )
     if (!newWindow) return
