@@ -20,6 +20,7 @@ export namespace Collab {
     export interface Props extends Stack.Props {
       notes: Note.Type[],
       links: Link.Type[]
+      container?: HTMLElement | null;
     }
   }
 
@@ -43,7 +44,7 @@ export namespace Collab {
       prevProps.item.name === nextProps.item.name &&
       prevProps.item.type === nextProps.item.type;
   });
-  export function List({ notes, links, className, ...props }: Collab.List.Props) {
+  export function List({ notes, links, container, className, ...props }: Collab.List.Props) {
     const { app, spawnBanner } = Application.use();
     const hasItems = notes.length > 0 || links.length > 0;
     const [targetId, setTargetId] = useState<string>(notes[0]?.id || links[0]?.id);
@@ -102,7 +103,7 @@ export namespace Collab {
             <Select.Icon name={Glyph.List.get(target.glyph_id!) ?? 'Target'} />
             <p>{target.name}</p>
           </Select.Trigger>
-          <Select.Content>
+          <Select.Content container={container}>
             {List}
           </Select.Content>
         </Select.Root>

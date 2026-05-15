@@ -1011,6 +1011,7 @@ export function DisplayEventDialog({
 					<Collab.List
 						notes={notes}
 						links={links}
+						container={currentDocument.body}
 					/>
 
 					{highlights}
