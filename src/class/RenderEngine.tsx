@@ -25,17 +25,7 @@ import { stringToHexColor } from "@/ui/utils";
 
 const NOTE_SIZE = 32;
 const NOTE_OFFSET = (NOTE_SIZE / 2) * -1;
-
-const mappedColors: Record<string, string> = {
-	red: "#d9303629",
-	blue: "#0062d129",
-	amber: "#ff990a29",
-	green: "#398e4a29",
-	teal: "#0d8c7d29",
-	purple: "#763da929",
-	pink: "#df267029",
-	gray: "#80808029",
-};
+const ALPHA_HIGHLIGHT = 29
 
 interface RenderEngineConstructor {
 	ctx: CanvasRenderingContext2D;
@@ -371,8 +361,13 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		index: number,
 		color: string,
 	) => {
-		this.ctx.fillStyle = mappedColors[color];
-
+		
+		if (color.startsWith("#")) {
+			// Add 16% alpha (hex 29) if it's a 6-digit hex
+			this.ctx.fillStyle = color.length === 7 ? color + ALPHA_HIGHLIGHT : color;
+		} else {
+			this.ctx.fillStyle = color;
+		}
 		const y = 32 * (index + 1);
 
 		const height = this.ctx.canvas.height - 20 * 2 * (index + 1);
