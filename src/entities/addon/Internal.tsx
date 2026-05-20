@@ -29,7 +29,7 @@ export namespace Internal {
       field: 'gulp.event_code',
       render_color_palette: 'thermal',
       render_engine: 'default',
-      frequency_sample: 1000
+      frequency_sample: 1000000
     }
 
     public static get server(): string {

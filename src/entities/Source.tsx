@@ -255,7 +255,7 @@ export namespace Source {
       owner_user_id: app.general.user?.id!,
       pinned: false,
       _sampleDataCached: {
-        frequency_sample: 1000,
+        frequency_sample: 1000000,
         min_timestamp: 0,
         max_timestampe: 0,
         sample_data : null

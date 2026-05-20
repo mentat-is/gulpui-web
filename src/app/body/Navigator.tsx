@@ -217,8 +217,7 @@ export function Navigator({
   }, [theme])
 
   // Sync operations, contexts, and files to detached windows so they can update their lists
-  useEffect(() => {
-    console.warn("APP_SNAPSHOT", app.target.filters)
+  useEffect(() => {    
     const selectedSourceIds = app.target.files.filter((f: Source.Type) => f.selected).map((f: Source.Type) => f.id);
     mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
       app: {
