@@ -164,6 +164,12 @@ function buildMockSources(frameMinTs: number, frameMaxTs: number, totalDocs: num
                 min: Internal.Transformator.toNanos(frameMinTs),
                 max: Internal.Transformator.toNanos(frameMaxTs),
             },
+            _sampleDataCached: {
+                frequency_sample: 1000,
+                min_timestamp: 0,
+                max_timestampe: 0,
+                sample_data : null
+                }
         } as Source.Type;
     });
 }

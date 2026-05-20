@@ -252,7 +252,7 @@ export namespace Auth {
         <Input
           variant='highlighted'
           icon='Link'
-          label='Server adress'
+          label='Server address'
           placeholder='http://localhost:8080'
           value={server}
           disabled={!!app.general.user}
@@ -450,7 +450,7 @@ export namespace Auth {
           <Input
             variant='highlighted'
             icon='Link'
-            label='Server adress'
+            label='Server address'
             placeholder='http://localhost:8080'
             value={server}
             disabled={!!app.general.user}

@@ -40,23 +40,24 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
   }
 
   render(file: Source.Type, y: number, force?: boolean) {
+    const sampleData = Source.Entity.samples(this.renderer.info.app, file) ?? []
+    
     const graphs = this.getCachedOrGenerate(file)
-    const maxHeight = graphs[Hardcode.MaxHeight]
+    const maxHeight = Math.max(...sampleData.map(obj => obj.sample))
 
     let lastDot: Dot | null = null
-
-    for (const [timestamp, height] of graphs) {
-      const x = this.renderer.getPixelPosition(timestamp)
-      if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue;
-      const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
-      const color = Color.Entity.gradient(file.settings.render_color_palette, height, {
+    sampleData.forEach((bucket) => {
+      if (throwableByTimestamp(bucket.min_timestamp, this.renderer.limits, this.renderer.info.app)) return;
+      let x = this.renderer.getPixelPosition(Math.floor(bucket.min_timestamp + (bucket.max_timesamp-bucket.min_timestamp)/2));
+      const dotY = y + 47 - Math.floor((bucket.sample/maxHeight) * 47 )
+      const color = Color.Entity.gradient(file.settings.render_color_palette, bucket.sample, {
         min: 0,
         max: maxHeight
       })
 
       this.renderer.ctx.font = '8px Arial'
       this.renderer.ctx.fillStyle = color
-      this.renderer.ctx.fillText(height.toString(), x - 3.5, dotY - 8)
+      this.renderer.ctx.fillText(bucket.sample.toString(), x - 3.5, dotY - 8)
 
       const currentDot = { x, y: dotY, color }
 
@@ -66,7 +67,30 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
       this.renderer.dot(currentDot)
       lastDot = currentDot
-    }
+    })
+
+    // for (const [timestamp, height] of graphs) {
+    //   const x = this.renderer.getPixelPosition(timestamp)
+    //   if (throwableByTimestamp(timestamp, this.renderer.limits, this.renderer.info.app)) continue;
+    //   const dotY = y + 47 - Math.floor((height / maxHeight) * 47)
+    //   const color = Color.Entity.gradient(file.settings.render_color_palette, height, {
+    //     min: 0,
+    //     max: maxHeight
+    //   })
+
+    //   this.renderer.ctx.font = '8px Arial'
+    //   this.renderer.ctx.fillStyle = color
+    //   this.renderer.ctx.fillText(height.toString(), x - 3.5, dotY - 8)
+
+    //   const currentDot = { x, y: dotY, color }
+
+    //   if (lastDot) {
+    //     this.renderer.connection([currentDot, lastDot])
+    //   }
+
+    //   this.renderer.dot(currentDot)
+    //   lastDot = currentDot
+    // }
   }
 
   private getCachedOrGenerate(file: Source.Type): typeof GraphEngine.target {
@@ -145,6 +169,8 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
     return result
   }
+
+
 
   is(file: Source.Type): boolean {
     return this.map.has(file.id)

@@ -33,6 +33,9 @@ import { Stack } from '@/ui/Stack'
 import { Separator } from '@radix-ui/react-select'
 import { formatDuration, intervalToDuration } from 'date-fns'
 import { Label } from '@/ui/Label'
+import { log } from 'console'
+
+
 
 export namespace Source {
   export const name = 'Source'
@@ -40,6 +43,12 @@ export namespace Source {
   export type Id = UUID & {
     readonly [_]: unique symbol
   }
+
+  type SampleData = {
+      min_timestamp: number;
+      max_timesamp: number;
+      sample: number;
+    }
 
   export interface Type extends Selectable {
     operation_id: Operation.Id,
@@ -61,17 +70,25 @@ export namespace Source {
       field: keyof Doc.Type;
       render_color_palette: Color.Gradient;
       render_engine: Engine.List;
+      frequency_sample: number //value in millisecondi
     }
     pinned: boolean // (false)
     // Enriched  using /query_operation
     timestamp: MinMax
     nanotimestamp: MinMax<bigint>
-    total: number
+    total: number,
+    _sampleDataCached: {
+      frequency_sample: number,
+      min_timestamp: number,
+      max_timestampe: number,
+      sample_data : SampleData[] | null
+    }
   }
 
   export class Entity {
     // @ts-ignore
     public static icon = Internal.IconExtractor.activate<Source.Type | null>(Default.Icon.FILE)
+
 
     /**
      * Memorization cache for `selected()`. Stores the result keyed by `app.target.files` reference.
@@ -236,7 +253,13 @@ export namespace Source {
       time_updated: Date.now(),
       plugin: '',
       owner_user_id: app.general.user?.id!,
-      pinned: false
+      pinned: false,
+      _sampleDataCached: {
+        frequency_sample: 1000,
+        min_timestamp: 0,
+        max_timestampe: 0,
+        sample_data : null
+      }
     })
 
     public static devirtualize = (app: App.Type, file: Source.Type): Source.Type[] => file.id.split('-').slice(1).map(id => Source.Entity.id(app, id as Source.Id)).filter(f => f);
@@ -277,6 +300,219 @@ export namespace Source {
     private static _select = (p: Source.Type): Source.Type => ({ ...p, selected: true })
 
     private static _unselect = (p: Source.Type): Source.Type => ({ ...p, selected: false })
+
+    /**
+     * Finds the index of the first event that falls within the specified time range using binary search.
+     * Auto-detects whether the events array is sorted in ascending or descending order.
+     *
+     * @param events List of events to search.
+     * @param startTimestamp The start of the time range (inclusive).
+     * @param endTimestamp The end of the time range (inclusive).
+     * @returns The index of the first event found, or -1 if no events fall within the range.
+     */
+    public static findFirstEventIndexInTimeRange = (
+      events: Doc.Type[],
+      startTimestamp: number,
+      endTimestamp: number
+    ): number => {
+      if (!events || events.length === 0 || startTimestamp > endTimestamp) {
+        return -1;
+      }
+
+      const isDescending = events[0].gulp_timestamp > events[events.length - 1].gulp_timestamp;
+
+      if (isDescending) {
+        // For descending order (highest/newest first, lowest/oldest last):
+        // The first matching event is the leftmost element <= endTimestamp.
+        let low = 0;
+        let high = events.length - 1;
+        let first = events.length;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          if (events[mid].gulp_timestamp <= endTimestamp) {
+            first = mid;
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        if (first < events.length && events[first].gulp_timestamp >= startTimestamp) {
+          return first;
+        }
+        return -1;
+      } else {
+        // For ascending order (lowest/oldest first, highest/newest last):
+        // The first matching event is the leftmost element >= startTimestamp.
+        let low = 0;
+        let high = events.length - 1;
+        let first = events.length;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          if (events[mid].gulp_timestamp >= startTimestamp) {
+            first = mid;
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        if (first < events.length && events[first].gulp_timestamp <= endTimestamp) {
+          return first;
+        }
+        return -1;
+      }
+    };    
+
+    /**
+     * Counts the total number of events within the specified nanosecond time range using binary search.
+     * Auto-detects whether the events array is sorted in ascending or descending order.
+     * Performs in O(log N) time, completely avoiding any sequential loop traversals even with identical timestamps.
+     *
+     * @param events List of events to count.
+     * @param minTimestampNanos The start of the time range in nanoseconds (inclusive).
+     * @param maxTimestampNanos The end of the time range in nanoseconds (inclusive).
+     * @returns The total number of events inside the time range.
+     */
+    public static countEventsInTimeRange = (
+      events: Doc.Type[],
+      minTimestampNanos: number | bigint,
+      maxTimestampNanos: number | bigint
+    ): number => {
+      if (!events || events.length === 0) {
+        return 0;
+      }
+
+      const getEventNanos = (event: Doc.Type): number => {        
+        return event.gulp_timestamp;
+      };
+
+      const firstNanos = getEventNanos(events[0]);
+      const lastNanos = getEventNanos(events[events.length - 1]);
+      const isDescending = firstNanos > lastNanos;
+
+      if (isDescending) {
+        // Find the first index where eventNanos <= maxNanos
+        let low = 0;
+        let high = events.length - 1;
+        let firstIdx = -1;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          const eventNanos = getEventNanos(events[mid]);
+          if (eventNanos < maxTimestampNanos) {
+            firstIdx = mid;
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        // Find the last index where eventNanos >= minNanos
+        low = 0;
+        high = events.length - 1;
+        let lastIdx = -1;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          const eventNanos = getEventNanos(events[mid]);
+          if (eventNanos >= minTimestampNanos) {
+            lastIdx = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+
+        if (firstIdx === -1 || lastIdx === -1 || firstIdx > lastIdx) {
+          return 0;
+        }
+
+        return lastIdx - firstIdx + 1;
+      } else {
+        // Find the first index where eventNanos >= minNanos
+        let low = 0;
+        let high = events.length - 1;
+        let firstIdx = -1;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          const eventNanos = getEventNanos(events[mid]);
+          if (eventNanos >= minTimestampNanos) {
+            firstIdx = mid;
+            high = mid - 1;
+          } else {
+            low = mid + 1;
+          }
+        }
+
+        // Find the last index where eventNanos <= maxNanos
+        low = 0;
+        high = events.length - 1;
+        let lastIdx = -1;
+        while (low <= high) {
+          const mid = (low + high) >> 1;
+          const eventNanos = getEventNanos(events[mid]);
+          if (eventNanos < maxTimestampNanos) {
+            lastIdx = mid;
+            low = mid + 1;
+          } else {
+            high = mid - 1;
+          }
+        }
+
+        if (firstIdx === -1 || lastIdx === -1 || firstIdx > lastIdx) {
+          return 0;
+        }
+
+        return lastIdx - firstIdx + 1;
+      }
+    };
+
+    public static samples = (app: App.Type, file: Source.Type) => {
+      /*
+      1. check cached value 
+      2. calulcate sampling start from frequency_sample
+      3. save in cache
+      4. return SampleData array
+      */
+      const events = Source.Entity.events(app, file);
+      if (!events || events.length === 0) return;
+
+      if(file._sampleDataCached &&
+        file._sampleDataCached.sample_data &&
+        file._sampleDataCached.frequency_sample == file.settings.frequency_sample &&
+        file._sampleDataCached.min_timestamp == file.timestamp.min &&
+        file._sampleDataCached.max_timestampe == file.timestamp.max        
+      ){
+        return file._sampleDataCached.sample_data 
+      }
+
+      
+      const [minTime, maxTime] = [
+        Math.min(file.timestamp.min, file.timestamp.max),
+        Math.max(file.timestamp.min, file.timestamp.max),
+      ];
+      var results: SampleData[] = []
+      const bucketCount = Math.ceil((maxTime - minTime) / file.settings.frequency_sample);
+      console.warn("bucleCount",bucketCount)
+      console.warn("frequency_sample",file.settings.frequency_sample)
+      for (let i =0; i<bucketCount;i++){
+        const startBucket = minTime + i * file.settings.frequency_sample;
+        const endBucket = startBucket + file.settings.frequency_sample;
+        let count = Source.Entity.countEventsInTimeRange(events,startBucket,endBucket)
+        results.push({
+          min_timestamp: startBucket,
+          max_timesamp: endBucket,
+          sample: count
+        })
+      }
+      file._sampleDataCached = {
+        frequency_sample : file.settings.frequency_sample,
+        min_timestamp : file.timestamp.min,
+        max_timestampe : file.timestamp.max,
+        sample_data : results,
+      }      
+      console.warn("results", results)
+      return results;
+    } 
   }
 
   export namespace Delete {
