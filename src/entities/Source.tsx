@@ -255,7 +255,7 @@ export namespace Source {
       owner_user_id: app.general.user?.id!,
       pinned: false,
       _sampleDataCached: {
-        frequency_sample: 1000000,
+        frequency_sample: Internal.Settings.default.frequency_sample,
         min_timestamp: 0,
         max_timestampe: 0,
         sample_data : null
@@ -684,6 +684,13 @@ export namespace Source {
       }
     }
 
+     /**
+     * Settings Banner component to manage configuration for a specific data Source.
+     * Allows adjusting time offset, sampling frequency, render engine, color palette,
+     * target field for color scheme, and context color.
+     * 
+     * @param props.source The data source object to configure.
+     */
     export function Banner({ source }: Settings.Banner.Props) {
       const { Info, app, spawnBanner, destroyBanner } = Application.use()
       const [render_color_palette, setRenderColorPalette] = useState<Color.Gradient>(source.settings.render_color_palette)
@@ -691,13 +698,21 @@ export namespace Source {
       const [render_engine, setEngine] = useState<Engine.List>(source.settings.render_engine)
       const context = useMemo(() => Context.Entity.id(app, source.context_id), [app.target.contexts, source.context_id])
       const [contextColor, setContextColor] = useState<string>(context?.color ?? '')
+      const [frequency_sample, setFrequencySample] = useState<number>(source.settings.frequency_sample)
 
+      /**
+       * Saves the updated source settings and optionally updates the associated context color.
+       * Invokes file_set_settings and context_update API calls, then closes the settings banner.
+       * 
+       * @returns A promise that resolves when saving is completed.
+       */
       const save = async () => {
         Info.file_set_settings(source.id, {
           render_color_palette,
           render_engine,
           offset,
           field,
+          frequency_sample,
         })
 
         if (contextColor !== context.color) {
@@ -715,7 +730,22 @@ export namespace Source {
 
       const [field, setField] = useState<keyof Doc.Type>(source.settings.field);
 
-      const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => setOffset(event.target.valueAsNumber || 0);
+      /**
+       * Event handler for changes to the source offset input.
+       * Parses the input value as a number and updates the local offset state.
+       * 
+       * @param event The change event from the offset input.
+       */
+      const handleOffsetChange = (event: ChangeEvent<HTMLInputElement>) => setOffset(event.target.valueAsNumber || 0);
+
+      /**
+       * Event handler for changes to the frequency sample input.
+       * Parses the input value as a number (falling back to a default value)
+       * and updates the local frequency sample state.
+       * 
+       * @param event The change event from the frequency sample input.
+       */
+      const handleFrequencyChange = (event: ChangeEvent<HTMLInputElement>) => setFrequencySample(event.target.valueAsNumber || 10000000);
 
       const done = (
         <Button variant="glass" onClick={save} icon="Check" />
@@ -760,11 +790,20 @@ export namespace Source {
           <Input
             variant='highlighted'
             icon="AlarmClockPlus"
-            accept="number"
+            type="number"
             label={`Offset: ${formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ['years', 'months', 'days', 'hours', 'minutes', 'seconds'], zero: false })} ${parseInt(offset.toString().slice(-3))} milliseconds`}
             value={offset}
             placeholder="Offset time in ms"
-            onChange={handleInputChange}
+            onChange={handleOffsetChange}
+          />
+          <Input
+            variant='highlighted'
+            icon="AlarmClockPlus"
+            type="number"
+            label={`Frequency sample: ${frequency_sample}`}
+            value={frequency_sample}
+            placeholder="Frequency sample"
+            onChange={handleFrequencyChange}
           />
           <Stack dir='column' gap={6} ai='flex-start'>
             <Label value='Render engine' />
