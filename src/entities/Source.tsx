@@ -466,51 +466,53 @@ export namespace Source {
       }
     };
 
-    public static samples = (app: App.Type, file: Source.Type) => {
-      /*
-      1. check cached value 
-      2. calulcate sampling start from frequency_sample
-      3. save in cache
-      4. return SampleData array
-      */
+    public static samples = (app: App.Type, file: Source.Type) => {      
       const events = Source.Entity.events(app, file);
       if (!events || events.length === 0) return;
 
-      if(file._sampleDataCached &&
+      if (file._sampleDataCached &&
         file._sampleDataCached.sample_data &&
         file._sampleDataCached.frequency_sample == file.settings.frequency_sample &&
         file._sampleDataCached.min_timestamp == file.timestamp.min &&
-        file._sampleDataCached.max_timestampe == file.timestamp.max        
-      ){
-        return file._sampleDataCached.sample_data 
+        file._sampleDataCached.max_timestampe == file.timestamp.max
+      ) {
+        return file._sampleDataCached.sample_data;
       }
 
-      
       const [minTime, maxTime] = [
         Math.min(file.timestamp.min, file.timestamp.max),
         Math.max(file.timestamp.min, file.timestamp.max),
       ];
-      var results: SampleData[] = []
-      const bucketCount = Math.ceil((maxTime - minTime) / file.settings.frequency_sample);
-      console.warn("bucleCount",bucketCount)
-      console.warn("frequency_sample",file.settings.frequency_sample)
-      for (let i =0; i<bucketCount;i++){
-        const startBucket = minTime + i * file.settings.frequency_sample;
-        const endBucket = startBucket + file.settings.frequency_sample;
-        let count = Source.Entity.countEventsInTimeRange(events,startBucket,endBucket)
-        results.push({
-          min_timestamp: startBucket,
-          max_timesamp: endBucket,
-          sample: count
-        })
+      const freq = file.settings.frequency_sample;
+      
+      const bucketMap = new Map<number, number>();
+      
+      for (let i = 0; i < events.length; i++) {
+        const timestamp = events[i].gulp_timestamp;
+        if (timestamp < minTime || timestamp >= maxTime) continue;
+        
+        const bucketIndex = Math.floor((timestamp - minTime) / freq);
+        bucketMap.set(bucketIndex, (bucketMap.get(bucketIndex) || 0) + 1);
       }
+      
+      const sortedKeys = Array.from(bucketMap.keys()).sort((a, b) => a - b);
+      const results: SampleData[] = [];
+      
+      for (let i = 0; i < sortedKeys.length; i++) {
+        const index = sortedKeys[i];
+        results.push({
+          min_timestamp: minTime + index * freq,
+          max_timesamp: minTime + (index + 1) * freq,
+          sample: bucketMap.get(index)!
+        });
+      }
+
       file._sampleDataCached = {
-        frequency_sample : file.settings.frequency_sample,
-        min_timestamp : file.timestamp.min,
-        max_timestampe : file.timestamp.max,
-        sample_data : results,
-      }      
-      console.warn("results", results)
+        frequency_sample: file.settings.frequency_sample,
+        min_timestamp: file.timestamp.min,
+        max_timestampe: file.timestamp.max,
+        sample_data: results,
+      };
       return results;
     } 
   }

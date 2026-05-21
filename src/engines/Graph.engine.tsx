@@ -39,108 +39,72 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     this.renderer = renderer
   }
 
-  render(file: Source.Type, y:number, forcr?:boolean) {    
-    //retrive sample to draw in graph render
+  render(file: Source.Type, y:number, forcr?:boolean) {
     const sampleData = Source.Entity.samples(this.renderer.info.app, file) ?? [];
-    // calculate max height 
-    const maxHeight = Math.max(...sampleData.map(obj => obj.sample));
+    if (sampleData.length === 0) return;
+
+    const freq = file.settings.frequency_sample;
+    const frame = this.renderer.info.app.timeline.frame;
+    const timePer8Px = 10 * (frame.max - frame.min) / this.renderer.info.width;
     
-    // previous bucket to render with dot
-    let prevBucket: any = null;
-    let prevCount: number = 0;
-    let prevX: number = -1;
-
-    //the last dot rendered to connect with the previous dot to render
-    let dotToConnect: Dot | null = null;
+    const dynamicFrequency = Math.max(freq, timePer8Px);
     
-    for(let i =0; i<sampleData.length; i++){
-      let bucket = sampleData[i];
-      if (throwableByTimestamp(bucket.min_timestamp, this.renderer.limits, this.renderer.info.app)) continue;
-      
-      // calculate the x position for the buckets
-      let minStamp = prevBucket != null ? prevBucket["min_timestamp"]: bucket.min_timestamp;
-      let maxStamp = bucket.max_timesamp;
-      let x = this.renderer.getPixelPosition(Math.floor(minStamp + (maxStamp - minStamp)/2));
-      
-      // check if there is a last bucket force to render
-      // else previous bucket to render or to join with current bucket
-      if(i <sampleData.length) {
-        if(prevBucket == null){
-          prevBucket = bucket;
-          prevCount += bucket.sample;
-          prevX = x;
-          continue;
-        }
+    const dynamicBuckets = new Map<number, number>();
+    let maxHeight = 0;
+    
+    for (let i = 0; i < sampleData.length; i++) {
+        const bucketIndex = Math.floor(sampleData[i].min_timestamp / dynamicFrequency);
+        const newCount = (dynamicBuckets.get(bucketIndex) || 0) + sampleData[i].sample;
+        dynamicBuckets.set(bucketIndex, newCount);
+        if (newCount > maxHeight) maxHeight = newCount;
+    }
+    
+    if (maxHeight === 0) return;
 
-        // check distance from bucket        
-        if (prevX == x || Math.abs(prevX-x)<=8) {
-          prevCount += bucket.sample        
-          continue;
-        }
-      }
-      else {
-        let drawLast= true;
-        if(prevBucket) {
-          if (prevX == x || Math.abs(prevX-x)<=8) {
-            prevCount += bucket.sample;
-            let prevDot = this.drawDot(y, prevCount, maxHeight, file, x)
-            if(dotToConnect)
-            {
-              this.renderer.connection([dotToConnect,prevDot])              
-            }
-            dotToConnect = prevDot;
-            prevCount=0
-            drawLast = false;
-          }
-          else {
-            let prevDot = this.drawDot(y,prevBucket.sample,maxHeight,file,prevX)
-            if(dotToConnect)
-            {
-              this.renderer.connection([dotToConnect,prevDot])             
-            }
-            dotToConnect = prevDot;
-            prevCount=0
-          }                    
-        }
-        if (drawLast){
-          let currentDot = this.drawDot(y,bucket.sample,maxHeight,file,x)
-            if(dotToConnect)
-            {
-              this.renderer.connection([dotToConnect,currentDot])
-            }
-        }
-        return;
-      }
-      
-      let count = prevCount + bucket.sample
-      // draw a previous dot because we cannot merge with current bucket
-      const prevDot = this.drawDot(y, count, maxHeight, file, x)
-      if(dotToConnect)
-      {
-        this.renderer.connection([dotToConnect,prevDot])        
-      }
-      dotToConnect = prevDot;
-      prevBucket = null;
-      prevCount = 0;
-      prevX = -1;
+    const minLimit = this.renderer.limits.min;
+    const maxLimit = this.renderer.limits.max;
 
+    const startBucketIdx = Math.floor(minLimit / dynamicFrequency) - 1;
+    const endBucketIdx = Math.floor(maxLimit / dynamicFrequency) + 1;
+
+    // Strict bounds to file's timeline
+    const fileStartBucketIdx = Math.floor(file.timestamp.min / dynamicFrequency);
+    const fileEndBucketIdx = Math.floor(file.timestamp.max / dynamicFrequency);
+
+    const actualStartBucketIdx = Math.max(startBucketIdx, fileStartBucketIdx);
+    const actualEndBucketIdx = Math.min(endBucketIdx, fileEndBucketIdx);
+
+    let prevDot: Dot | null = null;
+    
+    for (let i = actualStartBucketIdx; i <= actualEndBucketIdx; i++) {
+      const count = dynamicBuckets.get(i) || 0;
+      
+      const centerTimestamp = i * dynamicFrequency + dynamicFrequency / 2;
+      const x = this.renderer.getPixelPosition(centerTimestamp);
+      
+      const currentDot = this.drawDot(y, count, maxHeight, file, x);
+      if (prevDot) {
+        this.renderer.connection([prevDot, currentDot]);
+      }
+      prevDot = currentDot;
     }
   }
 
-  private drawDot(y: number, count: number, maxHeight: number, file: Source.Type, x: number) {
-    const dotY = y + 47 - Math.floor(((count) / maxHeight) * 47)
+  private drawDot(y: number, count: number, maxHeight: number, file: Source.Type, x: number,) {
+    const dotY = y + 47 - Math.floor((count / maxHeight) * 47);
     const color = Color.Entity.gradient(file.settings.render_color_palette, count, {
       min: 0,
       max: maxHeight
-    })
+    });
 
-    this.renderer.ctx.font = '8px Arial'
-    this.renderer.ctx.fillStyle = "white"
+    const currentDot = { x, y: dotY, color };
 
-    this.renderer.ctx.fillText((count).toString(), x - 3.5, dotY - 8)
-    const prevDot = { x, y: dotY, color }
-    this.renderer.dot(prevDot)
-    return prevDot
+    this.renderer.ctx.font = '8px Arial';
+    this.renderer.ctx.fillStyle = Color.Themer.theme.FONT_ACCENT;
+    this.renderer.ctx.fillText(count.toString(), x - 3.5, dotY - 8);
+    this.renderer.dot(currentDot);
+    
+    return currentDot;
   }
 
   render_old(file: Source.Type, y: number, force?: boolean) {
