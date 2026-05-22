@@ -1,7 +1,12 @@
 import { debounce, Dictionary } from "lodash";
 import { scrollStore } from "@/store/scroll.store";
 import { Default } from "@/dto/Dataset";
-import { generateUUID, NodeFile, Refractor, stringToHexColor } from "@/ui/utils";
+import {
+	generateUUID,
+	NodeFile,
+	Refractor,
+	stringToHexColor,
+} from "@/ui/utils";
 import { Logger } from "@/dto/Logger.class";
 import { SetState } from "./API";
 import { Icon } from "@impactium/icons";
@@ -73,7 +78,7 @@ export namespace GulpDataset {
 			name?: string;
 			offset?: number;
 			limit?: number;
-			sort?: Record<string, "desc" | "asc">
+			sort?: Record<string, "desc" | "asc">;
 		}
 	}
 	export namespace QueryOperations {
@@ -248,9 +253,9 @@ export class Info implements InfoProps {
 				...query,
 				source_config: query.source_config
 					? {
-						...query.source_config,
-						source_ids: [file.id],
-					}
+							...query.source_config,
+							source_ids: [file.id],
+						}
 					: undefined,
 			};
 
@@ -320,7 +325,7 @@ export class Info implements InfoProps {
 			// Uses the forward-shifted time range [fromNanos, nowNanos] to fetch
 			// only events newer than the latest known event.
 			const query: Query.Type = {
-				string: '',
+				string: "",
 				source_config: {
 					operation_id: file.operation_id,
 					source_ids: [file.id],
@@ -400,9 +405,16 @@ export class Info implements InfoProps {
 					m.req_id === req_id &&
 					this.app.general.loadings.byRequestId.has(req_id),
 				(m) => {
-					const events = Doc.Entity.normalize(m.payload.docs ?? []);
+					const events = Doc.Entity.normalize(
+						m.payload.docs ?? [],
+						file.settings.field,
+					);
 					bufferedEvents.push(...events);
-					if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+					if (
+						(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
+							m.payload.last) &&
+						bufferedEvents.length > 0
+					) {
 						const toFlush = bufferedEvents.splice(0);
 						lastFlushTime = Date.now();
 						flushChain = flushChain.then(() => this.events_add_async(toFlush));
@@ -554,13 +566,15 @@ export class Info implements InfoProps {
 				this.setInfoByKey(loadings, "general", "loadings");
 
 				this.ingestionProgress.delete(sourceId);
-				this.sync().catch(() => { });
+				this.sync().catch(() => {});
 			},
 		);
 
 		SmartSocket.Class.instance.con(
 			SmartSocket.Message.Type.STATS_UPDATE,
-			(m) => m.payload?.obj?.req_type === "ingest" && m.payload?.obj?.status === "done",
+			(m) =>
+				m.payload?.obj?.req_type === "ingest" &&
+				m.payload?.obj?.status === "done",
 			(m) => {
 				const reqId = m.req_id;
 				if (reqId) {
@@ -780,12 +794,21 @@ export class Info implements InfoProps {
 						m.req_id === req_id &&
 						this.app.general.loadings.byRequestId.has(req_id),
 					(m) => {
-						const events = Doc.Entity.normalize(m.payload.docs ?? []);
+						const events = Doc.Entity.normalize(
+							m.payload.docs ?? [],
+							"gulp.event_code",
+						);
 						bufferedEvents.push(...events);
-						if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+						if (
+							(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
+								m.payload.last) &&
+							bufferedEvents.length > 0
+						) {
 							const toFlush = bufferedEvents.splice(0);
 							lastFlushTime = Date.now();
-							flushChain = flushChain.then(() => this.events_add_async(toFlush));
+							flushChain = flushChain.then(() =>
+								this.events_add_async(toFlush),
+							);
 						}
 
 						if (m.payload.last) {
@@ -842,9 +865,9 @@ export class Info implements InfoProps {
 		return resp
 			? resp.data
 			: {
-				docs: [],
-				total_hits: 0,
-			};
+					docs: [],
+					total_hits: 0,
+				};
 	};
 
 	query_file = async (
@@ -868,7 +891,7 @@ export class Info implements InfoProps {
 
 		if (id) {
 			const ids = Array.isArray(id) ? id : [id];
-			ids.forEach(i => {
+			ids.forEach((i) => {
 				const request = this.app.general.loadings.byFileId.get(i);
 				if (request) {
 					this.delLoading(request);
@@ -893,7 +916,11 @@ export class Info implements InfoProps {
 
 		if (id) {
 			const ids = Array.isArray(id) ? id : [id];
-			body.q_options.fields = refetchKeys ?? Array.from(new Set(ids.map(i => Source.Entity.id(this.app, i).settings.field)));
+			body.q_options.fields =
+				refetchKeys ??
+				Array.from(
+					new Set(ids.map((i) => Source.Entity.id(this.app, i).settings.field)),
+				);
 		}
 
 		if (addToHistory) {
@@ -913,7 +940,7 @@ export class Info implements InfoProps {
 		// 1. Set loading state synchronously
 		if (id) {
 			const ids = Array.isArray(id) ? id : [id];
-			ids.forEach(i => this.setLoading(req_id, i as Source.Id));
+			ids.forEach((i) => this.setLoading(req_id, i as Source.Id));
 		}
 
 		// 2. Define cleanup logic for listeners and loading state
@@ -923,10 +950,16 @@ export class Info implements InfoProps {
 		const cleanup = () => {
 			this.delLoading(req_id);
 			if (sid) {
-				SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
+				SmartSocket.Class.instance.coff(
+					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+					sid,
+				);
 			}
 			if (sidCollab) {
-				SmartSocket.Class.instance.coff(SmartSocket.Message.Type.COLLAB_CREATE, sidCollab);
+				SmartSocket.Class.instance.coff(
+					SmartSocket.Message.Type.COLLAB_CREATE,
+					sidCollab,
+				);
 			}
 		};
 
@@ -941,10 +974,17 @@ export class Info implements InfoProps {
 				m.req_id === req_id &&
 				this.app.general.loadings.byRequestId.has(req_id),
 			(m) => {
-				const events = Doc.Entity.normalize(m.payload.docs ?? []);
+				// let source = Source.Entity.id(this.app, i).settings.field)
+				let source = this.app.general.loadings.byRequestId.get(req_id);
+				let field = Source.Entity.id(this.app, source as Source.Id).settings
+					.field;
+				const events = Doc.Entity.normalize(m.payload.docs ?? [], field);
 				bufferedEvents.push(...events);
 
-				if ((Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) && bufferedEvents.length > 0) {
+				if (
+					(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) &&
+					bufferedEvents.length > 0
+				) {
 					const toFlush = bufferedEvents.splice(0);
 					lastFlushTime = Date.now();
 					flushChain = flushChain.then(() => this.events_add_async(toFlush));
@@ -954,18 +994,17 @@ export class Info implements InfoProps {
 						cleanup();
 						if (id) {
 							const ids = Array.isArray(id) ? id : [id];
-							ids.forEach(i => {
+							ids.forEach((i) => {
 								const file = Source.Entity.id(this.app, i as Source.Id);
-								const loadedCount = Doc.Entity.get(this.app, i as Source.Id).length;
+								const loadedCount = Doc.Entity.get(
+									this.app,
+									i as Source.Id,
+								).length;
 								if (file && loadedCount > file.total) {
 									file.total = loadedCount;
 								}
 							});
-							this.setInfoByKey(
-								[...this.app.target.files],
-								"target",
-								"files",
-							);
+							this.setInfoByKey([...this.app.target.files], "target", "files");
 						}
 						this.render();
 					});
@@ -991,7 +1030,7 @@ export class Info implements InfoProps {
 							(item: any) => item.type === "note",
 						) as Note.Type[];
 						if (newItems.length > 0) {
-							newItems.forEach(note => this.AddNoteToDataStore(note));
+							newItems.forEach((note) => this.AddNoteToDataStore(note));
 							toast.success(`Fetched ${newItems.length} notes`, {
 								richColors: true,
 							});
@@ -1001,15 +1040,12 @@ export class Info implements InfoProps {
 			);
 		}
 
-		const resp = await api<any>(
-			"/query_raw",
-			{
-				method: "POST",
-				query: request_query,
-				body,
-				raw: true,
-			}
-		);
+		const resp = await api<any>("/query_raw", {
+			method: "POST",
+			query: request_query,
+			body,
+			raw: true,
+		});
 
 		// 5. If the API request failed or the job wasn't pending, clean up immediately
 		if (!resp || resp.status !== "pending") {
@@ -1033,14 +1069,19 @@ export class Info implements InfoProps {
 		return resp
 			? resp.data
 			: {
-				docs: [],
-				total_hits: 0,
-			};
+					docs: [],
+					total_hits: 0,
+				};
 	};
 
 	query_paginate = async (
 		query: Query.Type,
-		{ limit = 100, offset = 0, sort = { "@timestamp": "asc" } }: GulpDataset.QueryGulp.Options) => {
+		{
+			limit = 100,
+			offset = 0,
+			sort = { "@timestamp": "asc" },
+		}: GulpDataset.QueryGulp.Options,
+	) => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) {
 			return;
@@ -1059,22 +1100,19 @@ export class Info implements InfoProps {
 			req_id: generateUUID(Request.Prefix.QUERY),
 		};
 
-		const resp = await api<any>(
-			"/query_raw_paginate",
-			{
-				method: "POST",
-				body,
-				query: request_query,
-				raw: true,
-			},
-		);
+		const resp = await api<any>("/query_raw_paginate", {
+			method: "POST",
+			body,
+			query: request_query,
+			raw: true,
+		});
 
 		return resp
 			? resp.data
 			: {
-				docs: [],
-				total_hits: 0,
-			};
+					docs: [],
+					total_hits: 0,
+				};
 	};
 
 	/**
@@ -1102,7 +1140,14 @@ export class Info implements InfoProps {
 				 */
 				const walkBool = (
 					boolBody: Record<string, any[]>,
-					infra: { topLevel: boolean; operationId: string; sourceIds: string[]; rangeMin: string | number; rangeMax: string | number; textFilter: string },
+					infra: {
+						topLevel: boolean;
+						operationId: string;
+						sourceIds: string[];
+						rangeMin: string | number;
+						rangeMax: string | number;
+						textFilter: string;
+					},
 				): Filter.Item[] => {
 					const items: Filter.Item[] = [];
 
@@ -1113,11 +1158,14 @@ export class Info implements InfoProps {
 						arr.forEach((obj) => {
 							Object.entries(obj).forEach(([type, v]: [string, any]) => {
 								// Nested bool → Filter.Group (recurse)
-								if (type === 'bool' && v && typeof v === 'object') {
-									const groupChildren = walkBool(v, { ...infra, topLevel: false });
+								if (type === "bool" && v && typeof v === "object") {
+									const groupChildren = walkBool(v, {
+										...infra,
+										topLevel: false,
+									});
 									items.push({
 										id: generateUUID() as Filter.Id,
-										type: 'group',
+										type: "group",
 										operator,
 										children: groupChildren,
 										enabled: true,
@@ -1126,25 +1174,28 @@ export class Info implements InfoProps {
 								}
 
 								// Skip legacy query_string — not reconstructable as a builder row
-								if (type === 'query_string') return;
+								if (type === "query_string") return;
 
 								// Top-level infrastructure clauses → source_config / text_filter
 								if (infra.topLevel) {
-									if (type === 'term' && v['gulp.operation_id'] !== undefined) {
-										infra.operationId = v['gulp.operation_id'];
+									if (type === "term" && v["gulp.operation_id"] !== undefined) {
+										infra.operationId = v["gulp.operation_id"];
 										return;
 									}
-									if (type === 'terms' && v['gulp.source_id'] !== undefined) {
-										infra.sourceIds = v['gulp.source_id'];
+									if (type === "terms" && v["gulp.source_id"] !== undefined) {
+										infra.sourceIds = v["gulp.source_id"];
 										return;
 									}
-									if (type === 'range' && v['gulp.timestamp'] !== undefined) {
-										infra.rangeMin = v['gulp.timestamp'].gte ?? '';
-										infra.rangeMax = v['gulp.timestamp'].lte ?? '';
+									if (type === "range" && v["gulp.timestamp"] !== undefined) {
+										infra.rangeMin = v["gulp.timestamp"].gte ?? "";
+										infra.rangeMax = v["gulp.timestamp"].lte ?? "";
 										return;
 									}
-									if (type === 'wildcard' && v['event.original'] !== undefined) {
-										infra.textFilter = v['event.original'].value ?? '';
+									if (
+										type === "wildcard" &&
+										v["event.original"] !== undefined
+									) {
+										infra.textFilter = v["event.original"].value ?? "";
 										return;
 									}
 								}
@@ -1157,7 +1208,10 @@ export class Info implements InfoProps {
 										type: type as OpenSearchQueryBuilder.Condition,
 										id: generateUUID(),
 										field: fieldKey,
-										value: typeof v[fieldKey] === 'object' ? v[fieldKey].value : v[fieldKey],
+										value:
+											typeof v[fieldKey] === "object"
+												? v[fieldKey].value
+												: v[fieldKey],
 										enabled: true,
 									});
 								});
@@ -1174,26 +1228,26 @@ export class Info implements InfoProps {
 
 					const infra = {
 						topLevel: true,
-						operationId: '',
+						operationId: "",
 						sourceIds: [] as string[],
-						rangeMin: '' as string | number,
-						rangeMax: '' as string | number,
-						textFilter: '',
+						rangeMin: "" as string | number,
+						rangeMax: "" as string | number,
+						textFilter: "",
 					};
 
 					const filters = walkBool(root.bool, infra);
 
-					const source_config: Query.Type['source_config'] | undefined =
+					const source_config: Query.Type["source_config"] | undefined =
 						infra.operationId && infra.sourceIds.length > 0
 							? {
-								operation_id: infra.operationId,
-								source_ids: infra.sourceIds,
-								range: { min: infra.rangeMin, max: infra.rangeMax },
-							}
+									operation_id: infra.operationId,
+									source_ids: infra.sourceIds,
+									range: { min: infra.rangeMin, max: infra.rangeMax },
+								}
 							: undefined;
 
 					const queryObj: Query.Type = {
-						string: '',
+						string: "",
 						text_filter: infra.textFilter,
 						filters,
 						source_config,
@@ -1534,7 +1588,10 @@ export class Info implements InfoProps {
 	 * Registers streaming event listeners for real-time document ingestion.
 	 * [Tech-Note] Uses promise-chaining to ensure ordered event insertion.
 	 */
-	private _register_streaming_listeners = (id: Request.Id, sidSource: string) => {
+	private _register_streaming_listeners = (
+		id: Request.Id,
+		sidSource: string,
+	) => {
 		const bufferedEvents: Doc.Type[] = [];
 		let accumulatedCount = 0;
 		let lastFlushTime = 0;
@@ -1545,14 +1602,17 @@ export class Info implements InfoProps {
 			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 			(m) => m.req_id === id,
 			(m) => {
-				const events = Doc.Entity.normalize(m.payload.docs || []);
-				bufferedEvents.push(...events);
-				accumulatedCount += events.length;
-
-				const fileId = (events[0]?.["gulp.source_id"] ||
+				const fileId = ((m.payload.docs as any)[0]?.["gulp.source_id"] ||
 					(m.payload as any).source_id ||
 					(m.payload as any).gulp_source_id) as Source.Id;
 				if (!fileId) return;
+
+				const events = Doc.Entity.normalize(
+					m.payload.docs || [],
+					"gulp.event_code",
+				);
+				bufferedEvents.push(...events);
+				accumulatedCount += events.length;
 
 				this.ingestionProgress.set(
 					fileId,
@@ -1583,9 +1643,9 @@ export class Info implements InfoProps {
 								const timestamp =
 									all.length > 0
 										? {
-											min: all[all.length - 1].gulp_timestamp,
-											max: all[0].gulp_timestamp,
-										}
+												min: all[all.length - 1].gulp_timestamp,
+												max: all[0].gulp_timestamp,
+											}
 										: { min: Date.now(), max: Date.now() };
 
 								files[exist] = Source.Entity.normalize(draft, {
@@ -1628,8 +1688,14 @@ export class Info implements InfoProps {
 				m.payload?.obj?.req_type === "ingest" &&
 				m.payload?.obj?.status === "done",
 			() => {
-				SmartSocket.Class.instance.coff(SmartSocket.Message.Type.DOCUMENTS_CHUNK, sid);
-				SmartSocket.Class.instance.coff(SmartSocket.Message.Type.COLLAB_CREATE, sidSource);
+				SmartSocket.Class.instance.coff(
+					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+					sid,
+				);
+				SmartSocket.Class.instance.coff(
+					SmartSocket.Message.Type.COLLAB_CREATE,
+					sidSource,
+				);
 				this.delLoading(id);
 			},
 		);
@@ -1656,7 +1722,12 @@ export class Info implements InfoProps {
 		if (!operation) return;
 
 		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
-		const callbacks = this._ingest_orchestrator(id, file, context as string, setProgress);
+		const callbacks = this._ingest_orchestrator(
+			id,
+			file,
+			context as string,
+			setProgress,
+		);
 
 		ingestWorkerManager.enqueue({
 			req_id: id,
@@ -1694,7 +1765,12 @@ export class Info implements InfoProps {
 		if (!operation) return;
 
 		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
-		const callbacks = this._ingest_orchestrator(id, file, context as string, setProgress);
+		const callbacks = this._ingest_orchestrator(
+			id,
+			file,
+			context as string,
+			setProgress,
+		);
 
 		ingestWorkerManager.enqueue({
 			req_id: id,
@@ -1728,20 +1804,24 @@ export class Info implements InfoProps {
 		};
 
 		const pluginParams: any = {
-			preview_mode: true
+			preview_mode: true,
 		};
-		if (settings.custom_parameters) pluginParams.custom_parameters = settings.custom_parameters;
+		if (settings.custom_parameters)
+			pluginParams.custom_parameters = settings.custom_parameters;
 
 		const mappingParameters: any = {};
 		if (settings.method) mappingParameters.mapping_file = settings.method;
 		if (settings.mapping) mappingParameters.mapping_id = settings.mapping;
-		if (settings.additional_mapping_files) mappingParameters.additional_mapping_files = settings.additional_mapping_files;
+		if (settings.additional_mapping_files)
+			mappingParameters.additional_mapping_files =
+				settings.additional_mapping_files;
 
 		if (Object.keys(mappingParameters).length > 0) {
 			pluginParams.mapping_parameters = mappingParameters;
 		}
 
-		if (settings.store_file !== undefined) pluginParams.store_file = settings.store_file;
+		if (settings.store_file !== undefined)
+			pluginParams.store_file = settings.store_file;
 		ingestPayload.plugin_params = pluginParams;
 
 		formData.append(
@@ -1765,7 +1845,7 @@ export class Info implements InfoProps {
 			query,
 			headers: {
 				size: file.size.toString(),
-			}
+			},
 		});
 
 		return response.data as unknown as Doc.Type[];
@@ -1861,15 +1941,17 @@ export class Info implements InfoProps {
 				ids.map((id) => this.event_keys(Source.Entity.id(this.app, id))),
 			);
 
-			const result = filterOptionsStack.flat().reduce<Filter.Options>((acc, cur) => {
-				Object.keys(cur).forEach((c) => {
-					if (!acc[c]) {
-						acc[c] = cur[c];
-					}
-				});
+			const result = filterOptionsStack
+				.flat()
+				.reduce<Filter.Options>((acc, cur) => {
+					Object.keys(cur).forEach((c) => {
+						if (!acc[c]) {
+							acc[c] = cur[c];
+						}
+					});
 
-				return acc;
-			}, {});
+					return acc;
+				}, {});
 
 			Info._eventKeysCache.set(file.id, result);
 			return result;
@@ -1914,6 +1996,7 @@ export class Info implements InfoProps {
 		let notes: Note.Type[] = [];
 		const fetch = async (offset = 0) => {
 			const fetched = Note.Entity.normalize(
+				this.app,
 				await api<Note.Type[]>("/note_list", {
 					method: "POST",
 					query: {
@@ -2028,7 +2111,7 @@ export class Info implements InfoProps {
 	/**
 	 * Deletes multiple notes in a single API call.
 	 * Synchronizes the DataStore and invalidates caches upon success.
-	 * 
+	 *
 	 * @param ids - Array of Note identifiers to delete.
 	 */
 	notes_delete_bulk = (ids: Note.Id[]) =>
@@ -2223,7 +2306,7 @@ export class Info implements InfoProps {
 				// FIXME: this creates a link without destination documents, which is wrong. the backend allows it
 				// just to support this ui ....
 				doc_ids: [],
-				description: description
+				description: description,
 			},
 		}).then(this.links_reload);
 	};
@@ -2261,7 +2344,7 @@ export class Info implements InfoProps {
 			},
 			body: {
 				doc_ids: events,
-				description: description
+				description: description,
 			},
 		}).then(this.links_reload);
 
@@ -2632,14 +2715,14 @@ export class Info implements InfoProps {
 	};
 
 	private AddNoteToDataStore(note: Note.Type) {
-		note = Note.Entity.normalize_note(note);
+		note = Note.Entity.normalize_note(this.app, note);
 		const idx = DataStore.notes.findIndex((n) => n.id === note.id);
 		if (idx !== -1) {
 			DataStore.notes[idx] = note;
 		} else {
 			DataStore.notes.push(note);
 			DataStore.notes.sort(
-				(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a)
+				(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
 			);
 		}
 		Note.Entity.invalidateCache();
@@ -3144,7 +3227,7 @@ export class Info implements InfoProps {
 							const newItems = m.payload.obj.filter(
 								(item) => item.type === "note",
 							) as Note.Type[];
-							newItems.forEach(note => this.AddNoteToDataStore(note));
+							newItems.forEach((note) => this.AddNoteToDataStore(note));
 							toast.success(`Fetched ${newItems.length} notes`, {
 								richColors: true,
 							});

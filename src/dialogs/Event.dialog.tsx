@@ -9,7 +9,15 @@ import {
 	useRef,
 } from "react";
 import s from "./styles/DisplayEventDialog.module.css";
-import { copy, download, generateUUID, Refractor, isPlainObject, sortObjectKeysRecursively as sortTreeValueRecursively, parseLineToKeyValue as parseToKeyValue } from "@/ui/utils";
+import {
+	copy,
+	download,
+	generateUUID,
+	Refractor,
+	isPlainObject,
+	sortObjectKeysRecursively as sortTreeValueRecursively,
+	parseLineToKeyValue as parseToKeyValue,
+} from "@/ui/utils";
 import { Stack } from "@/ui/Stack";
 import { Button } from "@/ui/Button";
 import { Skeleton } from "@/ui/Skeleton";
@@ -30,7 +38,12 @@ import {
 import { FilterFileBanner } from "@/banners/FilterFile.banner";
 import { SendData } from "@/banners/SendData.banner";
 import { toast } from "sonner";
-import { JsonView, allExpanded, darkStyles, defaultStyles } from "react-json-view-lite";
+import {
+	JsonView,
+	allExpanded,
+	darkStyles,
+	defaultStyles,
+} from "react-json-view-lite";
 import "react-json-view-lite/dist/index.css";
 import { StyleProps } from "react-json-view-lite/dist/DataRenderer";
 import { useTheme } from "next-themes";
@@ -74,25 +87,31 @@ const flattenTableEntries = (
 ): Array<{ key: string; value: string }> => {
 	if (Array.isArray(value)) {
 		return value.flatMap((entry, index) =>
-			flattenTableEntries(entry, parentKey ? `${parentKey}.${index}` : String(index)),
+			flattenTableEntries(
+				entry,
+				parentKey ? `${parentKey}.${index}` : String(index),
+			),
 		);
 	}
 
 	if (value && typeof value === "object") {
-		return Object.entries(value as Record<string, unknown>).flatMap(([key, entry]) =>
-			flattenTableEntries(entry, parentKey ? `${parentKey}.${key}` : key),
+		return Object.entries(value as Record<string, unknown>).flatMap(
+			([key, entry]) =>
+				flattenTableEntries(entry, parentKey ? `${parentKey}.${key}` : key),
 		);
 	}
 
-	return [{
-		key: parentKey,
-		value:
-			value == null
-				? String(value)
-				: typeof value === "bigint"
-					? value.toString()
-					: String(value),
-	}];
+	return [
+		{
+			key: parentKey,
+			value:
+				value == null
+					? String(value)
+					: typeof value === "bigint"
+						? value.toString()
+						: String(value),
+		},
+	];
 };
 
 /**
@@ -110,7 +129,8 @@ const getTreeKeyPath = (
 	nodeClass: string,
 	basicClass: string,
 ): string => {
-	const clean = (el: Element) => (el.textContent || "").trim().replace(/^"+|"+$/g, "");
+	const clean = (el: Element) =>
+		(el.textContent || "").trim().replace(/^"+|"+$/g, "");
 	const parts: string[] = [clean(labelEl)];
 
 	let nodeEl: Element | null = labelEl.closest(`.${nodeClass}`);
@@ -121,7 +141,9 @@ const getTreeKeyPath = (
 		if (!parentNode?.classList.contains(nodeClass)) break;
 
 		const parentLabel = Array.from(parentNode.children).find(
-			(c) => c.classList.contains(labelClass) || c.classList.contains(clickableLabelClass),
+			(c) =>
+				c.classList.contains(labelClass) ||
+				c.classList.contains(clickableLabelClass),
 		);
 		if (!parentLabel) break;
 		parts.unshift(clean(parentLabel));
@@ -136,23 +158,30 @@ const getTreeKeyPath = (
  * @param json Source data object
  * @param path Dot-separated path to resolve
  */
-const getValueByPath = (json: Record<string, unknown>, path: string): unknown => {
+const getValueByPath = (
+	json: Record<string, unknown>,
+	path: string,
+): unknown => {
 	if (Object.prototype.hasOwnProperty.call(json, path)) {
 		return json[path];
 	}
 
 	const prefix = path + ".";
-	const nestedEntries = Object.entries(json).filter(([k]) => k.startsWith(prefix));
+	const nestedEntries = Object.entries(json).filter(([k]) =>
+		k.startsWith(prefix),
+	);
 
 	if (nestedEntries.length > 0) {
 		const nested: Record<string, any> = {};
 		nestedEntries.forEach(([k, v]) => {
 			const suffix = k.slice(prefix.length);
-			suffix.split(".").reduce(
-				(acc: Record<string, any>, part, index, parts) =>
-					acc[part] || (acc[part] = index === parts.length - 1 ? v : {}),
-				nested,
-			);
+			suffix
+				.split(".")
+				.reduce(
+					(acc: Record<string, any>, part, index, parts) =>
+						acc[part] || (acc[part] = index === parts.length - 1 ? v : {}),
+					nested,
+				);
 		});
 		return nested;
 	}
@@ -172,7 +201,11 @@ const getValueByPath = (json: Record<string, unknown>, path: string): unknown =>
 		const remainingParts = parts.slice(flatKeyMatch.split(".").length);
 
 		for (const part of remainingParts) {
-			if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
+			if (
+				current &&
+				typeof current === "object" &&
+				part in (current as Record<string, unknown>)
+			) {
 				current = (current as Record<string, unknown>)[part];
 			} else {
 				return undefined;
@@ -208,7 +241,10 @@ const isPointInSelection = (doc: Document, x: number, y: number): boolean => {
  * Detects the key-value pair under the cursor in the Table view.
  * @param element The clicked element
  */
-const detectTableSelection = (doc: Document, element: HTMLElement): string | null => {
+const detectTableSelection = (
+	doc: Document,
+	element: HTMLElement,
+): string | null => {
 	const tr = element.closest("tr");
 	if (tr) {
 		const cells = Array.from(tr.querySelectorAll("td"));
@@ -231,10 +267,17 @@ const detectTableSelection = (doc: Document, element: HTMLElement): string | nul
  * @param element The clicked element
  * @param json The source JSON object
  */
-const detectTreeSelection = (doc: Document, element: HTMLElement, json: Record<string, unknown> | null): string | null => {
-	let treeLabel = element.classList.contains(s.label) || element.classList.contains(s.clickableLabel)
-		? element
-		: (element.closest(`.${s.label}`) ?? element.closest(`.${s.clickableLabel}`));
+const detectTreeSelection = (
+	doc: Document,
+	element: HTMLElement,
+	json: Record<string, unknown> | null,
+): string | null => {
+	let treeLabel =
+		element.classList.contains(s.label) ||
+		element.classList.contains(s.clickableLabel)
+			? element
+			: (element.closest(`.${s.label}`) ??
+				element.closest(`.${s.clickableLabel}`));
 
 	if (!treeLabel) {
 		const node = element.closest(`.${s.node}`);
@@ -244,11 +287,18 @@ const detectTreeSelection = (doc: Document, element: HTMLElement, json: Record<s
 	}
 
 	if (treeLabel && json) {
-		const path = getTreeKeyPath(treeLabel, s.label, s.clickableLabel, s.node, s.basic);
+		const path = getTreeKeyPath(
+			treeLabel,
+			s.label,
+			s.clickableLabel,
+			s.node,
+			s.basic,
+		);
 		if (path) {
 			const value = getValueByPath(json, path);
 			if (value !== undefined) {
-				const strValue = typeof value === "object" ? JSON.stringify(value) : String(value);
+				const strValue =
+					typeof value === "object" ? JSON.stringify(value) : String(value);
 				const nodeContainer = treeLabel.closest(`.${s.node}`) as HTMLElement;
 				if (nodeContainer) {
 					const selection = doc.defaultView?.getSelection();
@@ -272,7 +322,12 @@ const detectTreeSelection = (doc: Document, element: HTMLElement, json: Record<s
  * @param x Client X
  * @param y Client Y
  */
-const detectRawSelection = (doc: Document, element: HTMLElement, x: number, y: number): string | null => {
+const detectRawSelection = (
+	doc: Document,
+	element: HTMLElement,
+	x: number,
+	y: number,
+): string | null => {
 	const highlighter = element.closest(`.${s.highlighter}`) as HTMLElement;
 	const codeEl = highlighter.querySelector("code, pre") as HTMLElement;
 
@@ -386,7 +441,11 @@ const detectSelectionAtPoint = (
 
 	// 2. Tree Handling
 	if (element.closest(`.${s.container}`) || element.closest(`.${s.node}`)) {
-		return detectTreeSelection(doc, element, json as Record<string, unknown> | null);
+		return detectTreeSelection(
+			doc,
+			element,
+			json as Record<string, unknown> | null,
+		);
 	}
 
 	// 3. Raw Handling
@@ -405,7 +464,9 @@ const detectSelectionAtPoint = (
  * Builds a { key: value } object from selected cells in the table view.
  * Returns null when the current selection does not intersect the event table.
  */
-const getSelectedTableKeyValueObject = (doc: Document): Record<string, string> | null => {
+const getSelectedTableKeyValueObject = (
+	doc: Document,
+): Record<string, string> | null => {
 	const selection = doc.defaultView?.getSelection();
 	if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
 		return null;
@@ -431,8 +492,8 @@ const getSelectedTableKeyValueObject = (doc: Document): Record<string, string> |
 		return null;
 	}
 
-	const headerCells = Array.from(table.querySelectorAll("thead th")).map((header) =>
-		header.textContent?.trim().toLowerCase() ?? "",
+	const headerCells = Array.from(table.querySelectorAll("thead th")).map(
+		(header) => header.textContent?.trim().toLowerCase() ?? "",
 	);
 
 	let keyIndex = headerCells.indexOf("key");
@@ -452,7 +513,9 @@ const getSelectedTableKeyValueObject = (doc: Document): Record<string, string> |
 	const rows = new Set(
 		selectedCells
 			.map((cell) => cell.closest("tr"))
-			.filter((row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement),
+			.filter(
+				(row): row is HTMLTableRowElement => row instanceof HTMLTableRowElement,
+			),
 	);
 
 	rows.forEach((row) => {
@@ -495,7 +558,11 @@ export function DisplayEventDialog({
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 	const treeContextPathRef = useRef<string | null>(null);
-	const [treeTooltip, setTreeTooltip] = useState<{ path: string; x: number; y: number } | null>(null);
+	const [treeTooltip, setTreeTooltip] = useState<{
+		path: string;
+		x: number;
+		y: number;
+	} | null>(null);
 	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
@@ -525,10 +592,7 @@ export function DisplayEventDialog({
 	const loadEvent = useCallback(async () => {
 		const opId = Doc.Entity.operationId(app, event);
 		if (!opId) return;
-		const detailed = await Info.query_single_id(
-			event._id,
-			opId,
-		);
+		const detailed = await Info.query_single_id(event._id, opId);
 		setJSON(prepareEventJson(detailed));
 	}, [event, app, Info]);
 
@@ -539,7 +603,10 @@ export function DisplayEventDialog({
 	// Global selection tracker
 	useEffect(() => {
 		const handleSelectionChange = () => {
-			const text = currentDocument.defaultView?.getSelection()?.toString().trim();
+			const text = currentDocument.defaultView
+				?.getSelection()
+				?.toString()
+				.trim();
 			if (text) {
 				setSelection(text);
 				if (text !== lastAutoSelectionRef.current)
@@ -548,11 +615,13 @@ export function DisplayEventDialog({
 		};
 		currentDocument.addEventListener("selectionchange", handleSelectionChange);
 		return () =>
-			currentDocument.removeEventListener("selectionchange", handleSelectionChange);
+			currentDocument.removeEventListener(
+				"selectionchange",
+				handleSelectionChange,
+			);
 	}, [currentDocument]);
 
 	useEffect(() => setSelection(""), [event._id]);
-
 
 	// --- HANDLERS: Actions ---
 
@@ -590,14 +659,23 @@ export function DisplayEventDialog({
 	const handleDownloadLogFile = useCallback(() => {
 		const storageId = json?.["gulp.storage_id"];
 		const opId = Doc.Entity.operationId(app, event);
-		if (storageId && typeof storageId === "string" && storageId.trim() !== "" && opId) {
+		if (
+			storageId &&
+			typeof storageId === "string" &&
+			storageId.trim() !== "" &&
+			opId
+		) {
 			Info.download_storage_file(storageId, opId);
 		}
 	}, [event, app, Info, json]);
 
 	const handleFocusTimeline = useCallback(() => {
 		// @ts-ignore
-		return window.focusCanvasOnEvent(event.gulp_timestamp + (file?.settings.offset || 0), false, event["gulp.source_id"]);
+		return window.focusCanvasOnEvent(
+			event.gulp_timestamp + (file?.settings.offset || 0),
+			false,
+			event["gulp.source_id"],
+		);
 	}, [event, file]);
 
 	// --- HANDLERS: Banners ---
@@ -631,35 +709,43 @@ export function DisplayEventDialog({
 		spawnBanner(<LinkFunctionality.Connect.Banner event={event} />);
 	}, [spawnBanner, event]);
 
-	const applySelectionAsFileFilter = useCallback((textSelected?: string) => {
-		if (!textSelected) return;
-		const file = Source.Entity.id(app, event["gulp.source_id"]);
-		const { filters } = Info.getQuery(file);
+	const applySelectionAsFileFilter = useCallback(
+		(textSelected?: string) => {
+			if (!textSelected) return;
+			const file = Source.Entity.id(app, event["gulp.source_id"]);
+			const { filters } = Info.getQuery(file);
 
-		const object = parseToKeyValue(textSelected);
+			const object = parseToKeyValue(textSelected);
 
-		if (Object.keys(object).length === 0) {
-			toast(`Invalid selection. Unable to add new filters`);
-			return;
-		}
+			if (Object.keys(object).length === 0) {
+				toast(`Invalid selection. Unable to add new filters`);
+				return;
+			}
 
-		const newFilters: Filter.Type[] = Object.keys(object).map((k) => ({
-			id: generateUUID<Filter.Id>(),
-			type: object[k].includes("*") || k.includes("*") ? "wildcard" : "range",
-			operator: "must",
-			field: k,
-			value: object[k],
-			enabled: true,
-		}));
+			const newFilters: Filter.Type[] = Object.keys(object).map((k) => ({
+				id: generateUUID<Filter.Id>(),
+				type: object[k].includes("*") || k.includes("*") ? "wildcard" : "range",
+				operator: "must",
+				field: k,
+				value: object[k],
+				enabled: true,
+			}));
 
-		const updatedQuery = {
-			...Info.getQuery(file),
-			filters: [...filters, ...newFilters],
-		};
+			const updatedQuery = {
+				...Info.getQuery(file),
+				filters: [...filters, ...newFilters],
+			};
 
-		toast(`Added ${newFilters.length} new filters`);
-		spawnBanner(<FilterFileBanner sources={[file]} query={updatedQuery} />);
-	}, [Info, app, event, spawnBanner]);
+			toast(`Added ${newFilters.length} new filters`);
+			spawnBanner(
+				<FilterFileBanner
+					sources={[file]}
+					query={updatedQuery}
+				/>,
+			);
+		},
+		[Info, app, event, spawnBanner],
+	);
 
 	// --- UI COMPONENTS: Sub-renders ---
 
@@ -687,9 +773,7 @@ export function DisplayEventDialog({
 		) as Record<string, unknown>;
 
 		const baseJsonStyles =
-			theme === "light" || theme === "light-old"
-				? defaultStyles
-				: darkStyles;
+			theme === "light" || theme === "light-old" ? defaultStyles : darkStyles;
 
 		const jsonStyles: StyleProps = {
 			...baseJsonStyles,
@@ -746,7 +830,10 @@ export function DisplayEventDialog({
 					<ContextMenuTrigger
 						asChild
 						onMouseDown={(e) => {
-							if (e.button === 2 && !isPointInSelection(currentDocument, e.clientX, e.clientY)) {
+							if (
+								e.button === 2 &&
+								!isPointInSelection(currentDocument, e.clientX, e.clientY)
+							) {
 								const element = currentDocument.elementFromPoint(
 									e.clientX,
 									e.clientY,
@@ -765,7 +852,10 @@ export function DisplayEventDialog({
 									if (element.closest(`.${s.highlighter}`)) {
 										const colonIndex = detected.indexOf(":");
 										if (colonIndex !== -1) {
-											treeContextPathRef.current = detected.slice(0, colonIndex).trim().replace(/^"+|"+$/g, "");
+											treeContextPathRef.current = detected
+												.slice(0, colonIndex)
+												.trim()
+												.replace(/^"+|"+$/g, "");
 											return;
 										}
 									}
@@ -775,27 +865,37 @@ export function DisplayEventDialog({
 								}
 
 								let labelEl = element
-									? (element.classList.contains(s.label) || element.classList.contains(s.clickableLabel)
+									? element.classList.contains(s.label) ||
+										element.classList.contains(s.clickableLabel)
 										? element
-										: (element.closest(`.${s.label}`) ?? element.closest(`.${s.clickableLabel}`)))
+										: (element.closest(`.${s.label}`) ??
+											element.closest(`.${s.clickableLabel}`))
 									: null;
 
 								if (!labelEl && element) {
 									const node = element.closest(`.${s.node}`);
 									if (node) {
-										labelEl = node.querySelector(`.${s.label}, .${s.clickableLabel}`);
+										labelEl = node.querySelector(
+											`.${s.label}, .${s.clickableLabel}`,
+										);
 									}
 								}
 
 								treeContextPathRef.current = labelEl
-									? getTreeKeyPath(labelEl, s.label, s.clickableLabel, s.node, s.basic)
+									? getTreeKeyPath(
+											labelEl,
+											s.label,
+											s.clickableLabel,
+											s.node,
+											s.basic,
+										)
 									: null;
 							}
 						}}
-					// onContextMenu={() => {
-					// 	const current = window.getSelection()?.toString().trim();
-					// 	if (current && current !== selection) setSelection(current);
-					// }}
+						// onContextMenu={() => {
+						// 	const current = window.getSelection()?.toString().trim();
+						// 	if (current && current !== selection) setSelection(current);
+						// }}
 					>
 						<div className={s.contextTrigger}>
 							<TabsContent
@@ -804,14 +904,22 @@ export function DisplayEventDialog({
 								onMouseMove={(e) => {
 									const target = e.target as Element;
 									const labelEl =
-										target.classList.contains(s.label) || target.classList.contains(s.clickableLabel)
+										target.classList.contains(s.label) ||
+										target.classList.contains(s.clickableLabel)
 											? target
-											: (target.closest(`.${s.label}`) ?? target.closest(`.${s.clickableLabel}`));
+											: (target.closest(`.${s.label}`) ??
+												target.closest(`.${s.clickableLabel}`));
 									if (!labelEl) {
 										setTreeTooltip(null);
 										return;
 									}
-									const path = getTreeKeyPath(labelEl, s.label, s.clickableLabel, s.node, s.basic);
+									const path = getTreeKeyPath(
+										labelEl,
+										s.label,
+										s.clickableLabel,
+										s.node,
+										s.basic,
+									);
 									setTreeTooltip({ path, x: e.clientX, y: e.clientY });
 								}}
 								onMouseLeave={() => setTreeTooltip(null)}
@@ -823,7 +931,10 @@ export function DisplayEventDialog({
 									style={jsonStyles}
 								/>
 							</TabsContent>
-							<TabsContent className={s.scrollable} value="raw">
+							<TabsContent
+								className={s.scrollable}
+								value="raw"
+							>
 								<Markdown
 									className={s.highlighter}
 									value={`\`\`\`json\n${JSON.stringify(json, null, 2)}`}
@@ -833,7 +944,11 @@ export function DisplayEventDialog({
 								value="table"
 								className={s.scrollable}
 							>
-								<Table className={s.tableView} includeIndex={false} values={tableRows} />
+								<Table
+									className={s.tableView}
+									includeIndex={false}
+									values={tableRows}
+								/>
 							</TabsContent>
 						</div>
 					</ContextMenuTrigger>
@@ -876,7 +991,8 @@ export function DisplayEventDialog({
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={() => {
-							const isManualSelection = selection !== lastAutoSelectionRef.current;
+							const isManualSelection =
+								selection !== lastAutoSelectionRef.current;
 							if (isManualSelection) {
 								handleEnrich({ key: "selection", value: selection });
 							} else {
@@ -929,8 +1045,14 @@ export function DisplayEventDialog({
 					dir="column"
 					gap={12}
 				>
-					<Icon name="CircleAlert" size={48} style={{ color: "var(--red-500)" }} />
-					<p style={{ color: "var(--red-500)", fontWeight: "bold" }}>Source was deleted</p>
+					<Icon
+						name="CircleAlert"
+						size={48}
+						style={{ color: "var(--red-500)" }}
+					/>
+					<p style={{ color: "var(--red-500)", fontWeight: "bold" }}>
+						Source was deleted
+					</p>
 					<p style={{ opacity: 0.6 }}>This event is no longer available.</p>
 				</Stack>
 			</Dialog>
@@ -982,17 +1104,19 @@ export function DisplayEventDialog({
 								Enrich
 							</Button>
 							{Object.values(extensions).some((ext) =>
-								Array.isArray(ext.type) ? ext.type.includes("send_data") : (ext.type as any) === "send_data",
+								Array.isArray(ext.type)
+									? ext.type.includes("send_data")
+									: (ext.type as any) === "send_data",
 							) && (
-									<Button
-										onClick={handleSendData}
-										variant="secondary"
-										title="Send IOCs to other systems"
-										icon="Send"
-									>
-										Send Data
-									</Button>
-								)}
+								<Button
+									onClick={handleSendData}
+									variant="secondary"
+									title="Send IOCs to other systems"
+									icon="Send"
+								>
+									Send Data
+								</Button>
+							)}
 							<Button
 								onClick={handleConnectLink}
 								variant="secondary"
@@ -1032,7 +1156,8 @@ export function DisplayEventDialog({
 								zIndex: 9999,
 								maxWidth: 400,
 								wordBreak: "break-all",
-								boxShadow: "var(--shadow-border), 0 8px 20px var(--gray-alpha-500)",
+								boxShadow:
+									"var(--shadow-border), 0 8px 20px var(--gray-alpha-500)",
 							}}
 						>
 							{treeTooltip.path}
@@ -1067,23 +1192,21 @@ export function DisplayEventDialog({
 							onClick={() => {
 								const opId = Doc.Entity.operationId(app, event);
 								if (!opId) return;
-								setIsFlagged(
-									Doc.Entity.flag.toggle(
-										event._id,
-										opId,
-									),
-								);
+								setIsFlagged(Doc.Entity.flag.toggle(event._id, opId));
 							}}
 							variant="secondary"
 							icon={isFlagged ? "FlagOff" : "Flag"}
-							disabled={
-								(() => {
-									const opId = Doc.Entity.operationId(app, event);
-									return (opId && Doc.Entity.flag.isLimitReached(
-										Doc.Entity.flag.getList(opId),
-									) && !isFlagged) || !opId;
-								})()
-							}
+							disabled={(() => {
+								const opId = Doc.Entity.operationId(app, event);
+								return (
+									(opId &&
+										Doc.Entity.flag.isLimitReached(
+											Doc.Entity.flag.getList(opId),
+										) &&
+										!isFlagged) ||
+									!opId
+								);
+							})()}
 							title="Flag event"
 						/>
 					</Stack>
@@ -1181,12 +1304,9 @@ export function EventIndicator({
 	const background = useMemo(() => {
 		const range =
 			RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;
-		const code = Refractor.any.toNumber(
-			Refractor.get(event, file.settings.field),
-		);
 		return Color.Entity.gradient(
 			file.settings.render_color_palette,
-			code,
+			event.color_code,
 			range,
 		);
 	}, [event, app.target.files, file]);
@@ -1218,25 +1338,30 @@ export function EventIndicator({
 			{...props}
 		>
 			<hr />
-			<p style={{ color: indicatorTextColor, fontSize: `${indicatorFontSize}px` }}>
+			<p
+				style={{
+					color: indicatorTextColor,
+					fontSize: `${indicatorFontSize}px`,
+				}}
+			>
 				{indicatorLabel}
 			</p>
 			{Doc.Entity.flag.isFlagged(
 				event._id,
 				Doc.Entity.operationId(app, event),
 			) && (
-					<Stack
-						ai="center"
-						jc="center"
-						className={cn(s.marker, s.flagged)}
-						pos="absolute"
-					>
-						<Icon
-							size={8}
-							name="Flag"
-						/>
-					</Stack>
-				)}
+				<Stack
+					ai="center"
+					jc="center"
+					className={cn(s.marker, s.flagged)}
+					pos="absolute"
+				>
+					<Icon
+						size={8}
+						name="Flag"
+					/>
+				</Stack>
+			)}
 			{notes.length > 0 && (
 				<Stack
 					ai="center"

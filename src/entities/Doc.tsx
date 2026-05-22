@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Icon } from "@impactium/icons";
 import { Logger } from "@/dto/Logger.class";
 import { DataStore } from "@/store/DataStore";
+import { Refractor } from "@/ui/utils";
 
 export namespace Doc {
 	export const name = "Doc";
@@ -24,6 +25,7 @@ export namespace Doc {
 		gulp_timestamp: number;
 		"gulp.source_id": Source.Id;
 		"gulp.event_code": number;
+		color_code: number;
 	}
 
 	export type Minified = Pick<Doc.Type, "_id" | "gulp.source_id">;
@@ -76,11 +78,17 @@ export namespace Doc {
 		};
 
 		/** Returns the Operation.Id for a doc by looking it up through its source. */
-		public static operationId = (app: App.Type, doc: Doc.Type): Operation.Id | undefined =>
+		public static operationId = (
+			app: App.Type,
+			doc: Doc.Type,
+		): Operation.Id | undefined =>
 			Source.Entity.id(app, doc["gulp.source_id"])?.operation_id;
 
 		/** Returns the Context.Id for a doc by looking it up through its source. */
-		public static contextId = (app: App.Type, doc: Doc.Type): Context.Id | undefined =>
+		public static contextId = (
+			app: App.Type,
+			doc: Doc.Type,
+		): Context.Id | undefined =>
 			Source.Entity.id(app, doc["gulp.source_id"])?.context_id;
 
 		/**
@@ -184,7 +192,7 @@ export namespace Doc {
 					DataStore.markDirty();
 				}
 			});
-			
+
 			return DataStore.events;
 		};
 
@@ -265,7 +273,7 @@ export namespace Doc {
 		public static links = (_app: App.Type, event: Doc.Type) =>
 			DataStore.links.filter((l) => l.doc_ids.some((doc) => doc === event._id));
 
-		public static normalize = (docs: Doc.Type[]): Doc.Type[] => {
+		public static normalize = (docs: Doc.Type[], field: string): Doc.Type[] => {
 			for (let i = 0; i < docs.length; i++) {
 				const raw = docs[i] as any;
 				docs[i] = {
@@ -276,6 +284,7 @@ export namespace Doc {
 					),
 					"gulp.source_id": raw["gulp.source_id"],
 					"gulp.event_code": raw["gulp.event_code"],
+					color_code: Refractor.any.toNumber(Refractor.get(raw, field)),
 				} as Doc.Type;
 			}
 			return docs;

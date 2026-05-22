@@ -102,8 +102,11 @@ export class DefaultEngine implements Engine.Interface<any> {
 
 			const x = this.renderer.getPixelPosition(timestamp);
 
-			const code = Refractor.any.toNumber(Refractor.get(events[i], field));
-			this.renderer.ctx.fillStyle = Color.Entity.gradient(palette, code, range);
+			this.renderer.ctx.fillStyle = Color.Entity.gradient(
+				palette,
+				events[i].color_code,
+				range,
+			);
 			this.renderer.ctx.fillRect(x, y, 1, 47);
 
 			// SKIP-AHEAD: events are descending in timestamp, so as i increases, x decreases.
@@ -161,9 +164,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 					};
 
 		for (let i = skip; i < events.length; i++) {
-			const value = Refractor.any.toNumber(
-				Refractor.get(events[i], file.settings.field),
-			);
+			const value = events[i].color_code;
 			if (value > range.max) range.max = value;
 			if (value < range.min) range.min = value;
 		}

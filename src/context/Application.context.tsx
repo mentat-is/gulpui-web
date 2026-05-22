@@ -24,7 +24,10 @@ import { Operation } from "@/entities/Operation";
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
-	const [banner, setBanner] = useState<{ node: ReactNode; target: string } | null>(null);
+	const [banner, setBanner] = useState<{
+		node: ReactNode;
+		target: string;
+	} | null>(null);
 	const [dialog, setDialog] = useState<ReactNode>(null);
 	const [hintOpen, setHintOpen] = useState(false);
 	const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
@@ -117,7 +120,10 @@ function _({ children }: { children: ReactNode }) {
 		const collabUpdateCallback = (message: any) => {
 			switch (message.payload.obj.type) {
 				case "note": {
-					const note: Note.Type = Note.Entity.normalize_note(message.payload.obj);
+					const note: Note.Type = Note.Entity.normalize_note(
+						app,
+						message.payload.obj,
+					);
 					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
 					if (idx >= 0) {
 						DataStore.notes[idx] = note;

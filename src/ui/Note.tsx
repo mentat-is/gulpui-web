@@ -19,7 +19,7 @@ import { RenderEngine } from "@/class/RenderEngine";
 import { useMemo, useState } from "react";
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip";
 
 export namespace NotePoint {
 	export interface Props extends Omit<
@@ -52,7 +52,8 @@ export namespace NotePoint {
 					toast.error("Event could not be retrieved");
 					return;
 				}
-				const [event] = Doc.Entity.normalize([fetched]);
+				let field = Source.Entity.id(Info.app, note.source_id).settings.field;
+				const [event] = Doc.Entity.normalize([fetched], field);
 				Info.events_add([event]);
 
 				const sourceId = event["gulp.source_id"];
@@ -60,10 +61,10 @@ export namespace NotePoint {
 				const updatedFiles = app.target.files.map((f) =>
 					f.id === sourceId
 						? {
-							...f,
-							selected: true,
-							total: Math.max(f.total ?? 0, loadedCount),
-						}
+								...f,
+								selected: true,
+								total: Math.max(f.total ?? 0, loadedCount),
+							}
 						: f,
 				);
 				Info.setInfoByKey(updatedFiles, "target", "files");
@@ -93,8 +94,8 @@ export namespace NotePoint {
 			>
 				<p>
 					The event linked to note <code>{note.name}</code> is not currently
-					loaded in the timeline (it may have been filtered out). Fetch it
-					from the server to view its details?
+					loaded in the timeline (it may have been filtered out). Fetch it from
+					the server to view its details?
 				</p>
 			</UIBanner>
 		);
@@ -110,7 +111,6 @@ export namespace NotePoint {
 	}: Combination.Props) {
 		const { app, Info } = Application.use();
 
-
 		return (
 			<Stack
 				className={cn(
@@ -125,7 +125,11 @@ export namespace NotePoint {
 				{...props}
 			>
 				<p>{formatTimestampToReadableString(note.doc.gulp_timestamp)}</p>
-				<Icon name={Note.Entity.icon(note)} style={{ color: note.color }} size={16} />
+				<Icon
+					name={Note.Entity.icon(note)}
+					style={{ color: note.color }}
+					size={16}
+				/>
 				<p style={{ color: note.color }}>{note.name}</p>
 				<Tooltip>
 					<TooltipTrigger asChild>
@@ -165,7 +169,7 @@ export namespace NotePoint {
 				/>
 				<Button
 					icon="Trash2"
-					onClick= {() => onDeleteClick?.(note)}//{() => Info.note_delete(note)}
+					onClick={() => onDeleteClick?.(note)} //{() => Info.note_delete(note)}
 					variant="glass"
 				/>
 			</Stack>

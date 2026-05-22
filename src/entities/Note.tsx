@@ -84,15 +84,22 @@ export namespace Note {
 			Note.Entity[CacheKey].clear();
 		};
 
-		public static normalize = (notes: Note.Type[]): Note.Type[] => {
+		public static normalize = (
+			app: App.Type,
+			notes: Note.Type[],
+		): Note.Type[] => {
 			for (let i = 0; i < notes.length; i++) {
-				notes[i] = this.normalize_note(notes[i]);
+				notes[i] = this.normalize_note(app, notes[i]);
 			}
 			return notes;
 		};
 
-		public static normalize_note = (note: Note.Type): Note.Type => {
-			note.doc = Doc.Entity.normalize([note.doc])[0];
+		public static normalize_note = (
+			app: App.Type,
+			note: Note.Type,
+		): Note.Type => {
+			let field = Source.Entity.id(app, note.source_id).settings.field;
+			note.doc = Doc.Entity.normalize([note.doc], field)[0];
 			return note;
 		};
 
