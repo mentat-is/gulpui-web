@@ -46,7 +46,7 @@ export namespace Source {
 
   type SampleData = {
       min_timestamp: number;
-      max_timesamp: number;
+      max_timestamp: number;
       sample: number;
     }
 
@@ -502,7 +502,7 @@ export namespace Source {
         const index = sortedKeys[i];
         results.push({
           min_timestamp: minTime + index * freq,
-          max_timesamp: minTime + (index + 1) * freq,
+          max_timestamp: minTime + (index + 1) * freq,
           sample: bucketMap.get(index)!
         });
       }

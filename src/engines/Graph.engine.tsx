@@ -45,18 +45,21 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
 
     const freq = file.settings.frequency_sample;
     const frame = this.renderer.info.app.timeline.frame;
-    const timePer8Px = 10 * (frame.max - frame.min) / this.renderer.info.width;
+    const timePer10Px = 10 * (frame.max - frame.min) / this.renderer.info.width;
     
-    const dynamicFrequency = Math.max(freq, timePer8Px);
+    const dynamicFrequency = Math.max(freq, timePer10Px);
     
     const dynamicBuckets = new Map<number, number>();
     let maxHeight = 0;
     
+    const offset = file.timestamp.min;
+    
     for (let i = 0; i < sampleData.length; i++) {
-        const bucketIndex = Math.floor(sampleData[i].min_timestamp / dynamicFrequency);
-        const newCount = (dynamicBuckets.get(bucketIndex) || 0) + sampleData[i].sample;
-        dynamicBuckets.set(bucketIndex, newCount);
-        if (newCount > maxHeight) maxHeight = newCount;
+      const relativeTs = sampleData[i].min_timestamp - offset;
+      const bucketIndex = Math.floor(relativeTs / dynamicFrequency);
+      const newCount = (dynamicBuckets.get(bucketIndex) || 0) + sampleData[i].sample;
+      dynamicBuckets.set(bucketIndex, newCount);
+      if (newCount > maxHeight) maxHeight = newCount;
     }
     
     if (maxHeight === 0) return;
@@ -64,12 +67,13 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     const minLimit = this.renderer.limits.min;
     const maxLimit = this.renderer.limits.max;
 
-    const startBucketIdx = Math.floor(minLimit / dynamicFrequency) - 1;
-    const endBucketIdx = Math.floor(maxLimit / dynamicFrequency) + 1;
+    const startBucketIdx = Math.floor((minLimit - offset) / dynamicFrequency) - 1;
+    const endBucketIdx = Math.floor((maxLimit - offset) / dynamicFrequency) + 1;
 
     // Strict bounds to file's timeline
-    const fileStartBucketIdx = Math.floor(file.timestamp.min / dynamicFrequency);
-    const fileEndBucketIdx = Math.floor(file.timestamp.max / dynamicFrequency);
+    const fileStartBucketIdx = 0; // Relative to offset, the file starts at bucket 0
+    // Use Math.ceil(x) - 1 to find the precise ending bucket index and avoid an extra trailing zero-bucket if max lands perfectly on a boundary
+    const fileEndBucketIdx = Math.max(0, Math.ceil((file.timestamp.max - offset) / dynamicFrequency) - 1);
 
     const actualStartBucketIdx = Math.max(startBucketIdx, fileStartBucketIdx);
     const actualEndBucketIdx = Math.min(endBucketIdx, fileEndBucketIdx);
@@ -77,11 +81,29 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
     let prevDot: Dot | null = null;
     
     for (let i = actualStartBucketIdx; i <= actualEndBucketIdx; i++) {
-      const count = dynamicBuckets.get(i) || 0;
+      let centerTimestamp = offset + i * dynamicFrequency + dynamicFrequency / 2;
       
-      const centerTimestamp = i * dynamicFrequency + dynamicFrequency / 2;
+      // Strictly clamp the rendered dot to the file's absolute boundaries so it never spills over the file's start/end
+      if (centerTimestamp < file.timestamp.min) centerTimestamp = file.timestamp.min;
+      if (centerTimestamp > file.timestamp.max) centerTimestamp = file.timestamp.max;
+
       const x = this.renderer.getPixelPosition(centerTimestamp);
       
+      //X-AXIS VIEWPORT CULLING
+      if(x < 0 - dynamicFrequency || x > this.renderer.ctx.canvas.width + dynamicFrequency) continue;
+      //Y-AXIS VIEWPORT CULLING
+      if (y < -48 || y > this.renderer.ctx.canvas.height + 48) continue;
+      
+      const count = dynamicBuckets.get(i) || 0;
+
+      // DRAW line bucket
+      this.renderer.ctx.strokeStyle = Color.Themer.theme.BORDER;
+      let startLine = this.renderer.getPixelPosition(offset + i * dynamicFrequency);
+      this.renderer.ctx.beginPath();
+      this.renderer.ctx.moveTo(startLine, y);
+      this.renderer.ctx.lineTo(startLine, y + 48);
+      this.renderer.ctx.stroke();
+
       const currentDot = this.drawDot(y, count, maxHeight, file, x);
       if (prevDot) {
         this.renderer.connection([prevDot, currentDot]);
@@ -123,7 +145,7 @@ export class GraphEngine implements Engine.Interface<typeof GraphEngine.target> 
       
       // calculate the x position for the buckets
       let minStamp = lastBucket != null ? lastBucket["min_timestamp"]: bucket.min_timestamp;
-      let maxStamp = bucket.max_timesamp
+      let maxStamp = bucket.max_timestamp
       
       let x = this.renderer.getPixelPosition(Math.floor(minStamp + (maxStamp-minStamp)/2));
       if (lastX == x || Math.abs(lastX-x)<=8) {
