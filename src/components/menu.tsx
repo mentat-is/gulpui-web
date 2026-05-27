@@ -115,20 +115,25 @@ export function Menu() {
 				ai={isOpen ? "stretch" : "flex-start"}
 				gap={12}
 			>
-				<Button
-					variant="secondary"
-					title={isOpen ? "Close Menu" : "Expand Menu"}
-					icon="MenuAlt"
-					size="md"
-					className={cn(s.actionBtn, isOpen && s.actionBtnExpanded)}
-					onClick={() => setIsOpen(!isOpen)}
-				>
-					{isOpen && (
-						<span className={s.btnLabel}>
-							{isOpen ? "Close Menu" : "Expand Menu"}
-						</span>
-					)}
-				</Button>
+				{isOpen && (
+					<Button
+						variant="secondary"
+						title={isOpen ? "Close Menu" : "Expand Menu"}
+						icon="ArrowLeft"
+						size="md"
+						onClick={() => setIsOpen(!isOpen)}
+					></Button>
+				)}
+				{!isOpen && (
+					<Button
+						variant="secondary"
+						title={isOpen ? "Close Menu" : "Expand Menu"}
+						icon="MenuAlt"
+						size="md"
+						className={cn(s.actionBtn, isOpen && s.actionBtnExpanded)}
+						onClick={() => setIsOpen(!isOpen)}
+					></Button>
+				)}
 
 				<Stack
 					ai={isOpen ? "stretch" : "center"}
