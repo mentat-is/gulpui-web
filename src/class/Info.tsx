@@ -202,6 +202,7 @@ export class Info implements InfoProps {
 	setInfo: SetState<App.Type>;
 	timeline: React.RefObject<HTMLDivElement>;
 
+	public readonly MIN_MS_PER_PIXEL = 1;
 	private static _latestInstance: Info | null = null;
 	public ingestionProgress = new Map<Source.Id, number>();
 	public activeUploads = new Map<
@@ -2969,8 +2970,14 @@ export class Info implements InfoProps {
 	};
 
 	setTimelineScale = (scale: number) => {
+		const timeRange = this.app.timeline.frame.max - this.app.timeline.frame.min;
+		const canvasWidth = document.getElementById("canvas")?.clientWidth || 1000;
+		const maxScale =
+			timeRange > 0
+				? timeRange / (this.MIN_MS_PER_PIXEL * canvasWidth)
+				: 9999999;
 		return this.setInfoByKey(
-			Math.max(0.01, Math.min(9999999, scale)),
+			Math.max(0.01, Math.min(maxScale, scale)),
 			"timeline",
 			"scale",
 		);

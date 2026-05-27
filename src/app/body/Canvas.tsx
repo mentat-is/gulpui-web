@@ -51,14 +51,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		null as unknown as HTMLCanvasElement,
 	);
 	const wrapper_ref = useRef<HTMLDivElement>(null as unknown as HTMLDivElement);
-	const {
-		app,
-		banner,
-		spawnDialog,
-		Info,
-		dialog,
-		highlightsOverlay,
-	} =
+	const { app, banner, spawnDialog, Info, dialog, highlightsOverlay } =
 		Application.use();
 	const { x: scrollX, y: scrollY } = useScroll();
 	const [target, setTarget] = useState<Source.Type | null>(null);
@@ -155,7 +148,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 			scrollY: currentScrollY,
 			mouseX: mouseXRef.current,
 			mouseY: mouseYRef.current,
-			visibleSources: Source.Entity.selected(app).filter((file) => app.hidden.filesWithNoEvents ? Doc.Entity.get(app, file.id).length > 0 : true),
+			visibleSources: Source.Entity.selected(app).filter((file) =>
+				app.hidden.filesWithNoEvents
+					? Doc.Entity.get(app, file.id).length > 0
+					: true,
+			),
 		});
 
 		const files = render.visibleSources;
@@ -395,7 +392,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 		};
 		const index = Math.floor(click.y / 48);
 
-		const files = Source.Entity.selected(app).filter((file) => app.hidden.filesWithNoEvents ? Doc.Entity.get(app, file.id).length > 0 : true);
+		const files = Source.Entity.selected(app).filter((file) =>
+			app.hidden.filesWithNoEvents
+				? Doc.Entity.get(app, file.id).length > 0
+				: true,
+		);
 		const file = files[index];
 
 		if (!file) return;
@@ -492,7 +493,14 @@ export function Canvas({ timeline }: Canvas.Props) {
 					? Info.decreasedTimelineScale()
 					: Info.increasedTimelineScale();
 
-			newScale = Math.max(0.01, Math.min(9999999, newScale));
+			const timeRange =
+				Info.app.timeline.frame.max - Info.app.timeline.frame.min;
+			const canvasWidth = wrapper_ref.current.clientWidth || 1000;
+			const maxScale =
+				timeRange > 0
+					? timeRange / (Info.MIN_MS_PER_PIXEL * canvasWidth)
+					: 9999999;
+			newScale = Math.max(0.01, Math.min(maxScale, newScale));
 
 			if (newScale === oldScale) return;
 
@@ -523,7 +531,9 @@ export function Canvas({ timeline }: Canvas.Props) {
 	useEffect(() => {
 		const el = wrapper_ref.current;
 		if (!el) return;
-		const observer = new ResizeObserver(() => { DataStore.markDirty(); });
+		const observer = new ResizeObserver(() => {
+			DataStore.markDirty();
+		});
 		observer.observe(el);
 		return () => {
 			observer.disconnect();
@@ -683,7 +693,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 				Math.round(
 					((timestamp - Info.app.timeline.frame.min) /
 						(Info.app.timeline.frame.max - Info.app.timeline.frame.min)) *
-					Info.width,
+						Info.width,
 				) - scrollXRef.current
 			);
 		},
@@ -700,15 +710,25 @@ export function Canvas({ timeline }: Canvas.Props) {
 				(event.clientY +
 					scrollYRef.current -
 					timeline.current.getBoundingClientRect().top) /
-				48,
+					48,
 			);
 
-			const files = Source.Entity.selected(Info.app).filter((file) => Info.app.hidden.filesWithNoEvents ? Doc.Entity.get(Info.app, file.id).length > 0 : true);
+			const files = Source.Entity.selected(Info.app).filter((file) =>
+				Info.app.hidden.filesWithNoEvents
+					? Doc.Entity.get(Info.app, file.id).length > 0
+					: true,
+			);
 			const file = files[index] ?? null;
 
 			setTarget(file);
 		},
-		[setTarget, timeline, app.timeline.filter, app.target.files, app.hidden.filesWithNoEvents],
+		[
+			setTarget,
+			timeline,
+			app.timeline.filter,
+			app.target.files,
+			app.hidden.filesWithNoEvents,
+		],
 	);
 
 	const Menu = useCallback(() => {
@@ -723,7 +743,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 		if (!canvas_ref.current) {
 			return 1920;
 		}
-		const amount = Source.Entity.selected(app).filter((file) => app.hidden.filesWithNoEvents ? Doc.Entity.get(app, file.id).length > 0 : true).length;
+		const amount = Source.Entity.selected(app).filter((file) =>
+			app.hidden.filesWithNoEvents
+				? Doc.Entity.get(app, file.id).length > 0
+				: true,
+		).length;
 
 		return canvas_ref.current.height * 2 + amount * 48 - 80;
 	}, [app.target.files, app.timeline.filter, canvas_ref]);
