@@ -232,8 +232,10 @@ export class Info implements InfoProps {
 		const files: Source.Type[] = Parser.array(_ids).map((id) =>
 			Source.Entity.id(this.app, id),
 		);
-
-		if (this.app.timeline.frame.min === 0) {
+		if (
+			this.app.timeline.frame.min === 0 &&
+			this.app.timeline.frame.max === 0
+		) {
 			this.setTimelineFrame({
 				min: Math.min(...files.map((f) => f.timestamp.min)),
 				max: Math.max(...files.map((f) => f.timestamp.max)),
