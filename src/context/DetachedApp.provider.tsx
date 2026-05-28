@@ -14,7 +14,7 @@
  * PERFORMANCE: The main tab no longer reconciles detached window DOM. State changes
  * in the main tab only reach detached windows via lightweight BroadcastChannel messages.
  */
-import {
+import React, {
   useState,
   useEffect,
   useCallback,
@@ -32,6 +32,7 @@ import { RenderEngine } from '@/class/RenderEngine'
 import { Color } from '@/entities/Color'
 import { Operation } from '@/entities/Operation'
 import { Source } from '@/entities/Source'
+import { Request } from '@/entities/Request'
 import { Extension } from '@/context/Extension.context'
 
 export namespace DetachedApp {
@@ -59,7 +60,7 @@ export function DetachedAppProvider({
   mainSpawnBanner,
   children,
 }: DetachedApp.ProviderProps) {
-  const [app, setInfo] = useState<App.Type>(initialApp)
+  const [app, setRawInfo] = useState<App.Type>(initialApp)
   const [banner, setBanner] = useState<{ node: ReactNode; target: string } | null>(null)
   const [dialog, setDialog] = useState<ReactNode>(null)
   const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement)
@@ -70,6 +71,47 @@ export function DetachedAppProvider({
     DataStore.notes = [...initialNotes]
   }, []) // Only on mount
 
+  /**
+   * Authoritative loadings ref — prevents loading maps from being lost
+   * to concurrent state interleaving between setLoading, events_reset_in_file,
+   * and other setInfoByKey calls during the refetch flow.
+   *
+   * This ref is the single source of truth for which sources are currently loading.
+   * It is updated BEFORE the React state and re-applied AFTER every state update.
+   */
+  const loadingsRef = useRef<{
+    byRequestId: Map<Request.Id, Source.Id>;
+    byFileId: Map<Source.Id, Request.Id>;
+  }>({
+    byRequestId: new Map(),
+    byFileId: new Map(),
+  })
+
+  /**
+   * Wrapped setInfo that re-applies authoritative loadings after every state update.
+   * This ensures that concurrent setInfoByKey calls (e.g. from events_reset_in_file)
+   * cannot overwrite the loading maps set by setLoading.
+   */
+  const setInfo = useCallback(
+    (action: React.SetStateAction<App.Type>) => {
+      setRawInfo((prev) => {
+        const next = typeof action === 'function' ? action(prev) : action
+        // Re-apply authoritative loadings to prevent state interleaving
+        return {
+          ...next,
+          general: {
+            ...next.general,
+            loadings: {
+              byRequestId: new Map(loadingsRef.current.byRequestId),
+              byFileId: new Map(loadingsRef.current.byFileId),
+            },
+          },
+        }
+      })
+    },
+    []
+  )
+
   // Create a stable Info instance for the detached window
   const infoRef = useRef<Info | null>(null)
   if (!infoRef.current) {
@@ -79,6 +121,31 @@ export function DetachedAppProvider({
     infoRef.current.setInfo = setInfo
   }
   const instance = infoRef.current
+
+  /**
+   * Patch setLoading/delLoading on the detached Info instance to keep
+   * the authoritative loadingsRef in sync. This ensures the loading
+   * state persists across concurrent React state updates.
+   */
+  if (!(infoRef.current as any)._detachedPatched) {
+    const origSetLoading = instance.setLoading.bind(instance)
+    instance.setLoading = (reqId: Request.Id, fileId: Source.Id) => {
+      loadingsRef.current.byRequestId.set(reqId, fileId)
+      loadingsRef.current.byFileId.set(fileId, reqId)
+      origSetLoading(reqId, fileId)
+    }
+
+    const origDelLoading = instance.delLoading.bind(instance)
+    instance.delLoading = (reqId: Request.Id) => {
+      loadingsRef.current.byRequestId.delete(reqId)
+      const fileId = [...loadingsRef.current.byFileId.entries()]
+        .find(([, v]) => v === reqId)?.[0]
+      if (fileId) loadingsRef.current.byFileId.delete(fileId)
+      origDelLoading(reqId)
+    }
+
+    ;(infoRef.current as any)._detachedPatched = true
+  }
 
   // Listen for incoming BroadcastChannel messages from the main tab
   useEffect(() => {
