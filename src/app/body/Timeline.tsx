@@ -1,99 +1,139 @@
-import { Application } from '@/context/Application.context';
-import { useScroll, scrollStore } from '@/store/scroll.store';
-import { Algorhithm, getTimestamp } from '@/ui/utils';
-import { Source } from '@/entities/Source';
-import { Doc } from '@/entities/Doc';
-import { Navigator } from './Navigator';
-import { Stack } from '@/ui/Stack';
-import s from '../Gulp.module.css';
-import { useEffect } from 'react';
-import { Canvas } from './Canvas';
-import { MINUTE } from '@/dto';
+import { Application } from "@/context/Application.context";
+import { useScroll, scrollStore } from "@/store/scroll.store";
+import { Algorhithm, getTimestamp } from "@/ui/utils";
+import { Source } from "@/entities/Source";
+import { Doc } from "@/entities/Doc";
+import { Navigator } from "./Navigator";
+import { Stack } from "@/ui/Stack";
+import s from "../Gulp.module.css";
+import { useEffect, useMemo } from "react";
+import { Canvas } from "./Canvas";
+import { MINUTE } from "@/dto";
+import { debounce, DebouncedFunc } from "lodash";
+import { Context } from "@/entities/Context";
 
 export function Timeline() {
-  const { app, Info, timeline } = Application.use()
-  const { x: scrollX, y: scrollY } = useScroll()
+	const { app, Info, timeline } = Application.use();
+	const { x: scrollX, y: scrollY } = useScroll();
 
-  const focusEvent = (timestamp: number, onLeft = false, file_id?: Source.Id) => {
-    const instance = getAlgothitmInstance()
+	const focusEvent = (
+		timestamp: number,
+		onLeft = false,
+		file_id?: Source.Id,
+	) => {
+		const instance = getAlgothitmInstance();
 
-    scrollStore.setScrollX(onLeft ? instance.abs_x_from_timestamp(timestamp) : instance.center_scroll_from_timestamp(timestamp))
-    if (file_id) {
-      const canvas = document.getElementById('canvas') as HTMLCanvasElement
-      if (!canvas) return
+		scrollStore.setScrollX(
+			onLeft
+				? instance.abs_x_from_timestamp(timestamp)
+				: instance.center_scroll_from_timestamp(timestamp),
+		);
+		if (file_id) {
+			const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+			if (!canvas) return;
 
-      const target = app.target.files.find(f => f.id === file_id)
-      if (!target) return
+			const target = app.target.files.find((f) => f.id === file_id);
+			if (!target) return;
 
-      // Reveal the source if it's currently unselected or excluded by the
-      // filesWithNoEvents toggle, so focusing always lands on a visible row.
-      const loadedCount = Doc.Entity.get(app, file_id).length
-      const needsReveal = !target.selected || (target.total ?? 0) === 0
-      const files = needsReveal
-        ? app.target.files.map(f =>
-          f.id === file_id
-            ? { ...f, selected: true, total: Math.max(f.total ?? 0, loadedCount, 1) }
-            : f
-        )
-        : app.target.files
+			// Reveal the source if it's currently unselected or excluded by the
+			// filesWithNoEvents toggle, so focusing always lands on a visible row.
+			const loadedCount = Doc.Entity.get(app, file_id).length;
+			const needsReveal = !target.selected || (target.total ?? 0) === 0;
+			const files = needsReveal
+				? app.target.files.map((f) =>
+						f.id === file_id
+							? {
+									...f,
+									selected: true,
+									total: Math.max(f.total ?? 0, loadedCount, 1),
+								}
+							: f,
+					)
+				: app.target.files;
 
-      if (needsReveal) Info.setInfoByKey(files, 'target', 'files')
+			if (needsReveal) Info.setInfoByKey(files, "target", "files");
 
-      // Compute the row index against the same list the renderer uses so the
-      // Y centering matches the actual rendered position. Reuse Source.Entity.selected
-      // (which applies pin order and the timeline search filter) on a synthetic app
-      // carrying the just-updated files, then apply the same loaded-events filter
-      // Canvas applies to derive visibleSources.
-      const synthApp = { ...app, target: { ...app.target, files } }
-      const visible = Source.Entity.selected(synthApp).filter(f =>
-        app.hidden.filesWithNoEvents ? Doc.Entity.get(synthApp, f.id).length > 0 : true
-      )
-      const index = visible.findIndex(s => s.id === file_id)
-      if (index === -1) return
+			// Compute the row index against the same list the renderer uses so the
+			// Y centering matches the actual rendered position. Reuse Source.Entity.selected
+			// (which applies pin order and the timeline search filter) on a synthetic app
+			// carrying the just-updated files, then apply the same loaded-events filter
+			// Canvas applies to derive visibleSources.
+			const synthApp = { ...app, target: { ...app.target, files } };
+			const visible = Source.Entity.selected(synthApp).filter((f) =>
+				app.hidden.filesWithNoEvents
+					? Doc.Entity.get(synthApp, f.id).length > 0
+					: true,
+			);
+			const index = visible.findIndex((s) => s.id === file_id);
+			if (index === -1) return;
 
-      scrollStore.setScrollY(Source.Entity.getHeight(app, file_id, 0, index) - canvas.clientHeight / 2)
-    }
-  }
+			scrollStore.setScrollY(
+				Source.Entity.getHeight(app, file_id, 0, index) -
+					canvas.clientHeight / 2,
+			);
+		}
+	};
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      Info.session_autosave();
-    }, MINUTE);
+	const debouceSessionAutoSave: DebouncedFunc<() => void> = useMemo(() => {
+		return debounce(() => {
+			console.warn("start session auto-save");
+			Info.session_autosave();
+		}, 10000);
+	}, [Info]);
 
-    return () => {
-      clearInterval(interval);
-    }
-  }, [Info]);
+	useEffect(() => {
+		debouceSessionAutoSave();
+	}, [
+		app.timeline.scale,
+		app.timeline.frame.max,
+		app.timeline.frame.min,
+		app.timeline.filter,
+		app.timeline.target,
+		app.target.filters,
+		app.hidden,
+		debouceSessionAutoSave,
+		Source.Entity.selected(app),
+		Context.Entity.selected(app),
+	]);
 
-  const getAlgothitmInstance = () => {
-    return new Algorhithm({
-      frame: app.timeline.frame,
-      scroll: {
-        x: scrollX,
-        y: scrollY,
-      },
-      width: Info.width,
-      scale: app.timeline.scale,
-    })
-  }
+	useEffect(() => {
+		return () => {
+			debouceSessionAutoSave.flush();
+		};
+	}, [debouceSessionAutoSave]);
 
-  // @ts-ignore
-  window.focusCanvasOnEvent = focusEvent
+	const getAlgothitmInstance = () => {
+		return new Algorhithm({
+			frame: app.timeline.frame,
+			scroll: {
+				x: scrollX,
+				y: scrollY,
+			},
+			width: Info.width,
+			scale: app.timeline.scale,
+		});
+	};
 
-  return (
-    <Stack
-      id="timeline"
-      className={s.timeline}
-      gap={12}
-      flex
-      dir="column"
-      ref={timeline}
-    >
-      <Canvas timeline={timeline} />
-      <Navigator
-        timeline={timeline}
-        timestamp={getTimestamp(scrollX + (timeline.current?.clientWidth || 0), Info)}
-      />
-    </Stack>
-  )
+	// @ts-ignore
+	window.focusCanvasOnEvent = focusEvent;
+
+	return (
+		<Stack
+			id="timeline"
+			className={s.timeline}
+			gap={12}
+			flex
+			dir="column"
+			ref={timeline}
+		>
+			<Canvas timeline={timeline} />
+			<Navigator
+				timeline={timeline}
+				timestamp={getTimestamp(
+					scrollX + (timeline.current?.clientWidth || 0),
+					Info,
+				)}
+			/>
+		</Stack>
+	);
 }
