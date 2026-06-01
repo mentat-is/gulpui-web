@@ -14,7 +14,9 @@ function _({ children }: Extension.Provider.Props) {
   const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
 
   useEffect(() => {
-    if (!extensionsPromise) {
+    let isMounted = true;
+
+    const load = async () => {
       extensionsPromise = (async () => {
         const plugins = await api<Extension.Interface[]>('/ui_plugin_list');
         if (!Array.isArray(plugins)) {
@@ -58,17 +60,37 @@ function _({ children }: Extension.Provider.Props) {
 
         return new_extensions;
       })();
+
+      try {
+        const data = await extensionsPromise;
+        if (isMounted) {
+          setExtensions(data);
+        }
+      } catch (err) {
+        console.error('Failed to resolve extensions promise:', err);
+      }
+    };
+
+    if (!extensionsPromise) {
+      load();
+    } else {
+      extensionsPromise.then((data) => {
+        if (isMounted) {
+          setExtensions(data);
+        }
+      });
     }
 
-    let isMounted = true;
-    extensionsPromise.then((data) => {
-      if (isMounted) {
-        setExtensions(data);
-      }
-    });
+    const handleServerChanged = () => {
+      extensionsPromise = null;
+      load();
+    };
+
+    window.addEventListener('gulp-server-changed', handleServerChanged);
 
     return () => {
       isMounted = false;
+      window.removeEventListener('gulp-server-changed', handleServerChanged);
     };
   }, []);
 
