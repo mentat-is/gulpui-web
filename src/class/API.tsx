@@ -214,18 +214,25 @@ const api: Api = async function <T>(
     },
   ).catch(() => { });
 
-  const res = new ResponseHandler((await response?.json()) as ResponseBase<T>)
+  let json: any;
+  try {
+    json = await response?.json();
+  } catch (err) {
+    // Gracefully handle non-JSON or malformed responses
+  }
+
+  const res = new ResponseHandler(json as ResponseBase<T>)
 
   // [λ] Workaround. Remove after gulp/issues/110 would be fixed
   // @ts-ignore
-  if (['success', 'pending'].includes(res.status) || typeof res.data.__error === 'undefined') {
+  if (['success', 'pending'].includes(res.status) || (res.data && typeof res.data.__error === 'undefined')) {
     if (options.toast?.onSuccess) {
       options.toast?.onSuccess(res);
       Logger.log(res, 'API');
     }
     // @ts-ignore
     soft(options.raw ? res : res.data, callback);
-  } else if ((res.data as ResponseErrorBody).__error.name === 'MissingPermission') {
+  } else if (res.data && (res.data as unknown as ResponseErrorBody).__error?.name === 'MissingPermission') {
     Internal.Settings.token = ''
     Logger.warn('Session has been expired', api, {
       icon: <Icon name='Warning' />,

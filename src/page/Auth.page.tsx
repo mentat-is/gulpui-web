@@ -44,19 +44,45 @@ export namespace Auth {
     const currentBannerRef = useRef<JSX.Element | null>(null);
 
     useEffect(() => {
-      if (methods.length === 0) {
-        Internal.Settings.server = server
-        api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-          toast: {
-            onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
-              description: 'Check configuration file on server side',
-              icon: <Icon name='Warning' />,
-              richColors: true
-            }) : undefined
-          },
-        }, setMethods)
-      }
-    }, [methods, server])
+      Internal.Settings.server = server
+      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+        toast: {
+          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
+            description: 'Check configuration file on server side',
+            icon: <Icon name='Warning' />,
+            richColors: true
+          }) : undefined
+        },
+      }, setMethods)
+    }, [])
+
+    const handleServerBlur = () => {
+      if (!server) return;
+      const removeOverload = (str: string): string =>
+        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str;
+
+      const validatedServer = Pattern.Server.test(server) ? removeOverload(server) : server;
+
+      Internal.Settings.server = validatedServer;
+      window.dispatchEvent(new CustomEvent('gulp-server-changed'));
+
+      setMethods([]);
+      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+        toast: {
+          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
+            description: 'Check configuration file on server side',
+            icon: <Icon name='Warning' />,
+            richColors: true
+          }) : undefined
+        },
+      }, (data) => {
+        if (Array.isArray(data)) {
+          setMethods(data);
+        } else {
+          setMethods([]);
+        }
+      });
+    };
 
     useEffect(() => {
       if (app.general.user) {
@@ -320,6 +346,7 @@ export namespace Auth {
           tabIndex={1}
           onChange={(e) => setServer(e.currentTarget.value)}
           onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
+          onBlur={handleServerBlur}
         />
         <Input
           variant='highlighted'
@@ -418,19 +445,45 @@ export namespace Auth {
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
 
     useEffect(() => {
-      if (methods.length === 0) {
-        Internal.Settings.server = server
-        api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-          toast: {
-            onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
-              description: 'Check configuration file on server side',
-              icon: <Icon name='Warning' />,
-              richColors: true
-            }) : undefined
-          },
-        }, setMethods)
-      }
-    }, [methods, server])
+      Internal.Settings.server = server
+      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+        toast: {
+          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
+            description: 'Check configuration file on server side',
+            icon: <Icon name='Warning' />,
+            richColors: true
+          }) : undefined
+        },
+      }, setMethods)
+    }, [])
+
+    const handleServerBlur = () => {
+      if (!server) return;
+      const removeOverload = (str: string): string =>
+        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str;
+
+      const validatedServer = Pattern.Server.test(server) ? removeOverload(server) : server;
+
+      Internal.Settings.server = validatedServer;
+      window.dispatchEvent(new CustomEvent('gulp-server-changed'));
+
+      setMethods([]);
+      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
+        toast: {
+          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
+            description: 'Check configuration file on server side',
+            icon: <Icon name='Warning' />,
+            richColors: true
+          }) : undefined
+        },
+      }, (data) => {
+        if (Array.isArray(data)) {
+          setMethods(data);
+        } else {
+          setMethods([]);
+        }
+      });
+    };
 
     const login = async () => {
       const removeOverload = (str: string): string =>
@@ -518,6 +571,7 @@ export namespace Auth {
             tabIndex={1}
             onChange={(e) => setServer(e.currentTarget.value)}
             onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
+            onBlur={handleServerBlur}
           />
           <Input
             variant='highlighted'
