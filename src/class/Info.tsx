@@ -2681,36 +2681,26 @@ export class Info implements InfoProps {
 	};
 
 	session_load = async (session: Internal.Session.Data) => {
-		this.setInfoByKey(session.timeline.target, "timeline", "target");
-		this.setInfoByKey(session.timeline.frame, "timeline", "frame");
-		this.setInfoByKey(session.timeline.filter, "timeline", "filter");
-		setTimeout(() => {
-			scrollStore.setScrollX(session.timeline.scroll.x);
-			scrollStore.setScrollY(session.timeline.scroll.y);
-			this.setInfoByKey(session.timeline.scale, "timeline", "scale");
-		}, 100);
-		this.setInfoByKey(
-			Operation.Entity.select(this.app, session.selected.operations),
-			"target",
-			"operations",
-		);
-		this.setInfoByKey(
-			Context.Entity.select(this.app, session.selected.contexts),
-			"target",
-			"contexts",
-		);
-		this.setInfoByKey(
-			Source.Entity.select(this.app, session.selected.files),
-			"target",
-			"files",
-		);
-		this.setInfoByKey(session.filters, "target", "filters");
-		if (session.hidden && typeof session.hidden === "object") {
-			Object.keys(session.hidden).forEach((k) => {
-				const key = k as keyof App.Type["hidden"];
-				this.setInfoByKey(session.hidden[key], "hidden", key);
-			});
-		}
+		this.batchUpdate((draft) => {
+			draft.timeline.target = session.timeline.target;
+			draft.timeline.frame = session.timeline.frame;
+			draft.timeline.filter = session.timeline.filter;
+			draft.timeline.scale = session.timeline.scale;
+			draft.target.operations = Operation.Entity.select(draft.target.operations, session.selected.operations);
+			draft.target.contexts = Context.Entity.select(draft.target.contexts, session.selected.contexts);
+			draft.target.files = Source.Entity.select(draft, session.selected.files);
+			draft.target.filters = session.filters;
+
+			if (session.hidden && typeof session.hidden === "object") {
+				Object.keys(session.hidden).forEach((k) => {
+					const key = k as keyof App.Type["hidden"];
+					draft.hidden[key] = session.hidden[key];
+				});
+			}
+		});
+
+		scrollStore.setScrollX(session.timeline.scroll.x);
+		scrollStore.setScrollY(session.timeline.scroll.y);
 
 		setTimeout(() => {
 			this.refetch();
@@ -2961,6 +2951,7 @@ export class Info implements InfoProps {
 		}
 
 		Internal.Settings.token = user.token;
+		localStorage.setItem("__user", JSON.stringify(Object.assign({}, credentials, user)));
 
 		await this.plugin_list();
 		await this.glyphs_reload();
@@ -2969,6 +2960,36 @@ export class Info implements InfoProps {
 		this.setInfoByKey(Object.assign(credentials, user), "general", "user");
 
 		return user;
+	};
+
+	/**
+	 * Logs out the current user session by calling the POST /logout API.
+	 * Clears the stored session token and resets the user context.
+	 *
+	 * @returns Promise that resolves when logout cleanup is completed
+	 */
+	logout = async (): Promise<void> => {
+		try {
+			await api<undefined>("/logout", {
+				method: "POST",
+				query: {
+					ws_id: this.app.general.ws_id,
+				},
+			});
+		} catch (error) {
+			Logger.error(error, "Info.logout");
+		}
+
+		Internal.Settings.token = "";
+		localStorage.removeItem("__user");
+		this.setInfo({
+			...App.Base,
+			general: {
+				...App.Base.general,
+				server: this.app.general.server,
+				ws_id: this.app.general.ws_id,
+			},
+		});
 	};
 
 	setTimelineScale = (scale: number) => {

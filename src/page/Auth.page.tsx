@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, JSX } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button as UIButton } from '@/ui/Button';
 import { Application } from '@/context/Application.context'
 import { Input } from '@/ui/Input';
@@ -27,6 +28,10 @@ export namespace Auth {
   }
 
   export function Page(_: Auth.Page.Props) {
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const redirectPath = searchParams.get('redirect');
+
     const { spawnBanner, Info, app, spawnDialog } = Application.use()
     const [server, setServer] = useState<string>(Info.app.general.server)
     const [id, setId] = useState('admin' as User.Id);
@@ -52,6 +57,47 @@ export namespace Auth {
         }, setMethods)
       }
     }, [methods, server])
+
+    useEffect(() => {
+      if (app.general.user) {
+        if (redirectPath) {
+          const decodedRedirect = decodeURIComponent(redirectPath);
+          const redirectOpMatch = decodedRedirect.match(/\/operations\/([^/]+)/);
+          const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
+          if (redirectOpId) {
+            const checkAndRedirect = async () => {
+              if (app.target.operations.length === 0) {
+                await Info.plugin_list();
+                await Info.glyphs_reload();
+                await Info.sync();
+              }
+              const matchedOp = Info.app.target.operations.find(
+                (op) => op.id === redirectOpId || op.name === redirectOpId
+              );
+              if (matchedOp) {
+                Info.operations_select(matchedOp.id);
+                navigate(decodedRedirect);
+              } else {
+                toast.error(`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`, {
+                  richColors: true,
+                  icon: <Icon name="Warning" />
+                });
+                reloadSessionsList(app.general.user);
+              }
+            };
+            checkAndRedirect();
+          }
+        } else {
+          // If no redirect path, but logged in, navigate to selected operation if present
+          const currentOp = Operation.Entity.selected(app);
+          if (currentOp) {
+            navigate(`/operations/${currentOp.id}`);
+          } else {
+            reloadSessionsList(app.general.user);
+          }
+        }
+      }
+    }, [app.general.user, redirectPath, navigate])
 
     const openAuthBanner = (banner: JSX.Element) => {
       if (currentBannerRef.current) {
@@ -86,6 +132,27 @@ export namespace Auth {
       const user = await Info.login({ id, password });
       setLoading(false);
 
+      if (user && redirectPath) {
+        const decodedRedirect = decodeURIComponent(redirectPath);
+        const redirectOpMatch = decodedRedirect.match(/\/operations\/([^/]+)/);
+        const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
+        if (redirectOpId) {
+          const matchedOp = Info.app.target.operations.find(
+            (op) => op.id === redirectOpId || op.name === redirectOpId
+          );
+          if (matchedOp) {
+            Info.operations_select(matchedOp.id);
+            navigate(decodedRedirect);
+            return;
+          } else {
+            toast.error(`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`, {
+              richColors: true,
+              icon: <Icon name="Warning" />
+            });
+          }
+        }
+      }
+
       reloadSessionsList(user);
     };
 
@@ -110,7 +177,7 @@ export namespace Auth {
             </UIButton>
           )}
 
-          {Operation.Entity.selected(app) && (
+          {app.general.user && Operation.Entity.selected(app) && (
             <UIButton
               icon='ArrowRight'
               variant='tertiary'
@@ -122,7 +189,7 @@ export namespace Auth {
               Skip to timeline
             </UIButton>
           )}
-          {Operation.Entity.selected(app) && (
+          {app.general.user && Operation.Entity.selected(app) && (
             <UIButton
               icon='Check'
               variant='glass'
@@ -221,16 +288,7 @@ export namespace Auth {
     const onLoginAndOperationSelection = () => {
       const operation = Operation.Entity.selected(app);
       if (!operation) return;
-
-      switch (true) {
-        case app.target.files.filter(file => file.operation_id === operation.id).length > 0:
-          spawnBanner(<SelectFiles.Banner fixed />);
-          break;
-
-        default:
-          spawnBanner(<UploadBanner />);
-          break;
-      }
+      navigate(`/operations/${operation.id}`);
     };
 
     const load_session = (name: string) => {
@@ -242,6 +300,9 @@ export namespace Auth {
       Info.session_load(session);
       if (session.timeline.target) {
         spawnDialog(<DisplayEventDialog event={session.timeline.target} />)
+      }
+      if (session.selected.operations) {
+        navigate(`/operations/${session.selected.operations}`);
       }
     }
 

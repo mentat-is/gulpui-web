@@ -23,7 +23,26 @@ import { RenderEngine } from "@/class/RenderEngine";
 import { Operation } from "@/entities/Operation";
 
 function _({ children }: { children: ReactNode }) {
-	const [app, setInfo] = useState<App.Type>(App.Base);
+	const getInitialAppState = (): App.Type => {
+		const savedUserStr = localStorage.getItem("__user");
+		let savedUser = null;
+		if (savedUserStr) {
+			try {
+				savedUser = JSON.parse(savedUserStr);
+			} catch (e) {
+				// Ignore
+			}
+		}
+		return {
+			...App.Base,
+			general: {
+				...App.Base.general,
+				user: savedUser,
+			},
+		};
+	};
+
+	const [app, setInfo] = useState<App.Type>(getInitialAppState);
 	const [banner, setBanner] = useState<{
 		node: ReactNode;
 		target: string;
