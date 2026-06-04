@@ -31,14 +31,78 @@ import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { Operation } from "@/entities/Operation";
 import { Request } from "@/entities/Request";
+import { Select } from "@/ui/Select";
+import { Session } from "./Session.banner";
+import { DisplayEventDialog } from "@/dialogs/Event.dialog";
+import { useParams } from "react-router-dom";
+import { Internal } from "@/entities/addon/Internal";
 
 export namespace SelectFiles {
 	export namespace Banner {
-		export type Props = UIBanner.Props;
+		export type Props = UIBanner.Props & {
+			showSession?: boolean;
+		};
 	}
 
-	export function Banner(props: Banner.Props) {
-		const { app, Info, spawnBanner } = Application.use();
+	export function Banner({ showSession = true, ...props }: Banner.Props) {
+		const { app, Info, spawnBanner, spawnDialog } = Application.use();
+		const { operation_id: routeOpId } = useParams<{ operation_id: string }>();
+		const operation = Operation.Entity.selected(app);
+		const operation_id = routeOpId || operation?.id;
+
+		const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
+		const [openSelectSession, setOpenSelectSession] = useState(false);
+
+		const activeSessions = useMemo(() => {
+			if (!operation_id) return [];
+			return sessions.filter(
+				(session) =>
+					session.selected.operations &&
+					session.selected.operations === operation_id,
+			);
+		}, [sessions, operation_id]);
+
+		/**
+		 * Reloads the sessions list from the backend for the current user.
+		 */
+		const reloadSessionsList = () => {
+			Info.session_list(app.general.user).then((res) => {
+				if (res) {
+					setSessions(res);
+				}
+			});
+		};
+
+		useEffect(() => {
+			let isMounted = true;
+			Info.session_list(app.general.user).then((res) => {
+				if (isMounted && res) {
+					setSessions(res);
+				}
+			});
+			return () => {
+				isMounted = false;
+			};
+		}, [app.general.user]);
+
+		/**
+		 * Loads a specific saved session, clears local selections, and launches the operation.
+		 * @param name - The name of the session to load.
+		 */
+		const load_session = async (name: string) => {
+			const session = sessions.find((s) => s.name === name);
+			if (!session) return;
+
+			await Info.session_load(session);
+			setSelectedContexts(new Set());
+			setSelectedFiles(new Set());
+			spawnBanner(null);
+
+			if (session.timeline.target) {
+				spawnDialog(<DisplayEventDialog event={session.timeline.target} />);
+			}
+		};
+
 		const [filter, setFilter] = useState("");
 		const [_, debug] = useReducer((i) => ++i, 0);
 		const [loading, setLoading] = useState(false);
@@ -274,6 +338,44 @@ export namespace SelectFiles {
 				}
 				{...props}
 			>
+				{showSession && activeSessions.length > 0 && (
+					<Stack dir="column" gap={6} ai="stretch" style={{ width: "100%", marginBottom: 12 }}>
+						<Label value="Session" />
+						<Select.Root
+							open={openSelectSession}
+							onOpenChange={setOpenSelectSession}
+							onValueChange={load_session}
+						>
+							<Select.Trigger>
+								<Select.Icon name="Status" />
+								Select session
+							</Select.Trigger>
+							<Select.Content>
+								{activeSessions.map((session) => (
+									<Select.Item key={session.name} value={session.name} style={{ color: session.color }}>
+										<Select.Icon name={session.icon} />
+										{session.name}
+									</Select.Item>
+								))}
+								<Button
+									variant="tertiary"
+									style={{ width: "100%" }}
+									onClick={() =>
+										spawnBanner(
+											<Session.Delete.Banner
+												onClose={reloadSessionsList}
+												back={() => spawnBanner(<SelectFiles.Banner showSession={showSession} />)}
+											/>,
+										)
+									}
+									icon="Wrench"
+								>
+									Manage sessions
+								</Button>
+							</Select.Content>
+						</Select.Root>
+					</Stack>
+				)}
 				{SearchInput}
 				<Stack>
 					<Button

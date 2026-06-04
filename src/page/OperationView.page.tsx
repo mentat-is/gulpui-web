@@ -57,30 +57,20 @@ export function OperationView() {
 
       // 1. Ensure the operation is selected in the global state
       const currentOp = Operation.Entity.selected(app)
-      if (!currentOp || currentOp.id !== operation_id) {
+      const isNewOperation = !currentOp || currentOp.id !== operation_id;
+      if (isNewOperation) {
         Info.operations_select(operation_id as Operation.Id)
       }
 
-      // 2. Check if a session was manually loaded (e.g. from the Auth login screen)
+      // 2. Check if a session was manually loaded
       const hasSelectedFiles = Source.Entity.selected(app).length > 0
-      if (hasSelectedFiles) {
+      if (!isNewOperation && hasSelectedFiles) {
         setInitialized(true)
         return
       }
 
-      // 3. Check if there is a saved session for this operation on the backend
-      const sessions = await Info.session_list(app.general.user)
-      const matchingSession = sessions?.find(
-        (session) => session.selected.operations === operation_id
-      )
-
-      if (matchingSession) {
-        // Load the session data and navigate to timeline dashboard
-        await Info.session_load(matchingSession)
-      } else {
-        // No session exists: present the SelectFiles banner to let user pick files and contexts
-        spawnBanner(<SelectFiles.Banner fixed />)
-      }
+      // 3. Present the SelectFiles banner to let user pick files/contexts or load a session
+      spawnBanner(<SelectFiles.Banner fixed />)
       setInitialized(true)
     }
 

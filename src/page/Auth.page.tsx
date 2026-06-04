@@ -18,8 +18,7 @@ import { User } from '@/entities/User';
 import { Operation } from '@/entities/Operation';
 import { Internal } from '@/entities/addon/Internal';
 import { Shimmer } from '@/ui/Shimmer';
-import { Session } from '@/banners/Session.banner';
-import { DisplayEventDialog } from '@/dialogs/Event.dialog';
+
 import { Logo } from '@/components/Logo';
 
 export namespace Auth {
@@ -38,9 +37,8 @@ export namespace Auth {
     const [password, setPassword] = useState<string>('')
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState<boolean>(false)
-    const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
     const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
-    const [openSelectAuth, setOpenSelectAuth] = useState<'operation' | 'session' | null>(null);
+    const [openSelectAuth, setOpenSelectAuth] = useState<'operation' | null>(null);
     const currentBannerRef = useRef<JSX.Element | null>(null);
 
     useEffect(() => {
@@ -126,7 +124,6 @@ export namespace Auth {
                   richColors: true,
                   icon: <Icon name="Warning" />
                 });
-                reloadSessionsList(app.general.user);
               }
             };
             checkAndRedirect();
@@ -136,8 +133,6 @@ export namespace Auth {
           const currentOp = Operation.Entity.selected(app);
           if (currentOp) {
             navigate(`/operations/${currentOp.id}`);
-          } else {
-            reloadSessionsList(app.general.user);
           }
         }
       }
@@ -197,12 +192,7 @@ export namespace Auth {
         }
       }
 
-      reloadSessionsList(user);
     };
-
-    const reloadSessionsList = (user: User.Type | null) => {
-      setTimeout(() => Info.session_list(user).then(setSessions), 0);
-    }
 
     const NextButton = () => {
       return (
@@ -335,20 +325,7 @@ export namespace Auth {
       navigate(`/operations/${operation.id}`);
     };
 
-    const load_session = (name: string) => {
-      const session = sessions.find(session => session.name === name);
-      if (!session) {
-        return;
-      }
 
-      Info.session_load(session);
-      if (session.timeline.target) {
-        spawnDialog(<DisplayEventDialog event={session.timeline.target} />)
-      }
-      if (session.selected.operations) {
-        navigate(`/operations/${session.selected.operations}`);
-      }
-    }
 
     return (
       <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
@@ -420,30 +397,7 @@ export namespace Auth {
             </Select.Root>
           </Stack>
         </Stack>
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && Operation.Entity.selected(app) && sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).length && s.visible)}>
-          <Label value='Session' />
-          <Stack style={{ width: '100%' }}>
-            <Select.Root
-              open={openSelectAuth === 'session'}
-              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? 'session' : null)}
-              onValueChange={name => load_session(name)}
-            >
-              <Select.Trigger tabIndex={5}>
-                <Select.Icon name='Status' />
-                Select session
-              </Select.Trigger>
-              <Select.Content>
-                {sessions.filter(session => session.selected.operations && session.selected.operations === Operation.Entity.selected(app)?.id).map(session => (
-                  <Select.Item key={session.name} value={session.name} style={{ color: session.color }}>
-                    <Select.Icon name={session.icon} />
-                    {session.name}
-                  </Select.Item>
-                ))}
-                <UIButton variant='tertiary' style={{ width: '100%' }} onClick={() => openAuthBanner(<Session.Delete.Banner onClose={() => reloadSessionsList(app.general.user)} />)} icon='Wrench'>Manage sessions</UIButton>
-              </Select.Content>
-            </Select.Root>
-          </Stack>
-        </Stack>
+
         <NextButton />
       </Stack>
     )

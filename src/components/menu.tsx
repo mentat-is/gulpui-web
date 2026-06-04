@@ -152,7 +152,7 @@ export function Menu() {
 							title="Select files and contexts"
 							icon="FileStack"
 							className={cn(s.relative, isOpen && s.expanded)}
-							onClick={() => spawnBanner(<SelectFiles.Banner />)}
+							onClick={() => spawnBanner(<SelectFiles.Banner showSession={false} />)}
 						>
 							<Button
 								asChild

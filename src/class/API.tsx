@@ -232,10 +232,10 @@ const api: Api = async function <T>(
 	const res = new ResponseHandler(json as ResponseBase<T>);
 
 	// [λ] Workaround. Remove after gulp/issues/110 would be fixed
-	// @ts-ignore
 	if (
 		["success", "pending"].includes(res.status) ||
-		(res.data && typeof res.data.__error === "undefined")
+		(res.data &&
+			typeof (res.data as unknown as ResponseErrorBody).__error === "undefined")
 	) {
 		if (options.toast?.onSuccess) {
 			options.toast?.onSuccess(res);

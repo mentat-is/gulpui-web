@@ -2709,7 +2709,7 @@ export class Info implements InfoProps {
 		scrollStore.setScrollY(session.timeline.scroll.y);
 
 		setTimeout(() => {
-			this.refetch();
+			this.refetch({ ids: session.selected.files });
 		}, 0);
 	};
 

@@ -2,7 +2,6 @@
   "name": "gulpui-web",
   "version": "0.3.0",
   "private": true,
-  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "prestart": "node ./scripts/copy_paid_plugins.js",
     "prebuild": "node ./scripts/copy_paid_plugins.js && node scripts/write-version.js",
@@ -56,6 +55,7 @@
     "react-dom": "^19.2.0",
     "react-json-view-lite": "^2.5.0",
     "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.22.3",
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^16.1.0",
     "rehype-prism": "^2.3.3",
