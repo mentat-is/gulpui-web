@@ -22,7 +22,8 @@ declare global {
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { app } = Application.use();
-  const isAuthenticated = !!app.general.user || app.general.skippedAuth;
+  const hasToken = !!localStorage.getItem('__token') && localStorage.getItem('__token') !== '-';
+  const isAuthenticated = !!app.general.user || hasToken || app.general.skippedAuth;
 
   if (!isAuthenticated) {
     const redirectUrl = encodeURIComponent(window.location.pathname + window.location.search);

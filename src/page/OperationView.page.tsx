@@ -37,6 +37,19 @@ export function OperationView() {
     const initializeOperation = async () => {
       // 0. If operations are not loaded yet (e.g. page refreshed), fetch them from backend
       if (app.target.operations.length === 0) {
+        const savedUserId = localStorage.getItem("__user_id");
+        if (savedUserId && !app.general.user) {
+          try {
+            const userProfile = await Info.user_get_by_id(savedUserId);
+            if (userProfile) {
+              Info.setInfoByKey(userProfile, "general", "user");
+            }
+          } catch (e) {
+            // API error handler in API.tsx handles redirection to /login on 401
+            return;
+          }
+        }
+
         await Info.plugin_list();
         await Info.glyphs_reload();
         await Info.sync();

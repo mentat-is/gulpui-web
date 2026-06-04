@@ -2686,8 +2686,14 @@ export class Info implements InfoProps {
 			draft.timeline.frame = session.timeline.frame;
 			draft.timeline.filter = session.timeline.filter;
 			draft.timeline.scale = session.timeline.scale;
-			draft.target.operations = Operation.Entity.select(draft.target.operations, session.selected.operations);
-			draft.target.contexts = Context.Entity.select(draft.target.contexts, session.selected.contexts);
+			draft.target.operations = Operation.Entity.select(
+				draft.target.operations,
+				session.selected.operations,
+			);
+			draft.target.contexts = Context.Entity.select(
+				draft.target.contexts,
+				session.selected.contexts,
+			);
 			draft.target.files = Source.Entity.select(draft, session.selected.files);
 			draft.target.filters = session.filters;
 
@@ -2921,6 +2927,12 @@ export class Info implements InfoProps {
 	setTimelineFrame = (frame: MinMax) =>
 		this.setInfoByKey(frame, "timeline", "frame");
 
+	user_get_by_id = (userId: string): Promise<User.Type> =>
+		api<User.Type>("/user_get_by_id", {
+			method: "GET",
+			query: { user_id: userId },
+		});
+
 	login = async (credentials: Pick<User.Minified, "id" | "password">) => {
 		const user = await api<User.Type>("/login", {
 			method: "POST",
@@ -2951,7 +2963,7 @@ export class Info implements InfoProps {
 		}
 
 		Internal.Settings.token = user.token;
-		localStorage.setItem("__user", JSON.stringify(Object.assign({}, credentials, user)));
+		localStorage.setItem("__user_id", user.id);
 
 		await this.plugin_list();
 		await this.glyphs_reload();
@@ -2981,7 +2993,7 @@ export class Info implements InfoProps {
 		}
 
 		Internal.Settings.token = "";
-		localStorage.removeItem("__user");
+		localStorage.removeItem("__user_id");
 		this.setInfo({
 			...App.Base,
 			general: {

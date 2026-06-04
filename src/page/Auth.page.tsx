@@ -85,6 +85,24 @@ export namespace Auth {
     };
 
     useEffect(() => {
+      const savedToken = localStorage.getItem("__token");
+      const savedUserId = localStorage.getItem("__user_id");
+
+      if (savedToken && savedToken !== "-" && savedUserId && !app.general.user) {
+        const autoLogin = async () => {
+          try {
+            const userProfile = await Info.user_get_by_id(savedUserId);
+            if (userProfile) {
+              Info.setInfoByKey(userProfile, "general", "user");
+            }
+          } catch (e) {
+            // API error handler in API.tsx handles redirection on 401
+          }
+        };
+        autoLogin();
+        return;
+      }
+
       if (app.general.user) {
         if (redirectPath) {
           const decodedRedirect = decodeURIComponent(redirectPath);
