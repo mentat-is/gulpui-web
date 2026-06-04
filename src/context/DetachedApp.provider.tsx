@@ -255,6 +255,12 @@ export function DetachedAppProvider({
   }, [detachedDocument])
 
   const spawnBanner = useCallback((node: ReactNode, target: string = 'main') => {
+    if (!node) {
+      setBanner(null)
+      detachedDocument.body.classList.remove('no-scroll')
+      return
+    }
+
     if (target === 'table' || target === 'main') {
       setBanner({ node, target })
       detachedDocument.body.classList.add('no-scroll')

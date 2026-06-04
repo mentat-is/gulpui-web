@@ -249,8 +249,13 @@ function _({ children }: { children: ReactNode }) {
 
 	const spawnBanner = useCallback(
 		(node: React.ReactNode, target: string = "main") => {
-			setBanner({ node, target });
-			document.querySelector("body")?.classList.add("no-scroll");
+			if (!node) {
+				setBanner(null);
+				document.querySelector("body")?.classList.remove("no-scroll");
+			} else {
+				setBanner({ node, target });
+				document.querySelector("body")?.classList.add("no-scroll");
+			}
 		},
 		[],
 	);
