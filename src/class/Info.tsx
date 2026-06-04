@@ -189,7 +189,9 @@ interface RefetchOptions {
 	notes_tags?: string[];
 	notes_glyph_id?: Glyph.Id;
 	name?: string;
+	frame?: MinMax;
 }
+
 
 interface InfoProps {
 	app: App.Type;
@@ -219,6 +221,21 @@ export class Info implements InfoProps {
 		Info._latestInstance = this;
 	}
 
+	/**
+	 * Refetches documents and updates associated state for the selected source files.
+	 *
+	 * @param options - Configuration options for the refetch.
+	 * @param options.ids - Optional list of source IDs to refetch (defaults to selected sources).
+	 * @param options.refetchKeys - Optional mapping of source IDs to specific document fields to fetch.
+	 * @param options.addToHistory - Whether to append this query to the server-side queries history.
+	 * @param options.create_notes - Whether to automatically create notes for matched documents.
+	 * @param options.notes_color - Color to apply to any auto-created notes.
+	 * @param options.notes_tags - Tags to apply to any auto-created notes.
+	 * @param options.notes_glyph_id - Icon glyph ID for any auto-created notes.
+	 * @param options.name - Optional name label for this search action.
+	 * @param options.frame - Optional custom timeframe to apply to the timeline.
+	 * @returns A promise that resolves when all queries are initiated.
+	 */
 	refetch = async ({
 		ids: _ids = Source.Entity.selected(this.app).map((f) => f.id),
 		refetchKeys,
@@ -228,11 +245,14 @@ export class Info implements InfoProps {
 		notes_tags,
 		notes_glyph_id,
 		name,
+		frame,
 	}: RefetchOptions = {}) => {
 		const files: Source.Type[] = Parser.array(_ids).map((id) =>
 			Source.Entity.id(this.app, id),
 		);
-		if (
+		if (frame) {
+			this.setTimelineFrame(frame);
+		} else if (
 			this.app.timeline.frame.min === 0 &&
 			this.app.timeline.frame.max === 0
 		) {
@@ -241,6 +261,7 @@ export class Info implements InfoProps {
 				max: Math.max(...files.map((f) => f.timestamp.max)),
 			});
 		}
+
 
 		this.notes_reload();
 		this.links_reload();
@@ -2680,6 +2701,13 @@ export class Info implements InfoProps {
 		});
 	};
 
+	/**
+	 * Loads a specific saved session, restoring its selected sources, contexts, filters, hidden items,
+	 * scroll positions, and timeline timeframe range.
+	 *
+	 * @param session - The session data object to restore.
+	 * @returns A promise that resolves when the session load action has completed.
+	 */
 	session_load = async (session: Internal.Session.Data) => {
 		this.batchUpdate((draft) => {
 			draft.timeline.target = session.timeline.target;
@@ -2709,9 +2737,13 @@ export class Info implements InfoProps {
 		scrollStore.setScrollY(session.timeline.scroll.y);
 
 		setTimeout(() => {
-			this.refetch({ ids: session.selected.files });
+			this.refetch({
+				ids: session.selected.files,
+				frame: session.timeline.frame,
+			});
 		}, 0);
 	};
+
 
 	private AddNoteToDataStore(note: Note.Type) {
 		note = Note.Entity.normalize_note(this.app, note);

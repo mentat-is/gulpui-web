@@ -1,587 +1,726 @@
-import { useEffect, useState, useRef, JSX } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Button as UIButton } from '@/ui/Button';
-import { Application } from '@/context/Application.context'
-import { Input } from '@/ui/Input';
-import { toast } from 'sonner'
-import { GulpDataset, Pattern } from '@/class/Info'
-import { Icon } from '@impactium/icons'
-import { capitalize, cn } from '@impactium/utils'
-import s from './styles/AuthPage.module.css'
-import { Select } from '@/ui/Select'
-import { Label } from '@/ui/Label'
-import { SelectFiles } from '@/banners/SelectFiles.banner'
-import { UploadBanner } from '@/banners/Upload.banner'
-import { Banner as UIBanner } from '@/ui/Banner';
-import { Stack } from '@/ui/Stack';
-import { User } from '@/entities/User';
-import { Operation } from '@/entities/Operation';
-import { Internal } from '@/entities/addon/Internal';
-import { Shimmer } from '@/ui/Shimmer';
+import { useEffect, useState, useRef, JSX } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Button as UIButton } from "@/ui/Button";
+import { Application } from "@/context/Application.context";
+import { Input } from "@/ui/Input";
+import { toast } from "sonner";
+import { GulpDataset, Pattern } from "@/class/Info";
+import { Icon } from "@impactium/icons";
+import { capitalize, cn } from "@impactium/utils";
+import s from "./styles/AuthPage.module.css";
+import { Select } from "@/ui/Select";
+import { Label } from "@/ui/Label";
+import { Banner as UIBanner } from "@/ui/Banner";
+import { Stack } from "@/ui/Stack";
+import { User } from "@/entities/User";
+import { Operation } from "@/entities/Operation";
+import { Internal } from "@/entities/addon/Internal";
+import { Shimmer } from "@/ui/Shimmer";
 
-import { Logo } from '@/components/Logo';
+import { Logo } from "@/components/Logo";
 
 export namespace Auth {
-  export namespace Page {
-    export interface Props { }
-  }
+	export namespace Page {
+		export interface Props {}
+	}
 
-  export function Page(_: Auth.Page.Props) {
-    const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const redirectPath = searchParams.get('redirect');
+	export function Page(_: Auth.Page.Props) {
+		const navigate = useNavigate();
+		const [searchParams] = useSearchParams();
+		const redirectPath = searchParams.get("redirect");
 
-    const { spawnBanner, Info, app, spawnDialog } = Application.use()
-    const [server, setServer] = useState<string>(Info.app.general.server)
-    const [id, setId] = useState('admin' as User.Id);
-    const [password, setPassword] = useState<string>('')
-    const [showPassword, setShowPassword] = useState(false)
-    const [loading, setLoading] = useState<boolean>(false)
-    const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
-    const [openSelectAuth, setOpenSelectAuth] = useState<'operation' | null>(null);
-    const currentBannerRef = useRef<JSX.Element | null>(null);
+		const { spawnBanner, Info, app, spawnDialog } = Application.use();
+		const [server, setServer] = useState<string>(Info.app.general.server);
+		const [id, setId] = useState("admin" as User.Id);
+		const [password, setPassword] = useState<string>("");
+		const [showPassword, setShowPassword] = useState(false);
+		const [loading, setLoading] = useState<boolean>(false);
+		const [methods, setMethods] =
+			useState<GulpDataset.GetAvailableLoginApi.Response>([]);
+		const [openSelectAuth, setOpenSelectAuth] = useState<"operation" | null>(
+			null,
+		);
+		const currentBannerRef = useRef<JSX.Element | null>(null);
 
-    useEffect(() => {
-      Internal.Settings.server = server
-      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-        toast: {
-          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
-            description: 'Check configuration file on server side',
-            icon: <Icon name='Warning' />,
-            richColors: true
-          }) : undefined
-        },
-      }, setMethods)
-    }, [])
+		useEffect(() => {
+			Internal.Settings.server = server;
+			api<GulpDataset.GetAvailableLoginApi.Response>(
+				"/get_available_login_api",
+				{
+					toast: {
+						onError: (payload) =>
+							payload.status === "error"
+								? toast.warning("Auth plugin is not configured", {
+										description: "Check configuration file on server side",
+										icon: <Icon name="Warning" />,
+										richColors: true,
+									})
+								: undefined,
+					},
+				},
+				setMethods,
+			);
+		}, []);
 
-    const handleServerBlur = () => {
-      if (!server) return;
-      const removeOverload = (str: string): string =>
-        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str;
+		const handleServerBlur = () => {
+			if (!server) return;
+			const removeOverload = (str: string): string =>
+				str.endsWith("/") ? removeOverload(str.slice(0, -1)) : str;
 
-      const validatedServer = Pattern.Server.test(server) ? removeOverload(server) : server;
+			const validatedServer = Pattern.Server.test(server)
+				? removeOverload(server)
+				: server;
 
-      Internal.Settings.server = validatedServer;
-      window.dispatchEvent(new CustomEvent('gulp-server-changed'));
+			Internal.Settings.server = validatedServer;
+			window.dispatchEvent(new CustomEvent("gulp-server-changed"));
 
-      setMethods([]);
-      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-        toast: {
-          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
-            description: 'Check configuration file on server side',
-            icon: <Icon name='Warning' />,
-            richColors: true
-          }) : undefined
-        },
-      }, (data) => {
-        if (Array.isArray(data)) {
-          setMethods(data);
-        } else {
-          setMethods([]);
-        }
-      });
-    };
+			setMethods([]);
+			api<GulpDataset.GetAvailableLoginApi.Response>(
+				"/get_available_login_api",
+				{
+					toast: {
+						onError: (payload) =>
+							payload.status === "error"
+								? toast.warning("Auth plugin is not configured", {
+										description: "Check configuration file on server side",
+										icon: <Icon name="Warning" />,
+										richColors: true,
+									})
+								: undefined,
+					},
+				},
+				(data) => {
+					if (Array.isArray(data)) {
+						setMethods(data);
+					} else {
+						setMethods([]);
+					}
+				},
+			);
+		};
 
-    useEffect(() => {
-      const savedToken = localStorage.getItem("__token");
-      const savedUserId = localStorage.getItem("__user_id");
+		useEffect(() => {
+			const savedToken = localStorage.getItem("__token");
+			const savedUserId = localStorage.getItem("__user_id");
 
-      if (savedToken && savedToken !== "-" && savedUserId && !app.general.user) {
-        const autoLogin = async () => {
-          try {
-            const userProfile = await Info.user_get_by_id(savedUserId);
-            if (userProfile) {
-              Info.setInfoByKey(userProfile, "general", "user");
-            }
-          } catch (e) {
-            // API error handler in API.tsx handles redirection on 401
-          }
-        };
-        autoLogin();
-        return;
-      }
+			if (
+				savedToken &&
+				savedToken !== "-" &&
+				savedUserId &&
+				!app.general.user
+			) {
+				const autoLogin = async () => {
+					try {
+						const userProfile = await Info.user_get_by_id(savedUserId);
+						if (userProfile) {
+							Info.setInfoByKey(userProfile, "general", "user");
+						}
+					} catch (e) {
+						// API error handler in API.tsx handles redirection on 401
+					}
+				};
+				autoLogin();
+				return;
+			}
 
-      if (app.general.user) {
-        if (redirectPath) {
-          const decodedRedirect = decodeURIComponent(redirectPath);
-          const redirectOpMatch = decodedRedirect.match(/\/operations\/([^/]+)/);
-          const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
-          if (redirectOpId) {
-            const checkAndRedirect = async () => {
-              if (app.target.operations.length === 0) {
-                await Info.plugin_list();
-                await Info.glyphs_reload();
-                await Info.sync();
-              }
-              const matchedOp = Info.app.target.operations.find(
-                (op) => op.id === redirectOpId || op.name === redirectOpId
-              );
-              if (matchedOp) {
-                Info.operations_select(matchedOp.id);
-                navigate(decodedRedirect);
-              } else {
-                toast.error(`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`, {
-                  richColors: true,
-                  icon: <Icon name="Warning" />
-                });
-              }
-            };
-            checkAndRedirect();
-          }
-        } else {
-          // If no redirect path, but logged in, navigate to selected operation if present
-          const currentOp = Operation.Entity.selected(app);
-          if (currentOp) {
-            navigate(`/operations/${currentOp.id}`);
-          }
-        }
-      }
-    }, [app.general.user, redirectPath, navigate])
+			if (app.general.user) {
+				if (redirectPath) {
+					const decodedRedirect = decodeURIComponent(redirectPath);
+					const redirectOpMatch = decodedRedirect.match(
+						/\/operations\/([^/]+)/,
+					);
+					const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
+					if (redirectOpId) {
+						const checkAndRedirect = async () => {
+							if (app.target.operations.length === 0) {
+								await Info.plugin_list();
+								await Info.glyphs_reload();
+								await Info.sync();
+							}
+							const matchedOp = Info.app.target.operations.find(
+								(op) => op.id === redirectOpId || op.name === redirectOpId,
+							);
+							if (matchedOp) {
+								Info.operations_select(matchedOp.id);
+								navigate(decodedRedirect);
+							} else {
+								toast.error(
+									`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`,
+									{
+										richColors: true,
+										icon: <Icon name="Warning" />,
+									},
+								);
+							}
+						};
+						checkAndRedirect();
+					}
+				} else {
+					// If no redirect path, but logged in, navigate to selected operation if present
+					const currentOp = Operation.Entity.selected(app);
+					if (currentOp) {
+						navigate(`/operations/${currentOp.id}`);
+					}
+				}
+			}
+		}, [app.general.user, redirectPath, navigate]);
 
-    const openAuthBanner = (banner: JSX.Element) => {
-      if (currentBannerRef.current) {
-        spawnBanner(null);
-      }
-      currentBannerRef.current = banner;
-      spawnBanner(banner);
-      setOpenSelectAuth(null);
-    };
+		const openAuthBanner = (banner: JSX.Element) => {
+			if (currentBannerRef.current) {
+				spawnBanner(null);
+			}
+			currentBannerRef.current = banner;
+			spawnBanner(banner);
+			setOpenSelectAuth(null);
+		};
 
-    const login = async () => {
-      const removeOverload = (str: string): string =>
-        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str
+		const login = async () => {
+			const removeOverload = (str: string): string =>
+				str.endsWith("/") ? removeOverload(str.slice(0, -1)) : str;
 
-      const validate = (str: string): string | void =>
-        !Pattern.Server.test(str)
-          ? (() => {
-            toast('Incorrect server URL', {
-              icon: <Icon name='Warning' />
-            })
-          })()
-          : removeOverload(str)
+			const validate = (str: string): string | void =>
+				!Pattern.Server.test(str)
+					? (() => {
+							toast("Incorrect server URL", {
+								icon: <Icon name="Warning" />,
+							});
+						})()
+					: removeOverload(str);
 
-      const validatedServer = validate(server)
+			const validatedServer = validate(server);
 
-      if (!validatedServer) return
+			if (!validatedServer) return;
 
-      Internal.Settings.server = validatedServer
+			Internal.Settings.server = validatedServer;
 
-      // Wrap into loading state
-      setLoading(true);
-      const user = await Info.login({ id, password });
-      setLoading(false);
+			// Wrap into loading state
+			setLoading(true);
+			const user = await Info.login({ id, password });
+			setLoading(false);
 
-      if (user && redirectPath) {
-        const decodedRedirect = decodeURIComponent(redirectPath);
-        const redirectOpMatch = decodedRedirect.match(/\/operations\/([^/]+)/);
-        const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
-        if (redirectOpId) {
-          const matchedOp = Info.app.target.operations.find(
-            (op) => op.id === redirectOpId || op.name === redirectOpId
-          );
-          if (matchedOp) {
-            Info.operations_select(matchedOp.id);
-            navigate(decodedRedirect);
-            return;
-          } else {
-            toast.error(`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`, {
-              richColors: true,
-              icon: <Icon name="Warning" />
-            });
-          }
-        }
-      }
+			if (user && redirectPath) {
+				const decodedRedirect = decodeURIComponent(redirectPath);
+				const redirectOpMatch = decodedRedirect.match(/\/operations\/([^/]+)/);
+				const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
+				if (redirectOpId) {
+					const matchedOp = Info.app.target.operations.find(
+						(op) => op.id === redirectOpId || op.name === redirectOpId,
+					);
+					if (matchedOp) {
+						Info.operations_select(matchedOp.id);
+						navigate(decodedRedirect);
+						return;
+					} else {
+						toast.error(
+							`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`,
+							{
+								richColors: true,
+								icon: <Icon name="Warning" />,
+							},
+						);
+					}
+				}
+			}
+		};
 
-    };
+		const NextButton = () => {
+			return (
+				<Stack
+					jc="flex-end"
+					dir="row"
+					gap={6}
+					style={{ marginLeft: "auto" }}
+				>
+					{!app.general.user && (
+						<UIButton
+							icon="LogIn"
+							disabled={!id || !password}
+							variant="glass"
+							revert
+							loading={loading}
+							tabIndex={4}
+							onClick={login}
+						>
+							Login
+						</UIButton>
+					)}
 
-    const NextButton = () => {
-      return (
-        <Stack jc='flex-end' dir="row" gap={6} style={{ marginLeft: 'auto' }}>
-          {!app.general.user && (
-            <UIButton
-              icon='LogIn'
-              disabled={!id || !password}
-              variant='glass'
-              revert
-              loading={loading}
-              tabIndex={4}
-              onClick={login}
-            >
-              Login
-            </UIButton>
-          )}
+					{app.general.user && Operation.Entity.selected(app) && (
+						<UIButton
+							icon="ArrowRight"
+							variant="tertiary"
+							revert
+							loading={loading}
+							tabIndex={6}
+							onClick={skipToTimeline}
+						>
+							Skip to timeline
+						</UIButton>
+					)}
+					{app.general.user && Operation.Entity.selected(app) && (
+						<UIButton
+							icon="Check"
+							variant="glass"
+							revert
+							loading={loading}
+							tabIndex={6}
+							onClick={onLoginAndOperationSelection}
+						>
+							Done
+						</UIButton>
+					)}
+				</Stack>
+			);
+		};
 
-          {app.general.user && Operation.Entity.selected(app) && (
-            <UIButton
-              icon='ArrowRight'
-              variant='tertiary'
-              revert
-              loading={loading}
-              tabIndex={6}
-              onClick={skipToTimeline}
-            >
-              Skip to timeline
-            </UIButton>
-          )}
-          {app.general.user && Operation.Entity.selected(app) && (
-            <UIButton
-              icon='Check'
-              variant='glass'
-              revert
-              loading={loading}
-              tabIndex={6}
-              onClick={onLoginAndOperationSelection}
-            >
-              Done
-            </UIButton>
-          )}
-        </Stack>
-      )
-    }
+		useEffect(() => {
+			const query = new URLSearchParams(window.location.search);
+			const token = query.get("token");
 
-    useEffect(() => {
-      const query = new URLSearchParams(window.location.search)
-      const token = query.get('token')
+			if (!token) return;
 
-      if (!token) return;
+			history.replaceState(null, "", window.location.origin);
 
-      history.replaceState(null, '', window.location.origin)
+			setLoading(true);
+		}, []);
 
-      setLoading(true)
-    }, [])
+		const [customLoading, setCustomLoading] = useState<string | null>(null);
 
-    const [customLoading, setCustomLoading] = useState<string | null>(null)
+		const skipToTimeline = () => {
+			const operation = Operation.Entity.selected(app);
+			if (!operation) return;
 
-    const skipToTimeline = () => {
-      Info.setInfo({
-        ...Info.app,
-        general: {
-          ...Info.app.general,
-          skippedAuth: true
-        }
-      })
-    }
-    const customLoginConstructor = (url: string) => () => {
-      const x = new URLSearchParams()
-      x.append('client', window.location.origin)
-      x.append('ws_id', Info.app.general.ws_id)
-      setCustomLoading(url)
-      window.location.replace(`${Internal.Settings.server}${url}?${x}`)
-    }
+			Info.operations_select(operation.id);
+			Info.setInfoByKey(true, "general", "skippedAuth");
+			navigate(`/operations/${operation.id}`);
+		};
+		const customLoginConstructor = (url: string) => () => {
+			const x = new URLSearchParams();
+			x.append("client", window.location.origin);
+			x.append("ws_id", Info.app.general.ws_id);
+			setCustomLoading(url);
+			window.location.replace(`${Internal.Settings.server}${url}?${x}`);
+		};
 
-    const LoginMethods = () => {
-      if (
-        methods.length === 0 ||
-        (methods.length === 1 && methods[0].name === 'gulp')
-      ) {
-        return null
-      }
+		const LoginMethods = () => {
+			if (
+				methods.length === 0 ||
+				(methods.length === 1 && methods[0].name === "gulp")
+			) {
+				return null;
+			}
 
-      function LoginMethod({ name, icon }: LoginMethod.Props) {
-        const method = methods.find((method) => method.name === name)
-        if (!method) {
-          return null
-        }
+			function LoginMethod({ name, icon }: LoginMethod.Props) {
+				const method = methods.find((method) => method.name === name);
+				if (!method) {
+					return null;
+				}
 
-        return (
-          <UIButton
-            onClick={customLoginConstructor(method.login.url)}
-            loading={customLoading === method.login.url}
-            style={{ flex: 1 }}
-            variant='glass'
-            icon={icon}
-          >
-            Login with {capitalize(name)}
-          </UIButton>
-        )
-      }
+				return (
+					<UIButton
+						onClick={customLoginConstructor(method.login.url)}
+						loading={customLoading === method.login.url}
+						style={{ flex: 1 }}
+						variant="glass"
+						icon={icon}
+					>
+						Login with {capitalize(name)}
+					</UIButton>
+				);
+			}
 
-      return (
-        <Stack>
-          <LoginMethod name='microsoft' icon='LogoMicrosoft' />
-          <LoginMethod name='google' icon='LogoGoogle' />
-        </Stack>
-      )
-    }
+			return (
+				<Stack>
+					<LoginMethod
+						name="microsoft"
+						icon="LogoMicrosoft"
+					/>
+					<LoginMethod
+						name="google"
+						icon="LogoGoogle"
+					/>
+				</Stack>
+			);
+		};
 
-    const SelectOperationTrigger = () => {
-      const selected = Operation.Entity.selected(Info.app)
+		const SelectOperationTrigger = () => {
+			const selected = Operation.Entity.selected(Info.app);
 
-      if (!app.general.user) {
-        return null;
-      }
+			if (!app.general.user) {
+				return null;
+			}
 
-      return (
-        <Select.Trigger tabIndex={5}>
-          <Select.Icon name={Operation.Entity.icon((selected || {}) as Operation.Type)} />
-          {selected ? selected.name : 'Select operation or create new one'}
-        </Select.Trigger>
-      )
-    }
+			return (
+				<Select.Trigger tabIndex={5}>
+					<Select.Icon
+						name={Operation.Entity.icon((selected || {}) as Operation.Type)}
+					/>
+					{selected ? selected.name : "Select operation or create new one"}
+				</Select.Trigger>
+			);
+		};
 
-    const onLoginAndOperationSelection = () => {
-      const operation = Operation.Entity.selected(app);
-      if (!operation) return;
-      navigate(`/operations/${operation.id}`);
-    };
+		const onLoginAndOperationSelection = () => {
+			const operation = Operation.Entity.selected(app);
+			if (!operation) return;
+			navigate(`/operations/${operation.id}`);
+		};
 
+		return (
+			<Stack
+				className={s.wrapper}
+				dir="column"
+				ai="center"
+				jc="center"
+			>
+				<Logo />
+				<Shimmer
+					duration={2}
+					className={s.title}
+					as="p"
+					color="var(--gray-800)"
+				>
+					[ Login ]
+				</Shimmer>
+				<Input
+					variant="highlighted"
+					icon="Link"
+					label="Server address"
+					placeholder="http://localhost:8080"
+					value={server}
+					disabled={!!app.general.user}
+					tabIndex={1}
+					onChange={(e) => setServer(e.currentTarget.value)}
+					onKeyDown={(e) =>
+						e.key === "Enter" && id && password && !loading && login()
+					}
+					onBlur={handleServerBlur}
+				/>
+				<Input
+					variant="highlighted"
+					label="Username"
+					icon="User"
+					placeholder="admin"
+					value={id}
+					disabled={!!app.general.user}
+					tabIndex={2}
+					onChange={(e) => setId(e.currentTarget.value as typeof id)}
+					onKeyDown={(e) =>
+						e.key === "Enter" && id && password && !loading && login()
+					}
+				/>
+				<Input
+					variant="highlighted"
+					icon="KeyRound"
+					label="Password"
+					placeholder="password"
+					type={showPassword ? "text" : "password"}
+					value={password}
+					endIcon={showPassword ? "EyeOff" : "Eye"}
+					endIconTitle={showPassword ? "Hide password" : "Show password"}
+					onEndIconClick={() => setShowPassword((current) => !current)}
+					disabled={!!app.general.user}
+					tabIndex={3}
+					onChange={(e) => setPassword(e.currentTarget.value)}
+					onKeyDown={(e) =>
+						e.key === "Enter" && id && password && !loading && login()
+					}
+				/>
+				<LoginMethods />
+				<Stack
+					dir="column"
+					gap={6}
+					ai="flex-start"
+					data-input
+					className={cn(s.operation, !!app.general.user && s.visible)}
+				>
+					<Label value="Operation" />
+					<Stack style={{ width: "100%" }}>
+						<Select.Root
+							open={openSelectAuth === "operation"}
+							onOpenChange={(isOpen) =>
+								setOpenSelectAuth(isOpen ? "operation" : null)
+							}
+							defaultValue={Operation.Entity.selected(Info.app)?.id}
+							onValueChange={(id) => Info.operations_select(id as Operation.Id)}
+						>
+							<SelectOperationTrigger />
+							<Select.Content>
+								{app.target.operations.map((operation) => (
+									<Stack
+										key={operation.id}
+										gap={2}
+									>
+										<Select.Item value={operation.id}>
+											<Select.Icon name={Operation.Entity.icon(operation)} />
+											{operation.name}
+										</Select.Item>
+										<UIButton
+											icon="PencilEdit"
+											style={{ color: "var(--second) !important" }}
+											variant="tertiary"
+											onClickCapture={() =>
+												openAuthBanner(
+													<Operation.CreateOrUpdate.Banner
+														operation={operation}
+													/>,
+												)
+											}
+										/>
+									</Stack>
+								))}
+								<UIButton
+									icon="BookPlus"
+									style={{ width: "100%" }}
+									onClick={() =>
+										openAuthBanner(<Operation.CreateOrUpdate.Banner />)
+									}
+									variant="tertiary"
+								>
+									Create new operation
+								</UIButton>
+							</Select.Content>
+						</Select.Root>
+					</Stack>
+				</Stack>
 
+				<NextButton />
+			</Stack>
+		);
+	}
 
-    return (
-      <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
-        <Logo />
-        <Shimmer duration={2} className={s.title} as='p' color='var(--gray-800)'>[ Login ]</Shimmer>
-        <Input
-          variant='highlighted'
-          icon='Link'
-          label='Server address'
-          placeholder='http://localhost:8080'
-          value={server}
-          disabled={!!app.general.user}
-          tabIndex={1}
-          onChange={(e) => setServer(e.currentTarget.value)}
-          onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
-          onBlur={handleServerBlur}
-        />
-        <Input
-          variant='highlighted'
-          label='Username'
-          icon='User'
-          placeholder='admin'
-          value={id}
-          disabled={!!app.general.user}
-          tabIndex={2}
-          onChange={(e) => setId(e.currentTarget.value as typeof id)}
-          onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
-        />
-        <Input
-          variant='highlighted'
-          icon='KeyRound'
-          label='Password'
-          placeholder='password'
-          type={showPassword ? 'text' : 'password'}
-          value={password}
-          endIcon={showPassword ? 'EyeOff' : 'Eye'}
-          endIconTitle={showPassword ? 'Hide password' : 'Show password'}
-          onEndIconClick={() => setShowPassword((current) => !current)}
-          disabled={!!app.general.user}
-          tabIndex={3}
-          onChange={(e) => setPassword(e.currentTarget.value)}
-          onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
-        />
-        <LoginMethods />
-        <Stack dir='column' gap={6} ai='flex-start' data-input className={cn(s.operation, !!app.general.user && s.visible)}>
-          <Label value='Operation' />
-          <Stack style={{ width: '100%' }}>
-            <Select.Root
-              open={openSelectAuth === 'operation'}
-              onOpenChange={(isOpen) => setOpenSelectAuth(isOpen ? 'operation' : null)}
-              defaultValue={Operation.Entity.selected(Info.app)?.id}
-              onValueChange={(id) => Info.operations_select(id as Operation.Id)}
-            >
-              <SelectOperationTrigger />
-              <Select.Content>
-                {app.target.operations.map((operation) => (
-                  <Stack key={operation.id} gap={2}>
-                    <Select.Item value={operation.id}>
-                      <Select.Icon name={Operation.Entity.icon(operation)} />
-                      {operation.name}
-                    </Select.Item>
-                    <UIButton icon='PencilEdit' style={{ color: 'var(--second) !important' }} variant='tertiary' onClickCapture={() => openAuthBanner(<Operation.CreateOrUpdate.Banner operation={operation} />)} />
-                  </Stack>
-                ))}
-                <UIButton icon='BookPlus' style={{ width: '100%' }} onClick={() => openAuthBanner(<Operation.CreateOrUpdate.Banner />)} variant='tertiary'>
-                  Create new operation
-                </UIButton>
-              </Select.Content>
-            </Select.Root>
-          </Stack>
-        </Stack>
+	export namespace Banner {
+		export interface Props extends UIBanner.Props {}
+	}
 
-        <NextButton />
-      </Stack>
-    )
-  }
+	export function Banner({ className, ...props }: Banner.Props) {
+		const { Info, app } = Application.use();
+		const [server, setServer] = useState<string>(Info.app.general.server);
+		const [id, setId] = useState("admin" as User.Id);
+		const [password, setPassword] = useState<string>("admin");
+		const [showPassword, setShowPassword] = useState(false);
+		const [loading, setLoading] = useState<boolean>(false);
+		const [methods, setMethods] =
+			useState<GulpDataset.GetAvailableLoginApi.Response>([]);
 
-  export namespace Banner {
-    export interface Props extends UIBanner.Props { }
-  }
+		useEffect(() => {
+			Internal.Settings.server = server;
+			api<GulpDataset.GetAvailableLoginApi.Response>(
+				"/get_available_login_api",
+				{
+					toast: {
+						onError: (payload) =>
+							payload.status === "error"
+								? toast.warning("Auth plugin is not configured", {
+										description: "Check configuration file on server side",
+										icon: <Icon name="Warning" />,
+										richColors: true,
+									})
+								: undefined,
+					},
+				},
+				setMethods,
+			);
+		}, []);
 
-  export function Banner({ className, ...props }: Banner.Props) {
-    const { Info, app } = Application.use()
-    const [server, setServer] = useState<string>(Info.app.general.server)
-    const [id, setId] = useState('admin' as User.Id);
-    const [password, setPassword] = useState<string>('admin')
-    const [showPassword, setShowPassword] = useState(false)
-    const [loading, setLoading] = useState<boolean>(false)
-    const [methods, setMethods] = useState<GulpDataset.GetAvailableLoginApi.Response>([])
+		const handleServerBlur = () => {
+			if (!server) return;
+			const removeOverload = (str: string): string =>
+				str.endsWith("/") ? removeOverload(str.slice(0, -1)) : str;
 
-    useEffect(() => {
-      Internal.Settings.server = server
-      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-        toast: {
-          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
-            description: 'Check configuration file on server side',
-            icon: <Icon name='Warning' />,
-            richColors: true
-          }) : undefined
-        },
-      }, setMethods)
-    }, [])
+			const validatedServer = Pattern.Server.test(server)
+				? removeOverload(server)
+				: server;
 
-    const handleServerBlur = () => {
-      if (!server) return;
-      const removeOverload = (str: string): string =>
-        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str;
+			Internal.Settings.server = validatedServer;
+			window.dispatchEvent(new CustomEvent("gulp-server-changed"));
 
-      const validatedServer = Pattern.Server.test(server) ? removeOverload(server) : server;
+			setMethods([]);
+			api<GulpDataset.GetAvailableLoginApi.Response>(
+				"/get_available_login_api",
+				{
+					toast: {
+						onError: (payload) =>
+							payload.status === "error"
+								? toast.warning("Auth plugin is not configured", {
+										description: "Check configuration file on server side",
+										icon: <Icon name="Warning" />,
+										richColors: true,
+									})
+								: undefined,
+					},
+				},
+				(data) => {
+					if (Array.isArray(data)) {
+						setMethods(data);
+					} else {
+						setMethods([]);
+					}
+				},
+			);
+		};
 
-      Internal.Settings.server = validatedServer;
-      window.dispatchEvent(new CustomEvent('gulp-server-changed'));
+		const login = async () => {
+			const removeOverload = (str: string): string =>
+				str.endsWith("/") ? removeOverload(str.slice(0, -1)) : str;
 
-      setMethods([]);
-      api<GulpDataset.GetAvailableLoginApi.Response>('/get_available_login_api', {
-        toast: {
-          onError: payload => payload.status === 'error' ? toast.warning('Auth plugin is not configured', {
-            description: 'Check configuration file on server side',
-            icon: <Icon name='Warning' />,
-            richColors: true
-          }) : undefined
-        },
-      }, (data) => {
-        if (Array.isArray(data)) {
-          setMethods(data);
-        } else {
-          setMethods([]);
-        }
-      });
-    };
+			const validate = (str: string): string | void =>
+				!Pattern.Server.test(str)
+					? (() => {
+							toast("Incorrect server URL", {
+								icon: <Icon name="Warning" />,
+							});
+						})()
+					: removeOverload(str);
 
-    const login = async () => {
-      const removeOverload = (str: string): string =>
-        str.endsWith('/') ? removeOverload(str.slice(0, -1)) : str
+			const validatedServer = validate(server);
 
-      const validate = (str: string): string | void =>
-        !Pattern.Server.test(str)
-          ? (() => {
-            toast('Incorrect server URL', {
-              icon: <Icon name='Warning' />
-            })
-          })()
-          : removeOverload(str)
+			if (!validatedServer) return;
 
-      const validatedServer = validate(server)
+			Internal.Settings.server = validatedServer;
 
-      if (!validatedServer) return
+			// Wrap into loading state
+			setLoading(true);
+			await Info.login({ id, password });
+			setLoading(false);
+		};
 
-      Internal.Settings.server = validatedServer
+		const NextButton = () => (
+			<UIButton
+				icon="LogIn"
+				disabled={!id || !password}
+				variant="glass"
+				loading={loading}
+				tabIndex={4}
+				onClick={login}
+			/>
+		);
 
-      // Wrap into loading state
-      setLoading(true);
-      await Info.login({ id, password });
-      setLoading(false);
-    };
+		const [customLoading, setCustomLoading] = useState<string | null>(null);
 
-    const NextButton = () => <UIButton icon='LogIn' disabled={!id || !password} variant='glass' loading={loading} tabIndex={4} onClick={login} />;
+		const customLoginConstructor = (url: string) => () => {
+			const x = new URLSearchParams();
+			x.append("client", window.location.origin);
+			x.append("ws_id", Info.app.general.ws_id);
+			setCustomLoading(url);
+			window.location.replace(`${Internal.Settings.server}${url}?${x}`);
+		};
 
-    const [customLoading, setCustomLoading] = useState<string | null>(null)
+		const LoginMethods = () => {
+			if (
+				methods.length === 0 ||
+				(methods.length === 1 && methods[0].name === "gulp")
+			) {
+				return null;
+			}
 
-    const customLoginConstructor = (url: string) => () => {
-      const x = new URLSearchParams()
-      x.append('client', window.location.origin)
-      x.append('ws_id', Info.app.general.ws_id)
-      setCustomLoading(url)
-      window.location.replace(`${Internal.Settings.server}${url}?${x}`)
-    }
+			function LoginMethod({ name, icon }: LoginMethod.Props) {
+				const method = methods.find((method) => method.name === name);
+				if (!method) {
+					return null;
+				}
 
-    const LoginMethods = () => {
-      if (
-        methods.length === 0 ||
-        (methods.length === 1 && methods[0].name === 'gulp')
-      ) {
-        return null
-      }
+				return (
+					<UIButton
+						onClick={customLoginConstructor(method.login.url)}
+						loading={customLoading === method.login.url}
+						style={{ flex: 1 }}
+						variant="glass"
+						icon={icon}
+					>
+						Login with {capitalize(name)}
+					</UIButton>
+				);
+			}
 
-      function LoginMethod({ name, icon }: LoginMethod.Props) {
-        const method = methods.find((method) => method.name === name)
-        if (!method) {
-          return null
-        }
+			return (
+				<Stack>
+					<LoginMethod
+						name="microsoft"
+						icon="LogoMicrosoft"
+					/>
+					<LoginMethod
+						name="google"
+						icon="LogoGoogle"
+					/>
+				</Stack>
+			);
+		};
 
-        return (
-          <UIButton
-            onClick={customLoginConstructor(method.login.url)}
-            loading={customLoading === method.login.url}
-            style={{ flex: 1 }}
-            variant='glass'
-            icon={icon}
-          >
-            Login with {capitalize(name)}
-          </UIButton>
-        )
-      }
-
-      return (
-        <Stack>
-          <LoginMethod name='microsoft' icon='LogoMicrosoft' />
-          <LoginMethod name='google' icon='LogoGoogle' />
-        </Stack>
-      )
-    }
-
-    return (
-      <UIBanner done={<NextButton />} className={cn(className, s.banner)} {...props}>
-        <Stack className={s.wrapper} dir='column' ai='center' jc='center'>
-          <Shimmer duration={2} className={s.title} as='p' color='var(--gray-800)'>[ Login ]</Shimmer>
-          <Input
-            variant='highlighted'
-            icon='Link'
-            label='Server address'
-            placeholder='http://localhost:8080'
-            value={server}
-            disabled={!!app.general.user}
-            tabIndex={1}
-            onChange={(e) => setServer(e.currentTarget.value)}
-            onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
-            onBlur={handleServerBlur}
-          />
-          <Input
-            variant='highlighted'
-            label='Username'
-            icon='User'
-            placeholder='admin'
-            value={id}
-            disabled={!!app.general.user}
-            tabIndex={2}
-            onChange={(e) => setId(e.currentTarget.value as typeof id)}
-            onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
-          />
-          <Input
-            variant='highlighted'
-            icon='KeyRound'
-            label='Password'
-            placeholder='admin'
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            endIcon={showPassword ? 'EyeOff' : 'Eye'}
-            endIconTitle={showPassword ? 'Hide password' : 'Show password'}
-            onEndIconClick={() => setShowPassword((current) => !current)}
-            disabled={!!app.general.user}
-            tabIndex={3}
-            onChange={(e) => setPassword(e.currentTarget.value)}
-            onKeyDown={(e) => e.key === 'Enter' && id && password && !loading && login()}
-          />
-          <LoginMethods />
-        </Stack>
-      </UIBanner>
-    )
-  }
+		return (
+			<UIBanner
+				done={<NextButton />}
+				className={cn(className, s.banner)}
+				{...props}
+			>
+				<Stack
+					className={s.wrapper}
+					dir="column"
+					ai="center"
+					jc="center"
+				>
+					<Shimmer
+						duration={2}
+						className={s.title}
+						as="p"
+						color="var(--gray-800)"
+					>
+						[ Login ]
+					</Shimmer>
+					<Input
+						variant="highlighted"
+						icon="Link"
+						label="Server address"
+						placeholder="http://localhost:8080"
+						value={server}
+						disabled={!!app.general.user}
+						tabIndex={1}
+						onChange={(e) => setServer(e.currentTarget.value)}
+						onKeyDown={(e) =>
+							e.key === "Enter" && id && password && !loading && login()
+						}
+						onBlur={handleServerBlur}
+					/>
+					<Input
+						variant="highlighted"
+						label="Username"
+						icon="User"
+						placeholder="admin"
+						value={id}
+						disabled={!!app.general.user}
+						tabIndex={2}
+						onChange={(e) => setId(e.currentTarget.value as typeof id)}
+						onKeyDown={(e) =>
+							e.key === "Enter" && id && password && !loading && login()
+						}
+					/>
+					<Input
+						variant="highlighted"
+						icon="KeyRound"
+						label="Password"
+						placeholder="admin"
+						type={showPassword ? "text" : "password"}
+						value={password}
+						endIcon={showPassword ? "EyeOff" : "Eye"}
+						endIconTitle={showPassword ? "Hide password" : "Show password"}
+						onEndIconClick={() => setShowPassword((current) => !current)}
+						disabled={!!app.general.user}
+						tabIndex={3}
+						onChange={(e) => setPassword(e.currentTarget.value)}
+						onKeyDown={(e) =>
+							e.key === "Enter" && id && password && !loading && login()
+						}
+					/>
+					<LoginMethods />
+				</Stack>
+			</UIBanner>
+		);
+	}
 }
 
-
 namespace LoginMethod {
-  export interface Props {
-    name: string
-    icon: Icon.Name
-  }
+	export interface Props {
+		name: string;
+		icon: Icon.Name;
+	}
 }

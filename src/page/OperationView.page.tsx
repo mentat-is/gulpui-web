@@ -62,9 +62,12 @@ export function OperationView() {
         Info.operations_select(operation_id as Operation.Id)
       }
 
-      // 2. Check if a session was manually loaded
+      // 2. Check if a session was manually loaded or timeline was skipped
       const hasSelectedFiles = Source.Entity.selected(app).length > 0
-      if (!isNewOperation && hasSelectedFiles) {
+      if ((!isNewOperation && hasSelectedFiles) || app.general.skippedAuth) {
+        if (app.general.skippedAuth) {
+          Info.setInfoByKey(false, "general", "skippedAuth");
+        }
         setInitialized(true)
         return
       }
