@@ -69,18 +69,12 @@ function ThemeInitializer() {
 }
 
 function _({ children }: any) {
-  const [mounted, setMounted] = useState(false);
   const [themes, setThemes] = useState<ThemeDefinition[]>(() => getAvailableThemes());
 
   useEffect(() => {
     loadThemesFromDirectory();
     setThemes(getAvailableThemes());
-    setMounted(true);
   }, [])
-
-  if (!mounted) {
-    return <>{children}</>
-  }
 
   const themeNames = themes.map((entry) => entry.name);
   const defaultTheme = getDefaultTheme(themes);

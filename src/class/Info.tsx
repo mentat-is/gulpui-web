@@ -1397,34 +1397,43 @@ export class Info implements InfoProps {
 		);
 	};
 
+	private _mappingFileListPromise: Promise<Mapping.Type.Plugin[]> | null = null;
 	mapping_file_list = async (): Promise<Mapping.Type.Plugin[]> => {
-		const shit = await api<Mapping.Raw[]>("/mapping_file_list");
+		if (this._mappingFileListPromise) return this._mappingFileListPromise;
 
-		const parsed_shit = Mapping.Entity.parse(shit);
+		this._mappingFileListPromise = (async () => {
+			const shit = await api<Mapping.Raw[]>("/mapping_file_list");
 
-		const another_parsed_shit = await this.plugin_list().then((p) =>
-			p.filter((p) => p.type.includes("ingestion")),
-		);
+			const parsed_shit = Mapping.Entity.parse(shit);
 
-		another_parsed_shit.forEach((shit) => {
-			const found_shit = parsed_shit.find((ps) => ps.name === shit.filename);
-			if (found_shit) {
-				return;
-			} else {
-				parsed_shit.push({
-					name: shit.filename,
-					methods: [],
-				});
-			}
-		});
+			const another_parsed_shit = await this.plugin_list().then((p) =>
+				p.filter((p) => p.type.includes("ingestion")),
+			);
 
-		const sorted_parsed_shit = parsed_shit.sort((a, b) =>
-			a.name.localeCompare(b.name),
-		);
+			another_parsed_shit.forEach((shit) => {
+				const found_shit = parsed_shit.find((ps) => ps.name === shit.filename);
+				if (found_shit) {
+					return;
+				} else {
+					parsed_shit.push({
+						name: shit.filename,
+						methods: [],
+					});
+				}
+			});
 
-		this.setInfoByKey(sorted_parsed_shit, "target", "mappings");
+			const sorted_parsed_shit = parsed_shit.sort((a, b) =>
+				a.name.localeCompare(b.name),
+			);
 
-		return sorted_parsed_shit;
+			this.setInfoByKey(sorted_parsed_shit, "target", "mappings");
+
+			return sorted_parsed_shit;
+		})();
+
+		const result = await this._mappingFileListPromise;
+		this._mappingFileListPromise = null;
+		return result;
 	};
 
 	/**
@@ -2503,66 +2512,74 @@ export class Info implements InfoProps {
 			this.highlights_reload();
 		});
 
+	private _glyphsReloadPromise: Promise<void> | null = null;
 	glyphs_reload = async () => {
-		Glyph.List.clear();
+		if (this._glyphsReloadPromise) return this._glyphsReloadPromise;
 
-		const glyphs = await api<Glyph.Type[]>("/glyph_list", {
-			method: "POST",
-		});
+		this._glyphsReloadPromise = (async () => {
+			Glyph.List.clear();
 
-		if (!glyphs) {
-			return Logger.error("Failed to sync glyphs", "Info.glyphs_reload");
-		}
-
-		const queue: (() => Promise<void>)[] = [];
-
-		const synced = new Map<string, Glyph.Id>();
-
-		glyphs.forEach((g) => {
-			synced.set(g.name, g.id);
-			Glyph.List.set(g.id, g.name);
-		});
-
-		const notSynced = Glyph.Raw.filter((glyph) => !synced.has(glyph));
-
-		notSynced.forEach((name) => {
-			queue.push(async () => {
-				const formData = new FormData();
-				formData.append("img", new Blob());
-
-				await api<Glyph.Type>(
-					"/glyph_create",
-					{
-						method: "POST",
-						deassign: true,
-						query: { name },
-						body: formData,
-					},
-					(glyph) => {
-						Glyph.List.set(glyph.id, glyph.name);
-					},
-				);
+			const glyphs = await api<Glyph.Type[]>("/glyph_list", {
+				method: "POST",
 			});
-		});
 
-		const runQueue = async () => {
-			const tasks = queue.splice(0, 10).map((task) => task());
-			await Promise.all(tasks);
-			if (queue.length > 0) {
-				await runQueue();
+			if (!glyphs) {
+				return Logger.error("Failed to sync glyphs", "Info.glyphs_reload");
 			}
-		};
 
-		await runQueue();
+			const queue: (() => Promise<void>)[] = [];
 
-		Logger.log(`Glyphs has been syncronized with gulp-backend`, Info);
+			const synced = new Map<string, Glyph.Id>();
 
-		while (Glyph.Entries.length) {
-			Glyph.Entries.pop();
-		}
-		Glyph.Entries.push(...Array.from(Glyph.List.entries()));
+			glyphs.forEach((g) => {
+				synced.set(g.name, g.id);
+				Glyph.List.set(g.id, g.name);
+			});
 
-		this.setInfoByKey(true, "general", "glyphs_syncronized");
+			const notSynced = Glyph.Raw.filter((glyph) => !synced.has(glyph));
+
+			notSynced.forEach((name) => {
+				queue.push(async () => {
+					const formData = new FormData();
+					formData.append("img", new Blob());
+
+					await api<Glyph.Type>(
+						"/glyph_create",
+						{
+							method: "POST",
+							deassign: true,
+							query: { name },
+							body: formData,
+						},
+						(glyph) => {
+							Glyph.List.set(glyph.id, glyph.name);
+						},
+					);
+				});
+			});
+
+			const runQueue = async () => {
+				const tasks = queue.splice(0, 10).map((task) => task());
+				await Promise.all(tasks);
+				if (queue.length > 0) {
+					await runQueue();
+				}
+			};
+
+			await runQueue();
+
+			Logger.log(`Glyphs has been syncronized with gulp-backend`, Info);
+
+			while (Glyph.Entries.length) {
+				Glyph.Entries.pop();
+			}
+			Glyph.Entries.push(...Array.from(Glyph.List.entries()));
+
+			this.setInfoByKey(true, "general", "glyphs_syncronized");
+		})();
+
+		await this._glyphsReloadPromise;
+		this._glyphsReloadPromise = null;
 	};
 
 	setPointers = (pointer: Pointers.Pointer) => {
@@ -2787,89 +2804,98 @@ export class Info implements InfoProps {
 			});
 	}
 
+	private _syncPromise: Promise<{ operations: Operation.Type[], contexts: Context.Type[], files: Source.Type[] } | undefined> | null = null;
 	sync = async () => {
-		await this.mapping_file_list();
+		if (this._syncPromise) return this._syncPromise;
 
-		const operationsData =
-			await api<GulpDataset.QueryOperations.Summary>("/query_operations");
-		if (!operationsData || !Array.isArray(operationsData)) return;
+		this._syncPromise = (async () => {
+			await this.mapping_file_list();
 
-		const operations: Operation.Type[] = [];
-		const contexts: Context.Type[] = [];
-		const files: Source.Type[] = [];
+			const operationsData =
+				await api<GulpDataset.QueryOperations.Summary>("/query_operations");
+			if (!operationsData || !Array.isArray(operationsData)) return undefined;
 
-		operationsData.forEach((opData) => {
-			const opId = opData.id as Operation.Id;
-			const existOp = Operation.Entity.id(this.app, opId) ?? {};
+			const operations: Operation.Type[] = [];
+			const contexts: Context.Type[] = [];
+			const files: Source.Type[] = [];
 
-			operations.push({
-				id: opId,
-				name: opData.name,
-				index: opData.index ?? opData.id,
-				glyph_id: opData.glyph_id ?? Default.Icon.OPERATION,
-				selected: existOp.selected ?? false,
-			} as Operation.Type);
+			operationsData.forEach((opData) => {
+				const opId = opData.id as Operation.Id;
+				const existOp = Operation.Entity.id(this.app, opId) ?? {};
 
-			opData.contexts?.forEach((ctxData) => {
-				const ctxId = ctxData.id as Context.Id;
-				const existCtx = Context.Entity.id(this.app, ctxId) ?? {};
+				operations.push({
+					id: opId,
+					name: opData.name,
+					index: opData.index ?? opData.id,
+					glyph_id: opData.glyph_id ?? Default.Icon.OPERATION,
+					selected: existOp.selected ?? false,
+				} as Operation.Type);
 
-				contexts.push({
-					id: ctxId,
-					name: ctxData.name,
-					operation_id: opId,
-					glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
-					color: existCtx.color ?? stringToHexColor(ctxData.name ?? ""),
-					type: "context",
-					selected: existCtx.selected ?? false,
-					owner_user_id: this.app.general.user?.id!,
-					time_created: Date.now(),
-					time_updated: Date.now(),
-					granted_user_group_ids: [],
-					granted_user_ids: [],
-				} as Context.Type);
+				opData.contexts?.forEach((ctxData) => {
+					const ctxId = ctxData.id as Context.Id;
+					const existCtx = Context.Entity.id(this.app, ctxId) ?? {};
 
-				ctxData.plugins?.forEach((pluginData) => {
-					pluginData.sources?.forEach((srcData) => {
-						const src = Source.Entity.normalize(
-							this.app,
-							{
-								id: (srcData as any).id,
-								name: srcData.name,
-								operation_id: opId,
-								context_id: ctxId,
-								plugin: pluginData.name,
-								glyph_id: srcData.glyph_id ?? Default.Icon.SOURCE,
-								type: "source",
-								owner_user_id: this.app.general.user?.id!,
-								time_created: Date.now(),
-								time_updated: Date.now(),
-							} as Source.Type,
-							srcData,
-						);
-						if (src) files.push(src);
+					contexts.push({
+						id: ctxId,
+						name: ctxData.name,
+						operation_id: opId,
+						glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
+						color: existCtx.color ?? stringToHexColor(ctxData.name ?? ""),
+						type: "context",
+						selected: existCtx.selected ?? false,
+						owner_user_id: this.app.general.user?.id!,
+						time_created: Date.now(),
+						time_updated: Date.now(),
+						granted_user_group_ids: [],
+						granted_user_ids: [],
+					} as Context.Type);
+
+					ctxData.plugins?.forEach((pluginData) => {
+						pluginData.sources?.forEach((srcData) => {
+							const src = Source.Entity.normalize(
+								this.app,
+								{
+									id: (srcData as any).id,
+									name: srcData.name,
+									operation_id: opId,
+									context_id: ctxId,
+									plugin: pluginData.name,
+									glyph_id: srcData.glyph_id ?? Default.Icon.SOURCE,
+									type: "source",
+									owner_user_id: this.app.general.user?.id!,
+									time_created: Date.now(),
+									time_updated: Date.now(),
+								} as Source.Type,
+								srcData,
+							);
+							if (src) files.push(src);
+						});
 					});
 				});
 			});
-		});
 
-		Logger.log(
-			`${operations.length} operations has been added to application data`,
-			this.sync,
-		);
+			Logger.log(
+				`${operations.length} operations has been added to application data`,
+				this.sync,
+			);
 
-		Logger.log(
-			`${files.length} files has been added to application data`,
-			this.sync,
-		);
+			Logger.log(
+				`${files.length} files has been added to application data`,
+				this.sync,
+			);
 
-		RenderEngine.reset("range");
+			RenderEngine.reset("range");
 
-		this.setInfoByKey(operations, "target", "operations");
-		this.setInfoByKey(contexts, "target", "contexts");
-		this.setInfoByKey(files, "target", "files");
+			this.setInfoByKey(operations, "target", "operations");
+			this.setInfoByKey(contexts, "target", "contexts");
+			this.setInfoByKey(files, "target", "files");
 
-		return { operations, contexts, files };
+			return { operations, contexts, files };
+		})();
+
+		const result = await this._syncPromise;
+		this._syncPromise = null;
+		return result;
 	};
 
 	syncFile = (id: Source.Id) =>
@@ -2925,45 +2951,63 @@ export class Info implements InfoProps {
 	};
 
 	// ⚠️ UNTOUCHABLE
+	private _pluginListPromise: Promise<GulpDataset.PluginList.Interface[]> | null = null;
 	plugin_list = async (): Promise<GulpDataset.PluginList.Interface[]> => {
 		const plugins = this.app.target.plugins;
 		if (plugins.length) {
 			return Internal.Transformator.toAsync(plugins);
 		}
 
-		Logger.warn("No plugins found in application data", "plugin_list");
-		Logger.log("Fetching plugins...", "plugin_list");
+		if (this._pluginListPromise) return this._pluginListPromise;
 
-		const list = await api<GulpDataset.PluginList.Interface[]>(
-			"/plugin_list",
-			(list) => list.sort((a, b) => a.filename.localeCompare(b.filename)),
-		);
-		if (!list) {
-			return [];
-		}
+		this._pluginListPromise = (async () => {
+			Logger.warn("No plugins found in application data", "plugin_list");
+			Logger.log("Fetching plugins...", "plugin_list");
 
-		this.setInfoByKey(list, "target", "plugins");
+			const list = await api<GulpDataset.PluginList.Interface[]>(
+				"/plugin_list",
+				(list) => list.sort((a, b) => a.filename.localeCompare(b.filename)),
+			);
+			if (!list) {
+				return [];
+			}
 
-		Logger.log(
-			`Fetched and sorted ${list.length} plugins. Names:`,
-			"plugin_list",
-		);
-		Logger.log(
-			list.map((l) => l.filename),
-			"plugin_list",
-		);
+			this.setInfoByKey(list, "target", "plugins");
 
-		return list;
+			Logger.log(
+				`Fetched and sorted ${list.length} plugins. Names:`,
+				"plugin_list",
+			);
+			Logger.log(
+				list.map((l) => l.filename),
+				"plugin_list",
+			);
+
+			return list;
+		})();
+
+		const result = await this._pluginListPromise;
+		this._pluginListPromise = null;
+		return result;
 	};
 
 	setTimelineFrame = (frame: MinMax) =>
 		this.setInfoByKey(frame, "timeline", "frame");
 
-	user_get_by_id = (userId: string): Promise<User.Type> =>
-		api<User.Type>("/user_get_by_id", {
+	private _userGetByIdPromises = new Map<string, Promise<User.Type>>();
+	user_get_by_id = (userId: string): Promise<User.Type> => {
+		if (this._userGetByIdPromises.has(userId)) {
+			return this._userGetByIdPromises.get(userId)!;
+		}
+		const p = api<User.Type>("/user_get_by_id", {
 			method: "GET",
 			query: { user_id: userId },
+		}).finally(() => {
+			this._userGetByIdPromises.delete(userId);
 		});
+		this._userGetByIdPromises.set(userId, p);
+		return p;
+	};
 
 	login = async (credentials: Pick<User.Minified, "id" | "password">) => {
 		const user = await api<User.Type>("/login", {

@@ -124,19 +124,20 @@ export namespace Auth {
 			}
 
 			if (app.general.user) {
-				if (redirectPath) {
-					const decodedRedirect = decodeURIComponent(redirectPath);
-					const redirectOpMatch = decodedRedirect.match(
-						/\/operations\/([^/]+)/,
-					);
-					const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
-					if (redirectOpId) {
-						const checkAndRedirect = async () => {
-							if (app.target.operations.length === 0) {
-								await Info.plugin_list();
-								await Info.glyphs_reload();
-								await Info.sync();
-							}
+				const initializeAndRedirect = async () => {
+					if (app.target.operations.length === 0) {
+						await Info.plugin_list();
+						await Info.glyphs_reload();
+						await Info.sync();
+					}
+
+					if (redirectPath) {
+						const decodedRedirect = decodeURIComponent(redirectPath);
+						const redirectOpMatch = decodedRedirect.match(
+							/\/operations\/([^/]+)/,
+						);
+						const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
+						if (redirectOpId) {
 							const matchedOp = Info.app.target.operations.find(
 								(op) => op.id === redirectOpId || op.name === redirectOpId,
 							);
@@ -152,16 +153,17 @@ export namespace Auth {
 									},
 								);
 							}
-						};
-						checkAndRedirect();
+						}
+					} else {
+						// If no redirect path, but logged in, navigate to selected operation if present
+						const currentOp = Operation.Entity.selected(Info.app);
+						if (currentOp) {
+							navigate(`/operations/${currentOp.id}`);
+						}
 					}
-				} else {
-					// If no redirect path, but logged in, navigate to selected operation if present
-					const currentOp = Operation.Entity.selected(app);
-					if (currentOp) {
-						navigate(`/operations/${currentOp.id}`);
-					}
-				}
+				};
+
+				initializeAndRedirect();
 			}
 		}, [app.general.user, redirectPath, navigate]);
 
