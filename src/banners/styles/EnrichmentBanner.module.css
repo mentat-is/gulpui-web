@@ -15,3 +15,9 @@
   line-height: 1.35;
   color: var(--second);
 }
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--second);
+}

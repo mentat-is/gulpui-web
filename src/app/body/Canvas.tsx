@@ -115,21 +115,24 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 		const app = Info.app; // Capture current state for this frame
 
-		if (canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
-			const oldWidth = canvas_ref.current.width;
-			const newWidth = wrapper_ref.current.clientWidth;
+		const oldWidth = canvas_ref.current.width;
+		const oldHeight = canvas_ref.current.height;
+		const newWidth = wrapper_ref.current.clientWidth;
+		const newHeight = wrapper_ref.current.clientHeight;
 
+		if (oldWidth !== newWidth || oldHeight !== newHeight) {
 			canvas_ref.current.width = newWidth;
-			canvas_ref.current.height = wrapper_ref.current.clientHeight;
+			canvas_ref.current.height = newHeight;
 
-			const delta = oldWidth / newWidth;
-
-			Info.setTimelineScale(app.timeline.scale * delta);
-			scrollStore.setScrollX((s) => s - newWidth + oldWidth);
+			if (oldWidth !== 0 && oldWidth !== newWidth) {
+				const delta = oldWidth / newWidth;
+				Info.setTimelineScale(app.timeline.scale * delta);
+				scrollStore.setScrollX((s) => s - newWidth + oldWidth);
+			}
 			return;
-		} else {
-			ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 		}
+
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
 		const currentScrollX = scrollXRef.current;
 		const currentScrollY = scrollYRef.current;
@@ -693,7 +696,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 				Math.round(
 					((timestamp - Info.app.timeline.frame.min) /
 						(Info.app.timeline.frame.max - Info.app.timeline.frame.min)) *
-						Info.width,
+					Info.width,
 				) - scrollXRef.current
 			);
 		},
@@ -710,7 +713,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 				(event.clientY +
 					scrollYRef.current -
 					timeline.current.getBoundingClientRect().top) /
-					48,
+				48,
 			);
 
 			const files = Source.Entity.selected(Info.app).filter((file) =>

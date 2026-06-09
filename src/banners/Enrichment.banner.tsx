@@ -93,17 +93,37 @@ interface FieldRowProps {
 function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
   return (
     <Stack gap={8} ai='center'>
-      <Input
-        placeholder='Field key'
-        value={field.key}
-        onChange={e => onUpdate(index, { key: e.target.value })}
-      />
-      <Input
-        placeholder='Field value'
-        disabled={field.value === null}
-        value={field.value ?? ''}
-        onChange={e => onUpdate(index, { value: e.target.value })}
-      />
+      <Stack dir='column' gap={4}>
+        <Label value='Key' className={s.label} />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Input
+                placeholder='Field key'
+                value={field.key}
+                onChange={e => onUpdate(index, { key: e.target.value })}
+              />
+            </TooltipTrigger>
+            {field.key && <TooltipContent side='top'>{field.key}</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
+      </Stack>
+      <Stack dir='column' gap={4}>
+        <Label value='Value' className={s.label} />
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Input
+                placeholder='Field value'
+                disabled={field.value === null}
+                value={field.value ?? ''}
+                onChange={e => onUpdate(index, { value: e.target.value })}
+              />
+            </TooltipTrigger>
+            {field.value !== null && field.value !== '' && <TooltipContent side='top'>{field.value}</TooltipContent>}
+          </Tooltip>
+        </TooltipProvider>
+      </Stack>
       <Checkbox
         checked={field.value !== null}
         onCheckedChange={(checked) => onUpdate(index, { value: checked ? '' : null })}
@@ -157,23 +177,29 @@ function TimeRangeSelector({ event, frame, setFrame, isLoaded }: TimeRangeSelect
   }
 
   return (
-    <Stack>
-      <Input
-        key='min-date'
-        onChange={handleMinChange}
-        value={formatDate(frame.min)}
-        variant='highlighted'
-        icon='CalendarArrowUp'
-        type='datetime-local'
-      />
-      <Input
-        key='max-date'
-        onChange={handleMaxChange}
-        value={formatDate(frame.max)}
-        variant='highlighted'
-        icon='CalendarArrowDown'
-        type='datetime-local'
-      />
+    <Stack dir='column' gap={8}>
+      <Stack dir='column' gap={4}>
+        <Label value='Start Date' className={s.label} />
+        <Input
+          key='min-date'
+          onChange={handleMinChange}
+          value={formatDate(frame.min)}
+          variant='highlighted'
+          icon='CalendarArrowUp'
+          type='datetime-local'
+        />
+      </Stack>
+      <Stack dir='column' gap={4}>
+        <Label value='End Date' className={s.label} />
+        <Input
+          key='max-date'
+          onChange={handleMaxChange}
+          value={formatDate(frame.max)}
+          variant='highlighted'
+          icon='CalendarArrowDown'
+          type='datetime-local'
+        />
+      </Stack>
     </Stack>
   )
 }

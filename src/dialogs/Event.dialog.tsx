@@ -44,7 +44,6 @@ import {
 	darkStyles,
 	defaultStyles,
 } from "react-json-view-lite";
-import "react-json-view-lite/dist/index.css";
 import { StyleProps } from "react-json-view-lite/dist/DataRenderer";
 import { useTheme } from "next-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
@@ -122,6 +121,45 @@ const flattenTableEntries = (
  * @param nodeClass CSS class for nodes
  * @param basicClass CSS class for basic containers
  */
+const getTreeLabelFromElement = (
+	element: Element | null,
+	labelClass: string,
+	clickableLabelClass: string,
+	nodeClass: string,
+): Element | null => {
+	if (!element) return null;
+
+	const directLabel =
+		element.classList.contains(labelClass) ||
+			element.classList.contains(clickableLabelClass)
+			? element
+			: (element.closest(`.${labelClass}`) ??
+				element.closest(`.${clickableLabelClass}`));
+
+	if (directLabel) return directLabel;
+
+	const node = element.closest(`.${nodeClass}`);
+	return node
+		? node.querySelector(`.${labelClass}, .${clickableLabelClass}`)
+		: null;
+};
+
+const getHoveredTreeLabel = (
+	target: EventTarget | null,
+	labelClass: string,
+	clickableLabelClass: string,
+	nodeClass: string,
+): Element | null => {
+	const element =
+		target instanceof Element
+			? target
+			: target instanceof Node
+				? target.parentElement
+				: null;
+
+	return getTreeLabelFromElement(element, labelClass, clickableLabelClass, nodeClass);
+};
+
 const getTreeKeyPath = (
 	labelEl: Element,
 	labelClass: string,
@@ -129,8 +167,14 @@ const getTreeKeyPath = (
 	nodeClass: string,
 	basicClass: string,
 ): string => {
-	const clean = (el: Element) =>
-		(el.textContent || "").trim().replace(/^"+|"+$/g, "");
+	const clean = (el: Element) => {
+		let text = (el.textContent || "").trim();
+		// Remove all quotes
+		text = text.replace(/"/g, "");
+		// Remove trailing colon, comma, and whitespace
+		text = text.replace(/[:, \s]+$/, "");
+		return text;
+	};
 	const parts: string[] = [clean(labelEl)];
 
 	let nodeEl: Element | null = labelEl.closest(`.${nodeClass}`);
@@ -166,55 +210,65 @@ const getValueByPath = (
 		return json[path];
 	}
 
-	const prefix = path + ".";
-	const nestedEntries = Object.entries(json).filter(([k]) =>
-		k.startsWith(prefix),
-	);
-
-	if (nestedEntries.length > 0) {
-		const nested: Record<string, any> = {};
-		nestedEntries.forEach(([k, v]) => {
-			const suffix = k.slice(prefix.length);
-			suffix
-				.split(".")
-				.reduce(
-					(acc: Record<string, any>, part, index, parts) =>
-						acc[part] || (acc[part] = index === parts.length - 1 ? v : {}),
-					nested,
-				);
-		});
-		return nested;
-	}
-
 	const parts = path.split(".");
-	let flatKeyMatch: string | null = null;
-	for (let i = parts.length; i > 0; i--) {
-		const candidate = parts.slice(0, i).join(".");
-		if (Object.prototype.hasOwnProperty.call(json, candidate)) {
-			flatKeyMatch = candidate;
-			break;
-		}
-	}
+	let current: unknown = json;
 
-	if (flatKeyMatch) {
-		let current = json[flatKeyMatch];
-		const remainingParts = parts.slice(flatKeyMatch.split(".").length);
+	// Try to traverse using dots
+	for (const part of parts) {
+		if (
+			current &&
+			typeof current === "object" &&
+			Object.prototype.hasOwnProperty.call(current, part)
+		) {
+			current = (current as Record<string, unknown>)[part];
+		} else {
+			// If we can't find it via dots, try checking if there's a parent key with dots
+			// For example, if path is "gulp.unmapped.Guid" and parts[0:2] joined as "gulp.unmapped" exists
+			for (let i = parts.length - 1; i > 0; i--) {
+				const parentPath = parts.slice(0, i).join(".");
+				const childPart = parts[i];
 
-		for (const part of remainingParts) {
-			if (
-				current &&
-				typeof current === "object" &&
-				part in (current as Record<string, unknown>)
-			) {
-				current = (current as Record<string, unknown>)[part];
-			} else {
-				return undefined;
+				if (Object.prototype.hasOwnProperty.call(json, parentPath)) {
+					const parentObj = json[parentPath];
+					if (
+						parentObj &&
+						typeof parentObj === "object" &&
+						Object.prototype.hasOwnProperty.call(parentObj, childPart)
+					) {
+						return (parentObj as Record<string, unknown>)[childPart];
+					}
+				}
 			}
+			return undefined;
 		}
-		return current;
 	}
 
-	return undefined;
+	return current;
+};
+
+const isTreeLeafValue = (
+	json: Record<string, unknown> | null,
+	path: string | null,
+): boolean => {
+	if (!json || !path) return false;
+	const value = getValueByPath(json, path);
+	return (
+		value !== undefined &&
+		!isPlainObject(value) &&
+		!Array.isArray(value)
+	);
+};
+
+const getLeafTooltipText = (
+	json: Record<string, unknown> | null,
+	path: string | null,
+): string | null => {
+	if (!json || !path || !isTreeLeafValue(json, path)) return null;
+
+	const value = getValueByPath(json, path);
+	if (value === undefined) return null;
+
+	return `${path}: ${String(value)}`;
 };
 
 /**
@@ -294,23 +348,21 @@ const detectTreeSelection = (
 			s.node,
 			s.basic,
 		);
-		if (path) {
+		if (path && isTreeLeafValue(json, path)) {
 			const value = getValueByPath(json, path);
-			if (value !== undefined) {
-				const strValue =
-					typeof value === "object" ? JSON.stringify(value) : String(value);
-				const nodeContainer = treeLabel.closest(`.${s.node}`) as HTMLElement;
-				if (nodeContainer) {
-					const selection = doc.defaultView?.getSelection();
-					if (selection) {
-						const range = doc.createRange();
-						range.selectNodeContents(nodeContainer);
-						selection.removeAllRanges();
-						selection.addRange(range);
-					}
+			const strValue =
+				typeof value === "string" ? `"${value}"` : JSON.stringify(value);
+			const nodeContainer = treeLabel.closest(`.${s.node}`) as HTMLElement;
+			if (nodeContainer) {
+				const selection = doc.defaultView?.getSelection();
+				if (selection) {
+					const range = doc.createRange();
+					range.selectNodeContents(nodeContainer);
+					selection.removeAllRanges();
+					selection.addRange(range);
 				}
-				return `"${path}": "${strValue}"`;
 			}
+			return `"${path}": ${strValue}`;
 		}
 	}
 	return null;
@@ -385,8 +437,28 @@ const detectRawSelection = (
 						}
 						if (currentIndent === 0) break;
 					}
+
+					// Find the complete value spanning multiple lines
 					const colonIndex = lineText.indexOf(":");
-					return `"${currentPath}": ${lineText.slice(colonIndex + 1).trim()}`;
+					let valueStartPos = colonIndex + 1;
+					let valueText = lineText.slice(valueStartPos).trim();
+
+					// Check if value spans multiple lines (incomplete JSON)
+					let currentLineIdx = lineIndex;
+					while (currentLineIdx < lines.length - 1) {
+						// Try to parse the accumulated value
+						try {
+							JSON.parse(valueText);
+							// Successfully parsed, we have the complete value
+							break;
+						} catch (e) {
+							// Value is incomplete, add next line
+							currentLineIdx++;
+							valueText += "\n" + lines[currentLineIdx];
+						}
+					}
+
+					return `"${currentPath}": ${valueText}`;
 				}
 
 				return lineText;
@@ -404,15 +476,40 @@ const detectRawSelection = (
 		!current.classList.contains(s.highlighter)
 	) {
 		const text = (current.innerText || current.textContent || "").trim();
-		if (text.includes(":") && !text.includes("\n")) {
-			const sel = doc.defaultView?.getSelection();
-			if (sel) {
-				const r = doc.createRange();
-				r.selectNodeContents(current);
-				sel.removeAllRanges();
-				sel.addRange(r);
+		if (text.includes(":")) {
+			// Try to parse as JSON to detect if it's a complete key-value pair
+			try {
+				const match = text.match(/^"([^"]+)":\s*(.+)$/s);
+				if (match) {
+					const key = match[1];
+					const valueStr = match[2];
+					// Try parsing the value to see if it's valid JSON
+					JSON.parse(valueStr);
+					// Valid complete value, use this
+					const sel = doc.defaultView?.getSelection();
+					if (sel) {
+						const r = doc.createRange();
+						r.selectNodeContents(current);
+						sel.removeAllRanges();
+						sel.addRange(r);
+					}
+					return text;
+				}
+			} catch (e) {
+				// Not a complete value or doesn't match pattern, try parent
 			}
-			return text;
+
+			// If doesn't include newlines, it's a simple single-line value, use it
+			if (!text.includes("\n")) {
+				const sel = doc.defaultView?.getSelection();
+				if (sel) {
+					const r = doc.createRange();
+					r.selectNodeContents(current);
+					sel.removeAllRanges();
+					sel.addRange(r);
+				}
+				return text;
+			}
 		}
 		current = current.parentElement;
 	}
@@ -558,8 +655,10 @@ export function DisplayEventDialog({
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 	const treeContextPathRef = useRef<string | null>(null);
+	const treeContainerRef = useRef<HTMLDivElement | null>(null);
+	const isContextMenuSelectingRef = useRef<boolean>(false);
 	const [treeTooltip, setTreeTooltip] = useState<{
-		path: string;
+		text: string;
 		x: number;
 		y: number;
 	} | null>(null);
@@ -603,6 +702,7 @@ export function DisplayEventDialog({
 	// Global selection tracker
 	useEffect(() => {
 		const handleSelectionChange = () => {
+			if (isContextMenuSelectingRef.current) return;
 			const text = currentDocument.defaultView
 				?.getSelection()
 				?.toString()
@@ -622,6 +722,87 @@ export function DisplayEventDialog({
 	}, [currentDocument]);
 
 	useEffect(() => setSelection(""), [event._id]);
+
+	// Tree event handlers using ref-based delegation
+	useEffect(() => {
+		const container = treeContainerRef.current;
+		console.log("EFFECT: Tree event setup", { container: !!container, json: !!json });
+		if (!container || !json) return;
+
+		const handleMouseEnter = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+
+			// For mouseenter, we know target is closer to the actual element
+			// Walk up to find the node container
+			let nodeEl: Element | null = target;
+			while (nodeEl && !nodeEl.classList.contains(s.node)) {
+				nodeEl = nodeEl.parentElement;
+			}
+
+			if (!nodeEl) {
+				setTreeTooltip(null);
+				return;
+			}
+
+			// Find label within node
+			const labelEl = Array.from(nodeEl.children).find(
+				(child) =>
+					child.classList.contains(s.label) ||
+					child.classList.contains(s.clickableLabel),
+			);
+
+			if (!labelEl) {
+				setTreeTooltip(null);
+				return;
+			}
+
+			const path = getTreeKeyPath(
+				labelEl,
+				s.label,
+				s.clickableLabel,
+				s.node,
+				s.basic,
+			);
+
+			// Only show tooltip if this is actually a leaf node
+			if (!isTreeLeafValue(json, path)) {
+				setTreeTooltip(null);
+				return;
+			}
+
+			const tooltipText = getLeafTooltipText(json, path);
+
+			if (!tooltipText) {
+				setTreeTooltip(null);
+				return;
+			}
+
+			// Get the position of the target element to show tooltip near it
+			const rect = target.getBoundingClientRect();
+			setTreeTooltip({
+				text: tooltipText,
+				x: rect.x,
+				y: rect.y,
+			});
+		};
+
+		const handleMouseLeave = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			// Only clear tooltip if we're leaving a node
+			if (target.classList.contains(s.node) || target.closest(`.${s.node}`)) {
+				setTreeTooltip(null);
+			}
+		};
+
+		// Use capture phase to catch events before they bubble to container
+		container.addEventListener("mouseenter", handleMouseEnter, true);
+		container.addEventListener("mouseleave", handleMouseLeave, true);
+
+		return () => {
+			container.removeEventListener("mouseenter", handleMouseEnter, true);
+			container.removeEventListener("mouseleave", handleMouseLeave, true);
+		};
+	}, [json, s.node, s.label, s.clickableLabel, s.basic]);
 
 	// --- HANDLERS: Actions ---
 
@@ -800,17 +981,10 @@ export function DisplayEventDialog({
 		return (
 			<ContextMenu>
 				<Tabs
-					defaultValue="raw"
+					defaultValue="tree"
 					className={s.tabs_wrapper}
 				>
 					<TabsList className={s.triggers}>
-						<TabsTrigger value="tree">
-							<Icon
-								name="GitFork"
-								size={14}
-							/>{" "}
-							Tree
-						</TabsTrigger>
 						<TabsTrigger value="raw">
 							<Icon
 								name="CodeBracket"
@@ -825,6 +999,13 @@ export function DisplayEventDialog({
 							/>{" "}
 							Table
 						</TabsTrigger>
+						<TabsTrigger value="tree">
+							<Icon
+								name="GitFork"
+								size={14}
+							/>{" "}
+							Tree
+						</TabsTrigger>
 					</TabsList>
 
 					<ContextMenuTrigger
@@ -837,7 +1018,7 @@ export function DisplayEventDialog({
 								const element = currentDocument.elementFromPoint(
 									e.clientX,
 									e.clientY,
-								) as HTMLElement;
+								) as HTMLElement | null;
 								currentDocument.defaultView?.getSelection()?.removeAllRanges();
 								const detected = detectSelectionAtPoint(
 									currentDocument,
@@ -846,50 +1027,68 @@ export function DisplayEventDialog({
 									json,
 								);
 								if (detected) {
+									isContextMenuSelectingRef.current = true;
 									lastAutoSelectionRef.current = detected;
 									setSelection(detected);
 
-									if (element.closest(`.${s.highlighter}`)) {
+									// Clear the flag after context menu interactions
+									setTimeout(() => {
+										isContextMenuSelectingRef.current = false;
+									}, 100);
+
+									// Extract leaf path from node
+									let nodeEl: Element | null = element as Element | null;
+									while (nodeEl && !nodeEl.classList.contains(s.node)) {
+										nodeEl = nodeEl.parentElement;
+									}
+
+									if (nodeEl) {
+										const labelEl = Array.from(nodeEl.children).find(
+											(child) =>
+												child.classList.contains(s.label) ||
+												child.classList.contains(s.clickableLabel),
+										);
+
+										if (labelEl) {
+											const leafPath = getTreeKeyPath(
+												labelEl,
+												s.label,
+												s.clickableLabel,
+												s.node,
+												s.basic,
+											);
+
+											if (leafPath && isTreeLeafValue(json, leafPath)) {
+												treeContextPathRef.current = leafPath;
+												// Select the leaf value text
+												const nodeContainer = element?.closest(`.${s.node}`) as HTMLElement | null;
+												if (nodeContainer) {
+													const selection = currentDocument.defaultView?.getSelection();
+													if (selection) {
+														const range = currentDocument.createRange();
+														range.selectNodeContents(nodeContainer);
+														selection.removeAllRanges();
+														selection.addRange(range);
+													}
+												}
+												// Context menu will show naturally
+											}
+										}
+									} else if (element?.closest(`.${s.highlighter}`)) {
 										const colonIndex = detected.indexOf(":");
 										if (colonIndex !== -1) {
 											treeContextPathRef.current = detected
 												.slice(0, colonIndex)
 												.trim()
 												.replace(/^"+|"+$/g, "");
-											return;
 										}
+									} else if (element?.closest(`.${s.tableView}`)) {
 									}
 								} else {
 									lastAutoSelectionRef.current = null;
 									setSelection("");
+									treeContextPathRef.current = null;
 								}
-
-								let labelEl = element
-									? element.classList.contains(s.label) ||
-										element.classList.contains(s.clickableLabel)
-										? element
-										: (element.closest(`.${s.label}`) ??
-											element.closest(`.${s.clickableLabel}`))
-									: null;
-
-								if (!labelEl && element) {
-									const node = element.closest(`.${s.node}`);
-									if (node) {
-										labelEl = node.querySelector(
-											`.${s.label}, .${s.clickableLabel}`,
-										);
-									}
-								}
-
-								treeContextPathRef.current = labelEl
-									? getTreeKeyPath(
-										labelEl,
-										s.label,
-										s.clickableLabel,
-										s.node,
-										s.basic,
-									)
-									: null;
 							}
 						}}
 					// onContextMenu={() => {
@@ -897,32 +1096,10 @@ export function DisplayEventDialog({
 					// 	if (current && current !== selection) setSelection(current);
 					// }}
 					>
-						<div className={s.contextTrigger}>
+						<div className={s.contextTrigger} ref={treeContainerRef}>
 							<TabsContent
 								value="tree"
 								className={s.scrollable}
-								onMouseMove={(e) => {
-									const target = e.target as Element;
-									const labelEl =
-										target.classList.contains(s.label) ||
-											target.classList.contains(s.clickableLabel)
-											? target
-											: (target.closest(`.${s.label}`) ??
-												target.closest(`.${s.clickableLabel}`));
-									if (!labelEl) {
-										setTreeTooltip(null);
-										return;
-									}
-									const path = getTreeKeyPath(
-										labelEl,
-										s.label,
-										s.clickableLabel,
-										s.node,
-										s.basic,
-									);
-									setTreeTooltip({ path, x: e.clientX, y: e.clientY });
-								}}
-								onMouseLeave={() => setTreeTooltip(null)}
 							>
 								<JsonView
 									data={unflattenObject}
@@ -1155,7 +1332,7 @@ export function DisplayEventDialog({
 									"var(--shadow-border), 0 8px 20px var(--gray-alpha-500)",
 							}}
 						>
-							{treeTooltip.path}
+							{treeTooltip.text}
 						</div>
 					)}
 					<Stack

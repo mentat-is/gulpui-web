@@ -131,9 +131,9 @@ export function Table<T extends Object>({
         dir="column"
         ref={wrapperRef}
         className={cn(s.wrapper, className)}
-        style={{ 
+        style={{
           ...props.style,
-          ['--highlight-color' as any]: Color.Themer.getTargetGuideColor() 
+          ['--highlight-color' as any]: Color.Themer.getTargetGuideColor()
         }}
         {...props}
       >
@@ -142,23 +142,23 @@ export function Table<T extends Object>({
             <tr>
               {selectable && <th style={{ width: '40px', textAlign: 'center' }}></th>}
               {onrowaction && <th style={{ width: '40px', textAlign: 'center' }}></th>}
-            {columns.map((c, i) => (
-                <Col 
-                  c={c} 
-                  key={c + i} 
-                  sortField={sortField} 
-                  sortDirection={sortDirection} 
-                  onSort={onSort} 
+              {columns.map((c, i) => (
+                <Col
+                  c={c}
+                  key={c + i}
+                  sortField={sortField}
+                  sortDirection={sortDirection}
+                  onSort={onSort}
                 />
               ))}
             </tr>
           </thead>
           <tbody>
             {values.map((i, index) => (
-              <Item 
-                columns={columns} 
-                key={(i._id || i.id || '') + index} 
-                i={i} 
+              <Item
+                columns={columns}
+                key={(i._id || i.id || '') + index}
+                i={i}
                 index={index}
                 selectable={selectable}
                 selected={selectedrows?.has(index)}
@@ -203,19 +203,19 @@ function Col({ c, sortField, sortDirection, onSort, ...props }: Col.Props) {
     if (c === '@timestamp' && sortField === 'timestamp') return true
     return false
   }, [c, sortField])
-  
+
   return (
-    <th 
-      {...props} 
-      onClick={() => onSort?.(c)} 
+    <th
+      {...props}
+      onClick={() => onSort?.(c)}
       style={{ cursor: onSort ? 'pointer' : 'default', userSelect: 'none' }}
     >
       <Stack gap={4} ai="center" jc="flex-start">
         <span>{c}</span>
         {isSorted && onSort && (
-          <Icon 
-            name={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'} 
-            size={14} 
+          <Icon
+            name={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'}
+            size={14}
           />
         )}
       </Stack>
@@ -299,31 +299,41 @@ function Value({ k, v, ...props }: Value.Props) {
   const icon =
     k === 'glyph_id' && glyph ? <Icon size={12} name={glyph} /> : null
 
-  let content = (
+  const content = (
     <>
       {icon}
       {displayValue}
     </>
   )
 
-  if (isArray || isObject) {
-    content = (
-      <TooltipProvider>
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <span style={{ cursor: 'pointer', textDecoration: 'underline' }}>{content}</span>
-          </TooltipTrigger>
-          <TooltipContent sideOffset={4} style={{ maxWidth: 400, maxHeight: 300, overflow: 'auto', whiteSpace: 'pre-wrap', textAlign: 'left', background: 'var(--background-100)', padding: 8, border: '1px solid var(--gray-400)', borderRadius: 6, zIndex: 50 }}>
-            {stringified}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )
-  }
+  const tooltipText = isArray || isObject ? stringified : displayValue
 
   return (
-    <td className={cn(s.value, displayValue === '<BLANK>' && s.blank)} {...props}>
-      {content}
-    </td>
+    <TooltipProvider>
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <td className={cn(s.value, displayValue === '<BLANK>' && s.blank)} {...props}>
+            {content}
+          </td>
+        </TooltipTrigger>
+        <TooltipContent
+          sideOffset={4}
+          style={{
+            maxWidth: 400,
+            maxHeight: 300,
+            overflow: 'auto',
+            whiteSpace: 'pre-wrap',
+            textAlign: 'left',
+            background: 'var(--background-100)',
+            padding: 8,
+            border: '1px solid var(--gray-400)',
+            borderRadius: 6,
+            zIndex: 50,
+          }}
+        >
+          {tooltipText}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
