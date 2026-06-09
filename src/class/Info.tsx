@@ -178,6 +178,19 @@ export namespace GulpDataset {
 		name: string;
 		content: string;
 	}
+
+	export namespace OperationGetById {
+		export interface Response {
+			id: string;
+			name: string;
+			tags: string[];
+			time_created: number;
+			user_id: string;
+			doc_count: number;
+			granted_user_ids: string[];
+			granted_user_group_ids: string[];
+		}
+	}
 }
 
 interface RefetchOptions {
@@ -191,7 +204,6 @@ interface RefetchOptions {
 	name?: string;
 	frame?: MinMax;
 }
-
 
 interface InfoProps {
 	app: App.Type;
@@ -261,7 +273,6 @@ export class Info implements InfoProps {
 				max: Math.max(...files.map((f) => f.timestamp.max)),
 			});
 		}
-
 
 		this.notes_reload();
 		this.links_reload();
@@ -1526,6 +1537,21 @@ export class Info implements InfoProps {
 		);
 	};
 
+	/**
+	 * Fetches detailed information about a specific operation by its ID.
+	 *
+	 * @param operation_id - The unique identifier of the operation to fetch.
+	 * @returns A promise that resolves to the detailed operation information.
+	 */
+	operation_get_by_id = (
+		operation_id: string,
+	): Promise<GulpDataset.OperationGetById.Response> => {
+		return api<GulpDataset.OperationGetById.Response>("/operation_get_by_id", {
+			method: "GET",
+			query: { operation_id },
+		});
+	};
+
 	fetch_gulp_parameters = async () => {
 		const res = await fetch("http://localhost:8080/openapi.json");
 		const json = await res.json();
@@ -2169,6 +2195,33 @@ export class Info implements InfoProps {
 			this.render();
 		});
 
+	/**
+	 * Deletes multiple operations in a single API call and updates the local operations list.
+	 *
+	 * @param ids - Array of Operation IDs to be deleted.
+	 * @returns A promise that resolves when the bulk delete API call is complete.
+	 */
+	delete_operations = (ids: Operation.Id[]) => {
+		return api(
+			"/object_delete_bulk",
+			{
+				method: "DELETE",
+				query: {
+					obj_type: "operation",
+					ws_id: this.app.general.ws_id,
+				},
+				body: { ids },
+			},
+			() => {
+				this.setInfoByKey(
+					this.app.target.operations.filter((op) => !ids.includes(op.id)),
+					"target",
+					"operations",
+				);
+			},
+		);
+	};
+
 	note_create = ({
 		name,
 		text,
@@ -2761,7 +2814,6 @@ export class Info implements InfoProps {
 		}, 0);
 	};
 
-
 	private AddNoteToDataStore(note: Note.Type) {
 		note = Note.Entity.normalize_note(this.app, note);
 		const idx = DataStore.notes.findIndex((n) => n.id === note.id);
@@ -2804,7 +2856,14 @@ export class Info implements InfoProps {
 			});
 	}
 
-	private _syncPromise: Promise<{ operations: Operation.Type[], contexts: Context.Type[], files: Source.Type[] } | undefined> | null = null;
+	private _syncPromise: Promise<
+		| {
+				operations: Operation.Type[];
+				contexts: Context.Type[];
+				files: Source.Type[];
+		  }
+		| undefined
+	> | null = null;
 	sync = async () => {
 		if (this._syncPromise) return this._syncPromise;
 
@@ -2951,7 +3010,9 @@ export class Info implements InfoProps {
 	};
 
 	// ⚠️ UNTOUCHABLE
-	private _pluginListPromise: Promise<GulpDataset.PluginList.Interface[]> | null = null;
+	private _pluginListPromise: Promise<
+		GulpDataset.PluginList.Interface[]
+	> | null = null;
 	plugin_list = async (): Promise<GulpDataset.PluginList.Interface[]> => {
 		const plugins = this.app.target.plugins;
 		if (plugins.length) {

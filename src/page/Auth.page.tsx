@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, JSX } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button as UIButton } from "@/ui/Button";
 import { Application } from "@/context/Application.context";
@@ -8,12 +8,9 @@ import { GulpDataset, Pattern } from "@/class/Info";
 import { Icon } from "@impactium/icons";
 import { capitalize, cn } from "@impactium/utils";
 import s from "./styles/AuthPage.module.css";
-import { Select } from "@/ui/Select";
-import { Label } from "@/ui/Label";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Stack } from "@/ui/Stack";
 import { User } from "@/entities/User";
-import { Operation } from "@/entities/Operation";
 import { Internal } from "@/entities/addon/Internal";
 import { Shimmer } from "@/ui/Shimmer";
 
@@ -29,7 +26,7 @@ export namespace Auth {
 		const [searchParams] = useSearchParams();
 		const redirectPath = searchParams.get("redirect");
 
-		const { spawnBanner, Info, app, spawnDialog } = Application.use();
+		const { Info, app } = Application.use();
 		const [server, setServer] = useState<string>(Info.app.general.server);
 		const [id, setId] = useState("admin" as User.Id);
 		const [password, setPassword] = useState<string>("");
@@ -37,11 +34,6 @@ export namespace Auth {
 		const [loading, setLoading] = useState<boolean>(false);
 		const [methods, setMethods] =
 			useState<GulpDataset.GetAvailableLoginApi.Response>([]);
-		const [openSelectAuth, setOpenSelectAuth] = useState<"operation" | null>(
-			null,
-		);
-		const currentBannerRef = useRef<JSX.Element | null>(null);
-
 		useEffect(() => {
 			Internal.Settings.server = server;
 			api<GulpDataset.GetAvailableLoginApi.Response>(
@@ -124,6 +116,11 @@ export namespace Auth {
 			}
 
 			if (app.general.user) {
+				/**
+				 * Initializes shared plugin/glyph state then redirects.
+				 * If a redirect path was encoded in the URL query (e.g. returning from
+				 * a protected route), honour it — otherwise send the user to the home page.
+				 */
 				const initializeAndRedirect = async () => {
 					if (app.target.operations.length === 0) {
 						await Info.plugin_list();
@@ -132,49 +129,15 @@ export namespace Auth {
 					}
 
 					if (redirectPath) {
-						const decodedRedirect = decodeURIComponent(redirectPath);
-						const redirectOpMatch = decodedRedirect.match(
-							/\/operations\/([^/]+)/,
-						);
-						const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
-						if (redirectOpId) {
-							const matchedOp = Info.app.target.operations.find(
-								(op) => op.id === redirectOpId || op.name === redirectOpId,
-							);
-							if (matchedOp) {
-								Info.operations_select(matchedOp.id);
-								navigate(decodedRedirect);
-							} else {
-								toast.error(
-									`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`,
-									{
-										richColors: true,
-										icon: <Icon name="Warning" />,
-									},
-								);
-							}
-						}
+						navigate(decodeURIComponent(redirectPath));
 					} else {
-						// If no redirect path, but logged in, navigate to selected operation if present
-						const currentOp = Operation.Entity.selected(Info.app);
-						if (currentOp) {
-							navigate(`/operations/${currentOp.id}`);
-						}
+						navigate("/");
 					}
 				};
 
 				initializeAndRedirect();
 			}
 		}, [app.general.user, redirectPath, navigate]);
-
-		const openAuthBanner = (banner: JSX.Element) => {
-			if (currentBannerRef.current) {
-				spawnBanner(null);
-			}
-			currentBannerRef.current = banner;
-			spawnBanner(banner);
-			setOpenSelectAuth(null);
-		};
 
 		const login = async () => {
 			const removeOverload = (str: string): string =>
@@ -200,80 +163,35 @@ export namespace Auth {
 			const user = await Info.login({ id, password });
 			setLoading(false);
 
-			if (user && redirectPath) {
-				const decodedRedirect = decodeURIComponent(redirectPath);
-				const redirectOpMatch = decodedRedirect.match(/\/operations\/([^/]+)/);
-				const redirectOpId = redirectOpMatch ? redirectOpMatch[1] : null;
-				if (redirectOpId) {
-					const matchedOp = Info.app.target.operations.find(
-						(op) => op.id === redirectOpId || op.name === redirectOpId,
-					);
-					if (matchedOp) {
-						Info.operations_select(matchedOp.id);
-						navigate(decodedRedirect);
-						return;
-					} else {
-						toast.error(
-							`The requested operation "${redirectOpId}" does not exist or you do not have permission to access it.`,
-							{
-								richColors: true,
-								icon: <Icon name="Warning" />,
-							},
-						);
-					}
-				}
-			}
+			// Redirect is handled by the initializeAndRedirect effect above
+			// which fires when app.general.user becomes truthy.
 		};
 
-		const NextButton = () => {
-			return (
-				<Stack
-					jc="flex-end"
-					dir="row"
-					gap={6}
-					style={{ marginLeft: "auto" }}
+		/**
+		 * Renders the login submit button.
+		 * Post-login navigation is handled by the initializeAndRedirect effect;
+		 * no additional buttons are needed here.
+		 */
+		const NextButton = () => (
+			<Stack
+				jc="flex-end"
+				dir="row"
+				gap={6}
+				style={{ marginLeft: "auto" }}
+			>
+				<UIButton
+					icon="LogIn"
+					disabled={!!app.general.user || !id || !password}
+					variant="glass"
+					revert
+					loading={loading}
+					tabIndex={4}
+					onClick={login}
 				>
-					{!app.general.user && (
-						<UIButton
-							icon="LogIn"
-							disabled={!id || !password}
-							variant="glass"
-							revert
-							loading={loading}
-							tabIndex={4}
-							onClick={login}
-						>
-							Login
-						</UIButton>
-					)}
-
-					{app.general.user && Operation.Entity.selected(app) && (
-						<UIButton
-							icon="ArrowRight"
-							variant="tertiary"
-							revert
-							loading={loading}
-							tabIndex={6}
-							onClick={skipToTimeline}
-						>
-							Skip to timeline
-						</UIButton>
-					)}
-					{app.general.user && Operation.Entity.selected(app) && (
-						<UIButton
-							icon="Check"
-							variant="glass"
-							revert
-							loading={loading}
-							tabIndex={6}
-							onClick={onLoginAndOperationSelection}
-						>
-							Done
-						</UIButton>
-					)}
-				</Stack>
-			);
-		};
+					Login
+				</UIButton>
+			</Stack>
+		);
 
 		useEffect(() => {
 			const query = new URLSearchParams(window.location.search);
@@ -288,14 +206,6 @@ export namespace Auth {
 
 		const [customLoading, setCustomLoading] = useState<string | null>(null);
 
-		const skipToTimeline = () => {
-			const operation = Operation.Entity.selected(app);
-			if (!operation) return;
-
-			Info.operations_select(operation.id);
-			Info.setInfoByKey(true, "general", "skippedAuth");
-			navigate(`/operations/${operation.id}`);
-		};
 		const customLoginConstructor = (url: string) => () => {
 			const x = new URLSearchParams();
 			x.append("client", window.location.origin);
@@ -343,29 +253,6 @@ export namespace Auth {
 					/>
 				</Stack>
 			);
-		};
-
-		const SelectOperationTrigger = () => {
-			const selected = Operation.Entity.selected(Info.app);
-
-			if (!app.general.user) {
-				return null;
-			}
-
-			return (
-				<Select.Trigger tabIndex={5}>
-					<Select.Icon
-						name={Operation.Entity.icon((selected || {}) as Operation.Type)}
-					/>
-					{selected ? selected.name : "Select operation or create new one"}
-				</Select.Trigger>
-			);
-		};
-
-		const onLoginAndOperationSelection = () => {
-			const operation = Operation.Entity.selected(app);
-			if (!operation) return;
-			navigate(`/operations/${operation.id}`);
 		};
 
 		return (
@@ -429,62 +316,6 @@ export namespace Auth {
 					}
 				/>
 				<LoginMethods />
-				<Stack
-					dir="column"
-					gap={6}
-					ai="flex-start"
-					data-input
-					className={cn(s.operation, !!app.general.user && s.visible)}
-				>
-					<Label value="Operation" />
-					<Stack style={{ width: "100%" }}>
-						<Select.Root
-							open={openSelectAuth === "operation"}
-							onOpenChange={(isOpen) =>
-								setOpenSelectAuth(isOpen ? "operation" : null)
-							}
-							defaultValue={Operation.Entity.selected(Info.app)?.id}
-							onValueChange={(id) => Info.operations_select(id as Operation.Id)}
-						>
-							<SelectOperationTrigger />
-							<Select.Content>
-								{app.target.operations.map((operation) => (
-									<Stack
-										key={operation.id}
-										gap={2}
-									>
-										<Select.Item value={operation.id}>
-											<Select.Icon name={Operation.Entity.icon(operation)} />
-											{operation.name}
-										</Select.Item>
-										<UIButton
-											icon="PencilEdit"
-											style={{ color: "var(--second) !important" }}
-											variant="tertiary"
-											onClickCapture={() =>
-												openAuthBanner(
-													<Operation.CreateOrUpdate.Banner
-														operation={operation}
-													/>,
-												)
-											}
-										/>
-									</Stack>
-								))}
-								<UIButton
-									icon="BookPlus"
-									style={{ width: "100%" }}
-									onClick={() =>
-										openAuthBanner(<Operation.CreateOrUpdate.Banner />)
-									}
-									variant="tertiary"
-								>
-									Create new operation
-								</UIButton>
-							</Select.Content>
-						</Select.Root>
-					</Stack>
-				</Stack>
 
 				<NextButton />
 			</Stack>
