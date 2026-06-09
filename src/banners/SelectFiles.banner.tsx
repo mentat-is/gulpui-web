@@ -517,11 +517,12 @@ export namespace SelectFiles {
 	}
 }
 
-function ContextHeading({
+export function ContextHeading({
 	context,
 	selectedContexts,
 	setContext,
 	noFiles,
+	showCheckbox = true,
 }: any) {
 	const { spawnBanner } = Application.use();
 
@@ -536,12 +537,14 @@ function ContextHeading({
 				className={s.contextHeading}
 				gap={8}
 			>
-				<Checkbox
-					style={{ height: 20, width: 20 }}
-					checked={selectedContexts.has(context.id)}
-					onCheckedChange={(checked) => setContext(context.id, !!checked)}
-					id={context.name}
-				/>
+				{showCheckbox && (
+					<Checkbox
+						style={{ height: 20, width: 20 }}
+						checked={selectedContexts?.has(context.id) || false}
+						onCheckedChange={(checked) => setContext(context.id, !!checked)}
+						id={context.name}
+					/>
+				)}
 				<Label value={context.name} />
 				<hr style={{ flex: 1 }} />
 				<Badge
@@ -565,7 +568,7 @@ function ContextHeading({
 	);
 }
 
-function FlatFileComponent({ file, selectedFiles, setFile, isLast }: any) {
+export function FlatFileComponent({ file, selectedFiles, setFile, isLast, showFilter = true, showCheckbox = true }: any) {
 	return (
 		<Stack
 			dir="column"
@@ -577,6 +580,8 @@ function FlatFileComponent({ file, selectedFiles, setFile, isLast }: any) {
 				file={file}
 				selectedFiles={selectedFiles}
 				setFile={setFile}
+				showFilter={showFilter}
+				showCheckbox={showCheckbox}
 			/>
 		</Stack>
 	);
@@ -586,9 +591,11 @@ interface FileComponentProps {
 	file: Source.Type;
 	selectedFiles: Set<Source.Id>;
 	setFile: (file: Source.Id, select: boolean) => void;
+	showFilter?: boolean;
+	showCheckbox?: boolean;
 }
 
-function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
+function FileComponent({ file, setFile, selectedFiles, showFilter = true, showCheckbox = true }: FileComponentProps) {
 	const { app, Info, spawnBanner } = Application.use();
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -658,11 +665,13 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 			className={cn(s.file, !file.total && s.disabled)}
 			key={file.id}
 		>
-			<Checkbox
-				id={file.name}
-				checked={selectedFiles.has(file.id)}
-				onCheckedChange={(checked) => setFile(file.id, !!checked)}
-			/>
+			{showCheckbox && (
+				<Checkbox
+					id={file.name}
+					checked={selectedFiles?.has(file.id) || false}
+					onCheckedChange={(checked) => setFile(file.id, !!checked)}
+				/>
+			)}
 			{Source.Entity.getRequestType(app, file) === Request.Prefix.INGESTION && (
 				<TooltipProvider>
 					<Tooltip>
@@ -683,21 +692,23 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 				variant="gray-subtle"
 				value={Math.max(file.total, progress)}
 			/>
-			<Button
-				shape="icon"
-				icon="Filter"
-				variant="secondary"
-				className={s.smallButton}
-				onClick={() =>
-					spawnBanner(
-						<FilterFileBanner
-							sources={[file]}
-							fixed
-							back={() => spawnBanner(<SelectFiles.Banner />)}
-						/>,
-					)
-				}
-			/>
+			{showFilter && (
+				<Button
+					shape="icon"
+					icon="Filter"
+					variant="secondary"
+					className={s.smallButton}
+					onClick={() =>
+						spawnBanner(
+							<FilterFileBanner
+								sources={[file]}
+								fixed
+								back={() => spawnBanner(<SelectFiles.Banner />)}
+							/>,
+						)
+					}
+				/>
+			)}
 			<Button
 				shape="icon"
 				icon="PreviewEye"
