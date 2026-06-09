@@ -117,9 +117,9 @@ export namespace SendData {
       >
         <Stack dir="column" ai="flex-start" gap={12} style={{ width: '100%' }}>
           {/* Dropdown to select the destination plugin */}
-           <Stack ai='center' jc='space-between'>
-            <Label style={{ color: 'var(--second)', fontSize: 14 }} value='Select an external source to send the event data to.' /> 
-           </Stack>
+          <Stack ai='center' jc='space-between'>
+            <Label className={s.helperText} value='Select an external source to send the event data to.' />
+          </Stack>
         </Stack>
         <Stack dir="column" ai="flex-start" gap={12} style={{ width: '100%' }}>
           {/* Dropdown to select the destination plugin */}

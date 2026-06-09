@@ -3,6 +3,8 @@
   min-height: 32px;
   height: 32px;
   width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
   align-items: center;
   justify-content: flex-start;
   border-radius: 6px;
@@ -11,7 +13,6 @@
   outline-offset: var(--accent);
   gap: 16px;
   overflow: hidden;
-  font-size: 12px;
   padding: 8px;
   color: var(--accent);
   text-align: left;
@@ -106,6 +107,8 @@
   position: relative;
   z-index: 1500;
   max-height: 312px;
+  font-family: var(--font-mono);
+  font-size: 11px;
   min-width: 128px;
   overflow: hidden;
   border-radius: 8px;
@@ -267,7 +270,8 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 11px;
+  font-family: var(--font-mono);
   justify-content: center;
 }
 
@@ -276,6 +280,8 @@
   display: flex;
   width: 100%;
   cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
   min-height: 32px;
   height: min-content;
   user-select: none;
@@ -284,7 +290,6 @@
   padding: 0 8px;
   align-items: center;
   outline: none;
-  font-size: 12px;
   transition: background-color 0.2s, color 0.2s;
   transition-duration: 150ms;
   transition-timing-function: var(--transition);

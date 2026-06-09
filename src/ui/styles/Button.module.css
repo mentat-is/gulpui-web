@@ -6,7 +6,8 @@
   line-height: 8px;
   white-space: nowrap;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
   cursor: pointer;
   font-weight: 400;
   transition: all 0.15s var(--transition);
@@ -36,23 +37,27 @@
 }
 
 .secondary {
-  background: var(--background-100);
-  color: var(--accent);
-  border: 1px solid var(--gray-alpha-400);
+  background: transparent;
+  color: var(--second);
+  border: 1px solid transparent;
 }
 
 .secondary:hover {
-  background: var(--gray-200);
+  background: var(--gray-alpha-200);
+  color: var(--accent);
+  border-color: transparent;
 }
 
 .tertiary {
   background: transparent;
   color: var(--second);
+  border: 1px solid transparent;
 }
 
 .tertiary:hover {
   background: var(--gray-alpha-200);
   color: var(--accent);
+  border-color: transparent;
 }
 
 .destructive {

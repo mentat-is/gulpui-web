@@ -274,7 +274,7 @@ const detectTreeSelection = (
 ): string | null => {
 	let treeLabel =
 		element.classList.contains(s.label) ||
-		element.classList.contains(s.clickableLabel)
+			element.classList.contains(s.clickableLabel)
 			? element
 			: (element.closest(`.${s.label}`) ??
 				element.closest(`.${s.clickableLabel}`));
@@ -883,19 +883,19 @@ export function DisplayEventDialog({
 
 								treeContextPathRef.current = labelEl
 									? getTreeKeyPath(
-											labelEl,
-											s.label,
-											s.clickableLabel,
-											s.node,
-											s.basic,
-										)
+										labelEl,
+										s.label,
+										s.clickableLabel,
+										s.node,
+										s.basic,
+									)
 									: null;
 							}
 						}}
-						// onContextMenu={() => {
-						// 	const current = window.getSelection()?.toString().trim();
-						// 	if (current && current !== selection) setSelection(current);
-						// }}
+					// onContextMenu={() => {
+					// 	const current = window.getSelection()?.toString().trim();
+					// 	if (current && current !== selection) setSelection(current);
+					// }}
 					>
 						<div className={s.contextTrigger}>
 							<TabsContent
@@ -905,7 +905,7 @@ export function DisplayEventDialog({
 									const target = e.target as Element;
 									const labelEl =
 										target.classList.contains(s.label) ||
-										target.classList.contains(s.clickableLabel)
+											target.classList.contains(s.clickableLabel)
 											? target
 											: (target.closest(`.${s.label}`) ??
 												target.closest(`.${s.clickableLabel}`));
@@ -1071,8 +1071,8 @@ export function DisplayEventDialog({
 						ai="stretch"
 					>
 						<Stack
+							className={s.topActions}
 							gap={12}
-							flex
 						>
 							<Button
 								onClick={handleCreateNote}
@@ -1090,11 +1090,6 @@ export function DisplayEventDialog({
 							>
 								Create link
 							</Button>
-						</Stack>
-						<Stack
-							gap={12}
-							flex
-						>
 							<Button
 								onClick={() => handleEnrich()}
 								variant="secondary"
@@ -1108,15 +1103,15 @@ export function DisplayEventDialog({
 									? ext.type.includes("send_data")
 									: (ext.type as any) === "send_data",
 							) && (
-								<Button
-									onClick={handleSendData}
-									variant="secondary"
-									title="Send IOCs to other systems"
-									icon="Send"
-								>
-									Send Data
-								</Button>
-							)}
+									<Button
+										onClick={handleSendData}
+										variant="secondary"
+										title="Send IOCs to other systems"
+										icon="Send"
+									>
+										Send Data
+									</Button>
+								)}
 							<Button
 								onClick={handleConnectLink}
 								variant="secondary"
@@ -1350,18 +1345,18 @@ export function EventIndicator({
 				event._id,
 				Doc.Entity.operationId(app, event),
 			) && (
-				<Stack
-					ai="center"
-					jc="center"
-					className={cn(s.marker, s.flagged)}
-					pos="absolute"
-				>
-					<Icon
-						size={8}
-						name="Flag"
-					/>
-				</Stack>
-			)}
+					<Stack
+						ai="center"
+						jc="center"
+						className={cn(s.marker, s.flagged)}
+						pos="absolute"
+					>
+						<Icon
+							size={8}
+							name="Flag"
+						/>
+					</Stack>
+				)}
 			{notes.length > 0 && (
 				<Stack
 					ai="center"

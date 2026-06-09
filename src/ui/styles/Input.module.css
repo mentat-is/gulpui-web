@@ -20,7 +20,8 @@
   text-overflow: ellipsis;
   text-align: left;
   overflow: hidden;
-  font-size: 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
 }
 
 .wrapper:hover {

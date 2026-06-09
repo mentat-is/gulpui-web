@@ -135,7 +135,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
     className?: string;
   }) => (
     <Button
-      variant="secondary"
+      variant="tertiary"
       title={title}
       icon={icon}
       size="md"
@@ -205,7 +205,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
       >
         {isOpen && (
           <Button
-            variant="secondary"
+            variant="tertiary"
             title="Close Menu"
             icon="ArrowLeft"
             size="md"
@@ -214,7 +214,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
         )}
         {!isOpen && (
           <Button
-            variant="secondary"
+            variant="tertiary"
             title="Expand Menu"
             icon="MenuAlt"
             size="md"

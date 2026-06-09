@@ -1,6 +1,8 @@
 .main {
   --notes-table-row-height: 44px;
   --notes-table-min-width: 1330px;
+  font-family: var(--font-mono);
+  font-size: 11px;
 }
 
 .main {
@@ -32,9 +34,10 @@
 }
 
 .header h3 {
-  font-size: 20px;
+  font-size: 18px;
   margin: 0;
   font-weight: 600;
+  font-family: var(--font-mono);
 }
 
 .content {
@@ -104,13 +107,14 @@
 }
 
 .result {
-  background: var(--geist-background);
-  border: var(--geist-border);
+  background: var(--background-100);
+  border: 1px solid var(--gray-400);
   border-radius: 6px;
   max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: none;
 }
 
 .result>button {
@@ -126,6 +130,7 @@
 .tableRowWrap {
   left: 0;
   min-width: var(--notes-table-min-width);
+  background: var(--background-100);
 }
 
 .tableRow {
@@ -136,11 +141,12 @@
   height: var(--notes-table-row-height);
   box-sizing: border-box;
   border-bottom: 1px solid var(--gray-400);
+  background: var(--background-100);
 }
 
 .tableHeaderRow {
-  background: color-mix(in srgb, var(--soft-black) 70%, transparent);
-  border-bottom: 1px solid var(--gray-300);
+  background: var(--background-200);
+  border-bottom: 1px solid var(--gray-400);
   position: sticky;
   top: 0;
   z-index: 1;
@@ -154,11 +160,13 @@
   height: 100%;
   padding: 0 12px;
   border-right: 1px solid var(--gray-400);
-  font-size: 13px;
+  background: var(--background-100);
+  font-size: 11px;
   font-family: var(--font-mono);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--gray-1000);
 }
 
 .tableCell:last-child {
@@ -166,11 +174,12 @@
 }
 
 .headerLabel {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--second);
+  font-family: var(--font-mono);
 }
 
 .checkboxCell {
@@ -201,4 +210,12 @@
 .portalContainer {
   position: relative;
   z-index: 9999;
+}
+
+.helperText {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  opacity: 0.8;
+  cursor: pointer;
+  user-select: none;
 }

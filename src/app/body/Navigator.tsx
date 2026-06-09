@@ -217,7 +217,7 @@ export function Navigator({
   }, [theme])
 
   // Sync operations, contexts, and files to detached windows so they can update their lists
-  useEffect(() => {    
+  useEffect(() => {
     const selectedSourceIds = app.target.files.filter((f: Source.Type) => f.selected).map((f: Source.Type) => f.id);
     mainBridgeRef.current?.send(WindowBridge.MessageType.APP_SNAPSHOT, {
       app: {
@@ -802,7 +802,7 @@ export function Navigator({
       {...props}
     >
       <Button
-        variant="secondary"
+        variant="tertiary"
         title='Zoom in'
         ref={size_minus}
         onClick={() => zoom(false)}
@@ -810,7 +810,7 @@ export function Navigator({
         size='md'
       />
       <Button
-        variant="secondary"
+        variant="tertiary"
         title='Zoom out'
         ref={size_plus}
         onClick={() => zoom(true)}
@@ -818,7 +818,7 @@ export function Navigator({
         size='md'
       />
       <Button
-        variant="secondary"
+        variant="tertiary"
         title='Reset scale'
         ref={size_reset}
         onClick={resetScaleAndScroll}
@@ -826,7 +826,7 @@ export function Navigator({
         size='md'
       />
       <Button
-        variant="secondary"
+        variant="tertiary"
         title='Create highlight'
         icon="ChartBarBig"
         onClick={createHighlightButtonClickHandler}
@@ -844,14 +844,14 @@ export function Navigator({
         iconTitle={filterMode === 'files' ? 'Switch to Event Filtering' : 'Switch to File Filtering'}
       />
       <Button
-        variant="secondary"
+        variant="tertiary"
         title="Search"
         icon="Search"
         onClick={() => triggerSearch(localFilterValue, filterMode)}
         size='md'
       />
       <Button
-        variant="secondary"
+        variant="tertiary"
         title="Open notes window"
         icon="FileText"
         onClick={openWindow}
@@ -861,10 +861,9 @@ export function Navigator({
         <Popover.Trigger asChild>
           <Button
             size='md'
-            variant="secondary"
+            variant="tertiary"
             title='Visibility settings'
             icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
-            className={cn(s.notes_visibility)}
           />
         </Popover.Trigger>
         <Popover.Content>
@@ -883,7 +882,7 @@ export function Navigator({
       <Popover.Root>
         <Popover.Trigger asChild>
           <Button size='md'
-            variant="secondary"
+            variant="tertiary"
             title="Go to timestamp"
             icon="Clock" />
         </Popover.Trigger>
@@ -900,7 +899,7 @@ export function Navigator({
               />
               <Button
                 icon="Undo2"
-                variant="secondary"
+                variant="tertiary"
                 onClick={resetTimestampToInitialValue}
               />
               <Button icon="Check" variant="glass" onClick={goToTimestamp} />
@@ -912,7 +911,7 @@ export function Navigator({
         <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
           <Popover.Trigger asChild>
             <Button
-              variant={selectionOpen ? 'default' : 'secondary'}
+              variant={selectionOpen ? 'default' : 'tertiary'}
               title='Select chat version'
               icon='Sparkles'
               onClick={handleChatButtonClick}
@@ -945,7 +944,7 @@ export function Navigator({
         </Popover.Root>
       ) : (
         <Button
-          variant='secondary'
+          variant='tertiary'
           title='Open AI Assistant Chat'
           icon='Sparkle'
           onClick={handleChatButtonClick}
@@ -953,14 +952,14 @@ export function Navigator({
         />
       )}
       <Button
-        variant='secondary'
+        variant='tertiary'
         title='Open table window'
         icon='Table'
         onClick={() => openTableWindow()}
         size='md'
       />
       <Button
-        variant='secondary'
+        variant='tertiary'
         title={isDialogPanelDetached ? 'Dock dialog panel' : 'Undock dialog panel'}
         icon={isDialogPanelDetached ? 'PanelLeftOpen' : 'PictureInPicture2'}
         onClick={() => setDialogsDocked((value) => !value)}

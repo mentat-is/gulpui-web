@@ -8,3 +8,10 @@
   min-height: 30vh;
   overflow: auto;
 }
+
+.helperText {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--second);
+}

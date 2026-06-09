@@ -82,7 +82,7 @@ const prepareFormattedFields = (fields: { key: string, value: string | null }[])
 
 interface FieldRowProps {
   field: { id: string, key: string, value: string | null }
-  index: number  
+  index: number
   onUpdate: (index: number, updates: Partial<FieldRowProps['field']>) => void
   onDelete: (id: string) => void
 }
@@ -233,42 +233,42 @@ export namespace Enrichment {
         setAvailableTypes(available)
 
         if (!enrichmentField) {
-           setSelectedType('Other')
+          setSelectedType('Other')
         } else {
-           let autoDetected: string | null = null
-           const detectedRegexType = detectType(enrichmentField.value)
+          let autoDetected: string | null = null
+          const detectedRegexType = detectType(enrichmentField.value)
 
-           for (const p of enrichmentPlugins) {
-             const data = p.data as Record<string, { ecs_fields?: string[]; regexp?: string }>
-             if (!data) continue
-             for (const [typeName, config] of Object.entries(data)) {
-               if (config.ecs_fields?.includes(enrichmentField.key)) {
-                 autoDetected = typeName
-                 break
-               }
-               if (config.regexp) {
-                 try {
-                    if (new RegExp(config.regexp, 'i').test(enrichmentField.value)) {
-                      autoDetected = typeName
-                      break
-                    }
-                 } catch (e) { /* ignore */ }
-               }
-               
-               const hasNoEcsFields = !config.ecs_fields || config.ecs_fields.filter(f => f !== "").length === 0
-               if (hasNoEcsFields && !config.regexp && detectedRegexType === typeName) {
-                 autoDetected = typeName
-                 break
-               }
-             }
-             if (autoDetected) break
-           }
-           
-           if (autoDetected && available.includes(autoDetected)) {
-             setSelectedType(autoDetected)
-           } else {
-             setSelectedType('Other')
-           }
+          for (const p of enrichmentPlugins) {
+            const data = p.data as Record<string, { ecs_fields?: string[]; regexp?: string }>
+            if (!data) continue
+            for (const [typeName, config] of Object.entries(data)) {
+              if (config.ecs_fields?.includes(enrichmentField.key)) {
+                autoDetected = typeName
+                break
+              }
+              if (config.regexp) {
+                try {
+                  if (new RegExp(config.regexp, 'i').test(enrichmentField.value)) {
+                    autoDetected = typeName
+                    break
+                  }
+                } catch (e) { /* ignore */ }
+              }
+
+              const hasNoEcsFields = !config.ecs_fields || config.ecs_fields.filter(f => f !== "").length === 0
+              if (hasNoEcsFields && !config.regexp && detectedRegexType === typeName) {
+                autoDetected = typeName
+                break
+              }
+            }
+            if (autoDetected) break
+          }
+
+          if (autoDetected && available.includes(autoDetected)) {
+            setSelectedType(autoDetected)
+          } else {
+            setSelectedType('Other')
+          }
         }
       })
     }, [enrichmentField, Info])
@@ -284,14 +284,14 @@ export namespace Enrichment {
           return data && !!data[selectedType]
         })
       }
-      
+
       setPlugins(filtered)
-      
+
       setPlugin(prev => {
-         if (prev && !filtered.find(f => f.filename === prev.filename)) {
-            return undefined
-         }
-         return prev
+        if (prev && !filtered.find(f => f.filename === prev.filename)) {
+          return undefined
+        }
+        return prev
       })
     }, [selectedType, allEnrichmentPlugins])
 
@@ -442,21 +442,21 @@ export namespace Enrichment {
         {PluginSelection}
         {FileSelection}
         <TimeRangeSelector event={event} frame={frame} setFrame={setFrame} isLoaded={!!plugins} />
-        
-        <CustomParameters.Editor 
-          customParameters={customParameters} 
-          setCustomParameters={setCustomParameters} 
-          plugin={plugin} 
+
+        <CustomParameters.Editor
+          customParameters={customParameters}
+          setCustomParameters={setCustomParameters}
+          plugin={plugin}
         />
-        
+
         <Stack style={{ border: '1px solid var(--border)', borderRadius: 6, padding: 8 }} gap={8} dir='column'>
           <Stack ai='center' jc='space-between'>
             <Label value='Fields' />
             {!enrichmentField && <Button variant='tertiary' icon='Plus' onClick={handleAddField} />}
           </Stack>
-          
+
           <EnrichmentTooltip />
-          
+
           {fields.map((field, index) => (
             <FieldRow
               key={field.id}
@@ -485,9 +485,7 @@ function EnrichmentTooltip() {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <p style={{
-            fontSize: 12,
-            color: 'var(--second)',
+          <p className={s.helperText} style={{
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',

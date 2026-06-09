@@ -21,7 +21,8 @@
 }
 
 .filter input {
-  font-size: 14px;
+  font-size: 11px;
+  font-family: var(--font-mono);
 }
 
 .goto p {

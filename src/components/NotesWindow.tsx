@@ -232,7 +232,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             onCheckedChange={handleSelectAll as any}
           />
           <span
-            style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+            className={s.helperText}
             onClick={() => handleSelectAll(!isAllSelected)}
           >
             {selectAllLabel}
@@ -245,7 +245,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
             onCheckedChange={(v: any) => setShowOnlyVisible(!!v)}
           />
           <span
-            style={{ fontSize: '13px', opacity: 0.8, cursor: 'pointer', userSelect: 'none' }}
+            className={s.helperText}
             onClick={() => setShowOnlyVisible(v => !v)}
           >
             Show notes for visible sources only
@@ -349,12 +349,12 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
                           <Button
                             icon="MagnifyingGlassSmall"
                             onClick={() => targetNoteButtonHandler(note)}
-                            variant="glass"
+                            variant="tertiary"
                           />
                           <Button
                             icon="Trash2"
                             onClick={() => handleDelete(note)}
-                            variant="glass"
+                            variant="tertiary"
                           />
                         </Stack>
                       </div>
@@ -369,7 +369,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
       <div className={s.footer}>
         <Stack jc="flex-end">
           <Button
-            variant="glass"
+            variant="secondary"
             disabled={selectedNoteIds.size === 0}
             onClick={handleBulkDelete}
             icon="Trash2"
