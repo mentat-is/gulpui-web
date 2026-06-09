@@ -4,7 +4,6 @@
 	align-items: center;
 	border-bottom: 1px solid var(--gray-300);
 	padding-bottom: 12px;
-	margin-bottom: 16px;
 	width: 100%;
 	padding: 6px;
 }
@@ -34,7 +33,6 @@
 }
 
 .section {
-	margin-bottom: 20px;
 	width: 100%;
 	padding: 6px;
 }

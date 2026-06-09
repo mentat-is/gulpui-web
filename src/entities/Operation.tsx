@@ -60,9 +60,9 @@ export namespace Operation {
 
     public static select = (use: App.Type | Operation.Type[], operation: Operation.Id | undefined): Operation.Type[] => Refractor.array(...Parser.use(use, 'operations').map((o) => o.id === operation ? Operation.Entity._select(o) : Operation.Entity._unselect(o)));
 
-    public static contexts = (app: App.Type): Context.Type[] =>
+    public static contexts = (app: App.Type, operationId?: Operation.Id): Context.Type[] =>
       app.target.contexts.filter(
-        (c) => c.operation_id === Operation.Entity.selected(app)?.id,
+        (c) => c.operation_id === (operationId || Operation.Entity.selected(app)?.id),
       )
 
     private static _select = (o: Operation.Type): Operation.Type => ({

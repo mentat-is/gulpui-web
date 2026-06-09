@@ -9,6 +9,14 @@ import { Stack } from "@/ui/Stack";
 import { formatTimestampToReadableString } from "@/ui/utils";
 import { GulpDataset } from "@/class/Info";
 import s from "./styles/DisplayOperationDetailDialog.module.css";
+import sFiles from "@/banners/styles/SelectFilesBanner.module.css";
+import {
+	ContextHeading,
+	FlatFileComponent,
+} from "@/banners/SelectFiles.banner";
+import { cn } from "@impactium/utils";
+import { Context } from "@/entities/Context";
+import { Source } from "@/entities/Source";
 
 export interface DisplayOperationDetailDialogProps {
 	/** Unique identifier of the operation to fetch details for. */
@@ -32,7 +40,7 @@ export function DisplayOperationDetailDialog({
 	fallbackGlyphId,
 	onClose,
 }: DisplayOperationDetailDialogProps) {
-	const { Info, spawnBanner } = Application.use();
+	const { app, Info, spawnBanner } = Application.use();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [details, setDetails] =
 		useState<GulpDataset.OperationGetById.Response | null>(null);
@@ -86,7 +94,10 @@ export function DisplayOperationDetailDialog({
 			id: operationId,
 			name: details?.name ?? globalOp?.name ?? fallbackName ?? "",
 			glyph_id: globalOp?.glyph_id ?? (fallbackGlyphId as any) ?? "",
-			description: (globalOp && globalOp.description !== undefined) ? globalOp.description : (details?.description ?? ""),
+			description:
+				globalOp && globalOp.description !== undefined
+					? globalOp.description
+					: (details?.description ?? ""),
 		} as any;
 
 		spawnBanner(
@@ -180,7 +191,9 @@ export function DisplayOperationDetailDialog({
 							<div className={s.detailItem}>
 								<span className={s.detailLabel}>Description:</span>
 								<span className={s.detailValue}>
-									{((globalOp && globalOp.description !== undefined) ? globalOp.description : details.description) || "-"}
+									{(globalOp && globalOp.description !== undefined
+										? globalOp.description
+										: details.description) || "-"}
 								</span>
 							</div>
 							<div
@@ -277,6 +290,57 @@ export function DisplayOperationDetailDialog({
 							</div>
 						</div>
 					</div>
+
+					{/* Contexts and Sources Section */}
+					{(() => {
+						const contexts = Operation.Entity.contexts(app, operationId);
+						if (!contexts || contexts.length === 0) return null;
+						return (
+							<div className={s.section}>
+								<div className={s.sectionTitle}>Contexts and Sources</div>
+								<div
+									className={s.detailsList}
+									style={{ flexDirection: "column", gap: 0 }}
+								>
+									{contexts.map((context: Context.Type) => {
+										const sources = Context.Entity.sources(app, context);
+										return (
+											<div key={context.id}>
+												<ContextHeading
+													context={context}
+													selectedContexts={new Set()}
+													setContext={() => {}}
+													noFiles={sources.length === 0}
+													showCheckbox={false}
+												/>
+												{sources.map((source: Source.Type, index: number) => {
+													const isLast = index === sources.length - 1;
+													return (
+														<div
+															key={source.id}
+															className={cn(
+																sFiles.fileWrapper,
+																isLast && sFiles.last,
+															)}
+														>
+															<FlatFileComponent
+																file={source}
+																selectedFiles={new Set()}
+																setFile={() => {}}
+																isLast={isLast}
+																showFilter={false}
+																showCheckbox={false}
+															/>
+														</div>
+													);
+												})}
+											</div>
+										);
+									})}
+								</div>
+							</div>
+						);
+					})()}
 				</Stack>
 			) : (
 				!loading && (
