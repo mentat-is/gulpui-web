@@ -193,6 +193,7 @@
 
 .footer {
 	border-top: 1px solid var(--gray-400);
-	padding: 12px;
+	margin-top: 16px;
+	padding: 12px 8px 0px 8px;
 	flex-shrink: 0;
 }

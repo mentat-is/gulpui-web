@@ -74,7 +74,10 @@ export namespace Home {
 					/>
 				}
 			>
-				<p>Are you sure you want to delete {operationIds.length} selected operations?</p>
+				<p>
+					Are you sure you want to delete {operationIds.length} selected
+					operations?
+				</p>
 				<Toggle
 					option={["No, don`t delete", "Yes, i`m sure"]}
 					checked={isSubmitted}
@@ -85,7 +88,8 @@ export namespace Home {
 	}
 
 	export function Page(_: Home.Page.Props) {
-		const { Info, app, spawnBanner, spawnDialog, dialog, banner } = Application.use();
+		const { Info, app, spawnBanner, spawnDialog, dialog, banner } =
+			Application.use();
 		const navigate = useNavigate();
 		const [loading, setLoading] = useState(true);
 		const [selectedIds, setSelectedIds] = useState<Set<Operation.Id>>(
@@ -364,15 +368,17 @@ export namespace Home {
 			}
 
 			return (
-				<div className={s.result}>
-					<TableHeader />
-					<div className={s.resultScroll}>
-						{app.target.operations.map((operation) => (
-							<OperationRow
-								key={operation.id}
-								operation={operation}
-							/>
-						))}
+				<>
+					<div className={s.result}>
+						<TableHeader />
+						<div className={s.resultScroll}>
+							{app.target.operations.map((operation) => (
+								<OperationRow
+									key={operation.id}
+									operation={operation}
+								/>
+							))}
+						</div>
 					</div>
 					<div className={s.footer}>
 						<Stack jc="flex-end">
@@ -386,7 +392,7 @@ export namespace Home {
 							</Button>
 						</Stack>
 					</div>
-				</div>
+				</>
 			);
 		};
 
@@ -397,9 +403,9 @@ export namespace Home {
 		const menuTopItems = useMemo<MenuItem[]>(
 			() => [
 				{
-					label: 'Create new',
-					icon: 'Plus',
-					category: 'Actions',
+					label: "Create new",
+					icon: "Plus",
+					category: "Actions",
 					action: () => spawnBanner(<Operation.CreateOrUpdate.Banner />),
 				},
 			],
@@ -413,9 +419,9 @@ export namespace Home {
 		const menuBottomItems = useMemo<MenuItem[]>(
 			() => [
 				{
-					label: 'LogOut',
-					icon: 'LogOut',
-					category: 'Account',
+					label: "LogOut",
+					icon: "LogOut",
+					category: "Account",
 					action: () => spawnBanner(<Session.Save.Banner />),
 				},
 			],
@@ -425,7 +431,10 @@ export namespace Home {
 		return (
 			<div className={s.wrapper}>
 				{/* Left navigation — data-driven Menu component */}
-				<Menu topItems={menuTopItems} bottomItems={menuBottomItems} />
+				<Menu
+					topItems={menuTopItems}
+					bottomItems={menuBottomItems}
+				/>
 
 				{/* Main content: operations list */}
 				<main className={s.main}>
