@@ -6,7 +6,7 @@ import { Application } from '../context/Application.context'
 import { Preloader } from '../components/Preloader'
 import s from '../App.module.css'
 import { Stack } from '@/ui/Stack'
-import { Menu, MenuItem } from '../components/menu'
+import { Menu, MenuItem, PluginNode } from '../components/menu'
 import { Timeline } from '../app/body/Timeline'
 import { Resizer } from '../ui/Resizer'
 import { Hint } from '../dialogs/Hint.dialog'
@@ -231,13 +231,15 @@ export function MainDashboard() {
    * React component that uses `useContext` internally — inside `useMemo`,
    * which would violate the Rules of Hooks.
    */
-  const pluginNodes = useMemo(() =>
+  const pluginNodes = useMemo<PluginNode[]>(() =>
     Object.keys(extensions)
       .filter((name) => extensions[name].type.includes('menu'))
       .map((name) => {
         const ext = extensions[name];
-        const title: string = ext.display_name || name;
-        return <Extension.Component key={name} name={name} title={title} />;
+        return {
+          node: <Extension.Component key={name} name={name} />,
+          title: ext.display_name || name,
+        };
       }),
   [extensions]);
 

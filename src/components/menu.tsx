@@ -23,6 +23,18 @@ export interface MenuItem {
   category: string;
 }
 
+/**
+ * A single extension plugin entry supplied to the Menu component.
+ * Keeps the rendered node and its display title as separate, typed fields
+ * to avoid passing `title` through props that don't declare it.
+ */
+export interface PluginNode {
+  /** The rendered Extension.Component node. */
+  node: React.ReactNode;
+  /** The resolved display title shown in the label overlay when expanded. */
+  title: string;
+}
+
 export namespace Menu {
   export interface Props {
     /** Items rendered at the top scroll area, grouped by their `category` field. */
@@ -30,10 +42,11 @@ export namespace Menu {
     /** Items rendered in the pinned bottom area, grouped by their `category` field. */
     bottomItems: MenuItem[];
     /**
-     * Pre-selected extension plugin nodes supplied by the consumer.
-     * Menu wraps each child with the expand/collapse-aware `pluginWrapper` styling.
+     * Extension plugin entries supplied by the consumer.
+     * Menu wraps each node with the expand/collapse-aware `pluginWrapper` styling
+     * and renders the `title` as a label overlay when expanded.
      */
-    pluginNodes?: React.ReactNode;
+    pluginNodes?: PluginNode[];
   }
 }
 
@@ -158,36 +171,21 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
   const bottomGroups = groupByCategory(bottomItems);
 
   /**
-   * Wraps each plugin node supplied via `pluginNodes` with the expand/collapse-aware
-   * `pluginWrapper` styling. The wrapping must happen inside Menu because it depends
-   * on the internal `isOpen` state.
+   * Wraps each plugin entry supplied via `pluginNodes` with the expand/collapse-aware
+   * `pluginWrapper` styling. Must live inside Menu because it depends on `isOpen`.
    *
-   * @param nodes - The raw plugin ReactNode(s) passed from the consumer.
+   * @param entries - Typed `{ node, title }` pairs produced by the consumer.
    */
-  const wrappedPluginItems = React.Children.map(pluginNodes, (child) => {
-    if (React.isValidElement(child)) {
-      const childElement = child as React.ReactElement<any>;
-      const title = childElement.props.title as string | undefined;
-
-      return (
-        <div
-          onClickCapture={() => setIsOpen(false)}
-          className={cn(s.pluginWrapper, isOpen && s.pluginWrapperExpanded)}
-        >
-          {React.cloneElement(childElement, {
-            props: {
-              ...childElement.props.props,
-              children: isOpen ? " " : undefined,
-            },
-          })}
-          {isOpen && title && (
-            <span className={s.pluginLabelOverlay}>{title}</span>
-          )}
-        </div>
-      );
-    }
-    return child;
-  });
+  const wrappedPluginItems = pluginNodes?.map(({ node, title }, index) => (
+    <div
+      key={index}
+      onClickCapture={() => setIsOpen(false)}
+      className={cn(s.pluginWrapper, isOpen && s.pluginWrapperExpanded)}
+    >
+      {node}
+      {isOpen && <span className={s.pluginLabelOverlay}>{title}</span>}
+    </div>
+  ));
 
   /** Count of active (pending/ongoing) requests for the badge indicator. */
   const activeRequestCount = app.general.requests.filter(

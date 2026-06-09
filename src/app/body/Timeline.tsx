@@ -6,7 +6,7 @@ import { Doc } from "@/entities/Doc";
 import { Navigator } from "./Navigator";
 import { Stack } from "@/ui/Stack";
 import s from "../Gulp.module.css";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas } from "./Canvas";
 import { MINUTE } from "@/dto";
 import { debounce, DebouncedFunc } from "lodash";
@@ -74,8 +74,34 @@ export function Timeline() {
 		}
 	};
 
+	/**
+	 * Ref that always holds the latest app state so the stable debounced
+	 * callback can read fresh data without being recreated on every render.
+	 */
+	const appRef = useRef(app);
+	appRef.current = app;
+
+	/**
+	 * Returns true when the current app state contains meaningful session
+	 * data (at least one selected source AND one selected context).
+	 * Used as a guard to prevent autosave during the initial loading phase
+	 * — e.g. while the SelectFiles banner is still open and the user has
+	 * not yet picked files/contexts or loaded a saved session.
+	 */
+	const hasSessionData = (): boolean => {
+		const currentApp = appRef.current;
+		return (
+			Source.Entity.selected(currentApp).length > 0 &&
+			Context.Entity.selected(currentApp).length > 0
+		);
+	};
+
 	const debouceSessionAutoSave: DebouncedFunc<() => void> = useMemo(() => {
 		return debounce(() => {
+			if (!hasSessionData()) {
+				console.warn("session auto-save skipped: no sources/contexts selected");
+				return;
+			}
 			console.warn("start session auto-save");
 			Info.session_autosave();
 		}, 10000);
@@ -98,7 +124,11 @@ export function Timeline() {
 
 	useEffect(() => {
 		return () => {
-			debouceSessionAutoSave.flush();
+			if (hasSessionData()) {
+				debouceSessionAutoSave.flush();
+			} else {
+				debouceSessionAutoSave.cancel();
+			}
 		};
 	}, [debouceSessionAutoSave]);
 
