@@ -32,10 +32,14 @@ export function DisplayOperationDetailDialog({
 	fallbackGlyphId,
 	onClose,
 }: DisplayOperationDetailDialogProps) {
-	const { Info } = Application.use();
+	const { Info, spawnBanner } = Application.use();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [details, setDetails] =
 		useState<GulpDataset.OperationGetById.Response | null>(null);
+
+	const globalOp = Info.app.target.operations.find(
+		(op) => op.id === operationId,
+	);
 
 	// Fetch detailed operation data on mount or when operationId changes
 	useEffect(() => {
@@ -77,12 +81,34 @@ export function DisplayOperationDetailDialog({
 		return formatTimestampToReadableString(milliseconds);
 	};
 
+	const handleEdit = () => {
+		const operation = {
+			id: operationId,
+			name: details?.name ?? globalOp?.name ?? fallbackName ?? "",
+			glyph_id: globalOp?.glyph_id ?? (fallbackGlyphId as any) ?? "",
+			description: (globalOp && globalOp.description !== undefined) ? globalOp.description : (details?.description ?? ""),
+		} as any;
+
+		spawnBanner(
+			<Operation.CreateOrUpdate.Banner
+				operation={operation}
+				onSuccess={async () => {
+					try {
+						const response = await Info.operation_get_by_id(operationId);
+						setDetails(response);
+					} catch (error) {
+						console.error("Failed to reload operation details:", error);
+					}
+				}}
+			/>,
+		);
+	};
+
 	// Determine values to show in header depending on load state
 	const displayName = details?.name ?? fallbackName ?? "Operation Details";
-	const iconName = Operation.Entity.icon({
-		glyph_id: details?.id ? undefined : (fallbackGlyphId as any),
-		...details,
-	} as any);
+	const iconName = Operation.Entity.icon(
+		globalOp || ({ glyph_id: fallbackGlyphId } as any),
+	);
 
 	return (
 		<Dialog
@@ -105,7 +131,7 @@ export function DisplayOperationDetailDialog({
 						variant="glass"
 						icon="PencilEdit"
 						title="Edit operation"
-						onClick={onClose}
+						onClick={handleEdit}
 					/>
 					<Button
 						variant="glass"
@@ -149,6 +175,12 @@ export function DisplayOperationDetailDialog({
 								<span className={s.detailLabel}>Doc Count:</span>
 								<span className={s.detailValue}>
 									{details.doc_count.toLocaleString()}
+								</span>
+							</div>
+							<div className={s.detailItem}>
+								<span className={s.detailLabel}>Description:</span>
+								<span className={s.detailValue}>
+									{((globalOp && globalOp.description !== undefined) ? globalOp.description : details.description) || "-"}
 								</span>
 							</div>
 							<div

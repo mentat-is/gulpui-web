@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Application } from "@/context/Application.context";
 import { Operation } from "@/entities/Operation";
-import { Menu } from "@/components/menu";
+import { Menu, MenuItem } from "@/components/menu";
 import { Icon } from "@impactium/icons";
 import { SelectFiles } from "@/banners/SelectFiles.banner";
+import { Session } from "@/banners/Session.banner";
 import { Checkbox } from "@/ui/Checkbox";
 import { Button } from "@/ui/Button";
 import s from "./styles/Home.module.css";
@@ -52,10 +53,12 @@ export namespace Home {
 
 		const confirmDelete = async () => {
 			setLoading(true);
-			await Info.delete_operations(operationIds);
+			const res = await Info.delete_operations(operationIds);
 			setLoading(false);
-			onDeleted();
-			destroyBanner();
+			if (res !== undefined) {
+				onDeleted();
+				destroyBanner();
+			}
 		};
 
 		return (
@@ -387,10 +390,42 @@ export namespace Home {
 			);
 		};
 
+		/**
+		 * Top area menu items for the Home page.
+		 * Includes the "Create new" button that opens the operation creation banner.
+		 */
+		const menuTopItems = useMemo<MenuItem[]>(
+			() => [
+				{
+					label: 'Create new',
+					icon: 'Plus',
+					category: 'Actions',
+					action: () => spawnBanner(<Operation.CreateOrUpdate.Banner />),
+				},
+			],
+			[spawnBanner],
+		);
+
+		/**
+		 * Bottom area menu items for the Home page.
+		 * Includes the "LogOut" button that triggers the session save/logout flow.
+		 */
+		const menuBottomItems = useMemo<MenuItem[]>(
+			() => [
+				{
+					label: 'LogOut',
+					icon: 'LogOut',
+					category: 'Account',
+					action: () => spawnBanner(<Session.Save.Banner />),
+				},
+			],
+			[spawnBanner],
+		);
+
 		return (
 			<div className={s.wrapper}>
-				{/* Left navigation — Menu component used as-is (refactor planned separately) */}
-				<Menu />
+				{/* Left navigation — data-driven Menu component */}
+				<Menu topItems={menuTopItems} bottomItems={menuBottomItems} />
 
 				{/* Main content: operations list */}
 				<main className={s.main}>

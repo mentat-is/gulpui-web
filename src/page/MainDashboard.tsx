@@ -1,12 +1,12 @@
 import ReactDOM from 'react-dom/client'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@impactium/utils'
 import { useTheme } from 'next-themes'
 import { Application } from '../context/Application.context'
 import { Preloader } from '../components/Preloader'
 import s from '../App.module.css'
 import { Stack } from '@/ui/Stack'
-import { Menu } from '../components/menu'
+import { Menu, MenuItem } from '../components/menu'
 import { Timeline } from '../app/body/Timeline'
 import { Resizer } from '../ui/Resizer'
 import { Hint } from '../dialogs/Hint.dialog'
@@ -17,6 +17,19 @@ import { Color } from '../entities/Color'
 import { Logger } from '../dto/Logger.class'
 import { Source } from '../entities/Source'
 import { DisplayEventDialog } from '../dialogs/Event.dialog'
+import { SelectFiles } from '../banners/SelectFiles.banner'
+import { UploadBanner } from '../banners/Upload.banner'
+import { FilterFileBanner } from '../banners/FilterFile.banner'
+import { QueryExternal } from '../banners/QueryExternal.banner'
+import { BridgeManager } from '../banners/BridgeManager.banner'
+import { Enrichment } from '../banners/Enrichment.banner'
+import { Sigma } from '../banners/Sigma'
+import { Requests } from '../banners/Requests.banner'
+import { Permissions } from '../banners/Permissions.banner'
+import { Operation } from '../entities/Operation'
+import { Settings } from '../banners/Settings.banner'
+import { Session } from '../banners/Session.banner'
+import { Extension } from '../context/Extension.context'
 
 export function MainDashboard() {
   const { theme } = useTheme();
@@ -29,7 +42,9 @@ export function MainDashboard() {
     setHintOpen,
     setDialogsDocked,
     spawnBanner,
+    toggleHintOpen,
   } = Application.use();
+  const { extensions } = Extension.use();
   const [isPreloaded, setIsPreloaded] = useState(false);
   const dialogWindowRef = useRef<Window | null>(null);
   const dialogRootRef = useRef<ReactDOM.Root | null>(null);
@@ -209,13 +224,57 @@ export function MainDashboard() {
     return () => cancelAnimationFrame(id);
   }, [dialogsDocked]);
 
+  /**
+   * Builds the extension plugin nodes for the Menu's plugin section.
+   * Iterates the `extensions` registry directly (already consumed at the top
+   * level via `Extension.use()`) to avoid calling `Extension.Components` — a
+   * React component that uses `useContext` internally — inside `useMemo`,
+   * which would violate the Rules of Hooks.
+   */
+  const pluginNodes = useMemo(() =>
+    Object.keys(extensions)
+      .filter((name) => extensions[name].type.includes('menu'))
+      .map((name) => {
+        const ext = extensions[name];
+        const title: string = ext.display_name || name;
+        return <Extension.Component key={name} name={name} title={title} />;
+      }),
+  [extensions]);
+
+  /**
+   * Top area menu items for the MainDashboard, grouped by category.
+   * Categories map to the original section headers: "Sources/filter", "External", "Plugins".
+   */
+  const menuTopItems = useMemo<MenuItem[]>(() => [
+    { label: 'Select files and contexts', icon: 'FileStack',   category: 'Sources/filter', action: () => spawnBanner(<SelectFiles.Banner showSession={false} />) },
+    { label: 'Upload files',              icon: 'Upload',      category: 'Sources/filter', action: () => spawnBanner(<UploadBanner />) },
+    { label: 'Apply filters',             icon: 'Filter',      category: 'Sources/filter', action: () => spawnBanner(<FilterFileBanner sources={[]} />) },
+    { label: 'Query external source',     icon: 'ServerCrash', category: 'External',       action: () => spawnBanner(<QueryExternal.Banner />) },
+    { label: 'Bridge Manager',            icon: 'Network',     category: 'External',       action: () => spawnBanner(<BridgeManager.Banner />) },
+    { label: 'Data enrichment',           icon: 'PrismColor',  category: 'External',       action: () => spawnBanner(<Enrichment.Banner />) },
+    { label: 'Upload sigma rule',         icon: 'Sigma',       category: 'Plugins',        action: () => spawnBanner(<Sigma.Banner sources={[]} />) },
+  ], [spawnBanner]);
+
+  /**
+   * Bottom area menu items for the MainDashboard.
+   * These are pinned at the bottom of the side navigation panel.
+   */
+  const menuBottomItems = useMemo<MenuItem[]>(() => [
+    { label: 'Requests',            icon: 'Activity',      category: 'Configuration', action: () => spawnBanner(<Requests.Banner />) },
+    { label: 'Manage Permissions',  icon: 'UserSettings',  category: 'Configuration', action: () => spawnBanner(<Permissions.Banner />) },
+    { label: 'Back to operations',  icon: 'Undo2',         category: 'Configuration', action: () => spawnBanner(<Operation.Select.Banner />) },
+    { label: 'Settings',            icon: 'SettingsGear',  category: 'Configuration', action: () => spawnBanner(<Settings.Banner />) },
+    { label: hintOpen ? 'Hide usage instructions' : 'Show usage instructions', icon: 'Info', category: 'Configuration', action: toggleHintOpen },
+    { label: 'Logout',              icon: 'LogOut',        category: 'Configuration', action: () => spawnBanner(<Session.Save.Banner />) },
+  ], [spawnBanner, hintOpen, toggleHintOpen]);
+
   if (!isPreloaded) {
     return <Preloader />
   }
 
   return (
     <Stack gap={12} className={s.window} ai='stretch'>
-      <Menu />
+      <Menu topItems={menuTopItems} bottomItems={menuBottomItems} pluginNodes={pluginNodes} />
       <Timeline />
       {hintOpen ? <Hint.Dialog onClose={() => setHintOpen(false)} /> : null}
       {dialogsDocked && dialog ? (

@@ -17,6 +17,9 @@ import { Glyph } from './Glyph'
 import { User } from './User'
 import { UUID } from 'crypto'
 import { App } from './App'
+import { Stack } from '@/ui/Stack'
+import { Label } from '@/ui/Label'
+import { Textarea } from '@/ui/Textarea'
 
 import s from './styles/Operation.module.css'
 import { toast } from 'sonner'
@@ -33,6 +36,7 @@ export namespace Operation {
     index: string;
     name: string;
     glyph_id: Glyph.Id;
+    description?: string;
   }
 
   export class Entity {
@@ -171,13 +175,23 @@ export namespace Operation {
     export namespace Banner {
       export interface Props extends UIBanner.Props {
         operation?: Operation.Type;
+        onSuccess?: () => void;
       }
     }
 
+    /**
+     * Banner component that allows the user to either create a new operation
+     * or update an existing operation's glyph and description.
+     *
+     * @param props - Component props.
+     * @param props.operation - The operation to update (optional, triggers create mode if omitted).
+     * @returns The React element for the create/update banner.
+     */
     export function Banner({ operation = {} as Operation.Type, ...props }: Operation.CreateOrUpdate.Banner.Props) {
-      const { Info, spawnBanner } = Application.use();
+      const { Info, spawnBanner, destroyBanner } = Application.use();
       const [name, setName] = useState<string>(operation.name ?? '');
       const [icon, setIcon] = useState<Glyph.Id | null>(operation.glyph_id ?? Glyph.getIdByName(Default.Icon.OPERATION));
+      const [description, setDescription] = useState<string>(operation.description ?? '');
       const [loading, setLoading] = useState<boolean>(false);
 
       const createOperation = () => {
@@ -185,6 +199,7 @@ export namespace Operation {
           method: 'POST',
           setLoading,
           query: { name },
+          body: { description },
           toast: {
             onSuccess: () => toast.success(`Operation has been created successfully`, {
               icon: <Icon name='Check' />,
@@ -196,8 +211,8 @@ export namespace Operation {
               richColors: true,
             })
           }
-        }, operation => updateOperation(operation).then(Info.sync)).then(() => {
-          spawnBanner(<Operation.Select.Banner />)
+        }, operation => {
+          updateOperation(operation).then(Info.sync);
         });
       }
 
@@ -208,7 +223,7 @@ export namespace Operation {
           operation_id: operationType?.id ?? operation.id,
           glyph_id: icon,
         },
-        body: { glyph_id: icon },
+        body: { glyph_id: icon, description },
       }, Info.sync)
         .then(() => {
           const isNewOperation = !operation.id;
@@ -216,27 +231,20 @@ export namespace Operation {
             icon: <Icon name='Check' />,
             richColors: true
           })
-          spawnBanner(<Operation.Select.Banner />)
+          Info.setInfoByKey(
+            Info.app.target.operations.map((op) =>
+              op.id === (operationType?.id ?? operation.id)
+                ? { ...op, glyph_id: icon!, description }
+                : op
+            ),
+            "target",
+            "operations"
+          );
+          destroyBanner();
+          if (props.onSuccess) {
+            props.onSuccess();
+          }
         });
-
-      const DeleteButton = () => {
-        if (!operation.id) return null
-
-        const deleteOperation = () => {
-          Info.deleteOperation(operation, setLoading).then(() => {
-            spawnBanner(<Operation.Select.Banner />)
-          })
-        }
-
-        return (
-          <Button
-            variant='tertiary'
-            onClick={deleteOperation}
-            icon='Trash'
-            loading={loading}
-          />
-        )
-      }
 
       const DoneButton = () => {
         const doneButtonClickHandler = () => {
@@ -257,16 +265,28 @@ export namespace Operation {
       }
 
       return (
-        <UIBanner title={operation.id ? 'Update operation' : 'Create new operation'} option={<DeleteButton />} done={<DoneButton />} className={s.wrapper} {...props}>
-          {operation.id ? null : <Input
+        <UIBanner title={operation.id ? 'Update operation' : 'Create new operation'} done={<DoneButton />} className={s.wrapper} {...props}>
+          <Input
             label='Name'
             value={name}
             variant='highlighted'
             icon='TextTitle'
             onChange={(e) => setName(e.currentTarget.value)}
             placeholder='Name of operation'
-          />}
+            readOnly={!!operation.id}
+            disabled={!!operation.id}
+          />
           <Glyph.Chooser icon={icon} setIcon={setIcon} label='Operation icon' />
+          <Stack dir='column' gap={6} ai='flex-start' data-input style={{ width: '100%' }}>
+            <Label htmlFor="description" value="Description" />
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.currentTarget.value)}
+              placeholder="Description of operation"
+              style={{ width: '100%' }}
+            />
+          </Stack>
         </UIBanner>
       )
     }

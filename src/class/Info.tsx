@@ -88,6 +88,7 @@ export namespace GulpDataset {
 			index?: string;
 			glyph_id?: Glyph.Id;
 			contexts: Context[];
+			description?: string;
 		}
 
 		interface Context {
@@ -189,6 +190,7 @@ export namespace GulpDataset {
 			doc_count: number;
 			granted_user_ids: string[];
 			granted_user_group_ids: string[];
+			description?: string;
 		}
 	}
 }
@@ -2211,6 +2213,22 @@ export class Info implements InfoProps {
 					ws_id: this.app.general.ws_id,
 				},
 				body: { ids },
+				toast: {
+					onSuccess: () =>
+						toast.success(
+							`Operations have been deleted successfully`,
+							{
+								icon: <Icon name="Check" />,
+								richColors: true,
+							},
+						),
+					onError: (response) =>
+						toast.error(`Failed deleting operations`, {
+							description: `Reason ${response.data.__error.msg}`,
+							icon: <Icon name="Stop" />,
+							richColors: true,
+						}),
+				},
 			},
 			() => {
 				this.setInfoByKey(
@@ -2887,6 +2905,7 @@ export class Info implements InfoProps {
 					name: opData.name,
 					index: opData.index ?? opData.id,
 					glyph_id: opData.glyph_id ?? Default.Icon.OPERATION,
+					description: opData.description,
 					selected: existOp.selected ?? false,
 				} as Operation.Type);
 
