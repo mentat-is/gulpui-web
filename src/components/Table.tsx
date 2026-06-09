@@ -251,7 +251,7 @@ function Item<T extends Object>({ i, columns, index, selectable, selected, onRow
         onRowAction && (
           <td className={cn(s.value, s.actionCell)}>
             <div className={s.centered}>
-              <Button className={s.Button_Icon} icon={iconAction as Icon.Name} variant="glass" onClick={() => onRowAction?.(i, index)} />
+              <Button className={s.Button_Icon} icon={iconAction as Icon.Name} variant="secondary" onClick={() => onRowAction?.(i, index)} />
             </div>
           </td>
         )
@@ -282,11 +282,9 @@ function Value({ k, v, ...props }: Value.Props) {
         ? v.toString()
         : String(v)
 
-  const displayValue = isArray
-    ? `Array(${v.length})`
-    : isObject
-      ? `Object`
-      : stringified
+  const displayValue = isArray || isObject
+    ? stringified
+    : stringified
 
   if (k === 'color') {
     props.style = {

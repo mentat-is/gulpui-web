@@ -22,6 +22,7 @@ export namespace OpenSearchQueryBuilder {
     | 'range'
     | 'LTE'
     | 'GTE'
+    | 'eq'
 
   export type Operator = 'must' | 'should' | 'must_not' | 'filter'
 
@@ -42,7 +43,8 @@ export namespace OpenSearchQueryBuilder {
     { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
     { value: 'range', label: 'Range', icon: 'CalendarRange' },
     { value: 'LTE', label: 'Lte', icon: 'ArrowDown' },
-    { value: 'GTE', label: 'Gte', icon: 'ArrowUp' }
+    { value: 'GTE', label: 'Gte', icon: 'ArrowUp' },
+    { value: 'eq', label: 'Eq', icon: 'Check' }
   ]
 
   export const OPERATORS: Entity.Operator[] = [

@@ -355,7 +355,7 @@ export function FilterFileBanner({
     () => (
       <Button
         icon="Check"
-        variant="glass"
+        variant="secondary"
         loading={loading}
         onClick={submit}
       />
@@ -533,7 +533,7 @@ export function FilterFileBanner({
         </Tabs>
         <Stack ai="center" jc="flex-start" dir="row">
           <Button
-            variant="glass"
+            variant="secondary"
             loading={isPreviewLoading}
             onClick={previewCurrentFilterButtonClickHandler}
             icon="PreviewDocument"

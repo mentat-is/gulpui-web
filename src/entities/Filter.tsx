@@ -128,6 +128,8 @@ export namespace Filter {
 					return { range: { [field]: { lte: Number(value) } } };
 				case "GTE":
 					return { range: { [field]: { gte: Number(value) } } };
+				case "eq":
+					return { term: { [field]: value } };
 				default:
 					return { match: { [field]: value } };
 			}

@@ -39,14 +39,14 @@ export namespace TableViewWindow {
  * Helper component for date selection using datetime-local input.
  * Converts nanoseconds timestamps to/from browser-compatible date strings.
  */
-function InputDateSelection({ type, value, valid, onChange }: { 
-  type: 'min' | 'max', 
-  value: string, 
-  valid: boolean, 
-  onChange: (val: string) => void 
+function InputDateSelection({ type, value, valid, onChange }: {
+  type: 'min' | 'max',
+  value: string,
+  valid: boolean,
+  onChange: (val: string) => void
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  
+
   /**
    * Formats a nanosecond timestamp string into a "yyyy-MM-dd'T'HH:mm" format.
    */
@@ -95,11 +95,11 @@ function InputDateSelection({ type, value, valid, onChange }: {
  * Helper component for ISO string selection.
  * Handles manual entry of ISO 8601 strings and synchronizes with nanosecond state.
  */
-function InputISOSelection({ type, value, valid, onChange }: { 
-  type: 'min' | 'max', 
-  value: string, 
-  valid: boolean, 
-  onChange: (val: string) => void 
+function InputISOSelection({ type, value, valid, onChange }: {
+  type: 'min' | 'max',
+  value: string,
+  valid: boolean,
+  onChange: (val: string) => void
 }) {
   const [localValue, setLocalValue] = useState(Internal.Transformator.toISO(value))
 
@@ -108,7 +108,7 @@ function InputISOSelection({ type, value, valid, onChange }: {
     // to avoid interrupting user typing
     const currentISO = Internal.Transformator.toISO(value)
     if (Internal.Transformator.toNanos(localValue) !== Internal.Transformator.toNanos(currentISO)) {
-       setLocalValue(currentISO)
+      setLocalValue(currentISO)
     }
   }, [value])
 
@@ -136,12 +136,12 @@ function InputISOSelection({ type, value, valid, onChange }: {
 export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Props) {
   // --- Constants ---
   const DEFAULT_HIDDEN_FIELDS = [
-    "_id", 
-    "gulp.source_id", 
-    "gulp.context_id", 
-    "gulp.operation_id", 
-    "gulp.event_code", 
-    "event.original", 
+    "_id",
+    "gulp.source_id",
+    "gulp.context_id",
+    "gulp.operation_id",
+    "gulp.event_code",
+    "event.original",
     "gulp.timestamp",
     "gulp.unmapped",
     "gulp.enrich"
@@ -150,24 +150,24 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   // --- Context & Infrastructure ---
   const { Info, app, spawnBanner, banner } = Application.use()
   const [container, setContainer] = useState<HTMLDivElement | null>(null)
-  
+
   // --- Selection & Sync State ---
   const [isSynced, setIsSynced] = useState<boolean>(false)
   const [selectedSourceId, setSelectedSourceId] = useState<Source.Id | null>(initialSourceId ?? null)
-  
-  const selectedSource = useMemo(() => 
+
+  const selectedSource = useMemo(() =>
     selectedSourceId ? Source.Entity.id(app, selectedSourceId) : null
-  , [app, selectedSourceId])
+    , [app, selectedSourceId])
 
   const selectedOperationId = app.target.operations.find(o => o.selected)?.id
 
   // --- Filter Derived State ---
   const syncedSourceFilter = selectedSourceId ? app.target.filters?.[selectedSourceId] : null
-  
+
   const serializedFilters = useMemo(() => {
     return JSON.stringify(syncedSourceFilter?.filters || [])
   }, [syncedSourceFilter])
-  
+
   const syncedTextFilter = syncedSourceFilter?.text_filter || '';
 
   const [localFieldTypeMap, setLocalFieldTypeMap] = useState<Record<string, string> | null>(null)
@@ -266,7 +266,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   const [totalHits, setTotalHits] = useState<number>(0)
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
-  
+
   // --- Display & Validation State ---
   const [manual, setManual] = useState(false)
   const [isMinValid, setIsMinValid] = useState(true)
@@ -298,7 +298,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     timelineMax: app.timeline.frame.max,
   });
 
-  const hasLogicalChange = 
+  const hasLogicalChange =
     prevSync.sourceId !== selectedSourceId ||
     prevSync.operationId !== selectedOperationId ||
     prevSync.isSynced !== isSynced ||
@@ -379,11 +379,11 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
     setLoading(true)
     try {
       let queryObj: Query.Type
-      
+
       // Branch logic: Determine if we use synced global filters or local search query
       if (isSynced) {
         if (activeFilters) {
-          let filter = {...activeFilters}
+          let filter = { ...activeFilters }
           if (filter.source_config) {
             filter.source_config.source_ids = [selectedSource.id]
             filter.source_config.range = { min: activeMin, max: activeMax }
@@ -421,7 +421,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       }
 
       const res = await Info.query_paginate(queryObj, { limit, offset, sort: sortOpt })
-      
+
       setData(res?.docs || [])
       setTotalHits(res?.total_hits || 0)
       setSelectedRows(new Set())
@@ -481,7 +481,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
         else setIsMaxValid(false)
         return
       }
-      
+
       setTimeFrame(prev => {
         const next = { ...prev, [type]: nanos }
         const min = BigInt(next.min)
@@ -534,12 +534,12 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       return
     }
     const selectedDocs = Array.from(selectedRows).map(i => data[i])
-    
+
     if (action === 'flagged') {
       for (const doc of selectedDocs) {
         Doc.Entity.flag.toggle(doc._id, selectedSource.operation_id)
       }
-      const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+      const bridge = WindowBridge.create(WindowBridge.generateId(), () => { })
       bridge.send(WindowBridge.MessageType.FLAGS_CHANGED, {
         docId: selectedDocs[0]._id,
         operationId: selectedSource.operation_id,
@@ -554,8 +554,8 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
    * Handles clicking an action on a specific row (usually to target an event in the main view).
    */
   const handleRowAction = useCallback((doc: any) => {
-    if(!selectedSource) return;
-    const bridge = WindowBridge.create(WindowBridge.generateId(), () => {})
+    if (!selectedSource) return;
+    const bridge = WindowBridge.create(WindowBridge.generateId(), () => { })
     bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
       docId: doc._id,
       operationId: selectedSource.operation_id,
@@ -576,7 +576,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
   }, [])
 
   // --- Constants ---
-  
+
   const isAllSelected = data.length > 0 && selectedRows.size === data.length
 
   return (
@@ -597,7 +597,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
             </TooltipTrigger>
             <TooltipContent>
               <div style={{ maxWidth: 300 }}>
-                {isSynced 
+                {isSynced
                   ? "Synced: Following global filters and timeline range. Local search is disabled."
                   : "Detached: Use local search and independent time range filters."}
               </div>
@@ -609,7 +609,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
       <div className={s.row1}>
         <div className={s.sourceRow}>
           <Select.Root onValueChange={(val) => setSelectedSourceId(val as Source.Id)} value={selectedSourceId || ''}>
-            <Select.Trigger data-no-icon>
+            <Select.Trigger data-no-icon className={s.sourceSelectTrigger}>
               <Stack gap={8} ai="center">
                 <Icon name='File' />
                 <Select.Value placeholder="Select a source..." />
@@ -630,8 +630,8 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
         {!isSynced && (
           <TooltipProvider>
             <div className={s.filtersSection}>
-              <Button 
-                variant="tertiary" 
+              <Button
+                variant="tertiary"
                 onClick={() => setIsFiltersOpen(!isFiltersOpen)}
                 icon={isFiltersOpen ? 'ChevronUp' : 'Filter'}
                 className={s.filtersToggle}
@@ -686,9 +686,9 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
                     setTextFilter={setLocalSearchQuery}
                     reset={() => setLocalSearchQuery('')}
                   />
-                  <OpenSearchQueryBuilder.Query.Add 
-                    filters={localFilters} 
-                    setFilters={setLocalFilters} 
+                  <OpenSearchQueryBuilder.Query.Add
+                    filters={localFilters}
+                    setFilters={setLocalFilters}
                     container={container}
                   />
                   <Separator />
@@ -700,7 +700,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
                   />
                   <Stack dir="row" jc="flex-end" gap={8}>
                     <Button variant="secondary" onClick={resetFilters} icon="RotateCcw">Reset</Button>
-                    <Button variant="glass" onClick={applyFilters} icon="Check">Apply</Button>
+                    <Button variant="secondary" onClick={applyFilters} icon="Check">Apply</Button>
                   </Stack>
                 </Stack>
               )}
@@ -717,11 +717,11 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
               Select All Visible
             </span>
           </Stack>
-          
+
           <Popover.Root>
             <Popover.Trigger asChild>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 icon="ChevronDown"
                 disabled={selectedRows.size === 0}
               >
@@ -729,15 +729,15 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
               </Button>
             </Popover.Trigger>
             <Popover.Content align="start" sideOffset={4} className={s.popoverContent} container={container}>
-              <div 
-                className={s.menuItem} 
+              <div
+                className={s.menuItem}
                 onClick={() => handleBulkAction('flagged')}
               >
                 <Icon name="Flag" size={14} />
                 <span>Flag</span>
               </div>
-              <div 
-                className={s.menuItem} 
+              <div
+                className={s.menuItem}
                 onClick={() => handleBulkAction('notes')}
               >
                 <Icon name="StickyNote" size={14} />
@@ -756,11 +756,11 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
                 ))}
               </Select.Content>
             </Select.Root>
-            <Button 
-              variant="secondary" 
-              icon={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'} 
-              onClick={toggleSortDirection} 
-              title="Toggle Sort Direction" 
+            <Button
+              variant="secondary"
+              icon={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'}
+              onClick={toggleSortDirection}
+              title="Toggle Sort Direction"
             />
           </Stack>
         </div>
@@ -769,7 +769,7 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
           <span className={s.label}>
             Show {totalHits > 0 ? pageSize * (currentPage - 1) + 1 : 0}-{Math.min(pageSize * currentPage, totalHits)} of {totalHits}
           </span>
-          
+
           <Stack gap={8} ai="center">
             <Select.Root onValueChange={(val) => setPageSize(Number(val))} value={pageSize.toString()}>
               <Select.Trigger className={s.pageSelect}><Select.Value placeholder="50" /></Select.Trigger>
@@ -795,42 +795,42 @@ export function TableViewWindow({ initialSourceId, onClose }: TableViewWindow.Pr
 
       <div className={s.result}>
         {!selectedSourceId ? (
-           <div className={s.placeholder}>Select a source to view events</div>
+          <div className={s.placeholder}>Select a source to view events</div>
         ) : loading || !localFieldTypeMap ? (
-           <p className={s.label}>Loading data...</p>
+          <p className={s.label}>Loading data...</p>
         ) : data.length > 0 ? (
-           <Table 
-             values={data}
-             columns={columns}
-             includeIndex={false} 
-             notshow={DEFAULT_HIDDEN_FIELDS} 
-             selectable={true}
-             selectedrows={selectedRows}
-             onrowselect={(index, selected) => {
-               setSelectedRows(prev => {
-                 const next = new Set(prev)
-                 if (selected) next.add(index)
-                 else next.delete(index)
-                 return next
-               })
-             }}
-             onrowaction={handleRowAction}
-             iconAction="Search"
-             sortField={sortField}
-             sortDirection={sortDirection}
-             onSort={(field) => {
-               if (sortableFields.includes(field)) {
-                 if (sortField === field) {
-                   toggleSortDirection()
-                 } else {
-                   handleSortFieldChange(field)
-                 }
-               }
-             }}
-             highlightedId={app.timeline.target?._id}
-           />
+          <Table
+            values={data}
+            columns={columns}
+            includeIndex={false}
+            notshow={DEFAULT_HIDDEN_FIELDS}
+            selectable={true}
+            selectedrows={selectedRows}
+            onrowselect={(index, selected) => {
+              setSelectedRows(prev => {
+                const next = new Set(prev)
+                if (selected) next.add(index)
+                else next.delete(index)
+                return next
+              })
+            }}
+            onrowaction={handleRowAction}
+            iconAction="Search"
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(field) => {
+              if (sortableFields.includes(field)) {
+                if (sortField === field) {
+                  toggleSortDirection()
+                } else {
+                  handleSortFieldChange(field)
+                }
+              }
+            }}
+            highlightedId={app.timeline.target?._id}
+          />
         ) : (
-           <p className={s.label}>No data found matching your query.</p>
+          <p className={s.label}>No data found matching your query.</p>
         )}
       </div>
       {banner?.target === 'table' && banner.node}

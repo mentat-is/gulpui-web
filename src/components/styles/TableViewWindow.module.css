@@ -50,6 +50,31 @@
   width: 100%;
 }
 
+.sourceSelectTrigger {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 12px !important;
+  border: 1px solid var(--gray-alpha-400) !important;
+  background: transparent !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  transition: all 0.125s var(--transition) !important;
+  color: var(--gray-1000) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: none !important;
+}
+
+.sourceSelectTrigger:hover {
+  background: var(--background-200) !important;
+}
+
+.sourceSelectTrigger:focus {
+  outline: none !important;
+  box-shadow: var(--ring) !important;
+}
+
 .filtersSection {
   background: var(--background-200);
   border: 1px solid var(--gray-alpha-400);
@@ -100,17 +125,18 @@
 }
 
 .result {
-  background: var(--geist-background);
-  border: var(--geist-border);
-  border-radius: 6px;
-  padding: 12px;
-  flex: 1;
-  overflow: hidden;
-  /* Hide overflow here so Table wrapper handles it */
-  position: relative;
-  min-height: 500px;
+  flex: 0 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
   display: flex;
   flex-direction: column;
+}
+
+.result :global(.wrapper) {
+  border: none;
 }
 
 .placeholder {
