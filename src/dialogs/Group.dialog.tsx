@@ -1,7 +1,7 @@
 import { DisplayEventDialog, EventIndicator } from "./Event.dialog";
 import { Application } from "@/context/Application.context";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Dialog } from "@/ui/Dialog";
 import { Doc } from "@/entities/Doc";
@@ -19,7 +19,35 @@ interface DisplayGroupDialogProps {
 
 export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDialogProps) {
 	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
-	const { spawnDialog, Info } = Application.use();
+	const { spawnDialog, Info, app } = Application.use();
+	const menuShellRef = useRef<HTMLDivElement>(null);
+	const eventRefsMap = useRef(new Map<string, HTMLDivElement>());
+	const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
+	const [hoveredEventData, setHoveredEventData] = useState<Doc.Type | null>(null);
+	const [isLoadingHover, setIsLoadingHover] = useState(false);
+	const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+
+	// Close on click outside
+	useEffect(() => {
+		if (!anchor) return;
+
+		const handleClickOutside = (e: MouseEvent) => {
+			if (menuShellRef.current && !menuShellRef.current.contains(e.target as Node)) {
+				onClose?.();
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, [anchor, onClose]);
+
+	// Cleanup timeout on unmount
+	useEffect(() => {
+		return () => {
+			if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+		};
+	}, []);
 
 	useEffect(() => {
 		Info.setTimelineTarget(null);
@@ -43,35 +71,153 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		[onClose, spawnDialog],
 	);
 
+	const handleEventHover = useCallback(
+		async (event: Doc.Type) => {
+			setHoveredEventId(event._id);
+
+			// Query gulp for the event
+			setIsLoadingHover(true);
+			try {
+				const opId = Doc.Entity.operationId(app, event);
+				if (!opId) {
+					console.warn("No opId found for event", event._id);
+					return;
+				}
+				const fetchedEvent = await Info.query_single_id(event._id, opId);
+				if (fetchedEvent) {
+					setHoveredEventData(fetchedEvent);
+				} else {
+					console.warn("No event returned from query");
+				}
+			} catch (error) {
+				console.error("Failed to fetch event on hover:", error);
+			} finally {
+				setIsLoadingHover(false);
+			}
+		},
+		[Info, app],
+	);
+
+	const handleMouseLeaveEvent = useCallback(() => {
+		closeTimeoutRef.current = setTimeout(() => {
+			setOpenTooltipId(null);
+		}, 100);
+	}, []);
+
+	const handleMouseEnterTooltip = useCallback((eventId: string) => {
+		if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+		setOpenTooltipId(eventId);
+	}, []);
+
+	const handleMouseLeaveTooltip = useCallback(() => {
+		closeTimeoutRef.current = setTimeout(() => {
+			setOpenTooltipId(null);
+		}, 100);
+	}, []);
+
 	const renderEvent = useCallback(
 		(event: Doc.Type) => {
 			if (!event) return null;
 
-			return (
-				<Stack
-					className={s.event}
-					onClick={() => handleSelectEvent(event)}
-					key={event._id}
+			const showTooltip = openTooltipId === event._id;
+			const eventElement = eventRefsMap.current.get(event._id);
+
+			const tooltipContent = hoveredEventData && hoveredEventId === event._id ? (
+				<div
+					style={{ fontSize: "11px", maxWidth: 300 }}
+					onMouseEnter={() => handleMouseEnterTooltip(event._id)}
+					onMouseLeave={handleMouseLeaveTooltip}
 				>
-					<EventIndicator event={event} />
-					<Stack
-						dir="column"
-						jc="space-evenly"
-						ai="flex-start"
-						flex
-						className={s.info}
-						gap={2}
+					<p style={{ margin: "0 0 4px 0", fontWeight: "bold" }}>
+						{event._id}
+					</p>
+					<p style={{ margin: "0 0 4px 0", color: "var(--second)" }}>
+						{event["gulp.event_code"] || "N/A"}
+					</p>
+					<details
+						style={{ cursor: "pointer" }}
+						onClick={(e) => e.stopPropagation()}
 					>
-						<p className={s.id}>
-							{`${format(new Date(event.gulp_timestamp), "yyyy-MM-dd HH:mm:ss")}.${String(Internal.Transformator.toNanos(event.gulp_timestamp) % 1_000_000n).padStart(6, "0")}`}{" "}
-							| {event["gulp.event_code"]}
-						</p>
-						<span className={s.description}>{event._id}</span>
+						<summary style={{ margin: "4px 0", textDecoration: "underline" }}>
+							Details
+						</summary>
+						<pre
+							style={{
+								margin: "4px 0 0 0",
+								maxHeight: 200,
+								overflow: "auto",
+								fontSize: "10px",
+								fontFamily: "monospace",
+								whiteSpace: "pre-wrap",
+							}}
+						>
+							{JSON.stringify(hoveredEventData, null, 2)}
+						</pre>
+					</details>
+				</div>
+			) : isLoadingHover && hoveredEventId === event._id ? (
+				<div style={{ fontSize: "11px" }}>Loading...</div>
+			) : null;
+
+			const tooltipPortal = showTooltip && tooltipContent && eventElement ? createPortal(
+				<div
+					style={{
+						position: "fixed",
+						left: Math.max(12, eventElement.getBoundingClientRect().left - 320),
+						top: eventElement.getBoundingClientRect().top,
+						background: "var(--background-100)",
+						border: "1px solid var(--border)",
+						borderRadius: "6px",
+						padding: "8px",
+						boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+						zIndex: 10000,
+						pointerEvents: "auto",
+					}}
+					onMouseEnter={() => handleMouseEnterTooltip(event._id)}
+					onMouseLeave={handleMouseLeaveTooltip}
+					onClick={(e) => e.stopPropagation()}
+				>
+					{tooltipContent}
+				</div>,
+				document.body
+			) : null;
+
+			return (
+				<>
+					<Stack
+						ref={(el) => {
+							if (el) eventRefsMap.current.set(event._id, el);
+						}}
+						className={s.event}
+						onClick={() => handleSelectEvent(event)}
+						onMouseEnter={() => {
+							if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+							handleEventHover(event);
+							setOpenTooltipId(event._id);
+						}}
+						onMouseLeave={handleMouseLeaveEvent}
+					>
+						<EventIndicator event={event} />
+						<Stack
+							dir="column"
+							jc="space-evenly"
+							ai="flex-start"
+							flex
+							className={s.info}
+							gap={2}
+						>
+							<p className={s.id}>
+								{`${format(new Date(event.gulp_timestamp), "yyyy-MM-dd HH:mm:ss")}.${String(Internal.Transformator.toNanos(event.gulp_timestamp) % 1_000_000n).padStart(6, "0")}`}{" "}
+								| {event["gulp.event_code"]}
+							</p>
+							<span className={s.description}>{event._id}</span>
+						</Stack>
 					</Stack>
-				</Stack>
+					{tooltipPortal}
+				</>
 			);
 		},
-		[handleSelectEvent],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, handleMouseLeaveEvent, handleMouseEnterTooltip, handleMouseLeaveTooltip],
 	);
 
 	const popupStyle = useMemo(() => {
@@ -98,7 +244,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 	if (anchor) {
 		return createPortal(
-			<div className={s.menuShell} style={popupStyle}>
+			<div className={s.menuShell} style={popupStyle} ref={menuShellRef}>
 				<div className={s.menuHeader}>
 					<span className={s.menuTitle}>Events</span>
 					<button
