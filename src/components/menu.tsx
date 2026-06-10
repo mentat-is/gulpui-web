@@ -51,6 +51,20 @@ export namespace Menu {
 }
 
 /**
+ * Internal union representing either a MenuItem or a PluginNode.
+ */
+type UnifiedMenuEntry =
+  | {
+      type: "item";
+      data: MenuItem;
+    }
+  | {
+      type: "plugin";
+      data: PluginNode;
+      index: number;
+    };
+
+/**
  * Groups an array of `MenuItem` objects by their `category` field,
  * preserving the insertion order of categories.
  *
@@ -65,6 +79,46 @@ function groupByCategory(items: MenuItem[]): [string, MenuItem[]][] {
     }
     map.get(item.category)!.push(item);
   }
+  return Array.from(map.entries());
+}
+
+/**
+ * Groups an array of MenuItem objects and an optional list of PluginNode objects
+ * by category, merging any plugin nodes under the "Plugins" category.
+ *
+ * @param items - The list of standard top menu items.
+ * @param pluginNodes - The list of plugin nodes, which default to the "Plugins" category.
+ * @returns An array of tuples mapping category names to their corresponding unified entries.
+ */
+function groupTopItemsWithPlugins(
+  items: MenuItem[],
+  pluginNodes?: PluginNode[]
+): [string, UnifiedMenuEntry[]][] {
+  const map = new Map<string, UnifiedMenuEntry[]>();
+
+  // First, group standard top menu items under their designated categories
+  for (const item of items) {
+    if (!map.has(item.category)) {
+      map.set(item.category, []);
+    }
+    map.get(item.category)!.push({ type: "item", data: item });
+  }
+
+  // Next, append plugin nodes under the "Plugins" category
+  if (pluginNodes && pluginNodes.length > 0) {
+    const categoryName = "Plugins";
+    if (!map.has(categoryName)) {
+      map.set(categoryName, []);
+    }
+    pluginNodes.forEach((plugin, index) => {
+      map.get(categoryName)!.push({
+        type: "plugin",
+        data: plugin,
+        index,
+      });
+    });
+  }
+
   return Array.from(map.entries());
 }
 
@@ -148,44 +202,47 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
   );
 
   /**
-   * Renders a list of `MenuItem` arrays grouped into labeled category sections.
+   * Renders a list of unified menu entry arrays grouped into labeled category sections.
+   * Handles both standard items and wrapped plugin components.
    *
-   * @param groups - Ordered `[categoryName, items[]]` tuples produced by `groupByCategory`.
+   * @param groups - Ordered `[categoryName, entries[]]` tuples produced by `groupTopItemsWithPlugins`.
    */
-  const renderGroups = (groups: [string, MenuItem[]][]) =>
-    groups.map(([category, items]) => (
+  const renderUnifiedGroups = (groups: [string, UnifiedMenuEntry[]][]) =>
+    groups.map(([category, entries]) => (
       <Stack key={category} dir="column" gap={4} className={s.section}>
         {isOpen && <div className={s.sectionTitle}>{category}</div>}
-        {items.map((item) => (
-          <ActionButton
-            key={item.label}
-            title={item.label}
-            icon={item.icon}
-            onClick={item.action}
-          />
-        ))}
+        {entries.map((entry) => {
+          if (entry.type === "item") {
+            return (
+              <ActionButton
+                key={entry.data.label}
+                title={entry.data.label}
+                icon={entry.data.icon}
+                onClick={entry.data.action}
+              />
+            );
+          } else {
+            return (
+              <div
+                key={`plugin-${entry.index}`}
+                onClickCapture={() => setIsOpen(false)}
+                className={cn(s.pluginWrapper, isOpen && s.pluginWrapperExpanded)}
+              >
+                {entry.data.node}
+                {isOpen && (
+                  <span className={s.pluginLabelOverlay}>
+                    {entry.data.title}
+                  </span>
+                )}
+              </div>
+            );
+          }
+        })}
       </Stack>
     ));
 
-  const topGroups = groupByCategory(topItems);
+  const topGroups = groupTopItemsWithPlugins(topItems, pluginNodes);
   const bottomGroups = groupByCategory(bottomItems);
-
-  /**
-   * Wraps each plugin entry supplied via `pluginNodes` with the expand/collapse-aware
-   * `pluginWrapper` styling. Must live inside Menu because it depends on `isOpen`.
-   *
-   * @param entries - Typed `{ node, title }` pairs produced by the consumer.
-   */
-  const wrappedPluginItems = pluginNodes?.map(({ node, title }, index) => (
-    <div
-      key={index}
-      onClickCapture={() => setIsOpen(false)}
-      className={cn(s.pluginWrapper, isOpen && s.pluginWrapperExpanded)}
-    >
-      {node}
-      {isOpen && <span className={s.pluginLabelOverlay}>{title}</span>}
-    </div>
-  ));
 
   /** Count of active (pending/ongoing) requests for the badge indicator. */
   const activeRequestCount = app.general.requests.filter(
@@ -230,16 +287,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
           gap={8}
           className={s.scroll}
         >
-          {renderGroups(topGroups)}
-
-          {wrappedPluginItems && wrappedPluginItems.length > 0 && (
-            <Stack dir="column" gap={4} className={s.section}>
-              {isOpen && (
-                <div className={s.sectionTitle}>Plugins</div>
-              )}
-              {wrappedPluginItems}
-            </Stack>
-          )}
+          {renderUnifiedGroups(topGroups)}
         </Stack>
 
         <Stack flex className={s.spacer} />

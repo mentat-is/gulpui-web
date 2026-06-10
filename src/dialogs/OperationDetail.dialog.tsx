@@ -140,13 +140,13 @@ export function DisplayOperationDetailDialog({
 				</div>
 				<div className={s.buttonGroup}>
 					<Button
-						variant="glass"
+						variant="secondary"
 						icon="PencilEdit"
 						title="Edit operation"
 						onClick={handleEdit}
 					/>
 					<Button
-						variant="glass"
+						variant="secondary"
 						icon="X"
 						title="Close dialog"
 						onClick={onClose}
@@ -228,25 +228,33 @@ export function DisplayOperationDetailDialog({
 
 					{/* Permissions Section */}
 					<div className={s.section}>
-						<Stack ai="center" jc="space-between" className={s.sectionTitle}>
+						<Stack
+							ai="center"
+							jc="space-between"
+							className={s.sectionTitle}
+						>
 							<span>Permissions</span>
 							<Button
 								icon="PenLine"
-								variant="glass"
-								style={{ height: 20, width: 20, minHeight: 20, padding: 0 }}
-								onClick={() => spawnBanner(
-									<OperationPermissions.Banner
-										operationId={operationId}
-										granted_user_ids={details.granted_user_ids || []}
-										granted_user_group_ids={details.granted_user_group_ids || []}
-										onSuccess={() => {
-											setLoading(true);
-											Info.operation_get_by_id(operationId)
-												.then(setDetails)
-												.finally(() => setLoading(false));
-										}}
-									/>
-								)}
+								variant="secondary"
+								style={{ padding: 0 }}
+								onClick={() =>
+									spawnBanner(
+										<OperationPermissions.Banner
+											operationId={operationId}
+											granted_user_ids={details.granted_user_ids || []}
+											granted_user_group_ids={
+												details.granted_user_group_ids || []
+											}
+											onSuccess={() => {
+												setLoading(true);
+												Info.operation_get_by_id(operationId)
+													.then(setDetails)
+													.finally(() => setLoading(false));
+											}}
+										/>,
+									)
+								}
 							/>
 						</Stack>
 						<div className={s.detailsList}>

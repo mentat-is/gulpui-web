@@ -56,7 +56,10 @@ export namespace Home {
 				.map((id) => app.target.operations.find((op) => op.id === id))
 				.filter((op): op is Operation.Type => !!op);
 
-			const deletedIds = await Info.deleteOperation(operationsToDelete, setLoading);
+			const deletedIds = await Info.deleteOperation(
+				operationsToDelete,
+				setLoading,
+			);
 			if (deletedIds.length > 0) {
 				onDeleted(deletedIds);
 			}
@@ -70,7 +73,7 @@ export namespace Home {
 					<Button
 						loading={loading}
 						icon="Trash2"
-						variant="glass"
+						variant="secondary"
 						onClick={confirmDelete}
 						disabled={!isSubmitted}
 					/>
@@ -329,7 +332,7 @@ export namespace Home {
 					</div>
 					<div className={`${s.tableCell} ${s.actionsCell}`}>
 						<Button
-							variant="glass"
+							variant="secondary"
 							icon="Trash2"
 							loading={deleting}
 							onClick={handleDelete}
@@ -337,7 +340,7 @@ export namespace Home {
 							aria-label={`Delete operation ${operation.name}`}
 						/>
 						<Button
-							variant="glass"
+							variant="secondary"
 							icon="ArrowRight"
 							onClick={handleGo}
 							title="Go to"
