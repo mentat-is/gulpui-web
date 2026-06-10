@@ -1506,37 +1506,88 @@ export class Info implements InfoProps {
 			"operations",
 		);
 
-	deleteOperation = (
-		operation: Operation.Type,
+	/**
+	 * Deletes one or more operations sequentially, shows a consolidated toast summary,
+	 * and syncs the application state exactly once at the end.
+	 *
+	 * @param operations - A single operation object or an array of operation objects to delete.
+	 * @param setLoading - State setter to control the loading indicator.
+	 * @returns A promise that resolves to an array of successfully deleted operation IDs.
+	 */
+	deleteOperation = async (
+		operations: Operation.Type | Operation.Type[],
 		setLoading: SetState<boolean>,
-	) => {
-		return api(
-			"/operation_delete",
-			{
+	): Promise<Operation.Id[]> => {
+		const list = Array.isArray(operations) ? operations : [operations];
+		if (list.length === 0) return [];
+
+		setLoading(true);
+		const succeeded: Operation.Type[] = [];
+		const failed: Operation.Type[] = [];
+
+		for (const op of list) {
+			const res = await api<any>("/operation_delete", {
 				method: "DELETE",
 				query: {
-					operation_id: operation.id,
+					operation_id: op.id,
 				},
-				setLoading,
-				toast: {
-					onSuccess: () =>
-						toast.success(
-							`Operation ${operation.name} has been deleted successfully`,
-							{
-								icon: <Icon name="Check" />,
-								richColors: true,
-							},
-						),
-					onError: (response) =>
-						toast.error(`Failed deleting operation`, {
-							description: `Reason ${response.data.__error.msg}`,
-							icon: <Icon name="Stop" />,
-							richColors: true,
-						}),
+			});
+
+			if (res !== undefined) {
+				succeeded.push(op);
+			} else {
+				failed.push(op);
+			}
+		}
+
+		setLoading(false);
+
+		// Show single toast based on the consolidated outcomes
+		if (succeeded.length > 0 && failed.length === 0) {
+			if (succeeded.length === 1) {
+				toast.success(
+					`Operation ${succeeded[0].name} has been deleted successfully`,
+					{
+						icon: <Icon name="Check" />,
+						richColors: true,
+					},
+				);
+			} else {
+				toast.success(
+					`${succeeded.length} operations have been deleted successfully`,
+					{
+						icon: <Icon name="Check" />,
+						richColors: true,
+					},
+				);
+			}
+		} else if (succeeded.length > 0 && failed.length > 0) {
+			toast.warning(
+				`${succeeded.length} operations deleted, ${failed.length} failed`,
+				{
+					description: `Failed: ${failed.map((f) => f.name).join(", ")}`,
+					icon: <Icon name="Warning" />,
+					richColors: true,
 				},
-			},
-			this.sync,
-		);
+			);
+		} else if (failed.length > 0) {
+			if (failed.length === 1) {
+				toast.error(`Failed deleting operation ${failed[0].name}`, {
+					icon: <Icon name="Stop" />,
+					richColors: true,
+				});
+			} else {
+				toast.error(`Failed deleting ${failed.length} operations`, {
+					icon: <Icon name="Stop" />,
+					richColors: true,
+				});
+			}
+		}
+
+		// Perform state sync exactly once at the end of the batch
+		await this.sync();
+
+		return succeeded.map((op) => op.id);
 	};
 
 	/**
@@ -2196,46 +2247,6 @@ export class Info implements InfoProps {
 			DataStore.markDirty();
 			this.render();
 		});
-
-	/**
-	 * Deletes multiple operations in a single API call and updates the local operations list.
-	 *
-	 * @param ids - Array of Operation IDs to be deleted.
-	 * @returns A promise that resolves when the bulk delete API call is complete.
-	 */
-	delete_operations = (ids: Operation.Id[]) => {
-		return api(
-			"/object_delete_bulk",
-			{
-				method: "DELETE",
-				query: {
-					obj_type: "operation",
-					ws_id: this.app.general.ws_id,
-				},
-				body: { ids },
-				toast: {
-					onSuccess: () =>
-						toast.success(`Operations have been deleted successfully`, {
-							icon: <Icon name="Check" />,
-							richColors: true,
-						}),
-					onError: (response) =>
-						toast.error(`Failed deleting operations`, {
-							description: `Reason ${response.data.__error.msg}`,
-							icon: <Icon name="Stop" />,
-							richColors: true,
-						}),
-				},
-			},
-			() => {
-				this.setInfoByKey(
-					this.app.target.operations.filter((op) => !ids.includes(op.id)),
-					"target",
-					"operations",
-				);
-			},
-		);
-	};
 
 	/* GRANTED PERMISSIONS */
 	add_granted_group = (obj_type: string, obj_id: string, group_id: string) => {
