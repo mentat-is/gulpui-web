@@ -1629,6 +1629,18 @@ export class Info implements InfoProps {
 					source_id: source.id,
 					ws_id: this.app.general.ws_id,
 				},
+				toast: {
+					onSuccess: () =>
+						toast.success(`Source ${source.name} has been deleted successfully`, {
+							icon: <Icon name="Check" />,
+							richColors: true,
+						}),
+					onError: () =>
+						toast.error(`Failed deleting source ${source.name}`, {
+							icon: <Icon name="Stop" />,
+							richColors: true,
+						}),
+				},
 			},
 			this.sync,
 		);
