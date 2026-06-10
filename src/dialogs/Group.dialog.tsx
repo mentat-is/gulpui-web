@@ -7,9 +7,36 @@ import { Dialog } from "@/ui/Dialog";
 import { Doc } from "@/entities/Doc";
 import { Stack } from "@/ui/Stack";
 import { format } from "date-fns";
+import { Markdown } from "@/ui/Markdown";
 
 import s from "./styles/DisplayGroupDialog.module.css";
 import { Internal } from "@/entities/addon/Internal";
+
+// Cache for tooltip event queries
+class TooltipEventCache {
+	private cache = new Map<string, Doc.Type>();
+	private maxSize = 100;
+
+	get(id: string): Doc.Type | undefined {
+		return this.cache.get(id);
+	}
+
+	set(id: string, event: Doc.Type): void {
+		if (this.cache.size >= this.maxSize && !this.cache.has(id)) {
+			const firstKey = this.cache.keys().next().value as string | undefined;
+			if (firstKey) {
+				this.cache.delete(firstKey);
+			}
+		}
+		this.cache.set(id, event);
+	}
+
+	has(id: string): boolean {
+		return this.cache.has(id);
+	}
+}
+
+const tooltipEventCache = new TooltipEventCache();
 
 interface DisplayGroupDialogProps {
 	events: Doc.Type[];
@@ -75,6 +102,12 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		async (event: Doc.Type) => {
 			setHoveredEventId(event._id);
 
+			// Check cache first
+			if (tooltipEventCache.has(event._id)) {
+				setHoveredEventData(tooltipEventCache.get(event._id) || null);
+				return;
+			}
+
 			// Query gulp for the event
 			setIsLoadingHover(true);
 			try {
@@ -85,6 +118,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				}
 				const fetchedEvent = await Info.query_single_id(event._id, opId);
 				if (fetchedEvent) {
+					tooltipEventCache.set(fetchedEvent._id, fetchedEvent);
 					setHoveredEventData(fetchedEvent);
 				} else {
 					console.warn("No event returned from query");
@@ -124,7 +158,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 			const tooltipContent = hoveredEventData && hoveredEventId === event._id ? (
 				<div
-					style={{ fontSize: "11px", maxWidth: 300 }}
+					style={{ fontSize: "11px", maxWidth: 400 }}
 					onMouseEnter={() => handleMouseEnterTooltip(event._id)}
 					onMouseLeave={handleMouseLeaveTooltip}
 				>
@@ -134,26 +168,17 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 					<p style={{ margin: "0 0 4px 0", color: "var(--second)" }}>
 						{event["gulp.event_code"] || "N/A"}
 					</p>
-					<details
-						style={{ cursor: "pointer" }}
-						onClick={(e) => e.stopPropagation()}
+					<div
+						style={{
+							maxHeight: "250px",
+							overflow: "auto",
+							fontSize: "10px",
+						}}
 					>
-						<summary style={{ margin: "4px 0", textDecoration: "underline" }}>
-							Details
-						</summary>
-						<pre
-							style={{
-								margin: "4px 0 0 0",
-								maxHeight: 200,
-								overflow: "auto",
-								fontSize: "10px",
-								fontFamily: "monospace",
-								whiteSpace: "pre-wrap",
-							}}
-						>
-							{JSON.stringify(hoveredEventData, null, 2)}
-						</pre>
-					</details>
+						<Markdown
+							value={`\`\`\`json\n${JSON.stringify(hoveredEventData, null, 2)}`}
+						/>
+					</div>
 				</div>
 			) : isLoadingHover && hoveredEventId === event._id ? (
 				<div style={{ fontSize: "11px" }}>Loading...</div>
@@ -163,7 +188,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				<div
 					style={{
 						position: "fixed",
-						left: Math.max(12, eventElement.getBoundingClientRect().left - 320),
+						left: Math.max(12, eventElement.getBoundingClientRect().left - 420),
 						top: eventElement.getBoundingClientRect().top,
 						background: "var(--background-100)",
 						border: "1px solid var(--border)",
