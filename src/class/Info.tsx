@@ -3257,6 +3257,31 @@ export class Info implements InfoProps {
 		return user;
 	};
 
+	user_set_data = async (key: string, value: any): Promise<User.Type | null> => {
+		if (!this.app.general.user) {
+			Logger.warn(`Tried to set user data ${key} without a logged-in user`);
+			return null;
+		}
+
+		const user = await api<User.Type>("/user_update", {
+			method: "PATCH",
+			query: {
+				user_id: this.app.general.user.id,
+			},
+			body: {
+				user_data: {
+					[key]: value,
+				},
+			},
+		});
+
+		if (user) {
+			this.setInfoByKey(user, "general", "user");
+		}
+
+		return user;
+	};
+
 	/**
 	 * Logs out the current user session by calling the POST /logout API.
 	 * Clears the stored session token and resets the user context.

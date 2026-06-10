@@ -9,12 +9,13 @@ import "./styles/prism-tomorrow.css";
 export namespace Markdown {
   export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "children"> {
     value: string;
+    scrollable?: boolean;
   }
 }
 
-export function Markdown({ className, value, ...props }: Markdown.Props) {
+export function Markdown({ className, value, scrollable = true, ...props }: Markdown.Props) {
   return (
-    <div className={cn(s.markdown, className)} {...props}>
+    <div className={cn(s.markdown, !scrollable && s.noScroll, className)} {...props}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypePrismPlus]}
