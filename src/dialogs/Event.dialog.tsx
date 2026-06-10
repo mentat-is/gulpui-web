@@ -63,6 +63,71 @@ import { Extension } from "@/context/Extension.context";
 // --- UTILITIES ---
 
 /**
+ * Extracts the path from a detected selection string.
+ * Example: `"gulp.unmapped.Data.0": "480 Pacific Standard Time"` -> `gulp.unmapped.Data.0`
+ */
+const extractPathFromDetected = (detected: string): string | null => {
+	const match = detected.match(/^"([^"]+)":/);
+	if (match) {
+		return match[1];
+	}
+	return null;
+};
+
+/**
+ * Checks if a path points to an actual selectable leaf value (not a parent array/object).
+ * For tree context, we only want primitive values or values at array indices, not parent arrays.
+ */
+const isSelectableLeafValue = (
+	json: Record<string, unknown>,
+	path: string,
+): boolean => {
+	const value = getValueByPath(json, path);
+
+	// Must be defined
+	if (value === undefined) return false;
+
+	// Primitives and nulls are always selectable
+	if (value === null || typeof value !== "object") return true;
+
+	// Objects are not selectable as leaf values
+	if (isPlainObject(value)) return false;
+
+	// Arrays are only selectable if the path includes an array index
+	if (Array.isArray(value)) {
+		// Check if the last part of the path is a numeric index
+		const parts = path.split(".");
+		return /^\d+$/.test(parts[parts.length - 1]);
+	}
+
+	return false;
+};
+
+/**
+ * Removes array indices from a dot-separated path.
+ * Example: `gulp.unmapped.Data.0.key` -> `gulp.unmapped.Data.key`
+ */
+const stripArrayIndices = (path: string): string => {
+	return path
+		.split(".")
+		.filter((part) => !/^\d+$/.test(part))
+		.join(".");
+};
+
+/**
+ * Removes all quotes from a string.
+ * @param text The text to clean
+ */
+const clean = (el: Element) => {
+	let text = (el.textContent || "").trim();
+	// Remove all quotes
+	text = text.replace(/"/g, "");
+	// Remove trailing colon, comma, and whitespace
+	text = text.replace(/[:, \s]+$/, "");
+	return text;
+};
+
+/**
  * Removes 'event.original' from an object and re-inserts it at the end.
  * @param obj The source object
  * @returns A new object with 'event.original' at the end
@@ -198,14 +263,15 @@ const getTreeKeyPath = (
 
 /**
  * Resolves a dot-separated path within a JSON object.
- * Handles both flat maps and nested structures.
+ * Handles both flat maps and nested structures, including array indices.
  * @param json Source data object
  * @param path Dot-separated path to resolve
  */
 const getValueByPath = (
-	json: Record<string, unknown>,
+	json: Record<string, unknown> | null,
 	path: string,
 ): unknown => {
+	if (!json) return undefined;
 	if (Object.prototype.hasOwnProperty.call(json, path)) {
 		return json[path];
 	}
@@ -217,28 +283,37 @@ const getValueByPath = (
 	for (const part of parts) {
 		if (
 			current &&
-			typeof current === "object" &&
-			Object.prototype.hasOwnProperty.call(current, part)
+			typeof current === "object"
 		) {
-			current = (current as Record<string, unknown>)[part];
-		} else {
-			// If we can't find it via dots, try checking if there's a parent key with dots
-			// For example, if path is "gulp.unmapped.Guid" and parts[0:2] joined as "gulp.unmapped" exists
-			for (let i = parts.length - 1; i > 0; i--) {
-				const parentPath = parts.slice(0, i).join(".");
-				const childPart = parts[i];
+			// Try direct property access first
+			if (Object.prototype.hasOwnProperty.call(current, part)) {
+				current = (current as Record<string, unknown>)[part];
+			}
+			// For arrays, also try numeric index
+			else if (Array.isArray(current) && /^\d+$/.test(part)) {
+				const index = parseInt(part, 10);
+				current = (current as unknown[])[index];
+			} else {
+				// If we can't find it via dots, try checking if there's a parent key with dots
+				// For example, if path is "gulp.unmapped.Guid" and parts[0:2] joined as "gulp.unmapped" exists
+				for (let i = parts.length - 1; i > 0; i--) {
+					const parentPath = parts.slice(0, i).join(".");
+					const childPart = parts[i];
 
-				if (Object.prototype.hasOwnProperty.call(json, parentPath)) {
-					const parentObj = json[parentPath];
-					if (
-						parentObj &&
-						typeof parentObj === "object" &&
-						Object.prototype.hasOwnProperty.call(parentObj, childPart)
-					) {
-						return (parentObj as Record<string, unknown>)[childPart];
+					if (Object.prototype.hasOwnProperty.call(json, parentPath)) {
+						const parentObj = json[parentPath];
+						if (
+							parentObj &&
+							typeof parentObj === "object" &&
+							Object.prototype.hasOwnProperty.call(parentObj, childPart)
+						) {
+							return (parentObj as Record<string, unknown>)[childPart];
+						}
 					}
 				}
+				return undefined;
 			}
+		} else {
 			return undefined;
 		}
 	}
@@ -254,8 +329,7 @@ const isTreeLeafValue = (
 	const value = getValueByPath(json, path);
 	return (
 		value !== undefined &&
-		!isPlainObject(value) &&
-		!Array.isArray(value)
+		!isPlainObject(value)
 	);
 };
 
@@ -310,7 +384,10 @@ const detectTableSelection = (
 				selection.removeAllRanges();
 				selection.addRange(range);
 			}
-			return `"${cells[0].innerText.trim()}": "${cells[1].innerText.trim()}"`;
+			// Strip array indices from the key
+			const rawKey = cells[0].innerText.trim();
+			const cleanedKey = stripArrayIndices(rawKey);
+			return `"${cleanedKey}": "${cells[1].innerText.trim()}"`;
 		}
 	}
 	return null;
@@ -321,12 +398,52 @@ const detectTableSelection = (
  * @param element The clicked element
  * @param json The source JSON object
  */
+const resolveTreeContextPath = (
+	element: HTMLElement,
+	json: Record<string, unknown> | null,
+): string | null => {
+	if (!json) return null;
+
+	const clickedNode = element.closest(`.${s.node}`) as HTMLElement | null;
+	if (!clickedNode) return null;
+
+	const arrayContainer = clickedNode.parentElement;
+	if (!arrayContainer || !arrayContainer.classList.contains(s.basic)) {
+		return null;
+	}
+
+	const parentFieldNode = arrayContainer.parentElement?.closest(`.${s.node}`);
+	if (!parentFieldNode) return null;
+
+	const parentLabel = Array.from(parentFieldNode.children).find(
+		(child) =>
+			child.classList.contains(s.label) ||
+			child.classList.contains(s.clickableLabel),
+	);
+	if (!parentLabel) return null;
+
+	const parentPath = getTreeKeyPath(
+		parentLabel,
+		s.label,
+		s.clickableLabel,
+		s.node,
+		s.basic,
+	);
+	if (!parentPath) return null;
+
+	const parentValue = getValueByPath(json, parentPath);
+	if (!Array.isArray(parentValue)) return null;
+
+	const index = Array.from(arrayContainer.children).indexOf(clickedNode);
+	return index >= 0 ? `${parentPath}.${index}` : null;
+};
+
 const detectTreeSelection = (
 	doc: Document,
 	element: HTMLElement,
 	json: Record<string, unknown> | null,
 ): string | null => {
-	let treeLabel =
+	let treeLabel: Element | null =
 		element.classList.contains(s.label) ||
 			element.classList.contains(s.clickableLabel)
 			? element
@@ -336,20 +453,142 @@ const detectTreeSelection = (
 	if (!treeLabel) {
 		const node = element.closest(`.${s.node}`);
 		if (node) {
-			treeLabel = node.querySelector(`.${s.label}, .${s.clickableLabel}`);
+			// Find the DIRECT child label, not the first descendant label
+			// This is important for arrays to avoid getting the first item's label
+			treeLabel = Array.from(node.children).find(
+				(child) =>
+					child.classList.contains(s.label) ||
+					child.classList.contains(s.clickableLabel),
+			) ?? null;
+		}
+	}
+
+	// If still no label found, try to find any node ancestor that has a label
+	if (!treeLabel) {
+		let current = element.closest(`.${s.node}`);
+		while (current) {
+			const label = Array.from(current.children).find(
+				(child) =>
+					child.classList.contains(s.label) ||
+					child.classList.contains(s.clickableLabel),
+			);
+			if (label) {
+				treeLabel = label;
+				break;
+			}
+			// Move to next ancestor node
+			current = current.parentElement?.closest(`.${s.node}`) ?? null;
+		}
+	}
+
+	// Last resort: if we're in a tree node but can't find a label, try to build path from node structure
+	if (!treeLabel) {
+		const node = element.closest(`.${s.node}`);
+		if (node) {
+			// Try to get any text that might be a key/index
+			const textContent = node.textContent?.trim() || "";
+			if (textContent && textContent.length > 0) {
+				// This is a fallback - just try to determine if this could be a leaf value
+				// by checking the element's text content
+				const nodeParent = node.parentElement?.closest(`.${s.node}`);
+				if (nodeParent) {
+					const parentLabel = Array.from(nodeParent.children).find(
+						(c) =>
+							c.classList.contains(s.label) ||
+							c.classList.contains(s.clickableLabel),
+					);
+					if (parentLabel) {
+						// We have a parent label, try to build path from there
+						const parentPath = getTreeKeyPath(
+							parentLabel,
+							s.label,
+							s.clickableLabel,
+							s.node,
+							s.basic,
+						);
+						// For now, just use the parent value as we can't determine the exact child key
+						if (parentPath && isTreeLeafValue(json, parentPath)) {
+							const value = getValueByPath(json, parentPath);
+							if (Array.isArray(value)) {
+								// This is an array - we're clicking on an element within it
+								// Try to find the index from the node's position
+								const parent = node.parentElement;
+								if (parent) {
+									const siblingNodes = Array.from(parent.querySelectorAll(`.${s.node}`));
+									const index = siblingNodes.indexOf(node);
+									if (index >= 0) {
+										const childPath = `${parentPath}.${index}`;
+										if (isTreeLeafValue(json, childPath)) {
+											const childValue = getValueByPath(json, childPath);
+											const strValue =
+												typeof childValue === "string" ? `"${childValue}"` : JSON.stringify(childValue);
+											const selection = doc.defaultView?.getSelection();
+											if (selection) {
+												const range = doc.createRange();
+												range.selectNodeContents(node);
+												selection.removeAllRanges();
+												selection.addRange(range);
+											}
+											return `"${childPath}": ${strValue}`;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 	}
 
 	if (treeLabel && json) {
-		const path = getTreeKeyPath(
-			treeLabel,
-			s.label,
-			s.clickableLabel,
-			s.node,
-			s.basic,
-		);
+		const resolvedPath = resolveTreeContextPath(element, json);
+		const path =
+			resolvedPath && isTreeLeafValue(json, resolvedPath)
+				? resolvedPath
+				: getTreeKeyPath(
+					treeLabel,
+					s.label,
+					s.clickableLabel,
+					s.node,
+					s.basic,
+				);
 		if (path && isTreeLeafValue(json, path)) {
 			const value = getValueByPath(json, path);
+
+			// Check if we're clicking on a child element of an array/object
+			const labelNode = treeLabel.closest(`.${s.node}`) as HTMLElement;
+			const clickedNode = element.closest(`.${s.node}`) as HTMLElement;
+
+			// If clicked node is different from label node and value is an array/object,
+			// try to find the actual child element
+			if (labelNode && clickedNode && labelNode !== clickedNode && (Array.isArray(value) || (typeof value === "object" && value !== null))) {
+				// Find which child node we're in
+				const parent = clickedNode.parentElement;
+				if (parent) {
+					const siblingNodes = Array.from(parent.querySelectorAll(`.${s.node}`));
+					const index = siblingNodes.indexOf(clickedNode);
+					if (index >= 0 && Array.isArray(value)) {
+						// This is an array, use the index to find the child value
+						const childPath = `${path}.${index}`;
+						const childValue = getValueByPath(json, childPath);
+						if (childValue !== undefined) {
+							const strValue =
+								typeof childValue === "string" ? `"${childValue}"` : JSON.stringify(childValue);
+							const selection = doc.defaultView?.getSelection();
+							if (selection) {
+								const range = doc.createRange();
+								range.selectNodeContents(clickedNode);
+								selection.removeAllRanges();
+								selection.addRange(range);
+							}
+							return `"${childPath}": ${strValue}`;
+						}
+					}
+				}
+			}
+
+			// Normal case: return the found path
 			const strValue =
 				typeof value === "string" ? `"${value}"` : JSON.stringify(value);
 			const nodeContainer = treeLabel.closest(`.${s.node}`) as HTMLElement;
@@ -532,18 +771,37 @@ const detectRawSelection = (
 		const lineEndIndex = strippedText.indexOf("\n", lineStartIndex);
 		const lineText = strippedText.slice(lineStartIndex, lineEndIndex < 0 ? undefined : lineEndIndex);
 		const targetLine = lineText;
-		const match = targetLine.match(/^(\s*)"([^"]+)":/);
-		if (!match) return null;
 
-		let currentPath = match[2];
-		let currentIndent = match[1].length;
+		// Try to match key:value on the target line
+		let match = targetLine.match(/^(\s*)"([^"]+)":/);
+		let currentPath = match?.[2];
+		let currentIndent = match?.[1].length;
+
+		// If no key:value match, this might be an array/object value on its own line
+		// Walk up to find the key
+		if (!currentPath) {
+			const lines = strippedText.split("\n");
+			const targetLineIndex = lines.indexOf(targetLine);
+			for (let i = targetLineIndex - 1; i >= 0; i -= 1) {
+				const line = lines[i] ?? "";
+				const m = line.match(/^(\s*)"([^"]+)":\s*[\{\[]/);
+				if (m) {
+					currentPath = m[2];
+					currentIndent = m[1].length;
+					break;
+				}
+			}
+			if (!currentPath) return null;
+		}
+
+		// Build the full path by walking up to find parent keys
 		const lines = strippedText.split("\n");
 		for (let i = lines.indexOf(targetLine) - 1; i >= 0; i -= 1) {
 			const line = lines[i] ?? "";
 			const m = line.match(/^(\s*)"([^"]+)":\s*[\{\[]/);
 			if (m) {
 				const indent = m[1].length;
-				if (indent < currentIndent) {
+				if (currentIndent !== undefined && indent < currentIndent) {
 					currentPath = `${m[2]}.${currentPath}`;
 					currentIndent = indent;
 				}
@@ -551,10 +809,24 @@ const detectRawSelection = (
 			if (currentIndent === 0) break;
 		}
 
+		// Find the value boundaries
 		const colonIndex = targetLine.indexOf(":");
-		const firstNonWs = targetLine.slice(colonIndex + 1).search(/\S/);
-		const valueStart = lineStartIndex + colonIndex + 1 + (firstNonWs >= 0 ? firstNonWs : 0);
-		const valueEnd = findJsonValueEnd(strippedText, valueStart);
+		let valueStart: number;
+		let valueEnd: number;
+
+		if (colonIndex >= 0) {
+			// Standard key:value line
+			const firstNonWs = targetLine.slice(colonIndex + 1).search(/\S/);
+			valueStart = lineStartIndex + colonIndex + 1 + (firstNonWs >= 0 ? firstNonWs : 0);
+			valueEnd = findJsonValueEnd(strippedText, valueStart);
+		} else {
+			// Array/object value line - find the start of the value on this line
+			const firstNonWs = targetLine.search(/\S/);
+			if (firstNonWs < 0) return null;
+			valueStart = lineStartIndex + firstNonWs;
+			valueEnd = findJsonValueEnd(strippedText, valueStart);
+		}
+
 		const selectedText = strippedText.slice(valueStart, valueEnd).trim();
 		const valueRange = createTextNodeRange(doc, codeEl, jsonStart + valueStart, jsonStart + valueEnd);
 
@@ -639,18 +911,23 @@ const detectSelectionAtPoint = (
 		return detectTableSelection(doc, element);
 	}
 
-	// 2. Tree Handling
-	if (element.closest(`.${s.container}`) || element.closest(`.${s.node}`)) {
+	// 3. Raw Handling (check before tree to ensure proper precedence)
+	if (element.closest(`.${s.highlighter}`)) {
+		return detectRawSelection(doc, element, x, y, json);
+	}
+
+	// 2. Tree Handling - check multiple ways to identify tree context
+	// This includes direct node/container checks plus fallback for nested elements
+	const inTreeContainer = element.closest(`.${s.container}`) ?? element.closest(`.${s.node}`);
+	const inScrollableTree = element.closest(`.${s.scrollable}`)?.querySelector(`.${s.container}`) !== null ||
+		element.closest(`.${s.scrollable}`)?.querySelector(`.${s.node}`) !== null;
+
+	if (inTreeContainer || (element.closest(`.${s.scrollable}`) && inScrollableTree)) {
 		return detectTreeSelection(
 			doc,
 			element,
 			json as Record<string, unknown> | null,
 		);
-	}
-
-	// 3. Raw Handling
-	if (element.closest(`.${s.highlighter}`)) {
-		return detectRawSelection(doc, element, x, y, json);
 	}
 
 	return null;
@@ -726,7 +1003,9 @@ const getSelectedTableKeyValueObject = (
 			return;
 		}
 
-		output[key] = value;
+		// Strip array indices from the key
+		const cleanedKey = stripArrayIndices(key);
+		output[cleanedKey] = value;
 	});
 
 	return Object.keys(output).length > 0 ? output : null;
@@ -760,6 +1039,7 @@ export function DisplayEventDialog({
 	const treeContextPathRef = useRef<string | null>(null);
 	const treeContainerRef = useRef<HTMLDivElement | null>(null);
 	const isContextMenuSelectingRef = useRef<boolean>(false);
+	const isTreeViewContextRef = useRef<boolean>(false);
 	const [treeTooltip, setTreeTooltip] = useState<{
 		text: string;
 		x: number;
@@ -1139,53 +1419,74 @@ export function DisplayEventDialog({
 										isContextMenuSelectingRef.current = false;
 									}, 100);
 
-									// Extract leaf path from node
-									let nodeEl: Element | null = element as Element | null;
-									while (nodeEl && !nodeEl.classList.contains(s.node)) {
-										nodeEl = nodeEl.parentElement;
-									}
+									// Determine which view we're in and extract the appropriate path
+									if (element?.closest(`.${s.highlighter}`)) {
+										// Raw view: clear tree context
+										isTreeViewContextRef.current = false;
+										treeContextPathRef.current = null;
+									} else if (element?.closest(`.${s.tableView}`)) {
+										// Table view: clear tree context
+										isTreeViewContextRef.current = false;
+										treeContextPathRef.current = null;
+									} else if (element?.closest(`.${s.container}`) || element?.closest(`.${s.node}`)) {
+										// Tree view: prefer the resolved array child path when available.
+										isTreeViewContextRef.current = true;
+										const extractedPath = extractPathFromDetected(detected);
+										const resolvedPath = resolveTreeContextPath(element as HTMLElement, json);
+										const candidatePath =
+											resolvedPath && isSelectableLeafValue(json, resolvedPath)
+												? resolvedPath
+												: extractedPath && isSelectableLeafValue(json, extractedPath)
+													? extractedPath
+													: null;
+										if (candidatePath) {
+											treeContextPathRef.current = candidatePath;
+										} else {
+											// Fallback: try to find from DOM
+											let nodeEl: Element | null = element as Element | null;
+											while (nodeEl && !nodeEl.classList.contains(s.node)) {
+												nodeEl = nodeEl.parentElement;
+											}
 
-									if (nodeEl) {
-										const labelEl = Array.from(nodeEl.children).find(
-											(child) =>
-												child.classList.contains(s.label) ||
-												child.classList.contains(s.clickableLabel),
-										);
+											if (nodeEl) {
+												let labelEl = Array.from(nodeEl.children).find(
+													(child) =>
+														child.classList.contains(s.label) ||
+														child.classList.contains(s.clickableLabel),
+												);
 
-										if (labelEl) {
-											const leafPath = getTreeKeyPath(
-												labelEl,
-												s.label,
-												s.clickableLabel,
-												s.node,
-												s.basic,
-											);
-
-											if (leafPath && isTreeLeafValue(json, leafPath)) {
-												treeContextPathRef.current = leafPath;
-												// Select the leaf value text
-												const nodeContainer = element?.closest(`.${s.node}`) as HTMLElement | null;
-												if (nodeContainer) {
-													const selection = currentDocument.defaultView?.getSelection();
-													if (selection) {
-														const range = currentDocument.createRange();
-														range.selectNodeContents(nodeContainer);
-														selection.removeAllRanges();
-														selection.addRange(range);
+												// If label not found as direct child, try to find in ancestor nodes
+												if (!labelEl) {
+													let current: Element | null = nodeEl;
+													while (current) {
+														const label = Array.from(current.children).find(
+															(child) =>
+																child.classList.contains(s.label) ||
+																child.classList.contains(s.clickableLabel),
+														);
+														if (label) {
+															labelEl = label;
+															break;
+														}
+														current = current.parentElement?.closest(`.${s.node}`) ?? null;
 													}
 												}
-												// Context menu will show naturally
+
+												if (labelEl) {
+													const leafPath = getTreeKeyPath(
+														labelEl,
+														s.label,
+														s.clickableLabel,
+														s.node,
+														s.basic,
+													);
+
+													if (leafPath && isSelectableLeafValue(json, leafPath)) {
+														treeContextPathRef.current = leafPath;
+													}
+												}
 											}
 										}
-									} else if (element?.closest(`.${s.highlighter}`)) {
-										const colonIndex = detected.indexOf(":");
-										if (colonIndex !== -1) {
-											treeContextPathRef.current = detected
-												.slice(0, colonIndex)
-												.trim()
-												.replace(/^"+|"+$/g, "");
-										}
-									} else if (element?.closest(`.${s.tableView}`)) {
 									}
 								} else {
 									lastAutoSelectionRef.current = null;
@@ -1263,7 +1564,18 @@ export function DisplayEventDialog({
 						Copy
 					</ContextMenuItem>
 					<ContextMenuItem
-						onClick={() => applySelectionAsFileFilter(selection)}
+						onClick={() => {
+							if (isTreeViewContextRef.current && treeContextPathRef.current && json) {
+								// Tree view: use the stored path to get the actual value
+								const path = treeContextPathRef.current;
+								const value = getValueByPath(json, path);
+								const strValue = value === undefined ? "" :
+									(typeof value === "string" ? value : JSON.stringify(value));
+								applySelectionAsFileFilter(`"${stripArrayIndices(path)}": "${strValue}"`);
+							} else {
+								applySelectionAsFileFilter(selection);
+							}
+						}}
 						icon="Filter"
 					>
 						New filter
@@ -1271,17 +1583,27 @@ export function DisplayEventDialog({
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={() => {
-							const isManualSelection =
-								selection !== lastAutoSelectionRef.current;
-							if (isManualSelection) {
-								handleEnrich({ key: "selection", value: selection });
+							if (isTreeViewContextRef.current && treeContextPathRef.current && json) {
+								// Tree view: use the stored path to get the actual value
+								const path = treeContextPathRef.current;
+								const value = getValueByPath(json, path);
+								const cleanedPath = stripArrayIndices(path);
+								const strValue = value === undefined ? "" :
+									(typeof value === "string" ? value : JSON.stringify(value));
+								handleEnrich({ key: cleanedPath, value: strValue });
 							} else {
-								const object = parseToKeyValue(selection);
-								const keys = Object.keys(object);
-								if (keys.length > 0) {
-									handleEnrich({ key: keys[0], value: object[keys[0]] });
-								} else {
+								const isManualSelection =
+									selection !== lastAutoSelectionRef.current;
+								if (isManualSelection) {
 									handleEnrich({ key: "selection", value: selection });
+								} else {
+									const object = parseToKeyValue(selection);
+									const keys = Object.keys(object);
+									if (keys.length > 0) {
+										handleEnrich({ key: keys[0], value: object[keys[0]] });
+									} else {
+										handleEnrich({ key: "selection", value: selection });
+									}
 								}
 							}
 						}}

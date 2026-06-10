@@ -92,8 +92,9 @@ interface FieldRowProps {
  */
 function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
   return (
-    <Stack gap={8} ai='center'>
-      <Stack dir='column' gap={4}>
+    <Stack gap={8} ai='center' className={s.fieldRow}>
+      {/* Key column */}
+      <Stack gap={4} ai='center' className={s.fieldColumn}>
         <Label value='Key' className={s.label} />
         <TooltipProvider>
           <Tooltip>
@@ -108,7 +109,9 @@ function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
           </Tooltip>
         </TooltipProvider>
       </Stack>
-      <Stack dir='column' gap={4}>
+
+      {/* Value column */}
+      <Stack gap={4} ai='center' className={s.fieldColumn}>
         <Label value='Value' className={s.label} />
         <TooltipProvider>
           <Tooltip>
@@ -124,15 +127,25 @@ function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
           </Tooltip>
         </TooltipProvider>
       </Stack>
-      <Checkbox
-        checked={field.value !== null}
-        onCheckedChange={(checked) => onUpdate(index, { value: checked ? '' : null })}
-      />
-      <Button
-        variant='tertiary'
-        icon='Trash'
-        onClick={() => onDelete(field.id)}
-      />
+
+      {/* Null/Value column */}
+      <Stack gap={4} ai='center' className={s.actionColumn}>
+        <Label value='Toggle Value' className={s.label} />
+        <Checkbox
+          checked={field.value !== null}
+          onCheckedChange={(checked) => onUpdate(index, { value: checked ? '' : null })}
+        />
+      </Stack>
+
+      {/* Delete column */}
+      <Stack gap={4} ai='center' className={s.actionColumn}>
+        <Label value='Delete' className={s.label} />
+        <Button
+          variant='tertiary'
+          icon='Trash'
+          onClick={() => onDelete(field.id)}
+        />
+      </Stack>
     </Stack>
   )
 }
@@ -519,7 +532,7 @@ function EnrichmentTooltip() {
             textOverflow: 'ellipsis',
             cursor: 'help'
           }}>
-            Define key/value pairs for enrichment. Use `null` values to extract data from the document, or specific values to override/add new data. Supports dot notation for nested fields.
+            Define key/value pairs for enrichment. Use `empty` values to extract data from the document, or specific values to override/add new data. Supports dot notation for nested fields.
           </p>
         </TooltipTrigger>
         <TooltipContent className={s.tooltip}>

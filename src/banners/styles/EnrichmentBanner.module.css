@@ -20,4 +20,26 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--second);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fieldRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fieldColumn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.actionColumn {
+  display: flex;
+  gap: 4px;
+  align-items: center;
 }
