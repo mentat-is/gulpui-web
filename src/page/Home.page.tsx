@@ -32,7 +32,7 @@ export namespace Home {
 	 */
 	interface BulkDeleteOperationsBannerProps {
 		operationIds: Operation.Id[];
-		onDeleted: () => void;
+		onDeleted: (deletedIds: Operation.Id[]) => void;
 	}
 
 	/**
@@ -47,18 +47,20 @@ export namespace Home {
 		operationIds,
 		onDeleted,
 	}: BulkDeleteOperationsBannerProps) {
-		const { Info, destroyBanner } = Application.use();
+		const { Info, app, destroyBanner } = Application.use();
 		const [loading, setLoading] = useState(false);
 		const [isSubmitted, setIsSubmitted] = useState(false);
 
 		const confirmDelete = async () => {
-			setLoading(true);
-			const res = await Info.delete_operations(operationIds);
-			setLoading(false);
-			if (res !== undefined) {
-				onDeleted();
-				destroyBanner();
+			const operationsToDelete = operationIds
+				.map((id) => app.target.operations.find((op) => op.id === id))
+				.filter((op): op is Operation.Type => !!op);
+
+			const deletedIds = await Info.deleteOperation(operationsToDelete, setLoading);
+			if (deletedIds.length > 0) {
+				onDeleted(deletedIds);
 			}
+			destroyBanner();
 		};
 
 		return (
@@ -105,7 +107,13 @@ export namespace Home {
 			spawnBanner(
 				<BulkDeleteOperationsBanner
 					operationIds={deletedIds}
-					onDeleted={() => setSelectedIds(new Set())}
+					onDeleted={(deleted) => {
+						setSelectedIds((prev) => {
+							const next = new Set(prev);
+							deleted.forEach((id) => next.delete(id));
+							return next;
+						});
+					}}
 				/>,
 				"table",
 			);

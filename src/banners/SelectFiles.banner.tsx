@@ -277,11 +277,11 @@ export namespace SelectFiles {
 		type VirtualItemType =
 			| { type: "context"; context: Context.Type; hasFiles: boolean }
 			| {
-				type: "file";
-				file: Source.Type;
-				context: Context.Type;
-				isLast: boolean;
-			};
+					type: "file";
+					file: Source.Type;
+					context: Context.Type;
+					isLast: boolean;
+			  };
 
 		const items = useMemo(() => {
 			const arr: VirtualItemType[] = [];
@@ -339,7 +339,12 @@ export namespace SelectFiles {
 				{...props}
 			>
 				{showSession && activeSessions.length > 0 && (
-					<Stack dir="column" gap={6} ai="stretch" style={{ width: "100%", marginBottom: 12 }}>
+					<Stack
+						dir="column"
+						gap={6}
+						ai="stretch"
+						style={{ width: "100%", marginBottom: 12 }}
+					>
 						<Label value="Session" />
 						<Select.Root
 							open={openSelectSession}
@@ -352,7 +357,11 @@ export namespace SelectFiles {
 							</Select.Trigger>
 							<Select.Content>
 								{activeSessions.map((session) => (
-									<Select.Item key={session.name} value={session.name} style={{ color: session.color }}>
+									<Select.Item
+										key={session.name}
+										value={session.name}
+										style={{ color: session.color }}
+									>
 										<Select.Icon name={session.icon} />
 										{session.name}
 									</Select.Item>
@@ -364,7 +373,11 @@ export namespace SelectFiles {
 										spawnBanner(
 											<Session.Delete.Banner
 												onClose={reloadSessionsList}
-												back={() => spawnBanner(<SelectFiles.Banner showSession={showSession} />)}
+												back={() =>
+													spawnBanner(
+														<SelectFiles.Banner showSession={showSession} />,
+													)
+												}
 											/>,
 										)
 									}
@@ -487,6 +500,7 @@ export namespace SelectFiles {
 														selectedFiles={selectedFiles}
 														setFile={setFile}
 														isLast={item.isLast}
+														onPreviewBack={() => spawnBanner(<SelectFiles.Banner />)}
 													/>
 												</div>
 											</div>
@@ -568,7 +582,15 @@ export function ContextHeading({
 	);
 }
 
-export function FlatFileComponent({ file, selectedFiles, setFile, isLast, showFilter = true, showCheckbox = true }: any) {
+export function FlatFileComponent({
+	file,
+	selectedFiles,
+	setFile,
+	isLast,
+	showFilter = true,
+	showCheckbox = true,
+	onPreviewBack,
+}: any) {
 	return (
 		<Stack
 			dir="column"
@@ -582,6 +604,7 @@ export function FlatFileComponent({ file, selectedFiles, setFile, isLast, showFi
 				setFile={setFile}
 				showFilter={showFilter}
 				showCheckbox={showCheckbox}
+				onPreviewBack={onPreviewBack}
 			/>
 		</Stack>
 	);
@@ -593,9 +616,17 @@ interface FileComponentProps {
 	setFile: (file: Source.Id, select: boolean) => void;
 	showFilter?: boolean;
 	showCheckbox?: boolean;
+	onPreviewBack?: () => void;
 }
 
-function FileComponent({ file, setFile, selectedFiles, showFilter = true, showCheckbox = true }: FileComponentProps) {
+function FileComponent({
+	file,
+	setFile,
+	selectedFiles,
+	showFilter = true,
+	showCheckbox = true,
+	onPreviewBack,
+}: FileComponentProps) {
 	const { app, Info, spawnBanner } = Application.use();
 	const [loading, setLoading] = useState<boolean>(false);
 
@@ -607,14 +638,10 @@ function FileComponent({ file, setFile, selectedFiles, showFilter = true, showCh
 					total={total_hits}
 					values={docs}
 					fixed
-					back={() => spawnBanner(<SelectFiles.Banner />)}
-					done={
-						<Button
-							icon="Check"
-							onClick={() => spawnBanner(<SelectFiles.Banner />)}
-							variant="glass"
-						/>
-					}
+					back={() => {
+						setLoading(false);
+						if (onPreviewBack) onPreviewBack();
+					}}
 				/>,
 			),
 		);
