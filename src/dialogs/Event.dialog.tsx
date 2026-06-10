@@ -1586,10 +1586,19 @@ export function DisplayEventDialog({
 							if (isTreeViewContextRef.current && treeContextPathRef.current && json) {
 								// Tree view: use the stored path to get the actual value
 								const path = treeContextPathRef.current;
-								const value = getValueByPath(json, path);
+								let value = getValueByPath(json, path);
+								
+								// if value is an array, get the numbered element if path ends with a number
+								if (Array.isArray(value) && /^\d+$/.test(path.split(".").slice(-1)[0] ?? "")) {
+									const index = Number(path.split(".").slice(-1)[0]);
+									if (index >= 0 && index < value.length) {
+										value = value[index];
+									}
+								}
 								const cleanedPath = stripArrayIndices(path);
 								const strValue = value === undefined ? "" :
 									(typeof value === "string" ? value : JSON.stringify(value));
+								console.log("Enriching from tree context", { path: treeContextPathRef.current, json:json, value:value, cleanedPath:cleanedPath, strValue:strValue });
 								handleEnrich({ key: cleanedPath, value: strValue });
 							} else {
 								const isManualSelection =
