@@ -14,6 +14,7 @@ import {
 	ContextHeading,
 	FlatFileComponent,
 } from "@/banners/SelectFiles.banner";
+import { OperationPermissions } from "@/banners/Permissions.banner";
 import { cn } from "@impactium/utils";
 import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
@@ -227,7 +228,27 @@ export function DisplayOperationDetailDialog({
 
 					{/* Permissions Section */}
 					<div className={s.section}>
-						<div className={s.sectionTitle}>Permissions</div>
+						<Stack ai="center" jc="space-between" className={s.sectionTitle} style={{ paddingBottom: 6, marginBottom: 12, borderBottom: '1px solid var(--gray-300)' }}>
+							<span>Permissions</span>
+							<Button
+								icon="PenLine"
+								variant="glass"
+								style={{ height: 20, width: 20, minHeight: 20, padding: 0 }}
+								onClick={() => spawnBanner(
+									<OperationPermissions.Banner
+										operationId={operationId}
+										granted_user_ids={details.granted_user_ids || []}
+										granted_user_group_ids={details.granted_user_group_ids || []}
+										onSuccess={() => {
+											setLoading(true);
+											Info.operation_get_by_id(operationId)
+												.then(setDetails)
+												.finally(() => setLoading(false));
+										}}
+									/>
+								)}
+							/>
+						</Stack>
 						<div className={s.detailsList}>
 							<div
 								className={s.detailItem}

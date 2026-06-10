@@ -2215,13 +2215,10 @@ export class Info implements InfoProps {
 				body: { ids },
 				toast: {
 					onSuccess: () =>
-						toast.success(
-							`Operations have been deleted successfully`,
-							{
-								icon: <Icon name="Check" />,
-								richColors: true,
-							},
-						),
+						toast.success(`Operations have been deleted successfully`, {
+							icon: <Icon name="Check" />,
+							richColors: true,
+						}),
 					onError: (response) =>
 						toast.error(`Failed deleting operations`, {
 							description: `Reason ${response.data.__error.msg}`,
@@ -2238,6 +2235,107 @@ export class Info implements InfoProps {
 				);
 			},
 		);
+	};
+
+	/* GRANTED PERMISSIONS */
+	add_granted_group = (obj_type: string, obj_id: string, group_id: string) => {
+		return api("/object_add_granted_group", {
+			method: "PATCH",
+			query: {
+				obj_type,
+				obj_id,
+				group_id,
+			},
+			toast: {
+				onSuccess: () =>
+					toast.success(`Group has been added successfully`, {
+						icon: <Icon name="Check" />,
+						richColors: true,
+					}),
+				onError: (response) =>
+					toast.error(`Failed adding group`, {
+						description: `Reason ${response.data.__error.msg}`,
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					}),
+			},
+		});
+	};
+
+	add_granted_user = (obj_type: string, obj_id: string, user_id: string) => {
+		return api("/object_add_granted_user", {
+			method: "PATCH",
+			query: {
+				obj_type,
+				obj_id,
+				user_id,
+			},
+			toast: {
+				onSuccess: () =>
+					toast.success(`User has been added successfully`, {
+						icon: <Icon name="Check" />,
+						richColors: true,
+					}),
+				onError: (response) =>
+					toast.error(`Failed adding user`, {
+						description: `Reason ${response.data.__error.msg}`,
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					}),
+			},
+		});
+	};
+
+	remove_granted_group = (
+		obj_type: string,
+		obj_id: string,
+		group_id: string,
+	) => {
+		return api("/object_remove_granted_group", {
+			method: "PATCH",
+			query: {
+				obj_type,
+				obj_id,
+				group_id,
+			},
+			toast: {
+				onSuccess: () =>
+					toast.success(`Group has been removed successfully`, {
+						icon: <Icon name="Check" />,
+						richColors: true,
+					}),
+				onError: (response) =>
+					toast.error(`Failed removing group`, {
+						description: `Reason ${response.data.__error.msg}`,
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					}),
+			},
+		});
+	};
+
+	remove_granted_user = (obj_type: string, obj_id: string, user_id: string) => {
+		return api("/object_remove_granted_user", {
+			method: "PATCH",
+			query: {
+				obj_type,
+				obj_id,
+				user_id,
+			},
+			toast: {
+				onSuccess: () =>
+					toast.success(`User has been removed successfully`, {
+						icon: <Icon name="Check" />,
+						richColors: true,
+					}),
+				onError: (response) =>
+					toast.error(`Failed removing user`, {
+						description: `Reason ${response.data.__error.msg}`,
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					}),
+			},
+		});
 	};
 
 	note_create = ({
