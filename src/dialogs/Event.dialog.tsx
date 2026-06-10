@@ -374,14 +374,130 @@ const detectTreeSelection = (
  * @param x Client X
  * @param y Client Y
  */
+const createTextNodeRange = (
+	doc: Document,
+	root: Node,
+	startIndex: number,
+	endIndex: number,
+): Range | null => {
+	const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	let current = 0;
+	let startNode: Text | null = null;
+	let endNode: Text | null = null;
+	let startOffset = 0;
+	let endOffset = 0;
+
+	while (walker.nextNode()) {
+		const node = walker.currentNode as Text;
+		const length = node.textContent?.length ?? 0;
+
+		if (!startNode && current + length >= startIndex) {
+			startNode = node;
+			startOffset = startIndex - current;
+		}
+
+		if (!endNode && current + length >= endIndex) {
+			endNode = node;
+			endOffset = endIndex - current;
+			break;
+		}
+
+		current += length;
+	}
+
+	if (!startNode || !endNode) return null;
+
+	const range = doc.createRange();
+	range.setStart(startNode, startOffset);
+	range.setEnd(endNode, endOffset);
+	return range;
+};
+
+const findJsonValueEnd = (text: string, startIndex: number): number => {
+	let i = startIndex;
+
+	while (i < text.length && /\s/.test(text[i])) {
+		i += 1;
+	}
+
+	if (i >= text.length) return i;
+
+	const first = text[i];
+
+	if (first === '"') {
+		let escaped = false;
+		i += 1;
+		while (i < text.length) {
+			const ch = text[i];
+			if (escaped) {
+				escaped = false;
+			} else if (ch === "\\") {
+				escaped = true;
+			} else if (ch === '"') {
+				return i + 1;
+			}
+			i += 1;
+		}
+		return text.length;
+	}
+
+	if (first === "{" || first === "[") {
+		const stack: string[] = [first];
+		let inString = false;
+		let escaped = false;
+
+		i += 1;
+		while (i < text.length) {
+			const ch = text[i];
+			if (inString) {
+				if (escaped) escaped = false;
+				else if (ch === "\\") escaped = true;
+				else if (ch === '"') inString = false;
+				i += 1;
+				continue;
+			}
+
+			if (ch === '"') {
+				inString = true;
+				i += 1;
+				continue;
+			}
+
+			if (ch === "{" || ch === "[") {
+				stack.push(ch);
+			} else if (ch === "}" || ch === "]") {
+				const open = stack.pop();
+				if (!open) break;
+				if ((open === "{" && ch === "}") || (open === "[" && ch === "]")) {
+					if (stack.length === 0) return i + 1;
+				} else {
+					break;
+				}
+			}
+			i += 1;
+		}
+
+		return text.length;
+	}
+
+	while (i < text.length) {
+		const ch = text[i];
+		if (/\s|,|\}|\]/.test(ch)) break;
+		i += 1;
+	}
+
+	return i;
+};
+
 const detectRawSelection = (
 	doc: Document,
 	element: HTMLElement,
 	x: number,
 	y: number,
+	json: Record<string, any> | null,
 ): string | null => {
 	const highlighter = element.closest(`.${s.highlighter}`) as HTMLElement;
-	const codeEl = highlighter.querySelector("code, pre") as HTMLElement;
+	const codeEl = highlighter?.querySelector("code, pre") as HTMLElement | null;
 
 	const selection = doc.defaultView?.getSelection();
 	let range: Range | null = null;
@@ -400,72 +516,59 @@ const detectRawSelection = (
 	}
 
 	if (range && selection && codeEl) {
-		selection.removeAllRanges();
-		selection.addRange(range);
-		try {
-			// @ts-ignore
-			selection.modify("move", "backward", "lineboundary");
-			// @ts-ignore
-			selection.modify("extend", "forward", "lineboundary");
-			const lineText = selection.toString().trim();
-			if (lineText.includes(":")) {
-				const fullText = codeEl.innerText;
-				const lines = fullText.split("\n");
+		const fullText = codeEl.textContent ?? codeEl.innerText ?? "";
+		const strippedText = fullText
+			.replace(/^```json\s*/g, "")
+			.replace(/\s*```$/g, "");
+		const jsonStart = fullText.indexOf(strippedText);
+		if (jsonStart < 0) return null;
 
-				const preRange = doc.createRange();
-				preRange.selectNodeContents(codeEl);
-				preRange.setEnd(range.startContainer, range.startOffset);
-				const offset = preRange.toString().length;
-				const lineIndex = fullText.substring(0, offset).split("\n").length - 1;
+		const preRange = doc.createRange();
+		preRange.selectNodeContents(codeEl);
+		preRange.setEnd(range.startContainer, range.startOffset);
+		const offset = preRange.toString().length;
+		const clickIndexInJson = Math.max(0, offset - jsonStart);
+		const lineStartIndex = strippedText.lastIndexOf("\n", clickIndexInJson - 1) + 1;
+		const lineEndIndex = strippedText.indexOf("\n", lineStartIndex);
+		const lineText = strippedText.slice(lineStartIndex, lineEndIndex < 0 ? undefined : lineEndIndex);
+		const targetLine = lineText;
+		const match = targetLine.match(/^(\s*)"([^"]+)":/);
+		if (!match) return null;
 
-				// Indentation Back-Scanner to resolve nested paths
-				const targetLine = lines[lineIndex];
-				const match = targetLine.match(/^(\s*)"([^"]+)":/);
-				if (match) {
-					let currentPath = match[2];
-					let currentIndent = match[1].length;
-
-					for (let i = lineIndex - 1; i >= 0; i--) {
-						const line = lines[i];
-						const m = line.match(/^(\s*)"([^"]+)":\s*[\{\[]/);
-						if (m) {
-							const indent = m[1].length;
-							if (indent < currentIndent) {
-								currentPath = m[2] + "." + currentPath;
-								currentIndent = indent;
-							}
-						}
-						if (currentIndent === 0) break;
-					}
-
-					// Find the complete value spanning multiple lines
-					const colonIndex = lineText.indexOf(":");
-					let valueStartPos = colonIndex + 1;
-					let valueText = lineText.slice(valueStartPos).trim();
-
-					// Check if value spans multiple lines (incomplete JSON)
-					let currentLineIdx = lineIndex;
-					while (currentLineIdx < lines.length - 1) {
-						// Try to parse the accumulated value
-						try {
-							JSON.parse(valueText);
-							// Successfully parsed, we have the complete value
-							break;
-						} catch (e) {
-							// Value is incomplete, add next line
-							currentLineIdx++;
-							valueText += "\n" + lines[currentLineIdx];
-						}
-					}
-
-					return `"${currentPath}": ${valueText}`;
+		let currentPath = match[2];
+		let currentIndent = match[1].length;
+		const lines = strippedText.split("\n");
+		for (let i = lines.indexOf(targetLine) - 1; i >= 0; i -= 1) {
+			const line = lines[i] ?? "";
+			const m = line.match(/^(\s*)"([^"]+)":\s*[\{\[]/);
+			if (m) {
+				const indent = m[1].length;
+				if (indent < currentIndent) {
+					currentPath = `${m[2]}.${currentPath}`;
+					currentIndent = indent;
 				}
-
-				return lineText;
 			}
-		} catch (e) {
-			console.error("Native selection modify failed", e);
+			if (currentIndent === 0) break;
 		}
+
+		const colonIndex = targetLine.indexOf(":");
+		const firstNonWs = targetLine.slice(colonIndex + 1).search(/\S/);
+		const valueStart = lineStartIndex + colonIndex + 1 + (firstNonWs >= 0 ? firstNonWs : 0);
+		const valueEnd = findJsonValueEnd(strippedText, valueStart);
+		const selectedText = strippedText.slice(valueStart, valueEnd).trim();
+		const valueRange = createTextNodeRange(doc, codeEl, jsonStart + valueStart, jsonStart + valueEnd);
+
+		if (valueRange) {
+			selection.removeAllRanges();
+			selection.addRange(valueRange);
+		} else {
+			const fallbackRange = doc.createRange();
+			fallbackRange.selectNodeContents(codeEl);
+			selection.removeAllRanges();
+			selection.addRange(fallbackRange);
+		}
+
+		return `"${currentPath}": ${selectedText}`;
 	}
 
 	// Fallback for Raw View
@@ -547,7 +650,7 @@ const detectSelectionAtPoint = (
 
 	// 3. Raw Handling
 	if (element.closest(`.${s.highlighter}`)) {
-		return detectRawSelection(doc, element, x, y);
+		return detectRawSelection(doc, element, x, y, json);
 	}
 
 	return null;

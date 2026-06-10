@@ -55,6 +55,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 		Application.use();
 	const { x: scrollX, y: scrollY } = useScroll();
 	const [target, setTarget] = useState<Source.Type | null>(null);
+	const [groupDialogEvents, setGroupDialogEvents] = useState<Doc.Type[]>([]);
+	const [groupDialogAnchor, setGroupDialogAnchor] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 	const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
 		useMagnifier(canvas_ref, [
 			app.target.files,
@@ -343,18 +348,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 				) {
 					const link = item.link;
 					if (link.doc_ids && link.doc_ids.length > 0) {
-						const dialog =
-							link.doc_ids.length === 1 ? (
-								<DisplayEventDialog
-									event={Doc.Entity.id(Info.app, link.doc_id_from)}
-								/>
-							) : (
-								<DisplayGroupDialog
-									events={link.doc_ids.map((id) => Doc.Entity.id(Info.app, id))}
-								/>
-							);
-
-						spawnDialog(dialog);
+						const docs = link.doc_ids.map((id) => Doc.Entity.id(Info.app, id));
+						if (docs.length === 1) {
+							spawnDialog(<DisplayEventDialog event={docs[0]} />);
+						} else {
+							setGroupDialogEvents(docs);
+							setGroupDialogAnchor({ x: event.clientX, y: event.clientY });
+						}
 					}
 					return;
 				}
@@ -371,20 +371,19 @@ export function Canvas({ timeline }: Canvas.Props) {
 					canvasHitY >= item.rect.y &&
 					canvasHitY <= item.rect.y + item.rect.h
 				) {
-					const dialog =
-						item.notes.length === 1 ? (
+					if (item.notes.length === 1) {
+						return spawnDialog(
 							<DisplayEventDialog
 								event={Doc.Entity.id(Info.app, item.notes[0].doc._id)}
-							/>
-						) : (
-							<DisplayGroupDialog
-								events={item.notes.map((note) =>
-									Doc.Entity.id(Info.app, note.doc._id),
-								)}
-							/>
+							/>,
 						);
+					}
 
-					return spawnDialog(dialog);
+					setGroupDialogEvents(
+						item.notes.map((note) => Doc.Entity.id(Info.app, note.doc._id)),
+					);
+					setGroupDialogAnchor({ x: event.clientX, y: event.clientY });
+					return;
 				}
 			}
 		}
@@ -422,13 +421,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 		LoggerHandler.canvasClick(file, events, click.x);
 
 		if (events.length > 0) {
-			spawnDialog(
-				events.length > 1 ? (
-					<DisplayGroupDialog events={events} />
-				) : (
-					<DisplayEventDialog event={events[0]} />
-				),
-			);
+			if (events.length > 1) {
+				setGroupDialogEvents(events);
+				setGroupDialogAnchor({ x: event.clientX, y: event.clientY });
+				return;
+			}
+
+			spawnDialog(<DisplayEventDialog event={events[0]} />);
 		} else {
 			Info.setTimelineTarget(null);
 		}
@@ -742,6 +741,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 		return <TargetMenu source={target} />;
 	}, [target]);
 
+	const closeGroupDialog = useCallback(() => {
+		setGroupDialogAnchor(null);
+		setGroupDialogEvents([]);
+	}, []);
+
 	const totalHeight = useMemo(() => {
 		if (!canvas_ref.current) {
 			return 1920;
@@ -869,6 +873,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 				{highlightsOverlay}
 			</ContextMenuTrigger>
 			<Menu />
+			{groupDialogAnchor && groupDialogEvents.length > 1 ? (
+				<DisplayGroupDialog
+					events={groupDialogEvents}
+					anchor={groupDialogAnchor}
+					onClose={closeGroupDialog}
+				/>
+			) : null}
 		</ContextMenu>
 	);
 }
