@@ -12,8 +12,6 @@ import s from "./styles/Home.module.css";
 import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
 import { Stack } from "@/ui/Stack";
 import { Resizer } from "@/ui/Resizer";
-import { Banner as UIBanner } from "@/ui/Banner";
-import { Toggle } from "@/ui/Toggle";
 
 export namespace Home {
 	export namespace Page {
@@ -30,67 +28,6 @@ export namespace Home {
 	 *    - Main: table of fetched operations, each linking to /operations/:id.
 	 *    - Right: empty drawer placeholder for the upcoming operation detail panel.
 	 */
-	interface BulkDeleteOperationsBannerProps {
-		operationIds: Operation.Id[];
-		onDeleted: (deletedIds: Operation.Id[]) => void;
-	}
-
-	/**
-	 * Banner component for confirming bulk deletion of selected operations.
-	 *
-	 * @param props - Component props.
-	 * @param props.operationIds - The list of operation IDs to delete.
-	 * @param props.onDeleted - Callback triggered when the operations have been successfully deleted.
-	 * @returns The React element for the confirmation banner.
-	 */
-	function BulkDeleteOperationsBanner({
-		operationIds,
-		onDeleted,
-	}: BulkDeleteOperationsBannerProps) {
-		const { Info, app, destroyBanner } = Application.use();
-		const [loading, setLoading] = useState(false);
-		const [isSubmitted, setIsSubmitted] = useState(false);
-
-		const confirmDelete = async () => {
-			const operationsToDelete = operationIds
-				.map((id) => app.target.operations.find((op) => op.id === id))
-				.filter((op): op is Operation.Type => !!op);
-
-			const deletedIds = await Info.deleteOperation(
-				operationsToDelete,
-				setLoading,
-			);
-			if (deletedIds.length > 0) {
-				onDeleted(deletedIds);
-			}
-			destroyBanner();
-		};
-
-		return (
-			<UIBanner
-				title="Delete operations"
-				done={
-					<Button
-						loading={loading}
-						icon="Trash2"
-						variant="secondary"
-						onClick={confirmDelete}
-						disabled={!isSubmitted}
-					/>
-				}
-			>
-				<p>
-					Are you sure you want to delete {operationIds.length} selected
-					operations?
-				</p>
-				<Toggle
-					option={["No, don`t delete", "Yes, i`m sure"]}
-					checked={isSubmitted}
-					onCheckedChange={setIsSubmitted}
-				/>
-			</UIBanner>
-		);
-	}
 
 	export function Page(_: Home.Page.Props) {
 		const { Info, app, spawnBanner, spawnDialog, dialog, banner } =
@@ -108,7 +45,7 @@ export namespace Home {
 			if (selectedIds.size === 0) return;
 			const deletedIds = [...selectedIds];
 			spawnBanner(
-				<BulkDeleteOperationsBanner
+				<Operation.BulkDelete.Banner
 					operationIds={deletedIds}
 					onDeleted={(deleted) => {
 						setSelectedIds((prev) => {

@@ -500,7 +500,9 @@ export namespace SelectFiles {
 														selectedFiles={selectedFiles}
 														setFile={setFile}
 														isLast={item.isLast}
-														onPreviewBack={() => spawnBanner(<SelectFiles.Banner />)}
+														onPreviewBack={() =>
+															spawnBanner(<SelectFiles.Banner />)
+														}
 													/>
 												</div>
 											</div>
@@ -730,7 +732,9 @@ function FileComponent({
 							<FilterFileBanner
 								sources={[file]}
 								fixed
-								back={() => spawnBanner(<SelectFiles.Banner />)}
+								back={() => {
+									if (onPreviewBack) onPreviewBack();
+								}}
 							/>,
 						)
 					}
@@ -757,7 +761,9 @@ function FileComponent({
 					spawnBanner(
 						<Source.Delete.Banner
 							source={file}
-							back={() => spawnBanner(<SelectFiles.Banner />)}
+							back={() => {
+								if (onPreviewBack) onPreviewBack();
+							}}
 						/>,
 					)
 				}

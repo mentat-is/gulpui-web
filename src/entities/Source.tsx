@@ -15,8 +15,8 @@ import { Request } from "./Request";
 import { Application } from "@/context/Application.context";
 import { Button } from "@/ui/Button";
 import { useMemo, useState, Fragment, ChangeEvent, useEffect } from "react";
-import { toast } from "sonner";
 import { Banner as UIBanner } from "@/ui/Banner";
+import { Toggle } from "@/ui/Toggle";
 import { Internal } from "./addon/Internal";
 import { Color } from "./Color";
 import { Select as UISelect } from "@/ui/Select";
@@ -627,10 +627,22 @@ export namespace Source {
 				source: Source.Type;
 			}
 		}
+
+		/**
+		 * Banner component for confirming deletion of a source file.
+		 *
+		 * @param props - Component props.
+		 * @param props.source - The source object to delete.
+		 * @returns The React element for the confirmation banner.
+		 */
 		export function Banner({ source, ...props }: Source.Delete.Banner.Props) {
 			const { Info, destroyBanner } = Application.use();
 			const [loading, setLoading] = useState<boolean>(false);
+			const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
+			/**
+			 * Deletes the source file and triggers the back callback or destroys the banner.
+			 */
 			const deleteFile = async () => {
 				setLoading(true);
 				await Info.file_delete(source);
@@ -640,26 +652,31 @@ export namespace Source {
 				} else {
 					destroyBanner();
 				}
-				toast(`Source.Entity ${source.name} deleted successfully`);
 			};
 
 			return (
 				<UIBanner
 					title="Delete file"
+					done={
+						<Button
+							loading={loading}
+							icon="Trash2"
+							variant="secondary"
+							onClick={deleteFile}
+							disabled={!isSubmitted}
+						/>
+					}
 					{...props}
 				>
 					<p>
 						Are you going to delete file <code>{source.name}</code>. Are you
 						sure?
 					</p>
-					<Button
-						loading={loading}
-						icon="Trash2"
-						style={{ width: "100" }}
-						onClick={deleteFile}
-					>
-						Yes, delete file
-					</Button>
+					<Toggle
+						option={["No, don`t delete", "Yes, i`m sure"]}
+						checked={isSubmitted}
+						onCheckedChange={setIsSubmitted}
+					/>
 				</UIBanner>
 			);
 		}
