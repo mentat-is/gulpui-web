@@ -41,7 +41,7 @@ export function DisplayOperationDetailDialog({
 	fallbackGlyphId,
 	onClose,
 }: DisplayOperationDetailDialogProps) {
-	const { app, Info, spawnBanner } = Application.use();
+	const { app, Info, spawnBanner, destroyBanner } = Application.use();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [details, setDetails] =
 		useState<GulpDataset.OperationGetById.Response | null>(null);
@@ -228,7 +228,7 @@ export function DisplayOperationDetailDialog({
 
 					{/* Permissions Section */}
 					<div className={s.section}>
-						<Stack ai="center" jc="space-between" className={s.sectionTitle} style={{ paddingBottom: 6, marginBottom: 12, borderBottom: '1px solid var(--gray-300)' }}>
+						<Stack ai="center" jc="space-between" className={s.sectionTitle}>
 							<span>Permissions</span>
 							<Button
 								icon="PenLine"
@@ -351,6 +351,7 @@ export function DisplayOperationDetailDialog({
 																isLast={isLast}
 																showFilter={false}
 																showCheckbox={false}
+																onPreviewBack={() => destroyBanner()}
 															/>
 														</div>
 													);

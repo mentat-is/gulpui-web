@@ -919,11 +919,17 @@ export class Info implements InfoProps {
 			notes_tags,
 			notes_glyph_id,
 			name,
-		}: GulpDataset.QueryGulp.Options,
+			operationId,
+		}: GulpDataset.QueryGulp.Options & { operationId?: Operation.Id },
 	) => {
-		const operation = Operation.Entity.selected(this.app);
+		const operation = operationId
+			? Operation.Entity.id(this.app, operationId)
+			: Operation.Entity.selected(this.app);
 		if (!operation) {
-			return;
+			return {
+				docs: [],
+				total_hits: 0,
+			};
 		}
 
 		if (id) {
@@ -1299,7 +1305,7 @@ export class Info implements InfoProps {
 		);
 
 	preview_file = (file: Source.Type, query = this.getQuery(file)) =>
-		this.query_file(query, { preview: true });
+		this.query_file(query, { preview: true, operationId: file.operation_id });
 
 	preview_query = (query: Query.Type) =>
 		this.query_file(query, { preview: true });

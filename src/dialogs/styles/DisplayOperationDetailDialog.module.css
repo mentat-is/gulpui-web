@@ -42,12 +42,10 @@
 }
 
 .sectionTitle {
-	font-size: 11px;
-	font-weight: 700;
-	text-transform: uppercase;
-	color: var(--second);
-	letter-spacing: 0.08em;
-	font-family: var(--font-mono);
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--gray-1000);
+	font-family: var(--font-sans, sans-serif);
 	border-bottom: 1px solid var(--gray-300);
 	padding-bottom: 6px;
 	margin-bottom: 12px;
