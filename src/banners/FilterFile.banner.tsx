@@ -441,12 +441,18 @@ export function FilterFileBanner({
    * Handler for applying a query from the "Last filters" popover.
    *
    * Resolves source_ids from the history query against available sources in the app.
-   * If matching sources are found, auto-selects them in the file picker.
+   * If matching sources are found and `applySource` is true, auto-selects them in the file picker.
    * Updates query state, manual mode, and editor content to reflect the applied filter.
+   * 
+   * @param q - The historical query to apply
+   * @param applySource - Whether to change the source selection to match the filter's sources
    */
-  const handleApplyLastFilter = useCallback((q: Query.Type) => {
-    // Resolve matching source files from the query's source_config
-    if (q.source_config?.source_ids?.length) {
+  const handleApplyLastFilter = useCallback((q: Query.Type, applySource: boolean = true) => {
+    let filesToUse = files
+    let queryToApply = { ...q }
+    
+    if (applySource && q.source_config?.source_ids?.length) {
+      // Apply the filter's sources
       const matchedFiles: Source.Type[] = []
       for (const id of q.source_config.source_ids) {
         try {
@@ -457,15 +463,25 @@ export function FilterFileBanner({
 
       if (matchedFiles.length > 0) {
         setFiles(matchedFiles)
+        filesToUse = matchedFiles
         prevFileIds.current = matchedFiles.map(f => f.id).sort().join(',')
+      }
+    } else {
+      // Keep current files: update query's source_config to match currently selected sources
+      queryToApply = {
+        ...q,
+        source_config: {
+          ...q.source_config,
+          source_ids: files.map(f => f.id)
+        }
       }
     }
 
     // Apply the full query state
-    setQuery(q)
-    setIsManual(!!q.isManual)
-    setManualContent(getManualContentFromQuery(q))
-    Info.setQuery(files, q)
+    setQuery(queryToApply)
+    setIsManual(!!queryToApply.isManual)
+    setManualContent(getManualContentFromQuery(queryToApply))
+    Info.setQuery(filesToUse, queryToApply)
   }, [app, getManualContentFromQuery, Info, files])
 
   /** Resets both builder and manual mode to a clean generated query from current sources. */
@@ -507,11 +523,13 @@ export function FilterFileBanner({
               <TabsTrigger value="false">Builder</TabsTrigger>
               <TabsTrigger value="true">Manual</TabsTrigger>
             </TabsList>
-            <Stack style={{ margin: '8px 0' }}>
-              <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
-              <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
-              <Icon name='Flag' />
-            </Stack>
+            {!isManual && (
+              <Stack style={{ margin: '8px 0' }}>
+                <Checkbox id='isFlagedEventOnly' checked={flaggedOnly} onCheckedChange={(v) => setFlaggedOnly(!!v)} />
+                <Label htmlFor='isFlagedEventOnly' value='Flagged events only' cursor='pointer' />
+                <Icon name='Flag' />
+              </Stack>
+            )}
           </Stack>
           <Separator style={{ margin: '8px 0' }} />
           <TabsContent value="false">

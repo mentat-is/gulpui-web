@@ -1,27 +1,41 @@
-import { memo } from 'react';
+import { memo, useState, useRef } from 'react';
 import { Popover } from '@/ui/Popover';
 import { Button } from '@/ui/Button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/ui/Tooltip';
 import { Separator } from '@/ui/Separator';
 import { Query } from '@/entities/Query';
+import { Checkbox } from '@/ui/Checkbox';
+import { Label } from '@/ui/Label';
+import { Stack } from '@/ui/Stack';
+import { Icon } from '@impactium/icons';
 import s from './styles/QueriesHistory.module.css';
 
 interface QueriesHistoryProps {
   list: Query.Type[];
-  onSelect: (q: Query.Type) => void;
+  onSelect: (q: Query.Type, applySource: boolean) => void;
 }
 
 /**
  * Reusable component displaying a list of previously applied queries in a Popover.
  *
  * @param list - The list of historical Query.Type objects.
- * @param onSelect - Callback when a query is selected for application.
+ * @param onSelect - Callback when a query is selected for application. Receives the query and whether to apply its source config.
  */
 export const QueriesHistory = memo(({ list, onSelect }: QueriesHistoryProps) => {
+  const [applySource, setApplySource] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+  const closeTimeoutRef = useRef<NodeJS.Timeout>();
+
   if (list.length === 0) return null;
 
+  const handleSelectFilter = (q: Query.Type) => {
+    onSelect(q, applySource);
+    // Close the popover after selection
+    setIsOpen(false);
+  };
+
   return (
-    <Popover.Root>
+    <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
       <Popover.Trigger asChild>
         <Button icon="ClockFading" variant="secondary">
           Last filters
@@ -29,22 +43,41 @@ export const QueriesHistory = memo(({ list, onSelect }: QueriesHistoryProps) => 
       </Popover.Trigger>
       <Popover.Content className={s.lastFilters}>
         <div className={s.lastFiltersList}>
-          {list.map((q, i) => (
-            <div key={i} className={s.lastFilterItem}>
-              <TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Stack dir="row" ai="center" gap={8} className={s.applySourceOption}>
+                  <Checkbox
+                    id="apply-source-checkbox"
+                    checked={applySource}
+                    onCheckedChange={(checked) => setApplySource(!!checked)}
+                  />
+                  <Label htmlFor="apply-source-checkbox" value="Apply sources from filter" cursor="pointer" />
+                  <Icon name="Info" style={{ width: 14, height: 14, opacity: 0.6 }} />
+                </Stack>
+              </TooltipTrigger>
+              <TooltipContent className={s.applySourceTooltip}>
+                When enabled, applies the source files from the selected filter. When disabled, only applies the filter conditions to your currently selected sources.
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Separator className={s.applySourceSeparator} />
+          <div className={s.filterListContainer}>
+            {list.map((q, i) => (
+              <TooltipProvider key={i}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className={s.lastFilterRow}>
-                      <div className={s.lastFilterText}>
-                        {q.string}
+                    <button
+                      className={s.filterListItem}
+                      onClick={() => handleSelectFilter(q)}
+                    >
+                      <div className={s.filterItemContent}>
+                        <div className={s.filterItemText}>
+                          {q.string}
+                        </div>
                       </div>
-                      <Button
-                        icon="Check"
-                        variant="glass"
-                        className={s.lastFilterApplyButton}
-                        onClick={() => onSelect(q)}
-                      />
-                    </div>
+                      <Icon name="ChevronRight" className={s.filterItemIcon} />
+                    </button>
                   </TooltipTrigger>
                   <TooltipContent className={s.tooltip}>
                     <pre style={{ textAlign: 'left', whiteSpace: 'pre-wrap' }}>{q.string}</pre>
@@ -56,10 +89,8 @@ export const QueriesHistory = memo(({ list, onSelect }: QueriesHistoryProps) => 
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              {list.length - 1 > i && <Separator className={s.lastFilterSeparator} />}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </Popover.Content>
     </Popover.Root>

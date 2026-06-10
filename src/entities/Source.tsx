@@ -849,10 +849,10 @@ export namespace Source {
 					<UISelect.Trigger>
 						<UISelect.Multi.Value
 							icon={["File", "Files"]}
-							placeholder={placeholder ?? "Select Sources"}
+							placeholder={placeholder ?? "Select sources"}
 							text={(len) =>
 								typeof len === "number"
-									? `Selected ${len} files`
+									? `Selected ${len} sources`
 									: Source.Entity.id(app, len as Source.Id).name
 							}
 						/>
