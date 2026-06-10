@@ -1587,7 +1587,7 @@ export function DisplayEventDialog({
 								// Tree view: use the stored path to get the actual value
 								const path = treeContextPathRef.current;
 								let value = getValueByPath(json, path);
-								
+
 								// if value is an array, get the numbered element if path ends with a number
 								if (Array.isArray(value) && /^\d+$/.test(path.split(".").slice(-1)[0] ?? "")) {
 									const index = Number(path.split(".").slice(-1)[0]);
@@ -1598,7 +1598,7 @@ export function DisplayEventDialog({
 								const cleanedPath = stripArrayIndices(path);
 								const strValue = value === undefined ? "" :
 									(typeof value === "string" ? value : JSON.stringify(value));
-								console.log("Enriching from tree context", { path: treeContextPathRef.current, json:json, value:value, cleanedPath:cleanedPath, strValue:strValue });
+								console.log("Enriching from tree context", { path: treeContextPathRef.current, json: json, value: value, cleanedPath: cleanedPath, strValue: strValue });
 								handleEnrich({ key: cleanedPath, value: strValue });
 							} else {
 								const isManualSelection =
@@ -1672,7 +1672,6 @@ export function DisplayEventDialog({
 
 	return (
 		<Dialog callback={onClose}>
-			<Navigation event={event} />
 			{json ? (
 				<Fragment>
 					<Stack
@@ -1769,6 +1768,7 @@ export function DisplayEventDialog({
 							{treeTooltip.text}
 						</div>
 					)}
+					<Navigation event={event} />
 					<Stack
 						className={s.actionButtons}
 						gap={12}
@@ -1866,22 +1866,6 @@ export namespace EventIndicator {
 	}
 }
 
-const getReadableIndicatorTextColor = (hexColor: string): string => {
-	const hex = hexColor.replace("#", "");
-	if (hex.length !== 6) {
-		return Color.Themer.getTheme("").FONT_ACCENT;
-	}
-
-	const r = parseInt(hex.slice(0, 2), 16);
-	const g = parseInt(hex.slice(2, 4), 16);
-	const b = parseInt(hex.slice(4, 6), 16);
-
-	if ([r, g, b].some(Number.isNaN)) {
-		return Color.Themer.getTheme("").FONT_ACCENT;
-	}
-
-	return Color.Themer.getReadablePaletteTextColor(hexColor);
-};
 
 /**
  * Visual indicator button for events in lists or timelines.
@@ -1917,10 +1901,7 @@ export function EventIndicator({
 		);
 	}, [event, app.target.files, file]);
 
-	const indicatorTextColor = useMemo(
-		() => getReadableIndicatorTextColor(background),
-		[background],
-	);
+	const indicatorColor = useMemo(() => background, [background]);
 	const indicatorLabel = useMemo(
 		() => String(event["gulp.event_code"]).slice(0, 4),
 		[event],
@@ -1937,21 +1918,26 @@ export function EventIndicator({
 		<Button
 			shape="icon"
 			className={cn(className, s.indicator)}
-			rounded
 			title={indicatorTooltip}
 			aria-label={indicatorTooltip}
 			style={{ ...style, background }}
 			{...props}
 		>
-			<hr />
-			<p
-				style={{
-					color: indicatorTextColor,
-					fontSize: `${indicatorFontSize}px`,
-				}}
-			>
-				{indicatorLabel}
-			</p>
+			<Stack className={s.indicatorIconWrap} ai="center" jc="center" dir="column" gap={2}>
+				<Icon
+					name="Square"
+					size={10}
+					color={indicatorColor}
+				/>
+				<p
+					style={{
+						color: 'var(--accent)',
+						fontSize: `${indicatorFontSize}px`,
+					}}
+				>
+					{indicatorLabel}
+				</p>
+			</Stack>
 			{Doc.Entity.flag.isFlagged(
 				event._id,
 				Doc.Entity.operationId(app, event),

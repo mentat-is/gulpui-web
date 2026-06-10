@@ -1,8 +1,8 @@
 .menuShell {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--gray-alpha-400);
-  border-radius: 12px;
+  border: none !important;
+  border-radius: 0 !important;
   background: color-mix(in srgb, var(--background-100) 92%, transparent);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(10px);
@@ -18,6 +18,7 @@
   gap: 8px;
   padding: 6px 8px;
   border-bottom: 1px solid var(--gray-alpha-300);
+  border-radius: 0 !important;
   background: color-mix(in srgb, var(--background-200) 80%, transparent);
 }
 
@@ -49,7 +50,7 @@
 
 .event {
   width: 100%;
-  border-radius: var(--round);
+  border-radius: 0;
   padding: 4px;
   transition: all 0.125s var(--transition);
   cursor: pointer;

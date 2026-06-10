@@ -1,26 +1,45 @@
 .navigation {
-  height: 48px;
-  padding: 8px;
-  border-radius: var(--round);
-  background: var(--background-100);
-  border: 1px solid var(--gray-400);
+  min-height: 32px;
+  height: 32px;
+  padding: 4px 6px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
+
+.navigation:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
 .content {
-  max-width: calc(100% - 90px);
-  height: 48px;
-  mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 20%, #000 80%, transparent 100%);
 }
+
 .content canvas {
   cursor: pointer;
   margin-top: 1px;
 }
 
 .focus {
-  border: 1px solid var(--geist-border);
-  box-shadow: 0px 0px 0px 4px #ffffff3d;
+  transform: scale(1.08);
+  min-width: 32px;
+  min-height: 32px;
+  padding: 3px;
+  border: none !important;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 25%, transparent) !important;
+  box-shadow: none !important;
+  z-index: 1;
+  overflow: visible !important;
 }
 
 .placeholder {
-  width: 27px;
-  height: 27px;
+  width: 18px;
+  height: 18px;
 }

@@ -239,37 +239,47 @@
 }
 
 .indicator {
-	padding: 0px !important;
+	padding: 0 !important;
 	position: relative;
+	min-width: 22px;
+	min-height: 22px;
+	border: none !important;
+	border-radius: 4px !important;
+	box-shadow: none !important;
 }
 
-.indicator hr {
-	width: 27px;
-	height: 26.5px;
-	position: absolute;
-	background: var(--geist-background);
-	box-shadow: inset 0 0 0 1px var(--gray-alpha-400);
-	border-radius: var(--round);
-	backdrop-filter: brightness(0.4);
-	z-index: 0;
+.indicatorIconWrap {
+	width: 100%;
+	height: 100%;
+	padding: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+}
+
+.indicatorIconWrap svg {
+	display: none;
 }
 
 .indicator p {
 	z-index: 1;
-	font-size: 8px;
-	color: currentColor;
+	font-size: 6px;
+	font-weight: 700;
+	color: var(--background-100);
 	font-family: var(--font-mono);
 	text-shadow: 0 0 1px var(--background-100);
-	max-width: 22px;
 	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: clip;
 	line-height: 1;
 	text-align: center;
+	margin: 0;
 }
 
 .indicator .marker {
-	border: 1px solid var(--gray-400);
+	border: 1px solid color-mix(in srgb, var(--gray-400) 70%, transparent);
 	width: 14px;
 	height: 14px;
 	background: var(--background-100);

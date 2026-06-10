@@ -48,6 +48,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
 	const { spawnDialog, Info, app } = Application.use();
 	const menuShellRef = useRef<HTMLDivElement>(null);
+	const tooltipRef = useRef<HTMLDivElement>(null);
 	const eventRefsMap = useRef(new Map<string, HTMLDivElement>());
 	const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
@@ -60,7 +61,9 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		if (!anchor) return;
 
 		const handleClickOutside = (e: MouseEvent) => {
-			if (menuShellRef.current && !menuShellRef.current.contains(e.target as Node)) {
+			const target = e.target as Node | null;
+			const isInsideTooltip = target instanceof Node && tooltipRef.current?.contains(target);
+			if (!isInsideTooltip && menuShellRef.current && !menuShellRef.current.contains(target)) {
 				onClose?.();
 			}
 		};
@@ -68,6 +71,34 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [anchor, onClose]);
+
+	// Close tooltip on click outside
+	useEffect(() => {
+		if (!openTooltipId) return;
+
+		const handleClickOutside = (e: MouseEvent) => {
+			const target = e.target as Node | null;
+			if (!tooltipRef.current || !target) return;
+
+			const isClickInside =
+				e.composedPath().includes(tooltipRef.current) ||
+				tooltipRef.current.contains(target);
+
+			if (!isClickInside) {
+				setOpenTooltipId(null);
+			}
+		};
+
+		// Use a small delay to avoid immediate closure
+		const timer = setTimeout(() => {
+			document.addEventListener("mousedown", handleClickOutside);
+		}, 50);
+
+		return () => {
+			clearTimeout(timer);
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [openTooltipId]);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -132,15 +163,22 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		[Info, app],
 	);
 
-	const handleMouseLeaveEvent = useCallback(() => {
+	const clearCloseTimeout = useCallback(() => {
+		if (closeTimeoutRef.current) {
+			clearTimeout(closeTimeoutRef.current);
+			closeTimeoutRef.current = null;
+		}
+	}, []);
+
+	const handleMouseLeaveEvent = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+		const target = document.elementFromPoint(event.clientX, event.clientY);
+		if (tooltipRef.current?.contains(target) || event.currentTarget.contains(target)) {
+			return;
+		}
+
 		closeTimeoutRef.current = setTimeout(() => {
 			setOpenTooltipId(null);
 		}, 100);
-	}, []);
-
-	const handleMouseEnterTooltip = useCallback((eventId: string) => {
-		if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-		setOpenTooltipId(eventId);
 	}, []);
 
 	const handleMouseLeaveTooltip = useCallback(() => {
@@ -159,8 +197,6 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 			const tooltipContent = hoveredEventData && hoveredEventId === event._id ? (
 				<div
 					style={{ fontSize: "11px", maxWidth: 400 }}
-					onMouseEnter={() => handleMouseEnterTooltip(event._id)}
-					onMouseLeave={handleMouseLeaveTooltip}
 				>
 					<p style={{ margin: "0 0 4px 0", fontWeight: "bold" }}>
 						{event._id}
@@ -171,6 +207,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 					<div
 						style={{
 							maxHeight: "250px",
+							maxWidth: "400px",
 							overflow: "auto",
 							fontSize: "10px",
 						}}
@@ -186,20 +223,21 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 			const tooltipPortal = showTooltip && tooltipContent && eventElement ? createPortal(
 				<div
+					ref={tooltipRef}
+					onMouseEnter={clearCloseTimeout}
+					onMouseLeave={handleMouseLeaveTooltip}
 					style={{
 						position: "fixed",
 						left: Math.max(12, eventElement.getBoundingClientRect().left - 420),
 						top: eventElement.getBoundingClientRect().top,
 						background: "var(--background-100)",
 						border: "1px solid var(--border)",
-						borderRadius: "6px",
+						borderRadius: "0",
 						padding: "8px",
 						boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
 						zIndex: 10000,
 						pointerEvents: "auto",
 					}}
-					onMouseEnter={() => handleMouseEnterTooltip(event._id)}
-					onMouseLeave={handleMouseLeaveTooltip}
 					onClick={(e) => e.stopPropagation()}
 				>
 					{tooltipContent}
@@ -216,7 +254,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 						className={s.event}
 						onClick={() => handleSelectEvent(event)}
 						onMouseEnter={() => {
-							if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+							clearCloseTimeout();
 							handleEventHover(event);
 							setOpenTooltipId(event._id);
 						}}
@@ -242,7 +280,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				</>
 			);
 		},
-		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, handleMouseLeaveEvent, handleMouseEnterTooltip, handleMouseLeaveTooltip],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent],
 	);
 
 	const popupStyle = useMemo(() => {

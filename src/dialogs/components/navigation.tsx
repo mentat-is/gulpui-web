@@ -1,10 +1,9 @@
 import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
 import { Application } from '@/context/Application.context'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Source } from '@/entities/Source'
 import s from './navigation.module.css'
 import { cn } from '@impactium/utils'
-import { Button } from '@/ui/Button'
 import { Doc } from '@/entities/Doc'
 import { Stack } from '@/ui/Stack'
 
@@ -18,6 +17,7 @@ const WINDOW_SIZE = 11
 
 export function Navigation({ event }: Navigation.Props) {
   const { app, spawnDialog } = Application.use()
+  const navRef = useRef<HTMLDivElement>(null)
 
   const file = Source.Entity.id(app, event['gulp.source_id'])
 
@@ -49,24 +49,62 @@ export function Navigation({ event }: Navigation.Props) {
 
   const openEvent = (e: Doc.Type) => () => spawnDialog(<DisplayEventDialog event={e} />)
 
-  const changeEvent = (forward: boolean) => () => {
+  const changeEvent = (direction: number) => {
     if (currentIndex === -1) return
-    const nextIndex = currentIndex + (forward ? 1 : -1)
+    const nextIndex = currentIndex + direction
     if (nextIndex >= 0 && nextIndex < allEvents.length) {
       spawnDialog(<DisplayEventDialog event={allEvents[nextIndex]} />)
     }
   }
 
-  return (
-    <Stack className={s.navigation} jc="space-between">
-      <Button
-        onClick={changeEvent(false)}
-        icon="ArrowLeft"
-        variant="glass"
-        rounded
-        disabled={currentIndex <= 0}
-      />
+  useEffect(() => {
+    const node = navRef.current
+    if (!node) return
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault()
+        changeEvent(1)
+      }
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault()
+        changeEvent(-1)
+      }
+    }
+
+    const onWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) >= Math.abs(event.deltaX)) {
+        event.preventDefault()
+        changeEvent(event.deltaY > 0 ? 1 : -1)
+      }
+    }
+
+    node.addEventListener('keydown', onKeyDown)
+    node.addEventListener('wheel', onWheel, { passive: false })
+
+    return () => {
+      node.removeEventListener('keydown', onKeyDown)
+      node.removeEventListener('wheel', onWheel)
+    }
+  }, [allEvents.length, currentIndex, changeEvent])
+
+  return (
+    <Stack
+      ref={navRef}
+      className={s.navigation}
+      jc="space-between"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight') changeEvent(1)
+        if (event.key === 'ArrowLeft') changeEvent(-1)
+      }}
+      onWheel={(event) => {
+        if (Math.abs(event.deltaY) >= Math.abs(event.deltaX)) {
+          event.preventDefault()
+          changeEvent(event.deltaY > 0 ? 1 : -1)
+        }
+      }}
+    >
       <Stack className={s.content} jc="center" gap={4} flex>
         {windowEvents.map((e, i) =>
           e ? (
@@ -82,13 +120,6 @@ export function Navigation({ event }: Navigation.Props) {
         )}
       </Stack>
 
-      <Button
-        onClick={changeEvent(true)}
-        icon="ArrowRight"
-        variant="glass"
-        rounded
-        disabled={currentIndex === -1 || currentIndex >= allEvents.length - 1}
-      />
     </Stack>
   )
 }
