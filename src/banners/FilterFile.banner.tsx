@@ -468,12 +468,14 @@ export function FilterFileBanner({
       }
     } else {
       // Keep current files: update query's source_config to match currently selected sources
+      const cleanBase = getCleanBase(files)
       queryToApply = {
         ...q,
-        source_config: {
-          ...q.source_config,
+        source_config: cleanBase.source_config ? {
+          operation_id: q.source_config?.operation_id ?? cleanBase.source_config.operation_id,
+          range: q.source_config?.range ?? cleanBase.source_config.range,
           source_ids: files.map(f => f.id)
-        }
+        } : undefined
       }
     }
 

@@ -24,7 +24,6 @@ interface QueriesHistoryProps {
 export const QueriesHistory = memo(({ list, onSelect }: QueriesHistoryProps) => {
   const [applySource, setApplySource] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
-  const closeTimeoutRef = useRef<NodeJS.Timeout>();
 
   if (list.length === 0) return null;
 
