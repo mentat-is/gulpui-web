@@ -163,7 +163,6 @@ export function DisplayOperationDetailDialog({
 				>
 					{/* Details Section */}
 					<div className={s.section}>
-						<div className={s.sectionTitle}>Details</div>
 						<div className={s.detailsList}>
 							<div className={s.detailItem}>
 								<span className={s.detailLabel}>ID:</span>

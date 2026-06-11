@@ -21,6 +21,7 @@ import { App } from "@/entities/App";
 import { DataStore } from "@/store/DataStore";
 import { RenderEngine } from "@/class/RenderEngine";
 import { Operation } from "@/entities/Operation";
+import { useLocation } from "react-router-dom";
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
@@ -34,10 +35,15 @@ function _({ children }: { children: ReactNode }) {
 	const [highlightsOverlay, setHighlightsOverlay] =
 		useState<React.ReactNode>(null);
 
-	// Reset dialog when operation changes
+	const location = useLocation();
+
+	/**
+	 * Resets the active dialog state to null when either the selected
+	 * operation ID changes or the user navigates to a different route.
+	 */
 	useEffect(() => {
 		setDialog(null);
-	}, [Operation.Entity.selected(app)?.id]);
+	}, [Operation.Entity.selected(app)?.id, location.pathname]);
 
 	/**
 	 * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
