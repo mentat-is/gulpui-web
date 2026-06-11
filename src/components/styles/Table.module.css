@@ -1,95 +1,179 @@
+/* ─── Wrapper ─── */
 .wrapper {
-  flex: 1 1 auto;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-  border: 1px solid var(--gray-500);
-  border-radius: 6px;
+	flex: 1 1 auto;
+	width: 100%;
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+	background: var(--background-100);
+	border: 1px solid var(--gray-400);
+	border-radius: 6px;
+	box-shadow: none;
 }
 
+/* ─── Table ─── */
 .table {
-  width: 100%;
-  min-width: 100%;
-  height: 100%;
-  user-select: text;
-  -webkit-user-select: text;
-  border-collapse: collapse;
+	width: max-content;
+	min-width: 100%;
+	height: 100%;
+	user-select: text;
+	-webkit-user-select: text;
+	border-collapse: separate;
+	border-spacing: 0;
+	table-layout: fixed;
 }
 
 .table * {
-  user-select: text;
-  -webkit-user-select: text;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.35;
-  white-space: nowrap;
+	user-select: text;
+	-webkit-user-select: text;
+	font-family: var(--font-mono);
+	font-size: 11px;
+	line-height: 1.35;
+	white-space: nowrap;
 }
 
-.centered {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
-.Button_Icon {
-  padding: 0px !important;
-  flex-shrink: 0;
-}
-
+/* ─── Header cells ─── */
 .table th {
-  padding: 0 8px;
-  text-align: left;
-  border-right: 1px solid var(--gray-500);
-  font-weight: 800;
-  position: sticky;
-  top: 0;
-  background: var(--background-200);
-  z-index: 10;
-  border-bottom: 1px solid var(--gray-400);
-  resize: horizontal;
-  overflow: hidden;
+	padding: 0 12px;
+	text-align: left;
+	border-right: 1px solid var(--gray-400);
+	border-bottom: 1px solid var(--gray-400);
+	font-weight: 700;
+	font-size: 11px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--second);
+	font-family: var(--font-mono);
+	position: sticky;
+	top: 0;
+	z-index: 10;
+	overflow: hidden;
+	height: 32px;
+	vertical-align: middle;
 }
 
-.table td>svg {
-  transform: translateY(1px);
-  margin-right: 4px;
+.table th:last-child {
+	border-right: none;
 }
 
+/* ─── Data cells ─── */
 .value {
-  white-space: nowrap;
-  padding: 0 8px;
-  height: 100%;
-  border-right: 1px solid var(--gray-500);
-  border-top: 1px solid var(--gray-500);
-  color: var(--gray-1000);
-  font-weight: 300;
+	white-space: nowrap;
+	padding: 0 12px;
+	height: 28px;
+	vertical-align: middle;
+	border-right: 1px solid var(--gray-400);
+	border-bottom: 1px solid var(--gray-400);
+	color: var(--gray-1000);
+	font-weight: 300;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.value:last-child {
+	border-right: none;
 }
 
 .blank {
-  color: var(--second);
-  font-weight: 300;
+	color: var(--second);
+	font-weight: 300;
 }
 
+.table td svg {
+	transform: translateY(1px);
+	margin-right: 4px;
+}
+
+/* ─── Centered content (checkbox / action cells) ─── */
+.centered {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: relative;
+	height: 100%;
+	width: 100%;
+}
+
+/* ─── Action cells ─── */
 .actionCell {
-  padding: 0 !important;
-  text-align: center;
-  vertical-align: middle;
-  width: 40px;
-  min-width: 40px;
+	padding: 0 !important;
+	text-align: center;
+	vertical-align: middle;
+	width: 40px;
+	min-width: 40px;
 }
 
-.item:hover {
-  background: var(--background-300);
+.Button_Icon {
+	padding: 0px !important;
+	flex-shrink: 0;
 }
 
+/* ─── Actions column (multi-action) ─── */
+.actionsCell {
+	padding: 0 4px !important;
+	text-align: center;
+	vertical-align: middle;
+}
+
+/* ─── Row items ─── */
+.item {
+	height: 28px;
+	background: var(--background-100);
+	transition: background 0.1s ease;
+}
+
+/* Hover is only active when parent tbody has data-clickable attribute */
+[data-clickable] .item:hover {
+	background: var(--background-200);
+	cursor: pointer;
+}
+
+/* ─── Active row (click-selected) ─── */
+.activeRow {
+	background: color-mix(
+		in srgb,
+		var(--accent) 8%,
+		var(--background-100)
+	) !important;
+	box-shadow: inset 3px 0 0 0 var(--accent);
+}
+
+/* ─── Highlighted row (external highlight by _id) ─── */
 .highlighted {
-  background: color-mix(in srgb, var(--highlight-color) 30%, transparent) !important;
-  outline: 1px solid var(--highlight-color);
-  outline-offset: -1px;
+	background: color-mix(
+		in srgb,
+		var(--highlight-color) 30%,
+		transparent
+	) !important;
+	outline: 1px solid var(--highlight-color);
+	outline-offset: -1px;
+}
+
+/* ─── Column resize handle (Phase 3) ─── */
+.resizeHandle {
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+	cursor: col-resize;
+	z-index: 11;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.resizeHandle:hover,
+.resizeHandle.resizing {
+	background: var(--accent);
+	opacity: 0.5;
+}
+
+/* ─── Select-all header cell ─── */
+.selectAllCell {
+	width: 40px;
+	min-width: 40px;
+	text-align: center;
+	vertical-align: middle;
 }
