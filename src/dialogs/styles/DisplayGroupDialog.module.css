@@ -22,12 +22,34 @@
   background: color-mix(in srgb, var(--background-200) 80%, transparent);
 }
 
+.dialogToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px 4px;
+}
+
 .menuTitle {
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--accent);
+}
+
+.tooltipToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--second);
+  font-size: 11px;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.tooltipToggle input {
+  margin: 0;
 }
 
 .closeButton {

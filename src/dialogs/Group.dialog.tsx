@@ -55,6 +55,11 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	const [hoveredEventData, setHoveredEventData] = useState<Doc.Type | null>(null);
 	const [isLoadingHover, setIsLoadingHover] = useState(false);
 	const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+	const [showTooltip, setShowTooltip] = useState(() => app.general.user?.user_data?.show_preview ?? true);
+
+	useEffect(() => {
+		setShowTooltip(app.general.user?.user_data?.show_preview ?? true);
+	}, [app.general.user?.user_data?.show_preview]);
 
 	// Close on click outside
 	useEffect(() => {
@@ -187,41 +192,54 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		}, 100);
 	}, []);
 
+	const handleShowPreviewChange = useCallback(
+		(checked: boolean) => {
+			setShowTooltip(checked);
+			if (!checked) {
+				setOpenTooltipId(null);
+			}
+			if (app.general.user) {
+				void Info.user_set_data("show_preview", checked);
+			}
+		},
+		[Info, app.general.user],
+	);
+
 	const renderEvent = useCallback(
 		(event: Doc.Type) => {
 			if (!event) return null;
 
-			const showTooltip = openTooltipId === event._id;
+			const isTooltipOpen = showTooltip && openTooltipId === event._id;
 			const eventElement = eventRefsMap.current.get(event._id);
 
-			const tooltipContent = hoveredEventData && hoveredEventId === event._id ? (
-				<div
-					style={{ fontSize: "11px", maxWidth: 400 }}
-				>
+			const tooltipContent = isTooltipOpen && hoveredEventData && hoveredEventId === event._id ? (
+				<div style={{ fontSize: "11px", maxWidth: 400 }}>
 					<p style={{ margin: "0 0 4px 0", fontWeight: "bold" }}>
 						{event._id}
 					</p>
 					<p style={{ margin: "0 0 4px 0", color: "var(--second)" }}>
 						{event["gulp.event_code"] || "N/A"}
 					</p>
-					<div
-						style={{
-							maxHeight: "250px",
-							maxWidth: "400px",
-							overflow: "auto",
-							fontSize: "10px",
-						}}
-					>
+						<div
+							style={{
+								maxHeight: "250px",
+								maxWidth: "400px",
+								overflowX: "scroll",
+								overflowY: "auto",
+								fontSize: "10px",
+							}}
+						>
 						<Markdown
+							scrollable={false}
 							value={`\`\`\`json\n${JSON.stringify(hoveredEventData, null, 2)}`}
 						/>
 					</div>
 				</div>
-			) : isLoadingHover && hoveredEventId === event._id ? (
+			) : isTooltipOpen && isLoadingHover && hoveredEventId === event._id ? (
 				<div style={{ fontSize: "11px" }}>Loading...</div>
 			) : null;
 
-			const tooltipPortal = showTooltip && tooltipContent && eventElement ? createPortal(
+			const tooltipPortal = tooltipContent && eventElement ? createPortal(
 				<div
 					ref={tooltipRef}
 					onMouseEnter={clearCloseTimeout}
@@ -242,7 +260,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				>
 					{tooltipContent}
 				</div>,
-				document.body
+				document.body,
 			) : null;
 
 			return (
@@ -254,6 +272,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 						className={s.event}
 						onClick={() => handleSelectEvent(event)}
 						onMouseEnter={() => {
+							if (!showTooltip) return;
 							clearCloseTimeout();
 							handleEventHover(event);
 							setOpenTooltipId(event._id);
@@ -280,7 +299,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				</>
 			);
 		},
-		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, showTooltip],
 	);
 
 	const popupStyle = useMemo(() => {
@@ -322,6 +341,16 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				<div className={s.menuBody}>
 					{sortedEvents.map((event) => renderEvent(event))}
 				</div>
+				<div className={s.dialogToolbar}>
+					<label className={s.tooltipToggle}>
+						<input
+							type="checkbox"
+							checked={showTooltip}
+							onChange={(e) => handleShowPreviewChange(e.target.checked)}
+						/>
+						<span>Show preview</span>
+					</label>
+				</div>
 			</div>,
 			document.body,
 		);
@@ -354,9 +383,19 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 						>
 							{renderEvent(sortedEvents[v.index])}
 						</div>
-					))}
+						))}
+					</div>
 				</div>
-			</div>
-		</Dialog>
+				<div className={s.dialogToolbar}>
+					<label className={s.tooltipToggle}>
+						<input
+							type="checkbox"
+							checked={showTooltip}
+							onChange={(e) => handleShowPreviewChange(e.target.checked)}
+						/>
+						<span>Show preview</span>
+					</label>
+				</div>
+			</Dialog>
 	);
 }
