@@ -185,9 +185,6 @@
 	flex-shrink: 0;
 	height: 100%;
 	overflow: visible;
-	border: 1px solid var(--gray-400);
-	border-radius: 4px;
-	background: var(--background-100, #111);
 	position: relative;
 }
 
