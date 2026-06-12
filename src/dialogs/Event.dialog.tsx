@@ -196,7 +196,7 @@ const getTreeLabelFromElement = (
 
 	const directLabel =
 		element.classList.contains(labelClass) ||
-			element.classList.contains(clickableLabelClass)
+		element.classList.contains(clickableLabelClass)
 			? element
 			: (element.closest(`.${labelClass}`) ??
 				element.closest(`.${clickableLabelClass}`));
@@ -222,7 +222,12 @@ const getHoveredTreeLabel = (
 				? target.parentElement
 				: null;
 
-	return getTreeLabelFromElement(element, labelClass, clickableLabelClass, nodeClass);
+	return getTreeLabelFromElement(
+		element,
+		labelClass,
+		clickableLabelClass,
+		nodeClass,
+	);
 };
 
 const getTreeKeyPath = (
@@ -281,10 +286,7 @@ const getValueByPath = (
 
 	// Try to traverse using dots
 	for (const part of parts) {
-		if (
-			current &&
-			typeof current === "object"
-		) {
+		if (current && typeof current === "object") {
 			// Try direct property access first
 			if (Object.prototype.hasOwnProperty.call(current, part)) {
 				current = (current as Record<string, unknown>)[part];
@@ -327,10 +329,7 @@ const isTreeLeafValue = (
 ): boolean => {
 	if (!json || !path) return false;
 	const value = getValueByPath(json, path);
-	return (
-		value !== undefined &&
-		!isPlainObject(value)
-	);
+	return value !== undefined && !isPlainObject(value);
 };
 
 const getLeafTooltipText = (
@@ -445,7 +444,7 @@ const detectTreeSelection = (
 ): string | null => {
 	let treeLabel: Element | null =
 		element.classList.contains(s.label) ||
-			element.classList.contains(s.clickableLabel)
+		element.classList.contains(s.clickableLabel)
 			? element
 			: (element.closest(`.${s.label}`) ??
 				element.closest(`.${s.clickableLabel}`));
@@ -455,11 +454,12 @@ const detectTreeSelection = (
 		if (node) {
 			// Find the DIRECT child label, not the first descendant label
 			// This is important for arrays to avoid getting the first item's label
-			treeLabel = Array.from(node.children).find(
-				(child) =>
-					child.classList.contains(s.label) ||
-					child.classList.contains(s.clickableLabel),
-			) ?? null;
+			treeLabel =
+				Array.from(node.children).find(
+					(child) =>
+						child.classList.contains(s.label) ||
+						child.classList.contains(s.clickableLabel),
+				) ?? null;
 		}
 	}
 
@@ -514,14 +514,18 @@ const detectTreeSelection = (
 								// Try to find the index from the node's position
 								const parent = node.parentElement;
 								if (parent) {
-									const siblingNodes = Array.from(parent.querySelectorAll(`.${s.node}`));
+									const siblingNodes = Array.from(
+										parent.querySelectorAll(`.${s.node}`),
+									);
 									const index = siblingNodes.indexOf(node);
 									if (index >= 0) {
 										const childPath = `${parentPath}.${index}`;
 										if (isTreeLeafValue(json, childPath)) {
 											const childValue = getValueByPath(json, childPath);
 											const strValue =
-												typeof childValue === "string" ? `"${childValue}"` : JSON.stringify(childValue);
+												typeof childValue === "string"
+													? `"${childValue}"`
+													: JSON.stringify(childValue);
 											const selection = doc.defaultView?.getSelection();
 											if (selection) {
 												const range = doc.createRange();
@@ -546,13 +550,7 @@ const detectTreeSelection = (
 		const path =
 			resolvedPath && isTreeLeafValue(json, resolvedPath)
 				? resolvedPath
-				: getTreeKeyPath(
-					treeLabel,
-					s.label,
-					s.clickableLabel,
-					s.node,
-					s.basic,
-				);
+				: getTreeKeyPath(treeLabel, s.label, s.clickableLabel, s.node, s.basic);
 		if (path && isTreeLeafValue(json, path)) {
 			const value = getValueByPath(json, path);
 
@@ -562,11 +560,18 @@ const detectTreeSelection = (
 
 			// If clicked node is different from label node and value is an array/object,
 			// try to find the actual child element
-			if (labelNode && clickedNode && labelNode !== clickedNode && (Array.isArray(value) || (typeof value === "object" && value !== null))) {
+			if (
+				labelNode &&
+				clickedNode &&
+				labelNode !== clickedNode &&
+				(Array.isArray(value) || (typeof value === "object" && value !== null))
+			) {
 				// Find which child node we're in
 				const parent = clickedNode.parentElement;
 				if (parent) {
-					const siblingNodes = Array.from(parent.querySelectorAll(`.${s.node}`));
+					const siblingNodes = Array.from(
+						parent.querySelectorAll(`.${s.node}`),
+					);
 					const index = siblingNodes.indexOf(clickedNode);
 					if (index >= 0 && Array.isArray(value)) {
 						// This is an array, use the index to find the child value
@@ -574,7 +579,9 @@ const detectTreeSelection = (
 						const childValue = getValueByPath(json, childPath);
 						if (childValue !== undefined) {
 							const strValue =
-								typeof childValue === "string" ? `"${childValue}"` : JSON.stringify(childValue);
+								typeof childValue === "string"
+									? `"${childValue}"`
+									: JSON.stringify(childValue);
 							const selection = doc.defaultView?.getSelection();
 							if (selection) {
 								const range = doc.createRange();
@@ -767,9 +774,13 @@ const detectRawSelection = (
 		preRange.setEnd(range.startContainer, range.startOffset);
 		const offset = preRange.toString().length;
 		const clickIndexInJson = Math.max(0, offset - jsonStart);
-		const lineStartIndex = strippedText.lastIndexOf("\n", clickIndexInJson - 1) + 1;
+		const lineStartIndex =
+			strippedText.lastIndexOf("\n", clickIndexInJson - 1) + 1;
 		const lineEndIndex = strippedText.indexOf("\n", lineStartIndex);
-		const lineText = strippedText.slice(lineStartIndex, lineEndIndex < 0 ? undefined : lineEndIndex);
+		const lineText = strippedText.slice(
+			lineStartIndex,
+			lineEndIndex < 0 ? undefined : lineEndIndex,
+		);
 		const targetLine = lineText;
 
 		// Try to match key:value on the target line
@@ -817,7 +828,8 @@ const detectRawSelection = (
 		if (colonIndex >= 0) {
 			// Standard key:value line
 			const firstNonWs = targetLine.slice(colonIndex + 1).search(/\S/);
-			valueStart = lineStartIndex + colonIndex + 1 + (firstNonWs >= 0 ? firstNonWs : 0);
+			valueStart =
+				lineStartIndex + colonIndex + 1 + (firstNonWs >= 0 ? firstNonWs : 0);
 			valueEnd = findJsonValueEnd(strippedText, valueStart);
 		} else {
 			// Array/object value line - find the start of the value on this line
@@ -828,7 +840,12 @@ const detectRawSelection = (
 		}
 
 		const selectedText = strippedText.slice(valueStart, valueEnd).trim();
-		const valueRange = createTextNodeRange(doc, codeEl, jsonStart + valueStart, jsonStart + valueEnd);
+		const valueRange = createTextNodeRange(
+			doc,
+			codeEl,
+			jsonStart + valueStart,
+			jsonStart + valueEnd,
+		);
 
 		if (valueRange) {
 			selection.removeAllRanges();
@@ -918,11 +935,17 @@ const detectSelectionAtPoint = (
 
 	// 2. Tree Handling - check multiple ways to identify tree context
 	// This includes direct node/container checks plus fallback for nested elements
-	const inTreeContainer = element.closest(`.${s.container}`) ?? element.closest(`.${s.node}`);
-	const inScrollableTree = element.closest(`.${s.scrollable}`)?.querySelector(`.${s.container}`) !== null ||
+	const inTreeContainer =
+		element.closest(`.${s.container}`) ?? element.closest(`.${s.node}`);
+	const inScrollableTree =
+		element.closest(`.${s.scrollable}`)?.querySelector(`.${s.container}`) !==
+			null ||
 		element.closest(`.${s.scrollable}`)?.querySelector(`.${s.node}`) !== null;
 
-	if (inTreeContainer || (element.closest(`.${s.scrollable}`) && inScrollableTree)) {
+	if (
+		inTreeContainer ||
+		(element.closest(`.${s.scrollable}`) && inScrollableTree)
+	) {
 		return detectTreeSelection(
 			doc,
 			element,
@@ -1109,7 +1132,6 @@ export function DisplayEventDialog({
 	// Tree event handlers using ref-based delegation
 	useEffect(() => {
 		const container = treeContainerRef.current;
-		console.log("EFFECT: Tree event setup", { container: !!container, json: !!json });
 		if (!container || !json) return;
 
 		const handleMouseEnter = (e: MouseEvent) => {
@@ -1428,15 +1450,22 @@ export function DisplayEventDialog({
 										// Table view: clear tree context
 										isTreeViewContextRef.current = false;
 										treeContextPathRef.current = null;
-									} else if (element?.closest(`.${s.container}`) || element?.closest(`.${s.node}`)) {
+									} else if (
+										element?.closest(`.${s.container}`) ||
+										element?.closest(`.${s.node}`)
+									) {
 										// Tree view: prefer the resolved array child path when available.
 										isTreeViewContextRef.current = true;
 										const extractedPath = extractPathFromDetected(detected);
-										const resolvedPath = resolveTreeContextPath(element as HTMLElement, json);
+										const resolvedPath = resolveTreeContextPath(
+											element as HTMLElement,
+											json,
+										);
 										const candidatePath =
 											resolvedPath && isSelectableLeafValue(json, resolvedPath)
 												? resolvedPath
-												: extractedPath && isSelectableLeafValue(json, extractedPath)
+												: extractedPath &&
+													  isSelectableLeafValue(json, extractedPath)
 													? extractedPath
 													: null;
 										if (candidatePath) {
@@ -1468,7 +1497,9 @@ export function DisplayEventDialog({
 															labelEl = label;
 															break;
 														}
-														current = current.parentElement?.closest(`.${s.node}`) ?? null;
+														current =
+															current.parentElement?.closest(`.${s.node}`) ??
+															null;
 													}
 												}
 
@@ -1481,7 +1512,10 @@ export function DisplayEventDialog({
 														s.basic,
 													);
 
-													if (leafPath && isSelectableLeafValue(json, leafPath)) {
+													if (
+														leafPath &&
+														isSelectableLeafValue(json, leafPath)
+													) {
 														treeContextPathRef.current = leafPath;
 													}
 												}
@@ -1495,12 +1529,15 @@ export function DisplayEventDialog({
 								}
 							}
 						}}
-					// onContextMenu={() => {
-					// 	const current = window.getSelection()?.toString().trim();
-					// 	if (current && current !== selection) setSelection(current);
-					// }}
+						// onContextMenu={() => {
+						// 	const current = window.getSelection()?.toString().trim();
+						// 	if (current && current !== selection) setSelection(current);
+						// }}
 					>
-						<div className={s.contextTrigger} ref={treeContainerRef}>
+						<div
+							className={s.contextTrigger}
+							ref={treeContainerRef}
+						>
 							<TabsContent
 								value="tree"
 								className={s.scrollable}
@@ -1565,13 +1602,23 @@ export function DisplayEventDialog({
 					</ContextMenuItem>
 					<ContextMenuItem
 						onClick={() => {
-							if (isTreeViewContextRef.current && treeContextPathRef.current && json) {
+							if (
+								isTreeViewContextRef.current &&
+								treeContextPathRef.current &&
+								json
+							) {
 								// Tree view: use the stored path to get the actual value
 								const path = treeContextPathRef.current;
 								const value = getValueByPath(json, path);
-								const strValue = value === undefined ? "" :
-									(typeof value === "string" ? value : JSON.stringify(value));
-								applySelectionAsFileFilter(`"${stripArrayIndices(path)}": "${strValue}"`);
+								const strValue =
+									value === undefined
+										? ""
+										: typeof value === "string"
+											? value
+											: JSON.stringify(value);
+								applySelectionAsFileFilter(
+									`"${stripArrayIndices(path)}": "${strValue}"`,
+								);
 							} else {
 								applySelectionAsFileFilter(selection);
 							}
@@ -1583,22 +1630,32 @@ export function DisplayEventDialog({
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={() => {
-							if (isTreeViewContextRef.current && treeContextPathRef.current && json) {
+							if (
+								isTreeViewContextRef.current &&
+								treeContextPathRef.current &&
+								json
+							) {
 								// Tree view: use the stored path to get the actual value
 								const path = treeContextPathRef.current;
 								let value = getValueByPath(json, path);
 
 								// if value is an array, get the numbered element if path ends with a number
-								if (Array.isArray(value) && /^\d+$/.test(path.split(".").slice(-1)[0] ?? "")) {
+								if (
+									Array.isArray(value) &&
+									/^\d+$/.test(path.split(".").slice(-1)[0] ?? "")
+								) {
 									const index = Number(path.split(".").slice(-1)[0]);
 									if (index >= 0 && index < value.length) {
 										value = value[index];
 									}
 								}
 								const cleanedPath = stripArrayIndices(path);
-								const strValue = value === undefined ? "" :
-									(typeof value === "string" ? value : JSON.stringify(value));
-								console.log("Enriching from tree context", { path: treeContextPathRef.current, json: json, value: value, cleanedPath: cleanedPath, strValue: strValue });
+								const strValue =
+									value === undefined
+										? ""
+										: typeof value === "string"
+											? value
+											: JSON.stringify(value);
 								handleEnrich({ key: cleanedPath, value: strValue });
 							} else {
 								const isManualSelection =
@@ -1713,15 +1770,15 @@ export function DisplayEventDialog({
 									? ext.type.includes("send_data")
 									: (ext.type as any) === "send_data",
 							) && (
-									<Button
-										onClick={handleSendData}
-										variant="secondary"
-										title="Send IOCs to other systems"
-										icon="Send"
-									>
-										Send Data
-									</Button>
-								)}
+								<Button
+									onClick={handleSendData}
+									variant="secondary"
+									title="Send IOCs to other systems"
+									icon="Send"
+								>
+									Send Data
+								</Button>
+							)}
 							<Button
 								onClick={handleConnectLink}
 								variant="secondary"
@@ -1866,7 +1923,6 @@ export namespace EventIndicator {
 	}
 }
 
-
 /**
  * Visual indicator button for events in lists or timelines.
  */
@@ -1923,7 +1979,13 @@ export function EventIndicator({
 			style={{ ...style, background }}
 			{...props}
 		>
-			<Stack className={s.indicatorIconWrap} ai="center" jc="center" dir="column" gap={2}>
+			<Stack
+				className={s.indicatorIconWrap}
+				ai="center"
+				jc="center"
+				dir="column"
+				gap={2}
+			>
 				<Icon
 					name="Square"
 					size={10}
@@ -1931,7 +1993,7 @@ export function EventIndicator({
 				/>
 				<p
 					style={{
-						color: 'var(--accent)',
+						color: "var(--accent)",
 						fontSize: `${indicatorFontSize}px`,
 					}}
 				>
@@ -1942,18 +2004,18 @@ export function EventIndicator({
 				event._id,
 				Doc.Entity.operationId(app, event),
 			) && (
-					<Stack
-						ai="center"
-						jc="center"
-						className={cn(s.marker, s.flagged)}
-						pos="absolute"
-					>
-						<Icon
-							size={8}
-							name="Flag"
-						/>
-					</Stack>
-				)}
+				<Stack
+					ai="center"
+					jc="center"
+					className={cn(s.marker, s.flagged)}
+					pos="absolute"
+				>
+					<Icon
+						size={8}
+						name="Flag"
+					/>
+				</Stack>
+			)}
 			{notes.length > 0 && (
 				<Stack
 					ai="center"

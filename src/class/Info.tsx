@@ -1631,10 +1631,13 @@ export class Info implements InfoProps {
 				},
 				toast: {
 					onSuccess: () =>
-						toast.success(`Source ${source.name} has been deleted successfully`, {
-							icon: <Icon name="Check" />,
-							richColors: true,
-						}),
+						toast.success(
+							`Source ${source.name} has been deleted successfully`,
+							{
+								icon: <Icon name="Check" />,
+								richColors: true,
+							},
+						),
 					onError: () =>
 						toast.error(`Failed deleting source ${source.name}`, {
 							icon: <Icon name="Stop" />,
@@ -1658,13 +1661,13 @@ export class Info implements InfoProps {
 	) => {
 		this.activeUploads.set(id, { filename: file.name, percent: 0 });
 
-		SmartSocket.Class.instance.conce(
-			SmartSocket.Message.Type.COLLAB_CREATE,
-			(m) =>
-				m.payload.obj.type === "context" &&
-				(m.req_id === id || m.payload.obj.name === context),
-			(m) => console.log(m.payload, "Context verification complete", id),
-		);
+		// SmartSocket.Class.instance.conce(
+		// 	SmartSocket.Message.Type.COLLAB_CREATE,
+		// 	(m) =>
+		// 		m.payload.obj.type === "context" &&
+		// 		(m.req_id === id || m.payload.obj.name === context),
+		// 	(m) => console.log(m.payload, "Context verification complete", id),
+		// );
 
 		let isCompletedOrError = false;
 
@@ -3257,7 +3260,10 @@ export class Info implements InfoProps {
 		return user;
 	};
 
-	user_set_data = async (key: string, value: any): Promise<User.Type | null> => {
+	user_set_data = async (
+		key: string,
+		value: any,
+	): Promise<User.Type | null> => {
 		if (!this.app.general.user) {
 			Logger.warn(`Tried to set user data ${key} without a logged-in user`);
 			return null;
@@ -3552,7 +3558,6 @@ export class Info implements InfoProps {
 					SmartSocket.Message.Type.STATS_UPDATE,
 					(m) => m.req_id === req_id,
 					(m) => {
-						console.log(m);
 						if (m.payload.obj.status !== "done") {
 							toast.error("Sigma query failed", {
 								icon: <Icon name="Stop" />,

@@ -318,7 +318,7 @@ export function Table<T extends Object>({
   }, [columns, hiddenColumns, _columnVisibility])
 
   // ─── Column Resizing ───────────────────────────────────────────────
-  const MIN_COL_WIDTH = 60
+  const MIN_COL_WIDTH = 30
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({})
 
   /** Calculate default column widths based on maximum character length of contents or custom column configuration */
@@ -389,9 +389,22 @@ export function Table<T extends Object>({
     localWin.addEventListener('mouseup', onMouseUp)
   }, [])
 
+  /** Calculates the total width of the table by summing all column widths. */
+  const totalTableWidth = useMemo(() => {
+    let width = 0
+    if (selectable) width += 40
+    visibleColumns.forEach((c) => {
+      width += columnWidths[c] ?? defaultWidths[c]
+    })
+    if (resolvedActions.length > 0) {
+      width += resolvedActions.length * 32 + 16
+    }
+    return width
+  }, [selectable, visibleColumns, columnWidths, defaultWidths, resolvedActions])
+
   /** Renders the inner table element with colgroup, thead, and tbody. */
   const tableElement = (
-    <table className={s.table}>
+    <table className={s.table} style={{ width: totalTableWidth }}>
       <colgroup>
         {selectable && <col style={{ width: 40 }} />}
         {visibleColumns.map((c) => (
@@ -465,7 +478,7 @@ export function Table<T extends Object>({
         }}
         {...props}
       >
-        {_columnVisibility ? (
+        {!configLoaded ? null : _columnVisibility ? (
           <ContextMenu>
             <ContextMenuTrigger asChild>
               {tableElement}
@@ -561,10 +574,11 @@ function Col({ c, label, sortField, sortDirection, onSort, onResizeStart, ...pro
       onClick={() => onSort?.(c)}
       style={{ cursor: onSort ? 'pointer' : 'default', userSelect: 'none', position: 'relative' }}
     >
-      <Stack gap={4} ai="center" jc="flex-start" style={{ height: '100%' }}>
+      <Stack gap={4} ai="center" jc="flex-start" className={s.headerStack}>
         <span>{label ?? c}</span>
         {isSorted && onSort && (
           <Icon
+            className={s.headerSortIcon}
             name={sortDirection === 'asc' ? 'SortAscending' : 'SortDescending'}
             size={14}
           />
@@ -724,10 +738,44 @@ namespace Value {
   }
 }
 
+/**
+ * Renders a single cell value, with auto-detection of text truncation.
+ * If the value is truncated, hovers trigger a portalled Tooltip.
+ * Keeps a completely stable DOM structure to prevent hover flickering and layout shifts.
+ */
 const Value = React.memo(
   function ValueInner({ k, v, ...props }: Value.Props) {
-    const [rendered, setRendered] = useState(false)
+    const [open, setOpen] = useState(false)
     const cellRef = useRef<HTMLTableCellElement>(null)
+    const triggerRef = useRef<HTMLSpanElement>(null)
+
+    useEffect(() => {
+      if (!open) return
+
+      /**
+       * Handles mouse clicks outside the cell and the active tooltip portal
+       * to close/dismiss the active tooltip.
+       *
+       * @param event - The global MouseEvent object.
+       */
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement
+        if (
+          cellRef.current &&
+          !cellRef.current.contains(target) &&
+          !target.closest('[data-table-tooltip="true"]')
+        ) {
+          setOpen(false)
+        }
+      }
+
+      const localDoc = cellRef.current?.ownerDocument ?? document
+      localDoc.addEventListener('click', handleClickOutside)
+      return () => {
+        localDoc.removeEventListener('click', handleClickOutside)
+      }
+    }, [open])
+
     const isObject = typeof v === 'object' && v !== null
     const isArray = Array.isArray(v)
 
@@ -764,46 +812,35 @@ const Value = React.memo(
     const tooltipText = isArray || isObject ? stringified : displayValue
 
     const handleMouseEnter = () => {
-      if (!cellRef.current) return
+      if (!triggerRef.current) return
       // Detect if text is truncated (overflowing).
       // We add a 1px tolerance to avoid subpixel rendering false-positives.
-      const isOverflowing = cellRef.current.scrollWidth > cellRef.current.clientWidth + 1
+      const isOverflowing = triggerRef.current.scrollWidth > triggerRef.current.clientWidth + 1
       if (isOverflowing) {
-        setRendered(true)
+        setOpen(true)
       }
     }
 
     const handleMouseLeave = () => {
-      setRendered(false)
-    }
-
-    if (!rendered) {
-      return (
-        <td
-          ref={cellRef}
-          className={cn(s.value, displayValue === '<BLANK>' && s.blank)}
-          onMouseEnter={handleMouseEnter}
-          {...props}
-        >
-          {content}
-        </td>
-      )
+      setOpen(false)
     }
 
     return (
       <td
         ref={cellRef}
         className={cn(s.value, displayValue === '<BLANK>' && s.blank)}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         {...props}
       >
-        <Tooltip open={true} delayDuration={0}>
+        <Tooltip open={open} delayDuration={0}>
           <TooltipTrigger asChild>
-            <span style={{ display: 'inline-flex', alignItems: 'center', maxWidth: '100%' }}>
+            <span ref={triggerRef} className={s.triggerSpan}>
               {content}
             </span>
           </TooltipTrigger>
           <TooltipContent
+            data-table-tooltip="true"
             sideOffset={4}
             style={{
               maxWidth: 400,
@@ -815,7 +852,7 @@ const Value = React.memo(
               padding: 8,
               border: '1px solid var(--gray-400)',
               borderRadius: 6,
-              zIndex: 50,
+              zIndex: 1500,
             }}
           >
             {tooltipText}

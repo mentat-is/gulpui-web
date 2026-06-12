@@ -11,8 +11,16 @@ import { toast } from "sonner";
 import { AdvancedPluginParams } from "@/components/AdvancedPluginParams";
 import { Operation } from "@/entities/Operation";
 import { Badge } from "@/ui/Badge";
-import { SummaryTable, SummaryTableColumn } from "@/components/AdvancedPluginParams/SummaryTable";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/Tooltip";
+import {
+	SummaryTable,
+	SummaryTableColumn,
+} from "@/components/AdvancedPluginParams/SummaryTable";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/ui/Tooltip";
 
 export namespace BridgeManager {
 	export const Banner = (props: any) => {
@@ -21,7 +29,10 @@ export namespace BridgeManager {
 
 		const [bridges, setBridges] = useState<any[] | null>(null);
 		const [selectedBridgeId, setSelectedBridgeId] = useState<string>("");
-		const selectedBridge = useMemo(() => bridges?.find((b) => b.id === selectedBridgeId) || null, [bridges, selectedBridgeId]);
+		const selectedBridge = useMemo(
+			() => bridges?.find((b) => b.id === selectedBridgeId) || null,
+			[bridges, selectedBridgeId],
+		);
 
 		const [tasks, setTasks] = useState<any[] | null>(null);
 		const [loading, setLoading] = useState(false);
@@ -43,7 +54,10 @@ export namespace BridgeManager {
 				return;
 			}
 			setLoading(true);
-			Info.list_ingestion_tasks({ bridge_id: selectedBridgeId, operation_ids: [operation.id] })
+			Info.list_ingestion_tasks({
+				bridge_id: selectedBridgeId,
+				operation_ids: [operation.id],
+			})
 				.then((res: any) => {
 					const data = res?.data?.tasks || res?.data || res || [];
 					setTasks(Array.isArray(data) ? data : []);
@@ -87,9 +101,12 @@ export namespace BridgeManager {
 		};
 
 		const handleStart = (task: any) => {
-            console.log(task.plugin_params)
 			if (!selectedBridgeId || !operation) return;
-			Info.create_start_ingestion(selectedBridgeId, operation.id, task.plugin_params || {})
+			Info.create_start_ingestion(
+				selectedBridgeId,
+				operation.id,
+				task.plugin_params || {},
+			)
 				.then((res: any) => {
 					if (res) {
 						toast.success("Task started");
@@ -102,7 +119,6 @@ export namespace BridgeManager {
 		};
 
 		const handleCreateNewTask = (pluginParams: any) => {
-            console.log(pluginParams)
 			if (!selectedBridgeId || !operation) return;
 			Info.create_start_ingestion(selectedBridgeId, operation.id, pluginParams)
 				.then((res: any) => {
@@ -122,8 +138,12 @@ export namespace BridgeManager {
 				.then((res: any) => {
 					if (res) {
 						toast.success("Bridge status checked");
-						console.log(`res: ${res}`)
-						setBridges((prev) => prev?.map((b) => (b.id === bridge_id ? { ...b, status: res.bridge_status } : b)) || null);
+						setBridges(
+							(prev) =>
+								prev?.map((b) =>
+									b.id === bridge_id ? { ...b, status: res.bridge_status } : b,
+								) || null,
+						);
 					} else {
 						toast.error("Failed to check bridge status");
 					}
@@ -140,13 +160,13 @@ export namespace BridgeManager {
 				render: (val) => (
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span style={{ cursor: "default" }}>{String(val).slice(0, 8)}...</span>
+							<span style={{ cursor: "default" }}>
+								{String(val).slice(0, 8)}...
+							</span>
 						</TooltipTrigger>
-						<TooltipContent>
-							{val}
-						</TooltipContent>
+						<TooltipContent>{val}</TooltipContent>
 					</Tooltip>
-				)
+				),
 			},
 			{
 				key: "parameters",
@@ -154,60 +174,137 @@ export namespace BridgeManager {
 				render: (_, item) => {
 					const params = item.plugin_params?.custom_parameters || {};
 					const jsonStr = JSON.stringify(params, null, 2);
-					const preview = typeof params === 'object' ? JSON.stringify(params).slice(0, 30) + (JSON.stringify(params).length > 30 ? '...' : '') : String(params);
+					const preview =
+						typeof params === "object"
+							? JSON.stringify(params).slice(0, 30) +
+								(JSON.stringify(params).length > 30 ? "..." : "")
+							: String(params);
 
 					return (
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span style={{ cursor: "default", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+								<span
+									style={{
+										cursor: "default",
+										fontFamily: "var(--font-mono)",
+										fontSize: 11,
+									}}
+								>
 									{preview}
 								</span>
 							</TooltipTrigger>
-							<TooltipContent style={{ maxWidth: 500, whiteSpace: "pre", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+							<TooltipContent
+								style={{
+									maxWidth: 500,
+									whiteSpace: "pre",
+									fontFamily: "var(--font-mono)",
+									fontSize: 11,
+								}}
+							>
 								{jsonStr}
 							</TooltipContent>
 						</Tooltip>
 					);
-				}
+				},
 			},
-			{ key: "status", label: "Status", width: 80, render: (val) => <Badge color={val === "ongoing" ? "blue" : val === "error" ? "red" : "gray"}>{val || "stopped"}</Badge> },
+			{
+				key: "status",
+				label: "Status",
+				width: 80,
+				render: (val) => (
+					<Badge
+						color={
+							val === "ongoing" ? "blue" : val === "error" ? "red" : "gray"
+						}
+					>
+						{val || "stopped"}
+					</Badge>
+				),
+			},
 			{
 				key: "actions",
 				label: "Actions",
 				width: "1%",
 				render: (_, task) => (
-					<Stack dir="row" jc="center" ai="center">
+					<Stack
+						dir="row"
+						jc="center"
+						ai="center"
+					>
 						{task.status === "ongoing" && (
-							<Button variant="tertiary" shape="icon" icon="Square" onClick={(e) => { e.stopPropagation(); handleStop(task.id); }} title="Stop Task" style={{ height: 24, width: 24, minHeight: 24 }} />
+							<Button
+								variant="tertiary"
+								shape="icon"
+								icon="Square"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleStop(task.id);
+								}}
+								title="Stop Task"
+								style={{ height: 24, width: 24, minHeight: 24 }}
+							/>
 						)}
 						{task.status !== "ongoing" && (
-							<Button variant="tertiary" shape="icon" icon="Play" onClick={(e) => { e.stopPropagation(); handleStart(task); }} title="Start Task" style={{ height: 24, width: 24, minHeight: 24 }} />
+							<Button
+								variant="tertiary"
+								shape="icon"
+								icon="Play"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleStart(task);
+								}}
+								title="Start Task"
+								style={{ height: 24, width: 24, minHeight: 24 }}
+							/>
 						)}
 					</Stack>
-				)
-			}
+				),
+			},
 		];
 
 		return (
 			<TooltipProvider>
-				<UIBanner title="Bridge Manager" {...props}>
-					<Stack dir="column" gap={16} ai="stretch" style={{ width: "100%", paddingBottom: 16 }}>
+				<UIBanner
+					title="Bridge Manager"
+					{...props}
+				>
+					<Stack
+						dir="column"
+						gap={16}
+						ai="stretch"
+						style={{ width: "100%", paddingBottom: 16 }}
+					>
 						<Label value="Select Registered Bridge" />
 						{!bridges ? (
 							<Skeleton style={{ height: 40 }} />
 						) : bridges.length === 0 ? (
-							<div style={{ padding: 12, backgroundColor: "var(--background-100)", borderRadius: 8, color: "var(--gray-500)" }}>
+							<div
+								style={{
+									padding: 12,
+									backgroundColor: "var(--background-100)",
+									borderRadius: 8,
+									color: "var(--gray-500)",
+								}}
+							>
 								No bridges found.
 							</div>
 						) : (
-							<Select.Root value={selectedBridgeId} onValueChange={setSelectedBridgeId}>
+							<Select.Root
+								value={selectedBridgeId}
+								onValueChange={setSelectedBridgeId}
+							>
 								<Select.Trigger>
 									<Icon name="Network" />
-									{selectedBridge ? selectedBridge.name || selectedBridge.id : "Select a bridge..."}
+									{selectedBridge
+										? selectedBridge.name || selectedBridge.id
+										: "Select a bridge..."}
 								</Select.Trigger>
 								<Select.Content>
 									{bridges.map((bridge) => (
-										<Select.Item key={bridge.id} value={bridge.id}>
+										<Select.Item
+											key={bridge.id}
+											value={bridge.id}
+										>
 											{bridge.name || bridge.id}
 										</Select.Item>
 									))}
@@ -216,11 +313,40 @@ export namespace BridgeManager {
 						)}
 
 						{selectedBridge && (
-							<Stack dir="column" gap={8} ai="stretch" style={{ padding: 12, backgroundColor: "var(--background-100)", borderRadius: 8, border: "1px solid var(--gray-alpha-400)" }}>
-								<Stack dir="row" jc="space-between" ai="center">
-									<span style={{ fontWeight: 600, color: "var(--gray-900)" }}>Bridge Connection</span>
-									<Stack dir="row" gap={4} ai="center">
-										<Badge color={selectedBridge.status === "ready" || selectedBridge.status === "connected" ? "green" : selectedBridge.status === "error" ? "red" : "gray"}>
+							<Stack
+								dir="column"
+								gap={8}
+								ai="stretch"
+								style={{
+									padding: 12,
+									backgroundColor: "var(--background-100)",
+									borderRadius: 8,
+									border: "1px solid var(--gray-alpha-400)",
+								}}
+							>
+								<Stack
+									dir="row"
+									jc="space-between"
+									ai="center"
+								>
+									<span style={{ fontWeight: 600, color: "var(--gray-900)" }}>
+										Bridge Connection
+									</span>
+									<Stack
+										dir="row"
+										gap={4}
+										ai="center"
+									>
+										<Badge
+											color={
+												selectedBridge.status === "ready" ||
+												selectedBridge.status === "connected"
+													? "green"
+													: selectedBridge.status === "error"
+														? "red"
+														: "gray"
+											}
+										>
 											{selectedBridge.status || "Unknown"}
 										</Badge>
 										<Button
@@ -234,9 +360,23 @@ export namespace BridgeManager {
 										/>
 									</Stack>
 								</Stack>
-								<Stack dir="row" gap={8} ai="center">
-									<Icon name="Link" size={14} style={{ color: "var(--gray-500)" }} />
-									<span style={{ color: "var(--gray-600)", wordBreak: "break-all", fontSize: 13 }}>
+								<Stack
+									dir="row"
+									gap={8}
+									ai="center"
+								>
+									<Icon
+										name="Link"
+										size={14}
+										style={{ color: "var(--gray-500)" }}
+									/>
+									<span
+										style={{
+											color: "var(--gray-600)",
+											wordBreak: "break-all",
+											fontSize: 13,
+										}}
+									>
 										{selectedBridge.url || "No URL provided"}
 									</span>
 								</Stack>
@@ -245,7 +385,12 @@ export namespace BridgeManager {
 
 						{selectedBridgeId && (
 							<>
-								<Stack dir="row" jc="space-between" ai="center" style={{ marginTop: 8 }}>
+								<Stack
+									dir="row"
+									jc="space-between"
+									ai="center"
+									style={{ marginTop: 8 }}
+								>
 									<Label value="Ingestion Tasks" />
 									<AdvancedPluginParams
 										pluginParams={{}}
@@ -259,7 +404,11 @@ export namespace BridgeManager {
 									/>
 								</Stack>
 
-								<Stack dir="column" gap={8} ai="stretch">
+								<Stack
+									dir="column"
+									gap={8}
+									ai="stretch"
+								>
 									{!tasks && loading ? (
 										<>
 											<Skeleton style={{ height: 60 }} />
@@ -275,10 +424,13 @@ export namespace BridgeManager {
 											<Stack style={{ marginTop: 8 }}>
 												<Button
 													onClick={loadTasks}
-													variant='secondary'
-													icon='RefreshClockwise'
+													variant="secondary"
+													icon="RefreshClockwise"
 													loading={loading}
-													style={{ background: "var(--background-100)", flex: 1 }}
+													style={{
+														background: "var(--background-100)",
+														flex: 1,
+													}}
 												>
 													Reload
 												</Button>

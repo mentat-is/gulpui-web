@@ -270,9 +270,6 @@ const api: Api = async function <T>(
 	}
 
 	soft(() => false, options.setLoading);
-
-	console.log(res.data);
-
 	return options.raw ? res : res.data;
 };
 
