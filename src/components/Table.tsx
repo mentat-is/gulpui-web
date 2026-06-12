@@ -414,8 +414,8 @@ export function Table<T extends Object>({
       <colgroup>
         {selectable && <col style={{ width: 40 }} />}
         {visibleColumns.map((c) => {
-          const w = columnWidths[c] ?? defaultWidths[c]
-          return <col key={`col-${c}`} style={w === 'auto' ? undefined : { width: w }} />
+          const w: number | string = columnWidths[c] ?? defaultWidths[c]
+          return <col key={`col-${c}`} style={String(w) === 'auto' ? undefined : { width: w }} />
         })}
         {resolvedActions.length > 0 && <col style={{ width: resolvedActions.length * 32 + 16 }} />}
       </colgroup>
