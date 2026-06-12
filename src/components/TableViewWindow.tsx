@@ -974,6 +974,8 @@ export function TableViewWindow({
 					<p className={s.label}>Loading data...</p>
 				) : data.length > 0 ? (
 					<Table
+						persistId={`table-${selectedSourceId}`}
+						columnVisibility={true}
 						values={data}
 						columns={columns}
 						includeIndex={false}

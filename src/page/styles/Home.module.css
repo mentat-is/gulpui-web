@@ -45,16 +45,10 @@
 	flex-shrink: 0;
 }
 
-/* Results container: mirrors NotesWindow .result */
+/* Results container: wrapper for the Table component */
 .result {
-	background: var(--geist-background);
-	border: var(--geist-border);
-	border-radius: 6px;
 	flex: 1;
 	min-height: 0;
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
 }
 
 /* Scrollable list inside .result */

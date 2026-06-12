@@ -12,6 +12,7 @@ import s from "./styles/Home.module.css";
 import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
 import { Stack } from "@/ui/Stack";
 import { Resizer } from "@/ui/Resizer";
+import { Table } from "@/components/Table";
 
 export namespace Home {
 	export namespace Page {
@@ -140,47 +141,9 @@ export namespace Home {
 			app.target.operations.length > 0 &&
 			selectedIds.size === app.target.operations.length;
 
-		/**
-		 * Renders the sticky header row of the operations table.
-		 * Includes the select all checkbox, column titles, and the actions column.
-		 */
-		const TableHeader = () => (
-			<div className={s.tableHeader}>
-				<div className={`${s.tableCell} ${s.selectCell}`}>
-					<Checkbox
-						checked={isAllSelected}
-						onCheckedChange={(checked) => handleSelectAll(!!checked)}
-						aria-label="Select all operations"
-					/>
-				</div>
-				<div className={s.tableCell}>
-					<span className={s.headerLabel}>Icon</span>
-				</div>
-				<div className={s.tableCell}>
-					<span className={s.headerLabel}>Name</span>
-				</div>
-				<div className={`${s.tableCell} ${s.actionsCell}`}>
-					<span className={s.headerLabel}>Actions</span>
-				</div>
-			</div>
-		);
-
-		/**
-		 * Renders a single row for one operation.
-		 * Provides a checkbox for multi-selection, the operation icon and name,
-		 * and buttons to either delete the operation or open it.
-		 *
-		 * @param props.operation - The operation object to render.
-		 */
-		const OperationRow = ({ operation }: { operation: Operation.Type }) => {
+		const OperationActions = ({ operation }: { operation: Operation.Type }) => {
 			const [deleting, setDeleting] = useState(false);
 
-			/**
-			 * Handler for deleting the operation.
-			 * Calls Info.deleteOperation and removes the operation from the selection set.
-			 *
-			 * @param e - The mouse event.
-			 */
 			const handleDelete = async (e: React.MouseEvent) => {
 				e.stopPropagation();
 				await Info.deleteOperation(operation, setDeleting);
@@ -194,97 +157,29 @@ export namespace Home {
 				});
 			};
 
-			/**
-			 * Handler for opening the operation.
-			 * Calls handleOpenOperation.
-			 *
-			 * @param e - The mouse event.
-			 */
 			const handleGo = (e: React.MouseEvent) => {
 				e.stopPropagation();
 				handleOpenOperation(operation);
 			};
 
-			/**
-			 * Toggles selection of this operation.
-			 *
-			 * @param checked - The new checkbox checked state.
-			 */
-			const handleCheckboxChange = (checked: boolean) => {
-				toggleSelection(operation.id);
-			};
-
-			/**
-			 * Row click handler to toggle checkbox selection.
-			 * Avoids triggering if interactive elements (checkbox, actions) were clicked directly.
-			 *
-			 * @param e - The mouse event.
-			 */
-			const handleRowClick = (e: React.MouseEvent) => {
-				const target = e.target as HTMLElement;
-				if (
-					target.closest(`.${s.actionsCell}`) ||
-					target.closest(`.${s.selectCell}`)
-				) {
-					return;
-				}
-				spawnDialog(
-					<DisplayOperationDetailDialog
-						operationId={operation.id}
-						fallbackName={operation.name}
-						fallbackGlyphId={operation.glyph_id}
-						onClose={() => spawnDialog(null)}
-					/>,
-				);
-			};
-
 			return (
-				<div
-					className={s.operationRow}
-					onClick={handleRowClick}
-					role="button"
-					tabIndex={0}
-					onKeyDown={(e) => {
-						if (e.key === " ") {
-							e.preventDefault();
-							toggleSelection(operation.id);
-						}
-					}}
-					aria-label={`Select operation ${operation.name}`}
-				>
-					<div className={`${s.tableCell} ${s.selectCell}`}>
-						<Checkbox
-							checked={selectedIds.has(operation.id)}
-							onCheckedChange={(checked) => handleCheckboxChange(!!checked)}
-							aria-label={`Select operation ${operation.name}`}
-						/>
-					</div>
-					<div className={`${s.tableCell} ${s.iconCell}`}>
-						<div className={s.operationIcon}>
-							<Icon name={Operation.Entity.icon(operation)} />
-						</div>
-					</div>
-					<div className={s.tableCell}>
-						<span className={s.operationName}>{operation.name}</span>
-					</div>
-					<div className={`${s.tableCell} ${s.actionsCell}`}>
-						<Button
-							variant="secondary"
-							icon="Trash2"
-							loading={deleting}
-							onClick={handleDelete}
-							title="Delete"
-							aria-label={`Delete operation ${operation.name}`}
-						/>
-						<Button
-							variant="secondary"
-							icon="ArrowRight"
-							onClick={handleGo}
-							title="Go to"
-							aria-label={`Go to operation ${operation.name}`}
-						/>
-					</div>
-				</div>
+				<Stack gap={4} ai="center" jc="center" dir="row">
+					<Button
+						variant="secondary"
+						icon="Trash2"
+						loading={deleting}
+						onClick={handleDelete}
+						title="Delete"
+						aria-label={`Delete operation ${operation.name}`}
+					/>
+					<Button
+						variant="secondary"
+						icon="ArrowRight"
+						onClick={handleGo}
+						title="Go to"
+						aria-label={`Go to operation ${operation.name}`}
+					/>
+				</Stack>
 			);
 		};
 
@@ -315,19 +210,61 @@ export namespace Home {
 				);
 			}
 
+			const selectedIndices = new Set<number>();
+			app.target.operations.forEach((op, i) => {
+				if (selectedIds.has(op.id)) {
+					selectedIndices.add(i);
+				}
+			});
+
 			return (
 				<>
-					<div className={s.result}>
-						<TableHeader />
-						<div className={s.resultScroll}>
-							{app.target.operations.map((operation) => (
-								<OperationRow
-									key={operation.id}
-									operation={operation}
-								/>
-							))}
-						</div>
-					</div>
+					<Table<Operation.Type>
+						className={s.result}
+						values={app.target.operations}
+						selectable={true}
+						selectedrows={selectedIndices}
+						onrowselect={(index, selected) => {
+							const op = app.target.operations[index];
+							if (op) toggleSelection(op.id);
+						}}
+						onSelectAll={handleSelectAll}
+						onRowClick={(row) => {
+							spawnDialog(
+								<DisplayOperationDetailDialog
+									operationId={row.id}
+									fallbackName={row.name}
+									fallbackGlyphId={row.glyph_id}
+									onClose={() => spawnDialog(null)}
+								/>,
+							);
+						}}
+						includeIndex={false}
+						persistId="home-operations-table"
+						columns={[
+							{
+								key: "icon",
+								label: "Icon",
+								width: 60,
+								render: (_, row) => (
+									<div className={s.operationIcon}>
+										<Icon name={Operation.Entity.icon(row)} />
+									</div>
+								),
+							},
+							{
+								key: "name",
+								label: "Name",
+								width: "auto",
+							},
+							{
+								key: "actions",
+								label: "Actions",
+								width: 120,
+								render: (_, row) => <OperationActions operation={row} />,
+							},
+						]}
+					/>
 					<div className={s.footer}>
 						<Stack jc="flex-end">
 							<Button

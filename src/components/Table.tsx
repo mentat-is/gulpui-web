@@ -58,8 +58,8 @@ export namespace Table {
     key: string
     /** Custom display label for the column header. */
     label?: string
-    /** Custom width for this column in pixels. */
-    width?: number
+    /** Custom width for this column. Can be a number (pixels) or string (e.g. 'auto', '100%'). */
+    width?: number | string
     /** Custom render function specifically for cells in this column. */
     render?: CellRenderer<T>
   }
@@ -323,7 +323,7 @@ export function Table<T extends Object>({
 
   /** Calculate default column widths based on maximum character length of contents or custom column configuration */
   const defaultWidths = useMemo(() => {
-    const widths: Record<string, number> = {}
+    const widths: Record<string, number | string> = {}
 
     columns.forEach((col) => {
       // Check if a custom width is provided in column definitions
@@ -392,14 +392,20 @@ export function Table<T extends Object>({
   /** Calculates the total width of the table by summing all column widths. */
   const totalTableWidth = useMemo(() => {
     let width = 0
+    let hasFlexible = false
     if (selectable) width += 40
     visibleColumns.forEach((c) => {
-      width += columnWidths[c] ?? defaultWidths[c]
+      const w = columnWidths[c] ?? defaultWidths[c]
+      if (typeof w === 'number') {
+        width += w
+      } else {
+        hasFlexible = true
+      }
     })
     if (resolvedActions.length > 0) {
       width += resolvedActions.length * 32 + 16
     }
-    return width
+    return hasFlexible ? '100%' : width
   }, [selectable, visibleColumns, columnWidths, defaultWidths, resolvedActions])
 
   /** Renders the inner table element with colgroup, thead, and tbody. */
@@ -407,9 +413,10 @@ export function Table<T extends Object>({
     <table className={s.table} style={{ width: totalTableWidth }}>
       <colgroup>
         {selectable && <col style={{ width: 40 }} />}
-        {visibleColumns.map((c) => (
-          <col key={`col-${c}`} style={{ width: columnWidths[c] ?? defaultWidths[c] }} />
-        ))}
+        {visibleColumns.map((c) => {
+          const w = columnWidths[c] ?? defaultWidths[c]
+          return <col key={`col-${c}`} style={w === 'auto' ? undefined : { width: w }} />
+        })}
         {resolvedActions.length > 0 && <col style={{ width: resolvedActions.length * 32 + 16 }} />}
       </colgroup>
       <thead>
