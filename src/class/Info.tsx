@@ -1923,6 +1923,12 @@ export class Info implements InfoProps {
 		this._register_streaming_listeners(id, sidSource);
 	};
 
+	/**
+	 * Uploads a file in preview mode and returns the parsed preview documents.
+	 *
+	 * @param options - File ingest options used to build the preview request payload.
+	 * @returns A promise that resolves with preview documents, or an empty array when preview loading fails.
+	 */
 	file_ingest_preview = async (
 		options: FileEntity.IngestOptions,
 	): Promise<Doc.Type[]> => {
@@ -1961,7 +1967,11 @@ export class Info implements InfoProps {
 			"payload",
 			new Blob([JSON.stringify(ingestPayload)], { type: "application/json" }),
 		);
-		formData.append("f", file, file.name);
+		formData.append(
+			"f",
+			new File([file], file.name, { type: "application/octet-stream" }),
+			file.name,
+		);
 
 		const query = {
 			plugin: settings.plugin?.split(".")[0],
@@ -1981,7 +1991,12 @@ export class Info implements InfoProps {
 			},
 		});
 
-		return response.data as unknown as Doc.Type[];
+		if (!response?.data) {
+			Logger.error("Failed to load preview for uploaded file", "Info.file_ingest_preview");
+			return [];
+		}
+
+		return Array.isArray(response.data) ? (response.data as Doc.Type[]) : [];
 	};
 
 	// ⚠️ UNTOUCHABLE

@@ -233,6 +233,7 @@ export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
 }>(({ file, settings, updateSettings, progress, setFiles, style, 'data-index': dataIndex }, ref) => {
   const { Info, app } = Application.use()
   const [preview, setPreview] = useState<Doc.Type[] | null>(null)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
 
   const methods = useMemo(
     () => Mapping.Entity.methods(app, settings.plugin),
@@ -277,15 +278,30 @@ export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
     updateSettings(finalUpdate);
   };
 
+  /**
+   * Loads preview rows for the current file before ingestion starts.
+   *
+   * @returns A promise that resolves when the preview state has been updated.
+   */
   const loadPreview = async () => {
-    const preview = await Info.file_ingest_preview({
-      preview_mode: true,
-      context: 'preview',
-      file,
-      settings
-    })
+    setIsPreviewLoading(true)
+    setPreview(null)
 
-    setPreview(preview ?? null);
+    try {
+      const nextPreview = await Info.file_ingest_preview({
+        preview_mode: true,
+        context: 'preview',
+        file,
+        settings
+      })
+
+      setPreview(nextPreview)
+    } catch {
+      toast.error('Failed to load file preview')
+      setPreview([])
+    } finally {
+      setIsPreviewLoading(false)
+    }
   }
 
   const setCustomParameters = (update: any) => {
@@ -321,7 +337,7 @@ export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
           <Button icon='PreviewDocument' variant='tertiary' />
         </Popover.Trigger>
         <Popover.Content style={{ maxHeight: '50vh', maxWidth: '50vw', overflow: 'auto' }}>
-          {preview ? <Table style={{ overflow: 'visible', width: 'fit-content' }} values={Array.isArray(preview) ? preview : []} /> : <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} />}
+          {isPreviewLoading || preview === null ? <Spinner style={{ width: 'fit-content', whiteSpace: 'nowrap' }} /> : <Table style={{ overflow: 'visible', width: 'fit-content' }} values={preview} />}
         </Popover.Content>
       </Popover.Root>
       <Popover.Root>
