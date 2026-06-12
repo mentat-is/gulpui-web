@@ -278,14 +278,20 @@ export const FilePreview = React.memo(React.forwardRef<HTMLDivElement, {
   };
 
   const loadPreview = async () => {
-    const preview = await Info.file_ingest_preview({
-      preview_mode: true,
-      context: 'preview',
-      file,
-      settings
-    })
+    setPreview(null);
 
-    setPreview(preview ?? null);
+    try {
+      const preview = await Info.file_ingest_preview({
+        preview_mode: true,
+        context: 'preview',
+        file,
+        settings
+      })
+
+      setPreview(preview ?? []);
+    } catch {
+      setPreview([]);
+    }
   }
 
   const setCustomParameters = (update: any) => {

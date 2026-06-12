@@ -1831,7 +1831,11 @@ export class Info implements InfoProps {
 			"payload",
 			new Blob([JSON.stringify(ingestPayload)], { type: "application/json" }),
 		);
-		formData.append("f", file, file.name);
+		formData.append(
+			"f",
+			new File([file], file.name, { type: "application/octet-stream" }),
+			file.name,
+		);
 
 		const query = {
 			plugin: settings.plugin?.split(".")[0],
@@ -1850,6 +1854,14 @@ export class Info implements InfoProps {
 				size: file.size.toString(),
 			},
 		});
+
+		if (!response?.data) {
+			Logger.error(
+				`Failed to load preview for ${file.name}: API returned no data`,
+				"Info.file_ingest_preview",
+			);
+			return [];
+		}
 
 		return response.data as unknown as Doc.Type[];
 	};
