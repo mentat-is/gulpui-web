@@ -1972,6 +1972,11 @@ export class Info implements InfoProps {
 			new File([file], file.name, { type: "application/octet-stream" }),
 			file.name,
 		);
+		formData.append(
+			"f",
+			new File([file], file.name, { type: "application/octet-stream" }),
+			file.name,
+		);
 
 		const query = {
 			plugin: settings.plugin?.split(".")[0],
@@ -1992,7 +1997,10 @@ export class Info implements InfoProps {
 		});
 
 		if (!response?.data) {
-			Logger.error("Failed to load preview for uploaded file", "Info.file_ingest_preview");
+			Logger.error(
+				`Failed to load preview for ${file.name}: API returned no data`,
+				"Info.file_ingest_preview",
+			);
 			return [];
 		}
 
