@@ -1,8 +1,10 @@
 import { Source } from "@/entities/Source";
 import { Engine, Hardcode } from "../class/Engine.dto";
 import { Dot, RenderEngine } from "../class/RenderEngine";
-import { throwableByTimestamp } from "@/ui/utils";
 import { Color } from "@/entities/Color";
+
+const GRAPH_DRAWABLE_HEIGHT = 47;
+const SEMI_LOG_BASE = 10;
 
 /**
  * Graph render engine: draws connected line graphs for event density over time.
@@ -14,7 +16,6 @@ export class GraphEngine implements Engine.Interface<
 > {
 	/** Reference to the parent RenderEngine. */
 	private renderer!: RenderEngine;
-	/** Singleton instance. */
 	/** Singleton instance, accessible for cache clearing in clearAllCaches(). */
 	public static instance: GraphEngine | null = null;
 	/** Type definition for the per-source graph map with metadata symbols. */
@@ -41,7 +42,17 @@ export class GraphEngine implements Engine.Interface<
 		this.renderer = renderer;
 	}
 
-	render(file: Source.Type, y: number, forcr?: boolean) {
+	/**
+	 * Renders the source density graph by aggregating visible samples into dynamic
+	 * buckets and drawing one semi-log-scaled dot per bucket.
+	 *
+	 * @param file The source to render.
+	 * @param y The top Y coordinate of the source row.
+	 * @returns Nothing; draws directly on the canvas context.
+	 */
+	render(file: Source.Type, y: number) {
+		if (y < -48 || y > this.renderer.ctx.canvas.height + 48) return;
+
 		const sampleData =
 			Source.Entity.samples(this.renderer.info.app, file) ?? [];
 		if (sampleData.length === 0) return;
@@ -69,7 +80,8 @@ export class GraphEngine implements Engine.Interface<
 
 		if (maxHeight === 0) return;
 
-		const logMaxHeigh = Math.log1p(maxHeight);
+		const semiLogMaxHeight = this.getSemiLogCeiling(maxHeight);
+		const semiLogMaxValue = this.getSemiLogValue(semiLogMaxHeight);
 		const minLimit = this.renderer.limits.min;
 		const maxLimit = this.renderer.limits.max;
 
@@ -102,20 +114,16 @@ export class GraphEngine implements Engine.Interface<
 
 			const x = this.renderer.getPixelPosition(centerTimestamp);
 
-			//X-AXIS VIEWPORT CULLING
 			if (
 				x < 0 - dynamicFrequency ||
 				x > this.renderer.ctx.canvas.width + dynamicFrequency
 			)
 				continue;
-			//Y-AXIS VIEWPORT CULLING
-			if (y < -48 || y > this.renderer.ctx.canvas.height + 48) continue;
 
 			const count = dynamicBuckets.get(i) || 0;
 
-			// DRAW line bucket
 			this.renderer.ctx.strokeStyle = Color.Themer.theme.BORDER;
-			let startLine = this.renderer.getPixelPosition(
+			const startLine = this.renderer.getPixelPosition(
 				offset + i * dynamicFrequency,
 			);
 			this.renderer.ctx.beginPath();
@@ -123,7 +131,7 @@ export class GraphEngine implements Engine.Interface<
 			this.renderer.ctx.lineTo(startLine, y + 48);
 			this.renderer.ctx.stroke();
 
-			const currentDot = this.drawDot(y, count, logMaxHeigh, file, x);
+			const currentDot = this.drawDot(y, count, semiLogMaxValue, file, x);
 			if (prevDot) {
 				this.renderer.connection([prevDot, currentDot]);
 			}
@@ -131,22 +139,60 @@ export class GraphEngine implements Engine.Interface<
 		}
 	}
 
+	/**
+	 * Returns the next power-of-10 ceiling used as the maximum on the semi-log scale.
+	 *
+	 * @param maxHeight The highest bucket count in the current render pass.
+	 * @returns A power of 10 greater than or equal to maxHeight.
+	 */
+	private getSemiLogCeiling(maxHeight: number): number {
+		if (maxHeight <= 1) return 1;
+
+		return SEMI_LOG_BASE ** Math.ceil(Math.log10(maxHeight));
+	}
+
+	/**
+	 * Converts a bucket count into the semi-log plotting domain.
+	 *
+	 * @param count The bucket count or semi-log ceiling to convert.
+	 * @returns The base-10 log value used for graph normalization.
+	 */
+	private getSemiLogValue(count: number): number {
+		if (count <= 0) return 0;
+
+		return Math.log10(count + 1);
+	}
+
+	/**
+	 * Draws a graph point using semi-log normalization for both vertical position
+	 * and color intensity so dense buckets remain distinguishable at large scale.
+	 *
+	 * @param y The top Y coordinate of the source row.
+	 * @param count The aggregated sample count for the current bucket.
+	 * @param semiLogMaxValue The maximum base-10 log value derived from maxHeight.
+	 * @param file The source being rendered.
+	 * @param x The canvas X coordinate for the current bucket center.
+	 * @returns The rendered dot coordinates and color used for line connections.
+	 */
 	private drawDot(
 		y: number,
 		count: number,
-		logMaxHeight: number,
+		semiLogMaxValue: number,
 		file: Source.Type,
 		x: number,
 	) {
-		const logCount = Math.log1p(count);
-		const heightRatio = logMaxHeight > 0 ? logCount / logMaxHeight : 0;
-		const dotY = y + 47 - Math.floor(heightRatio * 47);
+		const bottomY = y + GRAPH_DRAWABLE_HEIGHT;
+		const semiLogCount = this.getSemiLogValue(count);
+		const heightRatio =
+			semiLogMaxValue > 0 ? semiLogCount / semiLogMaxValue : count;
+		const dotY =
+			bottomY - Math.floor(Math.min(heightRatio, 1) * GRAPH_DRAWABLE_HEIGHT);
 		const color = Color.Entity.gradient(
 			file.settings.render_color_palette,
-			count,
+			semiLogCount,
 			{
 				min: 0,
-				max: logMaxHeight,
+				max: semiLogMaxValue,
 			},
 		);
 
