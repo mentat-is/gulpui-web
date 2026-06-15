@@ -25,7 +25,7 @@ export namespace Doc {
 		gulp_timestamp: number;
 		"gulp.source_id": Source.Id;
 		"gulp.event_code": number;
-		color_code: number;
+		number_hash: number;
 	}
 
 	export type Minified = Pick<Doc.Type, "_id" | "gulp.source_id">;
@@ -273,7 +273,11 @@ export namespace Doc {
 		public static links = (_app: App.Type, event: Doc.Type) =>
 			DataStore.links.filter((l) => l.doc_ids.some((doc) => doc === event._id));
 
-		public static normalize = (docs: Doc.Type[], field: string): Doc.Type[] => {
+		public static normalize = (
+			docs: Doc.Type[],
+			field: string,
+			hashFunction: Source.Type["settings"]["hash_function"] = "fnv1a",
+		): Doc.Type[] => {
 			for (let i = 0; i < docs.length; i++) {
 				const raw = docs[i] as any;
 				docs[i] = {
@@ -284,7 +288,10 @@ export namespace Doc {
 					),
 					"gulp.source_id": raw["gulp.source_id"],
 					"gulp.event_code": raw["gulp.event_code"],
-					color_code: Refractor.any.toNumber(Refractor.get(raw, field)),
+					number_hash: Refractor.any.toNumber(
+						Refractor.get(raw, field),
+						hashFunction,
+					),
 				} as Doc.Type;
 			}
 			return docs;

@@ -181,13 +181,15 @@ export const formatBytes = (bytes: number): string => {
 export const between = (num: number, min: number, max: number) =>
   num >= min && num <= max
 
-export function numericRepresentationOfAnyString(input: string): number {
-  let hash = 0
-  for (let i = 0; i < input.length; i++) {
-    const charCode = input.charCodeAt(i)
-    hash = (hash * 31 + charCode) % Number.MAX_SAFE_INTEGER
-  }
-  return Math.abs(hash)
+export type HashFunctionName = 'fnv1a' | 'djb2' | 'sdbm'
+
+export const HASH_FUNCTIONS: HashFunctionName[] = ['fnv1a', 'djb2', 'sdbm']
+
+export function numericRepresentationOfAnyString(
+  input: string,
+  hashFunction: HashFunctionName = 'fnv1a',
+): number {
+  return Refractor.string.toNumber(input, hashFunction)
 }
 
 export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngine(
@@ -201,12 +203,16 @@ export function numericRepresentationOfAnyValueOnlyForInternalUsageOfRenderEngin
       return (
         sum +
         (parseInt(value.toString(), 10) ||
-          numericRepresentationOfAnyString(value.toString()))
+          numericRepresentationOfAnyString(
+            value.toString(),
+            file.settings.hash_function,
+          ))
       )
     }, 0)
   }
 
-  return ((typeof key === 'string' && numericRepresentationOfAnyString(key)) ||
+  return ((typeof key === 'string' &&
+    numericRepresentationOfAnyString(key, file.settings.hash_function)) ||
     (typeof key === 'number' ? key : NaN) ||
     0)
 }
@@ -286,6 +292,35 @@ export async function sleep(ms = 0) {
 export type NodeFile = NonNullable<NonNullable<ChangeEvent<HTMLInputElement>['target']['files']>[0]>
 
 export class Refractor {
+  private static readonly HASH_MOD = 8000
+
+  private static readonly hash = {
+    fnv1a: (str: string) => {
+      let hash = 0x811c9dc5
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i)
+        hash = Math.imul(hash, 0x01000193)
+      }
+      return hash >>> 0
+    },
+    djb2: (str: string) => {
+      let hash = 5381
+      for (let i = 0; i < str.length; i++) {
+        hash = Math.imul(hash, 33) + str.charCodeAt(i)
+      }
+      return hash >>> 0
+    },
+    sdbm: (str: string) => {
+      let hash = 0
+      for (let i = 0; i < str.length; i++) {
+        hash =
+          str.charCodeAt(i) +
+          Math.imul(hash, 65599)
+      }
+      return hash >>> 0
+    }
+  }
+
   public static readonly reflect = {
     toVar: <T extends Record<string, any>>(obj: T) => {
       const reflection: Record<string, any> = {};
@@ -297,20 +332,24 @@ export class Refractor {
   }
 
   public static readonly string = {
-    toNumber: (str: string) => {
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = (hash * 31 + str.charCodeAt(i)) >>> 0;
-      }
-      return hash % 8000;
+    toNumber: (
+      str: string,
+      hashFunction: HashFunctionName = 'fnv1a',
+    ) => {
+      const algorithm =
+        Refractor.hash[hashFunction] ?? Refractor.hash.fnv1a
+      return algorithm(str) % Refractor.HASH_MOD
     }
   }
 
   public static readonly any = {
-    toNumber: (value: any): number => {
+    toNumber: (
+      value: any,
+      hashFunction: HashFunctionName = 'fnv1a',
+    ): number => {
       switch (typeof value) {
         case 'string':
-          return Refractor.string.toNumber(value);
+          return Refractor.string.toNumber(value, hashFunction);
         case 'number':
           return value;
         case 'bigint':

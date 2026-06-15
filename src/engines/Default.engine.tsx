@@ -104,7 +104,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 
 			this.renderer.ctx.fillStyle = Color.Entity.gradient(
 				palette,
-				events[i].color_code,
+				events[i].number_hash,
 				range,
 			);
 			this.renderer.ctx.fillRect(x, y, 1, 47);
@@ -164,7 +164,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 					};
 
 		for (let i = skip; i < events.length; i++) {
-			const value = events[i].color_code;
+			const value = events[i].number_hash;
 			if (value > range.max) range.max = value;
 			if (value < range.min) range.min = value;
 		}

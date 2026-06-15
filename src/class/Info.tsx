@@ -411,6 +411,7 @@ export class Info implements InfoProps {
 					const events = Doc.Entity.normalize(
 						m.payload.docs ?? [],
 						file.settings.field,
+						file.settings.hash_function,
 					);
 					bufferedEvents.push(...events);
 					if (
@@ -800,6 +801,7 @@ export class Info implements InfoProps {
 						const events = Doc.Entity.normalize(
 							m.payload.docs ?? [],
 							"gulp.event_code",
+							"fnv1a",
 						);
 						bufferedEvents.push(...events);
 						if (
@@ -979,9 +981,15 @@ export class Info implements InfoProps {
 			(m) => {
 				// let source = Source.Entity.id(this.app, i).settings.field)
 				let source = this.app.general.loadings.byRequestId.get(req_id);
-				let field = Source.Entity.id(this.app, source as Source.Id).settings
-					.field;
-				const events = Doc.Entity.normalize(m.payload.docs ?? [], field);
+				const sourceSettings = Source.Entity.id(
+					this.app,
+					source as Source.Id,
+				).settings;
+				const events = Doc.Entity.normalize(
+					m.payload.docs ?? [],
+					sourceSettings.field,
+					sourceSettings.hash_function,
+				);
 				bufferedEvents.push(...events);
 
 				if (
@@ -1613,6 +1621,7 @@ export class Info implements InfoProps {
 				const events = Doc.Entity.normalize(
 					m.payload.docs || [],
 					"gulp.event_code",
+					"fnv1a",
 				);
 				bufferedEvents.push(...events);
 				accumulatedCount += events.length;
@@ -1877,7 +1886,10 @@ export class Info implements InfoProps {
 			...settings,
 		} satisfies Source.Type["settings"];
 
-		if (!Source.Entity.isEventKeyFetched(this.app, id, [newSettings.field])) {
+		if (
+			newSettings.hash_function !== file.settings.hash_function ||
+			!Source.Entity.isEventKeyFetched(this.app, id, [newSettings.field])
+		) {
 			this.refetch({ ids: id, refetchKeys: { [id]: [newSettings.field] } });
 		}
 
@@ -2570,6 +2582,17 @@ export class Info implements InfoProps {
 		this.setInfoByKey(pointers, "timeline", "pointers");
 	};
 
+	private getSourceSettings = (): Internal.Session.SourceSettings => ({
+		source_settings: Object.fromEntries(
+			this.app.target.files.map((file) => [
+				file.id,
+				{
+					hash_function: file.settings.hash_function,
+				},
+			]),
+		) as Internal.Session.SourceSettings["source_settings"],
+	});
+
 	session_create = async ({
 		name,
 		icon = Default.Icon.SESSION,
@@ -2617,6 +2640,7 @@ export class Info implements InfoProps {
 			},
 			filters: this.app.target.filters,
 			hidden: this.app.hidden,
+			source_settings: this.getSourceSettings(),
 		});
 
 		if (!this.app.general.user) {
@@ -2693,6 +2717,25 @@ export class Info implements InfoProps {
 	};
 
 	session_load = async (session: Internal.Session.Data) => {
+		const sourceSettings = session.source_settings?.source_settings ?? {};
+		this.setInfoByKey(
+			(files) =>
+				files.map((file) => {
+					const savedSettings = sourceSettings[file.id];
+					return {
+						...file,
+						selected: session.selected.files.includes(file.id),
+						settings: savedSettings
+							? {
+									...file.settings,
+									...savedSettings,
+								}
+							: file.settings,
+					};
+				}),
+			"target",
+			"files",
+		);
 		this.setInfoByKey(session.timeline.target, "timeline", "target");
 		this.setInfoByKey(session.timeline.frame, "timeline", "frame");
 		this.setInfoByKey(session.timeline.filter, "timeline", "filter");
@@ -2710,11 +2753,6 @@ export class Info implements InfoProps {
 			Context.Entity.select(this.app, session.selected.contexts),
 			"target",
 			"contexts",
-		);
-		this.setInfoByKey(
-			Source.Entity.select(this.app, session.selected.files),
-			"target",
-			"files",
 		);
 		this.setInfoByKey(session.filters, "target", "filters");
 		if (session.hidden && typeof session.hidden === "object") {
