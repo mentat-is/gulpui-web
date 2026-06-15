@@ -18,7 +18,6 @@ import s from "./styles/QueriesHistory.module.css";
 interface QueriesHistoryProps {
 	list: Query.Type[];
 	onSelect: (q: Query.Type, applySource: boolean) => void;
-	onSelect: (q: Query.Type, applySource: boolean) => void;
 }
 
 /**
