@@ -52,8 +52,15 @@ export namespace NotePoint {
 					toast.error("Event could not be retrieved");
 					return;
 				}
-				let field = Source.Entity.id(Info.app, note.source_id).settings.field;
-				const [event] = Doc.Entity.normalize([fetched], field);
+				const sourceSettings = Source.Entity.id(
+					Info.app,
+					note.source_id,
+				).settings;
+				const [event] = Doc.Entity.normalize(
+					[fetched],
+					sourceSettings.field,
+					sourceSettings.hash_function,
+				);
 				Info.events_add([event]);
 
 				const sourceId = event["gulp.source_id"];

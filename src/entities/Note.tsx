@@ -98,8 +98,12 @@ export namespace Note {
 			app: App.Type,
 			note: Note.Type,
 		): Note.Type => {
-			let field = Source.Entity.id(app, note.source_id).settings.field;
-			note.doc = Doc.Entity.normalize([note.doc], field)[0];
+			const sourceSettings = Source.Entity.id(app, note.source_id).settings;
+			note.doc = Doc.Entity.normalize(
+				[note.doc],
+				sourceSettings.field,
+				sourceSettings.hash_function,
+			)[0];
 			return note;
 		};
 

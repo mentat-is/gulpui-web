@@ -115,6 +115,7 @@ export function Timeline() {
 		app.timeline.frame.min,
 		app.timeline.filter,
 		app.timeline.target,
+		app.target.files,
 		app.target.filters,
 		app.hidden,
 		debouceSessionAutoSave,

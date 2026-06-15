@@ -10,7 +10,12 @@ import { Note } from "./Note";
 import { User } from "./User";
 import { Glyph } from "./Glyph";
 import { Engine } from "@/class/Engine.dto";
-import { generateUUID, Refractor } from "@/ui/utils";
+import {
+	generateUUID,
+	HASH_FUNCTIONS,
+	type HashFunctionName,
+	Refractor,
+} from "@/ui/utils";
 import { Request } from "./Request";
 import { Application } from "@/context/Application.context";
 import { Button } from "@/ui/Button";
@@ -76,6 +81,7 @@ export namespace Source {
 		settings: {
 			offset: number;
 			field: keyof Doc.Type;
+			hash_function: HashFunctionName;
 			render_color_palette: Color.Gradient;
 			render_engine: Engine.List;
 			frequency_sample: number; //value in millisecondi
@@ -341,7 +347,11 @@ export namespace Source {
 				color: file.color ?? exist.color,
 				selected: file.selected ?? exist.selected ?? false,
 				pinned: file.pinned ?? exist.pinned ?? false,
-				settings: file.settings ?? exist.settings ?? Internal.Settings.default,
+				settings: {
+					...Internal.Settings.default,
+					...(exist.settings ?? {}),
+					...(file.settings ?? {}),
+				},
 				total: file.total ?? details?.doc_count ?? 0,
 				// @ts-ignore
 				nanotimestamp: { min, max, ...file.nanotimestamp },
@@ -937,6 +947,9 @@ export namespace Source {
 			const [frequency_sample, setFrequencySample] = useState<number>(
 				source.settings.frequency_sample,
 			);
+			const [hash_function, setHashFunction] = useState<HashFunctionName>(
+				source.settings.hash_function,
+			);
 
 			/**
 			 * Saves the updated source settings and optionally updates the associated context color.
@@ -950,6 +963,7 @@ export namespace Source {
 					render_engine,
 					offset,
 					field,
+					hash_function,
 					frequency_sample,
 				});
 
@@ -1129,6 +1143,33 @@ export namespace Source {
 										>
 											<Icon name={i.img} />
 											{i.title}
+										</UISelect.Item>
+									))}
+								</UISelect.Content>
+							</UISelect.Root>
+						</Stack>
+						<Stack
+							dir="column"
+							gap={6}
+							ai="flex-start"
+						>
+							<Label value="Hash function" />
+							<UISelect.Root
+								onValueChange={(value: HashFunctionName) =>
+									setHashFunction(value)
+								}
+								value={hash_function}
+							>
+								<UISelect.Trigger data-no-icon>
+									{hash_function}
+								</UISelect.Trigger>
+								<UISelect.Content>
+									{HASH_FUNCTIONS.map((value) => (
+										<UISelect.Item
+											key={value}
+											value={value}
+										>
+											{value}
 										</UISelect.Item>
 									))}
 								</UISelect.Content>

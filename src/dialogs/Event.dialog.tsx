@@ -1952,7 +1952,7 @@ export function EventIndicator({
 			RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;
 		return Color.Entity.gradient(
 			file.settings.render_color_palette,
-			event.color_code,
+			event.number_hash,
 			range,
 		);
 	}, [event, app.target.files, file]);
