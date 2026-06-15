@@ -8,7 +8,7 @@ import s from './styles/QueriesHistory.module.css';
 
 interface QueriesHistoryProps {
   list: Query.Type[];
-  onSelect: (q: Query.Type) => void;
+  onSelect: (q: Query.Type, applySource: boolean) => void;
 }
 
 /**
@@ -42,7 +42,7 @@ export const QueriesHistory = memo(({ list, onSelect }: QueriesHistoryProps) => 
                         icon="Check"
                         variant="glass"
                         className={s.lastFilterApplyButton}
-                        onClick={() => onSelect(q)}
+                        onClick={() => onSelect(q, true)}
                       />
                     </div>
                   </TooltipTrigger>
