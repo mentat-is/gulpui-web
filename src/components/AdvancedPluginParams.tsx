@@ -17,6 +17,8 @@ import { CustomParameters } from './CustomParameters'
 import { SummaryTable } from './AdvancedPluginParams/SummaryTable'
 import { MappingPanel, MappingData } from './AdvancedPluginParams/MappingPanel'
 import { SigmaMappingPanel, SigmaMappingData } from './AdvancedPluginParams/SigmaMappingPanel'
+import { LastMappingsPanel } from './AdvancedPluginParams/LastMappingsPanel'
+import { deleteSavedPluginMapping, loadSavedPluginMappings, persistPluginMappings, SavedPluginMapping } from './AdvancedPluginParams/mappingPersistence'
 
 import { Textarea } from '@/ui/Textarea'
 import { cn } from '@impactium/utils'
@@ -54,7 +56,7 @@ export function AdvancedPluginParams({
   applyText,
   onReset
 }: AdvancedPluginParamsProps) {
-  const { app } = Application.use()
+  const { app, Info } = Application.use()
   const { t } = Locale.use()
   const [open, setOpen] = useState(false)
 
@@ -71,6 +73,8 @@ export function AdvancedPluginParams({
   const [mappings, setMappings] = useState<MappingData[]>([])
   const [additionalMappings, setAdditionalMappings] = useState<MappingData[]>([])
   const [sigmaMappings, setSigmaMappings] = useState<SigmaMappingData[]>([])
+  const [savedMappings, setSavedMappings] = useState<SavedPluginMapping[]>([])
+  const [savedMappingsLoading, setSavedMappingsLoading] = useState(false)
 
   const methods = useMemo(() => plugin ? Mapping.Entity.methods(app, plugin.filename) : [], [app, plugin])
   const mappingsList = useMemo(() => plugin && mappingFile ? Mapping.Entity.mappings(app, plugin.filename, mappingFile) : [], [app, plugin, mappingFile])
@@ -80,6 +84,7 @@ export function AdvancedPluginParams({
 
   // Panel States
   const [isMappingPanelOpen, setIsMappingPanelOpen] = useState(false)
+  const [isLastMappingsPanelOpen, setIsLastMappingsPanelOpen] = useState(false)
   const [editingMapping, setEditingMapping] = useState<MappingData | null>(null)
   const [editingMappingIndex, setEditingMappingIndex] = useState<number | null>(null)
   const [editingMappingType, setEditingMappingType] = useState<'mappings' | 'additional'>('mappings')
@@ -187,23 +192,116 @@ export function AdvancedPluginParams({
     }
   }, [customParams, customParamsMode]);
 
+  /**
+   * Inserts or replaces a mapping entry while keeping mapping_id unique.
+   *
+   * @param currentMappings - Existing mapping entries from the target list.
+   * @param data - Mapping entry to insert or update.
+   * @param editingIndex - Explicit edit index when updating from the editor.
+   * @returns A new mapping list with a single entry for the provided mapping_id.
+   */
+  const upsertMappingById = (
+    currentMappings: MappingData[],
+    data: MappingData,
+    editingIndex: number | null,
+  ): MappingData[] => {
+    const normalizedData = {
+      ...data,
+      id: data.id.trim(),
+    }
+    const existingIndex = currentMappings.findIndex((mapping, index) => {
+      if (editingIndex !== null && index === editingIndex) {
+        return false
+      }
+
+      return mapping.id === normalizedData.id
+    })
+
+    if (editingIndex !== null) {
+      const nextMappings = currentMappings.filter((_, index) => index !== existingIndex)
+      nextMappings[editingIndex > existingIndex && existingIndex !== -1 ? editingIndex - 1 : editingIndex] = normalizedData
+      return nextMappings
+    }
+
+    if (existingIndex !== -1) {
+      const nextMappings = [...currentMappings]
+      nextMappings[existingIndex] = normalizedData
+      return nextMappings
+    }
+
+    return [...currentMappings, normalizedData]
+  }
+
+  /**
+   * Saves a mapping from the edit panel into the selected mapping collection.
+   *
+   * @param data - Mapping object created or updated in the mapping editor.
+   */
   const handleSaveMapping = (data: MappingData) => {
     if (editingMappingType === 'mappings') {
-      if (editingMappingIndex !== null) {
-        const newArr = [...mappings]
-        newArr[editingMappingIndex] = data
-        setMappings(newArr)
-      } else {
-        setMappings([...mappings, data])
-      }
+      setMappings((currentMappings) => upsertMappingById(currentMappings, data, editingMappingIndex))
+      setMappingId(data.id.trim())
     } else {
-      if (editingMappingIndex !== null) {
-        const newArr = [...additionalMappings]
-        newArr[editingMappingIndex] = data
-        setAdditionalMappings(newArr)
-      } else {
-        setAdditionalMappings([...additionalMappings, data])
-      }
+      setAdditionalMappings((currentMappings) => upsertMappingById(currentMappings, data, editingMappingIndex))
+    }
+  }
+
+  /**
+   * Loads saved custom mappings for the selected plugin into the Last Mappings panel.
+   *
+   * @returns A promise that resolves after the saved mappings are loaded or a failure is handled.
+   */
+  const openLastMappingsPanel = async () => {
+    if (!plugin?.filename) {
+      toast.error(t('advancedParams.selectPluginBeforeLoadingSavedMappings'))
+      return
+    }
+
+    setSavedMappingsLoading(true)
+    setIsLastMappingsPanelOpen(true)
+
+    try {
+      const savedPluginMappings = await loadSavedPluginMappings(plugin.filename)
+      setSavedMappings(savedPluginMappings)
+    } catch {
+      setSavedMappings([])
+      toast.error(t('advancedParams.failedLoadSavedMappings'))
+    } finally {
+      setSavedMappingsLoading(false)
+    }
+  }
+
+  /**
+   * Restores a saved custom mapping into the active mapping list.
+   *
+   * @param savedMapping - Saved mapping selected from IndexedDB history.
+   * @returns void
+   */
+  const loadSavedMapping = (savedMapping: SavedPluginMapping) => {
+    setMappings((currentMappings) => upsertMappingById(currentMappings, savedMapping.mapping, null))
+    setMappingId(savedMapping.mapping_id)
+    setIsLastMappingsPanelOpen(false)
+    toast.success('Saved mapping loaded')
+  }
+
+  /**
+   * Deletes a saved custom mapping from IndexedDB for the selected plugin.
+   *
+   * @param savedMapping - Persisted mapping record selected for deletion.
+   * @returns A promise that resolves when the saved mappings state is refreshed.
+   */
+  const deleteSavedMapping = async (savedMapping: SavedPluginMapping) => {
+    if (!plugin?.filename) {
+      toast.error('Select a plugin before deleting saved mappings')
+      return
+    }
+
+    try {
+      const savedPluginMappings = await deleteSavedPluginMapping(plugin.filename, savedMapping.mapping_id)
+      setSavedMappings(savedPluginMappings)
+      toast.success('Saved mapping deleted')
+    } catch {
+      toast.error('Failed to delete saved mapping')
     }
   }
 
@@ -218,24 +316,70 @@ export function AdvancedPluginParams({
   }
 
   /**
+   * Transforms mapping editor rows into the keyed backend mapping object.
+   *
+   * @param mappingEntries - Mapping rows currently present in the editor.
+   * @returns Backend-ready mapping object keyed by mapping_id.
+   */
+  const buildMappingsObject = (mappingEntries: MappingData[]): Record<string, Record<string, unknown>> => {
+    const mappingsObject: Record<string, Record<string, unknown>> = {}
+
+    mappingEntries.forEach((mappingEntry) => {
+      const { id, ...mappingData } = mappingEntry
+      const mappingId = id.trim()
+
+      if (mappingId) {
+        mappingsObject[mappingId] = mappingData as Record<string, unknown>
+      }
+    })
+
+    return mappingsObject
+  }
+
+  /**
+   * Uploads a single mapping row to the backend mapping-file endpoint.
+   *
+   * @param mapping - Mapping row selected from the mapping summary table.
+   * @returns A promise that resolves after the upload attempt is handled.
+   */
+  const uploadMapping = async (mapping: MappingData): Promise<void> => {
+    if (!plugin?.filename) {
+      toast.error('Select a plugin before uploading mappings')
+      return
+    }
+
+    const mappingsObject = buildMappingsObject([mapping])
+
+    if (Object.keys(mappingsObject).length === 0) {
+      toast.error('Mapping ID is required before upload')
+      return
+    }
+
+    try {
+      await Info.mapping_file_upload({
+        metadata: {
+          plugin: [plugin.filename],
+        },
+        mappings: mappingsObject,
+      }, false)
+      toast.success('Mapping uploaded')
+    } catch {
+      toast.error('Failed to upload mapping')
+    }
+  }
+
+  /**
    * Orchestrates the transformation of UI state into a flat 'settings' object structure.
    * It handles conditional deletions of empty parameters, number conversions, 
-   * and object mapping transformations before calling the update callback.
+   * mapping persistence, and object transformations.
+   *
+   * @returns A promise that resolves after the configuration is persisted and applied.
    */
-  const apply = () => {
+  const apply = async () => {
     try {
       // Transforming list-based UI states back into keyed objects used by the backend.
-      const mappingsObj: Record<string, any> = {}
-      mappings.forEach(m => {
-        const { id, ...rest } = m
-        mappingsObj[id] = rest
-      })
-
-      const additionalMappingsObj: Record<string, any> = {}
-      additionalMappings.forEach(m => {
-        const { id, ...rest } = m
-        additionalMappingsObj[id] = rest
-      })
+      const mappingsObj = buildMappingsObject(mappings)
+      const additionalMappingsObj = buildMappingsObject(additionalMappings)
 
       const sigmaObj: Record<string, any> = {}
       sigmaMappings.forEach(s => {
@@ -295,6 +439,11 @@ export function AdvancedPluginParams({
       // Removing legacy/internal keys that might have leaked into the state object.
       delete payload.timestamp_offset_msec
       delete payload.mapping_parameters
+
+      if (plugin?.filename && mappings.length > 0) {
+        const savedPluginMappings = await persistPluginMappings(plugin.filename, mappings)
+        setSavedMappings(savedPluginMappings)
+      }
 
       updatePluginParams(payload)
       toast.success(t('advancedParams.applied'))
@@ -407,13 +556,26 @@ export function AdvancedPluginParams({
 
             <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
               <Label value={t('advancedParams.mappings')} />
-              <Button variant='secondary' onClick={() => { setEditingMappingType('mappings'); setEditingMapping(null); setEditingMappingIndex(null); setIsMappingPanelOpen(true) }}>
-                {t('advancedParams.addMapping')}
-              </Button>
+              <Stack dir='row' gap={8} ai='center'>
+                <Button variant='secondary' onClick={openLastMappingsPanel} disabled={!plugin?.filename}>
+                  {t('advancedParams.lastMappings')}
+                </Button>
+                <Button variant='secondary' onClick={() => { setEditingMappingType('mappings'); setEditingMapping(null); setEditingMappingIndex(null); setIsMappingPanelOpen(true) }}>
+                  {t('advancedParams.addMapping')}
+                </Button>
+              </Stack>
             </Stack>
             <SummaryTable 
               columns={[{ key: 'id', label: t('advancedParams.mappingId') }, { key: 'agent_type', label: t('advancedParams.agentType') }, { key: 'description', label: t('common.description') }]} 
               data={mappings}
+              actions={[
+                {
+                  icon: 'Save',
+                  label: 'Upload mapping',
+                  variant: 'glass',
+                  onClick: (item) => uploadMapping(item),
+                }
+              ]}
               onEdit={(item, index) => { setEditingMappingType('mappings'); setEditingMapping(item); setEditingMappingIndex(index); setIsMappingPanelOpen(true) }}
               onDelete={(_, index) => setMappings(mappings.filter((__, i) => i !== index))}
             />
@@ -498,6 +660,14 @@ export function AdvancedPluginParams({
           setOpen={setIsMappingPanelOpen} 
           onSave={handleSaveMapping} 
           initialData={editingMapping} 
+        />
+        <LastMappingsPanel
+          open={isLastMappingsPanelOpen}
+          setOpen={setIsLastMappingsPanelOpen}
+          savedMappings={savedMappings}
+          loading={savedMappingsLoading}
+          onLoad={loadSavedMapping}
+          onDelete={deleteSavedMapping}
         />
         <SigmaMappingPanel 
           open={isSigmaPanelOpen} 
