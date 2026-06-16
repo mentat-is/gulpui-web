@@ -34,6 +34,7 @@ import { Operation } from '@/entities/Operation'
 import { Source } from '@/entities/Source'
 import { Request } from '@/entities/Request'
 import { Extension } from '@/context/Extension.context'
+import { Locale } from '@/locales'
 
 export namespace DetachedApp {
   export interface ProviderProps {
@@ -337,9 +338,11 @@ export function DetachedAppProvider({
 
   return (
     <Application.Context.Provider value={props}>
-      <Extension.Provider>
-        {children}
-      </Extension.Provider>
+      <Locale.Provider>
+        <Extension.Provider>
+          {children}
+        </Extension.Provider>
+      </Locale.Provider>
     </Application.Context.Provider>
   )
 }
