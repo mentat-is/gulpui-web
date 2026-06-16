@@ -21,7 +21,6 @@ import { Request } from "./Request";
 import { Application } from "@/context/Application.context";
 import { Button } from "@/ui/Button";
 import { useMemo, useState, Fragment, ChangeEvent, useEffect } from "react";
-import { toast } from "sonner";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Internal } from "./addon/Internal";
 import { Color } from "./Color";
@@ -49,7 +48,6 @@ import {
 import { Separator } from "@radix-ui/react-select";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Label } from "@/ui/Label";
-import { log } from "console";
 import { toast } from "sonner";
 
 export namespace Source {
@@ -1018,7 +1016,9 @@ export namespace Source {
 		export function Banner({ source }: Settings.Banner.Props) {
 			const { Info, app, spawnBanner, destroyBanner } = Application.use();
 			const [render_color_palette, setRenderColorPalette] =
-				useState<Color.Gradient>(Color.normalizeGradient(source.settings.render_color_palette));
+				useState<Color.Gradient>(
+					Color.normalizeGradient(source.settings.render_color_palette),
+				);
 			const [offset, setOffset] = useState<number>(source.settings.offset);
 			const [render_engine, setEngine] = useState<Engine.List>(
 				source.settings.render_engine,
