@@ -193,6 +193,15 @@ export namespace GulpDataset {
 			description?: string;
 		}
 	}
+
+	export namespace MappingFileUpload {
+		export interface Payload {
+			metadata: {
+				plugin: string[];
+			};
+			mappings: Record<string, Record<string, unknown>>;
+		}
+	}
 }
 
 interface RefetchOptions {
@@ -1461,6 +1470,47 @@ export class Info implements InfoProps {
 		const result = await this._mappingFileListPromise;
 		this._mappingFileListPromise = null;
 		return result;
+	};
+
+	/**
+	 * Uploads or updates a mapping JSON file on the backend.
+	 *
+	 * @param payload - Mapping file JSON body containing metadata.plugin and mappings.
+	 * @param failIfExists - Whether the backend should reject an existing mapping file.
+	 * @returns A promise that resolves after the backend upload and mapping list refresh.
+	 */
+	mapping_file_upload = async (
+		payload: GulpDataset.MappingFileUpload.Payload,
+		failIfExists = false,
+	): Promise<void> => {
+		const pluginName = payload.metadata.plugin[0] || "mapping";
+		const mappingId = Object.keys(payload.mappings)[0] || "custom";
+		const fileName = `${pluginName.replace(/\.[^.]+$/, "")}_${mappingId}.json`;
+		const formData = new FormData();
+
+		formData.append(
+			"file",
+			new Blob([JSON.stringify(payload, null, 2)], {
+				type: "application/json",
+			}),
+			fileName,
+		);
+
+		const response = await api("/mapping_file_upload", {
+			method: "POST",
+			query: {
+				fail_if_exists: failIfExists,
+			},
+			body: formData,
+			deassign: true,
+			raw: true,
+		});
+
+		if (!response || response.status === "error") {
+			throw new Error("Mapping file upload failed");
+		}
+
+		await this.mapping_file_list();
 	};
 
 	/**
