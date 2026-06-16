@@ -68,8 +68,15 @@ export namespace Locale {
     const [language, setLanguageState] = useState<Language>(() => isLanguage(userLanguage) ? userLanguage : defaultLanguage);
 
     useEffect(() => {
-      setLanguageState(isLanguage(userLanguage) ? userLanguage : defaultLanguage);
-    }, [userLanguage]);
+      if (!app.general.user) {
+        setLanguageState(defaultLanguage);
+        return;
+      }
+
+      if (isLanguage(userLanguage) && userLanguage !== language) {
+        setLanguageState(userLanguage);
+      }
+    }, [app.general.user, language, userLanguage]);
 
     const locale = localeByCode[language] ?? localeByCode[defaultLanguage] ?? { code: defaultLanguage, label: defaultLanguage, dir: "ltr" };
 
@@ -82,7 +89,7 @@ export namespace Locale {
     const setLanguage = useCallback((next: Language) => {
       if (!isLanguage(next)) return;
       setLanguageState(next);
-      if (app.general.user) {
+      if (app.general.user && app.general.user.user_data?.ui_language !== next) {
         void Info.user_set_data("ui_language", next);
       }
     }, [Info, app.general.user]);
