@@ -1,6 +1,6 @@
 .button {
 	display: inline-flex;
-	width: min-content;
+	width: fit-content;
 	align-items: center;
 	justify-content: center;
 	line-height: 8px;
@@ -141,6 +141,7 @@
 }
 
 .withImage {
+	width: fit-content;
 }
 
 .lg.withImage {
@@ -148,6 +149,7 @@
 }
 
 .revert {
+	width: fit-content;
 	padding: 0 8px 0 12px;
 	flex-direction: row-reverse;
 }

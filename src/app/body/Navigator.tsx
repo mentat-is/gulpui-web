@@ -581,8 +581,8 @@ export function Navigator({
             />
           </Popover.Trigger>
           <Popover.Content>
-            <Stack dir='column' gap={3}>
-              <Label value={t('navigator.selectChatVersion')} />
+            <Stack dir='column' gap={3} ai='stretch' className={s.chat}>
+              <Label value={t('navigator.selectChatVersion')} style={{ whiteSpace: 'nowrap' }} />
               <Stack>
                 <Button
                   variant="glass"
