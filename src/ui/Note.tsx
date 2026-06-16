@@ -20,6 +20,7 @@ import { useMemo, useState } from "react";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip";
+import { Locale } from "@/locales";
 
 export namespace NotePoint {
 	export interface Props extends Omit<
@@ -39,6 +40,7 @@ export namespace NotePoint {
 
 	export function FetchEventBanner({ note }: { note: Note.Type }) {
 		const { app, Info, spawnDialog, destroyBanner } = Application.use();
+		const { t } = Locale.use();
 		const [loading, setLoading] = useState<boolean>(false);
 
 		const fetch = async () => {
@@ -49,7 +51,7 @@ export namespace NotePoint {
 					note.operation_id,
 				);
 				if (!fetched) {
-					toast.error("Event could not be retrieved");
+					toast.error(t("notePoint.fetchFailed"));
 					return;
 				}
 				const sourceSettings = Source.Entity.id(
@@ -89,7 +91,7 @@ export namespace NotePoint {
 
 		return (
 			<UIBanner
-				title="Fetch event"
+				title={t("notePoint.fetchTitle")}
 				done={
 					<Button
 						loading={loading}
@@ -100,9 +102,7 @@ export namespace NotePoint {
 				}
 			>
 				<p>
-					The event linked to note <code>{note.name}</code> is not currently
-					loaded in the timeline (it may have been filtered out). Fetch it from
-					the server to view its details?
+					{t("notePoint.fetchDescriptionBefore")} <code>{note.name}</code> {t("notePoint.fetchDescriptionAfter")}
 				</p>
 			</UIBanner>
 		);

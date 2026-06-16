@@ -18,6 +18,7 @@ import { Button } from "@/ui/Button";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Internal } from "./addon/Internal";
+import { Locale } from "@/locales";
 
 export namespace Note {
 	export const name = "Note";
@@ -172,6 +173,7 @@ export namespace Note {
 		}
 		export function Banner({ note, ...props }: Note.Delete.Banner.Props) {
 			const { Info, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [loading, setLoading] = useState<boolean>(false);
 			const [isSubmited, setIsSubmited] = useState<boolean>(false);
 
@@ -194,20 +196,20 @@ export namespace Note {
 				} else {
 					destroyBanner();
 				}
-				toast(`Note.Entity ${note.name} has been deleted successfully`);
+				toast(t("note.deleted", { name: note.name }));
 			};
 
 			return (
 				<UIBanner
-					title="Delete note"
+					title={t("note.deleteTitle")}
 					done={<DeleteButton />}
 					{...props}
 				>
 					<p>
-						Are you sure you want to delete note: <code>{note.name}</code>
+						{t("note.deleteConfirm")} <code>{note.name}</code>
 					</p>
 					<Toggle
-						option={["No, don`t delete", "Yes, i`m sure"]}
+						option={[t("common.noDontDelete"), t("common.yesImSure")]}
 						checked={isSubmited}
 						onCheckedChange={setIsSubmited}
 					/>

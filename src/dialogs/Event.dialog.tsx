@@ -59,6 +59,7 @@ import { Filter } from "@/entities/Filter";
 import { Note } from "@/entities/Note";
 import { Color } from "@/entities/Color";
 import { Extension } from "@/context/Extension.context";
+import { Locale } from "@/locales";
 
 // --- UTILITIES ---
 
@@ -1049,6 +1050,7 @@ export function DisplayEventDialog({
 
 	const { Info, app, spawnBanner, currentDocument } = Application.use();
 	const { extensions } = Extension.use();
+	const { t } = Locale.use();
 
 	// --- STATE ---
 	const [json, setJSON] = useState<Record<string, string> | null>(null);
@@ -1304,7 +1306,7 @@ export function DisplayEventDialog({
 			const object = parseToKeyValue(textSelected);
 
 			if (Object.keys(object).length === 0) {
-				toast(`Invalid selection. Unable to add new filters`);
+				toast(t("eventDialog.invalidFilterSelection"));
 				return;
 			}
 
@@ -1395,21 +1397,21 @@ export function DisplayEventDialog({
 								name="CodeBracket"
 								size={14}
 							/>{" "}
-							Raw
+							{t("eventDialog.raw")}
 						</TabsTrigger>
 						<TabsTrigger value="table">
 							<Icon
 								name="Table"
 								size={14}
 							/>{" "}
-							Table
+							{t("eventDialog.table")}
 						</TabsTrigger>
 						<TabsTrigger value="tree">
 							<Icon
 								name="GitFork"
 								size={14}
 							/>{" "}
-							Tree
+							{t("eventDialog.tree")}
 						</TabsTrigger>
 					</TabsList>
 
@@ -1585,20 +1587,20 @@ export function DisplayEventDialog({
 						}
 						icon="StickyNote"
 					>
-						Create new note
+						{t("eventDialog.createNewNote")}
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!selection}
 						onClick={handleCreateLink}
 						icon="GitPullRequestCreate"
 					>
-						Create new link
+						{t("eventDialog.createNewLink")}
 					</ContextMenuItem>
 					<ContextMenuItem
 						onClick={handleCopyJson}
 						icon="Copy"
 					>
-						Copy
+						{t("common.copy")}
 					</ContextMenuItem>
 					<ContextMenuItem
 						onClick={() => {
@@ -1625,7 +1627,7 @@ export function DisplayEventDialog({
 						}}
 						icon="Filter"
 					>
-						New filter
+						{t("eventDialog.newFilter")}
 					</ContextMenuItem>
 					<ContextMenuItem
 						disabled={!selection}
@@ -1675,7 +1677,7 @@ export function DisplayEventDialog({
 						}}
 						icon="PrismColor"
 					>
-						Enrich
+						{t("targetMenu.enrich")}
 					</ContextMenuItem>
 					{storageId &&
 						typeof storageId === "string" &&
@@ -1684,7 +1686,7 @@ export function DisplayEventDialog({
 								onClick={handleDownloadLogFile}
 								icon="Download"
 							>
-								Download log file
+								{t("eventDialog.downloadLogFile")}
 							</ContextMenuItem>
 						)}
 				</ContextMenuContent>
@@ -1719,9 +1721,9 @@ export function DisplayEventDialog({
 						style={{ color: "var(--red-500)" }}
 					/>
 					<p style={{ color: "var(--red-500)", fontWeight: "bold" }}>
-						Source was deleted
+						{t("eventDialog.sourceDeleted")}
 					</p>
-					<p style={{ opacity: 0.6 }}>This event is no longer available.</p>
+					<p style={{ opacity: 0.6 }}>{t("eventDialog.eventUnavailable")}</p>
 				</Stack>
 			</Dialog>
 		);
@@ -1744,26 +1746,26 @@ export function DisplayEventDialog({
 							<Button
 								onClick={handleCreateNote}
 								variant="secondary"
-								title="Add a new note to the current event"
+								title={t("eventDialog.addNoteTitle")}
 								icon="StickyNote"
 							>
-								Create new note
+								{t("eventDialog.createNewNote")}
 							</Button>
 							<Button
 								onClick={handleCreateLink}
 								variant="secondary"
-								title="Create link with the current event as origin."
+								title={t("eventDialog.createLinkOriginTitle")}
 								icon="GitPullRequestCreate"
 							>
-								Create link
+								{t("eventDialog.createLink")}
 							</Button>
 							<Button
 								onClick={() => handleEnrich()}
 								variant="secondary"
-								title="Enrich the current event"
+								title={t("eventDialog.enrichCurrentTitle")}
 								icon="PrismColor"
 							>
-								Enrich
+								{t("targetMenu.enrich")}
 							</Button>
 							{Object.values(extensions).some((ext) =>
 								Array.isArray(ext.type)
@@ -1773,19 +1775,19 @@ export function DisplayEventDialog({
 								<Button
 									onClick={handleSendData}
 									variant="secondary"
-									title="Send IOCs to other systems"
+									title={t("eventDialog.sendIocsTitle")}
 									icon="Send"
 								>
-									Send Data
+									{t("eventDialog.sendData")}
 								</Button>
 							)}
 							<Button
 								onClick={handleConnectLink}
 								variant="secondary"
-								title="connect the current event with a link"
+								title={t("eventDialog.connectLinkTitle")}
 								icon="GitPullRequestCreateArrow"
 							>
-								Connect link
+								{t("eventDialog.connectLink")}
 							</Button>
 						</Stack>
 						<Extension.Component
@@ -1835,21 +1837,21 @@ export function DisplayEventDialog({
 							onClick={handleCopyJson}
 							icon="Copy"
 						>
-							Copy JSON
+							{t("eventDialog.copyJson")}
 						</Button>
 						<Button
 							variant="secondary"
 							onClick={handleDownloadJson}
 							icon="Download"
-							title="Download JSON"
+							title={t("eventDialog.downloadJson")}
 						>
-							Download JSON
+							{t("eventDialog.downloadJson")}
 						</Button>
 						<Button
 							onClick={handleFocusTimeline}
 							variant="secondary"
 							icon="Crosshair"
-							title="Focus timeline"
+							title={t("eventDialog.focusTimeline")}
 						/>
 						<Button
 							onClick={() => {
@@ -1870,7 +1872,7 @@ export function DisplayEventDialog({
 									!opId
 								);
 							})()}
-							title="Flag event"
+							title={t("eventDialog.flagEvent")}
 						/>
 					</Stack>
 				</Fragment>

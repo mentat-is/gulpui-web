@@ -43,6 +43,7 @@ import {
 } from "@/ui/Tooltip";
 import { AdvancedPluginParams } from "@/components/AdvancedPluginParams";
 import { Internal } from "@/entities/addon/Internal";
+import { Locale } from "@/locales";
 
 export namespace FileEntity {
 	export interface IngestOptions {
@@ -192,6 +193,7 @@ export const ContextSelector = ({
 	setContext: (value: string) => void;
 }) => {
 	const contexts = Operation.Entity.contexts(app);
+	const { t } = Locale.use();
 
 	return (
 		<Stack
@@ -199,7 +201,7 @@ export const ContextSelector = ({
 			gap={6}
 			ai="flex-start"
 		>
-			<Label value="Context" />
+			<Label value={t("common.context")} />
 			<Select.Root
 				value={context}
 				onValueChange={setContext}
@@ -209,7 +211,7 @@ export const ContextSelector = ({
 					<Icon
 						name={Context.Entity.icon(Context.Entity.findByName(app, context)!)}
 					/>
-					{context || "Select context"}
+					{context || t("upload.selectContext")}
 				</Select.Trigger>
 				<Select.Content>
 					{contexts.map((c) => (
@@ -300,6 +302,7 @@ export const FilePreview = React.memo(
 			ref,
 		) => {
 			const { Info, app } = Application.use();
+			const { t } = Locale.use();
 			const [preview, setPreview] = useState<Doc.Type[] | null>(null);
 			const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
@@ -373,7 +376,7 @@ export const FilePreview = React.memo(
 
 					setPreview(nextPreview);
 				} catch {
-					toast.error("Failed to load file preview");
+					toast.error(t("upload.previewLoadFailed"));
 					setPreview([]);
 				} finally {
 					setIsPreviewLoading(false);
@@ -458,8 +461,8 @@ export const FilePreview = React.memo(
 									onChange={fileOffsetInputChangeHandler}
 									icon="LayoutShift"
 									variant="highlighted"
-									placeholder="0 milliseconds"
-									label="Offset"
+									placeholder={t("common.zeroMilliseconds")}
+									label={t("advancedParams.offset")}
 								/>
 								<PluginSelector
 									settings={settings}
@@ -543,6 +546,7 @@ const PluginSelector = ({
 	updateSettings: (update: Partial<FileEntity.Settings>) => void;
 }) => {
 	const { app } = Application.use();
+	const { t } = Locale.use();
 
 	const plugins = Mapping.Entity.plugins(app);
 
@@ -557,7 +561,7 @@ const PluginSelector = ({
 			ai="flex-start"
 			data-input
 		>
-			<Label value="Plugin" />
+			<Label value={t("upload.plugin")} />
 			<Select.Root
 				value={settings.plugin || ""}
 				onValueChange={(plugin) => updateSettings({ plugin })}
@@ -567,8 +571,8 @@ const PluginSelector = ({
 					{settings.plugin
 						? cutExtension(settings.plugin)
 						: plugins.length > 0
-							? "Select plugin"
-							: "No plugins"}
+							? t("upload.selectPlugin")
+							: t("upload.noPlugins")}
 				</Select.Trigger>
 				<Select.Content>
 					{plugins.map((p) => (
@@ -594,6 +598,8 @@ export const MethodSelector = ({
 	updateSettings: (update: Partial<FileEntity.Settings>) => void;
 	methods: string[];
 }) => {
+	const { t } = Locale.use();
+
 	return methods.length > 0 ? (
 		<Stack
 			dir="column"
@@ -601,7 +607,7 @@ export const MethodSelector = ({
 			ai="flex-start"
 			data-input
 		>
-			<Label value="Mapping File" />
+			<Label value={t("upload.mappingFile")} />
 			<Select.Root
 				value={settings.method || ""}
 				onValueChange={(method) => updateSettings({ method })}
@@ -611,7 +617,7 @@ export const MethodSelector = ({
 					{settings.method
 						? settings.method
 						: methods.length > 0
-							? "Select method"
+							? t("upload.selectMethod")
 							: "-"}
 				</Select.Trigger>
 				<Select.Content>
@@ -637,15 +643,17 @@ export const MappingSelector = ({
 	settings: FileEntity.Settings;
 	updateSettings: (update: Partial<FileEntity.Settings>) => void;
 	mappings: string[];
-}) =>
-	mappings.length > 0 ? (
+}) => {
+	const { t } = Locale.use();
+
+	return mappings.length > 0 ? (
 		<Stack
 			dir="column"
 			gap={6}
 			ai="flex-start"
 			data-input
 		>
-			<Label value="Mapping ID" />
+			<Label value={t("advancedParams.mappingId")} />
 			<Select.Root
 				value={settings.mapping || ""}
 				onValueChange={(mapping) => updateSettings({ mapping })}
@@ -655,9 +663,9 @@ export const MappingSelector = ({
 					{settings.mapping
 						? settings.mapping
 						: mappings.length > 0
-							? "Select mapping"
+							? t("upload.selectMapping")
 							: settings.method
-								? "No mappings"
+								? t("upload.noMappings")
 								: "-"}
 				</Select.Trigger>
 				<Select.Content>
@@ -673,6 +681,7 @@ export const MappingSelector = ({
 			</Select.Root>
 		</Stack>
 	) : null;
+};
 
 export const FrameSelector = ({
 	isCustomFrame,
@@ -681,6 +690,8 @@ export const FrameSelector = ({
 	isCustomFrame: boolean;
 	setFrame: SetState<FileEntity.IngestOptions["frame"]>;
 }) => {
+	const { t } = Locale.use();
+
 	if (!isCustomFrame) {
 		return null;
 	}
@@ -692,7 +703,7 @@ export const FrameSelector = ({
 		const value = event.target.valueAsDate;
 
 		if (!value) {
-			toast.error("Date is not valid", {
+			toast.error(t("upload.invalidDate"), {
 				richColors: true,
 			});
 			return;
@@ -741,6 +752,7 @@ export const ApplySettinsForAllFiles = ({
 	setSettings: (s: FileEntity.Settings) => void;
 }) => {
 	const { app } = Application.use();
+	const { t } = Locale.use();
 	const [isOpen, setIsOpen] = useState(false);
 
 	/**
@@ -801,7 +813,7 @@ export const ApplySettinsForAllFiles = ({
 					variant="secondary"
 					icon="Settings"
 				>
-					Select settings for all files
+					{t("upload.selectSettingsForAll")}
 				</Button>
 			</Popover.Trigger>
 			<Popover.Content>
@@ -845,7 +857,7 @@ export const ApplySettinsForAllFiles = ({
 							setIsOpen(false);
 						}}
 					>
-						Apply!
+						{t("common.apply")}
 					</Button>
 				</Stack>
 			</Popover.Content>
@@ -855,6 +867,7 @@ export const ApplySettinsForAllFiles = ({
 
 export function UploadBanner() {
 	const { Info, app, spawnBanner } = Application.use();
+	const { t } = Locale.use();
 	const [files, setFiles] = useState<File[]>([]);
 	const [context, setContext] =
 		useState<FileEntity.IngestOptions["context"]>("");
@@ -1084,11 +1097,11 @@ export function UploadBanner() {
 	return (
 		<Banner
 			className={s.banner}
-			title="Ingest files"
+			title={t("upload.title")}
 			done={DoneButton}
 		>
 			<Toggle
-				option={["Files", "Package"]}
+				option={[t("upload.filesMode"), t("upload.packageMode")]}
 				checked={ingestMode === "PACKAGE"}
 				onCheckedChange={(c) => {
 					setIngestMode(c ? "PACKAGE" : "FILES");
@@ -1096,7 +1109,7 @@ export function UploadBanner() {
 				}}
 			/>
 			<Toggle
-				option={["Ingest everything", "Use limits"]}
+				option={[t("upload.ingestEverything"), t("upload.useLimits")]}
 				checked={customFrame}
 				onCheckedChange={setCustomFrame}
 			/>
@@ -1151,7 +1164,7 @@ export function UploadBanner() {
 					icon="Cross"
 					onClick={() => setFiles([])}
 				>
-					Clear selection
+					{t("upload.clearSelection")}
 				</Button>
 			</Stack>
 			<Stack
@@ -1161,11 +1174,11 @@ export function UploadBanner() {
 				{newContext ? (
 					<Input
 						variant="highlighted"
-						label="Context"
+						label={t("common.context")}
 						icon={Default.Icon.CONTEXT}
 						value={context}
 						onChange={(e) => setContext(e.target.value)}
-						placeholder="Context name"
+						placeholder={t("globalQuery.contextNamePlaceholder")}
 						className={s.reset_font}
 					/>
 				) : (
@@ -1186,7 +1199,7 @@ export function UploadBanner() {
 					/>
 					<Label
 						htmlFor="newContext"
-						value="Create new context"
+						value={t("upload.createNewContext")}
 						cursor="pointer"
 					/>
 				</Stack>

@@ -22,6 +22,7 @@ import { WindowBridge } from '@/lib/WindowBridge'
 import { DetachedAppProvider } from '@/context/DetachedApp.provider'
 import { DataStore } from '@/store/DataStore'
 import { AIAssistantWindow } from '@/components/AIAssistantWindow'
+import { Locale } from '@/locales'
 
 
 export namespace Navigator {
@@ -39,6 +40,7 @@ export function Navigator({
   ...props
 }: Navigator.Props) {
   const { Info, app, spawnDialog, spawnBanner, setHighlightsOverlay, dialogsDocked, setDialogsDocked, isDetachedWindow } = Application.use()
+  const { t } = Locale.use()
   const { x: scrollX } = useScroll()
   const [timestamp, setTimestamp] = useState<number>(_timestamp)
   const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true)
@@ -470,7 +472,7 @@ export function Navigator({
     >
       <Button
         variant="tertiary"
-        title='Zoom in'
+        title={t('navigator.zoomIn')}
         ref={size_minus}
         onClick={() => zoom(false)}
         icon="ZoomIn"
@@ -478,7 +480,7 @@ export function Navigator({
       />
       <Button
         variant="tertiary"
-        title='Zoom out'
+        title={t('navigator.zoomOut')}
         ref={size_plus}
         onClick={() => zoom(true)}
         icon="ZoomOut"
@@ -486,7 +488,7 @@ export function Navigator({
       />
       <Button
         variant="tertiary"
-        title='Reset scale'
+        title={t('navigator.resetScale')}
         ref={size_reset}
         onClick={resetScaleAndScroll}
         icon="AlignHorizontalSpaceBetween"
@@ -494,7 +496,7 @@ export function Navigator({
       />
       <Button
         variant="tertiary"
-        title='Create highlight'
+        title={t('navigator.createHighlight')}
         icon="ChartBarBig"
         onClick={createHighlightButtonClickHandler}
         size='md'
@@ -503,16 +505,16 @@ export function Navigator({
         className={s.filter}
         variant='highlighted'
         value={localFilterValue}
-        placeholder={filterMode === 'files' ? 'Filter by filenames and context' : 'Filter Events by raw logs'}
+        placeholder={filterMode === 'files' ? t('navigator.filterFilesPlaceholder') : t('navigator.filterEventsPlaceholder')}
         onChange={handleFilterChange}
         onKeyDown={handleKeyDown}
         icon={filterMode === 'files' ? 'Filter' : 'Activity'}
         onIconClick={handleIconClick}
-        iconTitle={filterMode === 'files' ? 'Switch to Event Filtering' : 'Switch to File Filtering'}
+        iconTitle={filterMode === 'files' ? t('navigator.switchToEventFiltering') : t('navigator.switchToFileFiltering')}
       />
       <Button
         variant="tertiary"
-        title="Search"
+        title={t('common.search')}
         icon="Search"
         onClick={() => triggerSearch(localFilterValue, filterMode)}
         size='md'
@@ -522,7 +524,7 @@ export function Navigator({
           <Button
             size='md'
             variant="tertiary"
-            title='Visibility settings'
+            title={t('navigator.visibilitySettings')}
             icon={app.hidden.notes || app.hidden.links ? 'ToggleOffAlt' : 'ToggleOnAlt'}
           />
         </Popover.Trigger>
@@ -531,7 +533,7 @@ export function Navigator({
             {(Object.keys(app.hidden) as unknown as Array<keyof App.Type['hidden']>).map((key) => {
               return (
                 <Stack key={key} jc='space-between'>
-                  <Label value={`Show ${key.replace(/([A-Z])/g, " $1").toLowerCase()}`} />
+                  <Label value={t(`navigator.visibility.${key}`)} />
                   <Switch checked={!app.hidden[key]} onCheckedChange={() => Info.toggle_visibility(key)} />
                 </Stack>
               )
@@ -543,12 +545,12 @@ export function Navigator({
         <Popover.Trigger asChild>
           <Button size='md'
             variant="tertiary"
-            title="Go to timestamp"
+            title={t('navigator.goToTimestamp')}
             icon="Clock" />
         </Popover.Trigger>
         <Popover.Content className={s.goto}>
           <Stack dir="column" ai="flex-start">
-            <p>Go to timestamp:</p>
+            <p>{t('navigator.goToTimestamp')}:</p>
             <Stack>
               <Input
                 variant="highlighted"
@@ -572,7 +574,7 @@ export function Navigator({
           <Popover.Trigger asChild>
             <Button
               variant={selectionOpen ? 'default' : 'tertiary'}
-              title='Select chat version'
+              title={t('navigator.selectChatVersion')}
               icon='Sparkles'
               onClick={handleChatButtonClick}
               size='md'
@@ -580,23 +582,23 @@ export function Navigator({
           </Popover.Trigger>
           <Popover.Content>
             <Stack dir='column' gap={3}>
-              <Label value="Select chat version" />
+              <Label value={t('navigator.selectChatVersion')} />
               <Stack>
                 <Button
                   variant="glass"
                   onClick={() => selectChat('free')}
                   icon="Sparkle"
-                  title="Use Free Version"
+                  title={t('navigator.useFreeVersion')}
                 >
-                  AIAssistant Chat
+                  {t('navigator.aiAssistantChat')}
                 </Button>
                 <Button
                   variant="default"
                   onClick={() => selectChat('pro')}
                   icon="Sparkles"
-                  title="Use Pro Version"
+                  title={t('navigator.useProVersion')}
                 >
-                  AIAssistant Pro
+                  {t('navigator.aiAssistantPro')}
                 </Button>
               </Stack>
             </Stack>
@@ -605,7 +607,7 @@ export function Navigator({
       ) : (
         <Button
           variant='tertiary'
-          title='Open AI Assistant Chat'
+          title={t('navigator.openAiAssistantChat')}
           icon='Sparkle'
           onClick={handleChatButtonClick}
           size='md'
@@ -613,7 +615,7 @@ export function Navigator({
       )}
       <Button
         variant='tertiary'
-        title={isDialogPanelDetached ? 'Dock dialog panel' : 'Undock dialog panel'}
+        title={isDialogPanelDetached ? t('navigator.dockDialogPanel') : t('navigator.undockDialogPanel')}
         icon={isDialogPanelDetached ? 'PanelLeftOpen' : 'PictureInPicture2'}
         onClick={() => setDialogsDocked((value) => !value)}
         size='md'

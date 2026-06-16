@@ -14,6 +14,7 @@ import { Label } from "@/ui/Label";
 import { Stack } from "@/ui/Stack";
 import { Icon } from "@impactium/icons";
 import s from "./styles/QueriesHistory.module.css";
+import { Locale } from "@/locales";
 
 interface QueriesHistoryProps {
 	list: Query.Type[];
@@ -30,6 +31,7 @@ export const QueriesHistory = memo(
 	({ list, onSelect }: QueriesHistoryProps) => {
 		const [applySource, setApplySource] = useState(true);
 		const [isOpen, setIsOpen] = useState(false);
+		const { t } = Locale.use();
 
 		if (list.length === 0) return null;
 
@@ -49,7 +51,7 @@ export const QueriesHistory = memo(
 						icon="ClockFading"
 						variant="secondary"
 					>
-						Last filters
+						{t("queriesHistory.lastFilters")}
 					</Button>
 				</Popover.Trigger>
 				<Popover.Content className={s.lastFilters}>
@@ -70,7 +72,7 @@ export const QueriesHistory = memo(
 										/>
 										<Label
 											htmlFor="apply-source-checkbox"
-											value="Apply sources from filter"
+											value={t("queriesHistory.applySources")}
 											cursor="pointer"
 										/>
 										<Icon
@@ -80,9 +82,7 @@ export const QueriesHistory = memo(
 									</Stack>
 								</TooltipTrigger>
 								<TooltipContent className={s.applySourceTooltip}>
-									When enabled, applies the source files from the selected
-									filter. When disabled, only applies the filter conditions to
-									your currently selected sources.
+									{t("queriesHistory.applySourcesTooltip")}
 								</TooltipContent>
 							</Tooltip>
 						</TooltipProvider>

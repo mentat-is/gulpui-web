@@ -6,6 +6,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Label } from '@/ui/Label'
 import s from '../styles/AdvancedPluginParams.module.css'
 import { cn } from '@impactium/utils'
+import { Locale } from '@/locales'
 
 /**
  * SigmaMappingData defines the structure for service-specific sigma detection 
@@ -30,6 +31,7 @@ interface SigmaMappingPanelProps {
  * service field and filter values.
  */
 export function SigmaMappingPanel({ initialData, onSave, open, setOpen }: SigmaMappingPanelProps) {
+  const { t } = Locale.use()
   const [name, setName] = useState('')
   const [serviceField, setServiceField] = useState('')
   const [serviceValuesStr, setServiceValuesStr] = useState('')
@@ -79,28 +81,28 @@ export function SigmaMappingPanel({ initialData, onSave, open, setOpen }: SigmaM
         >
         <Stack dir="column" gap={16} ai="stretch">
           <Dialog.Title className={cn(s.titleBase, s.titleS)}>
-            {initialData ? 'Update Sigma Mapping' : 'Add Sigma Mapping'}
+            {initialData ? t('advancedParams.updateSigmaMapping') : t('advancedParams.addSigmaMapping')}
           </Dialog.Title>
           
           <Input 
-            label="Mapping Key / Name" 
-            placeholder="e.g. windefend" 
+            label={t('advancedParams.mappingKeyName')} 
+            placeholder={t('advancedParams.sigmaNamePlaceholder')} 
             value={name} 
             onChange={(e) => setName(e.target.value)} 
              
           />
           
           <Input 
-            label="Service Field" 
-            placeholder="e.g. winlog.channel" 
+            label={t('advancedParams.serviceField')} 
+            placeholder={t('advancedParams.serviceFieldPlaceholder')} 
             value={serviceField} 
             onChange={(e) => setServiceField(e.target.value)} 
              
           />
           
           <Input 
-            label="Service Values (comma separated)" 
-            placeholder="e.g. Microsoft-Windows-Windows Defender" 
+            label={t('advancedParams.serviceValuesComma')} 
+            placeholder={t('advancedParams.serviceValuesPlaceholder')} 
             value={serviceValuesStr} 
             onChange={(e) => setServiceValuesStr(e.target.value)} 
              
@@ -111,14 +113,14 @@ export function SigmaMappingPanel({ initialData, onSave, open, setOpen }: SigmaM
               variant="secondary" 
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button 
               variant="tertiary" 
               disabled={!name || !serviceField || !serviceValuesStr} 
               onClick={handleSave}
             >
-              {initialData ? 'Update' : 'Add'}
+              {initialData ? t('common.update') : t('common.add')}
             </Button>
           </Stack>
         </Stack>

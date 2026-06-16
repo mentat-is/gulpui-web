@@ -39,6 +39,7 @@ import { Highlight } from "@/entities/Highlight";
 import { Mapping } from "@/entities/Mapping";
 import { Internal } from "@/entities/addon/Internal";
 import { ingestWorkerManager } from "@/workers/IngestWorker.manager";
+import { translate } from "@/locales/core";
 
 export namespace GulpDataset {
 	export namespace GetAvailableLoginApi {
@@ -473,13 +474,13 @@ export class Info implements InfoProps {
 				(m) => m.req_id === req_id,
 				(m) => {
 					if (m.payload.obj.status !== "done") {
-						toast.error("Enrichment failed", {
+						toast.error(translate("enrichment.failed"), {
 							icon: <Icon name="Stop" />,
 							richColors: true,
 						});
 					} else {
-						toast.success("Enrichment finished", {
-							description: `Total processed documents: ${m.payload.obj.data.total_hits ?? 0}`,
+						toast.success(translate("info.enrichmentFinished"), {
+							description: translate("info.totalProcessedDocuments", { count: m.payload.obj.data.total_hits ?? 0 }),
 							icon: <Icon name="Check" />,
 						});
 					}
@@ -510,7 +511,7 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success("Document has been enriched successfully", {
+					toast.success(translate("doc.enriched"), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
@@ -539,7 +540,7 @@ export class Info implements InfoProps {
 		);
 
 		if (!response.ok) {
-			toast.error("Failed to download log file", { richColors: true });
+			toast.error(translate("source.downloadLogFailed"), { richColors: true });
 			return;
 		}
 
@@ -890,14 +891,14 @@ export class Info implements InfoProps {
 		if (preview) {
 			if (!resp || (resp || {})?.data?.total_hits === 0) {
 				toast.error(
-					"This filter returned no results. No matching documents were found",
+					translate("filter.noResults"),
 					{
 						icon: <Icon name="FaceUnhappy" />,
 						richColors: true,
 					},
 				);
 			} else {
-				toast(`Total hits for this filter is ${resp.data?.total_hits}`);
+				toast(translate("filter.totalHits", { count: resp.data?.total_hits }));
 			}
 		}
 
@@ -1082,7 +1083,7 @@ export class Info implements InfoProps {
 						) as Note.Type[];
 						if (newItems.length > 0) {
 							newItems.forEach((note) => this.AddNoteToDataStore(note));
-							toast.success(`Fetched ${newItems.length} notes`, {
+							toast.success(translate("notes.fetchedCount", { count: newItems.length }), {
 								richColors: true,
 							});
 						}
@@ -1106,14 +1107,14 @@ export class Info implements InfoProps {
 		if (preview) {
 			if (!resp || (resp || {})?.data?.total_hits === 0) {
 				toast.error(
-					"This filter returned no results. No matching documents were found",
+					translate("filter.noResults"),
 					{
 						icon: <Icon name="FaceUnhappy" />,
 						richColors: true,
 					},
 				);
 			} else {
-				toast(`Total hits for this filter is ${resp.data?.total_hits}`);
+				toast(translate("filter.totalHits", { count: resp.data?.total_hits }));
 			}
 		}
 
@@ -1560,7 +1561,7 @@ export class Info implements InfoProps {
 		if (succeeded.length > 0 && failed.length === 0) {
 			if (succeeded.length === 1) {
 				toast.success(
-					`Operation ${succeeded[0].name} has been deleted successfully`,
+					translate("operation.deleted", { name: succeeded[0].name }),
 					{
 						icon: <Icon name="Check" />,
 						richColors: true,
@@ -1568,7 +1569,7 @@ export class Info implements InfoProps {
 				);
 			} else {
 				toast.success(
-					`${succeeded.length} operations have been deleted successfully`,
+					translate("operation.deletedCount", { count: succeeded.length }),
 					{
 						icon: <Icon name="Check" />,
 						richColors: true,
@@ -1577,21 +1578,21 @@ export class Info implements InfoProps {
 			}
 		} else if (succeeded.length > 0 && failed.length > 0) {
 			toast.warning(
-				`${succeeded.length} operations deleted, ${failed.length} failed`,
+				translate("operation.deletePartialFailed", { succeeded: succeeded.length, failed: failed.length }),
 				{
-					description: `Failed: ${failed.map((f) => f.name).join(", ")}`,
+					description: translate("operation.deleteFailedList", { names: failed.map((f) => f.name).join(", ") }),
 					icon: <Icon name="Warning" />,
 					richColors: true,
 				},
 			);
 		} else if (failed.length > 0) {
 			if (failed.length === 1) {
-				toast.error(`Failed deleting operation ${failed[0].name}`, {
+				toast.error(translate("operation.deleteFailed", { name: failed[0].name }), {
 					icon: <Icon name="Stop" />,
 					richColors: true,
 				});
 			} else {
-				toast.error(`Failed deleting ${failed.length} operations`, {
+				toast.error(translate("operation.deleteFailedCount", { count: failed.length }), {
 					icon: <Icon name="Stop" />,
 					richColors: true,
 				});
@@ -1640,14 +1641,14 @@ export class Info implements InfoProps {
 				toast: {
 					onSuccess: () =>
 						toast.success(
-							`Source ${source.name} has been deleted successfully`,
+							translate("source.deleted", { name: source.name }),
 							{
 								icon: <Icon name="Check" />,
 								richColors: true,
 							},
 						),
 					onError: () =>
-						toast.error(`Failed deleting source ${source.name}`, {
+						toast.error(translate("source.deleteFailed", { name: source.name }), {
 							icon: <Icon name="Stop" />,
 							richColors: true,
 						}),
@@ -1692,7 +1693,7 @@ export class Info implements InfoProps {
 			},
 			onError: (err: string) => {
 				isCompletedOrError = true;
-				toast.error(`Ingestion of ${file.name} failed: ${err}`);
+				toast.error(translate("source.ingestionFailed", { name: file.name, error: err }));
 				this.activeUploads.delete(id);
 				this.delLoading(id);
 				this.render();
@@ -1812,8 +1813,8 @@ export class Info implements InfoProps {
 
 						const finalFile = Source.Entity.id(this.app, finalFileId);
 						if (finalFile) {
-							toast.success(`Source ${finalFile.name} ingested`, {
-								description: `Total documents: ${all.length}`,
+							toast.success(translate("source.ingested", { name: finalFile.name }), {
+								description: translate("source.totalDocuments", { count: all.length }),
 								richColors: true,
 								icon: <Icon name="Check" />,
 							});
@@ -2183,8 +2184,8 @@ export class Info implements InfoProps {
 					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
 				);
 				if (notes.length % 2500 === 0) {
-					toast(`Fetched ${notes.length} notes`, {
-						description: "Continuing...",
+					toast(translate("notes.fetchedCount", { count: notes.length }), {
+						description: translate("notes.fetchContinuing"),
 						icon: <Spinner />,
 					});
 				}
@@ -2200,7 +2201,7 @@ export class Info implements InfoProps {
 					});
 				});
 			} else {
-				const message = `${notes.length} notes has been fetched in ${offset / 500} rounds`;
+				const message = translate("notes.fetchedInRounds", { count: notes.length, rounds: offset / 500 });
 				Logger.log(message, Info);
 				DataStore.notes = [...notes];
 				Note.Entity.invalidateCache();
@@ -2315,13 +2316,13 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`Group has been added successfully`, {
+					toast.success(translate("permissions.groupAdded"), {
 						icon: <Icon name="Check" />,
 						richColors: true,
 					}),
 				onError: (response) =>
-					toast.error(`Failed adding group`, {
-						description: `Reason ${response.data.__error.msg}`,
+					toast.error(translate("permissions.groupAddFailed"), {
+						description: translate("common.reason", { reason: response.data.__error.msg }),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2339,13 +2340,13 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`User has been added successfully`, {
+					toast.success(translate("permissions.userAdded"), {
 						icon: <Icon name="Check" />,
 						richColors: true,
 					}),
 				onError: (response) =>
-					toast.error(`Failed adding user`, {
-						description: `Reason ${response.data.__error.msg}`,
+					toast.error(translate("permissions.userAddFailed"), {
+						description: translate("common.reason", { reason: response.data.__error.msg }),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2367,13 +2368,13 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`Group has been removed successfully`, {
+					toast.success(translate("permissions.groupRemoved"), {
 						icon: <Icon name="Check" />,
 						richColors: true,
 					}),
 				onError: (response) =>
-					toast.error(`Failed removing group`, {
-						description: `Reason ${response.data.__error.msg}`,
+					toast.error(translate("permissions.groupRemoveFailed"), {
+						description: translate("common.reason", { reason: response.data.__error.msg }),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2391,13 +2392,13 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`User has been removed successfully`, {
+					toast.success(translate("permissions.userRemoved"), {
 						icon: <Icon name="Check" />,
 						richColors: true,
 					}),
 				onError: (response) =>
-					toast.error(`Failed removing user`, {
-						description: `Reason ${response.data.__error.msg}`,
+					toast.error(translate("permissions.userRemoveFailed"), {
+						description: translate("common.reason", { reason: response.data.__error.msg }),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2439,7 +2440,7 @@ export class Info implements InfoProps {
 
 			toast: {
 				onSuccess: () =>
-					toast.success(`Note ${name} has been created successfully`, {
+					toast.success(translate("note.created", { name }), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
@@ -2483,7 +2484,7 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`Note ${name} has been updated successfully`, {
+					toast.success(translate("note.updated", { name }), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
@@ -2566,7 +2567,7 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`Link ${name} has been created successfully`, {
+					toast.success(translate("link.created", { name }), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
@@ -2606,7 +2607,7 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`Link ${name} has been updated successfully`, {
+					toast.success(translate("link.updated", { name }), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
@@ -2627,7 +2628,7 @@ export class Info implements InfoProps {
 			toast: {
 				onSuccess: () =>
 					toast.success(
-						`Event ${event._id} has been connected to link ${link.name} successfully`,
+						translate("link.eventConnected", { event: event._id, link: link.name }),
 						{
 							richColors: true,
 							icon: <Icon name="Check" />,
@@ -2649,7 +2650,7 @@ export class Info implements InfoProps {
 			toast: {
 				onSuccess: () =>
 					toast.success(
-						`Event ${event._id} has been disconnected from link ${link.name} successfully`,
+						translate("link.eventDisconnected", { event: event._id, link: link.name }),
 						{
 							richColors: true,
 							icon: <Icon name="Check" />,
@@ -2724,7 +2725,7 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success(`Highlight ${name} has been created successfully`, {
+					toast.success(translate("highlights.created", { name }), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
@@ -2863,7 +2864,7 @@ export class Info implements InfoProps {
 
 		const sessions = await this.session_list();
 		if (sessions.some((s) => s.name === name)) {
-			toast.error("Session with this name is already exist", {
+			toast.error(translate("session.nameExists"), {
 				richColors: true,
 			});
 			return;
@@ -3044,8 +3045,8 @@ export class Info implements InfoProps {
 				return sessions || [];
 			})
 			.catch((error) => {
-				toast.error("Failed to load your sessions", {
-					description: `Error message: ${JSON.stringify(error)}`,
+				toast.error(translate("session.loadFailed"), {
+					description: translate("common.errorMessage", { message: JSON.stringify(error) }),
 					icon: <Icon name="FaceSad" />,
 				});
 			});
@@ -3274,14 +3275,14 @@ export class Info implements InfoProps {
 			},
 			toast: {
 				onSuccess: () =>
-					toast.success("Access granted", {
+					toast.success(translate("auth.accessGranted"), {
 						richColors: true,
 						icon: <Icon name="Check" />,
 					}),
 				onError: (response) =>
-					toast.error(`Login failed`, {
+					toast.error(translate("auth.loginFailed"), {
 						richColors: true,
-						description: `Reason: ${response.data.__error.msg}`,
+						description: translate("common.reason", { reason: response.data.__error.msg }),
 						icon: <Icon name="Warning" />,
 					}),
 			},
@@ -3589,12 +3590,12 @@ export class Info implements InfoProps {
 				},
 				toast: {
 					onSuccess: () =>
-						toast.success("Sigma rule has been successfully applied", {
+						toast.success(translate("sigma.applied"), {
 							richColors: true,
 							icon: <Icon name="Check" />,
 						}),
 					onError: (response) =>
-						toast.error("Sigma rule has not been applied", {
+						toast.error(translate("sigma.notApplied"), {
 							richColors: true,
 							icon: <Icon name="Warning" />,
 						}),
@@ -3606,15 +3607,15 @@ export class Info implements InfoProps {
 					(m) => m.req_id === req_id,
 					(m) => {
 						if (m.payload.obj.status !== "done") {
-							toast.error("Sigma query failed", {
+							toast.error(translate("sigma.queryFailed"), {
 								icon: <Icon name="Stop" />,
 								richColors: true,
 							});
 						} else {
 							toast.success(
-								`Sigma query ${m.payload.obj.name} has been successfully finished`,
+								translate("sigma.queryFinished", { name: m.payload.obj.name }),
 								{
-									description: `Total matches: ${m.payload.obj.data.total_hits ?? 0}`,
+									description: translate("sigma.totalMatches", { count: m.payload.obj.data.total_hits ?? 0 }),
 									icon: <Icon name="Sigma" />,
 								},
 							);
@@ -3630,7 +3631,7 @@ export class Info implements InfoProps {
 								(item) => item.type === "note",
 							) as Note.Type[];
 							newItems.forEach((note) => this.AddNoteToDataStore(note));
-							toast.success(`Fetched ${newItems.length} notes`, {
+							toast.success(translate("notes.fetchedCount", { count: newItems.length }), {
 								richColors: true,
 							});
 						}

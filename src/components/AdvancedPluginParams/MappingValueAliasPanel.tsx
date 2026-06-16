@@ -6,6 +6,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Label } from '@/ui/Label'
 import s from '../styles/AdvancedPluginParams.module.css'
 import { cn } from '@impactium/utils'
+import { Locale } from '@/locales'
 
 /**
  * MappingValueAliasData represents a value translation rule for a specific field.
@@ -29,6 +30,7 @@ interface MappingValueAliasPanelProps {
  * for a designated field.
  */
 export function MappingValueAliasPanel({ initialData, onSave, open, setOpen }: MappingValueAliasPanelProps) {
+  const { t } = Locale.use()
   const [field, setField] = useState('')
   const [oldValue, setOldValue] = useState('')
   const [newValue, setNewValue] = useState('')
@@ -73,27 +75,27 @@ export function MappingValueAliasPanel({ initialData, onSave, open, setOpen }: M
         >
         <Stack dir="column" gap={16} ai="stretch">
           <Dialog.Title className={cn(s.titleBase, s.titleS)}>
-            {initialData ? 'Update Value Alias' : 'Add Value Alias'}
+            {initialData ? t('advancedParams.updateValueAlias') : t('advancedParams.addValueAlias')}
           </Dialog.Title>
           <Input 
-            label="Field Name" 
-            placeholder="e.g. network.direction" 
+            label={t('advancedParams.fieldName')} 
+            placeholder={t('advancedParams.valueAliasFieldPlaceholder')} 
             value={field} 
             onChange={(e) => setField(e.target.value)} 
             
           />
           
           <Input 
-            label="Old Value" 
-            placeholder="Original string to match" 
+            label={t('advancedParams.oldValue')} 
+            placeholder={t('advancedParams.originalStringPlaceholder')} 
             value={oldValue} 
             onChange={(e) => setOldValue(e.target.value)} 
              
           />
           
           <Input 
-            label="New Value" 
-            placeholder="Replacement string" 
+            label={t('advancedParams.newValue')} 
+            placeholder={t('advancedParams.replacementStringPlaceholder')} 
             value={newValue} 
             onChange={(e) => setNewValue(e.target.value)} 
              
@@ -104,14 +106,14 @@ export function MappingValueAliasPanel({ initialData, onSave, open, setOpen }: M
               variant="secondary" 
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button 
               variant="tertiary" 
               disabled={!field || !oldValue || !newValue} 
               onClick={handleSave}
             >
-              {initialData ? 'Update' : 'Add'}
+              {initialData ? t('common.update') : t('common.add')}
             </Button>
           </Stack>
         </Stack>

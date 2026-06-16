@@ -18,6 +18,7 @@ import { OperationPermissions } from "@/banners/Permissions.banner";
 import { cn } from "@impactium/utils";
 import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
+import { Locale } from "@/locales";
 
 export interface DisplayOperationDetailDialogProps {
 	/** Unique identifier of the operation to fetch details for. */
@@ -42,6 +43,7 @@ export function DisplayOperationDetailDialog({
 	onClose,
 }: DisplayOperationDetailDialogProps) {
 	const { app, Info, spawnBanner, destroyBanner } = Application.use();
+	const { t } = Locale.use();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [details, setDetails] =
 		useState<GulpDataset.OperationGetById.Response | null>(null);
@@ -117,7 +119,7 @@ export function DisplayOperationDetailDialog({
 	};
 
 	// Determine values to show in header depending on load state
-	const displayName = details?.name ?? fallbackName ?? "Operation Details";
+	const displayName = details?.name ?? fallbackName ?? t("operationDetails.title");
 	const iconName = Operation.Entity.icon(
 		globalOp || ({ glyph_id: fallbackGlyphId } as any),
 	);
@@ -142,13 +144,13 @@ export function DisplayOperationDetailDialog({
 					<Button
 						variant="secondary"
 						icon="PencilEdit"
-						title="Edit operation"
+						title={t("operationDetails.edit")}
 						onClick={handleEdit}
 					/>
 					<Button
 						variant="secondary"
 						icon="X"
-						title="Close dialog"
+						title={t("common.closeDialog")}
 						onClick={onClose}
 					/>
 				</div>
@@ -165,31 +167,31 @@ export function DisplayOperationDetailDialog({
 					<div className={s.section}>
 						<div className={s.detailsList}>
 							<div className={s.detailItem}>
-								<span className={s.detailLabel}>ID:</span>
+								<span className={s.detailLabel}>{t("common.id")}:</span>
 								<span className={s.detailValue}>{details.id}</span>
 							</div>
 							<div className={s.detailItem}>
-								<span className={s.detailLabel}>Name:</span>
+								<span className={s.detailLabel}>{t("common.name")}:</span>
 								<span className={s.detailValue}>{details.name}</span>
 							</div>
 							<div className={s.detailItem}>
-								<span className={s.detailLabel}>Created:</span>
+								<span className={s.detailLabel}>{t("common.created")}:</span>
 								<span className={s.detailValue}>
 									{formatUnixTimestamp(details.time_created)}
 								</span>
 							</div>
 							<div className={s.detailItem}>
-								<span className={s.detailLabel}>Owner:</span>
+								<span className={s.detailLabel}>{t("common.owner")}:</span>
 								<span className={s.detailValue}>{details.user_id}</span>
 							</div>
 							<div className={s.detailItem}>
-								<span className={s.detailLabel}>Doc Count:</span>
+								<span className={s.detailLabel}>{t("common.docCount")}:</span>
 								<span className={s.detailValue}>
 									{details.doc_count.toLocaleString()}
 								</span>
 							</div>
 							<div className={s.detailItem}>
-								<span className={s.detailLabel}>Description:</span>
+								<span className={s.detailLabel}>{t("common.description")}:</span>
 								<span className={s.detailValue}>
 									{(globalOp && globalOp.description !== undefined
 										? globalOp.description
@@ -204,7 +206,7 @@ export function DisplayOperationDetailDialog({
 									className={s.detailLabel}
 									style={{ marginBottom: 6 }}
 								>
-									Tags
+									{t("common.tags")}
 								</span>
 								{details.tags && details.tags.length > 0 ? (
 									<div className={s.badgeList}>
@@ -219,7 +221,7 @@ export function DisplayOperationDetailDialog({
 										))}
 									</div>
 								) : (
-									<span className={s.noData}>No tags associated</span>
+									<span className={s.noData}>{t("operationDetails.noTags")}</span>
 								)}
 							</div>
 						</div>
@@ -232,7 +234,7 @@ export function DisplayOperationDetailDialog({
 							jc="space-between"
 							className={s.sectionTitle}
 						>
-							<span>Permissions</span>
+							<span>{t("common.permissions")}</span>
 							<Button
 								icon="PenLine"
 								variant="secondary"
@@ -265,7 +267,7 @@ export function DisplayOperationDetailDialog({
 									className={s.detailLabel}
 									style={{ marginBottom: 6 }}
 								>
-									Users:
+									{t("common.users")}:
 								</span>
 								{details.granted_user_ids &&
 								details.granted_user_ids.length > 0 ? (
@@ -281,7 +283,7 @@ export function DisplayOperationDetailDialog({
 										))}
 									</div>
 								) : (
-									<span className={s.noData}>No users granted access</span>
+									<span className={s.noData}>{t("operationDetails.noUsers")}</span>
 								)}
 							</div>
 
@@ -297,7 +299,7 @@ export function DisplayOperationDetailDialog({
 									className={s.detailLabel}
 									style={{ marginBottom: 6 }}
 								>
-									Groups:
+									{t("common.groups")}:
 								</span>
 								{details.granted_user_group_ids &&
 								details.granted_user_group_ids.length > 0 ? (
@@ -313,7 +315,7 @@ export function DisplayOperationDetailDialog({
 										))}
 									</div>
 								) : (
-									<span className={s.noData}>No groups granted access</span>
+									<span className={s.noData}>{t("operationDetails.noGroups")}</span>
 								)}
 							</div>
 						</div>
@@ -325,7 +327,7 @@ export function DisplayOperationDetailDialog({
 						if (!contexts || contexts.length === 0) return null;
 						return (
 							<div className={s.section}>
-								<div className={s.sectionTitle}>Contexts and Sources</div>
+								<div className={s.sectionTitle}>{t("operationDetails.contextsAndSources")}</div>
 								<div
 									className={s.detailsList}
 									style={{ flexDirection: "column", gap: 0 }}
@@ -377,7 +379,7 @@ export function DisplayOperationDetailDialog({
 						className={s.noData}
 						style={{ textAlign: "center", padding: "40px 0" }}
 					>
-						Failed to retrieve operation information.
+						{t("operationDetails.loadFailed")}
 					</div>
 				)
 			)}

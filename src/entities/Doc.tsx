@@ -12,6 +12,7 @@ import { Icon } from "@impactium/icons";
 import { Logger } from "@/dto/Logger.class";
 import { DataStore } from "@/store/DataStore";
 import { Refractor } from "@/ui/utils";
+import { translate } from "@/locales";
 
 export namespace Doc {
 	export const name = "Doc";
@@ -426,8 +427,8 @@ export namespace Doc {
 				}
 
 				if (!operationId) {
-					toast.error("Cannot flag document", {
-						description: "No operation selected",
+					toast.error(translate("doc.cannotFlag"), {
+						description: translate("doc.noOperationSelected"),
 						richColors: true,
 						icon: <Icon name="X" />,
 					});
@@ -440,8 +441,8 @@ export namespace Doc {
 
 				// Check limit for the specific operation
 				if (!isFlagged && operationIds.length >= 10) {
-					toast.error("Limit reached", {
-						description: "Max 10 events can be flagged per operation",
+					toast.error(translate("doc.limitReached"), {
+						description: translate("doc.flagLimitDescription"),
 						richColors: true,
 						icon: <Icon name="X" />,
 					});
@@ -456,9 +457,7 @@ export namespace Doc {
 					data[operationId] = [...operationIds, id];
 				}
 
-				toast.info(
-					`Event has been successfully ${isFlagged ? "unflagged" : "flagged"}`,
-				);
+				toast.info(translate(isFlagged ? "doc.unflagged" : "doc.flagged"));
 
 				Doc.Entity.saveFlaggedData(data);
 				return !isFlagged;

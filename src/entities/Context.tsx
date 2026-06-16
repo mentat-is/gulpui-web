@@ -14,6 +14,7 @@ import { Toggle } from '@/ui/Toggle'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { Internal } from './addon/Internal'
+import { Locale } from '@/locales'
 
 export namespace Context {
   export const name = 'Context'
@@ -128,6 +129,7 @@ export namespace Context {
     }
     export function Banner({ context, ...props }: Context.Delete.Banner.Props) {
       const { Info } = Application.use()
+      const { t } = Locale.use()
       const [isSubmited, setIsSubmited] = useState<boolean>(false)
       const [isWipe, setIsWipe] = useState<boolean>(true)
       const [loading, setLoading] = useState<boolean>(false)
@@ -149,22 +151,22 @@ export namespace Context {
         if (props.back) {
           props.back()
         }
-        toast(`Context ${context.name} deleted successfully`)
+        toast(t('context.deleted', { name: context.name }))
       }
 
       return (
-        <UIBanner title='Delete context' done={<DeleteButton />} {...props}>
+        <UIBanner title={t('context.deleteTitle')} done={<DeleteButton />} {...props}>
           <p>
-            Are you sure you want to delete context: <code>{context.name}</code>
+            {t('context.deleteConfirm')} <code>{context.name}</code>
           </p>
           <Toggle
-            option={['No, don`t delete', 'Yes, i`m sure']}
+            option={[t('common.noDontDelete'), t('common.yesImSure')]}
             checked={isSubmited}
             onCheckedChange={setIsSubmited}
           />
           {isSubmited && (
-            <Toggle
-              option={['Don`t delete data inside', 'Delete data inside']}
+	            <Toggle
+	              option={[t('context.keepData'), t('context.deleteDataInside')]}
               checked={isWipe}
               onCheckedChange={setIsWipe}
             />

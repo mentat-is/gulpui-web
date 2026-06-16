@@ -5,6 +5,7 @@ import { cn } from '@impactium/utils';
 import s from './styles/Button.module.css';
 import { Icon } from '@impactium/icons';
 import { Spinner } from './Spinner';
+import { translate } from '@/locales/core';
 
 const buttonVariants = cva(s.button, {
   variants: {
@@ -75,7 +76,7 @@ const Button = React.forwardRef<HTMLButtonElement, Button.Props>(
           ? (
             <>
               <Spinner color={color} size={iconSize + 4} />
-              {shape !== 'icon' ? placeholder ?? 'Loading...' : null}
+              {shape !== 'icon' ? placeholder ?? translate('common.loading') : null}
             </>
           )
           : <>

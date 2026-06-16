@@ -35,6 +35,7 @@ import { Operation } from "@/entities/Operation";
 import { useTheme } from "next-themes";
 import { Button } from "@/ui/Button";
 import { Color } from "@/entities/Color";
+import { Locale } from "@/locales";
 
 export namespace Canvas {
 	export interface Props extends Stack.Props {
@@ -44,6 +45,7 @@ export namespace Canvas {
 
 export function Canvas({ timeline }: Canvas.Props) {
 	const { theme } = useTheme();
+	const { t } = Locale.use();
 	const canvas_ref = useRef<HTMLCanvasElement>(
 		null as unknown as HTMLCanvasElement,
 	);
@@ -834,7 +836,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 							onClick={() => Doc.Entity.flag.reset(operation.id)}
 							icon="FlagOff"
 						>
-							Unflag all {flaggedEvents.size} documents
+							{t("doc.unflagAllDocuments", { count: flaggedEvents.size })}
 						</Button>
 					)}
 				</Stack>

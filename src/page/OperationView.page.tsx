@@ -43,6 +43,7 @@ import { Note } from "../entities/Note";
 import { Doc } from "../entities/Doc";
 import { NotePoint } from "../ui/Note";
 import { DisplayEventDialog } from "../dialogs/Event.dialog";
+import { Locale } from "@/locales";
 
 /**
  * FetchEventBannerMain — fetches a note-linked event from the server and opens its dialog
@@ -150,8 +151,9 @@ export function OperationTimeline() {
 		spawnBanner,
 		spawnDialog,
 		toggleHintOpen,
-	} = Application.use();
-	const { extensions } = Extension.use();
+		} = Application.use();
+		const { t } = Locale.use();
+		const { extensions } = Extension.use();
 
 	const applyThemeToWindow = useCallback(
 		(
@@ -642,7 +644,7 @@ export function OperationTimeline() {
 				return;
 			}
 
-			nextWindow.document.title = "Gulp Event Details";
+			nextWindow.document.title = t("operationView.eventDetailsTitle");
 			copyStylesToWindow(nextWindow);
 			dialogWindowRef.current = nextWindow;
 			nextWindow.addEventListener(
@@ -724,61 +726,61 @@ export function OperationTimeline() {
 	const menuTopItems = useMemo<MenuItem[]>(
 		() => [
 			{
-				label: "Open notes window",
+				label: t("operationView.menu.openNotesWindow"),
 				icon: "FileText",
-				category: "Notes/sources",
+				category: t("operationView.menu.notesSources"),
 				action: () => openWindow(),
 			},
 			{
-				label: "Open table window",
+				label: t("operationView.menu.openTableWindow"),
 				icon: "Table",
-				category: "Notes/sources",
+				category: t("operationView.menu.notesSources"),
 				action: () => openTableWindow(),
 			},
 			{
-				label: "Select files and contexts",
+				label: t("operationView.menu.selectFilesAndContexts"),
 				icon: "FileStack",
-				category: "Sources/filter",
+				category: t("operationView.menu.sourcesFilter"),
 				action: () => spawnBanner(<SelectFiles.Banner showSession={false} />),
 			},
 			{
-				label: "Upload files",
+				label: t("operationView.menu.uploadFiles"),
 				icon: "Upload",
-				category: "Sources/filter",
+				category: t("operationView.menu.sourcesFilter"),
 				action: () => spawnBanner(<UploadBanner />),
 			},
 			{
-				label: "Apply filters",
+				label: t("operationView.menu.applyFilters"),
 				icon: "Filter",
-				category: "Sources/filter",
+				category: t("operationView.menu.sourcesFilter"),
 				action: () => spawnBanner(<FilterFileBanner sources={[]} />),
 			},
 			{
-				label: "Query external source",
+				label: t("operationView.menu.queryExternalSource"),
 				icon: "ServerCrash",
-				category: "External",
+				category: t("operationView.menu.external"),
 				action: () => spawnBanner(<QueryExternal.Banner />),
 			},
 			{
-				label: "Bridge Manager",
+				label: t("operationView.menu.bridgeManager"),
 				icon: "Network",
-				category: "External",
+				category: t("operationView.menu.external"),
 				action: () => spawnBanner(<BridgeManager.Banner />),
 			},
 			{
-				label: "Data enrichment",
+				label: t("operationView.menu.dataEnrichment"),
 				icon: "PrismColor",
-				category: "External",
+				category: t("operationView.menu.external"),
 				action: () => spawnBanner(<Enrichment.Banner />),
 			},
 			{
-				label: "Upload sigma rule",
+				label: t("operationView.menu.uploadSigmaRule"),
 				icon: "Sigma",
-				category: "Plugins",
+				category: t("common.plugins"),
 				action: () => spawnBanner(<Sigma.Banner sources={[]} />),
 			},
 		],
-		[spawnBanner, openWindow, openTableWindow],
+		[spawnBanner, openWindow, openTableWindow, t],
 	);
 
 	/**
@@ -788,43 +790,43 @@ export function OperationTimeline() {
 	const menuBottomItems = useMemo<MenuItem[]>(
 		() => [
 			{
-				label: "Requests",
+				label: t("operationView.menu.requests"),
 				icon: "Activity",
-				category: "Configuration",
+				category: t("operationView.menu.configuration"),
 				action: () => spawnBanner(<Requests.Banner />),
 			},
 			{
-				label: "Manage Permissions",
+				label: t("operationView.menu.managePermissions"),
 				icon: "UserSettings",
-				category: "Configuration",
+				category: t("operationView.menu.configuration"),
 				action: () => spawnBanner(<Permissions.Banner />),
 			},
 			{
-				label: "Back to operations",
+				label: t("operationView.menu.backToOperations"),
 				icon: "Undo2",
-				category: "Configuration",
+				category: t("operationView.menu.configuration"),
 				action: () => spawnBanner(<Operation.Select.Banner />),
 			},
 			{
-				label: "Settings",
+				label: t("settings.title"),
 				icon: "SettingsGear",
-				category: "Configuration",
+				category: t("operationView.menu.configuration"),
 				action: () => spawnBanner(<Settings.Banner />),
 			},
 			{
-				label: hintOpen ? "Hide usage instructions" : "Show usage instructions",
+				label: hintOpen ? t("operationView.menu.hideUsageInstructions") : t("operationView.menu.showUsageInstructions"),
 				icon: "Info",
-				category: "Configuration",
+				category: t("operationView.menu.configuration"),
 				action: toggleHintOpen,
 			},
 			{
-				label: "Logout",
+				label: t("common.logout"),
 				icon: "LogOut",
-				category: "Configuration",
+				category: t("operationView.menu.configuration"),
 				action: () => spawnBanner(<Session.Save.Banner />),
 			},
 		],
-		[spawnBanner, hintOpen, toggleHintOpen],
+		[spawnBanner, hintOpen, toggleHintOpen, t],
 	);
 
 	if (!isPreloaded) {

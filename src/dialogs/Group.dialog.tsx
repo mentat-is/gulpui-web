@@ -11,6 +11,7 @@ import { Markdown } from "@/ui/Markdown";
 
 import s from "./styles/DisplayGroupDialog.module.css";
 import { Internal } from "@/entities/addon/Internal";
+import { Locale } from "@/locales";
 
 // Cache for tooltip event queries
 class TooltipEventCache {
@@ -47,6 +48,7 @@ interface DisplayGroupDialogProps {
 export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDialogProps) {
 	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
 	const { spawnDialog, Info, app } = Application.use();
+	const { t } = Locale.use();
 	const menuShellRef = useRef<HTMLDivElement>(null);
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const eventRefsMap = useRef(new Map<string, HTMLDivElement>());
@@ -236,7 +238,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 					</div>
 				</div>
 			) : isTooltipOpen && isLoadingHover && hoveredEventId === event._id ? (
-				<div style={{ fontSize: "11px" }}>Loading...</div>
+				<div style={{ fontSize: "11px" }}>{t("common.loading")}</div>
 			) : null;
 
 			const tooltipPortal = tooltipContent && eventElement ? createPortal(
@@ -299,7 +301,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				</>
 			);
 		},
-		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, showTooltip],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, showTooltip, t],
 	);
 
 	const popupStyle = useMemo(() => {
@@ -328,12 +330,12 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		return createPortal(
 			<div className={s.menuShell} style={popupStyle} ref={menuShellRef}>
 				<div className={s.menuHeader}>
-					<span className={s.menuTitle}>Events</span>
+					<span className={s.menuTitle}>{t("common.events")}</span>
 					<button
 						type="button"
 						className={s.closeButton}
 						onClick={() => onClose?.()}
-						aria-label="Close event list"
+						aria-label={t("group.closeEventList")}
 					>
 						×
 					</button>
@@ -348,7 +350,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 							checked={showTooltip}
 							onChange={(e) => handleShowPreviewChange(e.target.checked)}
 						/>
-						<span>Show preview</span>
+						<span>{t("common.showPreview")}</span>
 					</label>
 				</div>
 			</div>,
@@ -393,7 +395,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 							checked={showTooltip}
 							onChange={(e) => handleShowPreviewChange(e.target.checked)}
 						/>
-						<span>Show preview</span>
+						<span>{t("common.showPreview")}</span>
 					</label>
 				</div>
 			</Dialog>

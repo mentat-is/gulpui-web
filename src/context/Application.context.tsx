@@ -22,6 +22,7 @@ import { DataStore } from "@/store/DataStore";
 import { RenderEngine } from "@/class/RenderEngine";
 import { Operation } from "@/entities/Operation";
 import { useLocation } from "react-router-dom";
+import { translate } from "@/locales/core";
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
@@ -352,10 +353,10 @@ function _({ children }: { children: ReactNode }) {
 			if (target) {
 				spawnDialog(<DisplayEventDialog event={target} />);
 			} else {
-				toast(`Cannot open ${delta > 0 ? "previous" : "next"} event`);
+				toast(translate(delta > 0 ? "application.cannotOpenPreviousEvent" : "application.cannotOpenNextEvent"));
 			}
 		} else if (["ф", "а"].includes(key)) {
-			toast("Use English letters A and D for scrolling");
+			toast(translate("application.useEnglishScrollKeys"));
 		} else if (key === "end") {
 			event.preventDefault();
 			const target = instance.setTimelineTarget(events[0]);

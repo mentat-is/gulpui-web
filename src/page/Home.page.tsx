@@ -13,6 +13,7 @@ import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
 import { Stack } from "@/ui/Stack";
 import { Resizer } from "@/ui/Resizer";
 import { Table } from "@/components/Table";
+import { Locale } from "@/locales";
 
 export namespace Home {
 	export namespace Page {
@@ -33,6 +34,7 @@ export namespace Home {
 	export function Page(_: Home.Page.Props) {
 		const { Info, app, spawnBanner, spawnDialog, dialog, banner } =
 			Application.use();
+		const { t } = Locale.use();
 		const navigate = useNavigate();
 		const [loading, setLoading] = useState(true);
 		const [selectedIds, setSelectedIds] = useState<Set<Operation.Id>>(
@@ -169,15 +171,15 @@ export namespace Home {
 						icon="Trash2"
 						loading={deleting}
 						onClick={handleDelete}
-						title="Delete"
-						aria-label={`Delete operation ${operation.name}`}
+						title={t("common.delete")}
+						aria-label={t("home.operation.deleteAria", { name: operation.name })}
 					/>
 					<Button
 						variant="secondary"
 						icon="ArrowRight"
 						onClick={handleGo}
-						title="Go to"
-						aria-label={`Go to operation ${operation.name}`}
+						title={t("common.goTo")}
+						aria-label={t("home.operation.goToAria", { name: operation.name })}
 					/>
 				</Stack>
 			);
@@ -194,7 +196,7 @@ export namespace Home {
 				return (
 					<div className={s.result}>
 						<div className={s.resultScroll}>
-							<div className={s.emptyState}>Loading...</div>
+							<div className={s.emptyState}>{t("common.loading")}</div>
 						</div>
 					</div>
 				);
@@ -204,7 +206,7 @@ export namespace Home {
 				return (
 					<div className={s.result}>
 						<div className={s.resultScroll}>
-							<div className={s.emptyState}>No operations found.</div>
+							<div className={s.emptyState}>{t("home.operations.empty")}</div>
 						</div>
 					</div>
 				);
@@ -244,7 +246,7 @@ export namespace Home {
 						columns={[
 							{
 								key: "icon",
-								label: "Icon",
+								label: t("common.icon"),
 								width: 60,
 								render: (_, row) => (
 									<div className={s.operationIcon}>
@@ -254,12 +256,12 @@ export namespace Home {
 							},
 							{
 								key: "name",
-								label: "Name",
+								label: t("common.name"),
 								width: "auto",
 							},
 							{
 								key: "actions",
-								label: "Actions",
+								label: t("common.actions"),
 								width: 120,
 								render: (_, row) => <OperationActions operation={row} />,
 							},
@@ -273,7 +275,7 @@ export namespace Home {
 								onClick={handleBulkDelete}
 								icon="Trash2"
 							>
-								Delete selected operations ({selectedIds.size})
+								{t("home.operations.deleteSelected", { count: selectedIds.size })}
 							</Button>
 						</Stack>
 					</div>
@@ -288,13 +290,13 @@ export namespace Home {
 		const menuTopItems = useMemo<MenuItem[]>(
 			() => [
 				{
-					label: "Create new",
+					label: t("common.createNew"),
 					icon: "Plus",
-					category: "Actions",
+					category: t("common.actions"),
 					action: () => spawnBanner(<Operation.CreateOrUpdate.Banner />),
 				},
 			],
-			[spawnBanner],
+			[spawnBanner, t],
 		);
 
 		/**
@@ -304,13 +306,13 @@ export namespace Home {
 		const menuBottomItems = useMemo<MenuItem[]>(
 			() => [
 				{
-					label: "LogOut",
+					label: t("common.logout"),
 					icon: "LogOut",
-					category: "Account",
+					category: t("common.account"),
 					action: () => spawnBanner(<Session.Save.Banner />),
 				},
 			],
-			[spawnBanner],
+			[spawnBanner, t],
 		);
 
 		return (
@@ -323,7 +325,7 @@ export namespace Home {
 
 				{/* Main content: operations list */}
 				<main className={s.main}>
-					<p className={s.pageTitle}>[ Operations ]</p>
+					<p className={s.pageTitle}>{t("home.operations.title")}</p>
 					<MainContent />
 				</main>
 

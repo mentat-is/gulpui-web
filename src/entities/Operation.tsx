@@ -24,6 +24,7 @@ import { Textarea } from '@/ui/Textarea'
 import s from './styles/Operation.module.css'
 import { toast } from 'sonner'
 import { Toggle } from '@/ui/Toggle'
+import { Locale } from '@/locales'
 
 export namespace Operation {
   export const name = 'Operation'
@@ -84,6 +85,7 @@ export namespace Operation {
 
     export function Banner({ ...props }: Operation.Select.Banner.Props) {
       const { Info, app, spawnBanner } = Application.use()
+      const { t } = Locale.use()
 
       const InitializeNewOperaion = () => (
         <Button
@@ -116,7 +118,7 @@ export namespace Operation {
       )
 
       const NoOperations = () => (
-        <UISelect.Item value='X' disabled>There is no operations</UISelect.Item>
+        <UISelect.Item value='X' disabled>{t('operationSelect.empty')}</UISelect.Item>
       )
 
       const SelectTrigger = () => {
@@ -125,7 +127,7 @@ export namespace Operation {
         return (
           <UISelect.Trigger>
             <UISelect.Icon name={Operation.Entity.icon((selected || {}) as Operation.Type)} />
-            {selected ? selected.name : 'Select operation or create new one'}
+            {selected ? selected.name : t('operationSelect.placeholder')}
           </UISelect.Trigger>
         )
       }
@@ -140,7 +142,7 @@ export namespace Operation {
 
       return (
         <UIBanner
-          title='Choose operation'
+          title={t('operationSelect.title')}
           option={<InitializeNewOperaion />}
           done={<DoneButton />}
           loading={loading}
@@ -190,6 +192,7 @@ export namespace Operation {
      */
     export function Banner({ operation = {} as Operation.Type, ...props }: Operation.CreateOrUpdate.Banner.Props) {
       const { Info, spawnBanner, destroyBanner } = Application.use();
+      const { t } = Locale.use();
       const [name, setName] = useState<string>(operation.name ?? '');
       const [icon, setIcon] = useState<Glyph.Id | null>(operation.glyph_id ?? Glyph.getIdByName(Default.Icon.OPERATION));
       const [description, setDescription] = useState<string>(operation.description ?? '');
@@ -202,12 +205,12 @@ export namespace Operation {
           query: { name },
           body: { description },
           toast: {
-            onSuccess: () => toast.success(`Operation has been created successfully`, {
+            onSuccess: () => toast.success(t('operationEdit.created'), {
               icon: <Icon name='Check' />,
               richColors: true,
             }),
-            onError: response => toast.error(`Failed creating operation`, {
-              description: `Reason ${response.data.__error.msg}`,
+            onError: response => toast.error(t('operationEdit.createFailed'), {
+              description: t('common.reason', { reason: response.data.__error.msg }),
               icon: <Icon name='Check' />,
               richColors: true,
             })
@@ -266,25 +269,25 @@ export namespace Operation {
       }
 
       return (
-        <UIBanner title={operation.id ? 'Update operation' : 'Create new operation'} done={<DoneButton />} className={s.wrapper} {...props}>
+        <UIBanner title={operation.id ? t('operationEdit.updateTitle') : t('operationEdit.createTitle')} done={<DoneButton />} className={s.wrapper} {...props}>
           <Input
-            label='Name'
+            label={t('common.name')}
             value={name}
             variant='highlighted'
             icon='TextTitle'
             onChange={(e) => setName(e.currentTarget.value)}
-            placeholder='Name of operation'
+            placeholder={t('operationEdit.namePlaceholder')}
             readOnly={!!operation.id}
             disabled={!!operation.id}
           />
-          <Glyph.Chooser icon={icon} setIcon={setIcon} label='Operation icon' />
+          <Glyph.Chooser icon={icon} setIcon={setIcon} label={t('operationEdit.icon')} />
           <Stack dir='column' gap={6} ai='flex-start' data-input style={{ width: '100%' }}>
-            <Label htmlFor="description" value="Description" />
+            <Label htmlFor="description" value={t('common.description')} />
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.currentTarget.value)}
-              placeholder="Description of operation"
+              placeholder={t('operationEdit.descriptionPlaceholder')}
               style={{ width: '100%' }}
             />
           </Stack>
@@ -315,6 +318,7 @@ export namespace Operation {
       ...props
     }: Operation.BulkDelete.Banner.Props) {
       const { Info, app, destroyBanner } = Application.use();
+      const { t } = Locale.use();
       const [loading, setLoading] = useState<boolean>(false);
       const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
@@ -339,7 +343,7 @@ export namespace Operation {
 
       return (
         <UIBanner
-          title="Delete operations"
+          title={t('operationDelete.title')}
           done={
             <Button
               loading={loading}
@@ -352,11 +356,10 @@ export namespace Operation {
           {...props}
         >
           <p>
-            Are you sure you want to delete {operationIds.length} selected
-            operations?
+            {t('operationDelete.confirm', { count: operationIds.length })}
           </p>
           <Toggle
-            option={["No, don`t delete", "Yes, i`m sure"]}
+            option={[t('common.noDontDelete'), t('common.yesImSure')]}
             checked={isSubmitted}
             onCheckedChange={setIsSubmitted}
           />

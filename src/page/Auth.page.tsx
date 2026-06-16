@@ -13,6 +13,7 @@ import { Stack } from "@/ui/Stack";
 import { User } from "@/entities/User";
 import { Internal } from "@/entities/addon/Internal";
 import { Shimmer } from "@/ui/Shimmer";
+import { Locale } from "@/locales";
 
 import { Logo } from "@/components/Logo";
 
@@ -27,6 +28,7 @@ export namespace Auth {
 		const redirectPath = searchParams.get("redirect");
 
 		const { Info, app } = Application.use();
+		const { t } = Locale.use();
 		const [server, setServer] = useState<string>(Info.app.general.server);
 		const [id, setId] = useState("admin" as User.Id);
 		const [password, setPassword] = useState<string>("");
@@ -42,8 +44,8 @@ export namespace Auth {
 					toast: {
 						onError: (payload) =>
 							payload.status === "error"
-								? toast.warning("Auth plugin is not configured", {
-										description: "Check configuration file on server side",
+								? toast.warning(t("auth.pluginNotConfigured"), {
+										description: t("auth.pluginConfigHint"),
 										icon: <Icon name="Warning" />,
 										richColors: true,
 									})
@@ -73,8 +75,8 @@ export namespace Auth {
 					toast: {
 						onError: (payload) =>
 							payload.status === "error"
-								? toast.warning("Auth plugin is not configured", {
-										description: "Check configuration file on server side",
+								? toast.warning(t("auth.pluginNotConfigured"), {
+										description: t("auth.pluginConfigHint"),
 										icon: <Icon name="Warning" />,
 										richColors: true,
 									})
@@ -146,7 +148,7 @@ export namespace Auth {
 			const validate = (str: string): string | void =>
 				!Pattern.Server.test(str)
 					? (() => {
-							toast("Incorrect server URL", {
+							toast(t("auth.incorrectServerUrl"), {
 								icon: <Icon name="Warning" />,
 							});
 						})()
@@ -188,7 +190,7 @@ export namespace Auth {
 					tabIndex={4}
 					onClick={login}
 				>
-					Login
+					{t("auth.login")}
 				</UIButton>
 			</Stack>
 		);
@@ -236,7 +238,7 @@ export namespace Auth {
 						variant="glass"
 						icon={icon}
 					>
-						Login with {capitalize(name)}
+						{t("auth.loginWith", { provider: capitalize(name) })}
 					</UIButton>
 				);
 			}
@@ -269,12 +271,12 @@ export namespace Auth {
 					as="p"
 					color="var(--gray-800)"
 				>
-					[ Login ]
+					{t("auth.title")}
 				</Shimmer>
 				<Input
 					variant="highlighted"
 					icon="Link"
-					label="Server address"
+					label={t("auth.serverAddress")}
 					placeholder="http://localhost:8080"
 					value={server}
 					disabled={!!app.general.user}
@@ -287,9 +289,9 @@ export namespace Auth {
 				/>
 				<Input
 					variant="highlighted"
-					label="Username"
+					label={t("auth.username")}
 					icon="User"
-					placeholder="admin"
+					placeholder={t("auth.usernamePlaceholder")}
 					value={id}
 					disabled={!!app.general.user}
 					tabIndex={2}
@@ -301,12 +303,12 @@ export namespace Auth {
 				<Input
 					variant="highlighted"
 					icon="KeyRound"
-					label="Password"
-					placeholder="password"
+					label={t("auth.password")}
+					placeholder={t("auth.passwordPlaceholder")}
 					type={showPassword ? "text" : "password"}
 					value={password}
 					endIcon={showPassword ? "EyeOff" : "Eye"}
-					endIconTitle={showPassword ? "Hide password" : "Show password"}
+					endIconTitle={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
 					onEndIconClick={() => setShowPassword((current) => !current)}
 					disabled={!!app.general.user}
 					tabIndex={3}
@@ -328,6 +330,7 @@ export namespace Auth {
 
 	export function Banner({ className, ...props }: Banner.Props) {
 		const { Info, app } = Application.use();
+		const { t } = Locale.use();
 		const [server, setServer] = useState<string>(Info.app.general.server);
 		const [id, setId] = useState("admin" as User.Id);
 		const [password, setPassword] = useState<string>("admin");
@@ -344,8 +347,8 @@ export namespace Auth {
 					toast: {
 						onError: (payload) =>
 							payload.status === "error"
-								? toast.warning("Auth plugin is not configured", {
-										description: "Check configuration file on server side",
+								? toast.warning(t("auth.pluginNotConfigured"), {
+										description: t("auth.pluginConfigHint"),
 										icon: <Icon name="Warning" />,
 										richColors: true,
 									})
@@ -375,8 +378,8 @@ export namespace Auth {
 					toast: {
 						onError: (payload) =>
 							payload.status === "error"
-								? toast.warning("Auth plugin is not configured", {
-										description: "Check configuration file on server side",
+								? toast.warning(t("auth.pluginNotConfigured"), {
+										description: t("auth.pluginConfigHint"),
 										icon: <Icon name="Warning" />,
 										richColors: true,
 									})
@@ -400,7 +403,7 @@ export namespace Auth {
 			const validate = (str: string): string | void =>
 				!Pattern.Server.test(str)
 					? (() => {
-							toast("Incorrect server URL", {
+							toast(t("auth.incorrectServerUrl"), {
 								icon: <Icon name="Warning" />,
 							});
 						})()
@@ -461,7 +464,7 @@ export namespace Auth {
 						variant="glass"
 						icon={icon}
 					>
-						Login with {capitalize(name)}
+						{t("auth.loginWith", { provider: capitalize(name) })}
 					</UIButton>
 				);
 			}
@@ -498,12 +501,12 @@ export namespace Auth {
 						as="p"
 						color="var(--gray-800)"
 					>
-						[ Login ]
+						{t("auth.title")}
 					</Shimmer>
 					<Input
 						variant="highlighted"
 						icon="Link"
-						label="Server address"
+						label={t("auth.serverAddress")}
 						placeholder="http://localhost:8080"
 						value={server}
 						disabled={!!app.general.user}
@@ -516,9 +519,9 @@ export namespace Auth {
 					/>
 					<Input
 						variant="highlighted"
-						label="Username"
+						label={t("auth.username")}
 						icon="User"
-						placeholder="admin"
+						placeholder={t("auth.usernamePlaceholder")}
 						value={id}
 						disabled={!!app.general.user}
 						tabIndex={2}
@@ -530,12 +533,12 @@ export namespace Auth {
 					<Input
 						variant="highlighted"
 						icon="KeyRound"
-						label="Password"
-						placeholder="admin"
+						label={t("auth.password")}
+						placeholder={t("auth.passwordPlaceholder")}
 						type={showPassword ? "text" : "password"}
 						value={password}
 						endIcon={showPassword ? "EyeOff" : "Eye"}
-						endIconTitle={showPassword ? "Hide password" : "Show password"}
+						endIconTitle={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
 						onEndIconClick={() => setShowPassword((current) => !current)}
 						disabled={!!app.general.user}
 						tabIndex={3}

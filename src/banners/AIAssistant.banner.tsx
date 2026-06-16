@@ -13,6 +13,7 @@ import { cn } from '@impactium/utils'
 import { GulpIndexedDB } from '@/class/IndexedDB'
 import { copy, generateUUID } from '@/ui/utils'
 import { WindowBridge } from '@/lib/WindowBridge'
+import { Locale } from '@/locales'
 
 // initialize indexed db and store if not already initialized
 const chatDB = new GulpIndexedDB('gulp_DB', 'gulp_ai_assistant_history');
@@ -55,6 +56,7 @@ export namespace AIAssistant {
    */
   export function Panel({ message: initialMessage }: Panel.Props) {
     const { Info, app } = Application.use()
+    const { t } = Locale.use()
     const [loading, setLoading] = useState<boolean>(false);
     // History of requests
     const [history, setHistory] = useState<AnalysisRequest[]>([])
@@ -197,7 +199,7 @@ export namespace AIAssistant {
 
         const error = SmartSocket.Class.instance.conce(SmartSocket.Message.Type.AI_ASSISTANT_ERROR, m => m.req_id === req_id, m => {
           if (mounted.current) setLoading(false);
-          const errorMsg = String(m.payload as any) ?? 'Error during response generation';
+          const errorMsg = m.payload ? String(m.payload as any) : t('aiAssistant.responseError');
           updateLastRequestAIMessage(errorMsg)
 
           SmartSocket.Class.instance.coff(SmartSocket.Message.Type.AI_ASSISTANT_STREAM, stream);
@@ -220,7 +222,7 @@ export namespace AIAssistant {
       const docIds = Doc.Entity.flag.getDocIds(Info.app, operation?.id);
 
       if (!docIds.length) {
-        toast.info('No flagged events found to analyze.')
+        toast.info(t('aiAssistant.noFlaggedEvents'))
         return;
       }
 
@@ -238,7 +240,7 @@ export namespace AIAssistant {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
           // Briefly highlight or flash? (Optional)
-          toast.info('These events have already been analyzed. Scrolling to results.');
+          toast.info(t('aiAssistant.alreadyAnalyzed'));
         }
         return;
       }
@@ -248,7 +250,7 @@ export namespace AIAssistant {
         id: requestId,
         eventIds: docIds,
         userMessage: {
-          content: `Analyze ${docIds.length} flagged events`,
+          content: t('aiAssistant.analyzeFlaggedCount', { count: docIds.length }),
           role: Role.USER
         },
         aiMessage: {
@@ -277,12 +279,12 @@ export namespace AIAssistant {
           {history.map((req) => (
             <Stack key={req.id} id={`request-${req.id}`} dir='column' gap={8} style={{ width: '100%' }}>
               <Stack className={cn(s.message, s.user)} dir='column' gap={4} ai='flex-start'>
-                <span>You</span>
+                <span>{t('aiAssistant.you')}</span>
                 {req.userMessage.content}
               </Stack>
               <Stack dir='column' ai='flex-start' className={cn(s.message, s.ai)} pos='relative'>
                 <Button icon='Copy' variant='tertiary' className={s.copy} onClick={() => copy(req.aiMessage.content)} />
-                <span>AI Response</span>
+                <span>{t('aiAssistant.response')}</span>
                 <Markdown value={req.aiMessage.content} />
               </Stack>
             </Stack>
@@ -290,10 +292,10 @@ export namespace AIAssistant {
         </Stack>
         <Stack dir='row' ai='center' gap={8} className={s.actions}>
           <Button icon='Search' variant='secondary' onClick={analyze} disabled={loading} style={{ width: '100%' }}>
-            Analyze Flagged Events
+            {t('aiAssistant.analyzeFlagged')}
           </Button>
           <Button icon='Trash2' style={{ width: '100%' }} variant='secondary' onClick={() => {
-            const confirmed = window.confirm('Are you sure you want to delete all history?');
+            const confirmed = window.confirm(t('aiAssistant.deleteHistoryConfirm'));
             if (!confirmed) return;
             setHistory([]);
             if (operation) {
@@ -303,8 +305,8 @@ export namespace AIAssistant {
                 });
               });
             }
-            toast.info('History deleted');
-          }}>Clear history</Button>
+            toast.info(t('aiAssistant.historyDeleted'));
+          }}>{t('aiAssistant.clearHistory')}</Button>
         </Stack>
       </Stack>
     )

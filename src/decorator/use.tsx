@@ -4,6 +4,7 @@ import { scrollStore } from '@/store/scroll.store'
 import { StartEnd, StartEndBase } from '@/dto/StartEnd.dto'
 import { RefObject, useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
+import { translate } from '@/locales'
 
 export function useKeyHandler(key: string) {
   const [isKeyPressed, setIsKeyPressed] = useState(false)
@@ -111,7 +112,7 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
           Info.app.timeline.scale) /
         (max - min)
 
-      if (!isFinite(scale)) return toast('Selected frame too small')
+      if (!isFinite(scale)) return toast(translate('timeline.selectedFrameTooSmall'))
 
       scrollStore.setScrollX(x => (x + min) * (scale / Info.app.timeline.scale))
       setTimeout(() => {

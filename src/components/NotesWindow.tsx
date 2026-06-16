@@ -24,6 +24,7 @@ import { formatTimestampToReadableString } from "../ui/utils";
 import { WindowBridge } from "@/lib/WindowBridge";
 import { Table } from "./Table";
 import { Icon } from "@/ui/Icon";
+import { Locale } from "@/locales";
 
 import s from "./styles/NotesWindow.module.css";
 
@@ -41,6 +42,7 @@ function BulkDeleteNotesBanner({
 	onDeleted,
 }: BulkDeleteNotesBannerProps) {
 	const { Info, destroyBanner } = Application.use();
+	const { t } = Locale.use();
 	const [loading, setLoading] = useState(false);
 	const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -54,7 +56,7 @@ function BulkDeleteNotesBanner({
 
 	return (
 		<UIBanner
-			title="Delete notes"
+			title={t("notes.deleteTitle")}
 			done={
 				<Button
 					loading={loading}
@@ -65,9 +67,9 @@ function BulkDeleteNotesBanner({
 				/>
 			}
 		>
-			<p>Are you sure you want to delete {noteIds.length} selected notes?</p>
+			<p>{t("notes.deleteConfirm", { count: noteIds.length })}</p>
 			<Toggle
-				option={["No, don`t delete", "Yes, i`m sure"]}
+				option={[t("common.noDontDelete"), t("common.yesImSure")]}
 				checked={isSubmitted}
 				onCheckedChange={setIsSubmitted}
 			/>
@@ -77,6 +79,7 @@ function BulkDeleteNotesBanner({
 
 export function NotesWindow({ onClose }: FloatingWindowProps) {
 	const { app, Info, spawnBanner, banner } = Application.use();
+	const { t } = Locale.use();
 	useSyncExternalStore(DataStore.subscribe, DataStore.getSnapshot);
 	const [search, setSearch] = useState("");
 	const [showOnlyVisible, setShowOnlyVisible] = useState<boolean>(false);
@@ -162,9 +165,9 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 	}, [sortedNotes, selectedNoteIds]);
 
 	const selectAllLabel = useMemo(() => {
-		if (isAllSelected) return `Deselect All (${selectedNoteIds.size} selected)`;
-		return `Select All (${sortedNotes.length} visible)`;
-	}, [isAllSelected, selectedNoteIds.size, sortedNotes.length]);
+		if (isAllSelected) return t("notes.deselectAll", { count: selectedNoteIds.size });
+		return t("notes.selectAll", { count: sortedNotes.length });
+	}, [isAllSelected, selectedNoteIds.size, sortedNotes.length, t]);
 
 	const handleSelectAll = useCallback(
 		(checked: boolean) => {
@@ -274,7 +277,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 		() => [
 			{
 				icon: "MagnifyingGlassSmall",
-				label: "Target note",
+				label: t("notes.targetNote"),
 				onClick: (row, index) => {
 					const note = sortedNotes[index];
 					if (note) targetNoteButtonHandler(note);
@@ -282,14 +285,14 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 			},
 			{
 				icon: "Trash2",
-				label: "Delete note",
+				label: t("note.deleteTitle"),
 				onClick: (row, index) => {
 					const note = sortedNotes[index];
 					if (note) handleDelete(note);
 				},
 			},
 		],
-		[sortedNotes, targetNoteButtonHandler, handleDelete],
+		[sortedNotes, targetNoteButtonHandler, handleDelete, t],
 	);
 
 	/**
@@ -299,7 +302,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 		() => [
 			{
 				key: "title",
-				label: "Title",
+				label: t("common.title"),
 				width: 180,
 				render: (value, row) => (
 					<span
@@ -321,17 +324,17 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 			},
 			{
 				key: "timestamp",
-				label: "Timestamp",
+				label: t("common.timestamp"),
 				width: 190,
 			},
 			{
 				key: "text",
-				label: "Text",
+				label: t("common.text"),
 				width: 280,
 			},
 			{
 				key: "contextName",
-				label: "Context",
+				label: t("common.context"),
 				width: 160,
 				render: (value, row) => (
 					<span
@@ -344,7 +347,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 			},
 			{
 				key: "sourceName",
-				label: "Source",
+				label: t("common.source"),
 				width: 180,
 				render: (value, row) => (
 					<span
@@ -357,17 +360,17 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 			},
 			{
 				key: "tags",
-				label: "Tags",
+				label: t("common.tags"),
 				width: 180,
 			},
 		],
-		[],
+		[t],
 	);
 
 	return (
 		<div className={s.main}>
 			<div className={s.header}>
-				<h3>Notes</h3>
+				<h3>{t("notes.title")}</h3>
 			</div>
 			<div className={s.content}>
 				<Stack
@@ -376,7 +379,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 					ai="stretch"
 				>
 					<Input
-						placeholder="Context name, source name, note title or text"
+						placeholder={t("notes.searchPlaceholder")}
 						icon="MagnifyingGlass"
 						variant="highlighted"
 						value={search}
@@ -389,9 +392,9 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 						<Select.Trigger>
 							<Select.Multi.Value
 								icon={["DataPointMedium", "DataPoint"]}
-								placeholder="Select tags to be shown"
+								placeholder={t("notes.selectTags")}
 								text={(len) =>
-									typeof len === "number" ? `Selected ${len} tags` : len
+									typeof len === "number" ? t("notes.selectedTags", { count: len }) : len
 								}
 							/>
 						</Select.Trigger>
@@ -422,7 +425,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 						className={s.helperText}
 						onClick={() => setShowOnlyVisible((v) => !v)}
 					>
-						Show notes for visible sources only
+						{t("notes.visibleSourcesOnly")}
 					</span>
 				</Stack>
 				<div
@@ -452,7 +455,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 						onClick={handleBulkDelete}
 						icon="Trash2"
 					>
-						Delete selected notes ({selectedNoteIds.size})
+						{t("notes.deleteSelected", { count: selectedNoteIds.size })}
 					</Button>
 				</Stack>
 			</div>

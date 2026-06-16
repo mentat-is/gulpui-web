@@ -32,6 +32,7 @@ import { Highlight } from '@/entities/Highlight';
 import { DataStore } from '@/store/DataStore';
 import { scrollStore } from '@/store/scroll.store';
 import { Internal } from '@/entities/addon/Internal';
+import { Locale } from '@/locales';
 import s from './styles/RendererTest.module.css';
 
 // ─── tuneable constants ──────────────────────────────────────────────────────
@@ -253,15 +254,16 @@ function PerfOverlay({
     targetHighlights,
     onTargetHighlightsChange,
 }: PerfOverlayProps) {
+    const { t } = Locale.use();
     const pct = stats.total > 0 ? ((stats.injected / stats.total) * 100).toFixed(1) : '0.0';
     const maxNotesForDocs = Math.max(MIN_TOTAL_NOTES, Math.min(MAX_TOTAL_NOTES, targetDocs));
     const maxLinksForDocs = Math.max(MIN_TOTAL_LINKS, Math.min(MAX_TOTAL_LINKS, targetDocs));
     return (
         <div className={s.overlay}>
-            <div className={s.badge}>RENDERER TEST</div>
+            <div className={s.badge}>{t('rendererTest.badge')}</div>
             <div className={s.controls}>
                 <div className={s.sliderRow}>
-                    <label className={s.sliderLabel} htmlFor='renderer-doc-slider'>Documents</label>
+                    <label className={s.sliderLabel} htmlFor='renderer-doc-slider'>{t('rendererTest.documents')}</label>
                     <input
                         id='renderer-doc-number'
                         className={s.numberInput}
@@ -293,10 +295,10 @@ function PerfOverlay({
                         checked={renderNotes}
                         onChange={(e) => onRenderNotesChange(e.target.checked)}
                     />
-                    Render notes
+                    {t('rendererTest.renderNotes')}
                 </label>
                 <div className={s.sliderRow}>
-                    <label className={s.sliderLabel} htmlFor='renderer-note-slider'>Notes</label>
+                    <label className={s.sliderLabel} htmlFor='renderer-note-slider'>{t('notes.title')}</label>
                     <input
                         id='renderer-note-number'
                         className={s.numberInput}
@@ -333,10 +335,10 @@ function PerfOverlay({
                         checked={renderLinks}
                         onChange={(e) => onRenderLinksChange(e.target.checked)}
                     />
-                    Render links
+                    {t('rendererTest.renderLinks')}
                 </label>
                 <div className={s.sliderRow}>
-                    <label className={s.sliderLabel} htmlFor='renderer-link-slider'>Links</label>
+                    <label className={s.sliderLabel} htmlFor='renderer-link-slider'>{t('rendererTest.links')}</label>
                     <input
                         id='renderer-link-number'
                         className={s.numberInput}
@@ -373,10 +375,10 @@ function PerfOverlay({
                         checked={renderHighlights}
                         onChange={(e) => onRenderHighlightsChange(e.target.checked)}
                     />
-                    Render highlights
+                    {t('rendererTest.renderHighlights')}
                 </label>
                 <div className={s.sliderRow}>
-                    <label className={s.sliderLabel} htmlFor='renderer-highlight-slider'>Highlights</label>
+                    <label className={s.sliderLabel} htmlFor='renderer-highlight-slider'>{t('rendererTest.highlights')}</label>
                     <input
                         id='renderer-highlight-number'
                         className={s.numberInput}
@@ -404,26 +406,26 @@ function PerfOverlay({
                     onChange={(e) => onTargetHighlightsChange(Number(e.target.value))}
                 />
                 <button className={s.restartButton} onClick={onRestart} type='button'>
-                    Run!
+                    {t('rendererTest.run')}
                 </button>
             </div>
             <div className={s.row}>
-                <span className={s.label}>Events</span>
+                <span className={s.label}>{t('common.events')}</span>
                 <span className={s.value}>{stats.injected.toLocaleString()} / {stats.total.toLocaleString()}</span>
             </div>
             <div className={s.row}>
-                <span className={s.label}>Progress</span>
+                <span className={s.label}>{t('rendererTest.progress')}</span>
                 <span className={s.value}>{pct}%</span>
             </div>
             <div className={s.row}>
-                <span className={s.label}>FPS</span>
+                <span className={s.label}>{t('rendererTest.fps')}</span>
                 <span className={s.value}>{stats.fps}</span>
             </div>
             <div className={s.row}>
-                <span className={s.label}>Elapsed</span>
+                <span className={s.label}>{t('rendererTest.elapsed')}</span>
                 <span className={s.value}>{(stats.elapsed / 1000).toFixed(1)}s</span>
             </div>
-            {stats.done && <div className={s.done}>Injection complete</div>}
+            {stats.done && <div className={s.done}>{t('rendererTest.injectionComplete')}</div>}
         </div>
     );
 }

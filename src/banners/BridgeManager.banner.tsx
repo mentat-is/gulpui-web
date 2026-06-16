@@ -21,10 +21,12 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/ui/Tooltip";
+import { Locale } from "@/locales";
 
 export namespace BridgeManager {
 	export const Banner = (props: any) => {
 		const { Info, destroyBanner, app } = Application.use();
+		const { t } = Locale.use();
 		const operation = Operation.Entity.selected(app);
 
 		const [bridges, setBridges] = useState<any[] | null>(null);
@@ -44,7 +46,7 @@ export namespace BridgeManager {
 					const data = res?.data?.bridges || res?.data || res || [];
 					setBridges(Array.isArray(data) ? data : []);
 				})
-				.catch(() => toast.error("Failed to load bridges"))
+				.catch(() => toast.error(t("bridge.failedLoadBridges")))
 				.finally(() => setLoading(false));
 		};
 
@@ -62,7 +64,7 @@ export namespace BridgeManager {
 					const data = res?.data?.tasks || res?.data || res || [];
 					setTasks(Array.isArray(data) ? data : []);
 				})
-				.catch(() => toast.error("Failed to load tasks"))
+				.catch(() => toast.error(t("bridge.failedLoadTasks")))
 				.finally(() => setLoading(false));
 		};
 
@@ -78,26 +80,26 @@ export namespace BridgeManager {
 			Info.stop_ingestion(taskId)
 				.then((res: any) => {
 					if (res) {
-						toast.success("Task stopped");
+						toast.success(t("bridge.taskStopped"));
 						loadTasks();
 					} else {
-						toast.error("Failed to stop task");
+						toast.error(t("bridge.failedStopTask"));
 					}
 				})
-				.catch(() => toast.error("Failed to stop task"));
+				.catch(() => toast.error(t("bridge.failedStopTask")));
 		};
 
 		const handleDelete = (taskId: string) => {
 			Info.delete_ingestion(taskId)
 				.then((res: any) => {
 					if (res) {
-						toast.success("Task deleted");
+						toast.success(t("bridge.taskDeleted"));
 						loadTasks();
 					} else {
-						toast.error("Failed to delete task");
+						toast.error(t("bridge.failedDeleteTask"));
 					}
 				})
-				.catch(() => toast.error("Failed to delete task"));
+				.catch(() => toast.error(t("bridge.failedDeleteTask")));
 		};
 
 		const handleStart = (task: any) => {
@@ -109,13 +111,13 @@ export namespace BridgeManager {
 			)
 				.then((res: any) => {
 					if (res) {
-						toast.success("Task started");
+						toast.success(t("bridge.taskStarted"));
 						loadTasks();
 					} else {
-						toast.error("Failed to start task");
+						toast.error(t("bridge.failedStartTask"));
 					}
 				})
-				.catch(() => toast.error("Failed to start task"));
+				.catch(() => toast.error(t("bridge.failedStartTask")));
 		};
 
 		const handleCreateNewTask = (pluginParams: any) => {
@@ -123,13 +125,13 @@ export namespace BridgeManager {
 			Info.create_start_ingestion(selectedBridgeId, operation.id, pluginParams)
 				.then((res: any) => {
 					if (res) {
-						toast.success("Task created successfully");
+						toast.success(t("bridge.taskCreated"));
 						loadTasks();
 					} else {
-						toast.error("Failed to create task");
+						toast.error(t("bridge.failedCreateTask"));
 					}
 				})
-				.catch(() => toast.error("Failed to create task"));
+				.catch(() => toast.error(t("bridge.failedCreateTask")));
 		};
 
 		const handleCheckStatus = (bridge_id: string) => {
@@ -137,7 +139,7 @@ export namespace BridgeManager {
 			Info.check_bridge_status(bridge_id)
 				.then((res: any) => {
 					if (res) {
-						toast.success("Bridge status checked");
+						toast.success(t("bridge.statusChecked"));
 						setBridges(
 							(prev) =>
 								prev?.map((b) =>
@@ -145,17 +147,17 @@ export namespace BridgeManager {
 								) || null,
 						);
 					} else {
-						toast.error("Failed to check bridge status");
+						toast.error(t("bridge.failedCheckStatus"));
 					}
 				})
-				.catch(() => toast.error("Failed to check bridge status"))
+				.catch(() => toast.error(t("bridge.failedCheckStatus")))
 				.finally(() => setLoading(false));
 		};
 
 		const taskColumns: SummaryTableColumn<any>[] = [
 			{
 				key: "id",
-				label: "Task ID",
+				label: t("bridge.taskId"),
 				width: "1%",
 				render: (val) => (
 					<Tooltip>
@@ -170,7 +172,7 @@ export namespace BridgeManager {
 			},
 			{
 				key: "parameters",
-				label: "Parameters",
+				label: t("common.parameters"),
 				render: (_, item) => {
 					const params = item.plugin_params?.custom_parameters || {};
 					const jsonStr = JSON.stringify(params, null, 2);
@@ -209,7 +211,7 @@ export namespace BridgeManager {
 			},
 			{
 				key: "status",
-				label: "Status",
+				label: t("common.status"),
 				width: 80,
 				render: (val) => (
 					<Badge
@@ -223,7 +225,7 @@ export namespace BridgeManager {
 			},
 			{
 				key: "actions",
-				label: "Actions",
+				label: t("common.actions"),
 				width: "1%",
 				render: (_, task) => (
 					<Stack
@@ -240,7 +242,7 @@ export namespace BridgeManager {
 									e.stopPropagation();
 									handleStop(task.id);
 								}}
-								title="Stop Task"
+								title={t("bridge.stopTask")}
 								style={{ height: 24, width: 24, minHeight: 24 }}
 							/>
 						)}
@@ -253,7 +255,7 @@ export namespace BridgeManager {
 									e.stopPropagation();
 									handleStart(task);
 								}}
-								title="Start Task"
+								title={t("bridge.startTask")}
 								style={{ height: 24, width: 24, minHeight: 24 }}
 							/>
 						)}
@@ -265,7 +267,7 @@ export namespace BridgeManager {
 		return (
 			<TooltipProvider>
 				<UIBanner
-					title="Bridge Manager"
+					title={t("operationView.menu.bridgeManager")}
 					{...props}
 				>
 					<Stack
@@ -274,7 +276,7 @@ export namespace BridgeManager {
 						ai="stretch"
 						style={{ width: "100%", paddingBottom: 16 }}
 					>
-						<Label value="Select Registered Bridge" />
+						<Label value={t("bridge.selectRegistered")} />
 						{!bridges ? (
 							<Skeleton style={{ height: 40 }} />
 						) : bridges.length === 0 ? (
@@ -286,7 +288,7 @@ export namespace BridgeManager {
 									color: "var(--gray-500)",
 								}}
 							>
-								No bridges found.
+								{t("bridge.noBridges")}
 							</div>
 						) : (
 							<Select.Root
@@ -297,7 +299,7 @@ export namespace BridgeManager {
 									<Icon name="Network" />
 									{selectedBridge
 										? selectedBridge.name || selectedBridge.id
-										: "Select a bridge..."}
+										: t("bridge.selectPlaceholder")}
 								</Select.Trigger>
 								<Select.Content>
 									{bridges.map((bridge) => (
@@ -330,7 +332,7 @@ export namespace BridgeManager {
 									ai="center"
 								>
 									<span style={{ fontWeight: 600, color: "var(--gray-900)" }}>
-										Bridge Connection
+										{t("bridge.connection")}
 									</span>
 									<Stack
 										dir="row"
@@ -356,7 +358,7 @@ export namespace BridgeManager {
 											icon="RefreshClockwise"
 											loading={loading}
 											style={{ height: 22, width: 22, minHeight: 22 }}
-											title="Check bridge status"
+											title={t("bridge.checkStatus")}
 										/>
 									</Stack>
 								</Stack>
@@ -377,7 +379,7 @@ export namespace BridgeManager {
 											fontSize: 13,
 										}}
 									>
-										{selectedBridge.url || "No URL provided"}
+										{selectedBridge.url || t("bridge.noUrl")}
 									</span>
 								</Stack>
 							</Stack>
@@ -391,15 +393,15 @@ export namespace BridgeManager {
 									ai="center"
 									style={{ marginTop: 8 }}
 								>
-									<Label value="Ingestion Tasks" />
+									<Label value={t("bridge.ingestionTasks")} />
 									<AdvancedPluginParams
 										pluginParams={{}}
 										updatePluginParams={handleCreateNewTask}
 										customParamsMode="textarea"
-										triggerText="New Task"
+										triggerText={t("bridge.newTask")}
 										triggerIcon="Plus"
 										triggerVariant="secondary"
-										applyText="Create new task"
+										applyText={t("bridge.createNewTask")}
 										onReset={() => {}}
 									/>
 								</Stack>
@@ -432,7 +434,7 @@ export namespace BridgeManager {
 														flex: 1,
 													}}
 												>
-													Reload
+													{t("common.refresh")}
 												</Button>
 											</Stack>
 										</>

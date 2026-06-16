@@ -6,6 +6,7 @@ import { cn } from '@impactium/utils';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Stack } from '@/ui/Stack';
+import { Locale } from '@/locales';
 type UUID = string;
 
 import s from './styles/Glyph.module.css';
@@ -48,6 +49,7 @@ export namespace Glyph {
   }
 
   export const Chooser = ({ style, className, rootClassName, label, icon, setIcon, asButton, container }: Chooser.Props) => {
+    const { t } = Locale.use();
     const [search, setSearch] = useState<string>('');
     const parentRef = useRef<HTMLDivElement | null>(null);
     const entities = useMemo(() => {
@@ -59,8 +61,8 @@ export namespace Glyph {
     }, [setSearch]);
 
     const SearchInput = useMemo(() => {
-      return <Input variant='highlighted' icon='MagnifyingGlass' placeholder='Glyph name or association' value={search} onChange={handleGlyphSearchInput} name="glyph-search"/>
-    }, [search, handleGlyphSearchInput]);
+      return <Input variant='highlighted' icon='MagnifyingGlass' placeholder={t('glyph.searchPlaceholder')} value={search} onChange={handleGlyphSearchInput} name="glyph-search"/>
+    }, [search, handleGlyphSearchInput, t]);
 
     
     const rowVirtualizer = useVirtualizer({
@@ -81,7 +83,7 @@ export namespace Glyph {
         }}
       >
         <Popover.Trigger asChild>
-          {asButton ? <Button className={rootClassName} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : 'Choose icon'} label={label} />}
+          {asButton ? <Button className={rootClassName} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} variant='secondary' /> : <Input variant='highlighted' className={cn(s.input, className)} style={style} icon={icon ? Glyph.List.get(icon) : 'SquareDashed'} value={icon ? Glyph.List.get(icon) : t('glyph.chooseIcon')} label={label} />}
         </Popover.Trigger>
         <Popover.Content align='end' forceMount container={container}>
           <Stack dir='column' className={s.wrapper} ai='stretch'>

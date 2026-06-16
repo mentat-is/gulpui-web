@@ -4,6 +4,7 @@ import { Query } from "./Query";
 import { MinMax } from "@/class/Info";
 import { Source } from "./Source";
 import { App } from "./App";
+import { translate } from "@/locales/core";
 type UUID = string;
 import { Internal } from "./addon/Internal";
 
@@ -228,7 +229,7 @@ export namespace Filter {
 					}
 					return id;
 				});
-				lines.push(`Sources: ${names.join(', ')}`);
+				lines.push(translate('filter.sourcesLine', { sources: names.join(', ') }));
 			}
 
 			// Show each enabled filter condition/group
@@ -237,8 +238,8 @@ export namespace Filter {
 					if (!item.enabled) return '';
 					if (Filter.isGroup(item)) {
 						const childLines = item.children.map(c => describeItem(c, indent + '  ')).filter(Boolean);
-						const body = childLines.length ? `\n${childLines.join('\n')}` : ' (empty)';
-						return `${indent}${item.operator} group:${body}`;
+						const body = childLines.length ? `\n${childLines.join('\n')}` : translate('filter.emptyGroup');
+						return `${indent}${item.operator} ${translate('filter.groupLabel')}:${body}`;
 					}
 					return `${indent}${item.operator} ${item.type} ${item.field}: ${item.value}`;
 				};
@@ -249,10 +250,10 @@ export namespace Filter {
 			}
 
 			if (q.isManual) {
-				lines.push('[manual query]');
+				lines.push(translate('filter.manualQuery'));
 			}
 
-			return lines.join('\n') || 'No filters applied';
+			return lines.join('\n') || translate('filter.noFiltersApplied');
 		};
 
 		/**

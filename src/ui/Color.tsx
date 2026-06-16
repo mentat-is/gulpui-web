@@ -8,6 +8,7 @@ import { Button } from './Button'
 import { Stack } from './Stack'
 import { Input } from './Input'
 import { Color } from '@/entities/Color'
+import { Locale } from '@/locales'
 
 interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[]
@@ -106,6 +107,7 @@ export function ColorPickerPopover({
   customColors = [],
   container,
 }: ColorProps) {
+  const { t } = Locale.use()
   const { color: newColor, setColor: setNewColor } = useColor() || {}
 
   const color = _color ?? newColor
@@ -126,10 +128,10 @@ export function ColorPickerPopover({
         {!!solids.length && !!Object.keys(gradients).length && (
           <TabsList className={s.list}>
             <TabsTrigger className={s.trigger} value="solid">
-              Solid
+              {t('color.solid')}
             </TabsTrigger>
             <TabsTrigger className={s.trigger} value="gradient">
-              Gradient
+              {t('color.gradient')}
             </TabsTrigger>
           </TabsList>
         )}
@@ -146,7 +148,7 @@ export function ColorPickerPopover({
             ))}
             {!!customColors.length && (
               <div className={s.custom_group}>
-                <span className={s.custom_label}>Custom</span>
+                <span className={s.custom_label}>{t('color.custom')}</span>
                 <div className={s.custom_colors}>
                   {customColors.map((customColor) => (
                     <div

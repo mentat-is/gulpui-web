@@ -13,6 +13,7 @@ import { Stack } from '@/ui/Stack';
 import { Query } from '@/entities/Query';
 import { Filter } from '@/entities/Filter';
 import { Doc } from '@/entities/Doc';
+import { Locale } from '@/locales';
 
 export namespace GlobalQuery {
   export namespace Banner {
@@ -23,6 +24,7 @@ export namespace GlobalQuery {
 
   export function Banner({ query: initQuery, ...props }: GlobalQuery.Banner.Props) {
     const { Info, spawnBanner, destroyBanner } = Application.use();
+    const { t } = Locale.use();
     const [query, setQuery] = useState<Query.Type>(initQuery ?? {
       string: '',
       filters: []
@@ -127,30 +129,30 @@ export namespace GlobalQuery {
 
       return (
         <>
-          <Input value={filename} valid={isFilenameValid} onChange={filenameInputChangeHandler} variant='highlighted' icon='TextTitle' placeholder='Source.Entity name' />
-          <Input value={context} valid={isContextValid} onChange={contextInputChangeHandler} variant='highlighted' icon='TextTitle' placeholder='Context name' />
+          <Input value={filename} valid={isFilenameValid} onChange={filenameInputChangeHandler} variant='highlighted' icon='TextTitle' placeholder={t('globalQuery.sourceNamePlaceholder')} />
+          <Input value={context} valid={isContextValid} onChange={contextInputChangeHandler} variant='highlighted' icon='TextTitle' placeholder={t('globalQuery.contextNamePlaceholder')} />
         </>
       )
 
-    }, [separately, filename, setFilename, isFilenameValid, setIsFilenameValid, context, setContext, isContextValid, setIsContextValid]);
+    }, [separately, filename, setFilename, isFilenameValid, setIsFilenameValid, context, setContext, isContextValid, setIsContextValid, t]);
 
     return (
-      <UIBanner done={<DoneButton />} title='Global query' side={<OpenSearchQueryBuilder.Preview query={normalizedQuery} />} {...props}>
+      <UIBanner done={<DoneButton />} title={t('globalQuery.title')} side={<OpenSearchQueryBuilder.Preview query={normalizedQuery} />} {...props}>
         {QueryStringBuilder}
         {AddFilter}
         <Separator />
         {QueryFilterBuilder}
         <Stack ai='stretch' style={{ width: '100%' }}>
-          <Button style={{ flex: 1 }} variant='secondary' icon='Undo2' onClick={resetQueryButtonClickHandler}>Reset query</Button>
-          <Button style={{ flex: 1 }} variant='secondary' icon='Table' loading={isPreviewLoading} onClick={tabularPreviewButtonClickHandler}>Tabular preview</Button>
+          <Button style={{ flex: 1 }} variant='secondary' icon='Undo2' onClick={resetQueryButtonClickHandler}>{t('globalQuery.resetQuery')}</Button>
+          <Button style={{ flex: 1 }} variant='secondary' icon='Table' loading={isPreviewLoading} onClick={tabularPreviewButtonClickHandler}>{t('globalQuery.tabularPreview')}</Button>
         </Stack>
         <Stack ai='center' gap={4}>
           <Checkbox id='isNewLine' checked={separately} onCheckedChange={v => setSeparately(!!v)} />
-          <Label htmlFor='isNewLine' value='Temporarily save the result as a new file' />
+          <Label htmlFor='isNewLine' value={t('globalQuery.saveAsNewFile')} />
         </Stack>
         {FileDefiner}
         <Notification variant='error' icon='Warning'>
-          <p><span>Warning</span>: global queries may have significant impact on system performance. Please use with caution.</p>
+          <p><span>{t('common.warning')}</span>: {t('globalQuery.performanceWarning')}</p>
         </Notification>
       </UIBanner>
     )

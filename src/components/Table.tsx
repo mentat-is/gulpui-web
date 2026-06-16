@@ -17,6 +17,7 @@ import {
   ContextMenuSeparator,
 } from '@/ui/ContextMenu'
 import { useTableConfig } from '@/hooks/useTableConfig'
+import { Locale } from '@/locales'
 
 export type Object = Record<string, any>
 
@@ -154,6 +155,7 @@ function resolveActions<T extends Object>(
   actions: Table.Action<T>[] | undefined,
   onrowaction: ((value: T, index: number) => void) | undefined,
   iconAction: string | undefined,
+  defaultActionLabel: string,
 ): Table.Action<T>[] {
   if (actions && actions.length > 0) {
     return actions
@@ -167,7 +169,7 @@ function resolveActions<T extends Object>(
     }
     return [{
       icon: (iconAction || 'Search') as Icon.Name,
-      label: 'Action',
+      label: defaultActionLabel,
       onClick: onrowaction,
       variant: 'tertiary',
     }]
@@ -203,6 +205,7 @@ export function Table<T extends Object>({
   ...props
 }: Table.Props<T>) {
   const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const { t } = Locale.use()
   const isResizingRef = useRef(false)
   const lastResolvedActionsRef = useRef<Table.Action<T>[]>([])
 
@@ -213,7 +216,7 @@ export function Table<T extends Object>({
 
   /** Resolve actions with backward compat for deprecated props. */
   const resolvedActions = useMemo(() => {
-    const fresh = resolveActions(_actions, onrowaction, iconAction)
+    const fresh = resolveActions(_actions, onrowaction, iconAction, t('common.action'))
     const last = lastResolvedActionsRef.current
     if (
       last.length === fresh.length &&
@@ -231,7 +234,7 @@ export function Table<T extends Object>({
     }
     lastResolvedActionsRef.current = fresh
     return fresh
-  }, [_actions, onrowaction, iconAction])
+  }, [_actions, onrowaction, iconAction, t])
 
   const { values, columns, renderMapFromColumns, columnLabels } = useMemo(() => {
     const flattenedValues = _values.map((value) => flattenRow(value))
@@ -491,7 +494,7 @@ export function Table<T extends Object>({
               {tableElement}
             </ContextMenuTrigger>
             <ContextMenuContent>
-              <ContextMenuLabel>Column Visibility</ContextMenuLabel>
+              <ContextMenuLabel>{t('table.columnVisibility')}</ContextMenuLabel>
               <ContextMenuSeparator />
               {columns.map((col) => (
                 <ContextMenuCheckboxItem
@@ -511,7 +514,7 @@ export function Table<T extends Object>({
                     onCheckedChange={() => resetConfig()}
                     onSelect={(e) => e.preventDefault()}
                   >
-                    Show All Columns
+                    {t('table.showAllColumns')}
                   </ContextMenuCheckboxItem>
                 </>
               )}

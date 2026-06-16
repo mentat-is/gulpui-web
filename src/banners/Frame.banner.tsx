@@ -11,6 +11,7 @@ import { Button } from '@/ui/Button'
 import { Stack } from '@/ui/Stack'
 import { Context } from '@/entities/Context'
 import { Source } from '@/entities/Source'
+import { Locale } from '@/locales'
 
 export namespace Frame {
   export namespace Banner {
@@ -21,16 +22,17 @@ export namespace Frame {
   }
   export function Banner({ frame: initFrame, callback, ...props }: Frame.Banner.Props) {
     const { Info, destroyBanner, app } = Application.use()
+    const { t } = Locale.use()
     const [frame, setFrame] = useState<MinMax>(initFrame ?? Context.Entity.frame(app))
     const [isMinValid, setIsMinValid] = useState<boolean>(true)
     const [isMaxValid, setIsMaxValid] = useState<boolean>(true)
     const [manual, setManual] = useState<boolean>(false)
 
     const map = [
-      { text: 'Last day', do: () => save(frame.max - 24 * 60 * 60 * 1000) },
-      { text: 'Last week', do: () => save(frame.max - 7 * 24 * 60 * 60 * 1000) },
-      { text: 'Last month', do: () => save(frame.max - 30 * 24 * 60 * 60 * 1000) },
-      { text: 'Full range', do: () => save() },
+      { text: t('frame.lastDay'), do: () => save(frame.max - 24 * 60 * 60 * 1000) },
+      { text: t('frame.lastWeek'), do: () => save(frame.max - 7 * 24 * 60 * 60 * 1000) },
+      { text: t('frame.lastMonth'), do: () => save(frame.max - 30 * 24 * 60 * 60 * 1000) },
+      { text: t('frame.fullRange'), do: () => save() },
     ]
 
     const save = async (_min?: number) => {
@@ -90,7 +92,7 @@ export namespace Frame {
       return (
         <Input
           ref={inputRef}
-          label={type === 'min' ? 'From' : 'To'}
+          label={type === 'min' ? t('common.from') : t('common.to')}
           type="datetime-local"
           valid={type === 'min' ? isMinValid : isMaxValid}
           variant="highlighted"
@@ -107,13 +109,13 @@ export namespace Frame {
       return (
         <Input
           type="text"
-          label={type === 'min' ? 'From' : 'To'}
+          label={type === 'min' ? t('common.from') : t('common.to')}
           valid={type === 'min' ? isMinValid : isMaxValid}
           value={new Date(frame[type]).toISOString()}
           icon="Calendar"
           variant="highlighted"
           onChange={(e) => handleDateChange(type, e.target.value)}
-          placeholder="Enter date in ISO format"
+          placeholder={t('tableView.isoPlaceholder')}
         />
       )
     }
@@ -131,11 +133,11 @@ export namespace Frame {
     )
 
     return (
-      <UIBanner className={s.banner} title="Timeframe" done={<Done />} {...props}>
+      <UIBanner className={s.banner} title={t('frame.title')} done={<Done />} {...props}>
         <Toggle
           checked={manual}
           onCheckedChange={setManual}
-          option={['Select dates', 'ISO String']}
+          option={[t('tableView.selectDates'), t('tableView.isoString')]}
         />
         <DateSelection type="min" />
         <DateSelection type="max" />

@@ -10,6 +10,7 @@ import { MappingValueAliasData, MappingValueAliasPanel } from './MappingValueAli
 import { Separator } from '@/ui/Separator'
 import s from '../styles/AdvancedPluginParams.module.css'
 import { cn } from '@impactium/utils'
+import { Locale } from '@/locales'
 
 /**
  * MappingData represents the structure of a Gulp mapping configuration object,
@@ -42,6 +43,7 @@ interface MappingPanelProps {
  * providing recursive configuration capabilities.
  */
 export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPanelProps) {
+  const { t } = Locale.use()
   const [id, setId] = useState('')
   const [agentType, setAgentType] = useState('')
   const [description, setDescription] = useState('')
@@ -194,31 +196,31 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
         >
           <Stack dir="column" gap={16} ai="stretch">
           <Dialog.Title className={cn(s.titleBase, s.titleM)}>
-            {initialData ? 'Update Mapping Object' : 'Create Mapping Object'}
+            {initialData ? t('advancedParams.updateMappingObject') : t('advancedParams.createMappingObject')}
           </Dialog.Title>
           
           <Stack dir="row" gap={16} ai="flex-start">
             <Stack dir="column" gap={12} ai="stretch" style={{ flex: 1 }}>
-              <Input label="Mapping ID" value={id} onChange={(e) => setId(e.target.value)} valid={!!id} disabled={!!initialData} />
-              <Input label="Agent Type" value={agentType} onChange={(e) => setAgentType(e.target.value)}  />
-              <Input label="Description" value={description} onChange={(e) => setDescription(e.target.value)}  />
-              <Input label="Event Code" value={eventCode} onChange={(e) => setEventCode(e.target.value)}  />
-              <Input label="Exclude (comma separated)" value={excludeStr} onChange={(e) => setExcludeStr(e.target.value)}  />
+              <Input label={t('advancedParams.mappingId')} value={id} onChange={(e) => setId(e.target.value)} valid={!!id} disabled={!!initialData} />
+              <Input label={t('advancedParams.agentType')} value={agentType} onChange={(e) => setAgentType(e.target.value)}  />
+              <Input label={t('common.description')} value={description} onChange={(e) => setDescription(e.target.value)}  />
+              <Input label={t('advancedParams.eventCode')} value={eventCode} onChange={(e) => setEventCode(e.target.value)}  />
+              <Input label={t('advancedParams.excludeComma')} value={excludeStr} onChange={(e) => setExcludeStr(e.target.value)}  />
             </Stack>
             <Stack dir="column" gap={12} ai="stretch" style={{ flex: 1 }}>
-              <Input label="Include (comma separated)" value={includeStr} onChange={(e) => setIncludeStr(e.target.value)}  />
-              <Input label="Default Context" value={defaultContext} onChange={(e) => setDefaultContext(e.target.value)}  />
-              <Input label="Default Source" value={defaultSource} onChange={(e) => setDefaultSource(e.target.value)}  />
-              <Input label="Default Encoding" value={defaultEncoding} onChange={(e) => setDefaultEncoding(e.target.value)}  />
+              <Input label={t('advancedParams.includeComma')} value={includeStr} onChange={(e) => setIncludeStr(e.target.value)}  />
+              <Input label={t('advancedParams.defaultContext')} value={defaultContext} onChange={(e) => setDefaultContext(e.target.value)}  />
+              <Input label={t('advancedParams.defaultSource')} value={defaultSource} onChange={(e) => setDefaultSource(e.target.value)}  />
+              <Input label={t('advancedParams.defaultEncoding')} value={defaultEncoding} onChange={(e) => setDefaultEncoding(e.target.value)}  />
             </Stack>
           </Stack>
 
           <Separator style={{ margin: '8px 0' }} />
 
           <Stack dir="row" jc="space-between" ai="center">
-            <Label value="Fields" className={s.labelBold} />
+            <Label value={t('common.fields')} className={s.labelBold} />
             <Button variant="secondary" onClick={() => { setEditingField(null); setEditingFieldIndex(null); setIsFieldPanelOpen(true) }}>
-              Add Field
+              {t('advancedParams.addField')}
             </Button>
             <MappingFieldPanel 
               open={isFieldPanelOpen} 
@@ -229,9 +231,9 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
           </Stack>
           <SummaryTable 
             columns={[
-              { key: 'name', label: 'Name' },
-              { key: 'force_type', label: 'Force Type' },
-              { key: 'is_timestamp', label: 'Is Timestamp' },
+              { key: 'name', label: t('common.name') },
+              { key: 'force_type', label: t('advancedParams.forceType') },
+              { key: 'is_timestamp', label: t('advancedParams.isTimestamp') },
               { key: 'ecs', label: 'ECS' }
             ]} 
             data={fields}
@@ -246,9 +248,9 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
           <Separator style={{ margin: '8px 0' }} />
 
           <Stack dir="row" jc="space-between" ai="center">
-            <Label value="Value Aliases" className={s.labelBold} />
+            <Label value={t('advancedParams.valueAliases')} className={s.labelBold} />
             <Button variant="secondary" onClick={() => { setEditingAlias(null); setEditingAliasIndex(null); setIsAliasPanelOpen(true) }}>
-              Add Value Alias
+              {t('advancedParams.addValueAlias')}
             </Button>
             <MappingValueAliasPanel 
               open={isAliasPanelOpen} 
@@ -259,9 +261,9 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
           </Stack>
           <SummaryTable 
             columns={[
-              { key: 'field', label: 'Field' },
-              { key: 'oldValue', label: 'Old Value' },
-              { key: 'newValue', label: 'New Value' }
+              { key: 'field', label: t('common.field') },
+              { key: 'oldValue', label: t('advancedParams.oldValue') },
+              { key: 'newValue', label: t('advancedParams.newValue') }
             ]} 
             data={aliases}
             onEdit={(item, index) => {
@@ -277,7 +279,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
               variant="secondary" 
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button 
               variant="glass" 
@@ -285,7 +287,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
               disabled={!id}
               onClick={handleSave}
             >
-              {initialData ? 'Update Mapping' : 'Add Mapping'}
+              {initialData ? t('advancedParams.updateMapping') : t('advancedParams.addMapping')}
             </Button>
           </Stack>
         </Stack>

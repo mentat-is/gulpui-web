@@ -10,6 +10,7 @@ import { enUS } from 'date-fns/locale';
 import { Stack } from '@/ui/Stack';
 import { Request } from '@/entities/Request';
 import { Button } from '@/ui/Button';
+import { Locale } from '@/locales';
 
 export namespace Requests {
   export namespace Banner {
@@ -18,6 +19,7 @@ export namespace Requests {
 
   export function Banner({ className, ...props }: Requests.Banner.Props) {
     const { Info, app, spawnBanner } = Application.use();
+    const { t } = Locale.use();
     const [loading, setLoading] = useState<boolean>(false);
 
     const timeAgo = (timestamp: number): string => {
@@ -36,8 +38,8 @@ export namespace Requests {
     };
 
     const RefreshRequestsListButton = useMemo(() => {
-      return <Button variant='secondary' loading={loading} onClick={reload} icon='RefreshCcw'>Refresh</Button>
-    }, [reload, loading]);
+      return <Button variant='secondary' loading={loading} onClick={reload} icon='RefreshCcw'>{t('common.refresh')}</Button>
+    }, [reload, loading, t]);
 
     useEffect(() => {
       reload();
@@ -48,7 +50,7 @@ export namespace Requests {
     }, [app.general.requests]);
 
     return (
-      <UIBanner className={cn(className, s.banner)} title="Requests list" subtitle={RefreshRequestsListButton} {...props}>
+      <UIBanner className={cn(className, s.banner)} title={t('requests.title')} subtitle={RefreshRequestsListButton} {...props}>
         <Stack dir="column" gap={0} className={s.list}>
           {sortedRequests.map((request) => (
             <Stack key={request.id} className={cn(s.combination, className)} {...props}>
@@ -63,7 +65,7 @@ export namespace Requests {
                   onClick={() => cancelRequestButtonClickHandler(request.id)}
                 >
                   <Icon name="X" />
-                  Cancel
+                  {t('common.cancel')}
                 </Badge>
               )}
             </Stack>

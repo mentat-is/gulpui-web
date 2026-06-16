@@ -21,6 +21,7 @@ import { SigmaMappingPanel, SigmaMappingData } from './AdvancedPluginParams/Sigm
 import { Textarea } from '@/ui/Textarea'
 import { cn } from '@impactium/utils'
 import s from './styles/AdvancedPluginParams.module.css'
+import { Locale } from '@/locales'
 
 /**
  * AdvancedPluginParams component provides a comprehensive UI for configuring 
@@ -47,13 +48,14 @@ export function AdvancedPluginParams({
   plugin,
   showStoreFile,
   customParamsMode = 'auto',
-  triggerText = 'Advanced',
+  triggerText,
   triggerIcon = 'Code',
   triggerVariant = 'tertiary',
-  applyText = 'Apply Changes',
+  applyText,
   onReset
 }: AdvancedPluginParamsProps) {
   const { app } = Application.use()
+  const { t } = Locale.use()
   const [open, setOpen] = useState(false)
 
   // Global Settings
@@ -295,10 +297,10 @@ export function AdvancedPluginParams({
       delete payload.mapping_parameters
 
       updatePluginParams(payload)
-      toast.success('Plugin params applied!')
+      toast.success(t('advancedParams.applied'))
       setOpen(false)
     } catch {
-      toast.error('Failed to apply configuration')
+      toast.error(t('advancedParams.applyFailed'))
     }
   }
 
@@ -307,7 +309,7 @@ export function AdvancedPluginParams({
       onReset()
     } else {
       updatePluginParams({})
-      toast.success('Configuration reset successfully')
+      toast.success(t('advancedParams.resetSuccess'))
     }
     setOpen(false)
   }
@@ -316,7 +318,7 @@ export function AdvancedPluginParams({
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger asChild>
         <Button variant={triggerVariant as any} icon={triggerIcon as any} className={s.fullWidth}>
-          {triggerText}
+          {triggerText ?? t('advancedParams.trigger')}
         </Button>
       </Dialog.Trigger>
 
@@ -329,21 +331,21 @@ export function AdvancedPluginParams({
         <Stack dir='column' gap={24} ai='stretch'>
           <Stack dir='row' jc='space-between' ai='center'>
             <Dialog.Title className={cn(s.titleBase, s.titleL)}>
-              Advanced Plugin Parameters
+              {t('advancedParams.title')}
             </Dialog.Title>
-            <Button variant='tertiary' icon='Trash' onClick={handleReset} className={s.resetButton}>Reset / Delete</Button>
+            <Button variant='tertiary' icon='Trash' onClick={handleReset} className={s.resetButton}>{t('advancedParams.resetDelete')}</Button>
           </Stack>
           
           <Separator />
 
           {/* Global Settings */}
           <Stack dir='column' gap={12} ai='stretch'>
-            <Label value='Global Settings' className={s.labelBold} />
+            <Label value={t('advancedParams.globalSettings')} className={s.labelBold} />
             <Stack dir='column' gap={12} ai='stretch'>
               <Input 
                 icon='ChartColumn' 
                 variant='highlighted' 
-                label='Override Chunk Size' 
+                label={t('advancedParams.overrideChunkSize')} 
                 placeholder='e.g. 1000' 
                 type='number' 
                 value={overrideChunkSize} 
@@ -352,8 +354,8 @@ export function AdvancedPluginParams({
               <Input
                 icon='LayoutShift' 
                 variant='highlighted' 
-                placeholder='0 milliseconds' 
-                label='Offset'                 
+                placeholder={t('common.zeroMilliseconds')} 
+                label={t('advancedParams.offset')}                 
                 type='number' 
                 value={timestampOffsetMsec} 
                 onChange={e => setTimestampOffsetMsec(e.target.value)} 
@@ -361,12 +363,12 @@ export function AdvancedPluginParams({
             </Stack>
             <Stack ai="center" gap={8} className={s.fullWidth} style={{ padding: '8px 0' }}>
               <Checkbox id="override_allow_unmapped_fields" checked={overrideAllowUnmappedFields} onCheckedChange={(c) => setOverrideAllowUnmappedFields(!!c)} />
-              <Label htmlFor="override_allow_unmapped_fields" value="Override Allow Unmapped Fields" cursor="pointer" />
+              <Label htmlFor="override_allow_unmapped_fields" value={t('advancedParams.overrideAllowUnmapped')} cursor="pointer" />
             </Stack>
             {showStoreFile && (
               <Stack ai="center" gap={8} className={s.fullWidth} style={{ padding: '8px 0' }}>
                 <Checkbox id="store_file" checked={storeFile} onCheckedChange={(c) => setStoreFile(!!c)} />
-                <Label htmlFor="store_file" value="Store File" cursor="pointer" />
+                <Label htmlFor="store_file" value={t('advancedParams.storeFile')} cursor="pointer" />
               </Stack>
             )}
           </Stack>
@@ -375,7 +377,7 @@ export function AdvancedPluginParams({
 
           {/* Mapping Parameters */}
           <Stack dir='column' gap={16} ai='stretch'>
-            <Label value='Mapping Parameters' className={s.labelBold} />
+            <Label value={t('advancedParams.mappingParameters')} className={s.labelBold} />
             
             <Stack dir='column' gap={16} ai='stretch'>
               {methods.length > 0 && (
@@ -404,49 +406,49 @@ export function AdvancedPluginParams({
             </Stack>
 
             <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
-              <Label value='Mappings' />
+              <Label value={t('advancedParams.mappings')} />
               <Button variant='secondary' onClick={() => { setEditingMappingType('mappings'); setEditingMapping(null); setEditingMappingIndex(null); setIsMappingPanelOpen(true) }}>
-                Add Mapping
+                {t('advancedParams.addMapping')}
               </Button>
             </Stack>
             <SummaryTable 
-              columns={[{ key: 'id', label: 'Mapping ID' }, { key: 'agent_type', label: 'Agent Type' }, { key: 'description', label: 'Description' }]} 
+              columns={[{ key: 'id', label: t('advancedParams.mappingId') }, { key: 'agent_type', label: t('advancedParams.agentType') }, { key: 'description', label: t('common.description') }]} 
               data={mappings}
               onEdit={(item, index) => { setEditingMappingType('mappings'); setEditingMapping(item); setEditingMappingIndex(index); setIsMappingPanelOpen(true) }}
               onDelete={(_, index) => setMappings(mappings.filter((__, i) => i !== index))}
             />
 
             <Input 
-              label='Additional Mapping Files (comma separated)' 
+              label={t('advancedParams.additionalMappingFiles')} 
               placeholder='filename1/mapping_id1, filename2/mapping_id2' 
               value={additionalMappingFiles} 
               onChange={e => setAdditionalMappingFiles(e.target.value)} 
             />
 
             <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
-              <Label value='Additional Mappings' />
+              <Label value={t('advancedParams.additionalMappings')} />
               <Button variant='secondary' onClick={() => { setEditingMappingType('additional'); setEditingMapping(null); setEditingMappingIndex(null); setIsMappingPanelOpen(true) }}>
-                Add Additional Mapping
+                {t('advancedParams.addAdditionalMapping')}
               </Button>
             </Stack>
             <SummaryTable 
-              columns={[{ key: 'id', label: 'Mapping ID' }, { key: 'agent_type', label: 'Agent Type' }, { key: 'description', label: 'Description' }]} 
+              columns={[{ key: 'id', label: t('advancedParams.mappingId') }, { key: 'agent_type', label: t('advancedParams.agentType') }, { key: 'description', label: t('common.description') }]} 
               data={additionalMappings}
               onEdit={(item, index) => { setEditingMappingType('additional'); setEditingMapping(item); setEditingMappingIndex(index); setIsMappingPanelOpen(true) }}
               onDelete={(_, index) => setAdditionalMappings(additionalMappings.filter((__, i) => i !== index))}
             />
 
             <Stack dir='row' jc='space-between' ai='center' className={s.fullWidth} style={{ marginTop: 8 }}>
-              <Label value='Sigma Mappings' />
+              <Label value={t('advancedParams.sigmaMappings')} />
               <Button variant='secondary' onClick={() => { setEditingSigma(null); setEditingSigmaIndex(null); setIsSigmaPanelOpen(true) }}>
-                Add Sigma Mapping
+                {t('advancedParams.addSigmaMapping')}
               </Button>
             </Stack>
             <SummaryTable 
               columns={[
-                { key: 'name', label: 'Name' }, 
-                { key: 'service_field', label: 'Service Field' },
-                { key: 'service_values', label: 'Service Values', render: (val) => Array.isArray(val) ? val.join(', ') : val }
+                { key: 'name', label: t('common.name') }, 
+                { key: 'service_field', label: t('advancedParams.serviceField') },
+                { key: 'service_values', label: t('advancedParams.serviceValues'), render: (val) => Array.isArray(val) ? val.join(', ') : val }
               ]} 
               data={sigmaMappings}
               onEdit={(item, index) => { setEditingSigma(item); setEditingSigmaIndex(index); setIsSigmaPanelOpen(true) }}
@@ -458,7 +460,7 @@ export function AdvancedPluginParams({
 
           {/* Custom Parameters */}
           <Stack dir='column' gap={8} ai='stretch'>
-            <Label value='Custom Parameters' className={s.labelBold} />
+            <Label value={t('advancedParams.customParameters')} className={s.labelBold} />
             <Stack dir='column' gap={8} ai='stretch'>
             {customParamsMode === 'auto' && plugin && (
               <CustomParameters.Editor 
@@ -476,7 +478,7 @@ export function AdvancedPluginParams({
               <Textarea 
                 value={typeof customParams === 'string' ? customParams : ''}
                 onChange={e => setCustomParams(e.target.value)}
-                placeholder="Enter custom parameters..."
+                placeholder={t('advancedParams.customParametersPlaceholder')}
                 style={{ minHeight: 150 }}
                 error={!isCustomParamsJsonValid}
               />
@@ -486,7 +488,7 @@ export function AdvancedPluginParams({
 
           <Stack dir='row' gap={8} className={s.fullWidth} style={{ marginTop: 16 }}>
             <Button variant='glass' className={s.fullWidth} onClick={apply} icon="Check" disabled={!isCustomParamsJsonValid}>
-              {applyText}
+              {applyText ?? t('advancedParams.applyChanges')}
             </Button>
           </Stack>
         </Stack>

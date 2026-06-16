@@ -21,6 +21,7 @@ import { DataStore } from "@/store/DataStore";
 import { Highlight } from "@/entities/Highlight";
 import { Context } from "@/entities/Context";
 import { stringToHexColor } from "@/ui/utils";
+import { translate } from "@/locales/core";
 
 
 const NOTE_SIZE = 32;
@@ -932,8 +933,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const suffix = !requestType
 			? ""
 			: requestType === Request.Prefix.INGESTION
-				? " | Ingesting..."
-				: " | Loading...";
+				? translate("renderEngine.ingestingSuffix")
+				: translate("renderEngine.loadingSuffix");
 
 		const context = Source.Entity.context(this.info.app, file);
 		const lines: Array<{ text: string; dy: number; color: string }> = [

@@ -30,6 +30,7 @@ import {
 import { OpenSearchQueryBuilder } from "@/components/QueryBuilder";
 import { Separator } from "@/ui/Separator";
 import { Filter } from "@/entities/Filter";
+import { Locale } from "@/locales";
 
 export namespace TableViewWindow {
 	export interface Props {
@@ -53,6 +54,7 @@ function InputDateSelection({
 	valid: boolean;
 	onChange: (val: string) => void;
 }) {
+	const { t } = Locale.use();
 	const inputRef = useRef<HTMLInputElement | null>(null);
 
 	/**
@@ -85,7 +87,7 @@ function InputDateSelection({
 	return (
 		<Input
 			ref={inputRef}
-			label={type === "min" ? "From" : "To"}
+			label={type === "min" ? t("common.from") : t("common.to")}
 			type="datetime-local"
 			valid={valid}
 			variant="highlighted"
@@ -114,6 +116,7 @@ function InputISOSelection({
 	valid: boolean;
 	onChange: (val: string) => void;
 }) {
+	const { t } = Locale.use();
 	const [localValue, setLocalValue] = useState(
 		Internal.Transformator.toISO(value),
 	);
@@ -132,10 +135,10 @@ function InputISOSelection({
 
 	return (
 		<Input
-			label={type === "min" ? "From" : "To"}
+			label={type === "min" ? t("common.from") : t("common.to")}
 			type="text"
 			icon="Calendar"
-			placeholder="Enter date in ISO format"
+			placeholder={t("tableView.isoPlaceholder")}
 			variant="highlighted"
 			valid={valid}
 			value={localValue}
@@ -170,6 +173,7 @@ export function TableViewWindow({
 
 	// --- Context & Infrastructure ---
 	const { Info, app, spawnBanner, banner } = Application.use();
+	const { t } = Locale.use();
 	const [container, setContainer] = useState<HTMLDivElement | null>(null);
 
 	// --- Selection & Sync State ---
@@ -479,7 +483,7 @@ export function TableViewWindow({
 			setTotalHits(res?.total_hits || 0);
 			setSelectedRows(new Set());
 		} catch (e) {
-			toast.error("Failed to fetch table data");
+			toast.error(t("tableView.fetchFailed"));
 		} finally {
 			setLoading(false);
 		}
@@ -596,7 +600,7 @@ export function TableViewWindow({
 	const handleBulkAction = async (action: "flagged" | "notes") => {
 		if (!selectedSource) return;
 		if (selectedRows.size === 0) {
-			toast.error("No items selected");
+			toast.error(t("tableView.noItemsSelected"));
 			return;
 		}
 		const selectedDocs = Array.from(selectedRows).map((i) => data[i]);
@@ -661,7 +665,7 @@ export function TableViewWindow({
 			ref={setContainer}
 		>
 			<div className={s.header}>
-				<h2>Table View{selectedSource ? `: ${selectedSource.name}` : ""}</h2>
+				<h2>{t("tableView.title")}{selectedSource ? `: ${selectedSource.name}` : ""}</h2>
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
@@ -669,7 +673,7 @@ export function TableViewWindow({
 								<Toggle
 									checked={isSynced}
 									onCheckedChange={setIsSynced}
-									option={["Detached", "Synced"]}
+									option={[t("tableView.detached"), t("tableView.synced")]}
 									disabled={!selectedSourceId}
 								/>
 							</span>
@@ -677,8 +681,8 @@ export function TableViewWindow({
 						<TooltipContent>
 							<div style={{ maxWidth: 300 }}>
 								{isSynced
-									? "Synced: Following global filters and timeline range. Local search is disabled."
-									: "Detached: Use local search and independent time range filters."}
+									? t("tableView.syncedTooltip")
+									: t("tableView.detachedTooltip")}
 							</div>
 						</TooltipContent>
 					</Tooltip>
@@ -700,7 +704,7 @@ export function TableViewWindow({
 								ai="center"
 							>
 								<Icon name="File" />
-								<Select.Value placeholder="Select a source..." />
+								<Select.Value placeholder={t("tableView.selectSource")} />
 							</Stack>
 						</Select.Trigger>
 						<Select.Content container={container}>
@@ -727,7 +731,7 @@ export function TableViewWindow({
 								icon={isFiltersOpen ? "ChevronUp" : "Filter"}
 								className={s.filtersToggle}
 							>
-								Filters
+								{t("common.filters")}
 							</Button>
 							{isFiltersOpen && (
 								<Stack
@@ -743,7 +747,7 @@ export function TableViewWindow({
 										<Toggle
 											checked={manual}
 											onCheckedChange={setManual}
-											option={["Select dates", "ISO String"]}
+											option={[t("tableView.selectDates"), t("tableView.isoString")]}
 											disabled={!selectedSourceId}
 										/>
 									</Stack>
@@ -807,14 +811,14 @@ export function TableViewWindow({
 											onClick={resetFilters}
 											icon="RotateCcw"
 										>
-											Reset
+											{t("common.reset")}
 										</Button>
 										<Button
 											variant="secondary"
 											onClick={applyFilters}
 											icon="Check"
 										>
-											Apply
+											{t("common.apply")}
 										</Button>
 									</Stack>
 								</Stack>
@@ -838,7 +842,7 @@ export function TableViewWindow({
 							className={cn(s.label, s.pointer)}
 							onClick={() => handleSelectAll(!isAllSelected)}
 						>
-							Select All Visible
+							{t("tableView.selectAllVisible")}
 						</span>
 					</Stack>
 
@@ -849,7 +853,7 @@ export function TableViewWindow({
 								icon="ChevronDown"
 								disabled={selectedRows.size === 0}
 							>
-								Action
+								{t("common.action")}
 							</Button>
 						</Popover.Trigger>
 						<Popover.Content
@@ -866,7 +870,7 @@ export function TableViewWindow({
 									name="Flag"
 									size={14}
 								/>
-								<span>Flag</span>
+								<span>{t("common.flag")}</span>
 							</div>
 							<div
 								className={s.menuItem}
@@ -876,7 +880,7 @@ export function TableViewWindow({
 									name="StickyNote"
 									size={14}
 								/>
-								<span>New notes</span>
+								<span>{t("tableView.newNotes")}</span>
 							</div>
 						</Popover.Content>
 					</Popover.Root>
@@ -885,7 +889,7 @@ export function TableViewWindow({
 						gap={8}
 						ai="center"
 					>
-						<Label value="sort:" />
+						<Label value={t("tableView.sort")} />
 						<Select.Root
 							onValueChange={handleSortFieldChange}
 							value={sortField}
@@ -913,15 +917,18 @@ export function TableViewWindow({
 								sortDirection === "asc" ? "SortAscending" : "SortDescending"
 							}
 							onClick={toggleSortDirection}
-							title="Toggle Sort Direction"
+							title={t("tableView.toggleSortDirection")}
 						/>
 					</Stack>
 				</div>
 
 				<div className={s.row2Right}>
 					<span className={s.label}>
-						Show {totalHits > 0 ? pageSize * (currentPage - 1) + 1 : 0}-
-						{Math.min(pageSize * currentPage, totalHits)} of {totalHits}
+						{t("tableView.showingRange", {
+							from: totalHits > 0 ? pageSize * (currentPage - 1) + 1 : 0,
+							to: Math.min(pageSize * currentPage, totalHits),
+							total: totalHits,
+						})}
 					</span>
 
 					<Stack
@@ -941,11 +948,11 @@ export function TableViewWindow({
 								<Select.Item value="100">100</Select.Item>
 							</Select.Content>
 						</Select.Root>
-						<span className={s.label}>/ page</span>
+						<span className={s.label}>{t("tableView.perPage")}</span>
 					</Stack>
 
 					<span className={s.label}>
-						Page {currentPage} of {totalPages}
+						{t("tableView.pageOf", { page: currentPage, total: totalPages })}
 					</span>
 
 					<Stack gap={4}>
@@ -954,14 +961,14 @@ export function TableViewWindow({
 							icon="ChevronLeft"
 							disabled={currentPage <= 1 || loading}
 							onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-							title="Previous Page"
+							title={t("tableView.previousPage")}
 						/>
 						<Button
 							variant="secondary"
 							icon="ChevronRight"
 							disabled={currentPage >= totalPages || loading}
 							onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-							title="Next Page"
+							title={t("tableView.nextPage")}
 						/>
 					</Stack>
 				</div>
@@ -969,9 +976,9 @@ export function TableViewWindow({
 
 			<div className={s.result}>
 				{!selectedSourceId ? (
-					<div className={s.placeholder}>Select a source to view events</div>
+					<div className={s.placeholder}>{t("tableView.selectSourceToViewEvents")}</div>
 				) : loading || !localFieldTypeMap ? (
-					<p className={s.label}>Loading data...</p>
+					<p className={s.label}>{t("tableView.loadingData")}</p>
 				) : data.length > 0 ? (
 					<Table
 						persistId={`table-${selectedSourceId}`}
@@ -994,7 +1001,7 @@ export function TableViewWindow({
 						actions={[
 							{
 								icon: "Search",
-								label: "Target event",
+								label: t("tableView.targetEvent"),
 								onClick: handleRowAction,
 							},
 						]}
@@ -1012,7 +1019,7 @@ export function TableViewWindow({
 						highlightedId={app.timeline.target?._id}
 					/>
 				) : (
-					<p className={s.label}>No data found matching your query.</p>
+					<p className={s.label}>{t("tableView.noData")}</p>
 				)}
 			</div>
 			{banner?.target === "table" && banner.node}

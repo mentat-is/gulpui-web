@@ -7,6 +7,7 @@ import { cn } from "@impactium/utils";
 import { Icon } from "@impactium/icons";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";
+import { Locale } from "@/locales";
 
 /**
  * Represents a single item rendered inside the Menu component.
@@ -94,6 +95,7 @@ function groupByCategory(items: MenuItem[]): [string, MenuItem[]][] {
  */
 function groupTopItemsWithPlugins(
 	items: MenuItem[],
+	pluginCategory: string,
 	pluginNodes?: PluginNode[],
 ): [string, UnifiedMenuEntry[]][] {
 	const map = new Map<string, UnifiedMenuEntry[]>();
@@ -108,7 +110,7 @@ function groupTopItemsWithPlugins(
 
 	// Next, append plugin nodes under the "Plugins" category
 	if (pluginNodes && pluginNodes.length > 0) {
-		const categoryName = "Plugins";
+		const categoryName = pluginCategory;
 		if (!map.has(categoryName)) {
 			map.set(categoryName, []);
 		}
@@ -136,6 +138,7 @@ function groupTopItemsWithPlugins(
  */
 export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
 	const { app, Info } = Application.use();
+	const { t } = Locale.use();
 	const navigate = useNavigate();
 	const [isOpen, setIsOpen] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
@@ -252,7 +255,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
 			</Stack>
 		));
 
-	const topGroups = groupTopItemsWithPlugins(topItems, pluginNodes);
+	const topGroups = groupTopItemsWithPlugins(topItems, t("common.plugins"), pluginNodes);
 	const bottomGroups = groupByCategory(bottomItems);
 
 	/** Count of active (pending/ongoing) requests for the badge indicator. */
@@ -279,7 +282,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
 					>
 						<Button
 							variant="tertiary"
-							title="Close Menu"
+							title={t("menu.close")}
 							icon="ArrowLeft"
 							size="md"
 							onClick={() => setIsOpen(!isOpen)}
@@ -298,7 +301,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
 				{!isOpen && (
 					<Button
 						variant="tertiary"
-						title="Expand Menu"
+						title={t("menu.expand")}
 						icon="MenuAlt"
 						size="md"
 						className={cn(s.actionBtn, isOpen && s.actionBtnExpanded)}

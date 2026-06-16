@@ -21,6 +21,7 @@ import { Label } from "@/ui/Label";
 import { Select } from "@/ui/Select";
 import { cn } from "@impactium/utils";
 import { useNavigate } from "react-router-dom";
+import { Locale } from "@/locales";
 
 export namespace Session {
 	export namespace Save {
@@ -32,6 +33,7 @@ export namespace Session {
 			const [color, setColor] = useState<string>(Default.Color.OPERATION);
 			const [icon, setIcon] = useState<Glyph.Id | null>(null);
 			const { Info, app, spawnBanner } = Application.use();
+			const { t } = Locale.use();
 			const [loading, setLoading] = useState<boolean>(false);
 			const navigate = useNavigate();
 
@@ -48,7 +50,7 @@ export namespace Session {
 				}
 
 				if (!icon) {
-					toast.error("Session name should have icon", {
+					toast.error(t("session.nameNeedsIcon"), {
 						richColors: true,
 					});
 					return;
@@ -63,7 +65,7 @@ export namespace Session {
 				setLoading(false);
 				if (session) {
 					Logger.log(
-						`Session ${name} has been saved succesfully`,
+						t("session.saved", { name }),
 						Session.Save.Banner,
 						{
 							richColors: true,
@@ -98,7 +100,7 @@ export namespace Session {
 
 			return (
 				<UIBanner
-					title="Save session"
+					title={t("session.saveTitle")}
 					{...props}
 				>
 					<Stack
@@ -110,8 +112,8 @@ export namespace Session {
 						<Input
 							valid={name.length > 0}
 							icon="TextTitle"
-							label="Session name"
-							placeholder="Enter session name"
+							label={t("session.nameLabel")}
+							placeholder={t("session.namePlaceholder")}
 							variant="highlighted"
 							value={name}
 							onChange={changenameHandler}
@@ -140,14 +142,14 @@ export namespace Session {
 							disabled={!name.length || !icon}
 							icon="Check"
 						>
-							Save current session
+							{t("session.saveCurrent")}
 						</Button>
 						<Button
 							variant="destructive"
 							icon="LogOut"
 							onClick={logout}
 						>
-							Dont save my session
+							{t("session.dontSave")}
 						</Button>
 					</Stack>
 				</UIBanner>
@@ -164,6 +166,7 @@ export namespace Session {
 
 		export function Banner({ onClose, ...props }: Session.Delete.Banner.Props) {
 			const { Info, app, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
 			const [isDataLoading, setIsDataLoading] = useState<boolean>(true);
 			const [isDataDeleating, setIsDataDeleating] = useState<boolean>(false);
@@ -184,7 +187,7 @@ export namespace Session {
 				setIsDataDeleating(true);
 				await Info.sessions_delete([...selected.values()]).then(() => {
 					Logger.log(
-						`${selected.size} ${selected.size === 1 ? "session" : "sessions"} has been deleted successfully`,
+						t("session.deleted", { count: selected.size }),
 						"Session.Delete.Banner.deleteSessionButtonClickHandler",
 						{
 							richColors: true,
@@ -218,7 +221,7 @@ export namespace Session {
 
 			return (
 				<UIBanner
-					title="Delete sessions"
+					title={t("session.deleteTitle")}
 					done={DeleteButton}
 					{...props}
 				>
@@ -240,7 +243,7 @@ export namespace Session {
 								s.visible,
 						)}
 					>
-						<Label value="Session" />
+						<Label value={t("session.label")} />
 						<Stack style={{ width: "100%" }}>
 							<Select.Multi.Root
 								value={[...selected.values()]}
@@ -251,9 +254,9 @@ export namespace Session {
 								<Select.Trigger>
 									<Select.Multi.Value
 										icon="Status"
-										placeholder="Select sessions to be deleted"
+										placeholder={t("session.selectToDelete")}
 										text={(len) =>
-											typeof len === "number" ? `Selected ${len} sessions` : len
+											typeof len === "number" ? t("session.selectedCount", { count: len }) : len
 										}
 									/>
 								</Select.Trigger>

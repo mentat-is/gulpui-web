@@ -36,6 +36,7 @@ import { Session } from "./Session.banner";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import { useParams } from "react-router-dom";
 import { Internal } from "@/entities/addon/Internal";
+import { Locale } from "@/locales";
 
 export namespace SelectFiles {
 	export namespace Banner {
@@ -46,6 +47,7 @@ export namespace SelectFiles {
 
 	export function Banner({ showSession = true, ...props }: Banner.Props) {
 		const { app, Info, spawnBanner, spawnDialog } = Application.use();
+		const { t } = Locale.use();
 		const { operation_id: routeOpId } = useParams<{ operation_id: string }>();
 		const operation = Operation.Entity.selected(app);
 		const operation_id = routeOpId || operation?.id;
@@ -131,7 +133,7 @@ export namespace SelectFiles {
 		function all(select: boolean) {
 			const operation = Operation.Entity.selected(app);
 			if (!operation) {
-				toast.error("Operation not selected", {
+				toast.error(t("operationSelect.notSelected"), {
 					richColors: true,
 				});
 				return;
@@ -266,7 +268,7 @@ export namespace SelectFiles {
 			return (
 				<Input
 					icon="Search"
-					placeholder="Search by context name and file name"
+					placeholder={t("selectFiles.searchPlaceholder")}
 					variant="highlighted"
 					value={filter}
 					onChange={(e) => setFilter(e.target.value)}
@@ -319,7 +321,7 @@ export namespace SelectFiles {
 
 		return (
 			<UIBanner
-				title="Select sources"
+				title={t("source.selectSources")}
 				className={s.banner}
 				done={
 					<Button
@@ -345,7 +347,7 @@ export namespace SelectFiles {
 						ai="stretch"
 						style={{ width: "100%", marginBottom: 12 }}
 					>
-						<Label value="Session" />
+						<Label value={t("session.label")} />
 						<Select.Root
 							open={openSelectSession}
 							onOpenChange={setOpenSelectSession}
@@ -353,7 +355,7 @@ export namespace SelectFiles {
 						>
 							<Select.Trigger>
 								<Select.Icon name="Status" />
-								Select session
+								{t("session.select")}
 							</Select.Trigger>
 							<Select.Content>
 								{activeSessions.map((session) => (
@@ -383,7 +385,7 @@ export namespace SelectFiles {
 									}
 									icon="Wrench"
 								>
-									Manage sessions
+									{t("session.manage")}
 								</Button>
 							</Select.Content>
 						</Select.Root>
@@ -397,7 +399,7 @@ export namespace SelectFiles {
 						className={s.actionButton}
 						icon="FilePlus"
 					>
-						Select all
+						{t("common.selectAll")}
 					</Button>
 					<Button
 						onClick={() => all(false)}
@@ -405,7 +407,7 @@ export namespace SelectFiles {
 						className={s.actionButton}
 						icon="FileMinus"
 					>
-						Unselect all
+						{t("common.deselectAll")}
 					</Button>
 				</Stack>
 				{Info.activeUploads.size > 0 && (
@@ -512,7 +514,7 @@ export namespace SelectFiles {
 							</div>
 						) : (
 							<p className={s.noData}>
-								There is no data to analyze. Click below to upload...
+								{t("selectFiles.noData")}
 							</p>
 						)}
 					</Skeleton>
@@ -525,7 +527,7 @@ export namespace SelectFiles {
 						icon="RefreshClockwise"
 						loading={loading}
 					>
-						Reload
+						{t("common.refresh")}
 					</Button>
 				</Stack>
 			</UIBanner>
@@ -541,6 +543,7 @@ export function ContextHeading({
 	showCheckbox = true,
 }: any) {
 	const { spawnBanner } = Application.use();
+	const { t } = Locale.use();
 
 	return (
 		<Stack
@@ -565,7 +568,7 @@ export function ContextHeading({
 				<hr style={{ flex: 1 }} />
 				<Badge
 					size="sm"
-					value="Delete"
+					value={t("common.delete")}
 					style={{ border: "1px solid var(--red-400)", borderRadius: "2px" }}
 					variant="red-subtle"
 					icon="Trash2"
@@ -630,6 +633,7 @@ function FileComponent({
 	onPreviewBack,
 }: FileComponentProps) {
 	const { app, Info, spawnBanner } = Application.use();
+	const { t } = Locale.use();
 	const [loading, setLoading] = useState<boolean>(false);
 
 	const previewButtonClickHandler = () => {
@@ -684,7 +688,7 @@ function FileComponent({
 				size="sm"
 				variant="amber-subtle"
 				icon="Warning"
-				value="This file is too big"
+				value={t("selectFiles.fileTooBig")}
 			/>
 		);
 	};
@@ -709,7 +713,7 @@ function FileComponent({
 								<Spinner size={16} />
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Processing</TooltipContent>
+						<TooltipContent>{t("selectFiles.processing")}</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>
 			)}

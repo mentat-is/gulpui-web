@@ -25,6 +25,7 @@ import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { Link } from "@/entities/Link";
 import { Select } from "@/ui/Select";
+import { Locale } from "@/locales";
 
 export namespace NoteFunctionality {
 	export namespace Create {
@@ -45,6 +46,7 @@ export namespace NoteFunctionality {
 			...props
 		}: NoteFunctionality.Create.Banner.Props) {
 			const { app, destroyBanner, Info } = Application.use();
+			const { t } = Locale.use();
 			const [color, setColor] = useState<string>(note?.color || "#ffffff");
 			const [name, setName] = useState<string>(note?.name || "");
 			const [text, setText] = useState<string>(note?.text || "");
@@ -124,7 +126,7 @@ export namespace NoteFunctionality {
 
 			return (
 				<UIBanner
-					title={note?.id ? "Edit note" : "Create note"}
+					title={note?.id ? t("collab.editNote") : t("collab.createNote")}
 					done={
 						<Button
 							loading={loading}
@@ -143,62 +145,62 @@ export namespace NoteFunctionality {
 						gap={8}
 					>
 						<Input
-							label="Context"
+							label={t("common.context")}
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
 							value={
 								(() => {
-									if (events && events.length > 1) return `Multiple Contexts (${new Set(events.map(e => Doc.Entity.contextId(app, e))).size})`;
+									if (events && events.length > 1) return t("collab.multipleContexts", { count: new Set(events.map(e => Doc.Entity.contextId(app, e))).size });
 									const targetEvent = event || events?.[0];
-									if (!targetEvent) return "Unknown Context";
+									if (!targetEvent) return t("collab.unknownContext");
 									const contextId = Doc.Entity.contextId(app, targetEvent);
-									return contextId ? Context.Entity.id(app, contextId)?.name : "Deleted Context";
+									return contextId ? Context.Entity.id(app, contextId)?.name : t("collab.deletedContext");
 								})()
 							}
 							icon={Default.Icon.CONTEXT}
 						/>
 						<Input
-							label="Source"
+							label={t("common.source")}
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
 							value={
 								(() => {
-									if (events && events.length > 1) return `Multiple Sources (${new Set(events.map(e => e["gulp.source_id"])).size})`;
+									if (events && events.length > 1) return t("collab.multipleSources", { count: new Set(events.map(e => e["gulp.source_id"])).size });
 									const targetEvent = event || events?.[0];
-									if (!targetEvent) return "Unknown Source";
-									return Source.Entity.id(app, targetEvent["gulp.source_id"])?.name || "Deleted Source";
+									if (!targetEvent) return t("collab.unknownSource");
+									return Source.Entity.id(app, targetEvent["gulp.source_id"])?.name || t("collab.deletedSource");
 								})()
 							}
 							icon={Default.Icon.SOURCE}
 						/>
 						<Input
-							label="Event"
+							label={t("common.event")}
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
 							value={
 								events && events.length > 1 
-									? `${events.length} events selected` 
-									: (event || events?.[0])?._id || "Unknown Event"
+									? t("collab.eventsSelected", { count: events.length })
+									: (event || events?.[0])?._id || t("collab.unknownEvent")
 							}
 							icon="Triangle"
 						/>
 					</Stack>
 					<Separator />
 					<Input
-						label="Title"
+						label={t("common.title")}
 						value={name}
 						icon="TextTitle"
 						onChange={(e) => setName(String(e.currentTarget.value))}
-						placeholder="Note title"
+						placeholder={t("collab.noteTitlePlaceholder")}
 						variant="highlighted"
 						className={s.inp_input}
 					/>
 					<Stack className={s.chooser_wrapper}>
 						<Glyph.Chooser
-							label="Glyph"
+							label={t("common.glyph")}
 							icon={icon}
 							setIcon={setIcon}
 							container={container}
@@ -209,7 +211,7 @@ export namespace NoteFunctionality {
 							ai="flex-start"
 							data-input
 						>
-							<Label value="Pick a color" />
+							<Label value={t("common.pickColor")} />
 							<ColorPicker
 								color={color}
 								setColor={setColor}
@@ -220,13 +222,13 @@ export namespace NoteFunctionality {
 						</Stack>
 					</Stack>
 					<Input
-						placeholder="Tags separated by comma"
+						placeholder={t("collab.tagsPlaceholder")}
 						value={rawTags}
 						onChange={(e) => setRawTags(e.target.value)}
 					/>
 					{note?.id ? null : (
 						<Toggle
-							option={["Public", "Private"]}
+							option={[t("collab.public"), t("collab.private")]}
 							checked={isPrivate}
 							onCheckedChange={setIsPrivate}
 						/>
@@ -235,7 +237,7 @@ export namespace NoteFunctionality {
 						className={s.textarea}
 						value={text}
 						onChange={(e) => setText(String(e.currentTarget.value))}
-						placeholder="Note text"
+						placeholder={t("collab.noteTextPlaceholder")}
 					/>
 					<Stack
 						gap={4}
@@ -249,7 +251,7 @@ export namespace NoteFunctionality {
 							name="AcronymMarkdown"
 							size={20}
 						/>
-						markdown supported.
+						{t("common.markdownSupported")}
 					</Stack>
 				</UIBanner>
 			);
@@ -276,6 +278,7 @@ export namespace LinkFunctionality {
 			...props
 		}: LinkFunctionality.Create.Banner.Props) {
 			const { app, destroyBanner, Info } = Application.use();
+			const { t } = Locale.use();
 			const [color, setColor] = useState<string>(
 				link?.color || Default.Color.LINK,
 			);
@@ -357,7 +360,7 @@ export namespace LinkFunctionality {
 			return (
 				<UIBanner
 					{...props}
-					title="Create link"
+					title={t("eventDialog.createLink")}
 					done={<Done />}
 					back={props.back && showBackButton ? handleBack : undefined}
 					onClose={handleClose}
@@ -369,23 +372,23 @@ export namespace LinkFunctionality {
 						gap={8}
 					>
 						<Input
-							label="Context"
+							label={t("common.context")}
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={context?.name || "Deleted Context"}
+							value={context?.name || t("collab.deletedContext")}
 							icon={Default.Icon.CONTEXT}
 						/>
 						<Input
-							label="Source"
+							label={t("common.source")}
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
-							value={file?.name || "Deleted Source"}
+							value={file?.name || t("collab.deletedSource")}
 							icon={Default.Icon.SOURCE}
 						/>
 						<Input
-							label="Event"
+							label={t("common.event")}
 							variant="highlighted"
 							className={s.inp_input}
 							disabled
@@ -394,16 +397,16 @@ export namespace LinkFunctionality {
 						/>
 						<Separator />
 						<Input
-							label="Title"
+							label={t("common.title")}
 							value={name}
 							variant="highlighted"
 							icon="TextTitle"
 							onChange={(e) => setName(String(e.currentTarget.value))}
-							placeholder="Link title"
+							placeholder={t("collab.linkTitlePlaceholder")}
 						/>
 						<Stack className={s.chooser_wrapper}>
 							<Glyph.Chooser
-								label="Glyph"
+								label={t("common.glyph")}
 								icon={icon}
 								setIcon={setIcon}
 							/>
@@ -413,7 +416,7 @@ export namespace LinkFunctionality {
 								ai="flex-start"
 								data-input
 							>
-								<Label value="Pick a color" />
+								<Label value={t("common.pickColor")} />
 								<ColorPicker
 									color={color}
 									setColor={setColor}
@@ -427,7 +430,7 @@ export namespace LinkFunctionality {
 							className={s.textarea}
 							value={description}
 							onChange={(e) => setDescription(String(e.currentTarget.value))}
-							placeholder="Link description"
+							placeholder={t("collab.linkDescriptionPlaceholder")}
 						/>
 						<Stack
 							gap={4}
@@ -441,7 +444,7 @@ export namespace LinkFunctionality {
 								name="AcronymMarkdown"
 								size={20}
 							/>
-							markdown supported.
+							{t("common.markdownSupported")}
 						</Stack>
 					</Stack>
 				</UIBanner>
@@ -455,6 +458,7 @@ export namespace LinkFunctionality {
 		}
 		export function Banner({ event }: LinkFunctionality.Connect.Props) {
 			const { app, Info, destroyBanner, spawnBanner } = Application.use();
+			const { t } = Locale.use();
 
 			const links = useMemo(
 				() => Link.Entity.selected(app),
@@ -506,7 +510,7 @@ export namespace LinkFunctionality {
 
 			return (
 				<UIBanner
-					title="Connect link to event"
+					title={t("collab.connectLinkToEvent")}
 				>
 					<Select.Multi.Root
 						value={alreadyConnectedLinks}
@@ -516,8 +520,8 @@ export namespace LinkFunctionality {
 						<Select.Trigger>
 							<Select.Multi.Value
 								icon={["DataPointMedium", "DataPoint"]}
-								placeholder="Select links to be connected with this event"
-								text={(len) => `Connected with ${len} links`}
+								placeholder={t("collab.selectLinksForEvent")}
+								text={(len) => t("collab.connectedLinks", { count: len })}
 							/>
 						</Select.Trigger>
 						<Select.Content>
@@ -544,7 +548,7 @@ export namespace LinkFunctionality {
 								}}
 							>
 								<Select.Icon name="GitMerge" />
-								{`Select links to connect to document ${event._id}`}
+								{t("collab.selectLinksForDocument", { id: event._id })}
 							</Stack>
 						</Select.Content>
 					</Select.Multi.Root>
@@ -554,7 +558,7 @@ export namespace LinkFunctionality {
 						icon="GitPullRequestCreate"
 						style={{ width: "100%" }}
 					>
-						Create new link
+						{t("eventDialog.createNewLink")}
 					</Button>
 				</UIBanner>
 			);

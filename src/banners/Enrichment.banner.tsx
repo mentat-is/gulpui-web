@@ -23,6 +23,7 @@ import { Doc } from '@/entities/Doc'
 import { Source } from '@/entities/Source'
 import { Internal } from '@/entities/addon/Internal'
 import { toast } from 'sonner'
+import { Locale } from '@/locales'
 
 
 // --- CONSTANTS ---
@@ -91,16 +92,18 @@ interface FieldRowProps {
  * Renders a single row for field key/value configuration.
  */
 function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
+  const { t } = Locale.use()
+
   return (
     <Stack gap={8} ai='center' className={s.fieldRow}>
       {/* Key column */}
       <Stack gap={4} ai='center' className={s.fieldColumn}>
-        <Label value='Key' className={s.label} />
+        <Label value={t('common.key')} className={s.label} />
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Input
-                placeholder='Field key'
+                placeholder={t('enrichment.fieldKeyPlaceholder')}
                 value={field.key}
                 onChange={e => onUpdate(index, { key: e.target.value })}
               />
@@ -112,12 +115,12 @@ function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
 
       {/* Value column */}
       <Stack gap={4} ai='center' className={s.fieldColumn}>
-        <Label value='Value' className={s.label} />
+        <Label value={t('common.value')} className={s.label} />
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Input
-                placeholder='Field value'
+                placeholder={t('enrichment.fieldValuePlaceholder')}
                 disabled={field.value === null}
                 value={field.value ?? ''}
                 onChange={e => onUpdate(index, { value: e.target.value })}
@@ -130,7 +133,7 @@ function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
 
       {/* Null/Value column */}
       <Stack gap={4} ai='center' className={s.actionColumn}>
-        <Label value='Toggle Value' className={s.label} />
+        <Label value={t('enrichment.toggleValue')} className={s.label} />
         <Checkbox
           checked={field.value !== null}
           onCheckedChange={(checked) => onUpdate(index, { value: checked ? '' : null })}
@@ -139,7 +142,7 @@ function FieldRow({ field, index, onUpdate, onDelete }: FieldRowProps) {
 
       {/* Delete column */}
       <Stack gap={4} ai='center' className={s.actionColumn}>
-        <Label value='Delete' className={s.label} />
+        <Label value={t('common.delete')} className={s.label} />
         <Button
           variant='tertiary'
           icon='Trash'
@@ -161,6 +164,7 @@ interface TimeRangeSelectorProps {
  * Renders either the specific event ID or date-time inputs for range enrichment.
  */
 function TimeRangeSelector({ event, frame, setFrame, isLoaded }: TimeRangeSelectorProps) {
+  const { t } = Locale.use()
   const handleMinChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setFrame((prev) => ({ ...prev, min: new Date(value).getTime() }))
@@ -192,7 +196,7 @@ function TimeRangeSelector({ event, frame, setFrame, isLoaded }: TimeRangeSelect
   return (
     <Stack dir='column' gap={8}>
       <Stack dir='column' gap={4}>
-        <Label value='Start Date' className={s.label} />
+        <Label value={t('enrichment.startDate')} className={s.label} />
         <Input
           key='min-date'
           onChange={handleMinChange}
@@ -203,7 +207,7 @@ function TimeRangeSelector({ event, frame, setFrame, isLoaded }: TimeRangeSelect
         />
       </Stack>
       <Stack dir='column' gap={4}>
-        <Label value='End Date' className={s.label} />
+        <Label value={t('enrichment.endDate')} className={s.label} />
         <Input
           key='max-date'
           onChange={handleMaxChange}
@@ -228,6 +232,7 @@ export namespace Enrichment {
 
   export function Banner({ event, onEnrichment, enrichmentField, ...props }: Enrichment.Props) {
     const { Info, app, destroyBanner } = Application.use()
+    const { t } = Locale.use()
 
     // --- STATE ---
     const [file, setFile] = useState<Source.Type | null>(
@@ -380,8 +385,8 @@ export namespace Enrichment {
             if (onEnrichment) onEnrichment(enriched)
             destroyBanner()
           } else {
-            toast.error('Enrichment failed', {
-              description: 'The API returned an error while enriching the document.'
+            toast.error(t('enrichment.failed'), {
+              description: t('enrichment.failedDescription')
             })
           }
         } else {
@@ -389,8 +394,8 @@ export namespace Enrichment {
           destroyBanner()
         }
       } catch (error) {
-        toast.error('Enrichment error', {
-          description: error instanceof Error ? error.message : 'An unexpected error occurred'
+        toast.error(t('enrichment.error'), {
+          description: error instanceof Error ? error.message : t('common.unexpectedError')
         })
       } finally {
         setLoading(false)
@@ -413,7 +418,7 @@ export namespace Enrichment {
           <Select.Trigger>
             <Stack style={{ pointerEvents: event ? 'none' : 'all' }} gap={16}>
               <Icon variant='dimmed' name={file ? Source.Entity.icon(file) : Default.Icon.SESSION} />
-              {file ? file.name : 'Select source you want to enrich'}
+              {file ? file.name : t('enrichment.selectSource')}
             </Stack>
           </Select.Trigger>
           <Select.Content>
@@ -423,7 +428,7 @@ export namespace Enrichment {
           </Select.Content>
         </Select.Root>
       )
-    }, [plugins, file, event, app])
+    }, [plugins, file, event, app, t])
 
     const TypeSelection = useMemo(() => {
       if (!allEnrichmentPlugins) return <Skeleton className={s.skeleton} width='full' />
@@ -433,18 +438,20 @@ export namespace Enrichment {
           <Select.Trigger>
             <Stack gap={16}>
               <Icon variant='dimmed' name='Filter' />
-              {selectedType === 'Other' ? 'Observable Type: Other (All Plugins)' : `Observable Type: ${selectedType}`}
+              {selectedType === 'Other'
+                ? t('enrichment.observableTypeOther')
+                : t('enrichment.observableType', { type: selectedType })}
             </Stack>
           </Select.Trigger>
           <Select.Content>
             {availableTypes.map((type) => (
               <Select.Item key={type} value={type}>{type}</Select.Item>
             ))}
-            <Select.Item value='Other'>Other</Select.Item>
+            <Select.Item value='Other'>{t('common.other')}</Select.Item>
           </Select.Content>
         </Select.Root>
       )
-    }, [selectedType, availableTypes, allEnrichmentPlugins])
+    }, [selectedType, availableTypes, allEnrichmentPlugins, t])
 
     const PluginSelection = useMemo(() => {
       if (!plugins) return <Skeleton className={s.skeleton} width='full' />
@@ -454,7 +461,7 @@ export namespace Enrichment {
           <Select.Trigger>
             <Stack gap={16}>
               <Icon variant='dimmed' name='Puzzle' />
-              {plugin ? plugin.filename : 'Select plugin you want to use for enrichment'}
+              {plugin ? plugin.filename : t('enrichment.selectPlugin')}
             </Stack>
           </Select.Trigger>
           <Select.Content>
@@ -464,7 +471,7 @@ export namespace Enrichment {
           </Select.Content>
         </Select.Root>
       )
-    }, [plugin, plugins])
+    }, [plugin, plugins, t])
 
     const doneElement = (
       <Button disabled={!file || !plugin} variant='glass' icon='Check' onClick={submit} loading={loading} />
@@ -472,7 +479,7 @@ export namespace Enrichment {
 
     return (
       <UIBanner
-        title={event ? 'Event enrichment' : 'Data enrichment'}
+        title={event ? t('enrichment.eventTitle') : t('operationView.menu.dataEnrichment')}
         done={doneElement}
         loading={!plugins}
         {...props}
@@ -490,7 +497,7 @@ export namespace Enrichment {
 
         <Stack style={{ border: '1px solid var(--border)', borderRadius: 6, padding: 8 }} gap={8} dir='column'>
           <Stack ai='center' jc='space-between'>
-            <Label value='Fields' />
+            <Label value={t('common.fields')} />
             {!enrichmentField && <Button variant='tertiary' icon='Plus' onClick={handleAddField} />}
           </Stack>
 
@@ -509,7 +516,7 @@ export namespace Enrichment {
 
         <Stack ai='center' gap={4}>
           <Checkbox id='isShowOnlyEnriched' checked={isShowOnlyEnriched} onCheckedChange={v => setIsShowOnlyEnriched(!!v)} />
-          <Label htmlFor='isShowOnlyEnriched' value='Show only enriched docs' cursor='pointer' />
+          <Label htmlFor='isShowOnlyEnriched' value={t('enrichment.showOnlyEnriched')} cursor='pointer' />
         </Stack>
       </UIBanner>
     )
@@ -520,6 +527,8 @@ export namespace Enrichment {
  * Help tooltip for enrichment fields documentation.
  */
 function EnrichmentTooltip() {
+  const { t } = Locale.use()
+
   return (
     <TooltipProvider>
       <Tooltip>
@@ -532,21 +541,21 @@ function EnrichmentTooltip() {
             textOverflow: 'ellipsis',
             cursor: 'help'
           }}>
-            Define key/value pairs for enrichment. Use `empty` values to extract data from the document, or specific values to override/add new data. Supports dot notation for nested fields.
+            {t('enrichment.tooltipSummary')}
           </p>
         </TooltipTrigger>
         <TooltipContent className={s.tooltip}>
           <p>
-            A dict with key/value pairs to be updated (`enriched`) in the document, following this pattern: <br />
-            - A field with a <b>None</b> value will trigger plugin to get the value from the document and process it with the enrichment source. <br />
-            Example: <code>{`{ "host.name": null, "ip.address": null }`}</code> will enrich using values from `host.name` and `ip.address` fields in the document.<br />
+            {t('enrichment.tooltipIntro')} <br />
+            - {t('enrichment.tooltipNullValue')} <br />
+            {t('common.example')}: <code>{`{ "host.name": null, "ip.address": null }`}</code> {t('enrichment.tooltipNullExample')}<br />
             <br />
-            - A field with a <b>value set</b> will trigger `plugin` to process that value with the enrichment source. <br />
-            Example: <code>{`{ "host.name": "example.com", "ip.address": "8.8.8.8" }`}</code> will enrich "host.name" and "ip.address" using provided values.<br />
+            - {t('enrichment.tooltipSetValue')} <br />
+            {t('common.example')}: <code>{`{ "host.name": "example.com", "ip.address": "8.8.8.8" }`}</code> {t('enrichment.tooltipSetExample')}<br />
             <br />
-            - A mix of the two is also possible.<br />
+            - {t('enrichment.tooltipMix')}<br />
             <br />
-            `Dot notation` is supported for nested fields, i.e.: field1.field2, arrayfield[0].field3, and so on.
+            {t('enrichment.tooltipDotNotation')}
           </p>
         </TooltipContent>
       </Tooltip>

@@ -7,6 +7,7 @@ import { ComponentPropsWithoutRef } from 'react'
 import { Checkbox } from './Checkbox'
 import { Arrayed } from '@/class/Info'
 import { Application } from '@/context/Application.context'
+import { Locale } from '@/locales'
 
 export namespace Select {
   export const Root = (props: SelectPrimitive.SelectProps) => {
@@ -100,6 +101,7 @@ export namespace Select {
 
     export const Value = ({ placeholder, text, icon }: Value.Props) => {
       const multiSelect = Select.Multi.use()
+      const { t } = Locale.use()
 
       if (!multiSelect?.isMultiSelect) return null
 
@@ -107,7 +109,7 @@ export namespace Select {
 
       const Text = useMemo(() => {
         if (selectedValues.length === 0) {
-          return placeholder || 'Click here to choose...';
+          return placeholder || t('common.choosePlaceholder');
         }
 
         if (selectedValues.length === 1) {
@@ -115,7 +117,7 @@ export namespace Select {
         }
 
         return typeof text === 'function' ? text(selectedValues.length) : text ?? selectedValues.length;
-      }, [placeholder, text, selectedValues.length]);
+      }, [placeholder, text, selectedValues.length, t]);
 
       // icon can be array of icons, icon depends on len. if len > icon.len use icon.last (in fact its simplier than sounds like)
       return (
@@ -127,7 +129,7 @@ export namespace Select {
     }
 
     export const ToggleAll = ({
-      label = "Select all",
+      label,
       onToggle,
       checked
     }: {
@@ -137,6 +139,7 @@ export namespace Select {
     }) => {
 
       const isSelected = checked;
+      const { t } = Locale.use()
 
       const handleClick = (event: React.MouseEvent) => {
         event.preventDefault()
@@ -146,7 +149,7 @@ export namespace Select {
       return (
         <div className={cn(s.item, isSelected && s.selected)} onClick={handleClick} role="option" aria-selected={isSelected}>
           <Checkbox checked={isSelected} />
-          <span className={s.itemText}>{label}</span>
+          <span className={s.itemText}>{label ?? t('common.selectAll')}</span>
         </div>
       )
     }

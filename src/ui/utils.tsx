@@ -11,6 +11,7 @@ import { Doc } from '@/entities/Doc'
 import { App } from '@/entities/App'
 import { Color } from '@/entities/Color'
 import { Internal } from '@/entities/addon/Internal'
+import { translate } from '@/locales'
 
 export const parseTokensFromCookies = (tokens: string) => {
   try {
@@ -51,8 +52,8 @@ export const copy = (value: string) => {
         throw new Error('Clipboard API not available')
       }
       await navigator.clipboard.writeText(value)
-      toast('Data copied to clipboard successfully', {
-        description: 'Use CTRL + V to paste.',
+      toast(translate('clipboard.copied'), {
+        description: translate('clipboard.pasteHint'),
       })
     } catch (error) {
       // Fallback for lack of user activation or missing API
@@ -69,14 +70,14 @@ export const copy = (value: string) => {
         document.body.removeChild(textArea)
 
         if (successful) {
-          toast('Data copied to clipboard successfully', {
-            description: 'Use CTRL + V to paste.',
+          toast(translate('clipboard.copied'), {
+            description: translate('clipboard.pasteHint'),
           })
         } else {
           throw new Error('Fallback copy failed')
         }
       } catch (err) {
-        toast.error('Gulp doesn`t have access to clipboard')
+        toast.error(translate('clipboard.noAccess'))
       }
     }
   }

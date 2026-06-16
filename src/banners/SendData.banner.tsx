@@ -8,6 +8,7 @@ import { Stack } from '@/ui/Stack'
 import { Label } from '@/ui/Label'
 import { Icon } from '@impactium/icons'
 import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { Locale } from '@/locales'
 
 import s from './styles/EnrichmentBanner.module.css'
 
@@ -37,6 +38,7 @@ export namespace SendData {
 
   export function Banner({ event, onSendData, ...props }: SendData.Props) {
     const { extensions } = Extension.use()
+    const { t } = Locale.use()
     const [selectedPluginFilename, setSelectedPluginFilename] = useState<string | null>(null)
 
     /**
@@ -78,7 +80,7 @@ export namespace SendData {
             <Icon variant='dimmed' name='Send' />
             {selectedPlugin
               ? selectedPlugin.display_name || selectedPlugin.filename
-              : 'Select an external source'}
+              : t('sendData.selectExternalSource')}
           </Stack>
         </Select.Trigger>
       )
@@ -95,7 +97,7 @@ export namespace SendData {
           </Select.Content>
         </Select.Root>
       )
-    }, [selectedPluginFilename, sendDataPlugins, selectedPlugin])
+    }, [selectedPluginFilename, sendDataPlugins, selectedPlugin, t])
 
     /**
      * "Done" button passed to the UI Banner as the `done` prop.
@@ -110,7 +112,7 @@ export namespace SendData {
 
     return (
       <UIBanner
-        title="Send data to external source"
+        title={t('sendData.title')}
         subtitle={<span ></span>}
         done={doneButton}
         {...props}
@@ -118,7 +120,7 @@ export namespace SendData {
         <Stack dir="column" ai="flex-start" gap={12} style={{ width: '100%' }}>
           {/* Dropdown to select the destination plugin */}
           <Stack ai='center' jc='space-between'>
-            <Label className={s.helperText} value='Select an external source to send the event data to.' />
+            <Label className={s.helperText} value={t('sendData.helper')} />
           </Stack>
         </Stack>
         <Stack dir="column" ai="flex-start" gap={12} style={{ width: '100%' }}>

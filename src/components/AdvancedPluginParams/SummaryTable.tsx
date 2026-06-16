@@ -3,6 +3,7 @@ import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
 import { cn } from '@impactium/utils'
 import s from '../styles/Table.module.css'
+import { Locale } from '@/locales'
 
 /**
  * SummaryTableColumn defines the configuration for a single column in the SummaryTable.
@@ -35,6 +36,8 @@ export function SummaryTable<T extends Record<string, any>>({
   onDelete,
   className
 }: SummaryTableProps<T>) {
+  const { t } = Locale.use()
+
   return (
     <Stack ai="flex-start" jc="flex-start" dir="column" className={cn(s.wrapper, className)} style={{ width: '100%' }}>
       <table className={s.table} style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -92,7 +95,7 @@ export function SummaryTable<T extends Record<string, any>>({
           {data.length === 0 && (
             <tr>
               <td colSpan={columns.length + (onDelete ? 1 : 0)} className={cn(s.value, s.blank)} style={{ textAlign: 'center', padding: 8 }}>
-                No records
+                {t('common.noRecords')}
               </td>
             </tr>
           )}

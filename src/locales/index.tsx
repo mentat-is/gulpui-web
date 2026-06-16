@@ -1,87 +1,51 @@
+// This module provides localization utilities and a React context for managing the application's current language and text direction. 
+// It loads locale definitions from JSON files in the same directory, allowing for easy addition of new languages by simply adding new JSON files. 
+// The `Locale.Provider` component wraps the application and provides the current language, text direction, a function to change the language, and a translation function to its children via context.
+
+// to use strings from this module, add them to a JSON file in the same directory (e.g., `en.json`) with the structure:
+// {
+//   "metadata": {
+//     "@label": "English",
+//     "@dir": "ltr"
+//   },
+//   "strings": {
+//     "key1": "Translated string 1",
+//     "key2": "Translated string 2 with a variable: {var}"
+//   }
+// }
+
+// Then, in your React components, you can use the `Locale.use()` hook to access the current language and translation function:
+
+// import { Locale } from "@/locales";
+
+// function MyComponent() {
+//   const { t } = Locale.use();
+//   return <div>{t("key1")}</div>;
+// }
+
 import { Application } from "@/context/Application.context";
 import { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+  defaultLanguage,
+  formatMessage,
+  isLanguage,
+  Language,
+  LocaleDir,
+  localeByCode,
+  localeList,
+  resolveMessage,
+  setActiveLanguage,
+  translate,
+} from "./core";
 
-export const defaultLanguage = "en";
-export type Language = string;
-export type LocaleDir = "ltr" | "rtl";
-
-export interface LocaleDefinition {
-  code: Language;
-  label: string;
-  dir: LocaleDir;
-}
-
-type LocaleTable = Record<string, string>;
-
-declare const require: {
-  context: (path: string, deep?: boolean, filter?: RegExp) => {
-    keys: () => string[];
-    <T = unknown>(id: string): T;
-  };
+export {
+  defaultLanguage,
+  isLanguage,
+  localeList,
+  resolveMessage,
+  translate,
 };
-
-const localeContext = () =>
-  require.context("./", false, /^\.\/.+\.json$/);
-
-function codeFromFile(file: string): Language {
-  return file.replace(/^\.\//, "").replace(/\.json$/, "");
-}
-
-function normalizeModule(module: LocaleTable | { default: LocaleTable }): LocaleTable {
-  const maybeDefault = (module as { default?: unknown }).default;
-  return maybeDefault && typeof maybeDefault === "object" ? maybeDefault as LocaleTable : module as LocaleTable;
-}
-
-function normalizeDir(value: string | undefined): LocaleDir {
-  return value === "rtl" ? "rtl" : "ltr";
-}
-
-function titleCaseCode(code: string): string {
-  return code.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function loadLocaleTablesFromDirectory() {
-  const context = localeContext();
-  const tables: Record<Language, LocaleTable> = {};
-  const locales = context.keys().map((file) => {
-    const code = codeFromFile(file);
-    const table = normalizeModule(context<LocaleTable | { default: LocaleTable }>(file));
-    tables[code] = table;
-    return {
-      code,
-      label: table["@label"] ?? titleCaseCode(code),
-      dir: normalizeDir(table["@dir"]),
-    };
-  }).sort((left, right) => {
-    if (left.code === defaultLanguage) return -1;
-    if (right.code === defaultLanguage) return 1;
-    return left.label.localeCompare(right.label);
-  });
-
-  return { tables, locales };
-}
-
-const loadedLocales = loadLocaleTablesFromDirectory();
-const tables = loadedLocales.tables;
-export const localeList: LocaleDefinition[] = loadedLocales.locales;
-const localeByCode = Object.fromEntries(localeList.map((locale) => [locale.code, locale])) as Record<Language, LocaleDefinition>;
-
-if (!tables[defaultLanguage]) {
-  throw new Error(`Missing default locale: ${defaultLanguage}`);
-}
-
-export function isLanguage(value: unknown): value is Language {
-  return typeof value === "string" && value in tables;
-}
-
-export function resolveMessage(language: Language, key: string): string {
-  return tables[language]?.[key] ?? tables[defaultLanguage][key] ?? key;
-}
-
-function formatMessage(message: string, vars?: Record<string, string | number>) {
-  if (!vars) return message;
-  return message.replace(/\{(\w+)\}/g, (match, name) => String(vars[name] ?? match));
-}
+export type { Language, LocaleDir, LocaleDefinition } from "./core";
 
 export namespace Locale {
   export interface ContextValue {
@@ -94,7 +58,7 @@ export namespace Locale {
   export const Context = createContext<ContextValue>({
     language: defaultLanguage,
     dir: "ltr",
-    setLanguage: () => {},
+    setLanguage: () => { },
     t: (key) => resolveMessage(defaultLanguage, key),
   });
 
@@ -110,6 +74,7 @@ export namespace Locale {
     const locale = localeByCode[language] ?? localeByCode[defaultLanguage] ?? { code: defaultLanguage, label: defaultLanguage, dir: "ltr" };
 
     useEffect(() => {
+      setActiveLanguage(language);
       document.documentElement.lang = language;
       document.documentElement.dir = locale.dir;
     }, [language, locale.dir]);

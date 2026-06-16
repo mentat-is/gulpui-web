@@ -51,6 +51,7 @@ import { formatDuration, intervalToDuration } from "date-fns";
 import { Label } from "@/ui/Label";
 import { log } from "console";
 import { toast } from "sonner";
+import { Locale } from "@/locales";
 
 export namespace Source {
 	export const name = "Source";
@@ -736,6 +737,7 @@ export namespace Source {
 		 */
 		export function Banner({ source, ...props }: Source.Delete.Banner.Props) {
 			const { Info, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [loading, setLoading] = useState<boolean>(false);
 			const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
@@ -755,7 +757,7 @@ export namespace Source {
 
 			return (
 				<UIBanner
-					title="Delete file"
+					title={t("source.deleteTitle")}
 					done={
 						<Button
 							loading={loading}
@@ -768,11 +770,10 @@ export namespace Source {
 					{...props}
 				>
 					<p>
-						Are you going to delete file <code>{source.name}</code>. Are you
-						sure?
+						{t("source.deleteConfirmBefore")} <code>{source.name}</code>. {t("source.deleteConfirmAfter")}
 					</p>
 					<Toggle
-						option={["No, don`t delete", "Yes, i`m sure"]}
+						option={[t("common.noDontDelete"), t("common.yesImSure")]}
 						checked={isSubmitted}
 						onCheckedChange={setIsSubmitted}
 					/>
@@ -903,13 +904,14 @@ export namespace Source {
 			);
 		}
 
-		export function Multi({
-			sources,
-			selected,
-			setSelected,
-			placeholder,
-		}: Select.Multi.Props) {
-			const { app } = Application.use();
+			export function Multi({
+				sources,
+				selected,
+				setSelected,
+				placeholder,
+			}: Select.Multi.Props) {
+				const { app } = Application.use();
+				const { t } = Locale.use();
 
 			const all = useMemo(
 				() => sources ?? Source.Entity.selected(app),
@@ -964,10 +966,10 @@ export namespace Source {
 					<UISelect.Trigger>
 						<UISelect.Multi.Value
 							icon={["File", "Files"]}
-							placeholder={placeholder ?? "Select sources"}
+							placeholder={placeholder ?? t("source.selectSources")}
 							text={(len) =>
 								typeof len === "number"
-									? `Selected ${len} sources`
+									? t("source.selectedSources", { count: len })
 									: Source.Entity.id(app, len as Source.Id).name
 							}
 						/>
@@ -976,7 +978,7 @@ export namespace Source {
 						{isOpen && (
 							<>
 								<UISelect.Multi.ToggleAll
-									label={isAllSelected ? "Deselect all" : "Select all"}
+									label={isAllSelected ? t("common.deselectAll") : t("common.selectAll")}
 									checked={isAllSelected}
 									onToggle={(val) =>
 										setSelected(val ? all.map((s) => s.id) : [])
@@ -1034,6 +1036,7 @@ export namespace Source {
 		 */
 		export function Banner({ source }: Settings.Banner.Props) {
 			const { Info, app, spawnBanner, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [render_color_palette, setRenderColorPalette] =
 				useState<Color.Gradient>(Color.normalizeGradient(source.settings.render_color_palette));
 			const [offset, setOffset] = useState<number>(source.settings.offset);
@@ -1126,7 +1129,7 @@ export namespace Source {
 			const clearColorOverride = () => {
 				setColorOverride(undefined);
 				Info.file_set_settings(source.id, { color_override: undefined });
-				toast.success("Color override removed");
+				toast.success(t("source.colorOverrideRemoved"));
 			};
 
 			const done = (
@@ -1177,21 +1180,27 @@ export namespace Source {
 
 			return (
 				<UIBanner
-					title="Source settings"
+					title={t("source.settingsTitle")}
 					done={done}
 					option={option}
 				>
 					<TooltipProvider>
 						<h4>
-							{source.name} in {Context.Entity.id(app, source.context_id)?.name}
+							{t("source.nameInContext", {
+								source: source.name,
+								context: Context.Entity.id(app, source.context_id)?.name ?? "",
+							})}
 						</h4>
 						<Input
 							variant="highlighted"
 							icon="AlarmClockPlus"
 							type="number"
-							label={`Offset: ${formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ["years", "months", "days", "hours", "minutes", "seconds"], zero: false })} ${parseInt(offset.toString().slice(-3))} milliseconds`}
+							label={t("source.offsetLabel", {
+								duration: formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ["years", "months", "days", "hours", "minutes", "seconds"], zero: false }),
+								ms: parseInt(offset.toString().slice(-3)),
+							})}
 							value={offset}
-							placeholder="Offset time in ms"
+							placeholder={t("source.offsetPlaceholder")}
 							onChange={handleOffsetChange}
 						/>
 						<Stack
@@ -1205,7 +1214,7 @@ export namespace Source {
 								gap={4}
 								ai="center"
 							>
-								<Label value={`Min frequency sample: ${frequency_sample}ms`} />
+								<Label value={t("source.minFrequencySample", { value: `${frequency_sample}ms` })} />
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span
@@ -1223,11 +1232,7 @@ export namespace Source {
 										</span>
 									</TooltipTrigger>
 									<TooltipContent style={{ whiteSpace: "normal" }}>
-										The graph engine dynamically calculates the rendering
-										frequency sample based on the timeline scale and time range:
-										Max(Min Sample, 10 * Time Range / Width). Zooming out
-										dynamically increases the sample rate to optimize
-										performance and prevent overlapping.
+										{t("source.frequencyTooltip")}
 									</TooltipContent>
 								</Tooltip>
 							</Stack>
@@ -1236,7 +1241,7 @@ export namespace Source {
 								icon="AlarmClockPlus"
 								type="number"
 								value={frequency_sample}
-								placeholder="Min frequency sample (ms)"
+								placeholder={t("source.frequencyPlaceholder")}
 								onChange={handleFrequencyChange}
 							/>
 						</Stack>
@@ -1245,7 +1250,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Render engine" />
+							<Label value={t("common.renderEngine")} />
 							<UISelect.Root
 								onValueChange={(v: Engine.List) => setEngine(v)}
 								value={render_engine}
@@ -1278,7 +1283,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Hash function" />
+							<Label value={t("source.hashFunction")} />
 							<UISelect.Root
 								onValueChange={(value: HashFunctionName) =>
 									setHashFunction(value)
@@ -1305,7 +1310,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Color scheme" />
+							<Label value={t("source.colorScheme")} />
 							{colorPalette && (
 								<div className={s.custom_palette_notice}>
 									{!!colorPaletteColors?.length && (
@@ -1316,7 +1321,7 @@ export namespace Source {
 											}}
 										/>
 									)}
-									<span>Custom color palette applied: {colorPalette.name}</span>
+									<span>{t("source.customPaletteApplied", { name: colorPalette.name })}</span>
 								</div>
 							)}
 							<ColorPicker
@@ -1335,7 +1340,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Color scheme based on field" />
+							<Label value={t("source.colorSchemeField")} />
 							{EventFieldsSelection}
 						</Stack>
 						{colorOverrideEntries.length > 0 && (
@@ -1350,7 +1355,7 @@ export namespace Source {
 									jc="space-between"
 									className={s.override_header}
 								>
-									<Label value="Overrides" />
+									<Label value={t("source.overrides")} />
 									<Button
 										variant="secondary"
 										icon="Trash2"
@@ -1383,7 +1388,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Change context color" />
+							<Label value={t("source.changeContextColor")} />
 							<ColorPicker
 								color={contextColor}
 								setColor={setContextColor}
@@ -1403,9 +1408,10 @@ export namespace Source {
 			}
 
 			export function Banner({ ...props }: Banner.Props) {
+				const { t } = Locale.use();
 				return (
 					<UIBanner
-						title="Manage render rules"
+						title={t("source.manageRenderRules")}
 						{...props}
 					></UIBanner>
 				);

@@ -14,6 +14,7 @@ import { Note } from "@/entities/Note";
 import { Link } from "@/entities/Link";
 import { Doc } from "@/entities/Doc";
 import { Glyph } from "@/entities/Glyph";
+import { Locale } from "@/locales";
 
 export namespace Collab {
   export namespace List {
@@ -46,6 +47,7 @@ export namespace Collab {
   });
   export function List({ notes, links, container, className, ...props }: Collab.List.Props) {
     const { app, spawnBanner } = Application.use();
+    const { t } = Locale.use();
     const hasItems = notes.length > 0 || links.length > 0;
     const [targetId, setTargetId] = useState<string>(notes[0]?.id || links[0]?.id);
 
@@ -121,10 +123,7 @@ export namespace Collab {
             </Stack>
             <Stack style={FLEX_WRAP_STYLE} jc='flex-start' ai='center'>
               <Badge variant='gray-subtle' icon='ClockRewind' size='sm'>
-                Created {formatDistanceToNow(
-                  target.time_created,
-                  { addSuffix: true }
-                )}
+                {t('collab.createdAgo', { time: formatDistanceToNow(target.time_created, { addSuffix: true }) })}
               </Badge>
               {Tags}
             </Stack>
@@ -143,10 +142,11 @@ export namespace Collab {
   }
   export function Description({ value, isDefaultOpen = false }: Description.Props) {
     const [inOpen, setIsOpen] = useState<boolean>(isDefaultOpen)
+    const { t } = Locale.use()
     return (
       <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
         <Markdown className={cn(s.description, inOpen && s.revealed)} value={value} />
-        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} icon='AcronymMarkdown'>{inOpen ? 'Hide' : 'Show'} text</Button>
+        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} icon='AcronymMarkdown'>{inOpen ? t('common.hide') : t('common.show')} {t('common.text')}</Button>
       </Stack>
     )
   }

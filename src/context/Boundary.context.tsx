@@ -8,6 +8,7 @@ import { Button } from '@/ui/Button';
 import { Icon } from '@impactium/icons';
 import { Application } from '@/context/Application.context';
 import s from './styles/Boundary.module.css';
+import { Locale } from '@/locales';
 
 export namespace Boundary {
   export type Props = {
@@ -88,6 +89,7 @@ export namespace Boundary {
 
   export function Panel({ errors, onClose }: Panel.Props) {
     const { Info } = Application.use();
+    const { t } = Locale.use();
     const [isOnline, setIsOnline] = useState(navigator.onLine);
     const [current, setCurrent] = useState(0);
 
@@ -133,16 +135,16 @@ export namespace Boundary {
             <Badge variant='gray-subtle' disabled={current === errors.length - 1} onClick={() => setCurrent(i => i + 1)} icon='ArrowRight' />
           </Stack>
           <Stack ai='center' jc='center' dir='row' gap={'6px'}>
-            <Badge variant='gray-subtle' mono value='Version: 1.0.0' />
+            <Badge variant='gray-subtle' mono value={t('boundary.version', { version: '1.0.0' })} />
           </Stack>
         </Stack>
         <Panel.Actions onCopy={handleCopy} />
         <Stack ai='stretch' flex jc='center' dir='column' gap={16} style={{ height: 0 }}>
           <span>{visibleError.message}</span>
-          {Panel.HINTS.map((hint, idx) => <p key={idx}>{idx + 1}. {hint}</p>)}
+          {Panel.HINT_KEYS.map((hint, idx) => <p key={hint}>{idx + 1}. {t(hint)}</p>)}
           <Stack ai='flex-start' jc='center' dir='column' className={s.stackContainer} flex>
             <Stack ai='center' jc='start' dir='row' gap={6} className={s.stack} flex={0}>
-              <span style={{ color: 'var(--gray-alpha-1000)' }}>Call Stack</span>
+              <span style={{ color: 'var(--gray-alpha-1000)' }}>{t('boundary.callStack')}</span>
               <Badge variant='gray-subtle' size='sm' value={visibleError.stack ? `${visibleError.stack.split('\n').length}` : ''} />
             </Stack>
             <Stack dir='column' className={s.stackText}>
@@ -156,10 +158,10 @@ export namespace Boundary {
           </Stack>
           <Stack jc='flex-end' flex={0} gap={12}>
             {isOnline ? (
-              <Button variant='tertiary' onClick={() => window.open('https://github.com/mentat-is/gulpui-web/issues/new', '_blank')}>Report</Button>
-            ) : <Button variant='tertiary' onClick={handleSaveLog}>Save log</Button>}
-            <Button variant='secondary' icon='X' onClick={onClose}>Ignore</Button>
-            <Button variant='default' icon='Save' onClick={async () => { Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red' }); onClose?.() }}>Save sassion</Button>
+              <Button variant='tertiary' onClick={() => window.open('https://github.com/mentat-is/gulpui-web/issues/new', '_blank')}>{t('boundary.report')}</Button>
+            ) : <Button variant='tertiary' onClick={handleSaveLog}>{t('boundary.saveLog')}</Button>}
+            <Button variant='secondary' icon='X' onClick={onClose}>{t('boundary.ignore')}</Button>
+            <Button variant='default' icon='Save' onClick={async () => { Info.session_create({ name: `error ${new Date().toISOString()}`, icon: 'Bug', color: 'red' }); onClose?.() }}>{t('session.saveTitle')}</Button>
           </Stack>
         </Stack>
       </Stack>
@@ -173,11 +175,11 @@ export namespace Boundary {
       onClose?: () => void;
     }
 
-    export const HINTS = [
-      'You might have mismatching versions of React and the renderer (such as React DOM)',
-      'You might be breaking the Rules of Hooks',
-      'You might have more than one copy of React in the same app',
-      'We recommend reporting this error so our developers can investigate and fix it.'
+    export const HINT_KEYS = [
+      'boundary.hintReactVersions',
+      'boundary.hintRulesOfHooks',
+      'boundary.hintMultipleReactCopies',
+      'boundary.hintReportError'
     ] as const;
 
     export const parseStack = (stack = '') => {
@@ -214,10 +216,11 @@ export namespace Boundary {
     }
 
     export function Item({ projectPath, clientType, filePath, line, column }: Boundary.Panel.Item.Props) {
+      const { t } = Locale.use();
       return (
         <Stack ai='start' jc='center' dir='column' className={s.stackItem} flex={0}>
           <Stack ai='start' jc='start' dir='row' gap={6} className={s.stackHeader}>
-            [project] {projectPath} [{clientType}]
+            {t('boundary.project')} {projectPath} [{clientType}]
           </Stack>
           <Stack className={s.stackPosition}>
             {filePath}{projectPath} {line && column ? `(${line}:${column})` : ''}
@@ -233,9 +236,10 @@ export namespace Boundary {
     }
 
     export function Actions({ onCopy }: Actions.Props) {
+      const { t } = Locale.use();
       return (
         <Stack ai='center' jc='space-between' className={s.action}>
-          <Badge variant='red-subtle' value='Runtime Error' style={{ fontFamily: 'var(--font-mono)', borderRadius: '6px' }} />
+          <Badge variant='red-subtle' value={t('boundary.runtimeError')} style={{ fontFamily: 'var(--font-mono)', borderRadius: '6px' }} />
           <Stack className={s.action_block}>
             <Button rounded variant='secondary' icon='Copy' onClick={onCopy} size='sm' shape='icon' />
             <Button variant='secondary' asChild rounded size='sm' shape='icon'>

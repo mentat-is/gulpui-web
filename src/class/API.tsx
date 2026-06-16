@@ -5,6 +5,7 @@ import { Auth } from "@/page/Auth.page";
 import { Request } from "@/entities/Request";
 import { Internal } from "@/entities/addon/Internal";
 import { toast } from "sonner";
+import { translate } from "@/locales/core";
 
 export interface ResponseBase<T = any> {
 	status: "success" | "error" | "pending";
@@ -45,8 +46,8 @@ export class ResponseHandler<T extends ResponseBase<any>> {
 		this.data = payload.data;
 
 		if (this.status === "error" && !this.req_id && !this.data) {
-			toast.error("Gulp UI could not estabilish connection with API", {
-				description: "Make sure API is working and ready to accept connections",
+			toast.error(translate("api.connectionFailed"), {
+				description: translate("api.connectionCheck"),
 				richColors: true,
 				icon: <Icon name="Warning" />,
 			});

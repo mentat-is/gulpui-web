@@ -4,7 +4,6 @@ import { Table } from "@/components/Table";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import s from "./styles/PermissaionsBanner.module.css";
 import { Popover } from "@/ui/Popover";
-import { capitalize } from "lodash";
 import { Switch } from "@/ui/Switch";
 import { Icon } from "@impactium/icons";
 import { toast } from "sonner";
@@ -16,6 +15,7 @@ import { Stack } from "@/ui/Stack";
 import { User } from "@/entities/User";
 import { Group } from "@/entities/Group";
 import { Glyph } from "@/entities/Glyph";
+import { Locale } from "@/locales";
 
 export namespace Permissions {
 	export type Role = "admin" | "read" | "edit" | "ingest" | "delete";
@@ -36,6 +36,7 @@ export namespace Permissions {
 
 	export const Banner = () => {
 		const { destroyBanner } = Application.use();
+		const { t } = Locale.use();
 		const [users, setUsers] = useState<User.Type[]>([]);
 		const [_groups, setGroups] = useState<Group.Type[]>([]);
 		const [loading, setLoading] = useState<boolean>(false);
@@ -121,7 +122,7 @@ export namespace Permissions {
 
 		return (
 			<UIBanner
-				title="Permissions"
+				title={t("common.permissions")}
 				option={<Users.Create.Trigger loading={loading} />}
 				loading={!users.length}
 				done={done}
@@ -132,7 +133,7 @@ export namespace Permissions {
 					variant="glass"
 					icon="Users"
 				>
-					Manage groups
+					{t("permissions.manageGroups")}
 				</Button>
 			</UIBanner>
 		);
@@ -152,6 +153,7 @@ export namespace Permissions {
 		}
 		export const Combination = ({ user, update, users }: Combination.Props) => {
 			const { app, spawnBanner } = Application.use();
+			const { t } = Locale.use();
 
 			const changeRoles = (
 				id: User.Id,
@@ -164,8 +166,8 @@ export namespace Permissions {
 				}
 
 				if (role === "read") {
-					return toast("User should have minimum one role", {
-						description: "Request has been declined by server",
+					return toast(t("permissions.minimumRole"), {
+						description: t("permissions.requestDeclined"),
 					});
 				}
 
@@ -196,7 +198,7 @@ export namespace Permissions {
 					>
 						<p>
 							{user.name}
-							{user.id === app.general.user?.id ? <span>(you)</span> : null}
+							{user.id === app.general.user?.id ? <span>{t("permissions.you")}</span> : null}
 						</p>
 						<span>{user.id}</span>
 					</Stack>
@@ -207,7 +209,7 @@ export namespace Permissions {
 								icon="Gavel"
 								variant="secondary"
 							>
-								Roles /{" "}
+								{t("permissions.roles")} /{" "}
 								{user.permission
 									.map((p) => p[0])
 									.join("")
@@ -234,7 +236,7 @@ export namespace Permissions {
 													size={12}
 												/>
 											)}
-											<p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
+											<p style={{ fontSize: 12, flex: 1 }}>{t(r === "delete" ? "common.delete" : r === "edit" ? "common.edit" : `permissions.role.${r}`)}</p>
 											<Switch
 												checked={has}
 												onCheckedChange={(add) => changeRoles(user.id, r, add)}
@@ -251,7 +253,7 @@ export namespace Permissions {
 								icon="Users"
 								variant="secondary"
 							>
-								Groups
+								{t("common.groups")}
 							</Button>
 						</Popover.Trigger>
 						<Popover.Content>
@@ -272,7 +274,7 @@ export namespace Permissions {
 												name={RolesIcons[r]}
 												size={12}
 											/>
-											<p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
+											<p style={{ fontSize: 12, flex: 1 }}>{t(r === "delete" ? "common.delete" : r === "edit" ? "common.edit" : `permissions.role.${r}`)}</p>
 											<Switch
 												checked={has}
 												onCheckedChange={(add) => changeRoles(user.id, r, add)}
@@ -311,6 +313,7 @@ export namespace Permissions {
 			};
 			export const Banner = () => {
 				const { spawnBanner } = Application.use();
+				const { t } = Locale.use();
 				const [loading, setLoading] = useState<boolean>(false);
 				const [icon, setIcon] = useState<Glyph.Id | null>(null);
 				const [id, setId] = useState<string>("");
@@ -389,12 +392,12 @@ export namespace Permissions {
 				return (
 					<UIBanner
 						back={() => spawnBanner(<Permissions.Banner />)}
-						title="Create user"
+						title={t("permissions.createUser")}
 						done={<Done />}
 					>
 						<Input
 							icon="User"
-							placeholder="User idendificator"
+							placeholder={t("permissions.userIdPlaceholder")}
 							variant="highlighted"
 							value={id}
 							valid={isIdValid}
@@ -406,7 +409,7 @@ export namespace Permissions {
 						/>
 						<Input
 							icon="Key"
-							placeholder="Password"
+							placeholder={t("auth.password")}
 							variant="highlighted"
 							value={password}
 							valid={isPasswordValid}
@@ -453,6 +456,7 @@ export namespace Permissions {
 			}
 			export function Banner({ user, ...props }: Banner.Props) {
 				const { spawnBanner } = Application.use();
+				const { t } = Locale.use();
 				const [loading, setLoading] = useState<boolean>(false);
 				const [icon, setIcon] = useState<Glyph.Id | null>(user.glyph_id);
 				const [id, setId] = useState<string>(user.id);
@@ -532,13 +536,13 @@ export namespace Permissions {
 				return (
 					<UIBanner
 						back={() => spawnBanner(<Permissions.Banner />)}
-						title={`Edit user ${user.name}`}
+						title={t("permissions.editUser", { name: user.name })}
 						done={<Done />}
 						{...props}
 					>
 						<Input
 							icon="User"
-							placeholder="User idendificator"
+							placeholder={t("permissions.userIdPlaceholder")}
 							variant="highlighted"
 							value={id}
 							valid={isIdValid}
@@ -550,12 +554,12 @@ export namespace Permissions {
 						/>
 						<Input
 							icon="Key"
-							placeholder="Password"
+							placeholder={t("auth.password")}
 							variant="highlighted"
 							type={showPassword ? "text" : "password"}
 							value={password}
 							endIcon={showPassword ? "EyeOff" : "Eye"}
-							endIconTitle={showPassword ? "Hide password" : "Show password"}
+							endIconTitle={showPassword ? t("auth.hidePassword") : t("auth.showPassword")}
 							onEndIconClick={() => setShowPassword((current) => !current)}
 							valid={isPasswordValid}
 							onChange={inputConstructor(
@@ -601,6 +605,7 @@ export namespace OperationPermissions {
 		...props
 	}: Banner.Props) => {
 		const { Info, destroyBanner } = Application.use();
+		const { t } = Locale.use();
 		const [users, setUsers] = useState<User.Type[]>([]);
 		const [groups, setGroups] = useState<Group.Type[]>([]);
 		const [loading, setLoading] = useState<boolean>(true);
@@ -691,7 +696,7 @@ export namespace OperationPermissions {
 
 		return (
 			<UIBanner
-				title="Operation Permissions"
+				title={t("permissions.operationPermissions")}
 				loading={loading}
 				onClose={onSuccess}
 				{...props}
@@ -721,7 +726,7 @@ export namespace OperationPermissions {
 								fontFamily: "var(--font-mono)",
 							}}
 						>
-							Users
+							{t("common.users")}
 						</div>
 						{users.length > 0 ? (
 							<Table
@@ -756,7 +761,7 @@ export namespace OperationPermissions {
 								fontFamily: "var(--font-mono)",
 							}}
 						>
-							Groups
+							{t("common.groups")}
 						</div>
 						{groups.length > 0 ? (
 							<Table
