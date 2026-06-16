@@ -88,7 +88,7 @@
     "api.connectionFailed": "Gulp UI no pudo establecer la conexión con la API",
     "application.cannotOpenNextEvent": "No se puede abrir el próximo evento",
     "application.cannotOpenPreviousEvent": "No se puede abrir el evento anterior",
-    "application.useEnglishScrollKeys": "Utilice las letras inglesas A y D para desplazarse",
+    "application.useEnglishScrollKeys": "Utilice las letras A y D para desplazarse",
     "auth.accessGranted": "Acceso concedido",
     "auth.hidePassword": "Ocultar contraseña",
     "auth.incorrectServerUrl": "URL del servidor incorrecta",

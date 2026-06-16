@@ -88,7 +88,7 @@
     "api.connectionFailed": "L'interfaccia utente di Gulp non è riuscita a stabilire la connessione con l'API",
     "application.cannotOpenNextEvent": "Impossibile aprire l'evento successivo",
     "application.cannotOpenPreviousEvent": "Impossibile aprire l'evento precedente",
-    "application.useEnglishScrollKeys": "Utilizzare le lettere inglesi A e D per lo scorrimento",
+    "application.useEnglishScrollKeys": "Utilizzare le lettere A e D per lo scorrimento",
     "auth.accessGranted": "Accesso concesso",
     "auth.hidePassword": "Nascondi la password",
     "auth.incorrectServerUrl": "URL del server errato",
