@@ -2,10 +2,7 @@ import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Table } from "@/components/Table";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import s from "./styles/PermissaionsBanner.module.css";
-import { Popover } from "@/ui/Popover";
 import { capitalize } from "lodash";
-import { Switch } from "@/ui/Switch";
 import { Icon } from "@impactium/icons";
 import { toast } from "sonner";
 import { SetState } from "@/class/API";
@@ -13,313 +10,139 @@ import { Skeleton } from "@/ui/Skeleton";
 import { Button } from "@/ui/Button";
 import { Input } from "@/ui/Input";
 import { Stack } from "@/ui/Stack";
+import { Select } from "@/ui/Select";
 import { User } from "@/entities/User";
 import { Group } from "@/entities/Group";
 import { Glyph } from "@/entities/Glyph";
 
 export namespace Permissions {
 	export type Role = "admin" | "read" | "edit" | "ingest" | "delete";
-	export const RolesList: Role[] = [
-		"admin",
+	export const PermissionSelectRoles: Role[] = [
+		"read",
+		"ingest",
 		"edit",
 		"delete",
-		"ingest",
-		"read",
+		"admin",
 	];
-	export const RolesIcons: Record<Role, Icon.Name> = {
-		admin: "Crown",
-		read: "Book",
-		edit: "PenLine",
-		ingest: "Upload",
-		delete: "Trash2",
-	};
+	export const UserListChangedEvent = "gulp:user-list-changed";
 
-	export const Banner = () => {
-		const { destroyBanner } = Application.use();
-		const [users, setUsers] = useState<User.Type[]>([]);
-		const [_groups, setGroups] = useState<Group.Type[]>([]);
-		const [loading, setLoading] = useState<boolean>(false);
+	/**
+	 * Notifies active user list views that user data has changed.
+	 */
+	export function notifyUserListChanged() {
+		window.dispatchEvent(new Event(UserListChangedEvent));
+	}
 
-		const reload = useCallback(() => {
-			api<User.Type[]>(
-				"/user_list",
-				{
-					setLoading,
-				},
-				setUsers,
-			);
+	/**
+	 * Extracts the most useful API error message from supported response shapes.
+	 *
+	 * @param data - API error payload returned by the request helper.
+	 * @returns A readable error message for toast display.
+	 */
+	export function getApiErrorMessage(data: unknown): string {
+		if (!data || typeof data !== "object") {
+			return "Unexpected API error";
+		}
 
-			api<Group.Type[]>(
-				"/user_group_list",
-				{
-					method: "POST",
-					setLoading,
-				},
-				setGroups,
-			);
-		}, [setUsers, setGroups]);
+		const errorData = data as Record<string, unknown>;
+		if (typeof errorData.msg === "string") {
+			return errorData.msg;
+		}
 
-		useEffect(() => {
-			reload();
-		}, []);
+		const nestedError = errorData.__error;
+		if (nestedError && typeof nestedError === "object") {
+			const nestedErrorData = nestedError as Record<string, unknown>;
+			if (typeof nestedErrorData.msg === "string") {
+				return nestedErrorData.msg;
+			}
+		}
 
-		const update = (user: Pick<User.Type, "id"> & Partial<User.Type>) => {
-			const { glyph_id = user.glyph_id, id: user_id } = user;
-
-			const query: Record<string, string> = {
-				user_id,
-			};
-
-			if (glyph_id) query.glyph_id = glyph_id;
-
-			api<User.Type>(
-				"/user_update",
-				{
-					method: "PATCH",
-					query,
-					body: user,
-					setLoading,
-				},
-				reload,
-			);
-		};
-
-		const UsersList = useCallback(
-			() => (
-				<Stack
-					dir="column"
-					ai="unset"
-					style={{ height: "100%", overflow: "auto" }}
-				>
-					{users.length
-						? users.map((user) => (
-								<Users.Combination
-									key={user.id}
-									user={user}
-									update={update}
-									users={users}
-								/>
-							))
-						: Array.from({ length: 5 }).map((_, i) => (
-								<Skeleton
-									key={i}
-									width="full"
-								/>
-							))}
-				</Stack>
-			),
-			[users],
-		);
-
-		const done = (
-			<Button
-				icon="Check"
-				variant="glass"
-				onClick={destroyBanner}
-			/>
-		);
-
-		return (
-			<UIBanner
-				title="Permissions"
-				option={<Users.Create.Trigger loading={loading} />}
-				loading={!users.length}
-				done={done}
-			>
-				<UsersList />
-				<Button
-					style={{ width: "100%" }}
-					variant="glass"
-					icon="Users"
-				>
-					Manage groups
-				</Button>
-			</UIBanner>
-		);
-	};
+		return "Unexpected API error";
+	}
 
 	export namespace Users {
 		export const UsernameRule = /^[a-zA-Z0-9_.@-]{4,16}$/;
 		export const PasswordRule =
 			/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-])[A-Za-z0-9!@#$%^&*()_+\-]{8,64}$/;
 
-		export namespace Combination {
+		export namespace RolesSelect {
 			export interface Props {
-				user: User.Type;
-				update: (user: Pick<User.Type, "id"> & Partial<User.Type>) => void;
-				users: User.Type[];
+				/** Currently selected permission roles. */
+				value: Permissions.Role[];
+				/** Callback invoked when selected roles change. */
+				onChange: (roles: Permissions.Role[]) => void;
 			}
 		}
-		export const Combination = ({ user, update, users }: Combination.Props) => {
-			const { app, spawnBanner } = Application.use();
 
-			const changeRoles = (
-				id: User.Id,
-				role: Permissions.Role,
-				add?: boolean,
-			) => {
-				const user = users.find((u) => u.id === id);
-				if (!user) {
-					return;
-				}
+		/**
+		 * Renders a multi-value permission selector using the shared Select UI.
+		 *
+		 * @param props - Selected role values and change callback.
+		 * @returns A multi-select trigger and role option list.
+		 */
+		export function RolesSelect({ value, onChange }: RolesSelect.Props) {
+			/**
+			 * Keeps selected role values valid and ordered by the canonical role list.
+			 *
+			 * @param selectedRoles - Raw selected values emitted by the multi-select.
+			 * @returns A filtered and ordered role list.
+			 */
+			const normalizeSelectedRoles = (
+				selectedRoles: string[],
+			): Permissions.Role[] =>
+				PermissionSelectRoles.filter((role) => selectedRoles.includes(role));
 
-				if (role === "read") {
-					return toast("User should have minimum one role", {
-						description: "Request has been declined by server",
-					});
-				}
-
-				user.permission = user.permission.filter((p) => p !== role);
-				if (add) {
-					user.permission.push(role);
-				}
-
-				update({
-					id,
-					permission: user.permission,
-				});
-			};
+			const triggerLabel =
+				value.length > 0
+					? value.map((role) => capitalize(role)).join(", ")
+					: "Choose permissions";
 
 			return (
-				<Stack className={s.combination}>
-					{Glyph.List.get(user.glyph_id ?? Glyph.getIdByName("User")) && (
+				<Select.Multi.Root
+					value={value}
+					onValueChange={(selectedRoles) =>
+						onChange(normalizeSelectedRoles(selectedRoles))
+					}
+				>
+					<Select.Trigger>
 						<Icon
-							name={Glyph.List.get(user.glyph_id ?? Glyph.getIdByName("User"))!}
+							name="Gavel"
+							color="currentColor"
 						/>
-					)}
-					<Stack
-						className={s.general}
-						ai="flex-start"
-						jc="space-around"
-						gap={-1}
-						dir="column"
-					>
-						<p>
-							{user.name}
-							{user.id === app.general.user?.id ? <span>(you)</span> : null}
-						</p>
-						<span>{user.id}</span>
-					</Stack>
-					<Stack flex />
-					<Popover.Root>
-						<Popover.Trigger asChild>
-							<Button
-								icon="Gavel"
-								variant="secondary"
+						<span>{triggerLabel}</span>
+					</Select.Trigger>
+					<Select.Content>
+						{PermissionSelectRoles.map((role) => (
+							<Select.Item
+								key={role}
+								value={role}
 							>
-								Roles /{" "}
-								{user.permission
-									.map((p) => p[0])
-									.join("")
-									.toUpperCase() || "0"}
-							</Button>
-						</Popover.Trigger>
-						<Popover.Content>
-							<Stack
-								dir="column"
-								ai="flex-start"
-								gap={4}
-							>
-								{RolesList.map((r) => {
-									const has = user.permission.includes(r);
-									return (
-										<Stack
-											key={r}
-											className={s.role}
-											gap={6}
-										>
-											{RolesIcons[r] && (
-												<Icon
-													name={RolesIcons[r]}
-													size={12}
-												/>
-											)}
-											<p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
-											<Switch
-												checked={has}
-												onCheckedChange={(add) => changeRoles(user.id, r, add)}
-											/>
-										</Stack>
-									);
-								})}
-							</Stack>
-						</Popover.Content>
-					</Popover.Root>
-					<Popover.Root>
-						<Popover.Trigger asChild>
-							<Button
-								icon="Users"
-								variant="secondary"
-							>
-								Groups
-							</Button>
-						</Popover.Trigger>
-						<Popover.Content>
-							<Stack
-								dir="column"
-								ai="flex-start"
-								gap={4}
-							>
-								{RolesList.map((r) => {
-									const has = user.permission.includes(r);
-									return (
-										<Stack
-											key={r}
-											className={s.role}
-											gap={6}
-										>
-											<Icon
-												name={RolesIcons[r]}
-												size={12}
-											/>
-											<p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
-											<Switch
-												checked={has}
-												onCheckedChange={(add) => changeRoles(user.id, r, add)}
-											/>
-										</Stack>
-									);
-								})}
-							</Stack>
-						</Popover.Content>
-					</Popover.Root>
-					<Button
-						icon="PenLine"
-						onClick={() =>
-							spawnBanner(<Permissions.Users.Edit.Banner user={user} />)
-						}
-						variant="secondary"
-					/>
-				</Stack>
+								{capitalize(role)}
+							</Select.Item>
+						))}
+					</Select.Content>
+				</Select.Multi.Root>
 			);
-		};
-		export namespace Create {
-			export namespace Trigger {
-				export type Props = Button.Props;
-			}
-			export const Trigger = ({ ...props }: Trigger.Props) => {
-				const { spawnBanner } = Application.use();
+		}
 
-				return (
-					<Button
-						icon="UserPlus"
-						variant="tertiary"
-						onClick={() => spawnBanner(<Users.Create.Banner />)}
-						{...props}
-					/>
-				);
-			};
-			export const Banner = () => {
-				const { spawnBanner } = Application.use();
+		export namespace Create {
+			export namespace Banner {
+				export interface Props extends UIBanner.Props {
+					/** Callback invoked after a user is created successfully. */
+					onSuccess?: () => void;
+				}
+			}
+			export const Banner = ({ onSuccess, ...props }: Banner.Props) => {
+				const { destroyBanner } = Application.use();
 				const [loading, setLoading] = useState<boolean>(false);
 				const [icon, setIcon] = useState<Glyph.Id | null>(null);
 				const [id, setId] = useState<string>("");
 				const [isIdValid, setIsIdValid] = useState<boolean>(true);
 				const [password, setPassword] = useState<string>("");
 				const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
-				const [permissions, setPermisisons] = useState<string>("read");
-				const [isPermissionsValid, setIsPermissionsValid] =
-					useState<boolean>(true);
+				const [permissions, setPermissions] = useState<Permissions.Role[]>([
+					"read",
+				]);
 
 				const inputConstructor =
 					(
@@ -333,6 +156,9 @@ export namespace Permissions {
 						set(value);
 					};
 
+				/**
+				 * Creates a user with the selected glyph, password, and permissions.
+				 */
 				const submit = () => {
 					api(
 						"/user_create",
@@ -349,26 +175,43 @@ export namespace Permissions {
 							},
 							setLoading,
 							body: {
-								permission: permissions
-									.split(",")
-									.map((v) => v.trim().toLowerCase()),
+								permission: permissions,
+							},
+							toast: {
+								onError: (response) =>
+									toast.error("Failed creating user", {
+										description: Permissions.getApiErrorMessage(
+											response.data,
+										),
+										icon: <Icon name="Warning" />,
+										richColors: true,
+									}),
 							},
 						},
-						() => spawnBanner(<Permissions.Banner />),
+						() => {
+							Permissions.notifyUserListChanged();
+							onSuccess?.();
+							destroyBanner();
+						},
 					);
 				};
 
-				const handlePermsChange = (event: ChangeEvent<HTMLInputElement>) => {
-					const { value } = event.target;
-					const valid = value
-						.split(",")
-						.map((v) => v.trim())
-						.every((v) => RolesList.includes(v as Role));
-
-					setIsPermissionsValid(valid);
-					setPermisisons(value);
+				/**
+				 * Stores the role list selected from the permissions multi-select.
+				 *
+				 * @param selectedRoles - Roles selected by the user.
+				 */
+				const handlePermissionsChange = (
+					selectedRoles: Permissions.Role[],
+				) => {
+					setPermissions(selectedRoles);
 				};
 
+				/**
+				 * Renders the banner confirmation button for user creation.
+				 *
+				 * @returns The configured done button.
+				 */
 				const Done = () => (
 					<Button
 						icon="Check"
@@ -379,7 +222,7 @@ export namespace Permissions {
 							!isIdValid ||
 							password.length < 5 ||
 							!isPasswordValid ||
-							!isPermissionsValid ||
+							permissions.length === 0 ||
 							!icon
 						}
 						variant="glass"
@@ -388,9 +231,9 @@ export namespace Permissions {
 
 				return (
 					<UIBanner
-						back={() => spawnBanner(<Permissions.Banner />)}
 						title="Create user"
 						done={<Done />}
+						{...props}
 					>
 						<Input
 							icon="User"
@@ -416,13 +259,9 @@ export namespace Permissions {
 								new RegExp(Permissions.Users.PasswordRule),
 							)}
 						/>
-						<Input
-							icon="Gavel"
-							placeholder="read, ingest, edit, delete, admin"
-							variant="highlighted"
+						<Users.RolesSelect
 							value={permissions}
-							valid={isPermissionsValid}
-							onChange={handlePermsChange}
+							onChange={handlePermissionsChange}
 						/>
 						<Glyph.Chooser
 							icon={icon}
@@ -432,27 +271,17 @@ export namespace Permissions {
 				);
 			};
 		}
-		export namespace Groups {
-			export namespace Combination {
-				export interface Props {
-					group: Group.Type;
-				}
-			}
-			export function Combination({
-				group: _group,
-				...props
-			}: Combination.Props) {
-				return <Stack {...props}></Stack>;
-			}
-		}
 		export namespace Edit {
 			export namespace Banner {
 				export interface Props extends UIBanner.Props {
+					/** User loaded into the edit form. */
 					user: User.Type;
+					/** Callback invoked after a user is updated successfully. */
+					onSuccess?: () => void;
 				}
 			}
-			export function Banner({ user, ...props }: Banner.Props) {
-				const { spawnBanner } = Application.use();
+			export function Banner({ user, onSuccess, ...props }: Banner.Props) {
+				const { destroyBanner } = Application.use();
 				const [loading, setLoading] = useState<boolean>(false);
 				const [icon, setIcon] = useState<Glyph.Id | null>(user.glyph_id);
 				const [id, setId] = useState<string>(user.id);
@@ -460,11 +289,9 @@ export namespace Permissions {
 				const [password, setPassword] = useState<string>("");
 				const [showPassword, setShowPassword] = useState(false);
 				const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
-				const [permissions, setPermisisons] = useState<string>(
-					user.permission.join(", "),
+				const [permissions, setPermissions] = useState<Permissions.Role[]>(
+					user.permission ?? ["read"],
 				);
-				const [isPermissionsValid, setIsPermissionsValid] =
-					useState<boolean>(true);
 
 				const inputConstructor =
 					(
@@ -478,6 +305,9 @@ export namespace Permissions {
 						set(value);
 					};
 
+				/**
+				 * Updates the selected user with current form values and permissions.
+				 */
 				const submit = () => {
 					api(
 						"/user_update",
@@ -494,24 +324,43 @@ export namespace Permissions {
 							},
 							setLoading,
 							body: {
-								permission: permissions.split(",").map((v) => v.trim()),
+								permission: permissions,
+							},
+							toast: {
+								onError: (response) =>
+									toast.error("Failed updating user", {
+										description: Permissions.getApiErrorMessage(
+											response.data,
+										),
+										icon: <Icon name="Warning" />,
+										richColors: true,
+									}),
 							},
 						},
-						() => spawnBanner(<Permissions.Banner />),
+						() => {
+							Permissions.notifyUserListChanged();
+							onSuccess?.();
+							destroyBanner();
+						},
 					);
 				};
 
-				const handlePermsChange = (event: ChangeEvent<HTMLInputElement>) => {
-					const { value } = event.target;
-					const valid = value
-						.split(",")
-						.map((v) => v.trim())
-						.every((v) => RolesList.includes(v as Role));
-
-					setIsPermissionsValid(valid);
-					setPermisisons(value);
+				/**
+				 * Stores the role list selected from the permissions multi-select.
+				 *
+				 * @param selectedRoles - Roles selected by the user.
+				 */
+				const handlePermissionsChange = (
+					selectedRoles: Permissions.Role[],
+				) => {
+					setPermissions(selectedRoles);
 				};
 
+				/**
+				 * Renders the banner confirmation button for user updates.
+				 *
+				 * @returns The configured done button.
+				 */
 				const Done = () => (
 					<Button
 						icon="Check"
@@ -522,7 +371,7 @@ export namespace Permissions {
 							!isIdValid ||
 							password.length < 5 ||
 							!isPasswordValid ||
-							!isPermissionsValid ||
+							permissions.length === 0 ||
 							!icon
 						}
 						variant="glass"
@@ -531,7 +380,6 @@ export namespace Permissions {
 
 				return (
 					<UIBanner
-						back={() => spawnBanner(<Permissions.Banner />)}
 						title={`Edit user ${user.name}`}
 						done={<Done />}
 						{...props}
@@ -564,13 +412,9 @@ export namespace Permissions {
 								new RegExp(Permissions.Users.PasswordRule),
 							)}
 						/>
-						<Input
-							icon="Gavel"
-							placeholder="read, ingest, edit, delete, admin"
-							variant="highlighted"
+						<Users.RolesSelect
 							value={permissions}
-							valid={isPermissionsValid}
-							onChange={handlePermsChange}
+							onChange={handlePermissionsChange}
 						/>
 						<Glyph.Chooser
 							icon={icon}

@@ -132,7 +132,23 @@ function Root() {
 										path="/"
 										element={
 											<RequireAuth>
-												<Home.Page />
+												<Home.Page section="operations" />
+											</RequireAuth>
+										}
+									/>
+									<Route
+										path="/users"
+										element={
+											<RequireAuth>
+												<Home.Page section="users" />
+											</RequireAuth>
+										}
+									/>
+									<Route
+										path="/groups"
+										element={
+											<RequireAuth>
+												<Home.Page section="groups" />
 											</RequireAuth>
 										}
 									/>

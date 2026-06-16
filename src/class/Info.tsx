@@ -28,6 +28,7 @@ import { Glyph } from "@/entities/Glyph";
 import { Operation } from "@/entities/Operation";
 import { Context } from "@/entities/Context";
 import { User } from "@/entities/User";
+import { Group } from "@/entities/Group";
 import { Request } from "@/entities/Request";
 import { FileEntity } from "@/banners/Upload.banner";
 import { Note } from "@/entities/Note";
@@ -3302,6 +3303,40 @@ export class Info implements InfoProps {
 		this.setInfoByKey(frame, "timeline", "frame");
 
 	private _userGetByIdPromises = new Map<string, Promise<User.Type>>();
+
+	/**
+	 * Fetches all users available to the current session.
+	 *
+	 * @returns A promise resolving to the user list returned by the API.
+	 */
+	user_list = (): Promise<User.Type[]> => {
+		return api<User.Type[]>("/user_list", {
+			method: "GET",
+		});
+	};
+
+	/**
+	 * Deletes a user by its unique identifier.
+	 *
+	 * @param userId - The unique identifier of the user to delete.
+	 * @returns A promise resolving to true when the API confirms deletion.
+	 */
+	user_delete = async (userId: string): Promise<boolean> => {
+		const response = await api<undefined>("/user_delete", {
+			method: "DELETE",
+			query: { user_id: userId },
+			raw: true,
+		});
+
+		return response.status === "success";
+	};
+
+	/**
+	 * Fetches detailed information about a specific user by its ID.
+	 *
+	 * @param userId - The unique identifier of the user to fetch.
+	 * @returns A promise resolving to the detailed user information.
+	 */
 	user_get_by_id = (userId: string): Promise<User.Type> => {
 		if (this._userGetByIdPromises.has(userId)) {
 			return this._userGetByIdPromises.get(userId)!;
@@ -3314,6 +3349,46 @@ export class Info implements InfoProps {
 		});
 		this._userGetByIdPromises.set(userId, p);
 		return p;
+	};
+
+	/**
+	 * Fetches all user groups available to the current session.
+	 *
+	 * @returns A promise resolving to the user group list returned by the API.
+	 */
+	user_group_list = (): Promise<Group.Type[]> => {
+		return api<Group.Type[]>("/user_group_list", {
+			method: "POST",
+		});
+	};
+
+	/**
+	 * Fetches detailed information about a specific user group by its ID.
+	 *
+	 * @param groupId - The unique identifier of the group to fetch.
+	 * @returns A promise resolving to the detailed group information.
+	 */
+	user_group_get_by_id = (groupId: string): Promise<Group.Type> => {
+		return api<Group.Type>("/user_group_get_by_id", {
+			method: "GET",
+			query: { group_id: groupId },
+		});
+	};
+
+	/**
+	 * Deletes a user group by its unique identifier.
+	 *
+	 * @param groupId - The unique identifier of the group to delete.
+	 * @returns A promise resolving to true when the API confirms deletion.
+	 */
+	user_group_delete = async (groupId: string): Promise<boolean> => {
+		const response = await api<undefined>("/user_group_delete", {
+			method: "DELETE",
+			query: { group_id: groupId },
+			raw: true,
+		});
+
+		return response.status === "success";
 	};
 
 	login = async (credentials: Pick<User.Minified, "id" | "password">) => {
