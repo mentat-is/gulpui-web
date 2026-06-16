@@ -1,5 +1,5 @@
 import { Permissions } from "@/banners/Permissions.banner"
-import { UUID } from "crypto"
+type UUID = string
 import { Group } from "./Group"
 import { Glyph } from "./Glyph"
 

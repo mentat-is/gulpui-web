@@ -4,7 +4,6 @@ import { Refractor } from "@/ui/utils";
 import { MinMax } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
 import { Source } from "@/entities/Source";
-import { Color } from "@/entities/Color";
 import { Doc } from "@/entities/Doc";
 
 export class DefaultEngine implements Engine.Interface<any> {
@@ -39,8 +38,6 @@ export class DefaultEngine implements Engine.Interface<any> {
 		// Precompute hot-loop constants — avoids repeated property-chain traversal
 		const ctx = this.renderer.ctx;
 		const offset = file.settings.offset;
-		const palette = file.settings.render_color_palette;
-		const field = file.settings.field;
 		const scrollX = this.renderer.scrollX;
 		// Use ctx.canvas.width * scale (same denominator as getTimestamp), not Info.width
 		// which queries the DOM and may differ if the canvas element ID lookup fails.
@@ -102,9 +99,10 @@ export class DefaultEngine implements Engine.Interface<any> {
 
 			const x = this.renderer.getPixelPosition(timestamp);
 
-			this.renderer.ctx.fillStyle = Color.Entity.gradient(
-				palette,
-				events[i].number_hash,
+			const numberHash = events[i].number_hash;
+			this.renderer.ctx.fillStyle = Source.Entity.resolveColor(
+				file,
+				numberHash,
 				range,
 			);
 			this.renderer.ctx.fillRect(x, y, 1, 47);

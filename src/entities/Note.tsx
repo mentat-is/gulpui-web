@@ -1,7 +1,7 @@
 import { CacheKey } from "@/class/Engine.dto";
 import { Default } from "@/dto/Dataset";
 import { Logger } from "@/dto/Logger.class";
-import { UUID } from "crypto";
+type UUID = string;
 import { Parser } from "./addon/Parser";
 import { App } from "./App";
 import { Source } from "./Source";

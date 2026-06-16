@@ -1,5 +1,5 @@
 import { Default, Selectable } from '@/dto/Dataset'
-import { UUID } from 'crypto'
+type UUID = string
 import { Operation } from './Operation'
 import { User } from './User'
 import { Glyph } from './Glyph'

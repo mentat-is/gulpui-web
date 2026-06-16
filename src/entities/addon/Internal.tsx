@@ -28,7 +28,7 @@ export namespace Internal {
 			offset: 0,
 			field: "gulp.event_code",
 			hash_function: "fnv1a",
-			render_color_palette: "thermal",
+			render_color_palette: "plasma",
 			render_engine: "default",
 			frequency_sample: 1000,
 		};

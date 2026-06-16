@@ -1,4 +1,4 @@
-import { UUID } from "crypto";
+type UUID = string;
 
 export namespace Group {
   export const name = 'Group';

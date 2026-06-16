@@ -62,6 +62,25 @@
   margin-top: 0;
 }
 
+.custom_group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.custom_label {
+  color: var(--gray-900);
+  font-size: 12px;
+}
+
+.custom_colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .gradients,
 .images {
   display: flex;

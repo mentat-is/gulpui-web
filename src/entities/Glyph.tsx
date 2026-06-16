@@ -6,7 +6,7 @@ import { cn } from '@impactium/utils';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Stack } from '@/ui/Stack';
-import { UUID } from 'crypto';
+type UUID = string;
 
 import s from './styles/Glyph.module.css';
 

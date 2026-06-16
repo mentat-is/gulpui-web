@@ -2,7 +2,6 @@ import { Source } from "@/entities/Source";
 import { Engine, Hardcode } from "../class/Engine.dto";
 import { RenderEngine } from "../class/RenderEngine";
 import { throwableByTimestamp } from "@/ui/utils";
-import { Color } from "@/entities/Color";
 import { Doc } from "@/entities/Doc";
 
 const SAMPLE_SIZE = 60000;
@@ -60,8 +59,8 @@ export class HeightEngine implements Engine.Interface<
 			)
 				continue;
 
-			this.renderer.ctx.fillStyle = Color.Entity.gradient(
-				file.settings.render_color_palette,
+			this.renderer.ctx.fillStyle = Source.Entity.resolveColor(
+				file,
 				amount,
 				{ min: 0, max: height },
 			);
