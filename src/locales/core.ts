@@ -27,6 +27,8 @@ const localeContext = () =>
 const pluginLocaleContext = () =>
   require.context("../plugins", false, /^\.\/.+\.locale\.[^.]+\.json$/);
 
+const languageStorageKey = "settings.ui_language";
+
 function codeFromFile(file: string): Language {
   return file.replace(/^\.\//, "").replace(/\.json$/, "");
 }
@@ -42,6 +44,17 @@ function normalizeModule(module: LocaleFile | { default: LocaleFile }): LocaleFi
 
 function normalizeDir(value: string | undefined): LocaleDir {
   return value === "rtl" ? "rtl" : "ltr";
+}
+
+export function readStoredLanguage(): Language | null {
+  if (typeof window === "undefined") return null;
+  const value = window.localStorage.getItem(languageStorageKey);
+  return isLanguage(value) ? value : null;
+}
+
+export function writeStoredLanguage(language: Language) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(languageStorageKey, language);
 }
 
 function titleCaseCode(code: string): string {

@@ -34,8 +34,10 @@ import {
   localeByCode,
   localeList,
   resolveMessage,
+  readStoredLanguage,
   setActiveLanguage,
   translate,
+  writeStoredLanguage,
 } from "./core";
 
 export {
@@ -65,16 +67,28 @@ export namespace Locale {
   export function Provider({ children }: { children: ReactNode }) {
     const { app, Info } = Application.use();
     const userLanguage = app.general.user?.user_data?.ui_language;
-    const [language, setLanguageState] = useState<Language>(() => isLanguage(userLanguage) ? userLanguage : defaultLanguage);
+    const [language, setLanguageState] = useState<Language>(() => (
+      isLanguage(userLanguage)
+        ? userLanguage
+        : readStoredLanguage() ?? defaultLanguage
+    ));
 
     useEffect(() => {
-      if (!app.general.user) {
-        setLanguageState(defaultLanguage);
+      if (isLanguage(userLanguage)) {
+        writeStoredLanguage(userLanguage);
+        if (language !== userLanguage) {
+          setLanguageState(userLanguage);
+        }
         return;
       }
 
-      if (isLanguage(userLanguage) && userLanguage !== language) {
-        setLanguageState(userLanguage);
+      const storedLanguage = readStoredLanguage();
+      if (!app.general.user) {
+        const nextLanguage = storedLanguage ?? defaultLanguage;
+        writeStoredLanguage(nextLanguage);
+        if (language !== nextLanguage) {
+          setLanguageState(nextLanguage);
+        }
       }
     }, [app.general.user, language, userLanguage]);
 
@@ -89,6 +103,7 @@ export namespace Locale {
     const setLanguage = useCallback((next: Language) => {
       if (!isLanguage(next)) return;
       setLanguageState(next);
+      writeStoredLanguage(next);
       if (app.general.user && app.general.user.user_data?.ui_language !== next) {
         void Info.user_set_data("ui_language", next);
       }
