@@ -5,16 +5,16 @@
     "@sample": "true"
   },
   "strings": {
-    "settings.title": "إعدادات",
-    "settings.timestamps.local": "توقيت محلي",
-    "settings.timestamps.utc": "توقيت UTC",
-    "settings.scroll.normal": "تمرير عادي",
-    "settings.scroll.reverse": "تمرير عكسي",
+    "settings.language": "اللغة",
     "settings.realtime.off": "بدون تحديث",
     "settings.realtime.on": "تحديث مباشر",
+    "settings.scroll.normal": "تمرير عادي",
+    "settings.scroll.reverse": "تمرير عكسي",
+    "settings.theme": "السمة",
     "settings.timeoff.label": "مهلة",
     "settings.timeoff.placeholder": "فاصل الاستطلاع بالثواني (حد أدنى 10)",
-    "settings.theme": "السمة",
-    "settings.language": "اللغة"
+    "settings.timestamps.local": "توقيت محلي",
+    "settings.timestamps.utc": "توقيت UTC",
+    "settings.title": "إعدادات"
   }
 }

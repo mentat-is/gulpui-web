@@ -148,7 +148,7 @@ export namespace Boundary {
               <Badge variant='gray-subtle' size='sm' value={visibleError.stack ? `${visibleError.stack.split('\n').length}` : ''} />
             </Stack>
             <Stack dir='column' className={s.stackText}>
-              {Panel.parseStack(visibleError.stack).map((item, index) => (
+              {Panel.parseStack(visibleError.stack, t('boundary.project')).map((item, index) => (
                 <Panel.Item
                   key={index}
                   {...item}
@@ -182,7 +182,7 @@ export namespace Boundary {
       'boundary.hintReportError'
     ] as const;
 
-    export const parseStack = (stack = '') => {
+    export const parseStack = (stack = '', projectLabel: string) => {
       const result: Item.Props[] = [];
 
       stack.split('\n')
@@ -194,7 +194,7 @@ export namespace Boundary {
           const [, pathSuffix] = fullPath.split('/src/');
 
           result.push({
-            projectPath: pathSuffix ? `[project]/src/${pathSuffix}` : fullPath,
+            projectPath: pathSuffix ? `${projectLabel}/src/${pathSuffix}` : fullPath,
             clientType: fullPath.includes('/app/') ? 'app-client' : 'unknown',
             filePath: `/src/${pathSuffix || ''}`,
             line: parseInt(lineStr, 100),
