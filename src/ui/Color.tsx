@@ -13,6 +13,7 @@ interface ColorProps extends HTMLAttributes<HTMLDivElement> {
   images?: string[]
   gradients?: Record<string, string[]>
   solids?: string[]
+  customColors?: string[]
   color?: string
   setColor?: React.Dispatch<React.SetStateAction<string>>
   container?: HTMLElement | null
@@ -86,11 +87,23 @@ export function ColorPickerTrigger({
 
 export type Tab = 'solid' | 'gradient'
 
+const DEFAULT_SOLID_COLORS = [
+  ...Object.values(Color.GEIST).map(s => '#' + s.toString(16).padStart(6, '0')),
+  '#ff7a00',
+  '#ffd60a',
+  '#7c3aed',
+  '#14b8a6',
+  '#22c55e',
+  '#0f172a',
+  '#f8fafc',
+]
+
 export function ColorPickerPopover({
   color: _color,
   setColor: _setColor,
   gradients = {},
-  solids = Object.values(Color.GEIST).map(s => '#' + s.toString(16).padStart(6, '0')),
+  solids = DEFAULT_SOLID_COLORS,
+  customColors = [],
   container,
 }: ColorProps) {
   const { color: newColor, setColor: setNewColor } = useColor() || {}
@@ -131,6 +144,21 @@ export function ColorPickerPopover({
                 onClick={() => setColor(solid.toString())}
               />
             ))}
+            {!!customColors.length && (
+              <div className={s.custom_group}>
+                <span className={s.custom_label}>Custom</span>
+                <div className={s.custom_colors}>
+                  {customColors.map((customColor) => (
+                    <div
+                      key={customColor}
+                      style={{ background: customColor }}
+                      className={s.color}
+                      onClick={() => setColor(customColor.toString())}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
         )}
 

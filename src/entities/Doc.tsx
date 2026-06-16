@@ -1,4 +1,4 @@
-import { UUID } from "crypto";
+type UUID = string;
 import { Source } from "./Source";
 import { App } from "./App";
 import { Arrayed } from "@/class/Info";

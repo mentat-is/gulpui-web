@@ -1,10 +1,24 @@
 .popover {
   z-index: 1000;
+  box-sizing: border-box;
+  width: max-content;
+  min-width: 0;
+  max-width: min(320px, calc(100vw - 16px));
+  max-height: min(70vh, calc(100vh - 16px));
+  overflow-x: hidden;
+  overflow-y: auto;
   border-radius: 8px;
   border: 1px solid var(--gray-alpha-400);
   background: var(--background-100);
   padding: 8px;
   outline: none;
+  word-break: break-word;
+}
+
+.popover :where(button, [role="menuitem"], [role="option"]) {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .popover[data-state="open"] {

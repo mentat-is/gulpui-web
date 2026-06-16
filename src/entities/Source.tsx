@@ -1,5 +1,6 @@
 import { Default, Selectable } from "@/dto/Dataset";
-import { UUID } from "crypto";
+import s from "./styles/Source.module.css";
+type UUID = string;
 import { Context } from "./Context";
 import { Operation } from "./Operation";
 import { Doc } from "./Doc";
@@ -49,6 +50,7 @@ import { Separator } from "@radix-ui/react-select";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Label } from "@/ui/Label";
 import { log } from "console";
+import { toast } from "sonner";
 
 export namespace Source {
 	export const name = "Source";
@@ -85,6 +87,8 @@ export namespace Source {
 			render_color_palette: Color.Gradient;
 			render_engine: Engine.List;
 			frequency_sample: number; //value in millisecondi
+			color_override?: Source.ColorOverride;
+			color_palette?: Source.ColorPalette;
 		};
 		pinned: boolean; // (false)
 		// Enriched  using /query_operation
@@ -97,6 +101,18 @@ export namespace Source {
 			max_timestampe: number;
 			sample_data: SampleData[] | null;
 		};
+	}
+
+	export interface ColorOverride {
+		field: keyof Doc.Type | string;
+		values: Record<string, string>;
+		lookup: Record<number, string>;
+	}
+
+	export interface ColorPalette {
+		id: string;
+		name: string;
+		interval: number;
 	}
 
 	export class Entity {
@@ -372,6 +388,79 @@ export namespace Source {
 			app: App.Type,
 			file: Source.Type | Source.Id,
 		): Doc.Type[] => Doc.Entity.get(app, Parser.useUUID(file) as Source.Id);
+
+		/**
+		 * Hashes a color override value with the exact same hash calculation used by Doc.Entity.normalize().
+		 *
+		 * @param value Field value configured by a render rule.
+		 * @param hashFunction Source hash function used for Doc.number_hash.
+		 * @returns Numeric hash compatible with event.number_hash.
+		 */
+		public static hashColorValue = (
+			value: string,
+			hashFunction: HashFunctionName,
+		): number => Refractor.any.toNumber(value, hashFunction);
+
+		/**
+		 * Builds a render-ready color override lookup object for O(1) canvas reads.
+		 *
+		 * @param field Source field that Doc.number_hash will be calculated from.
+		 * @param values Mapping of raw field values to CSS colors.
+		 * @param hashFunction Source hash function used for the selected field.
+		 * @returns Color override settings with a precomputed numeric lookup table.
+		 */
+		public static buildColorOverride = (
+			field: keyof Doc.Type | string,
+			values: Record<string, string>,
+			hashFunction: HashFunctionName,
+		): Source.ColorOverride => {
+			const lookup: Record<number, string> = {};
+
+			Object.entries(values).forEach(([value, color]) => {
+				if (!color) return;
+				lookup[Source.Entity.hashColorValue(value, hashFunction)] = color;
+
+				const numericValue = Number(value);
+				if (value.trim() !== "" && Number.isFinite(numericValue)) {
+					lookup[Refractor.any.toNumber(numericValue, hashFunction)] = color;
+				}
+			});
+
+			return { field, values, lookup };
+		};
+
+		/**
+		 * Resolves the render color for a numeric event value with an O(1) override lookup.
+		 *
+		 * @param file Source whose render settings own the optional color override table.
+		 * @param value Numeric hash or bucket amount used for color resolution.
+		 * @param range Min/max range for gradient fallback.
+		 * @returns Override color, custom palette bucket, or standard gradient color.
+		 */
+		public static resolveColor = (
+			file: Source.Type,
+			value: number,
+			range: MinMax,
+		): string => {
+			const overrideColor = file.settings.color_override?.lookup?.[value];
+			if (overrideColor) {
+				return overrideColor;
+			}
+
+			const paletteId = file.settings.color_palette?.id;
+			if (paletteId) {
+				const paletteColor = Color.Entity.customPaletteColor(paletteId, value);
+				if (paletteColor) {
+					return paletteColor;
+				}
+			}
+
+			return Color.Entity.gradient(
+				file.settings.render_color_palette,
+				value,
+				range,
+			);
+		};
 
 		public static notes = (
 			app: App.Type,
@@ -701,6 +790,119 @@ export namespace Source {
 				placeholder?: string;
 			}
 		}
+
+		interface ContextGroupProps {
+			context: Context.Type;
+			toggleContext: (
+				contextId: Context.Id,
+				currentSelectedContextSources: Source.Type[],
+				allContextSources: Source.Type[],
+			) => void;
+			isAllContextSelected: boolean;
+			isIndeterminate: boolean;
+			selectedContextSources: Source.Type[];
+			contextSources: Source.Type[];
+		}
+
+		/**
+		 * Renders one context section inside the multi source selector.
+		 *
+		 * @param props Context grouping and selection state.
+		 * @returns Source selector group for a single context.
+		 */
+		function ContextGroup({
+			context,
+			toggleContext,
+			isAllContextSelected,
+			isIndeterminate,
+			selectedContextSources,
+			contextSources,
+		}: ContextGroupProps) {
+			const { app } = Application.use();
+			const [isCollapsed, setIsCollapsed] = useState(false);
+
+			return (
+				<UISelect.Group>
+					<UISelect.Label
+						style={{
+							display: "flex",
+							justifyContent: "flex-start",
+							textAlign: "left",
+							gap: 8,
+							paddingLeft: 25,
+						}}
+					>
+						<Icon
+							name={isCollapsed ? "ChevronRight" : "ChevronDown"}
+							onClick={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								setIsCollapsed(!isCollapsed);
+							}}
+							style={{
+								cursor: "pointer",
+								width: 16,
+								height: 16,
+								position: "absolute",
+								left: 4,
+							}}
+						/>
+						<Checkbox
+							style={{
+								width: "calc(100% - 20px)",
+								opacity: 0,
+								position: "absolute",
+								left: 20,
+							}}
+							checked={
+								isAllContextSelected
+									? true
+									: isIndeterminate
+										? "indeterminate"
+										: false
+							}
+							onCheckedChange={() =>
+								toggleContext(
+									context.id,
+									selectedContextSources,
+									contextSources,
+								)
+							}
+						/>
+						{context.name}
+					</UISelect.Label>
+					{!isCollapsed &&
+						contextSources.map((source) => (
+							<UISelect.Item
+								key={source.id}
+								value={source.id}
+								style={{ display: "flex", alignItems: "center", gap: 6 }}
+							>
+								<Icon
+									name={Source.Entity.icon(source) || "File"}
+									onClick={(e) => {
+										e.preventDefault();
+										e.stopPropagation();
+										const updated = Source.Entity.togglePin(source);
+										app.target.files = app.target.files.map((f) =>
+											f.id === updated.id ? updated : f,
+										);
+									}}
+									style={{ cursor: "pointer" }}
+								/>
+								{source.name}
+								{source.pinned && (
+									<Icon
+										name="Pin"
+										style={{ color: "#f5a623" }}
+									/>
+								)}
+							</UISelect.Item>
+						))}
+				</UISelect.Group>
+			);
+		}
+
 		export function Multi({
 			sources,
 			selected,
@@ -751,103 +953,6 @@ export namespace Source {
 				setSelected(newSelected);
 			};
 
-			const ContextGroup = ({
-				context,
-				all,
-				selected,
-				toggleContext,
-				isAllContextSelected,
-				isIndeterminate,
-				selectedContextSources,
-				contextSources,
-			}: any) => {
-				const { app } = Application.use();
-				const [isCollapsed, setIsCollapsed] = useState(false);
-
-				return (
-					<UISelect.Group>
-						<UISelect.Label
-							style={{
-								display: "flex",
-								justifyContent: "flex-start",
-								textAlign: "left",
-								gap: 8,
-								paddingLeft: 25,
-							}}
-						>
-							<Icon
-								name={isCollapsed ? "ChevronRight" : "ChevronDown"}
-								onClick={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									setIsCollapsed(!isCollapsed);
-								}}
-								style={{
-									cursor: "pointer",
-									width: 16,
-									height: 16,
-									position: "absolute",
-									left: 4,
-								}}
-							/>
-							<Checkbox
-								style={{
-									width: "calc(100% - 20px)",
-									opacity: 0,
-									position: "absolute",
-									left: 20,
-								}}
-								checked={
-									isAllContextSelected
-										? true
-										: isIndeterminate
-											? "indeterminate"
-											: false
-								}
-								onCheckedChange={() =>
-									toggleContext(
-										context.id,
-										selectedContextSources,
-										contextSources,
-									)
-								}
-							/>
-							{context.name}
-						</UISelect.Label>
-						{!isCollapsed &&
-							contextSources.map((source: Source.Type) => (
-								<UISelect.Item
-									key={source.id}
-									value={source.id}
-									style={{ display: "flex", alignItems: "center", gap: 6 }}
-								>
-									<Icon
-										name={Source.Entity.icon(source) || "File"}
-										onClick={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											// @ts-ignore
-											const updated = Source.Entity.togglePin(source);
-											// @ts-ignore
-											app.target.files = app.target.files.map((f) =>
-												f.id === updated.id ? updated : f,
-											);
-										}}
-										style={{ cursor: "pointer" }}
-									/>
-									{source.name}
-									{source.pinned && (
-										<Icon
-											name="Pin"
-											style={{ color: "#f5a623" }}
-										/>
-									)}
-								</UISelect.Item>
-							))}
-					</UISelect.Group>
-				);
-			};
-
 			const [isOpen, setIsOpen] = useState(false);
 
 			return (
@@ -893,8 +998,6 @@ export namespace Source {
 										<Fragment key={context.id}>
 											<ContextGroup
 												context={context}
-												all={all}
-												selected={selected}
 												toggleContext={toggleContext}
 												isAllContextSelected={isAllContextSelected}
 												isIndeterminate={isIndeterminate}
@@ -932,7 +1035,7 @@ export namespace Source {
 		export function Banner({ source }: Settings.Banner.Props) {
 			const { Info, app, spawnBanner, destroyBanner } = Application.use();
 			const [render_color_palette, setRenderColorPalette] =
-				useState<Color.Gradient>(source.settings.render_color_palette);
+				useState<Color.Gradient>(Color.normalizeGradient(source.settings.render_color_palette));
 			const [offset, setOffset] = useState<number>(source.settings.offset);
 			const [render_engine, setEngine] = useState<Engine.List>(
 				source.settings.render_engine,
@@ -950,6 +1053,17 @@ export namespace Source {
 			const [hash_function, setHashFunction] = useState<HashFunctionName>(
 				source.settings.hash_function,
 			);
+			const [colorOverride, setColorOverride] = useState<
+				Source.ColorOverride | undefined
+			>(source.settings.color_override);
+			const colorOverrideEntries = useMemo(
+				() => Object.entries(colorOverride?.values ?? {}),
+				[colorOverride],
+			);
+			const colorPalette = source.settings.color_palette;
+			const colorPaletteColors = colorPalette
+				? Color.Entity.getCustomPalette(colorPalette.id)
+				: undefined;
 
 			/**
 			 * Saves the updated source settings and optionally updates the associated context color.
@@ -965,6 +1079,8 @@ export namespace Source {
 					field,
 					hash_function,
 					frequency_sample,
+					color_override: colorOverride,
+					color_palette: undefined,
 				});
 
 				if (contextColor !== context.color) {
@@ -1003,6 +1119,15 @@ export namespace Source {
 			 */
 			const handleFrequencyChange = (event: ChangeEvent<HTMLInputElement>) =>
 				setFrequencySample(event.target.valueAsNumber || 1000);
+
+			/**
+			 * Removes the active color override from the source and refreshes rendering immediately.
+			 */
+			const clearColorOverride = () => {
+				setColorOverride(undefined);
+				Info.file_set_settings(source.id, { color_override: undefined });
+				toast.success("Color override removed");
+			};
 
 			const done = (
 				<Button
@@ -1181,6 +1306,19 @@ export namespace Source {
 							ai="flex-start"
 						>
 							<Label value="Color scheme" />
+							{colorPalette && (
+								<div className={s.custom_palette_notice}>
+									{!!colorPaletteColors?.length && (
+										<span
+											className={s.custom_palette_preview}
+											style={{
+												background: `linear-gradient(to right, ${colorPaletteColors.join(", ")})`,
+											}}
+										/>
+									)}
+									<span>Custom color palette applied: {colorPalette.name}</span>
+								</div>
+							)}
 							<ColorPicker
 								color={render_color_palette}
 								setColor={(c) => setRenderColorPalette(c as Color.Gradient)}
@@ -1200,6 +1338,44 @@ export namespace Source {
 							<Label value="Color scheme based on field" />
 							{EventFieldsSelection}
 						</Stack>
+						{colorOverrideEntries.length > 0 && (
+							<Stack
+								dir="column"
+								gap={6}
+								ai="stretch"
+							>
+								<Stack
+									dir="row"
+									ai="center"
+									jc="space-between"
+									className={s.override_header}
+								>
+									<Label value="Overrides" />
+									<Button
+										variant="secondary"
+										icon="Trash2"
+										onClick={clearColorOverride}
+									/>
+								</Stack>
+								<div className={s.override_list}>
+									{colorOverrideEntries.map(([value, color]) => (
+										<div
+											key={value}
+											className={s.override_row}
+										>
+											<span>{value}</span>
+											<span className={s.override_color_value}>
+												<span
+													className={s.override_swatch}
+													style={{ background: color }}
+												/>
+												{color}
+											</span>
+										</div>
+									))}
+								</div>
+							</Stack>
+						)}
 						<Separator style={{ margin: "8px 0" }} />
 						<h4>{Context.Entity.id(app, source.context_id)?.name}</h4>
 						<Stack

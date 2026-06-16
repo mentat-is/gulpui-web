@@ -1950,8 +1950,8 @@ export function EventIndicator({
 	const background = useMemo(() => {
 		const range =
 			RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;
-		return Color.Entity.gradient(
-			file.settings.render_color_palette,
+		return Source.Entity.resolveColor(
+			file,
 			event.number_hash,
 			range,
 		);

@@ -15,7 +15,7 @@ import { Context } from './Context'
 import { Input } from '@/ui/Input'
 import { Glyph } from './Glyph'
 import { User } from './User'
-import { UUID } from 'crypto'
+type UUID = string
 import { App } from './App'
 import { Stack } from '@/ui/Stack'
 import { Label } from '@/ui/Label'

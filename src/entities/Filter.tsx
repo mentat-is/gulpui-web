@@ -4,7 +4,7 @@ import { Query } from "./Query";
 import { MinMax } from "@/class/Info";
 import { Source } from "./Source";
 import { App } from "./App";
-import { UUID } from "crypto";
+type UUID = string;
 import { Internal } from "./addon/Internal";
 
 export namespace Filter {

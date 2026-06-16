@@ -1,4 +1,4 @@
-import { UUID } from "crypto"
+type UUID = string
 import { User } from "./User"
 
 export namespace Request {

@@ -187,8 +187,8 @@ export class GraphEngine implements Engine.Interface<
 			semiLogMaxValue > 0 ? semiLogCount / semiLogMaxValue : count;
 		const dotY =
 			bottomY - Math.floor(Math.min(heightRatio, 1) * GRAPH_DRAWABLE_HEIGHT);
-		const color = Color.Entity.gradient(
-			file.settings.render_color_palette,
+		const color = Source.Entity.resolveColor(
+			file,
 			semiLogCount,
 			{
 				min: 0,

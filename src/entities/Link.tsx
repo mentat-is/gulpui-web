@@ -1,6 +1,6 @@
 import { Doc } from "./Doc";
 import { Operation } from "./Operation";
-import { UUID } from "crypto";
+type UUID = string;
 import { App } from "./App";
 import { Source } from "./Source";
 import { Default } from "@/dto/Dataset";
