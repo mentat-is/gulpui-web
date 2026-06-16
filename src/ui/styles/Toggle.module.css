@@ -8,11 +8,11 @@
 }
 
 .toggle p:first-child {
-  text-align: right;
+  text-align: end;
 }
 
 .toggle p:last-child {
-  text-align: left;
+  text-align: start;
 }
 
 .toggle p.selected {

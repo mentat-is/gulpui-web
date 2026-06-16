@@ -161,7 +161,7 @@ export namespace Select {
   >(({ className, children, ...props }, ref) => (
     <SelectPrimitive.Trigger ref={ref} className={cn(s.trigger, className)} {...props}>
       {children}
-      <Select.Icon style={{ marginLeft: 'auto' }} name='ChevronDown' />
+      <Select.Icon style={{ marginInlineStart: 'auto' }} name='ChevronDown' />
     </SelectPrimitive.Trigger>
   ))
 

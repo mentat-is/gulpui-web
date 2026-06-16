@@ -43,6 +43,10 @@
   transform: translateX(24px);
 }
 
+:dir(rtl) .thumb[data-state="checked"] {
+  transform: translateX(-24px);
+}
+
 .thumb[data-state="unchecked"] {
   transform: translateX(0);
 }
@@ -51,8 +55,8 @@
   z-index: 0;
 }
 .icon.left {
-  left: 6px;
+  inset-inline-start: 6px;
 }
 .icon.right {
-  right: 6px;
+  inset-inline-end: 6px;
 }

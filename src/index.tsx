@@ -12,6 +12,7 @@ import { RendererTest } from "./page/RendererTest.page";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { OperationView } from "./page/OperationView.page";
 import { Home } from "./page/Home.page";
+import { Locale } from "./locales";
 
 const root = document.getElementById("root");
 
@@ -113,49 +114,51 @@ function Root() {
 				<Toaster />
 				<BrowserRouter>
 					<Application.Provider>
-						<Boundary.Provider>
-							<Extension.Provider>
-								<Routes>
-									<Route
-										path="/renderer-test"
-										element={<RendererTest.Page />}
-									/>
-									<Route
-										path="/login"
-										element={
-											<RedirectIfAuthenticated>
-												<Auth.Page />
-											</RedirectIfAuthenticated>
-										}
-									/>
-									<Route
-										path="/"
-										element={
-											<RequireAuth>
-												<Home.Page />
-											</RequireAuth>
-										}
-									/>
-									<Route
-										path="/operations/:operation_id"
-										element={
-											<RequireAuth>
-												<OperationView />
-											</RequireAuth>
-										}
-									/>
-									<Route
-										path="*"
-										element={
-											<Navigate
-												to="/login"
-												replace
-											/>
-										}
-									/>
-								</Routes>
-							</Extension.Provider>
-						</Boundary.Provider>
+						<Locale.Provider>
+							<Boundary.Provider>
+								<Extension.Provider>
+									<Routes>
+										<Route
+											path="/renderer-test"
+											element={<RendererTest.Page />}
+										/>
+										<Route
+											path="/login"
+											element={
+												<RedirectIfAuthenticated>
+													<Auth.Page />
+												</RedirectIfAuthenticated>
+											}
+										/>
+										<Route
+											path="/"
+											element={
+												<RequireAuth>
+													<Home.Page />
+												</RequireAuth>
+											}
+										/>
+										<Route
+											path="/operations/:operation_id"
+											element={
+												<RequireAuth>
+													<OperationView />
+												</RequireAuth>
+											}
+										/>
+										<Route
+											path="*"
+											element={
+												<Navigate
+													to="/login"
+													replace
+												/>
+											}
+										/>
+									</Routes>
+								</Extension.Provider>
+							</Boundary.Provider>
+						</Locale.Provider>
 					</Application.Provider>
 				</BrowserRouter>
 			</Theme.Provider>
