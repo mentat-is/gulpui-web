@@ -178,6 +178,29 @@ export namespace GulpDataset {
 		name: string;
 		content: string;
 	}
+
+	export namespace OperationGetById {
+		export interface Response {
+			id: string;
+			name: string;
+			tags: string[];
+			time_created: number;
+			user_id: string;
+			doc_count: number;
+			granted_user_ids: string[];
+			granted_user_group_ids: string[];
+			description?: string;
+		}
+	}
+
+	export namespace MappingFileUpload {
+		export interface Payload {
+			metadata: {
+				plugin: string[];
+			};
+			mappings: Record<string, Record<string, unknown>>;
+		}
+	}
 }
 
 interface RefetchOptions {
@@ -1384,34 +1407,84 @@ export class Info implements InfoProps {
 		);
 	};
 
+	private _mappingFileListPromise: Promise<Mapping.Type.Plugin[]> | null = null;
 	mapping_file_list = async (): Promise<Mapping.Type.Plugin[]> => {
-		const shit = await api<Mapping.Raw[]>("/mapping_file_list");
+		if (this._mappingFileListPromise) return this._mappingFileListPromise;
 
-		const parsed_shit = Mapping.Entity.parse(shit);
+		this._mappingFileListPromise = (async () => {
+			const shit = await api<Mapping.Raw[]>("/mapping_file_list");
 
-		const another_parsed_shit = await this.plugin_list().then((p) =>
-			p.filter((p) => p.type.includes("ingestion")),
+			const parsed_shit = Mapping.Entity.parse(shit);
+
+			const another_parsed_shit = await this.plugin_list().then((p) =>
+				p.filter((p) => p.type.includes("ingestion")),
+			);
+
+			another_parsed_shit.forEach((shit) => {
+				const found_shit = parsed_shit.find((ps) => ps.name === shit.filename);
+				if (found_shit) {
+					return;
+				} else {
+					parsed_shit.push({
+						name: shit.filename,
+						methods: [],
+					});
+				}
+			});
+
+			const sorted_parsed_shit = parsed_shit.sort((a, b) =>
+				a.name.localeCompare(b.name),
+			);
+
+			this.setInfoByKey(sorted_parsed_shit, "target", "mappings");
+
+			return sorted_parsed_shit;
+		})();
+
+		const result = await this._mappingFileListPromise;
+		this._mappingFileListPromise = null;
+		return result;
+	};
+
+	/**
+	 * Uploads or updates a mapping JSON file on the backend.
+	 *
+	 * @param payload - Mapping file JSON body containing metadata.plugin and mappings.
+	 * @param failIfExists - Whether the backend should reject an existing mapping file.
+	 * @returns A promise that resolves after the backend upload and mapping list refresh.
+	 */
+	mapping_file_upload = async (
+		payload: GulpDataset.MappingFileUpload.Payload,
+		failIfExists = false,
+	): Promise<void> => {
+		const pluginName = payload.metadata.plugin[0] || "mapping";
+		const mappingId = Object.keys(payload.mappings)[0] || "custom";
+		const fileName = `${pluginName.replace(/\.[^.]+$/, "")}_${mappingId}.json`;
+		const formData = new FormData();
+
+		formData.append(
+			"file",
+			new Blob([JSON.stringify(payload, null, 2)], {
+				type: "application/json",
+			}),
+			fileName,
 		);
 
-		another_parsed_shit.forEach((shit) => {
-			const found_shit = parsed_shit.find((ps) => ps.name === shit.filename);
-			if (found_shit) {
-				return;
-			} else {
-				parsed_shit.push({
-					name: shit.filename,
-					methods: [],
-				});
-			}
+		const response = await api("/mapping_file_upload", {
+			method: "POST",
+			query: {
+				fail_if_exists: failIfExists,
+			},
+			body: formData,
+			deassign: true,
+			raw: true,
 		});
 
-		const sorted_parsed_shit = parsed_shit.sort((a, b) =>
-			a.name.localeCompare(b.name),
-		);
+		if (!response || response.status === "error") {
+			throw new Error("Mapping file upload failed");
+		}
 
-		this.setInfoByKey(sorted_parsed_shit, "target", "mappings");
-
-		return sorted_parsed_shit;
+		await this.mapping_file_list();
 	};
 
 	/**

@@ -148,8 +148,11 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
   /**
    * Transforms the UI list-based state back into the structured MappingData object.
    * It aggregates individual field and alias entries into nested Record objects.
+   *
+   * @returns void
    */
   const handleSave = () => {
+    const mappingId = id.trim()
     const fieldsObj: Record<string, Partial<MappingFieldData>> = {}
     fields.forEach(f => {
       const { name, ...rest } = f
@@ -167,7 +170,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
     })
 
     const data: MappingData = {
-      id,
+      id: mappingId,
       agent_type: agentType || undefined,
       description: description || undefined,
       event_code: eventCode || undefined,
@@ -282,7 +285,7 @@ export function MappingPanel({ initialData, onSave, open, setOpen }: MappingPane
             <Button 
               variant="glass" 
               icon={initialData ? "Save" : "Plus"} 
-              disabled={!id}
+              disabled={!id.trim()}
               onClick={handleSave}
             >
               {initialData ? 'Update Mapping' : 'Add Mapping'}
