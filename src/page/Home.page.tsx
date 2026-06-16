@@ -1,23 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Application } from "@/context/Application.context";
-import { Operation } from "@/entities/Operation";
 import { Menu, MenuItem } from "@/components/menu";
-import { Icon } from "@impactium/icons";
-import { SelectFiles } from "@/banners/SelectFiles.banner";
 import { Session } from "@/banners/Session.banner";
-import { Checkbox } from "@/ui/Checkbox";
-import { Button } from "@/ui/Button";
 import s from "./styles/Home.module.css";
-import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
 import { Stack } from "@/ui/Stack";
 import { Resizer } from "@/ui/Resizer";
-import { Table } from "@/components/Table";
 import { Locale } from "@/locales";
+import {
+	GroupsList,
+	HeaderAction,
+	HomeContent,
+	OperationsList,
+	UsersList,
+} from "@/components/HomeContent";
 
 export namespace Home {
 	export namespace Page {
-		export interface Props {}
+		export interface Props {
+			/** Section rendered by the Home shell for the current route. */
+			section?: HomeContent.Section;
+		}
 	}
 
 	/**
@@ -26,41 +29,17 @@ export namespace Home {
 	 * Responsibilities:
 	 * 1. Fetch plugin list, glyphs, and the operation list via Info.sync().
 	 * 2. Render a 3-panel skeleton layout:
-	 *    - Left: existing Menu component (to be refactored later to accept button list via props).
-	 *    - Main: table of fetched operations, each linking to /operations/:id.
-	 *    - Right: empty drawer placeholder for the upcoming operation detail panel.
+	 *    - Left: navigation menu for Operations, Users, and Groups.
+	 *    - Main: active content table selected by the current Home route.
+	 *    - Right: docked detail drawer when a row detail view is open.
 	 */
 
-	export function Page(_: Home.Page.Props) {
+	export function Page({ section = "operations" }: Home.Page.Props) {
 		const { Info, app, spawnBanner, spawnDialog, dialog, banner } =
 			Application.use();
 		const { t } = Locale.use();
 		const navigate = useNavigate();
 		const [loading, setLoading] = useState(true);
-		const [selectedIds, setSelectedIds] = useState<Set<Operation.Id>>(
-			new Set(),
-		);
-
-		/**
-		 * Triggers the bulk deletion banner for selected operations.
-		 */
-		const handleBulkDelete = () => {
-			if (selectedIds.size === 0) return;
-			const deletedIds = [...selectedIds];
-			spawnBanner(
-				<Operation.BulkDelete.Banner
-					operationIds={deletedIds}
-					onDeleted={(deleted) => {
-						setSelectedIds((prev) => {
-							const next = new Set(prev);
-							deleted.forEach((id) => next.delete(id));
-							return next;
-						});
-					}}
-				/>,
-				"table",
-			);
-		};
 
 		/**
 		 * On mount, initializes shared application state, mirroring OperationView's exact
@@ -69,6 +48,11 @@ export namespace Home {
 		 * and the operations list.
 		 */
 		useEffect(() => {
+			/**
+			 * Initializes Home page data and restores the current user when needed.
+			 *
+			 * @returns A promise that resolves after all initial Home data has loaded.
+			 */
 			const initialize = async () => {
 				// Replicate OperationView's auto-login guard: if a saved token/userId
 				// exists but app.general.user hasn't been restored yet, re-hydrate the
@@ -100,203 +84,80 @@ export namespace Home {
 		}, []);
 
 		/**
-		 * Selects an operation in global state and navigates to the operation view.
+		 * Navigates to the route that renders the requested Home section.
 		 *
-		 * @param operation - The operation to load.
+		 * @param nextSection - The section to render inside the main content area.
 		 */
-		const handleOpenOperation = (operation: Operation.Type) => {
-			Info.operations_select(operation.id);
-			navigate(`/operations/${operation.id}`);
-		};
+		const handleSectionChange = useCallback(
+			(nextSection: HomeContent.Section) => {
+				spawnDialog(null);
+				const routes: Record<HomeContent.Section, string> = {
+					operations: "/",
+					users: "/users",
+					groups: "/groups",
+				};
+				navigate(routes[nextSection]);
+			},
+			[navigate, spawnDialog],
+		);
 
 		/**
-		 * Toggles the selection state of a specific operation by its ID.
+		 * Resolves the title shown above the active Home content table.
 		 *
-		 * @param id - The ID of the operation to toggle.
+		 * @returns A bracketed page title matching the existing Home style.
 		 */
-		const toggleSelection = (id: Operation.Id) => {
-			setSelectedIds((prev) => {
-				const next = new Set(prev);
-				if (next.has(id)) {
-					next.delete(id);
-				} else {
-					next.add(id);
-				}
-				return next;
-			});
-		};
-
-		/**
-		 * Selects or deselects all operations in the table.
-		 *
-		 * @param checked - True to select all operations, false to deselect all.
-		 */
-		const handleSelectAll = (checked: boolean) => {
-			if (checked) {
-				setSelectedIds(new Set(app.target.operations.map((op) => op.id)));
-			} else {
-				setSelectedIds(new Set());
-			}
-		};
-
-		const isAllSelected =
-			app.target.operations.length > 0 &&
-			selectedIds.size === app.target.operations.length;
-
-		const OperationActions = ({ operation }: { operation: Operation.Type }) => {
-			const [deleting, setDeleting] = useState(false);
-
-			const handleDelete = async (e: React.MouseEvent) => {
-				e.stopPropagation();
-				await Info.deleteOperation(operation, setDeleting);
-				setSelectedIds((prev) => {
-					if (prev.has(operation.id)) {
-						const next = new Set(prev);
-						next.delete(operation.id);
-						return next;
-					}
-					return prev;
-				});
+		const pageTitle = useMemo(() => {
+			const titles: Record<HomeContent.Section, string> = {
+				operations: t("home.operations.title"),
+				users: `[ ${t("common.users")} ]`,
+				groups: `[ ${t("common.groups")} ]`,
 			};
-
-			const handleGo = (e: React.MouseEvent) => {
-				e.stopPropagation();
-				handleOpenOperation(operation);
-			};
-
-			return (
-				<Stack gap={4} ai="center" jc="center" dir="row">
-					<Button
-						variant="secondary"
-						icon="Trash2"
-						loading={deleting}
-						onClick={handleDelete}
-						title={t("common.delete")}
-						aria-label={t("home.operation.deleteAria", { name: operation.name })}
-					/>
-					<Button
-						variant="secondary"
-						icon="ArrowRight"
-						onClick={handleGo}
-						title={t("common.goTo")}
-						aria-label={t("home.operation.goToAria", { name: operation.name })}
-					/>
-				</Stack>
-			);
-		};
+			return titles[section];
+		}, [section, t]);
 
 		/**
-		 * Main content area component that decides whether to show
-		 * the loading state, the empty state, or the list of operations.
+		 * Renders the active Home section without changing the current route.
 		 *
-		 * @returns A React element representing the current main view.
+		 * @returns The table component for the current section.
 		 */
 		const MainContent = () => {
-			if (loading) {
-				return (
-					<div className={s.result}>
-						<div className={s.resultScroll}>
-							<div className={s.emptyState}>{t("common.loading")}</div>
-						</div>
-					</div>
-				);
+			if (section === "users") {
+				return <UsersList />;
 			}
 
-			if (app.target.operations.length === 0) {
-				return (
-					<div className={s.result}>
-						<div className={s.resultScroll}>
-							<div className={s.emptyState}>{t("home.operations.empty")}</div>
-						</div>
-					</div>
-				);
+			if (section === "groups") {
+				return <GroupsList />;
 			}
 
-			const selectedIndices = new Set<number>();
-			app.target.operations.forEach((op, i) => {
-				if (selectedIds.has(op.id)) {
-					selectedIndices.add(i);
-				}
-			});
-
-			return (
-				<>
-					<Table<Operation.Type>
-						className={s.result}
-						values={app.target.operations}
-						selectable={true}
-						selectedrows={selectedIndices}
-						onrowselect={(index, selected) => {
-							const op = app.target.operations[index];
-							if (op) toggleSelection(op.id);
-						}}
-						onSelectAll={handleSelectAll}
-						onRowClick={(row) => {
-							spawnDialog(
-								<DisplayOperationDetailDialog
-									operationId={row.id}
-									fallbackName={row.name}
-									fallbackGlyphId={row.glyph_id}
-									onClose={() => spawnDialog(null)}
-								/>,
-							);
-						}}
-						includeIndex={false}
-						persistId="home-operations-table"
-						columns={[
-							{
-								key: "icon",
-								label: t("common.icon"),
-								width: 60,
-								render: (_, row) => (
-									<div className={s.operationIcon}>
-										<Icon name={Operation.Entity.icon(row)} />
-									</div>
-								),
-							},
-							{
-								key: "name",
-								label: t("common.name"),
-								width: "auto",
-							},
-							{
-								key: "actions",
-								label: t("common.actions"),
-								width: 120,
-								render: (_, row) => <OperationActions operation={row} />,
-							},
-						]}
-					/>
-					<div className={s.footer}>
-						<Stack jc="flex-end">
-							<Button
-								variant="glass"
-								disabled={selectedIds.size === 0}
-								onClick={handleBulkDelete}
-								icon="Trash2"
-							>
-								{t("home.operations.deleteSelected", { count: selectedIds.size })}
-							</Button>
-						</Stack>
-					</div>
-				</>
-			);
+			return <OperationsList loading={loading} />;
 		};
 
 		/**
 		 * Top area menu items for the Home page.
-		 * Includes the "Create new" button that opens the operation creation banner.
+		 * Navigation only switches the Home main content panel.
 		 */
 		const menuTopItems = useMemo<MenuItem[]>(
 			() => [
 				{
-					label: t("common.createNew"),
-					icon: "Plus",
-					category: t("common.actions"),
-					action: () => spawnBanner(<Operation.CreateOrUpdate.Banner />),
+					label: t("common.operations"),
+					icon: "BookPlus",
+					category: t("common.operations"),
+					action: () => handleSectionChange("operations"),
+				},
+				{
+					label: t("common.users"),
+					icon: "User",
+					category: t("common.administration"),
+					action: () => handleSectionChange("users"),
+				},
+				{
+					label: t("common.groups"),
+					icon: "Users",
+					category: t("common.administration"),
+					action: () => handleSectionChange("groups"),
 				},
 			],
-			[spawnBanner, t],
+			[handleSectionChange, t],
 		);
 
 		/**
@@ -323,9 +184,14 @@ export namespace Home {
 					bottomItems={menuBottomItems}
 				/>
 
-				{/* Main content: operations list */}
+				{/* Main content: active Home section */}
 				<main className={s.main}>
-					<p className={s.pageTitle}>{t("home.operations.title")}</p>
+					<div className={s.pageHeader}>
+						<p className={s.pageTitle}>{pageTitle}</p>
+						<div className={s.pageActions}>
+							<HeaderAction section={section} />
+						</div>
+					</div>
 					<MainContent />
 				</main>
 

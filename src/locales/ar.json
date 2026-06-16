@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "انتهى الإثراء",
     "info.totalProcessedDocuments": "إجمالي المستندات التي تمت معالجتها: {count}",
     "logo.alt": "شعار GULP",
-    "operationView.eventDetailsTitle": "تفاصيل حدث غول"
+    "operationView.eventDetailsTitle": "تفاصيل حدث غول",
+    "common.operations": "العمليات",
+    "common.administration": "الإدارة",
+    "home.users.loading": "جاري تحميل المستخدمين...",
+    "home.users.empty": "لم يتم العثور على مستخدمين.",
+    "home.users.deleteSelected": "حذف المستخدمين المحددين ({count})",
+    "home.users.cannotDeleteCurrentUser": "لا يمكنك حذف المستخدم الحالي",
+    "home.users.deleted": "تم حذف المستخدم {userId} بنجاح",
+    "home.users.deleteFailed": "فشل حذف المستخدم {userId}",
+    "home.groups.loading": "جاري تحميل المجموعات...",
+    "home.groups.empty": "لم يتم العثور على مجموعات.",
+    "home.groups.deleteSelected": "حذف المجموعات المحددة ({count})",
+    "home.groups.deleted": "تم حذف المجموعة {groupId} بنجاح",
+    "home.groups.deleteFailed": "فشل حذف المجموعة {groupId}"
   }
 }

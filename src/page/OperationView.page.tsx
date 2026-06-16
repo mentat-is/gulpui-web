@@ -32,7 +32,6 @@ import { BridgeManager } from "../banners/BridgeManager.banner";
 import { Enrichment } from "../banners/Enrichment.banner";
 import { Sigma } from "../banners/Sigma";
 import { Requests } from "../banners/Requests.banner";
-import { Permissions } from "../banners/Permissions.banner";
 import { Operation } from "../entities/Operation";
 import { Settings } from "../banners/Settings.banner";
 import { Session } from "../banners/Session.banner";
@@ -140,6 +139,7 @@ export function OperationView() {
 
 export function OperationTimeline() {
 	const { theme } = useTheme();
+	const navigate = useNavigate();
 	const {
 		Info,
 		app,
@@ -799,7 +799,7 @@ export function OperationTimeline() {
 				label: t("operationView.menu.managePermissions"),
 				icon: "UserSettings",
 				category: t("operationView.menu.configuration"),
-				action: () => spawnBanner(<Permissions.Banner />),
+				action: () => navigate("/users"),
 			},
 			{
 				label: t("operationView.menu.backToOperations"),

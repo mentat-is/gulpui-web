@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Verrijking voltooid",
     "info.totalProcessedDocuments": "Totaal verwerkte documenten: {count}",
     "logo.alt": "GULP-logo",
-    "operationView.eventDetailsTitle": "Gulp Evenementdetails"
+    "operationView.eventDetailsTitle": "Gulp Evenementdetails",
+    "common.operations": "Operaties",
+    "common.administration": "Beheer",
+    "home.users.loading": "Gebruikers laden...",
+    "home.users.empty": "Geen gebruikers gevonden.",
+    "home.users.deleteSelected": "Geselecteerde gebruikers verwijderen ({count})",
+    "home.users.cannotDeleteCurrentUser": "U kunt de huidige gebruiker niet verwijderen",
+    "home.users.deleted": "Gebruiker {userId} is succesvol verwijderd",
+    "home.users.deleteFailed": "Verwijderen van gebruiker {userId} is mislukt",
+    "home.groups.loading": "Groepen laden...",
+    "home.groups.empty": "Geen groepen gevonden.",
+    "home.groups.deleteSelected": "Geselecteerde groepen verwijderen ({count})",
+    "home.groups.deleted": "Groep {groupId} is succesvol verwijderd",
+    "home.groups.deleteFailed": "Verwijderen van groep {groupId} is mislukt"
   }
 }

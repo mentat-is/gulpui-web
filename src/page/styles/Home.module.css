@@ -36,12 +36,32 @@
 	overflow: hidden;
 }
 
+.pageHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-shrink: 0;
+	min-width: 0;
+}
+
 .pageTitle {
 	font-size: 20px;
 	font-family: var(--font-mono);
 	color: var(--gray-800);
 	font-weight: 600;
 	letter-spacing: -0.01em;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.pageActions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
 	flex-shrink: 0;
 }
 

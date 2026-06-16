@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Enriquecimiento terminado",
     "info.totalProcessedDocuments": "Total de documentos procesados: {count}",
     "logo.alt": "logotipo de gulp",
-    "operationView.eventDetailsTitle": "Detalles del evento trago"
+    "operationView.eventDetailsTitle": "Detalles del evento trago",
+    "common.operations": "Operaciones",
+    "common.administration": "Administración",
+    "home.users.loading": "Cargando usuarios...",
+    "home.users.empty": "No se encontraron usuarios.",
+    "home.users.deleteSelected": "Eliminar usuarios seleccionados ({count})",
+    "home.users.cannotDeleteCurrentUser": "No puede eliminar al usuario actual",
+    "home.users.deleted": "El usuario {userId} se eliminó correctamente",
+    "home.users.deleteFailed": "Error al eliminar al usuario {userId}",
+    "home.groups.loading": "Cargando grupos...",
+    "home.groups.empty": "No se encontraron grupos.",
+    "home.groups.deleteSelected": "Eliminar grupos seleccionados ({count})",
+    "home.groups.deleted": "El grupo {groupId} se eliminó correctamente",
+    "home.groups.deleteFailed": "Error al eliminar el grupo {groupId}"
   }
 }

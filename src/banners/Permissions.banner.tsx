@@ -33,6 +33,11 @@ export namespace Permissions {
 		ingest: "Upload",
 		delete: "Trash2",
 	};
+	export const UserListChangedEvent = "gulp:user-list-changed";
+
+	export function notifyUserListChanged() {
+		window.dispatchEvent(new Event(UserListChangedEvent));
+	}
 
 	export const Banner = () => {
 		const { destroyBanner } = Application.use();
@@ -337,6 +342,11 @@ export namespace Permissions {
 					};
 
 				const submit = () => {
+					const refreshUsers = () => {
+						notifyUserListChanged();
+						spawnBanner(<Permissions.Banner />);
+					};
+
 					api(
 						"/user_create",
 						{
@@ -357,7 +367,7 @@ export namespace Permissions {
 									.map((v) => v.trim().toLowerCase()),
 							},
 						},
-						() => spawnBanner(<Permissions.Banner />),
+						refreshUsers,
 					);
 				};
 
@@ -483,6 +493,11 @@ export namespace Permissions {
 					};
 
 				const submit = () => {
+					const refreshUsers = () => {
+						notifyUserListChanged();
+						spawnBanner(<Permissions.Banner />);
+					};
+
 					api(
 						"/user_update",
 						{
@@ -501,7 +516,7 @@ export namespace Permissions {
 								permission: permissions.split(",").map((v) => v.trim()),
 							},
 						},
-						() => spawnBanner(<Permissions.Banner />),
+						refreshUsers,
 					);
 				};
 

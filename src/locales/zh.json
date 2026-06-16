@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Enrichment finished",
     "info.totalProcessedDocuments": "Total processed documents: {count}",
     "logo.alt": "GULP logo",
-    "operationView.eventDetailsTitle": "Gulp Event Details"
+    "operationView.eventDetailsTitle": "Gulp Event Details",
+    "common.operations": "操作",
+    "common.administration": "管理",
+    "home.users.loading": "正在加载用户...",
+    "home.users.empty": "未找到用户。",
+    "home.users.deleteSelected": "删除所选用户 ({count})",
+    "home.users.cannotDeleteCurrentUser": "不能删除当前用户",
+    "home.users.deleted": "用户 {userId} 已成功删除",
+    "home.users.deleteFailed": "删除用户 {userId} 失败",
+    "home.groups.loading": "正在加载组...",
+    "home.groups.empty": "未找到组。",
+    "home.groups.deleteSelected": "删除所选组 ({count})",
+    "home.groups.deleted": "组 {groupId} 已成功删除",
+    "home.groups.deleteFailed": "删除组 {groupId} 失败"
   }
 }

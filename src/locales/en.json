@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Enrichment finished",
     "info.totalProcessedDocuments": "Total processed documents: {count}",
     "logo.alt": "GULP logo",
-    "operationView.eventDetailsTitle": "Gulp Event Details"
+    "operationView.eventDetailsTitle": "Gulp Event Details",
+    "common.operations": "Operations",
+    "common.administration": "Administration",
+    "home.users.loading": "Loading users...",
+    "home.users.empty": "No users found.",
+    "home.users.deleteSelected": "Delete selected users ({count})",
+    "home.users.cannotDeleteCurrentUser": "You cannot delete the current user",
+    "home.users.deleted": "User {userId} has been deleted successfully",
+    "home.users.deleteFailed": "Failed deleting user {userId}",
+    "home.groups.loading": "Loading groups...",
+    "home.groups.empty": "No groups found.",
+    "home.groups.deleteSelected": "Delete selected groups ({count})",
+    "home.groups.deleted": "Group {groupId} has been deleted successfully",
+    "home.groups.deleteFailed": "Failed deleting group {groupId}"
   }
 }

@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "ההעשרה הסתיימה",
     "info.totalProcessedDocuments": "סך המסמכים שעובדו: {count}",
     "logo.alt": "לוגו GULP",
-    "operationView.eventDetailsTitle": "Gulp פרטי אירוע"
+    "operationView.eventDetailsTitle": "Gulp פרטי אירוע",
+    "common.operations": "פעולות",
+    "common.administration": "ניהול",
+    "home.users.loading": "טוען משתמשים...",
+    "home.users.empty": "לא נמצאו משתמשים.",
+    "home.users.deleteSelected": "מחיקת המשתמשים שנבחרו ({count})",
+    "home.users.cannotDeleteCurrentUser": "לא ניתן למחוק את המשתמש הנוכחי",
+    "home.users.deleted": "המשתמש {userId} נמחק בהצלחה",
+    "home.users.deleteFailed": "מחיקת המשתמש {userId} נכשלה",
+    "home.groups.loading": "טוען קבוצות...",
+    "home.groups.empty": "לא נמצאו קבוצות.",
+    "home.groups.deleteSelected": "מחיקת הקבוצות שנבחרו ({count})",
+    "home.groups.deleted": "הקבוצה {groupId} נמחקה בהצלחה",
+    "home.groups.deleteFailed": "מחיקת הקבוצה {groupId} נכשלה"
   }
 }

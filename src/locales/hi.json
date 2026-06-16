@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "संवर्धन समाप्त हुआ",
     "info.totalProcessedDocuments": "कुल संसाधित दस्तावेज़: {गिनती}",
     "logo.alt": "गल्प लोगो",
-    "operationView.eventDetailsTitle": "गल्प घटना विवरण"
+    "operationView.eventDetailsTitle": "गल्प घटना विवरण",
+    "common.operations": "संचालन",
+    "common.administration": "प्रशासन",
+    "home.users.loading": "उपयोगकर्ता लोड हो रहे हैं...",
+    "home.users.empty": "कोई उपयोगकर्ता नहीं मिला।",
+    "home.users.deleteSelected": "चयनित उपयोगकर्ता हटाएँ ({count})",
+    "home.users.cannotDeleteCurrentUser": "वर्तमान उपयोगकर्ता को हटाया नहीं जा सकता",
+    "home.users.deleted": "उपयोगकर्ता {userId} सफलतापूर्वक हटा दिया गया",
+    "home.users.deleteFailed": "उपयोगकर्ता {userId} को हटाने में विफल",
+    "home.groups.loading": "समूह लोड हो रहे हैं...",
+    "home.groups.empty": "कोई समूह नहीं मिला।",
+    "home.groups.deleteSelected": "चयनित समूह हटाएँ ({count})",
+    "home.groups.deleted": "समूह {groupId} सफलतापूर्वक हटा दिया गया",
+    "home.groups.deleteFailed": "समूह {groupId} को हटाने में विफल"
   }
 }

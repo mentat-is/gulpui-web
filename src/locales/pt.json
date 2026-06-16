@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Enriquecimento concluído",
     "info.totalProcessedDocuments": "Total de documentos processados: {count}",
     "logo.alt": "Logotipo do GULP",
-    "operationView.eventDetailsTitle": "Gulp Detalhes do Evento"
+    "operationView.eventDetailsTitle": "Gulp Detalhes do Evento",
+    "common.operations": "Operações",
+    "common.administration": "Administração",
+    "home.users.loading": "Carregando usuários...",
+    "home.users.empty": "Nenhum usuário encontrado.",
+    "home.users.deleteSelected": "Excluir usuários selecionados ({count})",
+    "home.users.cannotDeleteCurrentUser": "Você não pode excluir o usuário atual",
+    "home.users.deleted": "O usuário {userId} foi excluído com sucesso",
+    "home.users.deleteFailed": "Falha ao excluir o usuário {userId}",
+    "home.groups.loading": "Carregando grupos...",
+    "home.groups.empty": "Nenhum grupo encontrado.",
+    "home.groups.deleteSelected": "Excluir grupos selecionados ({count})",
+    "home.groups.deleted": "O grupo {groupId} foi excluído com sucesso",
+    "home.groups.deleteFailed": "Falha ao excluir o grupo {groupId}"
   }
 }

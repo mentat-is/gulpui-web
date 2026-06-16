@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Anreicherung beendet",
     "info.totalProcessedDocuments": "Insgesamt verarbeitete Dokumente: {count}",
     "logo.alt": "GULP-Logo",
-    "operationView.eventDetailsTitle": "Details zum Gulp-Event"
+    "operationView.eventDetailsTitle": "Details zum Gulp-Event",
+    "common.operations": "Operationen",
+    "common.administration": "Verwaltung",
+    "home.users.loading": "Benutzer werden geladen...",
+    "home.users.empty": "Keine Benutzer gefunden.",
+    "home.users.deleteSelected": "Ausgewählte Benutzer löschen ({count})",
+    "home.users.cannotDeleteCurrentUser": "Der aktuelle Benutzer kann nicht gelöscht werden",
+    "home.users.deleted": "Benutzer {userId} wurde erfolgreich gelöscht",
+    "home.users.deleteFailed": "Löschen des Benutzers {userId} fehlgeschlagen",
+    "home.groups.loading": "Gruppen werden geladen...",
+    "home.groups.empty": "Keine Gruppen gefunden.",
+    "home.groups.deleteSelected": "Ausgewählte Gruppen löschen ({count})",
+    "home.groups.deleted": "Gruppe {groupId} wurde erfolgreich gelöscht",
+    "home.groups.deleteFailed": "Löschen der Gruppe {groupId} fehlgeschlagen"
   }
 }

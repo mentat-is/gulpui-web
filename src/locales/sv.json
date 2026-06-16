@@ -689,6 +689,19 @@
     "info.enrichmentFinished": "Anrikningen avslutad",
     "info.totalProcessedDocuments": "Totalt antal bearbetade dokument: {count}",
     "logo.alt": "GULP logotyp",
-    "operationView.eventDetailsTitle": "Gulp Händelsedetaljer"
+    "operationView.eventDetailsTitle": "Gulp Händelsedetaljer",
+    "common.operations": "Operationer",
+    "common.administration": "Administration",
+    "home.users.loading": "Laddar användare...",
+    "home.users.empty": "Inga användare hittades.",
+    "home.users.deleteSelected": "Ta bort valda användare ({count})",
+    "home.users.cannotDeleteCurrentUser": "Du kan inte ta bort den aktuella användaren",
+    "home.users.deleted": "Användaren {userId} har tagits bort",
+    "home.users.deleteFailed": "Misslyckades med att ta bort användaren {userId}",
+    "home.groups.loading": "Laddar grupper...",
+    "home.groups.empty": "Inga grupper hittades.",
+    "home.groups.deleteSelected": "Ta bort valda grupper ({count})",
+    "home.groups.deleted": "Gruppen {groupId} har tagits bort",
+    "home.groups.deleteFailed": "Misslyckades med att ta bort gruppen {groupId}"
   }
 }
