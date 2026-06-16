@@ -312,7 +312,7 @@
     "eventDialog.focusTimeline": "Focalizza la sequenza temporale",
     "eventDialog.invalidFilterSelection": "Selezione non valida. Impossibile aggiungere nuovi filtri",
     "eventDialog.newFilter": "Nuovo filtro",
-    "eventDialog.raw": "Crudo",
+    "eventDialog.raw": "Raw",
     "eventDialog.sendData": "Invia dati",
     "eventDialog.sendIocsTitle": "Invia IOC ad altri sistemi",
     "eventDialog.sourceDeleted": "La fonte è stata eliminata",
