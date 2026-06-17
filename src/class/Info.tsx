@@ -2835,22 +2835,12 @@ export class Info implements InfoProps {
 				offset += GLYPH_PAGE_SIZE;
 			}
 
-			if (!glyphs.length) return;
-
 			const namedGlyphs = glyphs
 				.filter((glyph) => glyph.name)
 				.map((glyph) => ({ ...glyph, id: glyph.name as Glyph.Id }));
 
-			if (!namedGlyphs.length) return;
-
-			Glyph.List.clear();
-
-			while (Glyph.Entries.length) {
-				Glyph.Entries.pop();
-			}
-
+			Glyph.reset();
 			namedGlyphs.forEach(Glyph.register);
-			Glyph.Entries.push(...Array.from(Glyph.List.entries()));
 
 			await glyphDB.UpdateConfigurations(
 				namedGlyphs.map((glyph) => [glyph.name, glyph]),

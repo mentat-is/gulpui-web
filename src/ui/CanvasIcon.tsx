@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { Icon } from '@/ui/Icon'
+import { Glyph } from '@/entities/Glyph'
 
 const PLACEHOLDER_CANVAS = document.createElement('canvas');
 PLACEHOLDER_CANVAS.width = 1;
@@ -13,14 +14,32 @@ export function getCanvasIcon({ name, ...props }: CanvasIcon.Props): HTMLImageEl
     return icon;
   }
 
+  const glyphSrc = Glyph.Images.get(name);
+  if (glyphSrc) {
+    createImage(glyphSrc).then(image => {
+      CanvasIcon.cache.set(key, image);
+      CanvasIcon.onIconLoad?.();
+    }).catch(() => undefined);
+    return PLACEHOLDER_IMAGE;
+  }
+
   // Start async load but return placeholder instead of throwing
   const svg = renderToStaticMarkup(<Icon name={name} {...props} />);
   createImageFromSVG(svg).then(image => {
     CanvasIcon.cache.set(key, image);
     CanvasIcon.onIconLoad?.();
-  });
+  }).catch(() => undefined);
 
   return PLACEHOLDER_IMAGE;
+}
+
+const createImage = (src: string): Promise<HTMLImageElement> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = reject
+    img.src = src
+  })
 }
 
 const createImageFromSVG = (svgString: string): Promise<HTMLImageElement> => {

@@ -1,4 +1,4 @@
-import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Icon } from '@/ui/Icon';
 import { Popover } from '@/ui/Popover';
@@ -27,22 +27,35 @@ export namespace Glyph {
     glyph: Glyph.Id
   }
 
-  export const Raw = (() => Object.keys(Icon.icons))();
+  const builtInIcons = new Map(Object.entries(Icon.icons));
+  export const Raw = Array.from(builtInIcons.keys()).sort() as Icon.Name[];
 
-  export const List: Map<Glyph.Id, Icon.Name> = new Map()
+  const builtInEntries = () => Raw.map((name) => [name as Glyph.Id, name] as [Glyph.Id, Icon.Name]);
 
-  export const Entries: Array<[Glyph.Id | null | undefined, Icon.Name]> = [];
+  export const List: Map<Glyph.Id, Icon.Name> = new Map(builtInEntries())
 
   export const Images: Map<Icon.Name, string> = new Map();
 
   export const getIdByName = (name: Icon.Name): Glyph.Id => Glyph.List.entries().find(([_, n]) => name === n)?.[0]!;
 
   const dataUrl = (img: string) => {
-    if (img.startsWith('data:')) return img;
-    if (img.startsWith('/9j/')) return `data:image/jpeg;base64,${img}`;
-    if (img.startsWith('R0lGOD')) return `data:image/gif;base64,${img}`;
-    if (img.startsWith('PHN2Zy')) return `data:image/svg+xml;base64,${img}`;
-    return `data:image/png;base64,${img}`;
+    const data = img.trim();
+    if (data.startsWith('data:')) return data;
+    if (data.startsWith('<svg') || data.startsWith('<?xml')) {
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(data)}`;
+    }
+
+    let decoded = '';
+    try {
+      decoded = atob(data.slice(0, 128)).trimStart().toLowerCase();
+    } catch {
+      decoded = '';
+    }
+
+    if (decoded.startsWith('<svg') || decoded.startsWith('<?xml')) return `data:image/svg+xml;base64,${data}`;
+    if (data.startsWith('/9j/')) return `data:image/jpeg;base64,${data}`;
+    if (data.startsWith('R0lGOD')) return `data:image/gif;base64,${data}`;
+    return `data:image/png;base64,${data}`;
   }
 
   export const register = (glyph: Glyph.Type) => {
@@ -53,14 +66,21 @@ export namespace Glyph {
 
     const src = dataUrl(glyph.img);
     Glyph.Images.set(glyph.name, src);
-    (Icon.icons as Record<string, React.ComponentType<any>>)[glyph.name] = ({ color, size, style, ...props }) => (
-      <img
-        alt=""
-        src={src}
-        style={{ width: size, height: size, objectFit: 'contain', ...style }}
-        {...props}
-      />
+    (Icon.icons as Record<string, React.ComponentType<any>>)[glyph.name] = ({ color, size, ...props }) => (
+      <svg width={size ?? 24} height={size ?? 24} viewBox="0 0 24 24" {...props}>
+        <image href={src} width="24" height="24" preserveAspectRatio="xMidYMid meet" />
+      </svg>
     );
+  }
+
+  export const reset = () => {
+    Object.keys(Icon.icons).forEach((name) => delete (Icon.icons as Record<string, unknown>)[name]);
+    builtInIcons.forEach((component, name) => {
+      (Icon.icons as Record<string, React.ComponentType<any>>)[name] = component;
+    });
+    Glyph.Images.clear();
+    Glyph.List.clear();
+    builtInEntries().forEach(([id, name]) => Glyph.List.set(id, name));
   }
 
   export namespace Chooser {
@@ -81,7 +101,7 @@ export namespace Glyph {
     const [search, setSearch] = useState<string>('');
     const parentRef = useRef<HTMLDivElement | null>(null);
     const entities = useMemo(() => {
-      return Glyph.Entries.filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
+      return Array.from(Glyph.List.entries()).filter(e => e[1].toLowerCase().includes(search.toLowerCase()));
     }, [search]);
 
     const handleGlyphSearchInput = useCallback((event: ChangeEvent<HTMLInputElement>) => {

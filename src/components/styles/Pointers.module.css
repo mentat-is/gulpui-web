@@ -44,5 +44,5 @@
 }
 
 .right svg {
-  rotate: -90deg;
+  transform: scaleX(-1);
 }

@@ -175,7 +175,7 @@ export function Pointers({
             style={{ top: isYours ? p.y : -scrollY + p.y, left: x }}
             pos="absolute"
           >
-            <Icon name="Gps" color={p.color} fill={p.color} />
+            <Icon name="MousePointer2" size={14} color={p.color} fill={p.color} />
             <p style={{ background: p.color, color: textColor }}>
               {p.id} {isYours ? `on ${formatTimestampToReadableString(timestamp)}ms` : null}
             </p>
