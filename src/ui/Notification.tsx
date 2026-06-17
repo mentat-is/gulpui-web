@@ -1,4 +1,4 @@
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import s from './styles/Notification.module.css'
 import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@impactium/utils'

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import s from './styles/Textarea.module.css'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { cn } from '@impactium/utils'
 
 export interface TextareaProps

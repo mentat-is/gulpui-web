@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { cn } from '@impactium/utils';
 import s from './styles/PreviewBanner.module.css'
 import { Notification } from '@/ui/Notification';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { Button } from '@/ui/Button';
 import { Locale } from '@/locales';
 

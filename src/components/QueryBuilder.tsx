@@ -1,6 +1,6 @@
 import { Toggle } from "@/ui/Toggle"
 import { copy, fws } from "@/ui/utils"
-import { Icon } from "@impactium/icons"
+import { Icon } from "@/ui/Icon"
 import { cn } from "@impactium/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"

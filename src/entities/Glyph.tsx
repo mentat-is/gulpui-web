@@ -1,6 +1,6 @@
 import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { Popover } from '@/ui/Popover';
 import { cn } from '@impactium/utils';
 import { Button } from '@/ui/Button';
@@ -19,7 +19,7 @@ export namespace Glyph {
 
   export interface Type {
     id: Glyph.Id;
-    img: string;
+    img?: string;
     name: Icon.Name;
   }
 
@@ -33,7 +33,35 @@ export namespace Glyph {
 
   export const Entries: Array<[Glyph.Id | null | undefined, Icon.Name]> = [];
 
+  export const Images: Map<Icon.Name, string> = new Map();
+
   export const getIdByName = (name: Icon.Name): Glyph.Id => Glyph.List.entries().find(([_, n]) => name === n)?.[0]!;
+
+  const dataUrl = (img: string) => {
+    if (img.startsWith('data:')) return img;
+    if (img.startsWith('/9j/')) return `data:image/jpeg;base64,${img}`;
+    if (img.startsWith('R0lGOD')) return `data:image/gif;base64,${img}`;
+    if (img.startsWith('PHN2Zy')) return `data:image/svg+xml;base64,${img}`;
+    return `data:image/png;base64,${img}`;
+  }
+
+  export const register = (glyph: Glyph.Type) => {
+    const glyphId = glyph.name as Glyph.Id;
+    Glyph.List.set(glyphId, glyph.name);
+
+    if (!glyph.img) return;
+
+    const src = dataUrl(glyph.img);
+    Glyph.Images.set(glyph.name, src);
+    (Icon.icons as Record<string, React.ComponentType<any>>)[glyph.name] = ({ color, size, style, ...props }) => (
+      <img
+        alt=""
+        src={src}
+        style={{ width: size, height: size, objectFit: 'contain', ...style }}
+        {...props}
+      />
+    );
+  }
 
   export namespace Chooser {
     export interface Props {

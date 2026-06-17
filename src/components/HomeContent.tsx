@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Application } from "@/context/Application.context";
 import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
 import { Operation } from "@/entities/Operation";

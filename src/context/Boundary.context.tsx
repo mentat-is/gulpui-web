@@ -5,7 +5,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { copy } from '@/ui/utils';
 import { Badge } from '@/ui/Badge';
 import { Button } from '@/ui/Button';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { Application } from '@/context/Application.context';
 import s from './styles/Boundary.module.css';
 import { Locale } from '@/locales';

@@ -1,6 +1,6 @@
 import s from './Highlights.module.css';
 import { useScroll } from '@/store/scroll.store';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { useMemo, useRef, useState } from 'react';
 import { MinMax, Range } from '@/class/Info';
 import { Application } from '@/context/Application.context';

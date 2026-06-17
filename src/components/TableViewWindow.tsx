@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { Toggle } from "@/ui/Toggle";
 import { Internal } from "@/entities/addon/Internal";
 import { format } from "date-fns";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Doc } from "@/entities/Doc";
 import { NoteFunctionality } from "@/banners/Collab.functionality";
 import { WindowBridge } from "@/lib/WindowBridge";

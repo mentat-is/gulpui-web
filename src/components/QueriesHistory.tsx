@@ -12,7 +12,7 @@ import { Query } from "@/entities/Query";
 import { Checkbox } from "@/ui/Checkbox";
 import { Label } from "@/ui/Label";
 import { Stack } from "@/ui/Stack";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import s from "./styles/QueriesHistory.module.css";
 import { Locale } from "@/locales";
 

@@ -84,6 +84,6 @@ It is highly recommended to **reuse existing UI components** from:
 * External shared libraries:
 
   * `@impactium/components`
-  * `@impactium/icons`
+  * `lucide-react`
 
 This ensures **consistent styling** and reduces duplication across the project.

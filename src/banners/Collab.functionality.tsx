@@ -9,7 +9,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import s from "./styles/CreateNoteBanner.module.css";
 import { Separator } from "@/ui/Separator";
 import { Default } from "@/dto/Dataset";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Textarea } from "@/ui/Textarea";
 import { Markdown } from "@/ui/Markdown";
 import { Toggle } from "@/ui/Toggle";

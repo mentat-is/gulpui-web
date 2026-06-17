@@ -1,7 +1,7 @@
 import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Select } from "@/ui/Select";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { useEffect, useState, useMemo } from "react";
 import { Label } from "@/ui/Label";
 import { Skeleton } from "@/ui/Skeleton";

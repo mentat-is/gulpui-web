@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 
 const PLACEHOLDER_CANVAS = document.createElement('canvas');
 PLACEHOLDER_CANVAS.width = 1;

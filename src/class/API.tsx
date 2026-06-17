@@ -1,6 +1,6 @@
 import { type Callback } from "@impactium/types";
 import { Logger } from "@/dto/Logger.class";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Auth } from "@/page/Auth.page";
 import { Request } from "@/entities/Request";
 import { Internal } from "@/entities/addon/Internal";

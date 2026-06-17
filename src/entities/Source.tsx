@@ -27,7 +27,7 @@ import { Internal } from "./addon/Internal";
 import { Color } from "./Color";
 import { Select as UISelect } from "@/ui/Select";
 import { SetState } from "@/class/API";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Badge } from "@/ui/Badge";
 import { Checkbox } from "@/ui/Checkbox";
 import { FilterFileBanner } from "@/banners/FilterFile.banner";

@@ -9,7 +9,7 @@ import {
 } from "@/ui/utils";
 import { Logger } from "@/dto/Logger.class";
 import { SetState } from "./API";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { toast } from "sonner";
 import { Pointers } from "@/components/Pointers";
 import { CustomParameters } from "@/components/CustomParameters";
@@ -41,6 +41,7 @@ import { Mapping } from "@/entities/Mapping";
 import { Internal } from "@/entities/addon/Internal";
 import { ingestWorkerManager } from "@/workers/IngestWorker.manager";
 import { translate } from "@/locales/core";
+import { GulpIndexedDB } from "@/class/IndexedDB";
 
 export namespace GulpDataset {
 	export namespace GetAvailableLoginApi {
@@ -223,6 +224,13 @@ interface InfoProps {
 	setInfo: React.Dispatch<React.SetStateAction<App.Type>>;
 	timeline: React.RefObject<HTMLDivElement>;
 }
+
+const glyphDB = new GulpIndexedDB("gulp_DB", "gulp_glyphs");
+const GLYPH_PAGE_SIZE = 10000;
+const ACTIVE_REQUEST_STATUSES = new Set<Request.Status>([
+	Request.Status.PENDING,
+	Request.Status.ONGOING,
+]);
 
 export class Info implements InfoProps {
 	app: App.Type;
@@ -604,16 +612,7 @@ export class Info implements InfoProps {
 			},
 			(m) => {
 				const sourceId = m.payload?.["gulp.source_id"] as Source.Id;
-
-				// Delete only this source's loading state
-				this.app.general.loadings.byFileId.delete(sourceId);
-
-				const loadings = {
-					byRequestId: new Map(this.app.general.loadings.byRequestId),
-					byFileId: new Map(this.app.general.loadings.byFileId),
-				};
-				this.setInfoByKey(loadings, "general", "loadings");
-
+				this.delLoadingByFile(sourceId);
 				this.ingestionProgress.delete(sourceId);
 				this.sync().catch(() => {});
 			},
@@ -627,12 +626,7 @@ export class Info implements InfoProps {
 			(m) => {
 				const reqId = m.req_id;
 				if (reqId) {
-					this.app.general.loadings.byRequestId.delete(reqId);
-					const loadings = {
-						byRequestId: new Map(this.app.general.loadings.byRequestId),
-						byFileId: new Map(this.app.general.loadings.byFileId),
-					};
-					this.setInfoByKey(loadings, "general", "loadings");
+					this.delLoading(reqId as Request.Id);
 				}
 			},
 		);
@@ -1342,6 +1336,7 @@ export class Info implements InfoProps {
 			"general",
 			"requests",
 		);
+		if (!ACTIVE_REQUEST_STATUSES.has(req.status)) this.delLoading(req.id);
 	};
 
 	request_list = () => {
@@ -1859,7 +1854,9 @@ export class Info implements InfoProps {
 									max: Math.max(...files.map((f) => f.timestamp.max)),
 								};
 							}
+							const reqId = draft.general.loadings.byFileId.get(finalFileId);
 							draft.general.loadings.byFileId.delete(finalFileId);
+							if (reqId) draft.general.loadings.byRequestId.delete(reqId);
 						});
 
 						const finalFile = Source.Entity.id(this.app, finalFileId);
@@ -2283,8 +2280,23 @@ export class Info implements InfoProps {
 		this.setInfoByKey(value, "settings", key);
 
 	setLoading(req_id: Request.Id, file_id: Source.Id) {
+		const req = this.app.general.requests.find((r) => r.id === req_id);
+		if (req && !ACTIVE_REQUEST_STATUSES.has(req.status)) return;
+
 		this.app.general.loadings.byRequestId.set(req_id, file_id);
 		this.app.general.loadings.byFileId.set(file_id, req_id);
+
+		const loadings = {
+			byRequestId: new Map(this.app.general.loadings.byRequestId),
+			byFileId: new Map(this.app.general.loadings.byFileId),
+		};
+		this.setInfoByKey(loadings, "general", "loadings");
+	}
+
+	delLoadingByFile(file_id: Source.Id) {
+		const req_id = this.app.general.loadings.byFileId.get(file_id);
+		this.app.general.loadings.byFileId.delete(file_id);
+		if (req_id) this.app.general.loadings.byRequestId.delete(req_id);
 
 		const loadings = {
 			byRequestId: new Map(this.app.general.loadings.byRequestId),
@@ -2805,69 +2817,54 @@ export class Info implements InfoProps {
 		if (this._glyphsReloadPromise) return this._glyphsReloadPromise;
 
 		this._glyphsReloadPromise = (async () => {
-			Glyph.List.clear();
+			const glyphs: Glyph.Type[] = [];
+			let offset = 0;
 
-			const glyphs = await api<Glyph.Type[]>("/glyph_list", {
-				method: "POST",
-			});
+			while (true) {
+				const batch = await api<Glyph.Type[]>("/glyph_list", {
+					method: "POST",
+					body: { limit: GLYPH_PAGE_SIZE, offset },
+				});
 
-			if (!glyphs) {
-				return Logger.error("Failed to sync glyphs", "Info.glyphs_reload");
+				if (!batch) {
+					return Logger.error("Failed to sync glyphs", "Info.glyphs_reload");
+				}
+
+				glyphs.push(...batch);
+				if (batch.length < GLYPH_PAGE_SIZE) break;
+				offset += GLYPH_PAGE_SIZE;
 			}
 
-			const queue: (() => Promise<void>)[] = [];
+			if (!glyphs.length) return;
 
-			const synced = new Map<string, Glyph.Id>();
+			const namedGlyphs = glyphs
+				.filter((glyph) => glyph.name)
+				.map((glyph) => ({ ...glyph, id: glyph.name as Glyph.Id }));
 
-			glyphs.forEach((g) => {
-				synced.set(g.name, g.id);
-				Glyph.List.set(g.id, g.name);
-			});
+			if (!namedGlyphs.length) return;
 
-			const notSynced = Glyph.Raw.filter((glyph) => !synced.has(glyph));
-
-			notSynced.forEach((name) => {
-				queue.push(async () => {
-					const formData = new FormData();
-					formData.append("img", new Blob());
-
-					await api<Glyph.Type>(
-						"/glyph_create",
-						{
-							method: "POST",
-							deassign: true,
-							query: { name },
-							body: formData,
-						},
-						(glyph) => {
-							Glyph.List.set(glyph.id, glyph.name);
-						},
-					);
-				});
-			});
-
-			const runQueue = async () => {
-				const tasks = queue.splice(0, 10).map((task) => task());
-				await Promise.all(tasks);
-				if (queue.length > 0) {
-					await runQueue();
-				}
-			};
-
-			await runQueue();
-
-			Logger.log(`Glyphs has been syncronized with gulp-backend`, Info);
+			Glyph.List.clear();
 
 			while (Glyph.Entries.length) {
 				Glyph.Entries.pop();
 			}
+
+			namedGlyphs.forEach(Glyph.register);
 			Glyph.Entries.push(...Array.from(Glyph.List.entries()));
 
+			await glyphDB.UpdateConfigurations(
+				namedGlyphs.map((glyph) => [glyph.name, glyph]),
+			);
+
 			this.setInfoByKey(true, "general", "glyphs_syncronized");
+			Logger.log(`Glyphs has been syncronized with gulp-backend`, Info);
 		})();
 
-		await this._glyphsReloadPromise;
-		this._glyphsReloadPromise = null;
+		try {
+			await this._glyphsReloadPromise;
+		} finally {
+			this._glyphsReloadPromise = null;
+		}
 	};
 
 	setPointers = (pointer: Pointers.Pointer) => {
@@ -3146,7 +3143,7 @@ export class Info implements InfoProps {
 						id: ctxId,
 						name: ctxData.name,
 						operation_id: opId,
-						glyph_id: ctxData.glyph_id ?? Default.Icon.CONTEXT,
+							glyph_id: ctxData.glyph_id ?? (Default.Icon.CONTEXT as unknown as Glyph.Id),
 						color: existCtx.color ?? stringToHexColor(ctxData.name ?? ""),
 						type: "context",
 						selected: existCtx.selected ?? false,

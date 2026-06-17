@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import s from './styles/Table.module.css'
 import { cn } from '@impactium/utils'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { Stack } from '@/ui/Stack'
 import { Checkbox } from '@/ui/Checkbox'
 import { Glyph } from '@/entities/Glyph'

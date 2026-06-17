@@ -1,7 +1,7 @@
 import { SetState } from "@/class/API";
 import { GulpDataset } from "@/class/Info";
 import { Toggle } from "@/ui/Toggle";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { capitalize } from "lodash";
 import { ChangeEvent, useEffect } from "react";
 import { Stack } from "@/ui/Stack";

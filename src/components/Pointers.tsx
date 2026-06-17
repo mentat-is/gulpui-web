@@ -1,7 +1,7 @@
 import { Application } from '@/context/Application.context'
 import { useScroll } from '@/store/scroll.store'
 import s from './styles/Pointers.module.css'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { cn } from '@impactium/utils'
 import { XY } from '@/dto/XY.dto'
 import { formatTimestampToReadableString } from '@/ui/utils'

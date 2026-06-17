@@ -5,7 +5,7 @@ import { Application } from "@/context/Application.context";
 import { Input } from "@/ui/Input";
 import { toast } from "sonner";
 import { GulpDataset, Pattern } from "@/class/Info";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { capitalize, cn } from "@impactium/utils";
 import s from "./styles/AuthPage.module.css";
 import { Banner as UIBanner } from "@/ui/Banner";

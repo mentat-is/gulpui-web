@@ -4,7 +4,7 @@ import { Stack } from "@/ui/Stack";
 import { Button } from "@/ui/Button";
 import React, { useEffect, useState, useRef } from "react";
 import { cn } from "@impactium/utils";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";
 import { Locale } from "@/locales";
@@ -15,7 +15,7 @@ import { Locale } from "@/locales";
 export interface MenuItem {
 	/** The display label shown when the menu is expanded. */
 	label: string;
-	/** The icon name from the `@impactium/icons` library. */
+	/** The icon name from the `@/ui/Icon` library. */
 	icon: Icon.Name;
 	/** Callback invoked when the item is clicked. */
 	action: () => void;

@@ -6,7 +6,7 @@ import { Button } from '@/ui/Button'
 import { Select } from '@/ui/Select'
 import { Stack } from '@/ui/Stack'
 import { Label } from '@/ui/Label'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Locale } from '@/locales'
 

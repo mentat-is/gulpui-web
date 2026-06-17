@@ -49,7 +49,7 @@ import { useTheme } from "next-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
 import { Table } from "@/components/Table";
 import { Markdown } from "@/ui/Markdown";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { cn } from "@impactium/utils";
 import { CacheKey } from "@/class/Engine.dto";
 import { RenderEngine } from "@/class/RenderEngine";

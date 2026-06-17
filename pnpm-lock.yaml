@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@impactium/icons':
-        specifier: ^1.2.8
-        version: 1.2.8(@types/node@24.10.0)(class-variance-authority@0.7.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
       '@impactium/types':
         specifier: ^1.0.0
         version: 1.0.0
@@ -92,6 +89,9 @@ importers:
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
+      lucide-react:
+        specifier: ^0.487.0
+        version: 0.487.0(react@19.2.0)
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -1180,19 +1180,6 @@ packages:
     engines: {node: ^18.17.0 || ^20.3.0 || >=21.0.0}
     cpu: [x64]
     os: [win32]
-
-  '@impactium/icons@1.2.8':
-    resolution: {integrity: sha512-1EAOwnnA0Lvb6a/MRAvNq3hUpfpiwMjzR7k2rIjBtlLv4HkXkSo2zs2405EFO9Xl8iHUmL+Mw5mi3fIEGU+rpw==}
-    engines: {node: '>=16.0.0', npm: '>=8.0.0'}
-    peerDependencies:
-      class-variance-authority: ^0.7.0
-      react: '*'
-      react-dom: '*'
-    peerDependenciesMeta:
-      react:
-        optional: true
-      react-dom:
-        optional: true
 
   '@impactium/types@1.0.0':
     resolution: {integrity: sha512-csFTvwkf5kWhdiWnlqW4QmkW75lt4nL/joCN1f5DX2GmscdsVly5rSxjEN8CtyUwi6da4p79ZFO1K9I6TaoiBg==}
@@ -8239,20 +8226,6 @@ snapshots:
 
   '@img/sharp-win32-x64@0.34.5':
     optional: true
-
-  '@impactium/icons@1.2.8(@types/node@24.10.0)(class-variance-authority@0.7.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(typescript@5.9.3)':
-    dependencies:
-      class-variance-authority: 0.7.1
-      lucide-react: 0.487.0(react@19.2.0)
-      ts-node: 10.9.2(@types/node@24.10.0)(typescript@5.9.3)
-    optionalDependencies:
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
-    transitivePeerDependencies:
-      - '@swc/core'
-      - '@swc/wasm'
-      - '@types/node'
-      - typescript
 
   '@impactium/types@1.0.0': {}
 

@@ -8,7 +8,7 @@ import { Operation } from "./Operation";
 import { Context } from "./Context";
 import { Internal } from "./addon/Internal";
 import { toast } from "sonner";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Logger } from "@/dto/Logger.class";
 import { DataStore } from "@/store/DataStore";
 import { Refractor } from "@/ui/utils";

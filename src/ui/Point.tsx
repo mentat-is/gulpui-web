@@ -1,4 +1,4 @@
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { Color } from '@impactium/types'
 import { cn } from '@impactium/utils'
 import s from './styles/Point.module.css'

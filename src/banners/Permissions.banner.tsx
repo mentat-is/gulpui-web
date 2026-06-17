@@ -2,7 +2,7 @@ import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Table } from "@/components/Table";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { toast } from "sonner";
 import { SetState } from "@/class/API";
 import { Button } from "@/ui/Button";

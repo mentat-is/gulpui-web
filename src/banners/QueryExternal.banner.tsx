@@ -3,7 +3,7 @@ import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Select } from "@/ui/Select";
 import { Switch } from "@/ui/Switch";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import s from "./styles/QueryExternalBanner.module.css";
 import { Label } from "@/ui/Label";

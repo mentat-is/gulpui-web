@@ -3,7 +3,7 @@ import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@impactium/utils';
 import s from './styles/Button.module.css';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { Spinner } from './Spinner';
 import { translate } from '@/locales/core';
 

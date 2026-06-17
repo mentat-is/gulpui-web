@@ -14,7 +14,7 @@ import { MinMax, MinMaxBase } from "@/class/Info";
 import { formatBytes, Refractor } from "@/ui/utils";
 import { SelectFiles } from "./SelectFiles.banner";
 import { Popover } from "@/ui/Popover";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Toggle } from "@/ui/Toggle";
 import { Separator } from "@/ui/Separator";
 import { cn } from "@impactium/utils";

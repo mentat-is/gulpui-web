@@ -49,7 +49,7 @@ interface FilterFileBannerProps extends Banner.Props {
 }
 
 import { QueriesHistory } from "@/components/QueriesHistory";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 
 /**
  * FilterFileBanner — Modal for building and applying OpenSearch queries/filters

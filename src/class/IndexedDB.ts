@@ -180,4 +180,27 @@ export class GulpIndexedDB {
             };
         });
     }
+
+    public UpdateConfigurations(configurations: Array<[string, any]>, storeName?: string): Promise<Event | void> {
+        if (!configurations.length) return Promise.resolve();
+
+        const targetStore = storeName || this.DB_STORE_NAMES[0];
+        return new Promise(async (resolve) => {
+            const tx = await this.MakeTransaction(targetStore, this.WRITEMODE);
+            tx.oncomplete = (ev) => {
+                resolve(ev);
+            };
+            const store = tx.objectStore(targetStore);
+            configurations.forEach(([configurationKey, configuration]) => {
+                const request = store.put(configuration, configurationKey);
+                request.onerror = (err) => {
+                    console.warn(
+                        "error in request to update configuration",
+                        configurationKey,
+                        err
+                    );
+                };
+            });
+        });
+    }
 }

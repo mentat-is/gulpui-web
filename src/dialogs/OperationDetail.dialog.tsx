@@ -4,7 +4,7 @@ import { Operation } from "@/entities/Operation";
 import { Dialog } from "@/ui/Dialog";
 import { Badge } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Stack } from "@/ui/Stack";
 import { formatTimestampToReadableString } from "@/ui/utils";
 import { GulpDataset } from "@/class/Info";

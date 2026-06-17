@@ -11,7 +11,7 @@ import {
 } from "@/ui/Color";
 import { Input } from "@/ui/Input";
 import { Logger } from "@/dto/Logger.class";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Stack } from "@/ui/Stack";
 import { Button } from "@/ui/Button";
 import { Glyph } from "@/entities/Glyph";

@@ -1,7 +1,7 @@
 import { Application } from "@/context/Application.context";
 import { DisplayGroupDialog } from "@/dialogs/Group.dialog";
 import { Point as UIPoint } from "./Point";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import s from "./styles/Note.module.css";
 import { cn } from "@impactium/utils";
 import { formatTimestampToReadableString, stringToHexColor } from "./utils";

@@ -1,7 +1,7 @@
 import s from './styles/Select.module.css'
 import * as SelectPrimitive from '@radix-ui/react-select'
 import { cn } from '@impactium/utils'
-import { Icon, Icon as ImpactiumIcon } from '@impactium/icons'
+import { Icon, Icon as BaseIcon } from '@/ui/Icon'
 import { ComponentRef, forwardRef, createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { ComponentPropsWithoutRef } from 'react'
 import { Checkbox } from './Checkbox'
@@ -168,9 +168,9 @@ export namespace Select {
     </SelectPrimitive.Trigger>
   ))
 
-  export const Icon = ({ name, className, color = 'currentColor', ...props }: ImpactiumIcon.Props) => (
+  export const Icon = ({ name, className, color = 'currentColor', ...props }: BaseIcon.Props) => (
     <SelectPrimitive.Icon asChild>
-      <ImpactiumIcon name={name} className={cn(s.icon, className)} color={color} {...props} />
+      <BaseIcon name={name} className={cn(s.icon, className)} color={color} {...props} />
     </SelectPrimitive.Icon>
   )
 

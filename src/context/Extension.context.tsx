@@ -10,7 +10,7 @@ import {
 import { Application } from "./Application.context";
 import React from "react";
 import { Version } from "@/dto/Dataset";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 
 const __component = Symbol("__extension_component");
 
