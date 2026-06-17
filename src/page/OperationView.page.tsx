@@ -53,14 +53,14 @@ import { Locale } from "@/locales";
  * @param operationId - The operation ID under which the event was ingested.
  */
 function FetchEventBannerMain({ docId, operationId }: { docId: Doc.Id; operationId: Operation.Id }) {
-  // Construct a minimal Note.Type shell so we can reuse the existing FetchEventBanner component.
-  const shell = {
-    doc: { _id: docId },
-    operation_id: operationId,
-    name: docId,
-  } as unknown as Note.Type
+	// Construct a minimal Note.Type shell so we can reuse the existing FetchEventBanner component.
+	const shell = {
+		doc: { _id: docId },
+		operation_id: operationId,
+		name: docId,
+	} as unknown as Note.Type
 
-  return <NotePoint.FetchEventBanner note={shell} />
+	return <NotePoint.FetchEventBanner note={shell} />
 }
 
 export function OperationView() {
@@ -151,9 +151,9 @@ export function OperationTimeline() {
 		spawnBanner,
 		spawnDialog,
 		toggleHintOpen,
-		} = Application.use();
-		const { t } = Locale.use();
-		const { extensions } = Extension.use();
+	} = Application.use();
+	const { t } = Locale.use();
+	const { extensions } = Extension.use();
 
 	const applyThemeToWindow = useCallback(
 		(
@@ -809,7 +809,7 @@ export function OperationTimeline() {
 			},
 			{
 				label: t("settings.title"),
-				icon: "SettingsGear",
+				icon: "Settings",
 				category: t("operationView.menu.configuration"),
 				action: () => spawnBanner(<Settings.Banner />),
 			},
