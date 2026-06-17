@@ -128,6 +128,37 @@ export function HeaderAction({ section }: { section: HomeContent.Section }) {
 }
 
 /**
+ * Renders the Home content back action that returns routed sub-pages to the
+ * root Home content.
+ *
+ * @returns A localized back button that navigates to the Home route.
+ */
+export function BackButton() {
+	const { spawnDialog } = Application.use();
+	const { t } = Locale.use();
+	const navigate = useNavigate();
+
+	/**
+	 * Closes any open Home detail dialog and redirects the user to root Home content.
+	 */
+	const handleBackToHome = useCallback(() => {
+		spawnDialog(null);
+		navigate("/");
+	}, [navigate, spawnDialog]);
+
+	return (
+		<Button
+			variant="tertiary"
+			icon="ArrowLeft"
+			title={t("common.back")}
+			onClick={handleBackToHome}
+		>
+			{t("common.back")}
+		</Button>
+	);
+}
+
+/**
  * Renders the operation list previously owned by Home.page.tsx.
  *
  * @param props - Loading state supplied by the Home page initializer.

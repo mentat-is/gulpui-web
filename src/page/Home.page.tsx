@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Application } from "@/context/Application.context";
 import { Menu, MenuItem } from "@/components/menu";
 import { Session } from "@/banners/Session.banner";
@@ -8,6 +8,7 @@ import { Stack } from "@/ui/Stack";
 import { Resizer } from "@/ui/Resizer";
 import { Locale } from "@/locales";
 import {
+	BackButton,
 	GroupsList,
 	HeaderAction,
 	HomeContent,
@@ -39,6 +40,7 @@ export namespace Home {
 			Application.use();
 		const { t } = Locale.use();
 		const navigate = useNavigate();
+		const location = useLocation();
 		const [loading, setLoading] = useState(true);
 
 		/**
@@ -116,6 +118,12 @@ export namespace Home {
 		}, [section, t]);
 
 		/**
+		 * Whether the current Home shell route should expose a shortcut back to
+		 * the root Home content.
+		 */
+		const shouldShowBackButton = location.pathname !== "/";
+
+		/**
 		 * Resolves the active Home section content without remounting the list on
 		 * unrelated parent re-renders such as banner or dialog state changes.
 		 */
@@ -183,7 +191,10 @@ export namespace Home {
 				{/* Main content: active Home section */}
 				<main className={s.main}>
 					<div className={s.pageHeader}>
-						<p className={s.pageTitle}>{pageTitle}</p>
+						<div className={s.pageTitleGroup}>
+							{shouldShowBackButton ? <BackButton /> : null}
+							<p className={s.pageTitle}>{pageTitle}</p>
+						</div>
 						<div className={s.pageActions}>
 							<HeaderAction section={section} />
 						</div>
