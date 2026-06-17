@@ -24,7 +24,10 @@ interface DetailRow {
 	value: string;
 }
 
-type DetailValueFormatter = (label: string, value: unknown) => string | undefined;
+type DetailValueFormatter = (
+	label: string,
+	value: unknown,
+) => string | undefined;
 
 export namespace HomeContent {
 	export type Section = "operations" | "users" | "groups";
@@ -675,14 +678,6 @@ export function UsersList() {
 				variant: "secondary",
 				onClick: (user) => {
 					deleteUser(user.id);
-				},
-			},
-			{
-				icon: "PenLine",
-				label: t("common.edit"),
-				variant: "secondary",
-				onClick: (user) => {
-					spawnBanner(<Permissions.Users.Edit.Banner user={user} />);
 				},
 			},
 		],

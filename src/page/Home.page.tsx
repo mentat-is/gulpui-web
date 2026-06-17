@@ -116,21 +116,17 @@ export namespace Home {
 		}, [section, t]);
 
 		/**
-		 * Renders the active Home section without changing the current route.
-		 *
-		 * @returns The table component for the current section.
+		 * Resolves the active Home section content without remounting the list on
+		 * unrelated parent re-renders such as banner or dialog state changes.
 		 */
-		const MainContent = () => {
-			if (section === "users") {
-				return <UsersList />;
-			}
-
-			if (section === "groups") {
-				return <GroupsList />;
-			}
-
-			return <OperationsList loading={loading} />;
-		};
+		const mainContent =
+			section === "users" ? (
+				<UsersList />
+			) : section === "groups" ? (
+				<GroupsList />
+			) : (
+				<OperationsList loading={loading} />
+			);
 
 		/**
 		 * Top area menu items for the Home page.
@@ -192,7 +188,7 @@ export namespace Home {
 							<HeaderAction section={section} />
 						</div>
 					</div>
-					<MainContent />
+					{mainContent}
 				</main>
 
 				{/* Right drawer placeholder — reserved for the upcoming detail panel */}
