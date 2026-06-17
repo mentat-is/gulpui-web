@@ -3,7 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Icon } from "@/ui/Icon";
 import { Application } from "@/context/Application.context";
+import { DisplayGroupDetailDialog } from "@/dialogs/GroupsDetail.dialog";
 import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
+import { DisplayUserDetailDialog } from "@/dialogs/UserDetail.dialog";
 import { Operation } from "@/entities/Operation";
 import { User } from "@/entities/User";
 import { Group } from "@/entities/Group";
@@ -11,23 +13,11 @@ import { Glyph } from "@/entities/Glyph";
 import { Permissions } from "@/banners/Permissions.banner";
 import { Table } from "@/components/Table";
 import { Button } from "@/ui/Button";
-import { Dialog } from "@/ui/Dialog";
 import { Stack } from "@/ui/Stack";
-import { formatTimestampToReadableString } from "@/ui/utils";
 import { Locale } from "@/locales";
 import s from "./styles/HomeContent.module.css";
 
 type EntityRecord = Record<string, unknown> & { id?: string; name?: string };
-
-interface DetailRow {
-	label: string;
-	value: string;
-}
-
-type DetailValueFormatter = (
-	label: string,
-	value: unknown,
-) => string | undefined;
 
 export namespace HomeContent {
 	export type Section = "operations" | "users" | "groups";
@@ -46,22 +36,6 @@ export namespace HomeContent {
  */
 function getEntityId(entity: EntityRecord): string {
 	return typeof entity.id === "string" ? entity.id : "";
-}
-
-/**
- * Converts a timestamp-like value to the readable format used by the rest of the UI.
- *
- * @param value - Timestamp value from an API entity.
- * @returns A readable timestamp string, or a fallback dash when unavailable.
- */
-function formatTimestampValue(value: unknown): string {
-	if (typeof value !== "number" || Number.isNaN(value)) {
-		return "-";
-	}
-
-	const isSeconds = String(value).length <= 10;
-	const milliseconds = isSeconds ? value * 1000 : value;
-	return formatTimestampToReadableString(milliseconds);
 }
 
 /**
@@ -89,80 +63,6 @@ function formatDetailValue(value: unknown): string {
 }
 
 /**
- * Extracts the user identifier from a primitive or user-like group member value.
- *
- * @param value - Group user entry returned by the API.
- * @returns The resolved user identifier, or null when no identifier is available.
- */
-function extractUserId(value: unknown): string | null {
-	if (typeof value === "string") {
-		return value;
-	}
-
-	if (!value || typeof value !== "object") {
-		return null;
-	}
-
-	const record = value as Record<string, unknown>;
-	if (typeof record.user_id === "string") {
-		return record.user_id;
-	}
-
-	if (typeof record.id === "string") {
-		return record.id;
-	}
-
-	return null;
-}
-
-/**
- * Formats a group user field as a compact list of user identifiers.
- *
- * @param value - Raw group user field value from the API.
- * @returns A comma-separated list of user identifiers.
- */
-function formatGroupUsers(value: unknown): string {
-	if (Array.isArray(value)) {
-		const userIds = value
-			.map((entry) => extractUserId(entry))
-			.filter((entry): entry is string => !!entry);
-		return userIds.length > 0 ? userIds.join(", ") : "-";
-	}
-
-	return extractUserId(value) ?? "-";
-}
-
-/**
- * Builds detail rows from a generic entity object.
- *
- * @param entity - Entity object to render in the detail drawer.
- * @param hiddenFields - Case-insensitive field names excluded from the detail list.
- * @param formatValue - Optional field-specific formatter.
- * @returns Ordered label/value pairs for the detail drawer.
- */
-function buildDetailRows(
-	entity: EntityRecord,
-	hiddenFields: string[] = [],
-	formatValue?: DetailValueFormatter,
-): DetailRow[] {
-	const hidden = new Set(hiddenFields.map((field) => field.toLowerCase()));
-
-	return Object.entries(entity)
-		.filter(([label]) => !hidden.has(label.toLowerCase()))
-		.map(([label, value]) => {
-			const customValue = formatValue?.(label, value);
-			return {
-				label,
-				value:
-					customValue ??
-					(label.toLowerCase().includes("time")
-						? formatTimestampValue(value)
-						: formatDetailValue(value)),
-			};
-		});
-}
-
-/**
  * Renders the shared loading or empty state used by all Home list sections.
  *
  * @param text - Message shown in the center of the result panel.
@@ -175,125 +75,6 @@ function ResultState({ text }: { text: string }) {
 				<div className={s.emptyState}>{text}</div>
 			</div>
 		</div>
-	);
-}
-
-namespace EntityDetailsDialog {
-	export interface Props {
-		/** Drawer title shown after details load. */
-		title: string;
-		/** Icon rendered in the detail drawer header. */
-		icon: Icon.Name;
-		/** Initial row data available before the detail endpoint returns. */
-		fallback: EntityRecord;
-		/** Loads fresh detail data by ID. */
-		loadDetails: () => Promise<EntityRecord>;
-		/** Case-insensitive field names excluded from the detail list. */
-		hiddenFields?: string[];
-		/** Optional field-specific value formatter. */
-		formatValue?: DetailValueFormatter;
-		/** Optional edit handler rendered as a header action. */
-		onEdit?: (details: EntityRecord) => void;
-		/** Callback invoked when the drawer should close. */
-		onClose: () => void;
-	}
-}
-
-/**
- * Fetches and displays user or group details in the Home page docked drawer.
- *
- * @param props - Detail drawer configuration and loader callback.
- * @returns A docked dialog containing formatted entity details.
- */
-function EntityDetailsDialog({
-	title,
-	icon,
-	fallback,
-	loadDetails,
-	hiddenFields,
-	formatValue,
-	onEdit,
-	onClose,
-}: EntityDetailsDialog.Props) {
-	const { t } = Locale.use();
-	const [loading, setLoading] = useState<boolean>(true);
-	const [details, setDetails] = useState<EntityRecord>(fallback);
-
-	/**
-	 * Loads the latest entity detail payload and keeps the fallback visible on failure.
-	 *
-	 * @returns A promise that settles after the detail request completes.
-	 */
-	const loadEntityDetails = useCallback(async () => {
-		setLoading(true);
-		try {
-			const response = await loadDetails();
-			if (response) {
-				setDetails(response);
-			}
-		} finally {
-			setLoading(false);
-		}
-	}, [loadDetails]);
-
-	useEffect(() => {
-		loadEntityDetails();
-	}, [loadEntityDetails]);
-
-	const rows = buildDetailRows(details, hiddenFields, formatValue);
-	const displayTitle = details.name || title;
-
-	return (
-		<Dialog
-			callback={onClose}
-			loading={loading}
-		>
-			<div className={s.detailHeader}>
-				<div className={s.detailTitleContainer}>
-					<div className={s.detailIcon}>
-						<Icon
-							name={icon}
-							size={18}
-						/>
-					</div>
-					<h2 className={s.detailTitle}>{displayTitle}</h2>
-				</div>
-				<div className={s.buttonGroup}>
-					{onEdit ? (
-						<Button
-							variant="secondary"
-							icon="PencilEdit"
-							title={t("common.edit")}
-							onClick={() => onEdit(details)}
-						/>
-					) : null}
-					<Button
-						variant="secondary"
-						icon="X"
-						title={t("common.closeDialog")}
-						onClick={onClose}
-					/>
-				</div>
-			</div>
-			<Stack
-				dir="column"
-				className={s.detailList}
-			>
-				<div className={s.detailSection}>
-					<div className={s.detailsList}>
-						{rows.map((row) => (
-							<div
-								key={row.label}
-								className={s.detailItem}
-							>
-								<span className={s.detailLabel}>{row.label}:</span>
-								<span className={s.detailValue}>{row.value}</span>
-							</div>
-						))}
-					</div>
-				</div>
-			</Stack>
-		</Dialog>
 	);
 }
 
@@ -319,6 +100,18 @@ export function HeaderAction({ section }: { section: HomeContent.Section }) {
 		);
 	}
 
+	if (section === "groups") {
+		return (
+			<Button
+				variant="glass"
+				icon="Users"
+				onClick={() => spawnBanner(<Permissions.Users.Groups.FormBanner />)}
+			>
+				{t("permissions.createGroup")}
+			</Button>
+		);
+	}
+
 	if (section === "operations") {
 		return (
 			<Button
@@ -332,6 +125,37 @@ export function HeaderAction({ section }: { section: HomeContent.Section }) {
 	}
 
 	return null;
+}
+
+/**
+ * Renders the Home content back action that returns routed sub-pages to the
+ * root Home content.
+ *
+ * @returns A localized back button that navigates to the Home route.
+ */
+export function BackButton() {
+	const { spawnDialog } = Application.use();
+	const { t } = Locale.use();
+	const navigate = useNavigate();
+
+	/**
+	 * Closes any open Home detail dialog and redirects the user to root Home content.
+	 */
+	const handleBackToHome = useCallback(() => {
+		spawnDialog(null);
+		navigate("/");
+	}, [navigate, spawnDialog]);
+
+	return (
+		<Button
+			variant="tertiary"
+			icon="ArrowLeft"
+			title={t("common.back")}
+			onClick={handleBackToHome}
+		>
+			{t("common.back")}
+		</Button>
+	);
 }
 
 /**
@@ -533,7 +357,7 @@ export function OperationsList({ loading }: HomeContent.OperationsListProps) {
  * @returns The users table, loading state, or empty state.
  */
 export function UsersList() {
-	const { Info, app, spawnBanner, spawnDialog } = Application.use();
+	const { Info, app, spawnDialog } = Application.use();
 	const { t } = Locale.use();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [users, setUsers] = useState<User.Type[]>([]);
@@ -636,28 +460,13 @@ export function UsersList() {
 	const openUserDetails = useCallback(
 		(user: User.Type) => {
 			spawnDialog(
-				<EntityDetailsDialog
-					title={user.name || user.id}
-					icon="User"
-					fallback={user as unknown as EntityRecord}
-					loadDetails={() =>
-						Info.user_get_by_id(user.id).then(
-							(response) => response as unknown as EntityRecord,
-						)
-					}
-					hiddenFields={["user_data", "pwd_hash", "psw_hash", "password"]}
-					onEdit={(details) =>
-						spawnBanner(
-							<Permissions.Users.Edit.Banner
-								user={details as unknown as User.Type}
-							/>,
-						)
-					}
+				<DisplayUserDetailDialog
+					user={user}
 					onClose={() => spawnDialog(null)}
 				/>,
 			);
 		},
-		[Info, spawnDialog],
+		[spawnDialog],
 	);
 
 	const selectedIndices = useMemo(() => {
@@ -681,7 +490,7 @@ export function UsersList() {
 				},
 			},
 		],
-		[deleteUser, spawnBanner, t],
+		[deleteUser, t],
 	);
 
 	if (loading) {
@@ -771,7 +580,7 @@ export function UsersList() {
  * @returns The groups table, loading state, or empty state.
  */
 export function GroupsList() {
-	const { Info, spawnDialog } = Application.use();
+	const { spawnDialog } = Application.use();
 	const { t } = Locale.use();
 	const [loading, setLoading] = useState<boolean>(true);
 	const [groups, setGroups] = useState<Group.Type[]>([]);
@@ -785,15 +594,35 @@ export function GroupsList() {
 	const reloadGroups = useCallback(async () => {
 		setLoading(true);
 		try {
-			const response = await Info.user_group_list();
+			const response = await Permissions.Users.Groups.list();
 			setGroups(response || []);
 		} finally {
 			setLoading(false);
 		}
-	}, [Info]);
+	}, []);
 
 	useEffect(() => {
 		reloadGroups();
+	}, [reloadGroups]);
+
+	useEffect(() => {
+		/**
+		 * Refreshes the group table after create/edit/membership banners complete.
+		 */
+		const handleGroupListChanged = () => {
+			reloadGroups();
+		};
+
+		window.addEventListener(
+			Permissions.GroupListChangedEvent,
+			handleGroupListChanged,
+		);
+		return () => {
+			window.removeEventListener(
+				Permissions.GroupListChangedEvent,
+				handleGroupListChanged,
+			);
+		};
 	}, [reloadGroups]);
 
 	/**
@@ -804,7 +633,7 @@ export function GroupsList() {
 	 */
 	const deleteGroup = useCallback(
 		async (groupId: string): Promise<boolean> => {
-			const deleted = await Info.user_group_delete(groupId);
+			const deleted = await Permissions.Users.Groups.deleteById(groupId);
 			if (deleted) {
 				toast.success(t("home.groups.deleted", { groupId }), {
 					icon: <Icon name="Check" />,
@@ -824,7 +653,7 @@ export function GroupsList() {
 			}
 			return deleted;
 		},
-		[Info, reloadGroups, t],
+		[reloadGroups, t],
 	);
 
 	/**
@@ -850,28 +679,13 @@ export function GroupsList() {
 			if (!groupId) return;
 
 			spawnDialog(
-				<EntityDetailsDialog
-					title={entity.name || groupId}
-					icon="Users"
-					fallback={entity}
-					loadDetails={() =>
-						Info.user_group_get_by_id(groupId).then(
-							(response) => response as EntityRecord,
-						)
-					}
-					formatValue={(label, value) => {
-						const normalizedLabel = label.toLowerCase();
-						if (normalizedLabel === "user" || normalizedLabel === "users") {
-							return formatGroupUsers(value);
-						}
-
-						return undefined;
-					}}
+				<DisplayGroupDetailDialog
+					group={group}
 					onClose={() => spawnDialog(null)}
 				/>,
 			);
 		},
-		[Info, spawnDialog],
+		[spawnDialog],
 	);
 
 	const selectedIndices = useMemo(() => {

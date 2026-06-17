@@ -28,7 +28,6 @@ import { Glyph } from "@/entities/Glyph";
 import { Operation } from "@/entities/Operation";
 import { Context } from "@/entities/Context";
 import { User } from "@/entities/User";
-import { Group } from "@/entities/Group";
 import { Request } from "@/entities/Request";
 import { FileEntity } from "@/banners/Upload.banner";
 import { Note } from "@/entities/Note";
@@ -498,7 +497,9 @@ export class Info implements InfoProps {
 						});
 					} else {
 						toast.success(translate("info.enrichmentFinished"), {
-							description: translate("info.totalProcessedDocuments", { count: m.payload.obj.data.total_hits ?? 0 }),
+							description: translate("info.totalProcessedDocuments", {
+								count: m.payload.obj.data.total_hits ?? 0,
+							}),
 							icon: <Icon name="Check" />,
 						});
 					}
@@ -875,7 +876,6 @@ export class Info implements InfoProps {
 						//     icon: <Icon name='Stop' />,
 						//     description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
 						//     duration: 1000 * 2,
-						//     // [λ] Uncomment next lines if not fixed in backend till 2026
 						//     // description: `Has been failed ${m.payload.obj.data.failed_queries} queries from total amount of ${m.payload.obj.data.num_queries}. \n\nWhich is ${(m.payload.obj.data.num_queries / m.payload.obj.data.failed_queries) * 100}% of total amount of queries. \n\nTraces: \n${m.payload.obj.errors.map((error: string, index: number) => `Error number ${index + 1} is ${error}`).join('\n')}. \nQuery has been executed on server with id ${m.payload.obj.server_id}`,
 						//     // duration: 1000 * 60 * 10,
 						//     richColors: true
@@ -894,13 +894,10 @@ export class Info implements InfoProps {
 
 		if (preview) {
 			if (!resp || (resp || {})?.data?.total_hits === 0) {
-				toast.error(
-					translate("filter.noResults"),
-					{
-						icon: <Icon name="FaceUnhappy" />,
-						richColors: true,
-					},
-				);
+				toast.error(translate("filter.noResults"), {
+					icon: <Icon name="FaceUnhappy" />,
+					richColors: true,
+				});
 			} else {
 				toast(translate("filter.totalHits", { count: resp.data?.total_hits }));
 			}
@@ -1087,9 +1084,12 @@ export class Info implements InfoProps {
 						) as Note.Type[];
 						if (newItems.length > 0) {
 							newItems.forEach((note) => this.AddNoteToDataStore(note));
-							toast.success(translate("notes.fetchedCount", { count: newItems.length }), {
-								richColors: true,
-							});
+							toast.success(
+								translate("notes.fetchedCount", { count: newItems.length }),
+								{
+									richColors: true,
+								},
+							);
 						}
 					}
 				},
@@ -1110,13 +1110,10 @@ export class Info implements InfoProps {
 
 		if (preview) {
 			if (!resp || (resp || {})?.data?.total_hits === 0) {
-				toast.error(
-					translate("filter.noResults"),
-					{
-						icon: <Icon name="FaceUnhappy" />,
-						richColors: true,
-					},
-				);
+				toast.error(translate("filter.noResults"), {
+					icon: <Icon name="FaceUnhappy" />,
+					richColors: true,
+				});
 			} else {
 				toast(translate("filter.totalHits", { count: resp.data?.total_hits }));
 			}
@@ -1624,24 +1621,35 @@ export class Info implements InfoProps {
 			}
 		} else if (succeeded.length > 0 && failed.length > 0) {
 			toast.warning(
-				translate("operation.deletePartialFailed", { succeeded: succeeded.length, failed: failed.length }),
+				translate("operation.deletePartialFailed", {
+					succeeded: succeeded.length,
+					failed: failed.length,
+				}),
 				{
-					description: translate("operation.deleteFailedList", { names: failed.map((f) => f.name).join(", ") }),
+					description: translate("operation.deleteFailedList", {
+						names: failed.map((f) => f.name).join(", "),
+					}),
 					icon: <Icon name="Warning" />,
 					richColors: true,
 				},
 			);
 		} else if (failed.length > 0) {
 			if (failed.length === 1) {
-				toast.error(translate("operation.deleteFailed", { name: failed[0].name }), {
-					icon: <Icon name="Stop" />,
-					richColors: true,
-				});
+				toast.error(
+					translate("operation.deleteFailed", { name: failed[0].name }),
+					{
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					},
+				);
 			} else {
-				toast.error(translate("operation.deleteFailedCount", { count: failed.length }), {
-					icon: <Icon name="Stop" />,
-					richColors: true,
-				});
+				toast.error(
+					translate("operation.deleteFailedCount", { count: failed.length }),
+					{
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					},
+				);
 			}
 		}
 
@@ -1674,7 +1682,6 @@ export class Info implements InfoProps {
 		return example;
 	};
 
-	// ⚠️ UNTOUCHABLE
 	file_delete = (source: Source.Type) => {
 		return api(
 			"/source_delete",
@@ -1686,18 +1693,18 @@ export class Info implements InfoProps {
 				},
 				toast: {
 					onSuccess: () =>
-						toast.success(
-							translate("source.deleted", { name: source.name }),
+						toast.success(translate("source.deleted", { name: source.name }), {
+							icon: <Icon name="Check" />,
+							richColors: true,
+						}),
+					onError: () =>
+						toast.error(
+							translate("source.deleteFailed", { name: source.name }),
 							{
-								icon: <Icon name="Check" />,
+								icon: <Icon name="Stop" />,
 								richColors: true,
 							},
 						),
-					onError: () =>
-						toast.error(translate("source.deleteFailed", { name: source.name }), {
-							icon: <Icon name="Stop" />,
-							richColors: true,
-						}),
 				},
 			},
 			this.sync,
@@ -1739,7 +1746,9 @@ export class Info implements InfoProps {
 			},
 			onError: (err: string) => {
 				isCompletedOrError = true;
-				toast.error(translate("source.ingestionFailed", { name: file.name, error: err }));
+				toast.error(
+					translate("source.ingestionFailed", { name: file.name, error: err }),
+				);
 				this.activeUploads.delete(id);
 				this.delLoading(id);
 				this.render();
@@ -1861,11 +1870,16 @@ export class Info implements InfoProps {
 
 						const finalFile = Source.Entity.id(this.app, finalFileId);
 						if (finalFile) {
-							toast.success(translate("source.ingested", { name: finalFile.name }), {
-								description: translate("source.totalDocuments", { count: all.length }),
-								richColors: true,
-								icon: <Icon name="Check" />,
-							});
+							toast.success(
+								translate("source.ingested", { name: finalFile.name }),
+								{
+									description: translate("source.totalDocuments", {
+										count: all.length,
+									}),
+									richColors: true,
+									icon: <Icon name="Check" />,
+								},
+							);
 						}
 					});
 				}
@@ -2065,7 +2079,6 @@ export class Info implements InfoProps {
 		return Array.isArray(response.data) ? (response.data as Doc.Type[]) : [];
 	};
 
-	// ⚠️ UNTOUCHABLE
 	file_set_settings = (
 		id: Source.Id,
 		settings: Partial<Source.Type["settings"]>,
@@ -2101,7 +2114,6 @@ export class Info implements InfoProps {
 			"files",
 		);
 
-	// ⚠️ UNTOUCHABLE
 	context_delete = (context: Context.Type, delete_data: boolean) =>
 		api<any>(
 			"/context_delete",
@@ -2195,7 +2207,6 @@ export class Info implements InfoProps {
 		this.setInfoByKey(number, "timeline", "dialogSize");
 	};
 
-	// ⚠️ UNTOUCHABLE
 	notes_reload = async () => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) {
@@ -2249,7 +2260,10 @@ export class Info implements InfoProps {
 					});
 				});
 			} else {
-				const message = translate("notes.fetchedInRounds", { count: notes.length, rounds: offset / 500 });
+				const message = translate("notes.fetchedInRounds", {
+					count: notes.length,
+					rounds: offset / 500,
+				});
 				Logger.log(message, Info);
 				DataStore.notes = [...notes];
 				Note.Entity.invalidateCache();
@@ -2321,7 +2335,6 @@ export class Info implements InfoProps {
 		this.setInfoByKey(loadings, "general", "loadings");
 	}
 
-	// ⚠️ UNTOUCHABLE
 	note_delete = (note: Note.Type) =>
 		api("/note_delete", {
 			method: "DELETE",
@@ -2385,7 +2398,9 @@ export class Info implements InfoProps {
 					}),
 				onError: (response) =>
 					toast.error(translate("permissions.groupAddFailed"), {
-						description: translate("common.reason", { reason: response.data.__error.msg }),
+						description: translate("common.reason", {
+							reason: response.data.__error.msg,
+						}),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2409,7 +2424,9 @@ export class Info implements InfoProps {
 					}),
 				onError: (response) =>
 					toast.error(translate("permissions.userAddFailed"), {
-						description: translate("common.reason", { reason: response.data.__error.msg }),
+						description: translate("common.reason", {
+							reason: response.data.__error.msg,
+						}),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2437,7 +2454,9 @@ export class Info implements InfoProps {
 					}),
 				onError: (response) =>
 					toast.error(translate("permissions.groupRemoveFailed"), {
-						description: translate("common.reason", { reason: response.data.__error.msg }),
+						description: translate("common.reason", {
+							reason: response.data.__error.msg,
+						}),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2461,7 +2480,9 @@ export class Info implements InfoProps {
 					}),
 				onError: (response) =>
 					toast.error(translate("permissions.userRemoveFailed"), {
-						description: translate("common.reason", { reason: response.data.__error.msg }),
+						description: translate("common.reason", {
+							reason: response.data.__error.msg,
+						}),
 						icon: <Icon name="Stop" />,
 						richColors: true,
 					}),
@@ -2561,7 +2582,6 @@ export class Info implements InfoProps {
 			this.AddNoteToDataStore(note);
 		});
 
-	// ⚠️ UNTOUCHABLE
 	links_reload = async () => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) {
@@ -2691,7 +2711,10 @@ export class Info implements InfoProps {
 			toast: {
 				onSuccess: () =>
 					toast.success(
-						translate("link.eventConnected", { event: event._id, link: link.name }),
+						translate("link.eventConnected", {
+							event: event._id,
+							link: link.name,
+						}),
 						{
 							richColors: true,
 							icon: <Icon name="Check" />,
@@ -2713,7 +2736,10 @@ export class Info implements InfoProps {
 			toast: {
 				onSuccess: () =>
 					toast.success(
-						translate("link.eventDisconnected", { event: event._id, link: link.name }),
+						translate("link.eventDisconnected", {
+							event: event._id,
+							link: link.name,
+						}),
 						{
 							richColors: true,
 							icon: <Icon name="Check" />,
@@ -3084,7 +3110,9 @@ export class Info implements InfoProps {
 			})
 			.catch((error) => {
 				toast.error(translate("session.loadFailed"), {
-					description: translate("common.errorMessage", { message: JSON.stringify(error) }),
+					description: translate("common.errorMessage", {
+						message: JSON.stringify(error),
+					}),
 					icon: <Icon name="FaceSad" />,
 				});
 			});
@@ -3244,7 +3272,6 @@ export class Info implements InfoProps {
 		});
 	};
 
-	// ⚠️ UNTOUCHABLE
 	private _pluginListPromise: Promise<
 		GulpDataset.PluginList.Interface[]
 	> | null = null;
@@ -3339,46 +3366,6 @@ export class Info implements InfoProps {
 		return p;
 	};
 
-	/**
-	 * Fetches all user groups available to the current session.
-	 *
-	 * @returns A promise resolving to the user group list returned by the API.
-	 */
-	user_group_list = (): Promise<Group.Type[]> => {
-		return api<Group.Type[]>("/user_group_list", {
-			method: "POST",
-		});
-	};
-
-	/**
-	 * Fetches detailed information about a specific user group by its ID.
-	 *
-	 * @param groupId - The unique identifier of the group to fetch.
-	 * @returns A promise resolving to the detailed group information.
-	 */
-	user_group_get_by_id = (groupId: string): Promise<Group.Type> => {
-		return api<Group.Type>("/user_group_get_by_id", {
-			method: "GET",
-			query: { group_id: groupId },
-		});
-	};
-
-	/**
-	 * Deletes a user group by its unique identifier.
-	 *
-	 * @param groupId - The unique identifier of the group to delete.
-	 * @returns A promise resolving to true when the API confirms deletion.
-	 */
-	user_group_delete = async (groupId: string): Promise<boolean> => {
-		const response = await api<undefined>("/user_group_delete", {
-			method: "DELETE",
-			query: { group_id: groupId },
-			raw: true,
-		});
-
-		return response.status === "success";
-	};
-
 	login = async (credentials: Pick<User.Minified, "id" | "password">) => {
 		const user = await api<User.Type>("/login", {
 			method: "POST",
@@ -3394,7 +3381,9 @@ export class Info implements InfoProps {
 				onError: (response) =>
 					toast.error(translate("auth.loginFailed"), {
 						richColors: true,
-						description: translate("common.reason", { reason: response.data.__error.msg }),
+						description: translate("common.reason", {
+							reason: response.data.__error.msg,
+						}),
 						icon: <Icon name="Warning" />,
 					}),
 			},
@@ -3727,7 +3716,9 @@ export class Info implements InfoProps {
 							toast.success(
 								translate("sigma.queryFinished", { name: m.payload.obj.name }),
 								{
-									description: translate("sigma.totalMatches", { count: m.payload.obj.data.total_hits ?? 0 }),
+									description: translate("sigma.totalMatches", {
+										count: m.payload.obj.data.total_hits ?? 0,
+									}),
 									icon: <Icon name="Sigma" />,
 								},
 							);
@@ -3743,9 +3734,12 @@ export class Info implements InfoProps {
 								(item) => item.type === "note",
 							) as Note.Type[];
 							newItems.forEach((note) => this.AddNoteToDataStore(note));
-							toast.success(translate("notes.fetchedCount", { count: newItems.length }), {
-								richColors: true,
-							});
+							toast.success(
+								translate("notes.fetchedCount", { count: newItems.length }),
+								{
+									richColors: true,
+								},
+							);
 						}
 					},
 				);

@@ -232,7 +232,6 @@ const api: Api = async function <T>(
 
 	const res = new ResponseHandler(json as ResponseBase<T>);
 
-	// [λ] Workaround. Remove after gulp/issues/110 would be fixed
 	if (
 		["success", "pending"].includes(res.status) ||
 		(res.data &&

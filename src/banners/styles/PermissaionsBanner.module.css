@@ -33,3 +33,32 @@
 .role button span[data-state="checked"] {
   transform: translateX(20px);
 }
+
+.textarea {
+  width: 100%;
+  min-height: 96px;
+}
+
+.tableScroll {
+  height: 100%;
+  overflow: auto;
+  gap: 24px;
+  padding-bottom: 24px;
+}
+
+.tableSection {
+  width: 100%;
+}
+
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--second);
+  letter-spacing: 0.08em;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+}
+
+.tableSkeleton {
+  height: 100px;
+}
