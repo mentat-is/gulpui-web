@@ -10,10 +10,13 @@ import { Input } from "@/ui/Input";
 import { Skeleton } from "@/ui/Skeleton";
 import { Stack } from "@/ui/Stack";
 import { Select } from "@/ui/Select";
+import { Textarea } from "@/ui/Textarea";
 import { User } from "@/entities/User";
 import { Group } from "@/entities/Group";
 import { Glyph } from "@/entities/Glyph";
 import { Locale } from "@/locales";
+import { translate } from "@/locales/core";
+import s from "@/banners/styles/PermissaionsBanner.module.css";
 
 export namespace Permissions {
 	export type Role = "admin" | "read" | "edit" | "ingest" | "delete";
@@ -25,9 +28,32 @@ export namespace Permissions {
 		"admin",
 	];
 	export const UserListChangedEvent = "gulp:user-list-changed";
+	export const GroupListChangedEvent = "gulp:group-list-changed";
 
+	/**
+	 * Notifies listeners that the user list has changed.
+	 */
 	export function notifyUserListChanged() {
 		window.dispatchEvent(new Event(UserListChangedEvent));
+	}
+
+	/**
+	 * Notifies listeners that the user group list has changed.
+	 */
+	export function notifyGroupListChanged() {
+		window.dispatchEvent(new Event(GroupListChangedEvent));
+	}
+
+	/**
+	 * Resolves the default glyph used for group forms.
+	 *
+	 * @returns A glyph ID for the Users icon, or the first available glyph.
+	 */
+	function getDefaultGroupGlyphId(): Glyph.Id {
+		return (
+			Glyph.getIdByName("Users") ||
+			(Array.from(Glyph.List.keys()).find(Boolean) as Glyph.Id)
+		);
 	}
 
 	export namespace Users {
@@ -232,7 +258,470 @@ export namespace Permissions {
 				);
 			};
 		}
-		export namespace Groups {}
+		export namespace Groups {
+			export const NameRule = /^[a-zA-Z0-9_.@-]{2,64}$/;
+
+			export interface SaveOptions {
+				name: string;
+				glyphId: Glyph.Id;
+				permissions: Permissions.Role[];
+				description: string;
+				setLoading?: SetState<boolean>;
+			}
+
+			export interface UpdateOptions extends SaveOptions {
+				groupId: string;
+			}
+
+			export interface MembershipOptions {
+				groupId: string;
+				userId: string;
+			}
+
+			/**
+			 * Extracts user IDs from the group detail payload.
+			 *
+			 * @param group - Group detail payload returned by the API.
+			 * @returns A normalized list of user IDs assigned to the group.
+			 */
+			export function getUserIds(
+				group: Group.Type | null | undefined,
+			): string[] {
+				const members = group?.users ?? group?.user ?? [];
+				return members
+					.map((member) => {
+						if (typeof member === "string") {
+							return member;
+						}
+
+						return member.user_id ?? member.id ?? "";
+					})
+					.filter((userId) => userId.length > 0);
+			}
+
+			/**
+			 * Fetches all user groups available to the current session.
+			 *
+			 * @returns A promise resolving to the user group list returned by the API.
+			 */
+			export function list(): Promise<Group.Type[]> {
+				return api<Group.Type[]>("/user_group_list", {
+					method: "POST",
+				});
+			}
+
+			/**
+			 * Fetches detailed information about a specific user group by ID.
+			 *
+			 * @param groupId - Unique identifier of the group to fetch.
+			 * @returns A promise resolving to the detailed group payload.
+			 */
+			export function getById(groupId: string): Promise<Group.Type> {
+				return api<Group.Type>("/user_group_get_by_id", {
+					method: "GET",
+					query: { group_id: groupId },
+				});
+			}
+
+			/**
+			 * Deletes a user group by ID.
+			 *
+			 * @param groupId - Unique identifier of the group to delete.
+			 * @returns A promise resolving to true when the API confirms deletion.
+			 */
+			export async function deleteById(groupId: string): Promise<boolean> {
+				const response = await api<undefined>("/user_group_delete", {
+					method: "DELETE",
+					query: { group_id: groupId },
+					raw: true,
+				});
+
+				return response?.status === "success";
+			}
+
+			/**
+			 * Creates a new user group with permissions and description metadata.
+			 *
+			 * @param options - Group name, glyph, permissions, and description payload.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function create(options: SaveOptions): Promise<boolean> {
+				const response = await api<undefined>("/user_group_create", {
+					method: "POST",
+					query: {
+						name: options.name,
+						glyph_id: options.glyphId,
+					},
+					setLoading: options.setLoading,
+					raw: true,
+					body: {
+						permission: options.permissions,
+						description: options.description,
+					},
+				});
+
+				return response?.status === "success";
+			}
+
+			/**
+			 * Updates an existing user group with permissions and description metadata.
+			 *
+			 * @param options - Target group ID, glyph, permissions, and description payload.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function update(options: UpdateOptions): Promise<boolean> {
+				const response = await api<undefined>("/user_group_update", {
+					method: "PATCH",
+					query: {
+						group_id: options.groupId,
+						glyph_id: options.glyphId,
+					},
+					setLoading: options.setLoading,
+					raw: true,
+					body: {
+						permission: options.permissions,
+						description: options.description,
+					},
+				});
+
+				return response?.status === "success";
+			}
+
+			/**
+			 * Adds a user to a group.
+			 *
+			 * @param options - Target group ID and user ID to add.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function addUser(
+				options: MembershipOptions,
+			): Promise<boolean> {
+				const response = await api<undefined>("/user_group_add_user", {
+					method: "PATCH",
+					query: {
+						group_id: options.groupId,
+						user_id: options.userId,
+					},
+					raw: true,
+					toast: {
+						onSuccess: () =>
+							toast.success(translate("permissions.userAdded"), {
+								icon: <Icon name="Check" />,
+								richColors: true,
+							}),
+						onError: (response) =>
+							toast.error(translate("permissions.userAddFailed"), {
+								description: translate("common.reason", {
+									reason: response.data.__error.msg,
+								}),
+								icon: <Icon name="Stop" />,
+								richColors: true,
+							}),
+					},
+				});
+
+				return response?.status === "success";
+			}
+
+			/**
+			 * Removes a user from a group.
+			 *
+			 * @param options - Target group ID and user ID to remove.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function removeUser(
+				options: MembershipOptions,
+			): Promise<boolean> {
+				const response = await api<undefined>("/user_group_remove_user", {
+					method: "PATCH",
+					query: {
+						group_id: options.groupId,
+						user_id: options.userId,
+					},
+					raw: true,
+					toast: {
+						onSuccess: () =>
+							toast.success(translate("permissions.userRemoved"), {
+								icon: <Icon name="Check" />,
+								richColors: true,
+							}),
+						onError: (response) =>
+							toast.error(translate("permissions.userRemoveFailed"), {
+								description: translate("common.reason", {
+									reason: response.data.__error.msg,
+								}),
+								icon: <Icon name="Stop" />,
+								richColors: true,
+							}),
+					},
+				});
+
+				return response?.status === "success";
+			}
+
+			export namespace FormBanner {
+				export interface Props extends UIBanner.Props {
+					group?: Group.Type;
+				}
+			}
+
+			/**
+			 * Renders the create/edit form for user groups.
+			 *
+			 * @param props - Optional group payload and banner props.
+			 * @returns A banner with group metadata and permission controls.
+			 */
+			export function FormBanner({ group, ...props }: FormBanner.Props) {
+				const { destroyBanner } = Application.use();
+				const { t } = Locale.use();
+				const groupId = typeof group?.id === "string" ? group.id : "";
+				const [loading, setLoading] = useState<boolean>(false);
+				const [name, setName] = useState<string>(group?.name ?? groupId);
+				const [isNameValid, setIsNameValid] = useState<boolean>(true);
+				const [description, setDescription] = useState<string>(
+					group?.description ?? "",
+				);
+				const [permissions, setPermissions] = useState<Permissions.Role[]>(
+					(group?.permission as Permissions.Role[] | undefined) ?? ["read"],
+				);
+				const [icon, setIcon] = useState<Glyph.Id | null>(
+					(group?.glyph_id as Glyph.Id | undefined) ?? getDefaultGroupGlyphId(),
+				);
+
+				/**
+				 * Stores the group name and validates it against the API-safe pattern.
+				 *
+				 * @param event - Name input change event.
+				 */
+				const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+					const { value } = event.target;
+					setIsNameValid(value.length === 0 || Groups.NameRule.test(value));
+					setName(value);
+				};
+
+				/**
+				 * Stores the current description textarea value.
+				 *
+				 * @param event - Description textarea change event.
+				 */
+				const handleDescriptionChange = (
+					event: ChangeEvent<HTMLTextAreaElement>,
+				) => {
+					setDescription(event.target.value);
+				};
+
+				/**
+				 * Stores the permissions selected from the multi-select control.
+				 *
+				 * @param selectedRoles - Roles selected by the user.
+				 */
+				const handlePermissionsChange = (selectedRoles: Permissions.Role[]) => {
+					setPermissions(selectedRoles);
+				};
+
+				/**
+				 * Creates or updates a user group using the current form values.
+				 */
+				const submit = () => {
+					const glyphId = icon ?? getDefaultGroupGlyphId();
+					const onSuccess = () => {
+						notifyGroupListChanged();
+						destroyBanner();
+						props.onClose?.();
+					};
+
+					if (groupId) {
+						Groups.update({
+							groupId,
+							name,
+							glyphId,
+							permissions,
+							description,
+							setLoading,
+						}).then((saved) => {
+							if (saved) onSuccess();
+						});
+						return;
+					}
+
+					Groups.create({
+						name,
+						glyphId,
+						permissions,
+						description,
+						setLoading,
+					}).then((saved) => {
+						if (saved) onSuccess();
+					});
+				};
+
+				const Done = () => (
+					<Button
+						icon="Check"
+						loading={loading}
+						onClick={submit}
+						disabled={
+							name.length < 2 ||
+							!isNameValid ||
+							permissions.length === 0 ||
+							!icon
+						}
+						variant="glass"
+					/>
+				);
+
+				return (
+					<UIBanner
+						title={
+							groupId
+								? t("permissions.editGroup", { name: name || groupId })
+								: t("permissions.createGroup")
+						}
+						done={<Done />}
+						{...props}
+					>
+						<Input
+							icon="Users"
+							placeholder={t("common.name")}
+							variant="highlighted"
+							value={name}
+							valid={isNameValid}
+							disabled={!!groupId}
+							onChange={handleNameChange}
+						/>
+						<Textarea
+							className={s.textarea}
+							placeholder={t("common.description")}
+							value={description}
+							onChange={handleDescriptionChange}
+						/>
+						<Users.RolesSelect
+							value={permissions}
+							onChange={handlePermissionsChange}
+						/>
+						<Glyph.Chooser
+							icon={icon}
+							setIcon={setIcon}
+						/>
+					</UIBanner>
+				);
+			}
+
+			export namespace ManageUsersBanner {
+				export interface Props extends UIBanner.Props {
+					groupId: string;
+					userIds: string[];
+				}
+			}
+
+			/**
+			 * Renders the group membership manager using selectable user rows.
+			 *
+			 * @param props - Target group ID, selected user IDs, and banner props.
+			 * @returns A banner for adding/removing users from a group.
+			 */
+			export function ManageUsersBanner({
+				groupId,
+				userIds,
+				onClose,
+				...props
+			}: ManageUsersBanner.Props) {
+				const { t } = Locale.use();
+				const [users, setUsers] = useState<User.Type[]>([]);
+				const [loading, setLoading] = useState<boolean>(true);
+				const [selectedUsers, setSelectedUsers] = useState<Set<string>>(
+					new Set(userIds),
+				);
+
+				/**
+				 * Reloads the complete user list used for membership selection.
+				 */
+				const reload = useCallback(() => {
+					setLoading(true);
+					api<User.Type[]>("/user_list", {}, (res) => {
+						setUsers(res || []);
+						setLoading(false);
+					});
+				}, []);
+
+				useEffect(() => {
+					reload();
+				}, [reload]);
+
+				/**
+				 * Adds or removes a user from the group based on checkbox state.
+				 *
+				 * @param index - Row index selected in the users table.
+				 * @param selected - Whether the row is now selected.
+				 */
+				const handleUserSelect = (index: number, selected: boolean) => {
+					const user = users[index];
+					if (!user) return;
+
+					const action = selected ? Groups.addUser : Groups.removeUser;
+					action({ groupId, userId: user.id }).then((saved) => {
+						if (!saved) return;
+						setSelectedUsers((prev) => {
+							const next = new Set(prev);
+							if (selected) {
+								next.add(user.id);
+							} else {
+								next.delete(user.id);
+							}
+							return next;
+						});
+						notifyGroupListChanged();
+					});
+				};
+
+				const selectedUserIndices = new Set<number>();
+				users.forEach((user, index) => {
+					if (selectedUsers.has(user.id)) {
+						selectedUserIndices.add(index);
+					}
+				});
+
+				return (
+					<UIBanner
+						title={t("permissions.manageUsers")}
+						loading={loading}
+						onClose={onClose}
+						{...props}
+					>
+						<Stack
+							dir="column"
+							ai="stretch"
+							className={s.tableScroll}
+						>
+							<Stack
+								dir="column"
+								ai="stretch"
+								gap={8}
+								className={s.tableSection}
+							>
+								<div className={s.sectionLabel}>{t("common.users")}</div>
+								{users.length > 0 ? (
+									<Table
+										values={users}
+										selectable={true}
+										selectedrows={selectedUserIndices}
+										onrowselect={handleUserSelect}
+										columns={["id", "name", "permission"]}
+										notshow={["glyph_id", "password"]}
+										includeIndex={false}
+									/>
+								) : (
+									<Skeleton
+										width="full"
+										className={s.tableSkeleton}
+									/>
+								)}
+							</Stack>
+						</Stack>
+					</UIBanner>
+				);
+			}
+		}
 		export namespace Edit {
 			export namespace Banner {
 				export interface Props extends UIBanner.Props {
@@ -342,7 +831,7 @@ export namespace Permissions {
 
 				return (
 					<UIBanner
-						title={t("permissions.editUser", { name: user.name })}
+						title={t("permissions.editUser", { name: user.name || user.id })}
 						done={<Done />}
 						{...props}
 					>
@@ -434,7 +923,7 @@ export namespace OperationPermissions {
 				checkDone();
 			});
 
-			api<Group.Type[]>("/user_group_list", { method: "POST" }, (res) => {
+			Permissions.Users.Groups.list().then((res) => {
 				setGroups(res || []);
 				groupsLoaded = true;
 				checkDone();
@@ -504,12 +993,7 @@ export namespace OperationPermissions {
 				<Stack
 					dir="column"
 					ai="stretch"
-					style={{
-						height: "100%",
-						overflow: "auto",
-						gap: 24,
-						paddingBottom: 24,
-					}}
+					className={s.tableScroll}
 				>
 					{/* Users Section */}
 					<Stack
@@ -517,17 +1001,7 @@ export namespace OperationPermissions {
 						ai="stretch"
 						gap={8}
 					>
-						<div
-							style={{
-								fontSize: 11,
-								fontWeight: 700,
-								color: "var(--second)",
-								letterSpacing: "0.08em",
-								fontFamily: "var(--font-mono)",
-							}}
-						>
-							{t("common.users")}
-						</div>
+						<div className={s.sectionLabel}>{t("common.users")}</div>
 						{users.length > 0 ? (
 							<Table
 								values={users}
@@ -541,7 +1015,7 @@ export namespace OperationPermissions {
 						) : (
 							<Skeleton
 								width="full"
-								style={{ height: 100 }}
+								className={s.tableSkeleton}
 							/>
 						)}
 					</Stack>
@@ -552,17 +1026,7 @@ export namespace OperationPermissions {
 						ai="stretch"
 						gap={8}
 					>
-						<div
-							style={{
-								fontSize: 11,
-								fontWeight: 700,
-								color: "var(--second)",
-								letterSpacing: "0.08em",
-								fontFamily: "var(--font-mono)",
-							}}
-						>
-							{t("common.groups")}
-						</div>
+						<div className={s.sectionLabel}>{t("common.groups")}</div>
 						{groups.length > 0 ? (
 							<Table
 								values={groups}
@@ -576,7 +1040,7 @@ export namespace OperationPermissions {
 						) : (
 							<Skeleton
 								width="full"
-								style={{ height: 100 }}
+								className={s.tableSkeleton}
 							/>
 						)}
 					</Stack>

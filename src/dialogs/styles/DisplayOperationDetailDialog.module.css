@@ -68,10 +68,26 @@
 	padding: 4px 0;
 }
 
+.detailItemColumn {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	font-family: var(--font-mono);
+	font-size: 12px;
+	line-height: 1.5;
+	padding: 4px 0;
+}
+
 .detailLabel {
 	color: var(--second);
 	flex-shrink: 0;
 	margin-right: 16px;
+}
+
+.detailLabelBlock {
+	color: var(--second);
+	flex-shrink: 0;
+	margin-bottom: 6px;
 }
 
 .detailValue {
@@ -94,6 +110,11 @@
 	color: var(--second);
 	opacity: 0.6;
 	font-style: italic;
+}
+
+.noDataCentered {
+	text-align: center;
+	padding: 40px 0;
 }
 
 .scrollable {
