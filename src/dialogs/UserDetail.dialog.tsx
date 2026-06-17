@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Icon } from "@impactium/icons";
 import { Application } from "@/context/Application.context";
 import { Permissions } from "@/banners/Permissions.banner";
 import { Glyph } from "@/entities/Glyph";
@@ -8,6 +7,7 @@ import { User } from "@/entities/User";
 import { Badge } from "@/ui/Badge";
 import { Button } from "@/ui/Button";
 import { Dialog } from "@/ui/Dialog";
+import { Icon } from "@/ui/Icon";
 import { Stack } from "@/ui/Stack";
 import { formatTimestampToReadableString } from "@/ui/utils";
 import { Locale } from "@/locales";

@@ -660,7 +660,7 @@
     "tableView.nextPage": "Következő oldal",
     "tableView.noData": "Nem található a lekérdezésének megfelelő adat.",
     "tableView.noItemsSelected": "Nincsenek kiválasztva elemek",
-    "tableView.pageOf": "{total}/{page}. oldal",
+    "tableView.pageOf": "{page}/{total}. oldal",
     "tableView.perPage": "/ oldal",
     "tableView.previousPage": "Előző oldal",
     "tableView.selectAllVisible": "Válassza az Összes látható lehetőséget",

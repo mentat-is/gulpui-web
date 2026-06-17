@@ -5,6 +5,7 @@
   "scripts": {
     "prestart": "node ./scripts/copy_paid_plugins.js",
     "prebuild": "node ./scripts/copy_paid_plugins.js && node scripts/write-version.js",
+    "check:locales": "node ./scripts/check-locale-fallback.mjs",
     "build": "react-app-rewired build",
     "start": "react-app-rewired start",
     "server": "serve -s build -l 80"

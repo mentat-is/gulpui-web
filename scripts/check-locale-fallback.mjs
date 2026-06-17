@@ -24,6 +24,7 @@ const en = locales.en;
 assert.ok(en, "missing default locale: en");
 assert.ok(en.strings, "default locale en is missing strings");
 
+const placeholders = (value) => [...String(value).matchAll(/\{([^{}]+)\}/g)].map((match) => match[1]);
 const table = { "settings.title": undefined };
 const t = (key) => table[key] ?? en.strings[key] ?? key;
 const keys = (locale) => Object.keys(locale.strings ?? {}).sort();
@@ -37,5 +38,12 @@ for (const [code, locale] of Object.entries(locales)) {
   assert.ok(locale.strings && typeof locale.strings === "object", `${code} is missing strings`);
   if (locale.metadata?.["@sample"] !== "true") {
     assert.deepEqual(keys(locale), keys(en), `${code} locale keys differ from en`);
+    for (const key of Object.keys(en.strings)) {
+      assert.deepEqual(
+        placeholders(locale.strings[key]),
+        placeholders(en.strings[key]),
+        `${code} locale placeholder mismatch for ${key}`,
+      );
+    }
   }
 }
