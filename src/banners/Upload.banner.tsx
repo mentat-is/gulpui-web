@@ -553,6 +553,9 @@ const PluginSelector = ({
 	const cutExtension = useCallback((str: string) => {
 		return str.split(".").slice(0, -1).join("");
 	}, []);
+	const value = settings.plugin ? cutExtension(settings.plugin) : "";
+	const text =
+		value || (plugins.length > 0 ? t("upload.selectPlugin") : t("upload.noPlugins"));
 
 	return (
 		<Stack
@@ -566,19 +569,16 @@ const PluginSelector = ({
 				value={settings.plugin || ""}
 				onValueChange={(plugin) => updateSettings({ plugin })}
 			>
-				<Select.Trigger className={s.select}>
+				<Select.Trigger className={s.select} title={text}>
 					<Icon name="Puzzle" />
-					{settings.plugin
-						? cutExtension(settings.plugin)
-						: plugins.length > 0
-							? t("upload.selectPlugin")
-							: t("upload.noPlugins")}
+					<span>{text}</span>
 				</Select.Trigger>
 				<Select.Content>
 					{plugins.map((p) => (
 						<Select.Item
 							key={p}
 							value={p}
+							title={cutExtension(p)}
 						>
 							{cutExtension(p)}
 						</Select.Item>
@@ -599,6 +599,8 @@ export const MethodSelector = ({
 	methods: string[];
 }) => {
 	const { t } = Locale.use();
+	const text =
+		settings.method || (methods.length > 0 ? t("upload.selectMethod") : "-");
 
 	return methods.length > 0 ? (
 		<Stack
@@ -612,19 +614,16 @@ export const MethodSelector = ({
 				value={settings.method || ""}
 				onValueChange={(method) => updateSettings({ method })}
 			>
-				<Select.Trigger className={s.select}>
+				<Select.Trigger className={s.select} title={text}>
 					<Icon name="ChevronRight" />
-					{settings.method
-						? settings.method
-						: methods.length > 0
-							? t("upload.selectMethod")
-							: "-"}
+					<span>{text}</span>
 				</Select.Trigger>
 				<Select.Content>
 					{methods.map((m) => (
 						<Select.Item
 							key={m}
 							value={m}
+							title={m}
 						>
 							{m}
 						</Select.Item>
@@ -645,6 +644,13 @@ export const MappingSelector = ({
 	mappings: string[];
 }) => {
 	const { t } = Locale.use();
+	const text =
+		settings.mapping ||
+		(mappings.length > 0
+			? t("upload.selectMapping")
+			: settings.method
+				? t("upload.noMappings")
+				: "-");
 
 	return mappings.length > 0 ? (
 		<Stack
@@ -658,21 +664,16 @@ export const MappingSelector = ({
 				value={settings.mapping || ""}
 				onValueChange={(mapping) => updateSettings({ mapping })}
 			>
-				<Select.Trigger className={s.select}>
+				<Select.Trigger className={s.select} title={text}>
 					<Icon name="ChevronRight" />
-					{settings.mapping
-						? settings.mapping
-						: mappings.length > 0
-							? t("upload.selectMapping")
-							: settings.method
-								? t("upload.noMappings")
-								: "-"}
+					<span>{text}</span>
 				</Select.Trigger>
 				<Select.Content>
 					{mappings.map((m) => (
 						<Select.Item
 							key={m}
 							value={m}
+							title={m}
 						>
 							{m}
 						</Select.Item>
@@ -816,7 +817,7 @@ export const ApplySettinsForAllFiles = ({
 					{t("upload.selectSettingsForAll")}
 				</Button>
 			</Popover.Trigger>
-			<Popover.Content>
+			<Popover.Content className={s.allSettingsPopover}>
 				<Stack
 					className={s.allSettings}
 					gap={0}
