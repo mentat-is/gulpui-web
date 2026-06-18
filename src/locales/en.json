@@ -44,7 +44,7 @@
     "advancedParams.multiplier": "Multiplier",
     "advancedParams.multiplierPlaceholder": "e.g. 1000",
     "advancedParams.newValue": "New Value",
-    "advancedParams.offset": "Offset",
+    "advancedParams.offset": "Timestamp offset (+/- milliseconds)",
     "advancedParams.oldValue": "Old Value",
     "advancedParams.originalStringPlaceholder": "Original string to match",
     "advancedParams.overrideAllowUnmapped": "Override Allow Unmapped Fields",

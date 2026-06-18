@@ -44,7 +44,7 @@
     "advancedParams.multiplier": "Moltiplicatore",
     "advancedParams.multiplierPlaceholder": "ad es. 1000",
     "advancedParams.newValue": "Nuovo valore",
-    "advancedParams.offset": "Scostamento",
+    "advancedParams.offset": "Timestamp offset (+/- millisecondi)",
     "advancedParams.oldValue": "Vecchio valore",
     "advancedParams.originalStringPlaceholder": "Stringa originale da abbinare",
     "advancedParams.overrideAllowUnmapped": "Ignora \"Consenti campi non mappati\"",
