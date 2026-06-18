@@ -31,8 +31,17 @@ export namespace Sigma {
     const [isZip, setIsZip] = useState<boolean>(false);
     const { Info, destroyBanner } = Application.use();
     const { t } = Locale.use();
+    const { extensions } = Extension.use();
 
     const [zipSubmit, setZipSubmit] = useState<{ run: () => Promise<void> }>();
+
+    /**
+     * Resolves the optional Sigma upload-mode plugin, such as ZIP upload support.
+     */
+    const sigmaUploadModePlugin = useMemo(
+      () => Extension.getBySlot(extensions, Extension.Slot.SigmaUploadMode)[0] ?? null,
+      [extensions],
+    )
 
     const DoneButton = () => {
       const submit = async () => {
@@ -87,14 +96,14 @@ export namespace Sigma {
 
     return (
       <UIBanner title={t('sigma.title')} done={<DoneButton />} {...props}>
-        <Extension.Optional name='SigmaZip.banner.tsx'>
+        {sigmaUploadModePlugin ? (
           <Toggle option={[t('common.file'), t('common.zip')]} checked={isZip} onClick={() => setIsZip(!isZip)} />
-        </Extension.Optional>       
+        ) : null}
 
         <Source.Select.Multi selected={sources} setSelected={setSources} placeholder={sourcePlaceholder} />
-        {isZip ? (
+        {isZip && sigmaUploadModePlugin ? (
           <Extension.Component
-            name='SigmaZip.banner.tsx'
+            name={sigmaUploadModePlugin.filename}
             props={{
               sources,
               createNotes,

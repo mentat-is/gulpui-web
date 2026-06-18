@@ -1321,20 +1321,15 @@ export function DisplayEventDialog({
 	 * Checks whether at least one send-data extension is available for the action menu.
 	 */
 	const hasSendDataExtension = useMemo(
-		() =>
-			Object.values(extensions).some((ext) =>
-				Array.isArray(ext.type)
-					? ext.type.includes("send_data")
-					: (ext.type as unknown) === "send_data",
-			),
+		() => Extension.hasSlot(extensions, Extension.Slot.SendData),
 		[extensions],
 	);
 
 	/**
-	 * Checks whether the story extension can render its own connect action.
+	 * Resolves plugin actions that should be mounted in the event action menu.
 	 */
-	const hasStoryExtension = useMemo(
-		() => Boolean(extensions["Story.popover.tsx"]),
+	const eventActionPlugins = useMemo(
+		() => Extension.getBySlot(extensions, Extension.Slot.EventActions),
 		[extensions],
 	);
 
@@ -1994,14 +1989,17 @@ export function DisplayEventDialog({
 											{t("eventDialog.sendIoc")}
 										</Button>
 									)}
-									{hasStoryExtension && (
-										<div className={s.storyAction}>
+									{eventActionPlugins.map((plugin) => (
+										<div
+											key={plugin.filename}
+											className={s.storyAction}
+										>
 											<Extension.Component
-												name="Story.popover.tsx"
-												props={{ doc: event }}
+												name={plugin.filename}
+												props={{ doc: event, event }}
 											/>
 										</div>
-									)}
+									))}
 									<Button
 										variant="tertiary"
 										className={s.menuAction}

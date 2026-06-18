@@ -1,33 +1,35 @@
-import '@/global.css'
-import { AIAssistant } from '@/banners/AIAssistant.banner'
-import { Extension } from '@/context/Extension.context'
-import { Locale } from '@/locales'
-import s from './styles/AIAssistantWindow.module.css'
+import "@/global.css";
+import { AIAssistant } from "@/banners/AIAssistant.banner";
+import { Extension } from "@/context/Extension.context";
+import s from "./styles/AIAssistantWindow.module.css";
 
 interface AIAssistantWindowProps {
-  mode: 'free' | 'pro'
-  onClose: () => void
+	title: string;
+	pluginFilename?: string;
+	onClose: () => void;
 }
 
 /**
  * AIAssistantWindow component for detached AI Assistant windows.
- * Renders a standalone layout with a header and the AI Assistant Panel.
+ * Renders either the built-in assistant or the selected assistant plugin.
  */
-export function AIAssistantWindow({ mode, onClose }: AIAssistantWindowProps) {
-  const { t } = Locale.use()
-
-  return (
-    <div className={s.main}>
-      <div className={s.header}>
-        <h2>{mode === 'pro' ? t('aiAssistant.proTitle') : t('aiAssistant.title')}</h2>
-      </div>
-      <div className={s.content}>
-        {mode === 'pro' ? (
-          <Extension.Component name='AIAssistantPro.banner.tsx' />
-        ) : (
-          <AIAssistant.Panel />
-        )}
-      </div>
-    </div>
-  )
+export function AIAssistantWindow({
+	title,
+	pluginFilename,
+	onClose,
+}: AIAssistantWindowProps) {
+	return (
+		<div className={s.main}>
+			<div className={s.header}>
+				<h2>{title}</h2>
+			</div>
+			<div className={s.content}>
+				{pluginFilename ? (
+					<Extension.Component name={pluginFilename} />
+				) : (
+					<AIAssistant.Panel />
+				)}
+			</div>
+		</div>
+	);
 }

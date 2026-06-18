@@ -13,7 +13,7 @@ import { Locale } from '@/locales'
 import s from './styles/EnrichmentBanner.module.css'
 
 /**
- * Interface that every "send_data" type plugin MUST expose via forwardRef +
+ * Interface that every send-data slot plugin MUST expose via forwardRef +
  * useImperativeHandle.
  *
  * The parent banner does not know the plugin's internal details: it only knows that,
@@ -48,11 +48,13 @@ export namespace SendData {
      */
     const pluginRef = useRef<SendDataPluginRef>(null)
 
-    /** Filter loaded extensions for type "send_data" */
+    /**
+     * Resolves every plugin registered for the send-data slot.
+     *
+     * @returns Loaded extensions that can send event data to an external destination.
+     */
     const sendDataPlugins = useMemo(() => {
-      return Object.values(extensions).filter((ext) =>
-        ext.type.includes('send_data')
-      )
+      return Extension.getBySlot(extensions, Extension.Slot.SendData)
     }, [extensions])
 
     const selectedPlugin = useMemo(() => {

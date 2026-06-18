@@ -1,11 +1,9 @@
 import {
 	createContext,
-	lazy,
 	ReactNode,
 	useContext,
 	useEffect,
 	useState,
-	useRef,
 } from "react";
 import { Application } from "./Application.context";
 import React from "react";
@@ -18,7 +16,6 @@ let extensionsPromise: Promise<Record<string, Extension.Interface>> | null =
 	null;
 
 function _({ children }: Extension.Provider.Props) {
-	const { app } = Application.use();
 	const { banner } = Application.use();
 	const [extensions, setExtensions] = useState<
 		Record<string, Extension.Interface>
@@ -29,7 +26,7 @@ function _({ children }: Extension.Provider.Props) {
 
 		const load = async () => {
 			extensionsPromise = (async () => {
-				const plugins = await api<Extension.Interface[]>("/ui_plugin_list");
+				const plugins = await api<Extension.Payload[]>("/ui_plugin_list");
 				if (!Array.isArray(plugins)) {
 					console.error(
 						`Backend returned unexpected type of ${plugins}. Expected array of plugins, but got ${typeof plugins}`,
@@ -72,13 +69,12 @@ function _({ children }: Extension.Provider.Props) {
 								);
 							}
 
+							const types = Extension.normalizeTypeList(plugin.type);
+
 							new_extensions[plugin.filename] = {
 								...plugin,
-								type: Array.isArray(plugin.type)
-									? plugin.type
-									: plugin.type
-										? [plugin.type]
-										: [],
+								type: types,
+								targets: Extension.normalizeMountTargets(types, plugin.targets),
 								[__component]: component.default,
 							};
 						} catch (err) {
@@ -139,9 +135,28 @@ function _({ children }: Extension.Provider.Props) {
 }
 
 export namespace Extension {
-	export type Type = "menu" | "banner" | "send_data";
+	export type Type = string;
+	export type Slot = string;
+	export type ComponentProps = Record<string, unknown>;
 
-	export interface Interface {
+	export const Slot = {
+		OperationMenu: "operation-menu",
+		SendData: "send-data",
+		EventActions: "event-actions",
+		SigmaUploadMode: "sigma-upload-mode",
+		AIAssistantWindow: "ai-assistant-window",
+	} as const;
+
+	export interface MountTarget {
+		slot: Slot;
+		order?: number;
+		group?: string;
+		variant?: string;
+		labelKey?: string;
+		icon?: string;
+	}
+
+	export interface Payload {
 		display_name: string;
 		plugin: string;
 		extension: boolean;
@@ -149,10 +164,16 @@ export namespace Extension {
 		desc: string;
 		path: string;
 		filename: string;
+		type?: Type | Type[];
+		targets?: MountTarget[];
+	}
+
+	export interface Interface extends Omit<Payload, "type"> {
 		type: Type[];
+		targets: MountTarget[];
 		[__component]:
-			| React.ComponentType<any>
-			| ((props: any) => React.JSX.Element);
+			| React.ComponentType<ComponentProps>
+			| ((props: ComponentProps) => React.JSX.Element);
 	}
 
 	export const Context = createContext<Extension.Export | undefined>(undefined);
@@ -175,8 +196,132 @@ export namespace Extension {
 
 	export const Provider = _;
 
+	/**
+	 * Converts server-provided plugin type data into a predictable array.
+	 *
+	 * @param type - Raw plugin type data from the backend.
+	 * @returns A list of plugin type or slot identifiers.
+	 */
+	export function normalizeTypeList(type?: Type | Type[]): Type[] {
+		if (Array.isArray(type)) {
+			return type.filter((item) => item.trim().length > 0);
+		}
+
+		if (type && type.trim().length > 0) {
+			return [type];
+		}
+
+		return [];
+	}
+
+	/**
+	 * Resolves legacy plugin type names to their current slot identifiers.
+	 *
+	 * @param type - A plugin type or slot identifier.
+	 * @returns The slot identifier represented by the type.
+	 */
+	export function resolveSlot(type: Type): Slot {
+		if (type === "menu") return Slot.OperationMenu;
+		if (type === "send_data") return Slot.SendData;
+		return type;
+	}
+
+	/**
+	 * Builds the final mount target list from explicit targets and slot-like types.
+	 *
+	 * @param types - Normalized plugin type or slot identifiers.
+	 * @param targets - Explicit mount target metadata from plugin configuration.
+	 * @returns A de-duplicated list of mount targets.
+	 */
+	export function normalizeMountTargets(
+		types: Type[],
+		targets?: MountTarget[],
+	): MountTarget[] {
+		const normalizedTargets = Array.isArray(targets)
+			? targets
+				.filter(
+					(target) =>
+						typeof target.slot === "string" &&
+						target.slot.trim().length > 0,
+				)
+				.map((target) => ({ ...target, slot: target.slot.trim() }))
+			: [];
+		const knownSlots = new Set(normalizedTargets.map((target) => target.slot));
+
+		for (const type of types) {
+			const slot = resolveSlot(type);
+			if (!knownSlots.has(slot)) {
+				normalizedTargets.push({ slot });
+				knownSlots.add(slot);
+			}
+		}
+
+		return normalizedTargets.sort(
+			(a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER),
+		);
+	}
+
+	/**
+	 * Checks whether an extension declares support for a UI slot.
+	 *
+	 * @param extension - The loaded extension entry to inspect.
+	 * @param slot - The slot identifier to match.
+	 * @returns True when the extension targets the given slot.
+	 */
+	export function targetsSlot(
+		extension: Extension.Interface,
+		slot: Slot,
+	): boolean {
+		return extension.targets.some((target) => target.slot === slot);
+	}
+
+	/**
+	 * Returns all extensions that target a specific UI slot.
+	 *
+	 * @param extensions - The loaded extension registry.
+	 * @param slot - The slot identifier to query.
+	 * @returns Slot-matching extensions sorted by mount order and display name.
+	 */
+	export function getBySlot(
+		extensions: Record<string, Extension.Interface>,
+		slot: Slot,
+	): Extension.Interface[] {
+		return Object.values(extensions)
+			.filter((extension) => targetsSlot(extension, slot))
+			.sort((first, second) => {
+				const firstTarget = first.targets.find((target) => target.slot === slot);
+				const secondTarget = second.targets.find((target) => target.slot === slot);
+				const firstOrder = firstTarget?.order ?? Number.MAX_SAFE_INTEGER;
+				const secondOrder = secondTarget?.order ?? Number.MAX_SAFE_INTEGER;
+
+				if (firstOrder !== secondOrder) {
+					return firstOrder - secondOrder;
+				}
+
+				return (first.display_name || first.filename).localeCompare(
+					second.display_name || second.filename,
+				);
+			});
+	}
+
+	/**
+	 * Checks whether at least one extension targets a specific UI slot.
+	 *
+	 * @param extensions - The loaded extension registry.
+	 * @param slot - The slot identifier to query.
+	 * @returns True when at least one extension targets the slot.
+	 */
+	export function hasSlot(
+		extensions: Record<string, Extension.Interface>,
+		slot: Slot,
+	): boolean {
+		return Object.values(extensions).some((extension) =>
+			targetsSlot(extension, slot),
+		);
+	}
+
 	export const safe =
-		(func: () => Promise<{ default: React.ComponentType<any> }>) =>
+		(func: () => Promise<{ default: React.ComponentType<ComponentProps> }>) =>
 		async () => {
 			try {
 				return await func();
@@ -189,10 +334,16 @@ export namespace Extension {
 	export namespace Component {
 		export interface Props {
 			name: string;
-			props?: any;
+			props?: ComponentProps;
 		}
 	}
 
+	/**
+	 * Renders a loaded extension component by filename.
+	 *
+	 * @param props - Component filename and optional props for the mounted plugin.
+	 * @returns The plugin component, or null when unavailable.
+	 */
 	export function Component({ name, props }: Extension.Component.Props) {
 		const { extensions } = Extension.use();
 		const extension = extensions[name];
@@ -219,6 +370,12 @@ export namespace Extension {
 		}
 	}
 
+	/**
+	 * Renders children only when a filename-based extension is available.
+	 *
+	 * @param props - Extension filename and children to render conditionally.
+	 * @returns The children when the extension exists, otherwise null.
+	 */
 	export function Optional({ name, children }: Extension.Optional.Props) {
 		const { extensions } = Extension.use();
 		const extension = extensions[name];
@@ -231,19 +388,26 @@ export namespace Extension {
 
 	export namespace Components {
 		export interface Props {
-			type: Type;
+			type: Slot;
+			props?: ComponentProps;
 		}
 	}
 
-	export function Components({ type }: Components.Props) {
+	/**
+	 * Renders all extensions assigned to a UI slot.
+	 *
+	 * @param props - Slot identifier and optional props passed to every plugin.
+	 * @returns All plugin components registered for the slot.
+	 */
+	export function Components({ type, props }: Components.Props) {
 		const { extensions } = Extension.use();
 
-		return Object.keys(extensions)
-			.filter((name) => extensions[name].type.includes(type))
-			.map((name) => (
+		return getBySlot(extensions, type)
+			.map((extension) => (
 				<Extension.Component
-					key={name}
-					name={name}
+					key={extension.filename}
+					name={extension.filename}
+					props={props}
 				/>
 			));
 	}

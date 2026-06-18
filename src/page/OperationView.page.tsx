@@ -702,18 +702,16 @@ export function OperationTimeline() {
 	 */
 	const pluginNodes = useMemo<PluginNode[]>(
 		() =>
-			Object.keys(extensions)
-				.filter((name) => extensions[name].type.includes("menu"))
-				.map((name) => {
-					const ext = extensions[name];
+			Extension.getBySlot(extensions, Extension.Slot.OperationMenu)
+				.map((ext) => {
 					return {
 						node: (
 							<Extension.Component
-								key={name}
-								name={name}
+								key={ext.filename}
+								name={ext.filename}
 							/>
 						),
-						title: ext.display_name || name,
+						title: ext.display_name || ext.filename,
 					};
 				}),
 		[extensions],

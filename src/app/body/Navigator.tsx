@@ -2,7 +2,7 @@ import { cn } from '@impactium/utils'
 import s from './styles/Navigator.module.css'
 import { Application } from '@/context/Application.context'
 import { useScroll, scrollStore } from '@/store/scroll.store'
-import { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject, useCallback, useEffect, useRef, useState } from 'react'
+import { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactNode, RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { Popover } from '@/ui/Popover'
 import { Logger } from '@/dto/Logger.class'
@@ -30,6 +30,23 @@ export namespace Navigator {
     timeline: RefObject<HTMLDivElement>
     timestamp: number
   }
+}
+
+const BUILT_IN_ASSISTANT_KEY = 'built-in-ai-assistant'
+
+interface AssistantWindowTarget {
+  key: string
+  title: string
+  pluginFilename?: string
+}
+
+/**
+ * Creates a stable browser window name for an assistant target.
+ * @param targetKey Unique assistant target key.
+ * @returns Sanitized window name for window.open reuse.
+ */
+function createAssistantWindowName(targetKey: string): string {
+  return `GulpAIAssistant-${targetKey.replace(/[^a-zA-Z0-9_-]/g, '_')}`
 }
 
 
@@ -144,26 +161,24 @@ export function Navigator({
     })
   }, [theme])
 
-  const [freeChatWindowRef, setFreeChatWindowRef] = useState<Window | null>(null)
-  const freeChatRootRef = useRef<ReactDOM.Root | null>(null)
+  const [chatWindows, setChatWindows] = useState<Record<string, Window>>({})
+  const chatRootsRef = useRef<Record<string, ReactDOM.Root | null>>({})
 
-  const [proChatWindowRef, setProChatWindowRef] = useState<Window | null>(null)
-  const proChatRootRef = useRef<ReactDOM.Root | null>(null)
+  /**
+   * Opens or focuses the detached assistant window for the selected target.
+   * @param target Assistant target selected from the registry-backed options.
+   */
+  const openChatWindow = useCallback((target: AssistantWindowTarget) => {
+    const existingWindow = chatWindows[target.key]
 
-  const openChatWindow = useCallback((mode: 'free' | 'pro') => {
-    const isPro = mode === 'pro'
-    const windowRef = isPro ? proChatWindowRef : freeChatWindowRef
-    const rootRef = isPro ? proChatRootRef : freeChatRootRef
-    const setWindowRef = isPro ? setProChatWindowRef : setFreeChatWindowRef
-
-    if (windowRef && !windowRef.closed) {
-      windowRef.focus()
+    if (existingWindow && !existingWindow.closed) {
+      existingWindow.focus()
       return
     }
 
     const newWindow = window.open(
       '',
-      isPro ? 'GulpAIAssistantPro' : 'GulpAIAssistant',
+      createAssistantWindowName(target.key),
       'width=480,height=800,left=120,top=120',
     )
     if (!newWindow) return
@@ -185,85 +200,72 @@ export function Navigator({
         mainSpawnBanner={spawnBanner}
       >
         <AIAssistantWindow
-          mode={mode}
+          title={target.title}
+          pluginFilename={target.pluginFilename}
           onClose={() => {
             newWindow.close()
           }}
         />
       </DetachedAppProvider>
     )
-    rootRef.current = root
-    setWindowRef(newWindow)
-  }, [theme, freeChatWindowRef, proChatWindowRef, app, copyStylesToWindow])
+    chatRootsRef.current[target.key] = root
+    setChatWindows((windows) => ({ ...windows, [target.key]: newWindow }))
+  }, [chatWindows, app, copyStylesToWindow, spawnBanner])
 
   // Sync theme to AI Assistant windows
   useEffect(() => {
-    if (freeChatWindowRef && !freeChatWindowRef.closed) {
+    const animationFrames = Object.values(chatWindows).map((chatWindow) => {
+      if (chatWindow.closed) return null
       const id = requestAnimationFrame(() => {
-        applyThemeToWindow(document, freeChatWindowRef.document, theme)
+        applyThemeToWindow(document, chatWindow.document, theme)
       })
-      return () => cancelAnimationFrame(id)
+      return id
+    })
+
+    return () => {
+      animationFrames.forEach((id) => {
+        if (id !== null) cancelAnimationFrame(id)
+      })
     }
-  }, [theme, freeChatWindowRef])
+  }, [theme, chatWindows])
 
   useEffect(() => {
-    if (proChatWindowRef && !proChatWindowRef.closed) {
-      const id = requestAnimationFrame(() => {
-        applyThemeToWindow(document, proChatWindowRef.document, theme)
-      })
-      return () => cancelAnimationFrame(id)
-    }
-  }, [theme, proChatWindowRef])
-
-  useEffect(() => {
-    if (freeChatWindowRef) {
+    const cleanupCallbacks = Object.entries(chatWindows).map(([key, chatWindow]) => {
       const handleBeforeUnload = () => {
-        const root = freeChatRootRef.current
-        freeChatRootRef.current = null
+        const root = chatRootsRef.current[key]
+        delete chatRootsRef.current[key]
         if (root) {
           setTimeout(() => root.unmount(), 0)
         }
-        setFreeChatWindowRef(null)
+        setChatWindows((windows) => {
+          const nextWindows = { ...windows }
+          delete nextWindows[key]
+          return nextWindows
+        })
       }
-      freeChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
-      return () => freeChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
-    }
-  }, [freeChatWindowRef])
+      chatWindow.addEventListener('beforeunload', handleBeforeUnload)
 
-  useEffect(() => {
-    if (proChatWindowRef) {
-      const handleBeforeUnload = () => {
-        const root = proChatRootRef.current
-        proChatRootRef.current = null
-        if (root) {
-          setTimeout(() => root.unmount(), 0)
-        }
-        setProChatWindowRef(null)
-      }
-      proChatWindowRef.addEventListener('beforeunload', handleBeforeUnload)
-      return () => proChatWindowRef.removeEventListener('beforeunload', handleBeforeUnload)
+      return () => chatWindow.removeEventListener('beforeunload', handleBeforeUnload)
+    })
+
+    return () => {
+      cleanupCallbacks.forEach((cleanupCallback) => cleanupCallback())
     }
-  }, [proChatWindowRef])
+  }, [chatWindows])
 
   const currentUser = app.general.user
 
   useEffect(() => {
     if (!currentUser) {
       // User logged out — close all detached windows
-      if (freeChatWindowRef) {
-        freeChatRootRef.current?.unmount()
-        freeChatRootRef.current = null
-        freeChatWindowRef.close()
-        setFreeChatWindowRef(null)
-      }
-      if (proChatWindowRef) {
-        proChatRootRef.current?.unmount()
-        proChatRootRef.current = null
-        proChatWindowRef.close()
-        setProChatWindowRef(null)
-      }
+      Object.entries(chatWindows).forEach(([key, chatWindow]) => {
+        chatRootsRef.current[key]?.unmount()
+        delete chatRootsRef.current[key]
+        chatWindow.close()
+      })
+      setChatWindows({})
     }
-  }, [currentUser, freeChatWindowRef, proChatWindowRef])
+  }, [currentUser, chatWindows])
 
   const size_plus = useRef<HTMLButtonElement>(null)
   const size_reset = useRef<HTMLButtonElement>(null)
@@ -444,20 +446,43 @@ export function Navigator({
 
 
   const { extensions } = Extension.use();
-  const hasPro = !!extensions['AIAssistantPro.banner.tsx'];
-  const [chatMode, setChatMode] = useState<'free' | 'pro'>('free'); // Default to free, but will be set by selection
+  const assistantPlugins = useMemo(
+    () => Extension.getBySlot(extensions, Extension.Slot.AIAssistantWindow),
+    [extensions],
+  )
+  const assistantTargets = useMemo<AssistantWindowTarget[]>(
+    () => [
+      {
+        key: BUILT_IN_ASSISTANT_KEY,
+        title: t('aiAssistant.title'),
+      },
+      ...assistantPlugins.map((plugin) => ({
+        key: plugin.filename,
+        title: plugin.display_name || plugin.filename,
+        pluginFilename: plugin.filename,
+      })),
+    ],
+    [assistantPlugins, t],
+  )
   const [selectionOpen, setSelectionOpen] = useState(false);
 
+  /**
+   * Opens the assistant directly when only one target exists, otherwise opens the selector.
+   */
   const handleChatButtonClick = () => {
-    if (hasPro) {
+    if (assistantTargets.length > 1) {
       setSelectionOpen(true);
     } else {
-      openChatWindow('free');
+      openChatWindow(assistantTargets[0]);
     }
   };
 
-  const selectChat = (mode: 'free' | 'pro') => {
-    openChatWindow(mode);
+  /**
+   * Opens the selected assistant target and closes the selector.
+   * @param target Assistant target selected by the user.
+   */
+  const selectChat = (target: AssistantWindowTarget) => {
+    openChatWindow(target);
     setSelectionOpen(false);
   };
 
@@ -569,7 +594,7 @@ export function Navigator({
           </Stack>
         </Popover.Content>
       </Popover.Root>
-      {hasPro ? (
+      {assistantTargets.length > 1 ? (
         <Popover.Root open={selectionOpen} onOpenChange={setSelectionOpen}>
           <Popover.Trigger asChild>
             <Button
@@ -584,22 +609,17 @@ export function Navigator({
             <Stack dir='column' gap={3} ai='stretch' className={s.chat}>
               <Label value={t('navigator.selectChatVersion')} style={{ whiteSpace: 'nowrap' }} />
               <Stack>
-                <Button
-                  variant="glass"
-                  onClick={() => selectChat('free')}
-                  icon="Sparkle"
-                  title={t('navigator.useFreeVersion')}
-                >
-                  {t('navigator.aiAssistantChat')}
-                </Button>
-                <Button
-                  variant="default"
-                  onClick={() => selectChat('pro')}
-                  icon="Sparkles"
-                  title={t('navigator.useProVersion')}
-                >
-                  {t('navigator.aiAssistantPro')}
-                </Button>
+                {assistantTargets.map((target, index) => (
+                  <Button
+                    key={target.key}
+                    variant={index === 0 ? 'glass' : 'default'}
+                    onClick={() => selectChat(target)}
+                    icon={target.pluginFilename ? 'Sparkles' : 'Sparkle'}
+                    title={target.title}
+                  >
+                    {target.title}
+                  </Button>
+                ))}
               </Stack>
             </Stack>
           </Popover.Content>
