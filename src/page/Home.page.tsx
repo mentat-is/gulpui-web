@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Application } from "@/context/Application.context";
 import { Menu, MenuItem } from "@/components/menu";
 import { Session } from "@/banners/Session.banner";
+import { Settings } from "@/banners/Settings.banner";
 import s from "./styles/Home.module.css";
 import { Stack } from "@/ui/Stack";
 import { Resizer } from "@/ui/Resizer";
@@ -166,10 +167,26 @@ export namespace Home {
 
 		/**
 		 * Bottom area menu items for the Home page.
-		 * Includes the "LogOut" button that triggers the session save/logout flow.
+		 * Includes settings and the "LogOut" button that triggers the session
+		 * save/logout flow.
 		 */
 		const menuBottomItems = useMemo<MenuItem[]>(
 			() => [
+				{
+					label: t("settings.title"),
+					icon: "Settings",
+					category: t("common.account"),
+					action: () =>
+						spawnBanner(
+							<Settings.Banner
+								visibility={{
+									timestamps: false,
+									scroll: false,
+									realtime: false,
+								}}
+							/>,
+						),
+				},
 				{
 					label: t("common.logout"),
 					icon: "LogOut",
