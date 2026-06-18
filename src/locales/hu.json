@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Normál görgetés",
     "settings.scroll.reverse": "Fordított görgetés",
     "settings.theme": "Téma",
-    "settings.timeoff.label": "Időszünet",
     "settings.timeoff.placeholder": "Lekérdezési intervallum másodpercben (min 10)",
     "settings.timestamps.local": "Helyi időbélyegek",
     "settings.timestamps.utc": "UTC időbélyegek",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Válassza ki a bővítményt",
     "upload.selectSettingsForAll": "Válassza ki az összes fájl beállításait",
     "upload.title": "Fájlok felvétele",
-    "upload.useLimits": "Használat korlátai"
+    "upload.useLimits": "Használat korlátai",
+    "eventDialog.createAndConnectLink": "Hivatkozás létrehozása és csatlakoztatása",
+    "eventDialog.links": "Hivatkozások",
+    "eventDialog.manageLink": "Hivatkozás kezelése",
+    "eventDialog.manageLinkDescription": "Válaszd ki, hogyan szeretnéd kezelni a csatlakoztatott hivatkozást:",
+    "eventDialog.noLinks": "Nincs hivatkozás csatlakoztatva ehhez az eseményhez",
+    "eventDialog.noNotes": "Nincs jegyzet csatlakoztatva ehhez az eseményhez",
+    "eventDialog.sendIoc": "IOC küldése",
+    "eventDialog.showLinkedEvents": "Kapcsolt események megjelenítése",
+    "eventDialog.removeEventFromLink": "Esemény eltávolítása a hivatkozásból",
+    "settings.timeoffset.label": "Időeltolás másodpercben (csak valós időben)",
+    "eventDialog.previousEvent": "Előző esemény",
+    "eventDialog.nextEvent": "Következő esemény"
   }
 }

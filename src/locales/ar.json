@@ -606,7 +606,6 @@
     "settings.scroll.normal": "التمرير العادي",
     "settings.scroll.reverse": "التمرير العكسي",
     "settings.theme": "الموضوع",
-    "settings.timeoff.label": "إجازة",
     "settings.timeoff.placeholder": "الفاصل الزمني للاستقصاء بالثواني (10 دقائق على الأقل)",
     "settings.timestamps.local": "الطوابع الزمنية المحلية",
     "settings.timestamps.utc": "الطوابع الزمنية UTC",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "حدد البرنامج المساعد",
     "upload.selectSettingsForAll": "حدد الإعدادات لجميع الملفات",
     "upload.title": "استيعاب الملفات",
-    "upload.useLimits": "استخدام الحدود"
+    "upload.useLimits": "استخدام الحدود",
+    "eventDialog.createAndConnectLink": "إنشاء رابط وربطه",
+    "eventDialog.links": "الروابط",
+    "eventDialog.manageLink": "إدارة الرابط",
+    "eventDialog.manageLinkDescription": "اختر كيفية إدارة الرابط المتصل:",
+    "eventDialog.noLinks": "لا توجد روابط متصلة بهذا الحدث",
+    "eventDialog.noNotes": "لا توجد ملاحظات متصلة بهذا الحدث",
+    "eventDialog.sendIoc": "إرسال IOC",
+    "eventDialog.showLinkedEvents": "عرض الأحداث المرتبطة",
+    "eventDialog.removeEventFromLink": "إزالة الحدث من الرابط",
+    "settings.timeoffset.label": "إزاحة الوقت بالثواني (للوقت الفعلي فقط)",
+    "eventDialog.previousEvent": "الحدث السابق",
+    "eventDialog.nextEvent": "الحدث التالي"
   }
 }

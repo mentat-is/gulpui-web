@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Normales Scrollen",
     "settings.scroll.reverse": "Rückwärtsscrollen",
     "settings.theme": "Thema",
-    "settings.timeoff.label": "Auszeit",
     "settings.timeoff.placeholder": "Abfrageintervall in Sekunden (min. 10)",
     "settings.timestamps.local": "Lokale Zeitstempel",
     "settings.timestamps.utc": "UTC-Zeitstempel",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Plugin auswählen",
     "upload.selectSettingsForAll": "Wählen Sie Einstellungen für alle Dateien aus",
     "upload.title": "Dateien aufnehmen",
-    "upload.useLimits": "Grenzen nutzen"
+    "upload.useLimits": "Grenzen nutzen",
+    "eventDialog.createAndConnectLink": "Link erstellen und verbinden",
+    "eventDialog.links": "Verknüpfungen",
+    "eventDialog.manageLink": "Link verwalten",
+    "eventDialog.manageLinkDescription": "Wählen Sie aus, wie der verbundene Link verwaltet werden soll:",
+    "eventDialog.noLinks": "Keine Links mit diesem Ereignis verbunden",
+    "eventDialog.noNotes": "Keine Notizen mit diesem Ereignis verbunden",
+    "eventDialog.sendIoc": "IOC senden",
+    "eventDialog.showLinkedEvents": "Verknüpfte Ereignisse anzeigen",
+    "eventDialog.removeEventFromLink": "Ereignis vom Link entfernen",
+    "settings.timeoffset.label": "Zeitversatz in Sekunden (nur Echtzeit)",
+    "eventDialog.previousEvent": "Vorheriges Ereignis",
+    "eventDialog.nextEvent": "Nächstes Ereignis"
   }
 }

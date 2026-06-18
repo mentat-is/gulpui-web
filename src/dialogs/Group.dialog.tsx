@@ -1,7 +1,14 @@
 import { DisplayEventDialog, EventIndicator } from "./Event.dialog";
 import { Application } from "@/context/Application.context";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { createPortal } from "react-dom";
 import { Dialog } from "@/ui/Dialog";
 import { Doc } from "@/entities/Doc";
@@ -38,6 +45,112 @@ class TooltipEventCache {
 }
 
 const tooltipEventCache = new TooltipEventCache();
+const VIEWPORT_PADDING = 12;
+const EVENT_LIST_WIDTH = 340;
+const EVENT_LIST_HEIGHT = 300;
+const EVENT_PREVIEW_WIDTH = 420;
+const EVENT_PREVIEW_HEIGHT = 330;
+
+/**
+ * Restricts a coordinate to a visible viewport range.
+ *
+ * @param value Coordinate to clamp.
+ * @param min Minimum visible coordinate.
+ * @param max Maximum visible coordinate.
+ * @returns Coordinate constrained between min and max.
+ */
+const clampCoordinate = (value: number, min: number, max: number): number => {
+	if (max < min) return min;
+	return Math.min(Math.max(value, min), max);
+};
+
+/**
+ * Resolves a fixed-position box that remains visible in the current viewport.
+ *
+ * @param anchor Anchor coordinate where the floating element should start.
+ * @param preferredSize Preferred floating element dimensions.
+ * @param viewportSize Current viewport dimensions.
+ * @returns CSS positioning and dimensions for the visible floating element.
+ */
+const resolveAnchoredBoxStyle = (
+	anchor: { x: number; y: number },
+	preferredSize: { width: number; height: number },
+	viewportSize: { width: number; height: number },
+): CSSProperties => {
+	const width = Math.min(
+		preferredSize.width,
+		Math.max(0, viewportSize.width - VIEWPORT_PADDING * 2),
+	);
+	const height = Math.min(
+		preferredSize.height,
+		Math.max(0, viewportSize.height - VIEWPORT_PADDING * 2),
+	);
+	const canOpenRight =
+		anchor.x + 14 + width <= viewportSize.width - VIEWPORT_PADDING;
+	const left = canOpenRight
+		? anchor.x + 14
+		: anchor.x - width - 14;
+	const top = clampCoordinate(
+		anchor.y,
+		VIEWPORT_PADDING,
+		viewportSize.height - height - VIEWPORT_PADDING,
+	);
+
+	return {
+		position: "fixed",
+		left: clampCoordinate(
+			left,
+			VIEWPORT_PADDING,
+			viewportSize.width - width - VIEWPORT_PADDING,
+		),
+		top,
+		width,
+		height,
+		maxHeight: height,
+		maxWidth: width,
+		zIndex: 1000,
+	};
+};
+
+/**
+ * Resolves a hover preview position near an event row while keeping it visible.
+ *
+ * @param eventRect Bounding rectangle of the hovered event row.
+ * @param viewportSize Current viewport dimensions.
+ * @returns CSS positioning for the preview portal.
+ */
+const resolvePreviewStyle = (
+	eventRect: DOMRect,
+	viewportSize: { width: number; height: number },
+): CSSProperties => {
+	const width = Math.min(
+		EVENT_PREVIEW_WIDTH,
+		Math.max(0, viewportSize.width - VIEWPORT_PADDING * 2),
+	);
+	const height = Math.min(
+		EVENT_PREVIEW_HEIGHT,
+		Math.max(0, viewportSize.height - VIEWPORT_PADDING * 2),
+	);
+	const canOpenLeft =
+		eventRect.left - width - 14 >= VIEWPORT_PADDING;
+	const left = canOpenLeft ? eventRect.left - width - 14 : eventRect.right + 14;
+
+	return {
+		position: "fixed",
+		left: clampCoordinate(
+			left,
+			VIEWPORT_PADDING,
+			viewportSize.width - width - VIEWPORT_PADDING,
+		),
+		top: clampCoordinate(
+			eventRect.top,
+			VIEWPORT_PADDING,
+			viewportSize.height - height - VIEWPORT_PADDING,
+		),
+		maxWidth: width,
+		maxHeight: height,
+	};
+};
 
 interface DisplayGroupDialogProps {
 	events: Doc.Type[];
@@ -47,7 +160,7 @@ interface DisplayGroupDialogProps {
 
 export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDialogProps) {
 	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
-	const { spawnDialog, Info, app } = Application.use();
+	const { spawnDialog, Info, app, currentDocument } = Application.use();
 	const { t } = Locale.use();
 	const menuShellRef = useRef<HTMLDivElement>(null);
 	const tooltipRef = useRef<HTMLDivElement>(null);
@@ -75,9 +188,10 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 			}
 		};
 
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, [anchor, onClose]);
+		currentDocument.addEventListener("mousedown", handleClickOutside);
+		return () =>
+			currentDocument.removeEventListener("mousedown", handleClickOutside);
+	}, [anchor, currentDocument, onClose]);
 
 	// Close tooltip on click outside
 	useEffect(() => {
@@ -98,14 +212,14 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 		// Use a small delay to avoid immediate closure
 		const timer = setTimeout(() => {
-			document.addEventListener("mousedown", handleClickOutside);
+			currentDocument.addEventListener("mousedown", handleClickOutside);
 		}, 50);
 
 		return () => {
 			clearTimeout(timer);
-			document.removeEventListener("mousedown", handleClickOutside);
+			currentDocument.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [openTooltipId]);
+	}, [currentDocument, openTooltipId]);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -178,15 +292,26 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	}, []);
 
 	const handleMouseLeaveEvent = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-		const target = document.elementFromPoint(event.clientX, event.clientY);
-		if (tooltipRef.current?.contains(target) || event.currentTarget.contains(target)) {
-			return;
-		}
+			const target = currentDocument.elementFromPoint(
+				event.clientX,
+				event.clientY,
+			);
+			if (tooltipRef.current?.contains(target) || event.currentTarget.contains(target)) {
+				return;
+			}
 
 		closeTimeoutRef.current = setTimeout(() => {
 			setOpenTooltipId(null);
 		}, 100);
-	}, []);
+	}, [currentDocument]);
+
+	const viewportSize = useMemo(() => {
+		const activeWindow = currentDocument.defaultView ?? window;
+		return {
+			width: activeWindow.innerWidth,
+			height: activeWindow.innerHeight,
+		};
+	}, [currentDocument]);
 
 	const handleMouseLeaveTooltip = useCallback(() => {
 		closeTimeoutRef.current = setTimeout(() => {
@@ -241,28 +366,32 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				<div style={{ fontSize: "11px" }}>{t("common.loading")}</div>
 			) : null;
 
-			const tooltipPortal = tooltipContent && eventElement ? createPortal(
-				<div
-					ref={tooltipRef}
-					onMouseEnter={clearCloseTimeout}
-					onMouseLeave={handleMouseLeaveTooltip}
-					style={{
-						position: "fixed",
-						left: Math.max(12, eventElement.getBoundingClientRect().left - 420),
-						top: eventElement.getBoundingClientRect().top,
-						background: "var(--background-100)",
-						border: "1px solid var(--border)",
-						borderRadius: "0",
-						padding: "8px",
-						boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-						zIndex: 10000,
-						pointerEvents: "auto",
-					}}
-					onClick={(e) => e.stopPropagation()}
-				>
-					{tooltipContent}
-				</div>,
-				document.body,
+			const tooltipPortal = tooltipContent && eventElement ? (
+				createPortal(
+					<div
+						ref={tooltipRef}
+						onMouseEnter={clearCloseTimeout}
+						onMouseLeave={handleMouseLeaveTooltip}
+						style={{
+							...resolvePreviewStyle(
+								eventElement.getBoundingClientRect(),
+								viewportSize,
+							),
+							background: "var(--background-100)",
+							border: "1px solid var(--border)",
+							borderRadius: "0",
+							padding: "8px",
+							boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+							zIndex: 10000,
+							pointerEvents: "auto",
+							overflow: "auto",
+						}}
+						onClick={(e) => e.stopPropagation()}
+					>
+						{tooltipContent}
+					</div>,
+					currentDocument.body,
+				)
 			) : null;
 
 			return (
@@ -301,30 +430,18 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				</>
 			);
 		},
-		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, showTooltip, t],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, showTooltip, t, viewportSize, currentDocument],
 	);
 
 	const popupStyle = useMemo(() => {
 		if (!anchor) return undefined;
 
-		const width = Math.min(340, window.innerWidth - 24);
-		const height = Math.min(300, window.innerHeight - 24);
-		const left = anchor.x + 14 + width <= window.innerWidth - 12
-			? anchor.x + 14
-			: Math.max(12, anchor.x - width - 14);
-		const top = Math.min(anchor.y, window.innerHeight - height - 12);
-
-		return {
-			position: "fixed" as const,
-			left,
-			top: Math.max(12, top),
-			width,
-			height,
-			maxHeight: height,
-			maxWidth: width,
-			zIndex: 1000,
-		};
-	}, [anchor]);
+		return resolveAnchoredBoxStyle(
+			anchor,
+			{ width: EVENT_LIST_WIDTH, height: EVENT_LIST_HEIGHT },
+			viewportSize,
+		);
+	}, [anchor, viewportSize]);
 
 	if (anchor) {
 		return createPortal(
@@ -354,7 +471,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 					</label>
 				</div>
 			</div>,
-			document.body,
+			currentDocument.body,
 		);
 	}
 

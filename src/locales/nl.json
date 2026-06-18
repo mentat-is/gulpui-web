@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Normaal scrollen",
     "settings.scroll.reverse": "Omgekeerd scrollen",
     "settings.theme": "Thema",
-    "settings.timeoff.label": "Vrije tijd",
     "settings.timeoff.placeholder": "Polling-interval in seconden (min 10)",
     "settings.timestamps.local": "Lokale tijdstempels",
     "settings.timestamps.utc": "UTC-tijdstempels",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Selecteer plug-in",
     "upload.selectSettingsForAll": "Selecteer instellingen voor alle bestanden",
     "upload.title": "Bestanden opnemen",
-    "upload.useLimits": "Gebruik limieten"
+    "upload.useLimits": "Gebruik limieten",
+    "eventDialog.createAndConnectLink": "Link maken en verbinden",
+    "eventDialog.links": "Koppelingen",
+    "eventDialog.manageLink": "Link beheren",
+    "eventDialog.manageLinkDescription": "Kies hoe je de verbonden link wilt beheren:",
+    "eventDialog.noLinks": "Geen links verbonden met deze gebeurtenis",
+    "eventDialog.noNotes": "Geen notities verbonden met deze gebeurtenis",
+    "eventDialog.sendIoc": "IOC verzenden",
+    "eventDialog.showLinkedEvents": "Gekoppelde gebeurtenissen tonen",
+    "eventDialog.removeEventFromLink": "Gebeurtenis uit link verwijderen",
+    "settings.timeoffset.label": "Tijdverschuiving in seconden (alleen realtime)",
+    "eventDialog.previousEvent": "Vorige gebeurtenis",
+    "eventDialog.nextEvent": "Volgende gebeurtenis"
   }
 }

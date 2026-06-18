@@ -301,6 +301,7 @@
     "eventDialog.connectLink": "Connect link",
     "eventDialog.connectLinkTitle": "Connect the current event with a link",
     "eventDialog.copyJson": "Copy JSON",
+    "eventDialog.createAndConnectLink": "Create and connect link",
     "eventDialog.createLink": "Create link",
     "eventDialog.createLinkOriginTitle": "Create link with the current event as origin.",
     "eventDialog.createNewLink": "Create new link",
@@ -312,10 +313,18 @@
     "eventDialog.flagEvent": "Flag event",
     "eventDialog.focusTimeline": "Focus timeline",
     "eventDialog.invalidFilterSelection": "Invalid selection. Unable to add new filters",
+    "eventDialog.links": "Links",
+    "eventDialog.manageLink": "Manage link",
+    "eventDialog.manageLinkDescription": "Choose how to manage the connected link:",
     "eventDialog.newFilter": "New filter",
+    "eventDialog.noLinks": "No links connected to this event",
+    "eventDialog.noNotes": "No notes connected to this event",
     "eventDialog.raw": "Raw",
     "eventDialog.sendData": "Send Data",
+    "eventDialog.sendIoc": "Send IOC",
     "eventDialog.sendIocsTitle": "Send IOCs to other systems",
+    "eventDialog.showLinkedEvents": "Show linked events",
+    "eventDialog.removeEventFromLink": "Remove event from link",
     "eventDialog.sourceDeleted": "Source was deleted",
     "eventDialog.table": "Table",
     "eventDialog.tree": "Tree",
@@ -708,6 +717,8 @@
     "upload.selectPlugin": "Select plugin",
     "upload.selectSettingsForAll": "Select settings for all files",
     "upload.title": "Ingest files",
-    "upload.useLimits": "Use limits"
+    "upload.useLimits": "Use limits",
+    "eventDialog.previousEvent": "Previous event",
+    "eventDialog.nextEvent": "Next event"
   }
 }

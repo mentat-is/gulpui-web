@@ -606,7 +606,6 @@
     "settings.scroll.normal": "גלילה רגילה",
     "settings.scroll.reverse": "הגלילה הפוכה",
     "settings.theme": "נושא",
-    "settings.timeoff.label": "פסק זמן",
     "settings.timeoff.placeholder": "מרווח סקרים בשניות (דקות 10)",
     "settings.timestamps.local": "חותמות זמן מקומיות",
     "settings.timestamps.utc": "חותמות זמן של UTC",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "בחר תוסף",
     "upload.selectSettingsForAll": "בחר הגדרות עבור כל הקבצים",
     "upload.title": "הטמעת קבצים",
-    "upload.useLimits": "השתמש במגבלות"
+    "upload.useLimits": "השתמש במגבלות",
+    "eventDialog.createAndConnectLink": "יצירת קישור וחיבורו",
+    "eventDialog.links": "קישורים",
+    "eventDialog.manageLink": "ניהול קישור",
+    "eventDialog.manageLinkDescription": "בחר כיצד לנהל את הקישור המחובר:",
+    "eventDialog.noLinks": "אין קישורים מחוברים לאירוע זה",
+    "eventDialog.noNotes": "אין הערות מחוברות לאירוע זה",
+    "eventDialog.sendIoc": "שליחת IOC",
+    "eventDialog.showLinkedEvents": "הצגת אירועים מקושרים",
+    "eventDialog.removeEventFromLink": "הסרת אירוע מהקישור",
+    "settings.timeoffset.label": "היסט זמן בשניות (בזמן אמת בלבד)",
+    "eventDialog.previousEvent": "אירוע קודם",
+    "eventDialog.nextEvent": "אירוע הבא"
   }
 }

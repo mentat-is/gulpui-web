@@ -1,6 +1,9 @@
 import { Application } from "@/context/Application.context";
 import { Dialog } from "@/ui/Dialog";
+import { Banner as UIBanner } from "@/ui/Banner";
 import {
+	type CSSProperties,
+	type MouseEvent as ReactMouseEvent,
 	Fragment,
 	useEffect,
 	useMemo,
@@ -13,7 +16,6 @@ import {
 	copy,
 	download,
 	generateUUID,
-	Refractor,
 	isPlainObject,
 	sortObjectKeysRecursively as sortTreeValueRecursively,
 	parseLineToKeyValue as parseToKeyValue,
@@ -47,6 +49,7 @@ import {
 import { StyleProps } from "react-json-view-lite/dist/DataRenderer";
 import { useTheme } from "next-themes";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
+import { Popover } from "@/ui/Popover";
 import { Table } from "@/components/Table";
 import { Markdown } from "@/ui/Markdown";
 import { Icon } from "@/ui/Icon";
@@ -57,11 +60,21 @@ import { Doc } from "@/entities/Doc";
 import { Source } from "@/entities/Source";
 import { Filter } from "@/entities/Filter";
 import { Note } from "@/entities/Note";
-import { Color } from "@/entities/Color";
+import { Link } from "@/entities/Link";
 import { Extension } from "@/context/Extension.context";
 import { Locale } from "@/locales";
+import { DisplayGroupDialog } from "./Group.dialog";
 
 // --- UTILITIES ---
+
+interface EventLinkTableRow {
+	id: Link.Id;
+	_id: Link.Id;
+	name: string;
+	description: string;
+	color: string;
+	icon: Icon.Name;
+}
 
 /**
  * Extracts the path from a detected selection string.
@@ -1048,7 +1061,8 @@ export function DisplayEventDialog({
 }) {
 	if (!event) return null;
 
-	const { Info, app, spawnBanner, currentDocument } = Application.use();
+	const { Info, app, spawnBanner, spawnDialog, currentDocument } =
+		Application.use();
 	const { extensions } = Extension.use();
 	const { t } = Locale.use();
 
@@ -1059,6 +1073,11 @@ export function DisplayEventDialog({
 		const opId = Doc.Entity.operationId(app, event);
 		return opId ? Doc.Entity.flag.isFlagged(event._id, opId) : false;
 	});
+	const [isCollabPanelOpen, setIsCollabPanelOpen] = useState<boolean>(true);
+	const [linkedEventsPopup, setLinkedEventsPopup] = useState<{
+		events: Doc.Type[];
+		anchor: { x: number; y: number };
+	} | null>(null);
 	const lastAutoSelectionRef = useRef<string | null>(null);
 	const prevTargetRef = useRef<Doc.Id | null>(null);
 	const treeContextPathRef = useRef<string | null>(null);
@@ -1130,6 +1149,7 @@ export function DisplayEventDialog({
 	}, [currentDocument]);
 
 	useEffect(() => setSelection(""), [event._id]);
+	useEffect(() => setLinkedEventsPopup(null), [event._id]);
 
 	// Tree event handlers using ref-based delegation
 	useEffect(() => {
@@ -1266,6 +1286,58 @@ export function DisplayEventDialog({
 		);
 	}, [event, file]);
 
+	/**
+	 * Closes the event dialog and clears the timeline target.
+	 */
+	const handleCloseDialog = useCallback(() => {
+		onClose?.();
+		spawnDialog(null);
+		Info.setTimelineTarget(null);
+	}, [Info, onClose, spawnDialog]);
+
+	/**
+	 * Toggles the current event flag state when an operation is available.
+	 */
+	const handleToggleFlag = useCallback(() => {
+		const opId = Doc.Entity.operationId(app, event);
+		if (!opId) return;
+		setIsFlagged(Doc.Entity.flag.toggle(event._id, opId));
+	}, [app, event]);
+
+	/**
+	 * Determines whether the event can be flagged under the current operation limit.
+	 */
+	const isFlagButtonDisabled = useMemo(() => {
+		const opId = Doc.Entity.operationId(app, event);
+		return (
+			(opId &&
+				Doc.Entity.flag.isLimitReached(Doc.Entity.flag.getList(opId)) &&
+				!isFlagged) ||
+			!opId
+		);
+	}, [app, event, isFlagged]);
+
+	/**
+	 * Checks whether at least one send-data extension is available for the action menu.
+	 */
+	const hasSendDataExtension = useMemo(
+		() =>
+			Object.values(extensions).some((ext) =>
+				Array.isArray(ext.type)
+					? ext.type.includes("send_data")
+					: (ext.type as unknown) === "send_data",
+			),
+		[extensions],
+	);
+
+	/**
+	 * Checks whether the story extension can render its own connect action.
+	 */
+	const hasStoryExtension = useMemo(
+		() => Boolean(extensions["Story.popover.tsx"]),
+		[extensions],
+	);
+
 	// --- HANDLERS: Banners ---
 
 	const handleEnrich = useCallback(
@@ -1296,6 +1368,50 @@ export function DisplayEventDialog({
 	const handleConnectLink = useCallback(() => {
 		spawnBanner(<LinkFunctionality.Connect.Banner event={event} />);
 	}, [spawnBanner, event]);
+
+	/**
+	 * Opens every event connected to the provided link.
+	 *
+	 * @param link The link whose connected events should be displayed.
+	 * @param triggerEvent Mouse event used to anchor the floating event list.
+	 */
+	const handleOpenLinkedEvents = useCallback(
+		(link: Link.Type, triggerEvent: ReactMouseEvent<HTMLButtonElement>) => {
+			const linkedEvents = link.doc_ids
+				.map((id) => Doc.Entity.id(app, id))
+				.filter((doc): doc is Doc.Type => Boolean(doc));
+
+			if (linkedEvents.length === 0) return;
+
+			const rect = triggerEvent.currentTarget.getBoundingClientRect();
+
+			setLinkedEventsPopup({
+				events: linkedEvents,
+				anchor: {
+					x: rect.left,
+					y: rect.top,
+				},
+			});
+		},
+		[app],
+	);
+
+	/**
+	 * Opens the link action banner for disconnect/delete decisions.
+	 *
+	 * @param link The selected link table row.
+	 */
+	const handleOpenLinkActionBanner = useCallback(
+		(link: Link.Type) => {
+			spawnBanner(
+				<LinkEventActionBanner
+					event={event}
+					link={link}
+				/>,
+			);
+		},
+		[event, spawnBanner],
+	);
 
 	const applySelectionAsFileFilter = useCallback(
 		(textSelected?: string) => {
@@ -1704,6 +1820,79 @@ export function DisplayEventDialog({
 		currentDocument,
 	]);
 
+	/**
+	 * Converts connected links into the table shape used by the lower links tab.
+	 */
+	const linkTableRows = useMemo<EventLinkTableRow[]>(
+		() =>
+			links.map((link) => ({
+				id: link.id,
+				_id: link.id,
+				name: link.name,
+				description: link.description,
+				color: link.color,
+				icon: Link.Entity.icon(link),
+			})),
+		[links],
+	);
+
+	/**
+	 * Defines the visible columns and custom link-name renderer for the links tab.
+	 */
+	const linkTableColumns = useMemo<Table.ColumnDefinition<EventLinkTableRow>[]>(
+		() => [
+			{
+				key: "name",
+				label: t("common.name"),
+				width: 180,
+				render: (_value, row) => (
+					<span
+						className={s.linkName}
+						style={{ color: row.color }}
+					>
+						<Icon
+							name={row.icon}
+							color={row.color}
+							size={12}
+						/>
+						{row.name}
+					</span>
+				),
+			},
+			{
+				key: "description",
+				label: t("common.description"),
+				width: "auto",
+			},
+		],
+		[t],
+	);
+
+	/**
+	 * Defines the per-row actions available for connected links.
+	 */
+	const linkTableActions = useMemo<Table.Action<EventLinkTableRow>[]>(
+		() => [
+			{
+				icon: "MagnifyingGlassSmall",
+				label: t("eventDialog.showLinkedEvents"),
+				onClick: (_row, index, actionEvent) => {
+					const link = links[index];
+					if (link) handleOpenLinkedEvents(link, actionEvent);
+				},
+			},
+			{
+				icon: "Trash2",
+				label: t("eventDialog.manageLink"),
+				onClick: (_row, index) => {
+					const link = links[index];
+					if (link) handleOpenLinkActionBanner(link);
+				},
+			},
+		],
+		[handleOpenLinkActionBanner, handleOpenLinkedEvents, links, t],
+	);
+
 	if (!file) {
 		return (
 			<Dialog callback={onClose}>
@@ -1733,148 +1922,198 @@ export function DisplayEventDialog({
 		<Dialog callback={onClose}>
 			{json ? (
 				<Fragment>
-					<Stack
-						dir="column"
-						className={s.group}
-						gap={12}
-						ai="stretch"
-					>
-						<Stack
-							className={s.topActions}
-							gap={12}
-						>
+					<Navigation event={event} />
+					<div className={s.header}>
+						<div className={s.titleContainer}>
+							<div className={s.iconWrapper}>
+								<Icon
+									name="Triangle"
+									size={18}
+								/>
+							</div>
+							<h2 className={s.title}>{t("common.event")}</h2>
+						</div>
+						<div className={s.buttonGroup}>
 							<Button
-								onClick={handleCreateNote}
+								onClick={handleToggleFlag}
 								variant="secondary"
-								title={t("eventDialog.addNoteTitle")}
-								icon="StickyNote"
-							>
-								{t("eventDialog.createNewNote")}
-							</Button>
+								icon={isFlagged ? "FlagOff" : "Flag"}
+								disabled={isFlagButtonDisabled}
+								title={t("eventDialog.flagEvent")}
+							/>
 							<Button
-								onClick={handleCreateLink}
+								onClick={handleFocusTimeline}
 								variant="secondary"
-								title={t("eventDialog.createLinkOriginTitle")}
-								icon="GitPullRequestCreate"
-							>
-								{t("eventDialog.createLink")}
-							</Button>
-							<Button
-								onClick={() => handleEnrich()}
-								variant="secondary"
-								title={t("eventDialog.enrichCurrentTitle")}
-								icon="PrismColor"
-							>
-								{t("targetMenu.enrich")}
-							</Button>
-							{Object.values(extensions).some((ext) =>
-								Array.isArray(ext.type)
-									? ext.type.includes("send_data")
-									: (ext.type as any) === "send_data",
-							) && (
-								<Button
-									onClick={handleSendData}
-									variant="secondary"
-									title={t("eventDialog.sendIocsTitle")}
-									icon="Send"
+								icon="Crosshair"
+								title={t("eventDialog.focusTimeline")}
+							/>
+							<Popover.Root>
+								<Popover.Trigger asChild>
+									<Button
+										variant="secondary"
+										icon="List"
+										title={t("common.actions")}
+									/>
+								</Popover.Trigger>
+								<Popover.Content
+									className={s.actionMenu}
+									container={currentDocument.body}
+									align="end"
 								>
-									{t("eventDialog.sendData")}
-								</Button>
-							)}
+									<Button
+										variant="tertiary"
+										className={s.menuAction}
+										icon="StickyNote"
+										onClick={handleCreateNote}
+									>
+										{t("eventDialog.createNewNote")}
+									</Button>
+									<Button
+										variant="tertiary"
+										className={s.menuAction}
+										icon="GitPullRequestCreate"
+										onClick={handleCreateLink}
+									>
+										{t("eventDialog.createAndConnectLink")}
+									</Button>
+									<Button
+										variant="tertiary"
+										className={s.menuAction}
+										icon="PrismColor"
+										onClick={() => handleEnrich()}
+									>
+										{t("targetMenu.enrich")}
+									</Button>
+									{hasSendDataExtension && (
+										<Button
+											variant="tertiary"
+											className={s.menuAction}
+											icon="Send"
+											onClick={handleSendData}
+										>
+											{t("eventDialog.sendIoc")}
+										</Button>
+									)}
+									{hasStoryExtension && (
+										<div className={s.storyAction}>
+											<Extension.Component
+												name="Story.popover.tsx"
+												props={{ doc: event }}
+											/>
+										</div>
+									)}
+									<Button
+										variant="tertiary"
+										className={s.menuAction}
+										icon="GitPullRequestCreateArrow"
+										onClick={handleConnectLink}
+									>
+										{t("eventDialog.connectLink")}
+									</Button>
+									<Button
+										variant="tertiary"
+										className={s.menuAction}
+										icon="Download"
+										onClick={handleDownloadJson}
+									>
+										{t("eventDialog.downloadJson")}
+									</Button>
+								</Popover.Content>
+							</Popover.Root>
 							<Button
-								onClick={handleConnectLink}
 								variant="secondary"
-								title={t("eventDialog.connectLinkTitle")}
-								icon="GitPullRequestCreateArrow"
-							>
-								{t("eventDialog.connectLink")}
-							</Button>
-						</Stack>
-						<Extension.Component
-							name="Story.popover.tsx"
-							props={{ doc: event }}
+								icon="X"
+								title={t("common.closeDialog")}
+								onClick={handleCloseDialog}
+							/>
+						</div>
+					</div>
+
+					<div className={s.eventViewer}>
+						<Button
+							className={s.copyJsonButton}
+							variant="secondary"
+							onClick={handleCopyJson}
+							icon="Copy"
+							title={t("eventDialog.copyJson")}
 						/>
-					</Stack>
-
-					<Collab.List
-						notes={notes}
-						links={links}
-						container={currentDocument.body}
-					/>
-
-					{highlights}
+						{highlights}
+					</div>
 					{treeTooltip && (
 						<div
+							className={s.treeTooltip}
 							style={{
-								position: "fixed",
 								left: treeTooltip.x + 14,
 								top: treeTooltip.y + 14,
-								background: "var(--background-100)",
-								border: "1px solid var(--gray-400)",
-								borderRadius: 4,
-								padding: "2px 8px",
-								fontSize: 10,
-								fontFamily: "var(--font-mono)",
-								color: "var(--second)",
-								pointerEvents: "none",
-								zIndex: 9999,
-								maxWidth: 400,
-								wordBreak: "break-all",
-								boxShadow:
-									"var(--shadow-border), 0 8px 20px var(--gray-alpha-500)",
 							}}
 						>
 							{treeTooltip.text}
 						</div>
 					)}
-					<Navigation event={event} />
-					<Stack
-						className={s.actionButtons}
-						gap={12}
+
+					<Tabs
+						defaultValue="notes"
+						className={s.collabTabs}
 					>
-						<Button
-							variant="secondary"
-							onClick={handleCopyJson}
-							icon="Copy"
-						>
-							{t("eventDialog.copyJson")}
-						</Button>
-						<Button
-							variant="secondary"
-							onClick={handleDownloadJson}
-							icon="Download"
-							title={t("eventDialog.downloadJson")}
-						>
-							{t("eventDialog.downloadJson")}
-						</Button>
-						<Button
-							onClick={handleFocusTimeline}
-							variant="secondary"
-							icon="Crosshair"
-							title={t("eventDialog.focusTimeline")}
+						<div className={s.collabTabsHeader}>
+							<TabsList className={s.collabTriggers}>
+								<TabsTrigger value="notes">{t("notes.title")}</TabsTrigger>
+								<TabsTrigger value="links">
+									{t("eventDialog.links")}
+								</TabsTrigger>
+							</TabsList>
+							<Button
+								variant="tertiary"
+								icon={isCollabPanelOpen ? "ChevronDown" : "ChevronRight"}
+								title={isCollabPanelOpen ? t("common.hide") : t("common.show")}
+								onClick={() => setIsCollabPanelOpen((value) => !value)}
+							/>
+						</div>
+						{isCollabPanelOpen && (
+							<div className={s.collabPanel}>
+								<TabsContent
+									value="notes"
+									className={s.collabContent}
+								>
+									{notes.length > 0 ? (
+										<Collab.List
+											notes={notes}
+											links={[]}
+											container={currentDocument.body}
+										/>
+									) : (
+										<div className={s.emptyState}>
+											{t("eventDialog.noNotes")}
+										</div>
+									)}
+								</TabsContent>
+								<TabsContent
+									value="links"
+									className={s.collabContent}
+								>
+									{linkTableRows.length > 0 ? (
+										<Table
+											values={linkTableRows}
+											columns={linkTableColumns}
+											includeIndex={false}
+											actions={linkTableActions}
+										/>
+									) : (
+										<div className={s.emptyState}>
+											{t("eventDialog.noLinks")}
+										</div>
+									)}
+								</TabsContent>
+							</div>
+						)}
+					</Tabs>
+					{linkedEventsPopup && (
+						<DisplayGroupDialog
+							events={linkedEventsPopup.events}
+							anchor={linkedEventsPopup.anchor}
+							onClose={() => setLinkedEventsPopup(null)}
 						/>
-						<Button
-							onClick={() => {
-								const opId = Doc.Entity.operationId(app, event);
-								if (!opId) return;
-								setIsFlagged(Doc.Entity.flag.toggle(event._id, opId));
-							}}
-							variant="secondary"
-							icon={isFlagged ? "FlagOff" : "Flag"}
-							disabled={(() => {
-								const opId = Doc.Entity.operationId(app, event);
-								return (
-									(opId &&
-										Doc.Entity.flag.isLimitReached(
-											Doc.Entity.flag.getList(opId),
-										) &&
-										!isFlagged) ||
-									!opId
-								);
-							})()}
-							title={t("eventDialog.flagEvent")}
-						/>
-					</Stack>
+					)}
 				</Fragment>
 			) : (
 				<LoadingSkeleton />
@@ -1917,6 +2156,69 @@ function LoadingSkeleton() {
 	);
 }
 
+/**
+ * Banner that lets the user choose whether to disconnect the current event
+ * from a link or delete the link entirely.
+ */
+function LinkEventActionBanner({
+	event,
+	link,
+}: {
+	event: Doc.Type;
+	link: Link.Type;
+}) {
+	const { Info, destroyBanner, spawnBanner } = Application.use();
+	const { t } = Locale.use();
+	const [loading, setLoading] = useState<boolean>(false);
+
+	/**
+	 * Disconnects the current event from the selected link.
+	 */
+	const handleDisconnectEvent = async () => {
+		setLoading(true);
+		await Info.links_disconnect(link, event);
+		setLoading(false);
+		destroyBanner();
+		toast(t("link.eventDisconnected", { event: event._id, link: link.name }));
+	};
+
+	/**
+	 * Replaces this choice banner with the existing delete-link confirmation.
+	 */
+	const handleDeleteLink = () => {
+		spawnBanner(<Link.Delete.Banner link={link} />);
+	};
+
+	return (
+		<UIBanner title={t("eventDialog.manageLink")}>
+			<p>
+				{t("eventDialog.manageLinkDescription")} <code>{link.name}</code>
+			</p>
+			<Stack
+				dir="column"
+				ai="stretch"
+				gap={8}
+			>
+				<Button
+					loading={loading}
+					variant="secondary"
+					icon="Unlink"
+					onClick={handleDisconnectEvent}
+				>
+					{t("eventDialog.removeEventFromLink")}
+				</Button>
+				<Button
+					variant="destructive"
+					icon="Trash2"
+					onClick={handleDeleteLink}
+				>
+					{t("link.deleteTitle")}
+				</Button>
+			</Stack>
+		</UIBanner>
+	);
+}
+
 // --- SECONDARY COMPONENTS ---
 
 export namespace EventIndicator {
@@ -1952,14 +2254,9 @@ export function EventIndicator({
 	const background = useMemo(() => {
 		const range =
 			RenderEngine[CacheKey].range.get(event["gulp.source_id"]) ?? MinMaxBase;
-		return Source.Entity.resolveColor(
-			file,
-			event.number_hash,
-			range,
-		);
+		return Source.Entity.resolveColor(file, event.number_hash, range);
 	}, [event, app.target.files, file]);
 
-	const indicatorColor = useMemo(() => background, [background]);
 	const indicatorLabel = useMemo(
 		() => String(event["gulp.event_code"]).slice(0, 4),
 		[event],
@@ -1969,7 +2266,7 @@ export function EventIndicator({
 		[event],
 	);
 	const indicatorFontSize = useMemo(() => {
-		return 8;
+		return 10;
 	}, [indicatorLabel]);
 
 	return (
@@ -1978,7 +2275,7 @@ export function EventIndicator({
 			className={cn(className, s.indicator)}
 			title={indicatorTooltip}
 			aria-label={indicatorTooltip}
-			style={{ ...style, background }}
+			style={{ ...style, "--event-color": background } as CSSProperties}
 			{...props}
 		>
 			<Stack
@@ -1988,14 +2285,8 @@ export function EventIndicator({
 				dir="column"
 				gap={2}
 			>
-				<Icon
-					name="Square"
-					size={10}
-					color={indicatorColor}
-				/>
 				<p
 					style={{
-						color: "var(--accent)",
 						fontSize: `${indicatorFontSize}px`,
 					}}
 				>

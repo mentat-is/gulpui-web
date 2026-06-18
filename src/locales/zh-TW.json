@@ -606,7 +606,6 @@
     "settings.scroll.normal": "正常滾動",
     "settings.scroll.reverse": "反向捲動",
     "settings.theme": "主題",
-    "settings.timeoff.label": "休息時間",
     "settings.timeoff.placeholder": "輪詢間隔（以秒為單位）（分鐘 10）",
     "settings.timestamps.local": "本地時間戳",
     "settings.timestamps.utc": "UTC 時間戳",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "選擇插件",
     "upload.selectSettingsForAll": "選擇所有文件的設置",
     "upload.title": "攝取文件",
-    "upload.useLimits": "使用限制"
+    "upload.useLimits": "使用限制",
+    "eventDialog.createAndConnectLink": "建立並連接連結",
+    "eventDialog.links": "連結",
+    "eventDialog.manageLink": "管理連結",
+    "eventDialog.manageLinkDescription": "選擇如何管理已連接的連結：",
+    "eventDialog.noLinks": "沒有連結連接到此事件",
+    "eventDialog.noNotes": "沒有備註連接到此事件",
+    "eventDialog.sendIoc": "傳送 IOC",
+    "eventDialog.showLinkedEvents": "顯示已連結事件",
+    "eventDialog.removeEventFromLink": "從連結中移除事件",
+    "settings.timeoffset.label": "時間偏移秒數（僅即時）",
+    "eventDialog.previousEvent": "上一個事件",
+    "eventDialog.nextEvent": "下一個事件"
   }
 }

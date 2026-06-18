@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Normalny scroll",
     "settings.scroll.reverse": "Odwrotne przewijanie",
     "settings.theme": "Temat",
-    "settings.timeoff.label": "Czas wolny",
     "settings.timeoff.placeholder": "Interwał odpytywania w sekundach (min. 10)",
     "settings.timestamps.local": "Lokalne znaczniki czasu",
     "settings.timestamps.utc": "znaczniki czasu UTC",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Wybierz wtyczkę",
     "upload.selectSettingsForAll": "Wybierz ustawienia dla wszystkich plików",
     "upload.title": "Pozyskaj pliki",
-    "upload.useLimits": "Używaj limitów"
+    "upload.useLimits": "Używaj limitów",
+    "eventDialog.createAndConnectLink": "Utwórz i połącz link",
+    "eventDialog.links": "Linki",
+    "eventDialog.manageLink": "Zarządzaj linkiem",
+    "eventDialog.manageLinkDescription": "Wybierz, jak zarządzać połączonym linkiem:",
+    "eventDialog.noLinks": "Brak linków połączonych z tym zdarzeniem",
+    "eventDialog.noNotes": "Brak notatek połączonych z tym zdarzeniem",
+    "eventDialog.sendIoc": "Wyślij IOC",
+    "eventDialog.showLinkedEvents": "Pokaż połączone zdarzenia",
+    "eventDialog.removeEventFromLink": "Usuń zdarzenie z linku",
+    "settings.timeoffset.label": "Przesunięcie czasu w sekundach (tylko w czasie rzeczywistym)",
+    "eventDialog.previousEvent": "Poprzednie zdarzenie",
+    "eventDialog.nextEvent": "Następne zdarzenie"
   }
 }

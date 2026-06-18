@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Обычная прокрутка",
     "settings.scroll.reverse": "Обратная прокрутка",
     "settings.theme": "Тема",
-    "settings.timeoff.label": "перерыв",
     "settings.timeoff.placeholder": "Интервал опроса в секундах (мин 10)",
     "settings.timestamps.local": "Местные временные метки",
     "settings.timestamps.utc": "Временные метки UTC",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Выберите плагин",
     "upload.selectSettingsForAll": "Выберите настройки для всех файлов",
     "upload.title": "Вставить файлы",
-    "upload.useLimits": "Использовать лимиты"
+    "upload.useLimits": "Использовать лимиты",
+    "eventDialog.createAndConnectLink": "Создать и подключить ссылку",
+    "eventDialog.links": "Ссылки",
+    "eventDialog.manageLink": "Управление ссылкой",
+    "eventDialog.manageLinkDescription": "Выберите, как управлять подключенной ссылкой:",
+    "eventDialog.noLinks": "Нет ссылок, подключенных к этому событию",
+    "eventDialog.noNotes": "Нет заметок, подключенных к этому событию",
+    "eventDialog.sendIoc": "Отправить IOC",
+    "eventDialog.showLinkedEvents": "Показать связанные события",
+    "eventDialog.removeEventFromLink": "Удалить событие из ссылки",
+    "settings.timeoffset.label": "Смещение времени в секундах (только в реальном времени)",
+    "eventDialog.previousEvent": "Предыдущее событие",
+    "eventDialog.nextEvent": "Следующее событие"
   }
 }

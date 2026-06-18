@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Normal rullning",
     "settings.scroll.reverse": "Omvänd rullning",
     "settings.theme": "Tema",
-    "settings.timeoff.label": "Ledighet",
     "settings.timeoff.placeholder": "Pollingintervall i sekunder (min 10)",
     "settings.timestamps.local": "Lokala tidsstämplar",
     "settings.timestamps.utc": "UTC-tidsstämplar",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Välj plugin",
     "upload.selectSettingsForAll": "Välj inställningar för alla filer",
     "upload.title": "Ta emot filer",
-    "upload.useLimits": "Använd gränser"
+    "upload.useLimits": "Använd gränser",
+    "eventDialog.createAndConnectLink": "Skapa och anslut länk",
+    "eventDialog.links": "Länkar",
+    "eventDialog.manageLink": "Hantera länk",
+    "eventDialog.manageLinkDescription": "Välj hur den anslutna länken ska hanteras:",
+    "eventDialog.noLinks": "Inga länkar anslutna till denna händelse",
+    "eventDialog.noNotes": "Inga anteckningar anslutna till denna händelse",
+    "eventDialog.sendIoc": "Skicka IOC",
+    "eventDialog.showLinkedEvents": "Visa länkade händelser",
+    "eventDialog.removeEventFromLink": "Ta bort händelse från länk",
+    "settings.timeoffset.label": "Tidsförskjutning i sekunder (endast realtid)",
+    "eventDialog.previousEvent": "Föregående händelse",
+    "eventDialog.nextEvent": "Nästa händelse"
   }
 }

@@ -606,7 +606,7 @@
     "settings.scroll.normal": "Scorrimento normale",
     "settings.scroll.reverse": "Scorrimento inverso",
     "settings.theme": "Tema",
-    "settings.timeoffset.label": "Time offset in secondi (solo per realtime)",
+    "settings.timeoffset.label": "Offset temporale in secondi (solo realtime)",
     "settings.timeoff.placeholder": "Intervallo di polling in secondi (min 10)",
     "settings.timestamps.local": "Timestamp locali",
     "settings.timestamps.utc": "Timestamp UTC",
@@ -708,6 +708,17 @@
     "upload.selectPlugin": "Seleziona plug-in",
     "upload.selectSettingsForAll": "Seleziona le impostazioni per tutti i file",
     "upload.title": "Importa file",
-    "upload.useLimits": "Limiti d'uso"
+    "upload.useLimits": "Limiti d'uso",
+    "eventDialog.createAndConnectLink": "Crea e collega collegamento",
+    "eventDialog.links": "Collegamenti",
+    "eventDialog.manageLink": "Gestisci collegamento",
+    "eventDialog.manageLinkDescription": "Scegli come gestire il collegamento connesso:",
+    "eventDialog.noLinks": "Nessun collegamento connesso a questo evento",
+    "eventDialog.noNotes": "Nessuna nota connessa a questo evento",
+    "eventDialog.sendIoc": "Invia IOC",
+    "eventDialog.showLinkedEvents": "Mostra eventi collegati",
+    "eventDialog.removeEventFromLink": "Rimuovi evento dal collegamento",
+    "eventDialog.previousEvent": "Evento precedente",
+    "eventDialog.nextEvent": "Evento successivo"
   }
 }

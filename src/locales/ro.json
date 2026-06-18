@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Defilare normală",
     "settings.scroll.reverse": "Defilare inversă",
     "settings.theme": "Temă",
-    "settings.timeoff.label": "Timp liber",
     "settings.timeoff.placeholder": "Interval de sondare în secunde (min 10)",
     "settings.timestamps.local": "Marcaje orare locale",
     "settings.timestamps.utc": "Marcaje orare UTC",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Selectați pluginul",
     "upload.selectSettingsForAll": "Selectați setările pentru toate fișierele",
     "upload.title": "Ingerați fișiere",
-    "upload.useLimits": "Utilizați limite"
+    "upload.useLimits": "Utilizați limite",
+    "eventDialog.createAndConnectLink": "Creează și conectează linkul",
+    "eventDialog.links": "Linkuri",
+    "eventDialog.manageLink": "Gestionează linkul",
+    "eventDialog.manageLinkDescription": "Alege cum să gestionezi linkul conectat:",
+    "eventDialog.noLinks": "Nu există linkuri conectate la acest eveniment",
+    "eventDialog.noNotes": "Nu există note conectate la acest eveniment",
+    "eventDialog.sendIoc": "Trimite IOC",
+    "eventDialog.showLinkedEvents": "Afișează evenimentele conectate",
+    "eventDialog.removeEventFromLink": "Elimină evenimentul din link",
+    "settings.timeoffset.label": "Decalaj de timp în secunde (doar în timp real)",
+    "eventDialog.previousEvent": "Evenimentul anterior",
+    "eventDialog.nextEvent": "Evenimentul următor"
   }
 }

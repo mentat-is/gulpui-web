@@ -606,7 +606,6 @@
     "settings.scroll.normal": "Normální rolování",
     "settings.scroll.reverse": "Zpětné posouvání",
     "settings.theme": "Téma",
-    "settings.timeoff.label": "Volno",
     "settings.timeoff.placeholder": "Interval dotazování v sekundách (min 10)",
     "settings.timestamps.local": "Místní časová razítka",
     "settings.timestamps.utc": "Časová razítka UTC",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "Vyberte plugin",
     "upload.selectSettingsForAll": "Vyberte nastavení pro všechny soubory",
     "upload.title": "Ingest soubory",
-    "upload.useLimits": "Používejte limity"
+    "upload.useLimits": "Používejte limity",
+    "eventDialog.createAndConnectLink": "Vytvořit a připojit odkaz",
+    "eventDialog.links": "Odkazy",
+    "eventDialog.manageLink": "Spravovat odkaz",
+    "eventDialog.manageLinkDescription": "Vyberte, jak spravovat připojený odkaz:",
+    "eventDialog.noLinks": "K této události nejsou připojeny žádné odkazy",
+    "eventDialog.noNotes": "K této události nejsou připojeny žádné poznámky",
+    "eventDialog.sendIoc": "Odeslat IOC",
+    "eventDialog.showLinkedEvents": "Zobrazit propojené události",
+    "eventDialog.removeEventFromLink": "Odebrat událost z odkazu",
+    "settings.timeoffset.label": "Časový posun v sekundách (pouze v reálném čase)",
+    "eventDialog.previousEvent": "Předchozí událost",
+    "eventDialog.nextEvent": "Další událost"
   }
 }

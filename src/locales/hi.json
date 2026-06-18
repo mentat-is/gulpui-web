@@ -606,7 +606,6 @@
     "settings.scroll.normal": "सामान्य स्क्रॉल",
     "settings.scroll.reverse": "उलटा स्क्रॉल करें",
     "settings.theme": "थीम",
-    "settings.timeoff.label": "टाइमऑफ़",
     "settings.timeoff.placeholder": "मतदान अंतराल सेकंड में (न्यूनतम 10)",
     "settings.timestamps.local": "स्थानीय टाइमस्टैम्प",
     "settings.timestamps.utc": "यूटीसी टाइमस्टैम्प",
@@ -708,6 +707,18 @@
     "upload.selectPlugin": "प्लगइन का चयन करें",
     "upload.selectSettingsForAll": "सभी फ़ाइलों के लिए सेटिंग्स चुनें",
     "upload.title": "फ़ाइलें निगलें",
-    "upload.useLimits": "सीमा का प्रयोग करें"
+    "upload.useLimits": "सीमा का प्रयोग करें",
+    "eventDialog.createAndConnectLink": "लिंक बनाएं और कनेक्ट करें",
+    "eventDialog.links": "लिंक",
+    "eventDialog.manageLink": "लिंक प्रबंधित करें",
+    "eventDialog.manageLinkDescription": "कनेक्ट किए गए लिंक को कैसे प्रबंधित करना है चुनें:",
+    "eventDialog.noLinks": "इस इवेंट से कोई लिंक जुड़ा नहीं है",
+    "eventDialog.noNotes": "इस इवेंट से कोई नोट जुड़ा नहीं है",
+    "eventDialog.sendIoc": "IOC भेजें",
+    "eventDialog.showLinkedEvents": "लिंक किए गए इवेंट दिखाएं",
+    "eventDialog.removeEventFromLink": "लिंक से इवेंट हटाएं",
+    "settings.timeoffset.label": "समय ऑफ़सेट सेकंड में (केवल रीयलटाइम)",
+    "eventDialog.previousEvent": "पिछला इवेंट",
+    "eventDialog.nextEvent": "अगला इवेंट"
   }
 }
