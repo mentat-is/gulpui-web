@@ -85,15 +85,9 @@
 	font-weight: 300;
 }
 
-.table td svg {
+.cellIcon {
 	transform: translateY(1px);
 	margin-right: 4px;
-}
-
-.table td button svg,
-.table td [role="checkbox"] svg {
-	transform: none;
-	margin-right: 0;
 }
 
 /* ─── Centered content (checkbox / action cells) ─── */

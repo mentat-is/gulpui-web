@@ -9,6 +9,8 @@ const VARIANT_COLORS = {
     black: '#0d0d0d',
 } as const
 
+const DEFAULT_ICON_SIZE = 16
+
 const isLucideIcon = (component: unknown): component is LucideIcon =>
     typeof component === 'object' && component !== null && '$$typeof' in component
 
@@ -50,16 +52,23 @@ Object.assign(iconMap, {
     microsoft: LucideIcons.Grid2x2,
 } satisfies Record<string, LucideIcon>)
 
+/**
+ * Renders a named SVG icon while preserving the legacy default icon size.
+ *
+ * @param props - Icon name, color variant, explicit color, size, and SVG attributes.
+ * @returns The matching icon component, or a fallback help icon when the name is unknown.
+ */
 export function Icon({
     name,
     variant = 'default',
     color,
+    size = DEFAULT_ICON_SIZE,
     ...props
 }: Icon.Props) {
     const resolvedColor = color ?? VARIANT_COLORS[variant]
     const LucideIcon = iconMap[name] ?? LucideIcons.CircleHelp
 
-    return <LucideIcon color={resolvedColor} {...props} />
+    return <LucideIcon color={resolvedColor} size={size} {...props} />
 }
 
 export namespace Icon {

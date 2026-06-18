@@ -913,6 +913,7 @@ const Value = React.memo(
 		const icon =
 			k === "glyph_id" && glyph ? (
 				<Icon
+					className={s.cellIcon}
 					size={12}
 					name={glyph}
 				/>

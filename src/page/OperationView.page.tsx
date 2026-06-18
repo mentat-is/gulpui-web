@@ -52,15 +52,21 @@ import { Locale } from "@/locales";
  * @param docId - The document ID of the event to fetch.
  * @param operationId - The operation ID under which the event was ingested.
  */
-function FetchEventBannerMain({ docId, operationId }: { docId: Doc.Id; operationId: Operation.Id }) {
+function FetchEventBannerMain({
+	docId,
+	operationId,
+}: {
+	docId: Doc.Id;
+	operationId: Operation.Id;
+}) {
 	// Construct a minimal Note.Type shell so we can reuse the existing FetchEventBanner component.
 	const shell = {
 		doc: { _id: docId },
 		operation_id: operationId,
 		name: docId,
-	} as unknown as Note.Type
+	} as unknown as Note.Type;
 
-	return <NotePoint.FetchEventBanner note={shell} />
+	return <NotePoint.FetchEventBanner note={shell} />;
 }
 
 export function OperationView() {
@@ -211,7 +217,9 @@ export function OperationTimeline() {
 	const tableRootRef = useRef<ReactDOM.Root | null>(null);
 
 	const mainBridgeIdRef = useRef(WindowBridge.generateId());
-	const mainBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null);
+	const mainBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(
+		null,
+	);
 
 	/**
 	 * Stable references to spawnDialog, spawnBanner, and app to be used inside
@@ -243,19 +251,26 @@ export function OperationTimeline() {
 				}
 				case WindowBridge.MessageType.TARGET_NOTE: {
 					// Detached NotesWindow requested to open an event dialog in the main tab.
-					const { docId, operationId } = message.payload as WindowBridge.TargetNotePayload;
+					const { docId, operationId } =
+						message.payload as WindowBridge.TargetNotePayload;
 					const event = Doc.Entity.id(appRef.current, docId);
 					if (event) {
 						spawnDialogRef.current(<DisplayEventDialog event={event} />);
 					} else {
 						// Event not loaded in main tab — fetch it from the server
-						spawnBannerRef.current(<FetchEventBannerMain docId={docId} operationId={operationId} />);
+						spawnBannerRef.current(
+							<FetchEventBannerMain
+								docId={docId}
+								operationId={operationId}
+							/>,
+						);
 					}
 					break;
 				}
 				case WindowBridge.MessageType.EVENT_SELECTED: {
 					// Detached dialog window changed the selected event — update the main canvas crosshair.
-					const { event: selectedEvent } = message.payload as WindowBridge.EventSelectedPayload;
+					const { event: selectedEvent } =
+						message.payload as WindowBridge.EventSelectedPayload;
 					// Guard against echo: only update if the ID actually changed
 					if (selectedEvent?._id !== Info.app.timeline.target?._id) {
 						Info.setTimelineTarget(selectedEvent ?? null);
@@ -274,7 +289,9 @@ export function OperationTimeline() {
 
 	// Forward theme changes to all detached windows via BroadcastChannel
 	useEffect(() => {
-		mainBridgeRef.current?.send(WindowBridge.MessageType.THEME_CHANGE, { theme: theme ?? "dark" });
+		mainBridgeRef.current?.send(WindowBridge.MessageType.THEME_CHANGE, {
+			theme: theme ?? "dark",
+		});
 	}, [theme]);
 
 	// Sync operations, contexts, and files to detached windows so they can update their lists
@@ -375,9 +392,12 @@ export function OperationTimeline() {
 			if (tableWindowRef && !tableWindowRef.closed) {
 				tableWindowRef.focus();
 				if (sourceId) {
-					mainBridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
-						sourceId,
-					});
+					mainBridgeRef.current?.send(
+						WindowBridge.MessageType.TABLE_SELECT_SOURCE,
+						{
+							sourceId,
+						},
+					);
 				}
 				return;
 			}
@@ -498,9 +518,12 @@ export function OperationTimeline() {
 				openTableWindow(app.general.tableViewSource.id);
 			} else {
 				tableWindowRef.focus();
-				mainBridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
-					sourceId: app.general.tableViewSource.id,
-				});
+				mainBridgeRef.current?.send(
+					WindowBridge.MessageType.TABLE_SELECT_SOURCE,
+					{
+						sourceId: app.general.tableViewSource.id,
+					},
+				);
 			}
 			Info.setInfoByKey(null, "general", "tableViewSource");
 		}
@@ -533,8 +556,6 @@ export function OperationTimeline() {
 	const dialogWindowRef = useRef<Window | null>(null);
 	const dialogRootRef = useRef<ReactDOM.Root | null>(null);
 	const dialogBridgeIdRef = useRef<string | null>(null);
-
-
 
 	const unmountDialogWindow = useCallback(() => {
 		const root = dialogRootRef.current;
@@ -702,8 +723,8 @@ export function OperationTimeline() {
 	 */
 	const pluginNodes = useMemo<PluginNode[]>(
 		() =>
-			Extension.getBySlot(extensions, Extension.Slot.OperationMenu)
-				.map((ext) => {
+			Extension.getBySlot(extensions, Extension.Slot.OperationMenu).map(
+				(ext) => {
 					return {
 						node: (
 							<Extension.Component
@@ -713,7 +734,8 @@ export function OperationTimeline() {
 						),
 						title: ext.display_name || ext.filename,
 					};
-				}),
+				},
+			),
 		[extensions],
 	);
 
@@ -795,7 +817,7 @@ export function OperationTimeline() {
 			},
 			{
 				label: t("operationView.menu.managePermissions"),
-				icon: "UserSettings",
+				icon: "LucideUserRoundPlus",
 				category: t("operationView.menu.configuration"),
 				action: () => navigate("/users"),
 			},
@@ -812,7 +834,9 @@ export function OperationTimeline() {
 				action: () => spawnBanner(<Settings.Banner />),
 			},
 			{
-				label: hintOpen ? t("operationView.menu.hideUsageInstructions") : t("operationView.menu.showUsageInstructions"),
+				label: hintOpen
+					? t("operationView.menu.hideUsageInstructions")
+					: t("operationView.menu.showUsageInstructions"),
 				icon: "Info",
 				category: t("operationView.menu.configuration"),
 				action: toggleHintOpen,

@@ -173,6 +173,7 @@ export function Pointers({
             key={p.id}
             className={cn(s.pointer, isRightSide && s.right, !isYours && s.guest)}
             style={{ top: isYours ? p.y : -scrollY + p.y, left: x }}
+            ai="flex-start"
             pos="absolute"
           >
             <Icon name="MousePointer2" size={14} color={p.color} fill={p.color} />
