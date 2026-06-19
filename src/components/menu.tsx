@@ -3,7 +3,7 @@ import { Application } from "@/context/Application.context";
 import { Stack } from "@/ui/Stack";
 import { Button } from "@/ui/Button";
 import React, { useEffect, useState, useRef } from "react";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Icon } from "@/ui/Icon";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";

@@ -1,6 +1,6 @@
 import s from './styles/Select.module.css'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Icon, Icon as BaseIcon } from '@/ui/Icon'
 import { ComponentRef, forwardRef, createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react'
 import { ComponentPropsWithoutRef } from 'react'

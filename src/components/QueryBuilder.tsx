@@ -1,7 +1,7 @@
 import { Toggle } from "@/ui/Toggle"
 import { copy, fws } from "@/ui/utils"
 import { Icon } from "@/ui/Icon"
-import { cn } from "@impactium/utils"
+import { cn } from "@/ui/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'

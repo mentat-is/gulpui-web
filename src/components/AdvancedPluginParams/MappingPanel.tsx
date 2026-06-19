@@ -9,7 +9,7 @@ import { MappingFieldData, MappingFieldPanel } from './MappingFieldPanel'
 import { MappingValueAliasData, MappingValueAliasPanel } from './MappingValueAliasPanel'
 import { Separator } from '@/ui/Separator'
 import s from '../styles/AdvancedPluginParams.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Locale } from '@/locales'
 
 /**

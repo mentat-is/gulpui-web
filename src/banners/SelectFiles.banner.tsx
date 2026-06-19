@@ -10,7 +10,7 @@ import { UploadBanner } from "./Upload.banner";
 import { Separator } from "@/ui/Separator";
 import { Preview } from "./Preview.banner";
 import { FilterFileBanner } from "./FilterFile.banner";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Refractor } from "@/ui/utils";
 import { SetState } from "@/class/API";
 import { toast } from "sonner";

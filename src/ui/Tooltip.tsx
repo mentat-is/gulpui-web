@@ -1,7 +1,7 @@
 import React from 'react'
 import * as TooltipPrimitive from '@radix-ui/react-tooltip'
 import s from './styles/Tooltip.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Application } from '@/context/Application.context'
 
 const TooltipProvider = TooltipPrimitive.Provider

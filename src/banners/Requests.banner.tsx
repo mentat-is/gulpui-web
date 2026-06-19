@@ -2,7 +2,7 @@ import { Application } from '@/context/Application.context';
 import { Badge } from '@/ui/Badge';
 import { Banner as UIBanner } from '@/ui/Banner';
 import { Icon } from '@/ui/Icon';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import { useEffect, useMemo, useState } from 'react';
 import s from './styles/RequestsBanner.module.css';
 import { formatDistanceToNow } from 'date-fns';

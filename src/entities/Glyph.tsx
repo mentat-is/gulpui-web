@@ -2,7 +2,7 @@ import { ChangeEvent, CSSProperties, useCallback, useMemo, useState, useRef } fr
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Icon } from '@/ui/Icon';
 import { Popover } from '@/ui/Popover';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import { Button } from '@/ui/Button';
 import { Input } from '@/ui/Input';
 import { Stack } from '@/ui/Stack';

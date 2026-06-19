@@ -53,7 +53,7 @@ import { Popover } from "@/ui/Popover";
 import { Table } from "@/components/Table";
 import { Markdown } from "@/ui/Markdown";
 import { Icon } from "@/ui/Icon";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { CacheKey } from "@/class/Engine.dto";
 import { RenderEngine } from "@/class/RenderEngine";
 import { Doc } from "@/entities/Doc";

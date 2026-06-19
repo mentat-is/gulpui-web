@@ -1,11 +1,16 @@
-// @ts-ignore
-import { Console } from '@impactium/console'
 import { DisplayEventDialog } from '@/dialogs/Event.dialog'
 import { DisplayGroupDialog } from '@/dialogs/Group.dialog'
 import { toast, ToastT } from 'sonner'
 import { Source } from '@/entities/Source'
 import { Doc } from '@/entities/Doc'
 import { Parser } from '@/entities/addon/Parser'
+
+export type LogLevel = 'log' | 'warn' | 'error' | 'debug' | 'verbose' | 'fatal'
+
+export interface LogHistory {
+  level: LogLevel
+  message: string
+}
 
 interface Options extends Omit<ToastT, 'id'> {
   toast?: 'success' | 'warning' | 'error'
@@ -14,7 +19,7 @@ interface Options extends Omit<ToastT, 'id'> {
 type ExecutionContext = string | { name: string };
 
 export class Logger {
-  protected static messages: Console.History[] = []
+  protected static messages: LogHistory[] = []
 
   static log(message: any, context: string | { name: string }, options?: Options) {
     Logger.store('log', message, typeof context === 'string' ? context : context?.name, options)
@@ -48,7 +53,7 @@ export class Logger {
   }
 
   public static store(
-    level: Console.LogLevel,
+    level: LogLevel,
     message: string,
     context?: ExecutionContext,
     options?: Options
@@ -86,7 +91,7 @@ export class Logger {
     return condition
   }
 
-  private static preformat: Record<Console.LogLevel, keyof typeof _Logger> = {
+  private static preformat: Record<LogLevel, keyof typeof _Logger> = {
     log: 'green',
     warn: 'yellow',
     error: 'red',
@@ -96,7 +101,7 @@ export class Logger {
   }
 
   private static format(
-    level: Console.LogLevel,
+    level: LogLevel,
     message: any,
     context?: ExecutionContext,
     trace?: string,

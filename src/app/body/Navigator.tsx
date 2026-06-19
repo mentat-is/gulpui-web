@@ -1,4 +1,4 @@
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import s from "./styles/Navigator.module.css";
 import { Application } from "@/context/Application.context";
 import { useScroll, scrollStore } from "@/store/scroll.store";

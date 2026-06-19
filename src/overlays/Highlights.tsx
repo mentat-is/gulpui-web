@@ -6,7 +6,7 @@ import { MinMax, Range } from '@/class/Info';
 import { Application } from '@/context/Application.context';
 import { Default } from '@/dto/Dataset';
 import { Algorhithm } from '@/ui/utils';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import { Stack } from '@/ui/Stack';
 import { Badge } from '@/ui/Badge';
 import { Input } from '@/ui/Input';

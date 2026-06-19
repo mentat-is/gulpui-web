@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Drawer as Primitive } from 'vaul';
 import styles from './styles/Drawer.module.css';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 
 namespace Drawer {
   export namespace Root {

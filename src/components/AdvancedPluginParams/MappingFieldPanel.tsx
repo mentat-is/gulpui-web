@@ -8,7 +8,7 @@ import { Select } from '@/ui/Select'
 import { Checkbox } from '@/ui/Checkbox'
 import { Icon } from '@/ui/Icon'
 import s from '../styles/AdvancedPluginParams.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Locale } from '@/locales'
 
 /**

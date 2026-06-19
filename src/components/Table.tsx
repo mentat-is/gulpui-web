@@ -7,7 +7,7 @@ import React, {
 } from "react";
 
 import s from "./styles/Table.module.css";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Icon } from "@/ui/Icon";
 import { Stack } from "@/ui/Stack";
 import { Checkbox } from "@/ui/Checkbox";

@@ -5,7 +5,7 @@ import { Button } from '@/ui/Button'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Label } from '@/ui/Label'
 import s from '../styles/AdvancedPluginParams.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Locale } from '@/locales'
 
 /**

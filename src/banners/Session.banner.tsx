@@ -19,7 +19,7 @@ import { Operation } from "@/entities/Operation";
 import { Internal } from "@/entities/addon/Internal";
 import { Label } from "@/ui/Label";
 import { Select } from "@/ui/Select";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { useNavigate } from "react-router-dom";
 import { Locale } from "@/locales";
 

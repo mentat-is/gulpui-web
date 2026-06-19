@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as TabsPrimitive from '@radix-ui/react-tabs'
 import s from './styles/Tabs.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 
 const Tabs = TabsPrimitive.Root
 

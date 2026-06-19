@@ -1,6 +1,6 @@
 import { LinkFunctionality, NoteFunctionality } from "@/banners/Collab.functionality";
 import { Application } from "@/context/Application.context";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { formatDistanceToNow } from "date-fns";
 import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Markdown } from "@/ui/Markdown";

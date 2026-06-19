@@ -22,7 +22,7 @@ import { debounce } from "lodash";
 import { useDrugs } from "@/decorator/use";
 import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
 import { TargetMenu } from "./Target.menu";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Pointers } from "@/components/Pointers";
 import { XY } from "@/dto/XY.dto";
 import { Highlights } from "@/overlays/Highlights";

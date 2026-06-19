@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react'
 import s from './styles/Card.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 
 export namespace Card {
   export interface Props {

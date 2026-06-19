@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import ReactDOM from "react-dom/client";
 import { useParams, useNavigate } from "react-router-dom";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { useTheme } from "next-themes";
 import { Application } from "../context/Application.context";
 import { Preloader } from "../components/Preloader";

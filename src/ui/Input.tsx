@@ -1,6 +1,6 @@
 import React from 'react'
 import s from './styles/Input.module.css'
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { Icon } from '@/ui/Icon';
 import { Label } from './Label';

@@ -1,4 +1,4 @@
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { HTMLAttributes } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";

@@ -3,7 +3,7 @@ import { KeyboardEvent, MouseEvent, useState } from 'react'
 import { Button } from '@/ui/Button'
 import { Label } from '@/ui/Label'
 import { Stack } from '@/ui/Stack'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { SavedPluginMapping } from './mappingPersistence'
 import s from '../styles/AdvancedPluginParams.module.css'
 

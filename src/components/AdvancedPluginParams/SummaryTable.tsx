@@ -1,7 +1,7 @@
 import { ReactNode } from 'react'
 import { Stack } from '@/ui/Stack'
 import { Button } from '@/ui/Button'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import s from '../styles/Table.module.css'
 import { Locale } from '@/locales'
 

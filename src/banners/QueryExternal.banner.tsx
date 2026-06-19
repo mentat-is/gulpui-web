@@ -8,7 +8,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import s from "./styles/QueryExternalBanner.module.css";
 import { Label } from "@/ui/Label";
 import { Input } from "@/ui/Input";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Preview } from "./Preview.banner";
 import { SelectFiles } from "./SelectFiles.banner";
 import { Skeleton } from "@/ui/Skeleton";

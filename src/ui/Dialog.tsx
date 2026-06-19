@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import s from './styles/Dialog.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Application } from '@/context/Application.context'
 import { Stack } from './Stack'
 import { Spinner } from './Spinner'

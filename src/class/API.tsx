@@ -1,4 +1,4 @@
-import { type Callback } from "@impactium/types";
+import { type Callback } from "@/ui/utils";
 import { Logger } from "@/dto/Logger.class";
 import { Icon } from "@/ui/Icon";
 import { Auth } from "@/page/Auth.page";

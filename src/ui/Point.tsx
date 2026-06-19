@@ -1,6 +1,5 @@
 import { Icon } from '@/ui/Icon'
-import { Color } from '@impactium/types'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import s from './styles/Point.module.css'
 import { Button } from './Button'
 

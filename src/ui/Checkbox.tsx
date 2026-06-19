@@ -2,7 +2,7 @@ import s from './styles/Checkbox.module.css'
 import React from 'react'
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
 import { Icon } from '@/ui/Icon'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Label } from './Label'
 const Checkbox = React.forwardRef<
   React.ElementRef<typeof CheckboxPrimitive.Root>,

@@ -1,6 +1,6 @@
 import s from './styles/Combination.module.css'
 import { HTMLAttributes, useMemo } from 'react'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { EventIndicator } from '@/dialogs/Event.dialog'
 import { Doc } from '@/entities/Doc'
 

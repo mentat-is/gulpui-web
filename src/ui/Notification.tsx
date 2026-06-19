@@ -1,7 +1,7 @@
 import { Icon } from "@/ui/Icon";
 import s from './styles/Notification.module.css'
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Stack } from "./Stack";
 
 export const notificationVariants = cva(s.notification, {

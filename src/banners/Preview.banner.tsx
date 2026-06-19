@@ -1,7 +1,7 @@
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Table } from '@/components/Table'
 import { useMemo, useState } from 'react';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import s from './styles/PreviewBanner.module.css'
 import { Notification } from '@/ui/Notification';
 import { Icon } from '@/ui/Icon';

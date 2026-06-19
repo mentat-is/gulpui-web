@@ -15,7 +15,7 @@ import {
 	FlatFileComponent,
 } from "@/banners/SelectFiles.banner";
 import { OperationPermissions } from "@/banners/Permissions.banner";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { Locale } from "@/locales";

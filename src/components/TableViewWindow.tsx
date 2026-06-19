@@ -12,7 +12,7 @@ import { Source } from "@/entities/Source";
 import { Context } from "@/entities/Context";
 import { Query } from "@/entities/Query";
 import s from "./styles/TableViewWindow.module.css";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { toast } from "sonner";
 import { Toggle } from "@/ui/Toggle";
 import { Internal } from "@/entities/addon/Internal";

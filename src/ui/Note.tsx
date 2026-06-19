@@ -3,7 +3,7 @@ import { DisplayGroupDialog } from "@/dialogs/Group.dialog";
 import { Point as UIPoint } from "./Point";
 import { Icon } from "@/ui/Icon";
 import s from "./styles/Note.module.css";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { formatTimestampToReadableString, stringToHexColor } from "./utils";
 import { Stack } from "./Stack";
 import { Badge } from "./Badge";

@@ -17,7 +17,7 @@ import { Popover } from "@/ui/Popover";
 import { Icon } from "@/ui/Icon";
 import { Toggle } from "@/ui/Toggle";
 import { Separator } from "@/ui/Separator";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Default } from "@/dto/Dataset";
 import { toast } from "sonner";
 import { SetState } from "@/class/API";

@@ -1,6 +1,6 @@
 import { ElementType, HTMLAttributes, ReactNode } from "react";
 import s from './styles/Shimmer.module.css';
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Refractor } from "./utils";
 
 export namespace Shimmer {

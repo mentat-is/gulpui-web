@@ -21,7 +21,7 @@ import { LastMappingsPanel } from './AdvancedPluginParams/LastMappingsPanel'
 import { deleteSavedPluginMapping, loadSavedPluginMappings, persistPluginMappings, SavedPluginMapping } from './AdvancedPluginParams/mappingPersistence'
 
 import { Textarea } from '@/ui/Textarea'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import s from './styles/AdvancedPluginParams.module.css'
 import { Locale } from '@/locales'
 
