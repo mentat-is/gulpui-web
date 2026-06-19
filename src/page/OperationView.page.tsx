@@ -38,6 +38,7 @@ import { Session } from "../banners/Session.banner";
 import { Extension } from "../context/Extension.context";
 import { NotesWindow } from "../components/NotesWindow";
 import { TableViewWindow } from "../components/TableViewWindow";
+import { DashboardViewWindow } from "../components/DashboardViewWindow";
 import { Note } from "../entities/Note";
 import { Doc } from "../entities/Doc";
 import { NotePoint } from "../ui/Note";
@@ -215,6 +216,9 @@ export function OperationTimeline() {
 
 	const [tableWindowRef, setTableWindowRef] = useState<Window | null>(null);
 	const tableRootRef = useRef<ReactDOM.Root | null>(null);
+
+	const [dashboardWindowRef, setDashboardWindowRef] = useState<Window | null>(null);
+	const dashboardRootRef = useRef<ReactDOM.Root | null>(null);
 
 	const mainBridgeIdRef = useRef(WindowBridge.generateId());
 	const mainBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(
@@ -453,6 +457,63 @@ export function OperationTimeline() {
 		}
 	}, [tableWindowRef]);
 
+	/**
+	 * Opens the detached Dashboard View window. If it is already open, focuses it.
+	 */
+	const openDashboardWindow = useCallback(() => {
+		if (dashboardWindowRef && !dashboardWindowRef.closed) {
+			dashboardWindowRef.focus();
+			return;
+		}
+
+		const newWindow = window.open(
+			"",
+			"GulpDashboardView",
+			"width=1480,height=820,left=180,top=120",
+		);
+		if (!newWindow) return;
+
+		const container = document.createElement("div");
+		newWindow.document.body.appendChild(container);
+
+		copyStylesToWindow(newWindow);
+
+		const detachedBridgeId = WindowBridge.generateId();
+		const root = ReactDOM.createRoot(container);
+		root.render(
+			<DetachedAppProvider
+				initialApp={app}
+				initialNotes={[...DataStore.notes]}
+				bridgeId={detachedBridgeId}
+				detachedDocument={newWindow.document}
+				mainSpawnBanner={spawnBanner}
+			>
+				<DashboardViewWindow
+					onClose={() => {
+						newWindow.close();
+					}}
+				/>
+			</DetachedAppProvider>,
+		);
+		dashboardRootRef.current = root;
+		setDashboardWindowRef(newWindow);
+	}, [app, copyStylesToWindow, dashboardWindowRef, spawnBanner]);
+
+	/**
+	 * Closes the detached Dashboard View window and unmounts its React root.
+	 */
+	const closeDashboardWindow = useCallback(() => {
+		if (dashboardWindowRef) {
+			const root = dashboardRootRef.current;
+			dashboardRootRef.current = null;
+			if (root) {
+				setTimeout(() => root.unmount(), 0);
+			}
+			dashboardWindowRef.close();
+			setDashboardWindowRef(null);
+		}
+	}, [dashboardWindowRef]);
+
 	// Listen for beforeunload event on the Notes window to cleanup references
 	useEffect(() => {
 		if (windowRef) {
@@ -511,6 +572,35 @@ export function OperationTimeline() {
 		return () => cancelAnimationFrame(id);
 	}, [theme, tableWindowRef, applyThemeToWindow]);
 
+	// Listen for beforeunload event on the Dashboard window to cleanup references
+	useEffect(() => {
+		if (dashboardWindowRef) {
+			const handleBeforeUnload = () => {
+				const root = dashboardRootRef.current;
+				dashboardRootRef.current = null;
+				if (root) {
+					setTimeout(() => root.unmount(), 0);
+				}
+				setDashboardWindowRef(null);
+			};
+
+			dashboardWindowRef.addEventListener("beforeunload", handleBeforeUnload);
+
+			return () => {
+				dashboardWindowRef.removeEventListener("beforeunload", handleBeforeUnload);
+			};
+		}
+	}, [dashboardWindowRef]);
+
+	// Sync theme to DashboardViewWindow via direct DOM access
+	useEffect(() => {
+		if (!dashboardWindowRef) return;
+		const id = requestAnimationFrame(() => {
+			applyThemeToWindow(document, dashboardWindowRef.document, theme);
+		});
+		return () => cancelAnimationFrame(id);
+	}, [theme, dashboardWindowRef, applyThemeToWindow]);
+
 	// Auto-open or focus the Table view window when app.general.tableViewSource is set
 	useEffect(() => {
 		if (app.general.tableViewSource) {
@@ -541,17 +631,19 @@ export function OperationTimeline() {
 
 		if (selectedOperationId !== initialOperationRef.current) {
 			if (windowRef) closeWindow();
+			if (dashboardWindowRef) closeDashboardWindow();
 			initialOperationRef.current = selectedOperationId ?? null;
 		}
-	}, [selectedOperationId, windowRef]);
+	}, [selectedOperationId, windowRef, dashboardWindowRef, closeDashboardWindow]);
 
 	// Close all detached windows on user logout
 	useEffect(() => {
 		if (!currentUser) {
 			if (windowRef) closeWindow();
 			if (tableWindowRef) closeTableWindow();
+			if (dashboardWindowRef) closeDashboardWindow();
 		}
-	}, [currentUser, tableWindowRef, windowRef, closeTableWindow]);
+	}, [currentUser, dashboardWindowRef, tableWindowRef, windowRef, closeDashboardWindow, closeTableWindow]);
 	const [isPreloaded, setIsPreloaded] = useState(false);
 	const dialogWindowRef = useRef<Window | null>(null);
 	const dialogRootRef = useRef<ReactDOM.Root | null>(null);
@@ -758,6 +850,12 @@ export function OperationTimeline() {
 				action: () => openTableWindow(),
 			},
 			{
+				label: t("operationView.menu.openDashboardWindow"),
+				icon: "AreaChart",
+				category: t("operationView.menu.notesSources"),
+				action: () => openDashboardWindow(),
+			},
+			{
 				label: t("operationView.menu.selectFilesAndContexts"),
 				icon: "FileStack",
 				category: t("operationView.menu.sourcesFilter"),
@@ -800,7 +898,7 @@ export function OperationTimeline() {
 				action: () => spawnBanner(<Sigma.Banner sources={[]} />),
 			},
 		],
-		[spawnBanner, openWindow, openTableWindow, t],
+		[spawnBanner, openWindow, openTableWindow, openDashboardWindow, t],
 	);
 
 	/**

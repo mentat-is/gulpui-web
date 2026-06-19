@@ -145,6 +145,7 @@ export namespace Extension {
 		EventActions: "event-actions",
 		SigmaUploadMode: "sigma-upload-mode",
 		AIAssistantWindow: "ai-assistant-window",
+		DashboardView: "dashboard-view",
 	} as const;
 
 	export interface MountTarget {

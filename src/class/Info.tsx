@@ -119,6 +119,63 @@ export namespace GulpDataset {
 
 		export type Summary = Operation[];
 	}
+
+	export namespace QueryAggregation {
+		export interface Bucket {
+			key: string | number;
+			key_as_string?: string;
+			doc_count: number;
+			[name: string]: unknown;
+		}
+
+		export interface Aggregation {
+			buckets?: Bucket[];
+			doc_count_error_upper_bound?: number;
+			sum_other_doc_count?: number;
+			[name: string]: unknown;
+		}
+
+		export interface Body {
+			query: Record<string, unknown>;
+			aggs: Record<string, unknown>;
+		}
+
+		export interface Response {
+			total_hits: number;
+			aggregations: Record<string, Aggregation>;
+		}
+	}
+
+	export namespace SharedObject {
+		export interface Type<TObject = Record<string, unknown>> {
+			id?: string;
+			obj_id?: string;
+			type: string;
+			operation_id?: string;
+			tags?: string[];
+			color?: string;
+			owner_user_id?: string;
+			granted_user_ids?: string[];
+			granted_user_group_ids?: string[];
+			time_created?: number;
+			time_updated?: number;
+			glyph_id?: Glyph.Id;
+			name: string;
+			description?: string;
+			obj: TObject;
+			obj_type: string;
+		}
+
+		export interface ListParams {
+			type: "shared_object";
+			obj_type: string;
+		}
+
+		export type ListResponse<TObject = Record<string, unknown>> =
+			| Type<TObject>[]
+			| { data: Type<TObject>[] };
+	}
+
 	export namespace PluginList {
 		export type Type = "ingestion" | "enrichment" | "external" | "extension";
 
@@ -1166,6 +1223,65 @@ export class Info implements InfoProps {
 					docs: [],
 					total_hits: 0,
 				};
+	};
+
+	/**
+	 * Executes an OpenSearch aggregation query for the selected operation context.
+	 *
+	 * @param operationId - Operation identifier used by the backend to select the target index.
+	 * @param body - OpenSearch query and aggregation body to execute.
+	 * @returns Aggregation response containing total hits and named aggregation buckets.
+	 */
+	query_aggregation = async (
+		operationId: Operation.Id,
+		body: GulpDataset.QueryAggregation.Body,
+	) => {
+		const resp = await api<GulpDataset.QueryAggregation.Response>(
+			"/query_aggregation",
+			{
+				method: "POST",
+				body,
+				query: {
+					operation_id: operationId,
+					req_id: generateUUID(Request.Prefix.QUERY),
+				},
+				raw: true,
+			},
+		);
+
+		return resp
+			? resp.data
+			: {
+					total_hits: 0,
+					aggregations: {},
+				};
+	};
+
+	/**
+	 * Retrieves shared objects matching a type filter from the backend.
+	 *
+	 * @param params - Shared object type and object subtype filters.
+	 * @returns Matching shared objects or an empty list when the request yields no data.
+	 */
+	shared_object_list = async <TObject extends Record<string, unknown>>(
+		params: GulpDataset.SharedObject.ListParams,
+	): Promise<GulpDataset.SharedObject.Type<TObject>[]> => {
+		const response = await api<GulpDataset.SharedObject.ListResponse<TObject>>(
+			"/shared_object_list",
+			{
+				method: "POST",
+				body: {
+					type: params.type,
+					obj_type: params.obj_type,
+				},
+			},
+		);
+
+		if (Array.isArray(response)) {
+			return response;
+		}
+
+		return response?.data ?? [];
 	};
 
 	/**
