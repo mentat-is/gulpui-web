@@ -176,20 +176,22 @@ export function DetachedAppProvider({
             const oldOpId = prev.target.operations.find((o: Operation.Type) => o.selected)?.id
             const newOpId = snapshot.target?.operations?.find((o: Operation.Type) => o.selected)?.id
             const opChanged = newOpId && oldOpId && newOpId !== oldOpId
+            const snapshotTarget = snapshot.target
 
             const next = {
               ...prev,
               ...snapshot,
-              target: snapshot.target ? {
+              target: snapshotTarget ? {
                 ...prev.target,
-                ...snapshot.target,
-                // Clear stale files/contexts immediately if operation changed
-                files: opChanged ? [] : prev.target.files,
-                contexts: opChanged ? [] : prev.target.contexts,
+                ...snapshotTarget,
+                // Operation changes are followed by instance.sync(); same-operation
+                // snapshots carry live source/context updates for detached dashboards.
+                files: opChanged ? [] : (snapshotTarget.files ?? prev.target.files),
+                contexts: opChanged ? [] : (snapshotTarget.contexts ?? prev.target.contexts),
               } : prev.target
             }
 
-            // Sync selection status for existing files if no op change
+            // Sync selection status for current and newly added files if no op change
             if (!opChanged && selectedSourceIds) {
               next.target.files = next.target.files.map((f: Source.Type) => ({
                 ...f,

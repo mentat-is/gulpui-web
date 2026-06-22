@@ -307,6 +307,8 @@ export function OperationTimeline() {
 			app: {
 				target: {
 					operations: app.target.operations,
+					contexts: app.target.contexts,
+					files: app.target.files,
 					events: new Map(), // Omit events map as it cannot be cloned over BroadcastChannel
 					filters: app.target.filters,
 				},

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartData, ChartOptions } from "chart.js";
 import { Application } from "@/context/Application.context";
 import { Extension } from "@/context/Extension.context";
 import { GulpDataset } from "@/class/Info";
 import { Source } from "@/entities/Source";
+import { Context } from "@/entities/Context";
 import { Operation } from "@/entities/Operation";
 import { Filter } from "@/entities/Filter";
 import { Internal } from "@/entities/addon/Internal";
@@ -26,6 +27,7 @@ import { Locale } from "@/locales";
 import { format } from "date-fns";
 import s from "./styles/DashboardViewWindow.module.css";
 import { Icon } from "@/ui/Icon";
+import { stringToHexColor } from "@/ui/utils";
 
 export namespace DashboardViewWindow {
 	export interface Props {
@@ -108,6 +110,7 @@ const DEFAULT_TOP_VALUES_SIZE = 10;
 const DEFAULT_TIME_BUCKET_SIZE = 5;
 const DEFAULT_MAX_DOC_COUNT = 5;
 const DEFAULT_AGGREGATION_INTERVAL = "15m";
+const FIELD_AGGREGATION_EXCLUDED_PREFIXES = ["gulp.unmapped", "gulp.enriched"];
 const CALENDAR_INTERVAL_UNITS = new Set([
 	"minute",
 	"hour",
@@ -135,6 +138,18 @@ function parsePositiveIntegerInput(value: string, fallback: number): number {
 	}
 
 	return parsed;
+}
+
+/**
+ * Checks whether a field can be selected for ad-hoc dashboard aggregations.
+ *
+ * @param field - Field name returned by the source event-key metadata endpoint.
+ * @returns True when the field is safe to expose in the aggregation field list.
+ */
+function isFieldAggregationAllowed(field: string): boolean {
+	return !FIELD_AGGREGATION_EXCLUDED_PREFIXES.some((prefix) =>
+		field.startsWith(prefix),
+	);
 }
 
 /**
@@ -240,6 +255,107 @@ function serializeFilterState(filterState: AnalyticsFilterState): string {
 		textFilter: filterState.textFilter,
 		filters: filterState.filters,
 	});
+}
+
+/**
+ * Returns a stable string key for source selections that affect dashboard queries.
+ *
+ * @param sourceIds - Source identifiers selected in the operation view.
+ * @returns Serialized source identifier list.
+ */
+function serializeSourceIds(sourceIds: Source.Id[]): string {
+	return JSON.stringify(sourceIds);
+}
+
+/**
+ * Returns a stable string key for dashboard aggregation definitions.
+ *
+ * @param dashboard - Dashboard definition returned by shared objects.
+ * @returns Serialized aggregation payload used by the fixed dashboard query.
+ */
+function serializeDashboardAggregations(
+	dashboard: DashboardDefinition,
+): string {
+	return JSON.stringify(dashboard.opensearch_query?.aggs ?? {});
+}
+
+/**
+ * Collects enabled leaf filter fields, including fields inside nested groups.
+ *
+ * @param filters - Filter items configured in the dashboard filter editor.
+ * @returns Field names whose type metadata can affect query clause generation.
+ */
+function getEnabledFilterFieldNames(filters: Filter.Item[]): string[] {
+	return filters.flatMap((item) => {
+		if (!item.enabled) {
+			return [];
+		}
+
+		if (Filter.isGroup(item)) {
+			return getEnabledFilterFieldNames(item.children);
+		}
+
+		return item.field ? [item.field] : [];
+	});
+}
+
+/**
+ * Returns a stable key for field type entries used by enabled custom filters.
+ *
+ * @param filterState - Filter state whose enabled clauses may require field types.
+ * @param fieldTypeMap - Field metadata used by the OpenSearch query builder.
+ * @returns Serialized field type subset relevant to the current filters.
+ */
+function serializeRelevantFieldTypes(
+	filterState: AnalyticsFilterState,
+	fieldTypeMap: Record<string, string>,
+): string {
+	const fieldNames = Array.from(
+		new Set(getEnabledFilterFieldNames(filterState.filters)),
+	).sort((a, b) => a.localeCompare(b));
+
+	return JSON.stringify(
+		fieldNames.map((field) => [field, fieldTypeMap[field] ?? ""]),
+	);
+}
+
+/**
+ * Checks whether two string/number records contain the same values.
+ *
+ * @param left - First record to compare.
+ * @param right - Second record to compare.
+ * @returns True when both records have identical keys and values.
+ */
+function areRecordsEqual<T extends string | number>(
+	left: Record<string, T>,
+	right: Record<string, T>,
+): boolean {
+	const leftKeys = Object.keys(left);
+	const rightKeys = Object.keys(right);
+
+	if (leftKeys.length !== rightKeys.length) {
+		return false;
+	}
+
+	return leftKeys.every((key) => left[key] === right[key]);
+}
+
+/**
+ * Resolves the static display color used for source-labelled dashboard buckets.
+ *
+ * @param source - Source represented by an aggregation bucket.
+ * @param contextColorById - Context colors keyed by context ID.
+ * @returns Source color, context color, or deterministic context fallback.
+ */
+function resolveDashboardSourceColor(
+	source: Source.Type,
+	contextColorById: Map<string, string>,
+): string {
+	return (
+		source.color ||
+		contextColorById.get(source.context_id) ||
+		stringToHexColor(source.context_id)
+	);
 }
 
 /**
@@ -951,6 +1067,7 @@ function DashboardCard({
 	container,
 	palette,
 	sourceNameById,
+	sourceColorById,
 	defaultSourceIds,
 	availableSources,
 }: {
@@ -961,6 +1078,7 @@ function DashboardCard({
 	container: HTMLDivElement | null;
 	palette: ChartPalette;
 	sourceNameById: Map<string, string>;
+	sourceColorById: Map<string, string>;
 	defaultSourceIds: Source.Id[];
 	availableSources: Source.Type[];
 }) {
@@ -978,7 +1096,28 @@ function DashboardCard({
 	const activeFilterState = customFiltersEnabled
 		? localFilterState
 		: globalFilterState;
-	const filterSignature = serializeFilterState(activeFilterState);
+	const operationId = operation?.id;
+	const activeFilterSignature = useMemo(
+		() => serializeFilterState(activeFilterState),
+		[activeFilterState],
+	);
+	const defaultSourceIdsSignature = useMemo(
+		() => serializeSourceIds(defaultSourceIds),
+		[defaultSourceIds],
+	);
+	const dashboardAggregationSignature = useMemo(
+		() => serializeDashboardAggregations(dashboard),
+		[dashboard],
+	);
+	const relevantFieldTypesSignature = useMemo(
+		() => serializeRelevantFieldTypes(activeFilterState, fieldTypeMap),
+		[activeFilterState, fieldTypeMap],
+	);
+	const loadFailedTextRef = useRef(t("dashboard.loadFailed"));
+
+	useEffect(() => {
+		loadFailedTextRef.current = t("dashboard.loadFailed");
+	}, [t]);
 
 	/**
 	 * Opens the card-local filter editor and enables custom filters when applied.
@@ -1047,9 +1186,9 @@ function DashboardCard({
 	}, [resetCustomFiltersToGlobal]);
 
 	useEffect(() => {
-		if (!operation) return;
+		if (!operationId) return;
 		const query = buildAnalyticsQuery(
-			operation.id,
+			operationId,
 			activeFilterState,
 			fieldTypeMap,
 			defaultSourceIds,
@@ -1060,7 +1199,7 @@ function DashboardCard({
 		let cancelled = false;
 		setLoading(true);
 		setError(null);
-		Info.query_aggregation(operation.id, body)
+		Info.query_aggregation(operationId, body)
 			.then((nextResponse) => {
 				if (!cancelled) {
 					setResponse(nextResponse);
@@ -1068,7 +1207,7 @@ function DashboardCard({
 			})
 			.catch(() => {
 				if (!cancelled) {
-					setError(t("dashboard.loadFailed"));
+					setError(loadFailedTextRef.current);
 					setResponse(null);
 				}
 			})
@@ -1083,12 +1222,12 @@ function DashboardCard({
 		};
 	}, [
 		Info,
-		dashboard,
-		defaultSourceIds,
-		fieldTypeMap,
-		filterSignature,
-		operation?.id,
-		t,
+		activeFilterSignature,
+		dashboard.id,
+		dashboardAggregationSignature,
+		defaultSourceIdsSignature,
+		operationId,
+		relevantFieldTypesSignature,
 	]);
 
 	const buckets = useMemo(
@@ -1102,6 +1241,12 @@ function DashboardCard({
 			: bucket.label,
 	);
 	const values = buckets.map((bucket) => bucket.value);
+	const bucketColors = buckets.map(
+		(bucket, index) =>
+			(bucket.sourceId ? sourceColorById.get(bucket.sourceId) : undefined) ??
+			palette.bars[index % palette.bars.length],
+	);
+	const hasSourceBuckets = buckets.some((bucket) => bucket.sourceId);
 	const chartOptions = useMemo<ChartOptions<"line" | "bar">>(
 		() => ({
 			responsive: true,
@@ -1137,10 +1282,14 @@ function DashboardCard({
 					fill: true,
 					tension: 0.25,
 					pointRadius: 2,
+					pointBackgroundColor: hasSourceBuckets
+						? bucketColors
+						: palette.accent,
+					pointBorderColor: hasSourceBuckets ? bucketColors : palette.accent,
 				},
 			],
 		}),
-		[dashboard, labels, palette, values],
+		[dashboard, labels, palette, values, bucketColors, hasSourceBuckets],
 	);
 
 	const barData = useMemo<ChartData<"bar">>(
@@ -1150,15 +1299,13 @@ function DashboardCard({
 				{
 					label: dashboard.labels?.value ?? dashboard.name,
 					data: values,
-					backgroundColor: values.map(
-						(_, index) => palette.bars[index % palette.bars.length],
-					),
+					backgroundColor: bucketColors,
 					borderColor: palette.border,
 					borderWidth: 1,
 				},
 			],
 		}),
-		[dashboard, labels, palette, values],
+		[bucketColors, dashboard, labels, palette.border, values],
 	);
 
 	return (
@@ -1243,17 +1390,20 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 	const [container, setContainer] = useState<HTMLDivElement | null>(null);
 	const operation = Operation.Entity.selected(app);
 	const operationSources = useMemo(
-		() => Source.Entity.selected(app),
-		[
-			app.hidden.filesWithNoEvents,
-			app.target.files,
-			app.timeline.filter,
-			app.timeline.renderVersion,
-		],
+		() =>
+			Source.Entity.pins(
+				app.target.files.filter(
+					(source) =>
+						source.selected &&
+						(app.hidden.filesWithNoEvents ? source.total > 0 : true),
+				),
+			),
+		[app.hidden.filesWithNoEvents, app.target.files],
 	);
 	const [filterState, setFilterState] = useState<AnalyticsFilterState>(() =>
 		createInitialFilterState(operationSources),
 	);
+	const previousOperationIdRef = useRef<Operation.Id | undefined>(operation?.id);
 	const [fieldTypeMap, setFieldTypeMap] = useState<Record<string, string>>({});
 	const [fieldSourceCounts, setFieldSourceCounts] = useState<
 		Record<string, number>
@@ -1295,9 +1445,39 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 		() => new Map(app.target.files.map((source) => [source.id, source.name])),
 		[app.target.files],
 	);
+	const sourceColorById = useMemo(() => {
+		const contextColorById = new Map(
+			app.target.contexts.map((context: Context.Type) => [
+				context.id,
+				context.color,
+			]),
+		);
+
+		return new Map(
+			app.target.files.map((source) => [
+				source.id,
+				resolveDashboardSourceColor(source, contextColorById),
+			]),
+		);
+	}, [app.target.contexts, app.target.files]);
 	const operationSourceIds = useMemo(
 		() => operationSources.map((source) => source.id),
 		[operationSources],
+	);
+	const operationSourceIdsSignature = useMemo(
+		() => serializeSourceIds(operationSourceIds),
+		[operationSourceIds],
+	);
+	const fieldMetadataSourceIds = useMemo(
+		() =>
+			filterState.sourceIds.length > 0
+				? filterState.sourceIds
+				: operationSourceIds,
+		[filterState.sourceIds, operationSourceIds],
+	);
+	const fieldMetadataSourceIdsSignature = useMemo(
+		() => serializeSourceIds(fieldMetadataSourceIds),
+		[fieldMetadataSourceIds],
 	);
 	const dashboardExtensions = useMemo(
 		() => Extension.getBySlot(extensions, Extension.Slot.DashboardView),
@@ -1305,17 +1485,32 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 	);
 
 	useEffect(() => {
+		const previousOperationId = previousOperationIdRef.current;
+		const isOperationChanged = previousOperationId !== operation?.id;
+		previousOperationIdRef.current = operation?.id;
+
 		setFilterState((prev) => {
-			const range = resolveInitialRange(operationSources);
+			const sourceIds = prev.sourceIds.filter((id) =>
+				operationSources.some((source) => source.id === id),
+			);
+			const range = isOperationChanged
+				? resolveInitialRange(operationSources)
+				: prev.range;
+			const sourceIdsChanged =
+				sourceIds.length !== prev.sourceIds.length ||
+				sourceIds.some((id, index) => id !== prev.sourceIds[index]);
+
+			if (!isOperationChanged && !sourceIdsChanged) {
+				return prev;
+			}
+
 			return {
 				...prev,
 				range,
-				sourceIds: prev.sourceIds.filter((id) =>
-					operationSources.some((source) => source.id === id),
-				),
+				sourceIds,
 			};
 		});
-	}, [operation?.id, operationSources]);
+	}, [operation?.id, operationSourceIdsSignature]);
 
 	useEffect(() => {
 		currentDocument.defaultView?.localStorage.setItem(
@@ -1347,12 +1542,9 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 	}, [Info, operation?.id]);
 
 	useEffect(() => {
-		const sources =
-			filterState.sourceIds.length > 0
-				? filterState.sourceIds
-						.map((id) => Source.Entity.id(app, id))
-						.filter(Boolean)
-				: operationSources;
+		const sources = fieldMetadataSourceIds
+			.map((id) => Source.Entity.id(app, id))
+			.filter(Boolean);
 
 		let cancelled = false;
 		Promise.all(sources.map((source) => Info.event_keys(source))).then(
@@ -1368,19 +1560,23 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 					});
 				});
 
-				setFieldTypeMap(nextFieldTypeMap);
-				setFieldSourceCounts(nextCounts);
+				setFieldTypeMap((prev) =>
+					areRecordsEqual(prev, nextFieldTypeMap) ? prev : nextFieldTypeMap,
+				);
+				setFieldSourceCounts((prev) =>
+					areRecordsEqual(prev, nextCounts) ? prev : nextCounts,
+				);
 			},
 		);
 
 		return () => {
 			cancelled = true;
 		};
-	}, [Info, app, filterState.sourceIds, operationSources]);
+	}, [Info, fieldMetadataSourceIdsSignature]);
 
 	const fieldRows = useMemo<FieldInfoRow[]>(
 		() =>
-			fieldKeys.map((field) => ({
+			fieldKeys.filter(isFieldAggregationAllowed).map((field) => ({
 				field,
 				type: fieldTypeMap[field] ?? "-",
 				sources: fieldSourceCounts[field] ?? 0,
@@ -1426,7 +1622,7 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 			nextAggregationFunction: AggregationFunction,
 			options: ReturnType<typeof getFieldAggregationOptions>,
 		) => {
-			if (!operation) return;
+			if (!operation || !isFieldAggregationAllowed(field)) return;
 			const query = buildAnalyticsQuery(
 				operation.id,
 				filterState,
@@ -1650,6 +1846,7 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 											container={container}
 											palette={palette}
 											sourceNameById={sourceNameById}
+											sourceColorById={sourceColorById}
 											defaultSourceIds={operationSourceIds}
 											availableSources={operationSources}
 										/>

@@ -49,7 +49,6 @@ import {
 import { Separator } from "@radix-ui/react-select";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Label } from "@/ui/Label";
-import { log } from "console";
 import { toast } from "sonner";
 import { Locale } from "@/locales";
 
