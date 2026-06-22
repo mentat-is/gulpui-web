@@ -40,6 +40,7 @@ import { Mapping } from "@/entities/Mapping";
 import { Internal } from "@/entities/addon/Internal";
 import { ingestWorkerManager } from "@/workers/IngestWorker.manager";
 import { translate } from "@/locales/core";
+import { WindowBridge } from "@/lib/WindowBridge";
 import { GulpIndexedDB } from "@/class/IndexedDB";
 
 export namespace GulpDataset {
@@ -3155,6 +3156,30 @@ export class Info implements InfoProps {
 	 * @returns A promise that resolves when the session load action has completed.
 	 */
 	session_load = async (session: Internal.Session.Data) => {
+		const replayApp: App.Type = {
+			...this.app,
+			timeline: {
+				...this.app.timeline,
+				target: session.timeline.target,
+				frame: session.timeline.frame,
+				filter: session.timeline.filter,
+				scale: session.timeline.scale,
+			},
+			target: {
+				...this.app.target,
+				operations: Operation.Entity.select(
+					this.app.target.operations,
+					session.selected.operations,
+				),
+				contexts: Context.Entity.select(
+					this.app.target.contexts,
+					session.selected.contexts,
+				),
+				files: Source.Entity.select(this.app, session.selected.files),
+				filters: session.filters,
+			},
+		};
+
 		this.batchUpdate((draft) => {
 			draft.timeline.target = session.timeline.target;
 			draft.timeline.frame = session.timeline.frame;
@@ -3181,12 +3206,24 @@ export class Info implements InfoProps {
 
 		scrollStore.setScrollX(session.timeline.scroll.x);
 		scrollStore.setScrollY(session.timeline.scroll.y);
+		WindowBridge.broadcastMainContext(
+			replayApp,
+			"active",
+			session.selected.operations,
+		);
+		window.dispatchEvent(new CustomEvent(WindowBridge.DETACHED_REPLAY_EVENT));
 
 		setTimeout(() => {
 			this.refetch({
 				ids: session.selected.files,
 				frame: session.timeline.frame,
 			});
+			WindowBridge.broadcastMainContext(
+				replayApp,
+				"active",
+				session.selected.operations,
+			);
+			window.dispatchEvent(new CustomEvent(WindowBridge.DETACHED_REPLAY_EVENT));
 		}, 0);
 	};
 
@@ -3560,6 +3597,9 @@ export class Info implements InfoProps {
 	 * @returns Promise that resolves when logout cleanup is completed
 	 */
 	logout = async (): Promise<void> => {
+		WindowBridge.broadcastMainStatus("auth_lost");
+		window.dispatchEvent(new CustomEvent("gulp-auth-lost"));
+
 		try {
 			await api<undefined>("/logout", {
 				method: "POST",

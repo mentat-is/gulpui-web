@@ -13,6 +13,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { OperationView } from "./page/OperationView.page";
 import { Home } from "./page/Home.page";
 import { Locale } from "./locales";
+import { DetachedWindow } from "./context/DetachedWindow.context";
 
 const root = document.getElementById("root");
 
@@ -117,61 +118,63 @@ function Root() {
 						<Locale.Provider>
 							<Boundary.Provider>
 								<Extension.Provider>
-									<Routes>
-										<Route
-											path="/renderer-test"
-											element={<RendererTest.Page />}
-										/>
-										<Route
-											path="/login"
-											element={
-												<RedirectIfAuthenticated>
-													<Auth.Page />
-												</RedirectIfAuthenticated>
-											}
-										/>
-										<Route
-											path="/"
-											element={
-												<RequireAuth>
-													<Home.Page section="operations" />
-												</RequireAuth>
-											}
-										/>
-										<Route
-											path="/users"
-											element={
-												<RequireAuth>
-													<Home.Page section="users" />
-												</RequireAuth>
-											}
-										/>
-										<Route
-											path="/groups"
-											element={
-												<RequireAuth>
-													<Home.Page section="groups" />
-												</RequireAuth>
-											}
-										/>
-										<Route
-											path="/operations/:operation_id"
-											element={
-												<RequireAuth>
-													<OperationView />
-												</RequireAuth>
-											}
-										/>
-										<Route
-											path="*"
-											element={
-												<Navigate
-													to="/login"
-													replace
-												/>
-											}
-										/>
-									</Routes>
+									<DetachedWindow.Provider>
+										<Routes>
+											<Route
+												path="/renderer-test"
+												element={<RendererTest.Page />}
+											/>
+											<Route
+												path="/login"
+												element={
+													<RedirectIfAuthenticated>
+														<Auth.Page />
+													</RedirectIfAuthenticated>
+												}
+											/>
+											<Route
+												path="/"
+												element={
+													<RequireAuth>
+														<Home.Page section="operations" />
+													</RequireAuth>
+												}
+											/>
+											<Route
+												path="/users"
+												element={
+													<RequireAuth>
+														<Home.Page section="users" />
+													</RequireAuth>
+												}
+											/>
+											<Route
+												path="/groups"
+												element={
+													<RequireAuth>
+														<Home.Page section="groups" />
+													</RequireAuth>
+												}
+											/>
+											<Route
+												path="/operations/:operation_id"
+												element={
+													<RequireAuth>
+														<OperationView />
+													</RequireAuth>
+												}
+											/>
+											<Route
+												path="*"
+												element={
+													<Navigate
+														to="/login"
+														replace
+													/>
+												}
+											/>
+										</Routes>
+									</DetachedWindow.Provider>
 								</Extension.Provider>
 							</Boundary.Provider>
 						</Locale.Provider>

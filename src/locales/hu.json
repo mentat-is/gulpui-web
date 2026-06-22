@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Bejelentkezés szükséges",
+    "detachedApp.authLostDescription": "A fő lap ki van jelentkezve. Jelentkezzen be újra, és válasszon egy műveletet a leválasztott ablak folytatásához.",
+    "detachedApp.idle": "Műveletre vár",
+    "detachedApp.idleDescription": "Nyisson meg egy műveletet a fő lapon a leválasztott ablak folytatásához.",
+    "detachedApp.initializing": "A művelet környezete előkészítés alatt",
+    "detachedApp.initializingDescription": "Válasszon forrásokat és kontextusokat a fő lapon a leválasztott ablak újratöltéséhez.",
     "advancedParams.addAdditionalMapping": "További leképezés hozzáadása",
     "advancedParams.addField": "Mező hozzáadása",
     "advancedParams.addMapping": "Leképezés hozzáadása",

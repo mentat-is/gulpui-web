@@ -37,6 +37,7 @@ import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 import { useParams } from "react-router-dom";
 import { Internal } from "@/entities/addon/Internal";
 import { Locale } from "@/locales";
+import { WindowBridge } from "@/lib/WindowBridge";
 
 export namespace SelectFiles {
 	export namespace Banner {
@@ -234,8 +235,34 @@ export namespace SelectFiles {
 			Info.setInfoByKey(contexts, "target", "contexts");
 			Info.setInfoByKey(files, "target", "files");
 
+			/**
+			 * Replays the just-saved source/context selection to detached tabs.
+			 *
+			 * @returns Nothing.
+			 */
+			const replayDetachedSelection = () => {
+				if (!operation_id) return;
+
+				WindowBridge.broadcastMainContext(
+					{
+						...app,
+						target: {
+							...app.target,
+							contexts,
+							files,
+						},
+					},
+					"active",
+					operation_id as Operation.Id,
+				);
+			};
+
+			replayDetachedSelection();
 			Info.session_autosave();
+			window.dispatchEvent(new CustomEvent(WindowBridge.DETACHED_REPLAY_EVENT));
 			setTimeout(() => {
+				replayDetachedSelection();
+				window.dispatchEvent(new CustomEvent(WindowBridge.DETACHED_REPLAY_EVENT));
 				spawnBanner(
 					<Frame.Banner
 						//was fixed //(disable close button)

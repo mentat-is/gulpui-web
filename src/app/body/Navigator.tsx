@@ -13,7 +13,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import ReactDOM from "react-dom/client";
 import { Popover } from "@/ui/Popover";
 import { Logger } from "@/dto/Logger.class";
 import { Highlights } from "@/overlays/Highlights";
@@ -24,15 +23,11 @@ import { Button } from "@/ui/Button";
 import { Input } from "@/ui/Input";
 import { Context } from "@/entities/Context";
 import { App } from "@/entities/App";
-import { useTheme } from "next-themes";
 import { Extension } from "@/context/Extension.context";
 import { Filter } from "@/entities/Filter";
 import { Source } from "@/entities/Source";
-import { WindowBridge } from "@/lib/WindowBridge";
-import { DetachedAppProvider } from "@/context/DetachedApp.provider";
-import { DataStore } from "@/store/DataStore";
-import { AIAssistantWindow } from "@/components/AIAssistantWindow";
 import { Locale } from "@/locales";
+import { DetachedWindow } from "@/context/DetachedWindow.context";
 
 export namespace Navigator {
 	export interface Props extends Stack.Props {
@@ -47,15 +42,6 @@ interface AssistantWindowTarget {
 	key: string;
 	title: string;
 	pluginFilename?: string;
-}
-
-/**
- * Creates a stable browser window name for an assistant target.
- * @param targetKey Unique assistant target key.
- * @returns Sanitized window name for window.open reuse.
- */
-function createAssistantWindowName(targetKey: string): string {
-	return `GulpAIAssistant-${targetKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
 }
 
 export function Navigator({
@@ -75,10 +61,10 @@ export function Navigator({
 		isDetachedWindow,
 	} = Application.use();
 	const { t } = Locale.use();
+	const detachedWindows = DetachedWindow.use();
 	const { x: scrollX } = useScroll();
 	const [timestamp, setTimestamp] = useState<number>(_timestamp);
 	const [timestampInputValid, setTimestampInputValid] = useState<boolean>(true);
-	const { theme } = useTheme();
 
 	const isDialogPanelDetached = isDetachedWindow || !dialogsDocked;
 
@@ -100,27 +86,6 @@ export function Navigator({
 		setTimestampInputValid(false);
 		setTimestamp(0);
 	};
-
-	function applyThemeToWindow(
-		sourceDoc: Document,
-		targetDoc: Document,
-		theme: string | undefined,
-	) {
-		const sourceRoot = sourceDoc.documentElement;
-		const targetRoot = targetDoc.documentElement;
-
-		// use data-theme
-		targetRoot.setAttribute("data-theme", theme ?? "dark");
-
-		// copy css style
-		const styles = getComputedStyle(sourceRoot);
-		for (let i = 0; i < styles.length; i++) {
-			const key = styles[i];
-			if (key.startsWith("--")) {
-				targetRoot.style.setProperty(key, styles.getPropertyValue(key));
-			}
-		}
-	}
 
 	const handleTimestampChangeHandler = (ev: ChangeEvent<HTMLInputElement>) => {
 		const { value } = ev.target;
@@ -159,146 +124,15 @@ export function Navigator({
 	};
 
 	/**
-	 * Copies stylesheets from the main document into a detached window.
-	 * Runs once at window creation time (not reactively).
-	 */
-	const copyStylesToWindow = useCallback(
-		(targetWindow: Window) => {
-			applyThemeToWindow(document, targetWindow.document, theme);
-
-			Array.from(document.styleSheets).forEach((styleSheet: CSSStyleSheet) => {
-				try {
-					if (styleSheet.href) {
-						const link = document.createElement("link");
-						link.rel = "stylesheet";
-						link.href = styleSheet.href;
-						targetWindow.document.head.appendChild(link);
-					} else if (styleSheet.cssRules) {
-						const style = document.createElement("style");
-						Array.from(styleSheet.cssRules).forEach((rule) => {
-							style.appendChild(document.createTextNode(rule.cssText));
-						});
-						targetWindow.document.head.appendChild(style);
-					}
-				} catch (err) {
-					console.warn("error copying style", err);
-				}
-			});
-		},
-		[theme],
-	);
-
-	const [chatWindows, setChatWindows] = useState<Record<string, Window>>({});
-	const chatRootsRef = useRef<Record<string, ReactDOM.Root | null>>({});
-
-	/**
 	 * Opens or focuses the detached assistant window for the selected target.
 	 * @param target Assistant target selected from the registry-backed options.
 	 */
 	const openChatWindow = useCallback(
 		(target: AssistantWindowTarget) => {
-			const existingWindow = chatWindows[target.key];
-
-			if (existingWindow && !existingWindow.closed) {
-				existingWindow.focus();
-				return;
-			}
-
-			const newWindow = window.open(
-				"",
-				createAssistantWindowName(target.key),
-				"width=480,height=800,left=120,top=120",
-			);
-			if (!newWindow) return;
-
-			const container = document.createElement("div");
-			newWindow.document.body.innerHTML = "";
-			newWindow.document.body.appendChild(container);
-
-			copyStylesToWindow(newWindow);
-
-			const detachedBridgeId = WindowBridge.generateId();
-			const root = ReactDOM.createRoot(container);
-			root.render(
-				<DetachedAppProvider
-					initialApp={app}
-					initialNotes={[...DataStore.notes]}
-					bridgeId={detachedBridgeId}
-					detachedDocument={newWindow.document}
-					mainSpawnBanner={spawnBanner}
-				>
-					<AIAssistantWindow
-						title={target.title}
-						pluginFilename={target.pluginFilename}
-						onClose={() => {
-							newWindow.close();
-						}}
-					/>
-				</DetachedAppProvider>,
-			);
-			chatRootsRef.current[target.key] = root;
-			setChatWindows((windows) => ({ ...windows, [target.key]: newWindow }));
+			detachedWindows.openAssistantWindow(target);
 		},
-		[chatWindows, app, copyStylesToWindow, spawnBanner],
+		[detachedWindows],
 	);
-
-	// Sync theme to AI Assistant windows
-	useEffect(() => {
-		const animationFrames = Object.values(chatWindows).map((chatWindow) => {
-			if (chatWindow.closed) return null;
-			const id = requestAnimationFrame(() => {
-				applyThemeToWindow(document, chatWindow.document, theme);
-			});
-			return id;
-		});
-
-		return () => {
-			animationFrames.forEach((id) => {
-				if (id !== null) cancelAnimationFrame(id);
-			});
-		};
-	}, [theme, chatWindows]);
-
-	useEffect(() => {
-		const cleanupCallbacks = Object.entries(chatWindows).map(
-			([key, chatWindow]) => {
-				const handleBeforeUnload = () => {
-					const root = chatRootsRef.current[key];
-					delete chatRootsRef.current[key];
-					if (root) {
-						setTimeout(() => root.unmount(), 0);
-					}
-					setChatWindows((windows) => {
-						const nextWindows = { ...windows };
-						delete nextWindows[key];
-						return nextWindows;
-					});
-				};
-				chatWindow.addEventListener("beforeunload", handleBeforeUnload);
-
-				return () =>
-					chatWindow.removeEventListener("beforeunload", handleBeforeUnload);
-			},
-		);
-
-		return () => {
-			cleanupCallbacks.forEach((cleanupCallback) => cleanupCallback());
-		};
-	}, [chatWindows]);
-
-	const currentUser = app.general.user;
-
-	useEffect(() => {
-		if (!currentUser) {
-			// User logged out — close all detached windows
-			Object.entries(chatWindows).forEach(([key, chatWindow]) => {
-				chatRootsRef.current[key]?.unmount();
-				delete chatRootsRef.current[key];
-				chatWindow.close();
-			});
-			setChatWindows({});
-		}
-	}, [currentUser, chatWindows]);
 
 	const size_plus = useRef<HTMLButtonElement>(null);
 	const size_reset = useRef<HTMLButtonElement>(null);

@@ -4,6 +4,12 @@
     "@dir": "rtl"
   },
   "strings": {
+    "detachedApp.authLost": "تسجيل الدخول مطلوب",
+    "detachedApp.authLostDescription": "تم تسجيل خروج علامة التبويب الرئيسية. سجّل الدخول مرة أخرى وحدد عملية لاستئناف هذه النافذة المنفصلة.",
+    "detachedApp.idle": "في انتظار عملية",
+    "detachedApp.idleDescription": "افتح عملية في علامة التبويب الرئيسية لاستئناف هذه النافذة المنفصلة.",
+    "detachedApp.initializing": "جارٍ تحضير سياق العملية",
+    "detachedApp.initializingDescription": "حدد المصادر والسياقات في علامة التبويب الرئيسية لإعادة تحميل هذه النافذة المنفصلة.",
     "advancedParams.addAdditionalMapping": "إضافة تعيينات إضافية",
     "advancedParams.addField": "إضافة حقل",
     "advancedParams.addMapping": "إضافة رسم الخرائط",

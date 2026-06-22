@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Inloggning krävs",
+    "detachedApp.authLostDescription": "Huvudfliken är utloggad. Logga in igen och välj en operation för att återuppta det här fristående fönstret.",
+    "detachedApp.idle": "Väntar på en operation",
+    "detachedApp.idleDescription": "Öppna en operation i huvudfliken för att återuppta det här fristående fönstret.",
+    "detachedApp.initializing": "Förbereder operationskontext",
+    "detachedApp.initializingDescription": "Välj källor och kontexter i huvudfliken för att läsa om det här fristående fönstret.",
     "advancedParams.addAdditionalMapping": "Lägg till ytterligare mappning",
     "advancedParams.addField": "Lägg till fält",
     "advancedParams.addMapping": "Lägg till mappning",

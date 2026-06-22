@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Autentificare necesară",
+    "detachedApp.authLostDescription": "Fila principală este deconectată. Autentificați-vă din nou și selectați o operațiune pentru a relua această fereastră detașată.",
+    "detachedApp.idle": "Se așteaptă o operațiune",
+    "detachedApp.idleDescription": "Deschideți o operațiune în fila principală pentru a relua această fereastră detașată.",
+    "detachedApp.initializing": "Se pregătește contextul operațiunii",
+    "detachedApp.initializingDescription": "Selectați surse și contexte în fila principală pentru a reîncărca această fereastră detașată.",
     "advancedParams.addAdditionalMapping": "Adăugați cartografiere suplimentară",
     "advancedParams.addField": "Adăugați câmp",
     "advancedParams.addMapping": "Adăugați cartografiere",

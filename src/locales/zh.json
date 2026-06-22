@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "需要登录",
+    "detachedApp.authLostDescription": "主标签页已退出登录。请重新登录并选择一个操作，以继续使用这个分离窗口。",
+    "detachedApp.idle": "正在等待操作",
+    "detachedApp.idleDescription": "在主标签页打开一个操作，以继续使用这个分离窗口。",
+    "detachedApp.initializing": "正在准备操作上下文",
+    "detachedApp.initializingDescription": "请在主标签页选择来源和上下文，以重新加载这个分离窗口。",
     "advancedParams.addAdditionalMapping": "添加附加映射",
     "advancedParams.addField": "添加字段",
     "advancedParams.addMapping": "添加映射",

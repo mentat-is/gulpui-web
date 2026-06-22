@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Inicio de sesión requerido",
+    "detachedApp.authLostDescription": "La pestaña principal cerró la sesión. Inicia sesión de nuevo y selecciona una operación para reanudar esta ventana separada.",
+    "detachedApp.idle": "Esperando una operación",
+    "detachedApp.idleDescription": "Abre una operación en la pestaña principal para reanudar esta ventana separada.",
+    "detachedApp.initializing": "Preparando el contexto de la operación",
+    "detachedApp.initializingDescription": "Selecciona fuentes y contextos en la pestaña principal para recargar esta ventana separada.",
     "advancedParams.addAdditionalMapping": "Agregar mapeo adicional",
     "advancedParams.addField": "Agregar campo",
     "advancedParams.addMapping": "Agregar mapeo",

@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Требуется вход",
+    "detachedApp.authLostDescription": "Главная вкладка вышла из системы. Войдите снова и выберите операцию, чтобы продолжить работу в этом отдельном окне.",
+    "detachedApp.idle": "Ожидание операции",
+    "detachedApp.idleDescription": "Откройте операцию на главной вкладке, чтобы продолжить работу в этом отдельном окне.",
+    "detachedApp.initializing": "Подготовка контекста операции",
+    "detachedApp.initializingDescription": "Выберите источники и контексты на главной вкладке, чтобы перезагрузить это отдельное окно.",
     "advancedParams.addAdditionalMapping": "Добавить дополнительное сопоставление",
     "advancedParams.addField": "Добавить поле",
     "advancedParams.addMapping": "Добавить сопоставление",

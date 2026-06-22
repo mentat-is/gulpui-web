@@ -35,6 +35,7 @@ import { Source } from '@/entities/Source'
 import { Request } from '@/entities/Request'
 import { Extension } from '@/context/Extension.context'
 import { Locale } from '@/locales'
+import s from './styles/DetachedApp.module.css'
 
 export namespace DetachedApp {
   export interface ProviderProps {
@@ -66,6 +67,9 @@ export function DetachedAppProvider({
   const [dialog, setDialog] = useState<ReactNode>(null)
   const timeline = useRef<HTMLDivElement>(null as unknown as HTMLDivElement)
   const [highlightsOverlay, setHighlightsOverlay] = useState<ReactNode>(null)
+  const [detachedStatus, setDetachedStatus] =
+    useState<WindowBridge.MainContextStatus>('initializing')
+  const [detachedContextVersion, setDetachedContextVersion] = useState(0)
 
   // Initialize DataStore notes in the detached window context
   useEffect(() => {
@@ -203,6 +207,12 @@ export function DetachedAppProvider({
           })
           break
         }
+        case WindowBridge.MessageType.MAIN_CONTEXT_STATUS: {
+          const { status, contextVersion } = message.payload as WindowBridge.MainContextStatusPayload
+          setDetachedStatus(status)
+          setDetachedContextVersion(contextVersion)
+          break
+        }
         case WindowBridge.MessageType.EVENT_SELECTED: {
           const { event } = message.payload as WindowBridge.EventSelectedPayload
           setInfo(prev => ({
@@ -280,12 +290,26 @@ export function DetachedAppProvider({
   const outboundBridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null)
   useEffect(() => {
     const sendId = WindowBridge.generateId()
-    outboundBridgeRef.current = WindowBridge.create(sendId, () => { })
+    const bridge = WindowBridge.create(sendId, () => { })
+    outboundBridgeRef.current = bridge
+    bridge.send(WindowBridge.MessageType.DETACHED_READY, { windowId: bridgeId })
     return () => {
       outboundBridgeRef.current?.destroy()
       outboundBridgeRef.current = null
     }
-  }, [])
+  }, [bridgeId])
+
+  useEffect(() => {
+    if (detachedStatus === 'active') return
+
+    const interval = window.setInterval(() => {
+      outboundBridgeRef.current?.send(WindowBridge.MessageType.DETACHED_READY, {
+        windowId: bridgeId,
+      })
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [bridgeId, detachedStatus])
 
   // Sync timeline target selection back to the main window so the canvas crosshair updates.
   // Use _id as dep to avoid re-firing when the same event is echoed back as a new object ref.
@@ -298,6 +322,42 @@ export function DetachedAppProvider({
   const setDockedState = useCallback(() => {
     outboundBridgeRef.current?.send(WindowBridge.MessageType.DOCK_DIALOG, {})
   }, [])
+
+  useEffect(() => {
+    if (detachedStatus === 'active') return
+
+    loadingsRef.current.byRequestId.clear()
+    loadingsRef.current.byFileId.clear()
+    setBanner(null)
+    setDialog(null)
+    detachedDocument.body.classList.remove('no-scroll')
+    setInfo(prev => ({
+      ...prev,
+      target: {
+        ...App.Base.target,
+        operations: prev.target.operations.map((operation: Operation.Type) => ({
+          ...operation,
+          selected: false,
+        })),
+      },
+      timeline: {
+        ...prev.timeline,
+        target: null,
+        cache: {
+          data: new Map(),
+          filters: {},
+        },
+        renderVersion: prev.timeline.renderVersion + 1,
+      },
+      general: {
+        ...prev.general,
+        loadings: {
+          byRequestId: new Map(),
+          byFileId: new Map(),
+        },
+      },
+    }))
+  }, [detachedDocument, detachedStatus, setInfo])
 
   const props = useMemo(
     () => ({
@@ -321,6 +381,8 @@ export function DetachedAppProvider({
       toggleHintOpen: () => { },
       isDetachedWindow: true,
       currentDocument: detachedDocument,
+      detachedStatus,
+      detachedContextVersion,
     }),
     [
       spawnBanner,
@@ -335,6 +397,8 @@ export function DetachedAppProvider({
       highlightsOverlay,
       setHighlightsOverlay,
       setDockedState,
+      detachedStatus,
+      detachedContextVersion,
     ],
   )
 
@@ -342,9 +406,41 @@ export function DetachedAppProvider({
     <Application.Context.Provider value={props}>
       <Locale.Provider>
         <Extension.Provider>
-          {children}
+          {detachedStatus === 'active'
+            ? children
+            : <DetachedIdleState status={detachedStatus} />}
         </Extension.Provider>
       </Locale.Provider>
     </Application.Context.Provider>
+  )
+}
+
+/**
+ * DetachedIdleState renders a guarded state while the main tab cannot provide
+ * a valid operation context to the detached root.
+ *
+ * @param props.status - Current detached lifecycle status.
+ * @returns Idle state content for the detached window.
+ */
+function DetachedIdleState({ status }: { status: WindowBridge.MainContextStatus }) {
+  const { t } = Locale.use()
+  const titleKey = status === 'auth_lost'
+    ? 'detachedApp.authLost'
+    : status === 'initializing'
+      ? 'detachedApp.initializing'
+      : 'detachedApp.idle'
+  const descriptionKey = status === 'auth_lost'
+    ? 'detachedApp.authLostDescription'
+    : status === 'initializing'
+      ? 'detachedApp.initializingDescription'
+      : 'detachedApp.idleDescription'
+
+  return (
+    <div className={s.idle}>
+      <div className={s.panel}>
+        <h2>{t(titleKey)}</h2>
+        <p>{t(descriptionKey)}</p>
+      </div>
+    </div>
   )
 }

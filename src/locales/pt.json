@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Login necessário",
+    "detachedApp.authLostDescription": "A aba principal está desconectada. Faça login novamente e selecione uma operação para retomar esta janela destacada.",
+    "detachedApp.idle": "Aguardando uma operação",
+    "detachedApp.idleDescription": "Abra uma operação na aba principal para retomar esta janela destacada.",
+    "detachedApp.initializing": "Preparando o contexto da operação",
+    "detachedApp.initializingDescription": "Selecione fontes e contextos na aba principal para recarregar esta janela destacada.",
     "advancedParams.addAdditionalMapping": "Adicionar mapeamento adicional",
     "advancedParams.addField": "Adicionar campo",
     "advancedParams.addMapping": "Adicionar mapeamento",

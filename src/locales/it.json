@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Accesso richiesto",
+    "detachedApp.authLostDescription": "La scheda principale è disconnessa. Accedi di nuovo e seleziona un'operazione per riprendere questa finestra separata.",
+    "detachedApp.idle": "In attesa di un'operazione",
+    "detachedApp.idleDescription": "Apri un'operazione nella scheda principale per riprendere questa finestra separata.",
+    "detachedApp.initializing": "Preparazione del contesto dell'operazione",
+    "detachedApp.initializingDescription": "Seleziona sorgenti e contesti nella scheda principale per ricaricare questa finestra separata.",
     "advancedParams.addAdditionalMapping": "Aggiungi ulteriore mappatura",
     "advancedParams.addField": "Aggiungi campo",
     "advancedParams.addMapping": "Aggiungi mappatura",

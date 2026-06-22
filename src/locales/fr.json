@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Connexion requise",
+    "detachedApp.authLostDescription": "L’onglet principal est déconnecté. Reconnectez-vous et sélectionnez une opération pour reprendre cette fenêtre détachée.",
+    "detachedApp.idle": "En attente d’une opération",
+    "detachedApp.idleDescription": "Ouvrez une opération dans l’onglet principal pour reprendre cette fenêtre détachée.",
+    "detachedApp.initializing": "Préparation du contexte de l’opération",
+    "detachedApp.initializingDescription": "Sélectionnez des sources et des contextes dans l’onglet principal pour recharger cette fenêtre détachée.",
     "advancedParams.addAdditionalMapping": "Ajouter un mappage supplémentaire",
     "advancedParams.addField": "Ajouter un champ",
     "advancedParams.addMapping": "Ajouter un mappage",

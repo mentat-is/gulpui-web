@@ -6,6 +6,7 @@ import { Request } from "@/entities/Request";
 import { Internal } from "@/entities/addon/Internal";
 import { toast } from "sonner";
 import { translate } from "@/locales/core";
+import { WindowBridge } from "@/lib/WindowBridge";
 
 export interface ResponseBase<T = any> {
 	status: "success" | "error" | "pending";
@@ -248,6 +249,8 @@ const api: Api = async function <T>(
 		(res.data as unknown as ResponseErrorBody).__error?.name ===
 			"MissingPermission"
 	) {
+		WindowBridge.broadcastMainStatus("auth_lost");
+		window.dispatchEvent(new CustomEvent("gulp-auth-lost"));
 		Internal.Settings.token = "";
 		localStorage.removeItem("__user_id");
 		Logger.warn("Session has been expired", api, {

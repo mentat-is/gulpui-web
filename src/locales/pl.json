@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Wymagane logowanie",
+    "detachedApp.authLostDescription": "Główna karta jest wylogowana. Zaloguj się ponownie i wybierz operację, aby wznowić to odłączone okno.",
+    "detachedApp.idle": "Oczekiwanie na operację",
+    "detachedApp.idleDescription": "Otwórz operację na głównej karcie, aby wznowić to odłączone okno.",
+    "detachedApp.initializing": "Przygotowywanie kontekstu operacji",
+    "detachedApp.initializingDescription": "Wybierz źródła i konteksty na głównej karcie, aby ponownie załadować to odłączone okno.",
     "advancedParams.addAdditionalMapping": "Dodaj dodatkowe mapowanie",
     "advancedParams.addField": "Dodaj pole",
     "advancedParams.addMapping": "Dodaj mapowanie",

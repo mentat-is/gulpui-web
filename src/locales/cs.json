@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Je vyžadováno přihlášení",
+    "detachedApp.authLostDescription": "Hlavní karta je odhlášená. Přihlaste se znovu a vyberte operaci, aby bylo možné toto samostatné okno obnovit.",
+    "detachedApp.idle": "Čeká se na operaci",
+    "detachedApp.idleDescription": "Otevřete operaci na hlavní kartě, aby bylo možné toto samostatné okno obnovit.",
+    "detachedApp.initializing": "Připravuje se kontext operace",
+    "detachedApp.initializingDescription": "Vyberte zdroje a kontexty na hlavní kartě, aby se toto samostatné okno znovu načetlo.",
     "advancedParams.addAdditionalMapping": "Přidat další mapování",
     "advancedParams.addField": "Přidat pole",
     "advancedParams.addMapping": "Přidat mapování",

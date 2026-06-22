@@ -41,7 +41,14 @@ export namespace WindowBridge {
     AI_HISTORY_UPDATED = 'AI_HISTORY_UPDATED',
     /** Detached → Main: User clicked "Dock" in the detached dialog window */
     DOCK_DIALOG = 'DOCK_DIALOG',
+    /** Main → Detached: Current main-tab operation/auth lifecycle status */
+    MAIN_CONTEXT_STATUS = 'MAIN_CONTEXT_STATUS',
+    /** Detached → Main: Detached root mounted/reconnected and needs current state replay */
+    DETACHED_READY = 'DETACHED_READY',
   }
+
+  export type MainContextStatus = 'active' | 'initializing' | 'idle' | 'auth_lost'
+  export const DETACHED_REPLAY_EVENT = 'gulp-detached-replay-request'
 
   export interface ThemeChangePayload {
     theme: string
@@ -88,6 +95,16 @@ export namespace WindowBridge {
     event: Doc.Type | null
   }
 
+  export interface MainContextStatusPayload {
+    status: MainContextStatus
+    contextVersion: number
+    operationId?: Operation.Id | null
+  }
+
+  export interface DetachedReadyPayload {
+    windowId: string
+  }
+
 
   export type MessagePayload = {
     [MessageType.THEME_CHANGE]: ThemeChangePayload
@@ -100,6 +117,8 @@ export namespace WindowBridge {
     [MessageType.EVENT_SELECTED]: EventSelectedPayload
     [MessageType.AI_HISTORY_UPDATED]: { senderId?: string }
     [MessageType.DOCK_DIALOG]: Record<string, never>
+    [MessageType.MAIN_CONTEXT_STATUS]: MainContextStatusPayload
+    [MessageType.DETACHED_READY]: DetachedReadyPayload
   }
 
   export interface Message<T extends MessageType = MessageType> {
@@ -143,5 +162,78 @@ export namespace WindowBridge {
    */
   export function generateId(): string {
     return `win_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  }
+
+  /**
+   * Broadcasts only the main-tab lifecycle status to detached windows.
+   *
+   * @param status - Lifecycle status to send.
+   * @param operationId - Operation associated with the status, when available.
+   */
+  export function broadcastMainStatus(
+    status: MainContextStatus,
+    operationId?: Operation.Id | null,
+  ) {
+    const bridge = create(generateId(), () => {})
+
+    bridge.send(MessageType.MAIN_CONTEXT_STATUS, {
+      status,
+      contextVersion: Date.now(),
+      operationId: operationId ?? null,
+    })
+
+    bridge.destroy()
+  }
+
+  /**
+   * Broadcasts the current main-tab operation context to detached windows.
+   *
+   * @param app - Current application snapshot to replay.
+   * @param status - Lifecycle status to send before the snapshot.
+   * @param operationId - Operation that should be selected in the detached snapshot.
+   */
+  export function broadcastMainContext(
+    app: App.Type,
+    status: MainContextStatus,
+    operationId?: Operation.Id | null,
+  ) {
+    const bridge = create(generateId(), () => {})
+    const selectedSourceIds = app.target.files
+      .filter((source) =>
+        source.selected &&
+        (!operationId || source.operation_id === operationId),
+      )
+      .map((source) => source.id)
+
+    bridge.send(MessageType.MAIN_CONTEXT_STATUS, {
+      status,
+      contextVersion: Date.now(),
+      operationId: operationId ?? null,
+    })
+
+    if (status === 'active') {
+      bridge.send(MessageType.APP_SNAPSHOT, {
+        app: {
+          target: {
+            operations: operationId
+              ? app.target.operations.map((operation) => ({
+                ...operation,
+                selected: operation.id === operationId,
+              }))
+              : app.target.operations,
+            contexts: app.target.contexts,
+            files: app.target.files,
+            events: new Map(),
+            filters: app.target.filters,
+          },
+        } as any,
+        selectedSourceIds,
+      })
+      bridge.send(MessageType.EVENT_SELECTED, {
+        event: app.timeline.target,
+      })
+    }
+
+    bridge.destroy()
   }
 }

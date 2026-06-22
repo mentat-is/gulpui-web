@@ -9,7 +9,7 @@ To create a plugin, you need to add two files in the following directory:
 ### Example
 
 ```
-coconut.tsx  
+coconut.tsx
 coconut.tsx.json
 ```
 
@@ -17,21 +17,21 @@ coconut.tsx.json
 
 ## Plugin `.tsx` File
 
-* The `.tsx` file must export a `default export`.
+- The `.tsx` file must export a `default export`.
   This component will be used as a trigger to launch the plugin.
 
-* The main logic and UI of the plugin should be encapsulated inside a **separate namespace**.
+- The main logic and UI of the plugin should be encapsulated inside a **separate namespace**.
   You can refer to `example.tsx` for a sample structure.
 
 ### Interacting with Application Data
 
 To interact with the application's state and data:
 
-* Use `Info.tsx` — provides access to shared app data.
-* Import `Info` and `app` using `Application.use` hook:
+- Use `Info.tsx` — provides access to shared app data.
+- Import `Info` and `app` using `Application.use` hook:
 
 ```tsx
-import { Application } from '@/context/Application.context';
+import { Application } from "@/context/Application.context";
 
 const { app, Info } = Application.use();
 ```
@@ -41,11 +41,11 @@ const { app, Info } = Application.use();
 For displaying notifications and dialogs, you can use the following helpers:
 
 ```tsx
-import { spawnBanner, spawnDialog } from '@/utils/ui';
+import { spawnBanner, spawnDialog } from "@/utils/ui";
 ```
 
-* `spawnBanner()` — show a banner notification.
-* `spawnDialog()` — open a dialog window.
+- `spawnBanner()` — show a banner notification.
+- `spawnDialog()` — open a dialog window.
 
 ---
 
@@ -59,14 +59,14 @@ The structure of this metadata is described in:
 
 ```json
 {
-  "display_name": "Example UI Plugin",
-  "plugin": "some_gulp_plugin.py",
-  "extension": true,
-  "version": "1.0.0",
-  "desc": "THIS IS A SAMPLE UI PLUGIN!",
-  "path": "/home/gulp/src/gulp/plugins/ui/example_ui_plugin.tsx",
-  "filename": "example_ui_plugin.tsx",
-  "type": []
+	"display_name": "Example UI Plugin",
+	"plugin": "some_gulp_plugin.py",
+	"extension": true,
+	"version": "1.0.0",
+	"desc": "THIS IS A SAMPLE UI PLUGIN!",
+	"path": "/home/gulp/src/gulp/plugins/ui/example_ui_plugin.tsx",
+	"filename": "example_ui_plugin.tsx",
+	"type": []
 }
 ```
 
@@ -76,14 +76,11 @@ The structure of this metadata is described in:
 
 It is highly recommended to **reuse existing UI components** from:
 
-* Local project folders:
+- Local project folders:
+  - `@/ui`
+  - `@/components`
 
-  * `@/ui`
-  * `@/components`
-
-* External shared libraries:
-
-  * `@impactium/components`
-  * `lucide-react`
+- External shared libraries:
+  - `lucide-react`
 
 This ensures **consistent styling** and reduces duplication across the project.

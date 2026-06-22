@@ -44,6 +44,7 @@ import { Doc } from "../entities/Doc";
 import { NotePoint } from "../ui/Note";
 import { DisplayEventDialog } from "../dialogs/Event.dialog";
 import { Locale } from "@/locales";
+import { DetachedWindow } from "@/context/DetachedWindow.context";
 
 /**
  * FetchEventBannerMain — fetches a note-linked event from the server and opens its dialog
@@ -161,6 +162,7 @@ export function OperationTimeline() {
 	} = Application.use();
 	const { t } = Locale.use();
 	const { extensions } = Extension.use();
+	const detachedWindows = DetachedWindow.use();
 
 	const applyThemeToWindow = useCallback(
 		(
@@ -241,55 +243,11 @@ export function OperationTimeline() {
 	 * with the detached notes and table windows.
 	 */
 	useEffect(() => {
-		const bridge = WindowBridge.create(mainBridgeIdRef.current, (message) => {
-			switch (message.type) {
-				case WindowBridge.MessageType.FLAGS_CHANGED: {
-					// Flag changes from detached window — re-render canvas
-					RenderEngine.clearAllCaches();
-					DataStore.markDirty();
-					Info.render();
-					break;
-				}
-				case WindowBridge.MessageType.BANNER_ACTION: {
-					break;
-				}
-				case WindowBridge.MessageType.TARGET_NOTE: {
-					// Detached NotesWindow requested to open an event dialog in the main tab.
-					const { docId, operationId } =
-						message.payload as WindowBridge.TargetNotePayload;
-					const event = Doc.Entity.id(appRef.current, docId);
-					if (event) {
-						spawnDialogRef.current(<DisplayEventDialog event={event} />);
-					} else {
-						// Event not loaded in main tab — fetch it from the server
-						spawnBannerRef.current(
-							<FetchEventBannerMain
-								docId={docId}
-								operationId={operationId}
-							/>,
-						);
-					}
-					break;
-				}
-				case WindowBridge.MessageType.EVENT_SELECTED: {
-					// Detached dialog window changed the selected event — update the main canvas crosshair.
-					const { event: selectedEvent } =
-						message.payload as WindowBridge.EventSelectedPayload;
-					// Guard against echo: only update if the ID actually changed
-					if (selectedEvent?._id !== Info.app.timeline.target?._id) {
-						Info.setTimelineTarget(selectedEvent ?? null);
-					}
-					break;
-				}
-			}
-		});
-		mainBridgeRef.current = bridge;
-
+		mainBridgeRef.current = null;
 		return () => {
-			bridge.destroy();
 			mainBridgeRef.current = null;
 		};
-	}, [Info]);
+	}, []);
 
 	// Forward theme changes to all detached windows via BroadcastChannel
 	useEffect(() => {
@@ -606,20 +564,10 @@ export function OperationTimeline() {
 	// Auto-open or focus the Table view window when app.general.tableViewSource is set
 	useEffect(() => {
 		if (app.general.tableViewSource) {
-			if (!tableWindowRef) {
-				openTableWindow(app.general.tableViewSource.id);
-			} else {
-				tableWindowRef.focus();
-				mainBridgeRef.current?.send(
-					WindowBridge.MessageType.TABLE_SELECT_SOURCE,
-					{
-						sourceId: app.general.tableViewSource.id,
-					},
-				);
-			}
+			detachedWindows.openTableWindow(app.general.tableViewSource.id);
 			Info.setInfoByKey(null, "general", "tableViewSource");
 		}
-	}, [app.general.tableViewSource, tableWindowRef, openTableWindow, Info]);
+	}, [app.general.tableViewSource, detachedWindows, Info]);
 
 	// Close Notes window when selected operation changes
 	const selectedOperationId = app.target.operations.find((o) => o.selected)?.id;
@@ -843,19 +791,19 @@ export function OperationTimeline() {
 				label: t("operationView.menu.openNotesWindow"),
 				icon: "FileText",
 				category: t("operationView.menu.notesSources"),
-				action: () => openWindow(),
+				action: () => detachedWindows.openNotesWindow(),
 			},
 			{
 				label: t("operationView.menu.openTableWindow"),
 				icon: "Table",
 				category: t("operationView.menu.notesSources"),
-				action: () => openTableWindow(),
+				action: () => detachedWindows.openTableWindow(),
 			},
 			{
 				label: t("operationView.menu.openDashboardWindow"),
 				icon: "AreaChart",
 				category: t("operationView.menu.notesSources"),
-				action: () => openDashboardWindow(),
+				action: () => detachedWindows.openDashboardWindow(),
 			},
 			{
 				label: t("operationView.menu.selectFilesAndContexts"),
@@ -900,7 +848,7 @@ export function OperationTimeline() {
 				action: () => spawnBanner(<Sigma.Banner sources={[]} />),
 			},
 		],
-		[spawnBanner, openWindow, openTableWindow, openDashboardWindow, t],
+		[spawnBanner, detachedWindows, t],
 	);
 
 	/**

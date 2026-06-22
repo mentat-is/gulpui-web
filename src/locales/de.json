@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Anmeldung erforderlich",
+    "detachedApp.authLostDescription": "Der Haupt-Tab ist abgemeldet. Melden Sie sich erneut an und wählen Sie eine Operation aus, um dieses losgelöste Fenster fortzusetzen.",
+    "detachedApp.idle": "Warten auf eine Operation",
+    "detachedApp.idleDescription": "Öffnen Sie eine Operation im Haupt-Tab, um dieses losgelöste Fenster fortzusetzen.",
+    "detachedApp.initializing": "Operationskontext wird vorbereitet",
+    "detachedApp.initializingDescription": "Wählen Sie Quellen und Kontexte im Haupt-Tab aus, um dieses losgelöste Fenster neu zu laden.",
     "advancedParams.addAdditionalMapping": "Zusätzliche Zuordnung hinzufügen",
     "advancedParams.addField": "Feld hinzufügen",
     "advancedParams.addMapping": "Zuordnung hinzufügen",

@@ -4,6 +4,12 @@
     "@dir": "rtl"
   },
   "strings": {
+    "detachedApp.authLost": "נדרשת התחברות",
+    "detachedApp.authLostDescription": "הלשונית הראשית מנותקת. התחבר מחדש ובחר פעולה כדי להמשיך את החלון המנותק הזה.",
+    "detachedApp.idle": "ממתין לפעולה",
+    "detachedApp.idleDescription": "פתח פעולה בלשונית הראשית כדי להמשיך את החלון המנותק הזה.",
+    "detachedApp.initializing": "מכין את הקשר הפעולה",
+    "detachedApp.initializingDescription": "בחר מקורות והקשרים בלשונית הראשית כדי לטעון מחדש את החלון המנותק הזה.",
     "advancedParams.addAdditionalMapping": "הוסף מיפוי נוסף",
     "advancedParams.addField": "הוסף שדה",
     "advancedParams.addMapping": "הוסף מיפוי",

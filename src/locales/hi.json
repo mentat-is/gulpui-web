@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "लॉगिन आवश्यक है",
+    "detachedApp.authLostDescription": "मुख्य टैब लॉग आउट है। फिर से लॉग इन करें और इस अलग विंडो को फिर शुरू करने के लिए कोई ऑपरेशन चुनें।",
+    "detachedApp.idle": "ऑपरेशन की प्रतीक्षा है",
+    "detachedApp.idleDescription": "इस अलग विंडो को फिर शुरू करने के लिए मुख्य टैब में कोई ऑपरेशन खोलें।",
+    "detachedApp.initializing": "ऑपरेशन संदर्भ तैयार हो रहा है",
+    "detachedApp.initializingDescription": "इस अलग विंडो को फिर लोड करने के लिए मुख्य टैब में स्रोत और संदर्भ चुनें।",
     "advancedParams.addAdditionalMapping": "अतिरिक्त मैपिंग जोड़ें",
     "advancedParams.addField": "फ़ील्ड जोड़ें",
     "advancedParams.addMapping": "मैपिंग जोड़ें",

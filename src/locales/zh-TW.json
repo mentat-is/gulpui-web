@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "需要登入",
+    "detachedApp.authLostDescription": "主分頁已登出。請重新登入並選擇一個作業，以繼續使用這個分離視窗。",
+    "detachedApp.idle": "正在等待作業",
+    "detachedApp.idleDescription": "在主分頁開啟一個作業，以繼續使用這個分離視窗。",
+    "detachedApp.initializing": "正在準備作業內容",
+    "detachedApp.initializingDescription": "請在主分頁選擇來源與內容，以重新載入這個分離視窗。",
     "advancedParams.addAdditionalMapping": "新增附加映射",
     "advancedParams.addField": "新增字段",
     "advancedParams.addMapping": "新增映射",

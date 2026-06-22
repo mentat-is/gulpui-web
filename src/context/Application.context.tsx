@@ -308,6 +308,8 @@ function _({ children }: { children: ReactNode }) {
 			toggleHintOpen,
 			isDetachedWindow: false,
 			currentDocument: globalThis.document,
+			detachedStatus: "active" as const,
+			detachedContextVersion: 0,
 		}),
 		[
 			spawnBanner,
@@ -406,6 +408,8 @@ export namespace Application {
 			toggleHintOpen: () => void;
 			isDetachedWindow: boolean;
 			currentDocument: Document;
+			detachedStatus: "active" | "initializing" | "idle" | "auth_lost";
+			detachedContextVersion: number;
 		}
 	}
 

@@ -4,6 +4,12 @@
     "@dir": "ltr"
   },
   "strings": {
+    "detachedApp.authLost": "Inloggen vereist",
+    "detachedApp.authLostDescription": "Het hoofdtabblad is uitgelogd. Log opnieuw in en selecteer een operatie om dit losgekoppelde venster te hervatten.",
+    "detachedApp.idle": "Wachten op een operatie",
+    "detachedApp.idleDescription": "Open een operatie in het hoofdtabblad om dit losgekoppelde venster te hervatten.",
+    "detachedApp.initializing": "Operatiecontext voorbereiden",
+    "detachedApp.initializingDescription": "Selecteer bronnen en contexten in het hoofdtabblad om dit losgekoppelde venster opnieuw te laden.",
     "advancedParams.addAdditionalMapping": "Voeg extra mapping toe",
     "advancedParams.addField": "Veld toevoegen",
     "advancedParams.addMapping": "Voeg toewijzing toe",
