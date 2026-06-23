@@ -1062,13 +1062,31 @@ export namespace Source {
 				() => Object.entries(colorOverride?.values ?? {}),
 				[colorOverride],
 			);
-			const colorPalette = source.settings.color_palette;
+			const [colorPalette, setColorPalette] = useState<
+				Source.ColorPalette | undefined
+			>(source.settings.color_palette);
 			const colorPaletteColors = colorPalette
 				? Color.Entity.getCustomPalette(colorPalette.id)
 				: undefined;
 
 			/**
+			 * Selects a standard render palette and marks any active custom palette for removal.
+			 *
+			 * @param color Selected palette id, or a React state updater from the color picker.
+			 * @returns Nothing.
+			 */
+			const selectRenderColorPalette = (
+				color: string | ((previousColor: string) => string),
+			) => {
+				const nextColor =
+					typeof color === "function" ? color(render_color_palette) : color;
+				setRenderColorPalette(nextColor as Color.Gradient);
+				setColorPalette(undefined);
+			};
+
+			/**
 			 * Saves the updated source settings and optionally updates the associated context color.
+			 * Persists custom palette state unless the user selected a standard render palette.
 			 * Invokes file_set_settings and context_update API calls, then closes the settings banner.
 			 *
 			 * @returns A promise that resolves when saving is completed.
@@ -1082,7 +1100,7 @@ export namespace Source {
 					hash_function,
 					frequency_sample,
 					color_override: colorOverride,
-					color_palette: undefined,
+					color_palette: colorPalette,
 				});
 
 				if (contextColor !== context.color) {
@@ -1325,7 +1343,7 @@ export namespace Source {
 							)}
 							<ColorPicker
 								color={render_color_palette}
-								setColor={(c) => setRenderColorPalette(c as Color.Gradient)}
+								setColor={selectRenderColorPalette}
 							>
 								<ColorPickerTrigger />
 								<ColorPickerPopover
