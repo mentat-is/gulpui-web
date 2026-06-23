@@ -12,9 +12,9 @@ import type { Note } from '@/entities/Note'
 import type { App } from '@/entities/App'
 import type { Doc } from '@/entities/Doc'
 import type { Operation } from '@/entities/Operation'
-import type { MinMax } from '@/class/Info'
 
 const CHANNEL_NAME = 'gulp-window-bridge'
+const MAIN_CONTEXT_STORAGE_KEY = 'gulp-window-bridge:main-context'
 
 export namespace WindowBridge {
   /**
@@ -128,6 +128,17 @@ export namespace WindowBridge {
     senderId: string
   }
 
+  export interface Bridge {
+    send<T extends MessageType>(type: T, payload: MessagePayload[T]): void
+    destroy(): void
+  }
+
+  export interface StoredMainContextReplay {
+    createdAt: number
+    status: MainContextStatusPayload
+    snapshot?: AppSnapshotPayload
+  }
+
   /**
    * Creates a new BroadcastChannel instance for cross-window communication.
    *
@@ -138,7 +149,7 @@ export namespace WindowBridge {
   export function create(
     id: string,
     onMessage: (message: Message) => void,
-  ) {
+  ): Bridge {
     const channel = new BroadcastChannel(CHANNEL_NAME)
 
     channel.onmessage = (event: MessageEvent<Message>) => {
@@ -165,54 +176,99 @@ export namespace WindowBridge {
   }
 
   /**
-   * Broadcasts only the main-tab lifecycle status to detached windows.
+   * Closes a one-shot bridge after the browser has had a chance to deliver
+   * queued BroadcastChannel messages to detached windows.
    *
-   * @param status - Lifecycle status to send.
-   * @param operationId - Operation associated with the status, when available.
+   * @param bridge - Temporary bridge created only for this broadcast.
+   * @returns Nothing.
    */
-  export function broadcastMainStatus(
-    status: MainContextStatus,
-    operationId?: Operation.Id | null,
-  ) {
-    const bridge = create(generateId(), () => {})
-
-    bridge.send(MessageType.MAIN_CONTEXT_STATUS, {
-      status,
-      contextVersion: Date.now(),
-      operationId: operationId ?? null,
-    })
-
-    bridge.destroy()
+  function destroyAfterMessageFlush(bridge: Bridge): void {
+    window.setTimeout(() => bridge.destroy(), 100)
   }
 
   /**
-   * Broadcasts the current main-tab operation context to detached windows.
+   * Persists the last main-tab context so detached windows can recover when
+   * BroadcastChannel delivery is interrupted by login redirects or reloads.
    *
-   * @param app - Current application snapshot to replay.
-   * @param status - Lifecycle status to send before the snapshot.
-   * @param operationId - Operation that should be selected in the detached snapshot.
+   * @param replay - Serializable main-context replay payload.
+   * @returns Nothing.
    */
-  export function broadcastMainContext(
+  function writeStoredMainContext(replay: StoredMainContextReplay): void {
+    try {
+      localStorage.setItem(MAIN_CONTEXT_STORAGE_KEY, JSON.stringify(replay))
+    } catch (error) {
+      console.warn('Failed to store detached main context fallback', {
+        error,
+        status: replay.status.status,
+        operationId: replay.status.operationId ?? null,
+      })
+    }
+  }
+
+  /**
+   * Reads the latest stored main-tab context replay.
+   *
+   * @returns Stored replay payload, or null when none exists or parsing fails.
+   */
+  export function readStoredMainContext(): StoredMainContextReplay | null {
+    try {
+      const raw = localStorage.getItem(MAIN_CONTEXT_STORAGE_KEY)
+      if (!raw) return null
+
+      const replay = JSON.parse(raw) as StoredMainContextReplay
+      if (!replay.status?.status || typeof replay.createdAt !== 'number') {
+        return null
+      }
+
+      return replay
+    } catch (error) {
+      console.warn('Failed to read detached main context fallback', {
+        error,
+      })
+      return null
+    }
+  }
+
+  /**
+   * Gets the storage key used for stored detached-window context replay.
+   *
+   * @returns LocalStorage key that contains the latest main context.
+   */
+  export function getMainContextStorageKey(): string {
+    return MAIN_CONTEXT_STORAGE_KEY
+  }
+
+  /**
+   * Builds a serializable lifecycle replay payload for detached windows.
+   *
+   * @param app - Current application state.
+   * @param status - Lifecycle status to replay.
+   * @param operationId - Operation associated with the replay.
+   * @returns Serializable context replay payload.
+   */
+  function createMainContextReplay(
     app: App.Type,
     status: MainContextStatus,
     operationId?: Operation.Id | null,
-  ) {
-    const bridge = create(generateId(), () => {})
+  ): StoredMainContextReplay {
     const selectedSourceIds = app.target.files
       .filter((source) =>
         source.selected &&
         (!operationId || source.operation_id === operationId),
       )
       .map((source) => source.id)
-
-    bridge.send(MessageType.MAIN_CONTEXT_STATUS, {
+    const statusPayload: MainContextStatusPayload = {
       status,
       contextVersion: Date.now(),
       operationId: operationId ?? null,
-    })
+    }
+    const replay: StoredMainContextReplay = {
+      createdAt: Date.now(),
+      status: statusPayload,
+    }
 
     if (status === 'active') {
-      bridge.send(MessageType.APP_SNAPSHOT, {
+      replay.snapshot = {
         app: {
           target: {
             operations: operationId
@@ -223,17 +279,126 @@ export namespace WindowBridge {
               : app.target.operations,
             contexts: app.target.contexts,
             files: app.target.files,
-            events: new Map(),
             filters: app.target.filters,
-          },
-        } as any,
+          } as unknown as App.Type['target'],
+        },
         selectedSourceIds,
-      })
-      bridge.send(MessageType.EVENT_SELECTED, {
-        event: app.timeline.target,
-      })
+      }
     }
 
-    bridge.destroy()
+    return replay
+  }
+
+  /**
+   * Sends the currently selected timeline event to detached windows.
+   *
+   * @param bridge - Existing bridge used to send the event.
+   * @param event - Selected event, or null when selection was cleared.
+   * @returns Nothing.
+   */
+  export function sendSelectedEvent(
+    bridge: Bridge,
+    event: Doc.Type | null,
+  ): void {
+    bridge.send(MessageType.EVENT_SELECTED, { event })
+  }
+
+  /**
+   * Broadcasts the currently selected timeline event to detached windows.
+   *
+   * @param event - Selected event, or null when selection was cleared.
+   * @returns Nothing.
+   */
+  export function broadcastSelectedEvent(event: Doc.Type | null): void {
+    const bridge = create(generateId(), () => {})
+    sendSelectedEvent(bridge, event)
+    destroyAfterMessageFlush(bridge)
+  }
+
+  /**
+   * Sends only the main-tab lifecycle status to detached windows.
+   *
+   * @param bridge - Existing bridge used to send the lifecycle status.
+   * @param status - Lifecycle status to send.
+   * @param operationId - Operation associated with the status, when available.
+   * @returns Nothing.
+   */
+  export function sendMainStatus(
+    bridge: Bridge,
+    status: MainContextStatus,
+    operationId?: Operation.Id | null,
+  ): void {
+    const statusPayload: MainContextStatusPayload = {
+      status,
+      contextVersion: Date.now(),
+      operationId: operationId ?? null,
+    }
+
+    bridge.send(MessageType.MAIN_CONTEXT_STATUS, statusPayload)
+    writeStoredMainContext({
+      createdAt: Date.now(),
+      status: statusPayload,
+    })
+  }
+
+  /**
+   * Broadcasts only the main-tab lifecycle status to detached windows.
+   *
+   * @param status - Lifecycle status to send.
+   * @param operationId - Operation associated with the status, when available.
+   * @returns Nothing.
+   */
+  export function broadcastMainStatus(
+    status: MainContextStatus,
+    operationId?: Operation.Id | null,
+  ): void {
+    const bridge = create(generateId(), () => {})
+    sendMainStatus(bridge, status, operationId)
+    destroyAfterMessageFlush(bridge)
+  }
+
+  /**
+   * Sends the current main-tab operation context to detached windows.
+   *
+   * @param bridge - Existing bridge used to send the context.
+   * @param app - Current application snapshot to replay.
+   * @param status - Lifecycle status to send before the snapshot.
+   * @param operationId - Operation that should be selected in the detached snapshot.
+   * @returns Nothing.
+   */
+  export function sendMainContext(
+    bridge: Bridge,
+    app: App.Type,
+    status: MainContextStatus,
+    operationId?: Operation.Id | null,
+  ): void {
+    const replay = createMainContextReplay(app, status, operationId)
+    writeStoredMainContext(replay)
+
+    bridge.send(MessageType.MAIN_CONTEXT_STATUS, replay.status)
+
+    if (replay.snapshot) {
+      bridge.send(MessageType.APP_SNAPSHOT, replay.snapshot)
+    }
+
+    sendSelectedEvent(bridge, app.timeline.target)
+  }
+
+  /**
+   * Broadcasts the current main-tab operation context to detached windows.
+   *
+   * @param app - Current application snapshot to replay.
+   * @param status - Lifecycle status to send before the snapshot.
+   * @param operationId - Operation that should be selected in the detached snapshot.
+   * @returns Nothing.
+   */
+  export function broadcastMainContext(
+    app: App.Type,
+    status: MainContextStatus,
+    operationId?: Operation.Id | null,
+  ): void {
+    const bridge = create(generateId(), () => {})
+    sendMainContext(bridge, app, status, operationId)
+    destroyAfterMessageFlush(bridge)
   }
 }

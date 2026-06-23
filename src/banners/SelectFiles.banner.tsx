@@ -218,6 +218,12 @@ export namespace SelectFiles {
 		const hasData =
 			app.target.operations.length > 0 || app.target.contexts.length > 0;
 
+		/**
+		 * Persists the selected contexts and sources, then replays that active
+		 * selection to any detached windows.
+		 *
+		 * @returns Nothing.
+		 */
 		const save = () => {
 			const contexts = Refractor.array(
 				...app.target.contexts.map((context) => ({

@@ -70,6 +70,7 @@ export function DetachedAppProvider({
   const [detachedStatus, setDetachedStatus] =
     useState<WindowBridge.MainContextStatus>('initializing')
   const [detachedContextVersion, setDetachedContextVersion] = useState(0)
+  const selectedSourceIdsRef = useRef<string[] | null | undefined>(null)
 
   // Initialize DataStore notes in the detached window context
   useEffect(() => {
@@ -152,6 +153,84 @@ export function DetachedAppProvider({
     ;(infoRef.current as any)._detachedPatched = true
   }
 
+  /**
+   * Applies a main-tab lifecycle status received from either BroadcastChannel
+   * or the localStorage replay fallback.
+   *
+   * @param payload - Lifecycle status payload from the main tab.
+   * @returns Nothing.
+   */
+  const applyMainContextStatus = useCallback((
+    payload: WindowBridge.MainContextStatusPayload,
+  ) => {
+    const { status, contextVersion } = payload
+    setDetachedStatus(status)
+    setDetachedContextVersion(contextVersion)
+  }, [])
+
+  /**
+   * Applies a main-tab app snapshot received from either BroadcastChannel or
+   * the localStorage replay fallback.
+   *
+   * @param payload - App snapshot payload from the main tab.
+   * @returns Nothing.
+   */
+  const applyAppSnapshot = useCallback((
+    payload: WindowBridge.AppSnapshotPayload,
+  ) => {
+    const { app: snapshot, selectedSourceIds } = payload
+    selectedSourceIdsRef.current = selectedSourceIds
+
+    setInfo(prev => {
+      const oldOpId = prev.target.operations.find((o: Operation.Type) => o.selected)?.id
+      const newOpId = snapshot.target?.operations?.find((o: Operation.Type) => o.selected)?.id
+      const opChanged = newOpId && oldOpId && newOpId !== oldOpId
+      const snapshotTarget = snapshot.target
+
+      const next = {
+        ...prev,
+        ...snapshot,
+        target: snapshotTarget ? {
+          ...prev.target,
+          ...snapshotTarget,
+          // Operation changes are followed by instance.sync(); same-operation
+          // snapshots carry live source/context updates for detached dashboards.
+          files: opChanged ? [] : (snapshotTarget.files ?? prev.target.files),
+          contexts: opChanged ? [] : (snapshotTarget.contexts ?? prev.target.contexts),
+        } : prev.target
+      }
+
+      // Sync selection status for current and newly added files if no op change
+      if (!opChanged && selectedSourceIds) {
+        next.target.files = next.target.files.map((f: Source.Type) => ({
+          ...f,
+          selected: selectedSourceIds.includes(f.id)
+        }))
+      }
+
+      return next
+    })
+  }, [setInfo])
+
+  /**
+   * Applies a selected timeline event replayed by the main tab.
+   *
+   * @param payload - Selected event payload.
+   * @returns Nothing.
+   */
+  const applyEventSelected = useCallback((
+    payload: WindowBridge.EventSelectedPayload,
+  ) => {
+    const { event } = payload
+    setInfo(prev => ({
+      ...prev,
+      timeline: {
+        ...prev.timeline,
+        target: event
+      }
+    }))
+  }, [setInfo])
+
   // Listen for incoming BroadcastChannel messages from the main tab
   useEffect(() => {
     const bridge = WindowBridge.create(bridgeId, (message) => {
@@ -173,55 +252,15 @@ export function DetachedAppProvider({
           break
         }
         case WindowBridge.MessageType.APP_SNAPSHOT: {
-          const { app: snapshot, selectedSourceIds } = message.payload as WindowBridge.AppSnapshotPayload
-          selectedSourceIdsRef.current = selectedSourceIds
-
-          setInfo(prev => {
-            const oldOpId = prev.target.operations.find((o: Operation.Type) => o.selected)?.id
-            const newOpId = snapshot.target?.operations?.find((o: Operation.Type) => o.selected)?.id
-            const opChanged = newOpId && oldOpId && newOpId !== oldOpId
-            const snapshotTarget = snapshot.target
-
-            const next = {
-              ...prev,
-              ...snapshot,
-              target: snapshotTarget ? {
-                ...prev.target,
-                ...snapshotTarget,
-                // Operation changes are followed by instance.sync(); same-operation
-                // snapshots carry live source/context updates for detached dashboards.
-                files: opChanged ? [] : (snapshotTarget.files ?? prev.target.files),
-                contexts: opChanged ? [] : (snapshotTarget.contexts ?? prev.target.contexts),
-              } : prev.target
-            }
-
-            // Sync selection status for current and newly added files if no op change
-            if (!opChanged && selectedSourceIds) {
-              next.target.files = next.target.files.map((f: Source.Type) => ({
-                ...f,
-                selected: selectedSourceIds.includes(f.id)
-              }))
-            }
-
-            return next
-          })
+          applyAppSnapshot(message.payload as WindowBridge.AppSnapshotPayload)
           break
         }
         case WindowBridge.MessageType.MAIN_CONTEXT_STATUS: {
-          const { status, contextVersion } = message.payload as WindowBridge.MainContextStatusPayload
-          setDetachedStatus(status)
-          setDetachedContextVersion(contextVersion)
+          applyMainContextStatus(message.payload as WindowBridge.MainContextStatusPayload)
           break
         }
         case WindowBridge.MessageType.EVENT_SELECTED: {
-          const { event } = message.payload as WindowBridge.EventSelectedPayload
-          setInfo(prev => ({
-            ...prev,
-            timeline: {
-              ...prev.timeline,
-              target: event
-            }
-          }))
+          applyEventSelected(message.payload as WindowBridge.EventSelectedPayload)
           break
         }
       }
@@ -230,13 +269,38 @@ export function DetachedAppProvider({
     return () => {
       bridge.destroy()
     }
-  }, [bridgeId])
+  }, [applyAppSnapshot, applyEventSelected, applyMainContextStatus, bridgeId])
+
+  useEffect(() => {
+    /**
+     * Applies the last stored main-context replay when BroadcastChannel delivery
+     * was missed during login redirects or page reloads.
+     *
+     * @returns Nothing.
+     */
+    const applyStoredReplay = () => {
+      const replay = WindowBridge.readStoredMainContext()
+      if (!replay) return
+
+      applyMainContextStatus(replay.status)
+      if (replay.snapshot) applyAppSnapshot(replay.snapshot)
+    }
+
+    applyStoredReplay()
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== WindowBridge.getMainContextStorageKey()) return
+      applyStoredReplay()
+    }
+
+    window.addEventListener('storage', handleStorage)
+    return () => window.removeEventListener('storage', handleStorage)
+  }, [applyAppSnapshot, applyEventSelected, applyMainContextStatus])
 
   // Reactively fetch new sources/contexts when the selected operation changes.
   // This avoids sending large source lists over BroadcastChannel (APP_SNAPSHOT).
   const selectedOperationId = app.target.operations.find(o => o.selected)?.id
   const prevOperationIdRef = useRef<string | null | undefined>(undefined)
-  const selectedSourceIdsRef = useRef<string[] | null | undefined>(null)
 
   useEffect(() => {
     if (selectedOperationId && prevOperationIdRef.current !== undefined && selectedOperationId !== prevOperationIdRef.current) {

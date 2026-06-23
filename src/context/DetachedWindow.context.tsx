@@ -20,6 +20,7 @@ import { TableViewWindow } from "@/components/TableViewWindow";
 import { DashboardViewWindow } from "@/components/DashboardViewWindow";
 import { AIAssistantWindow } from "@/components/AIAssistantWindow";
 import { RenderEngine } from "@/class/RenderEngine";
+import { App } from "@/entities/App";
 import { Source } from "@/entities/Source";
 import { Operation } from "@/entities/Operation";
 import { Doc } from "@/entities/Doc";
@@ -28,6 +29,7 @@ import { NotePoint } from "@/ui/Note";
 import { DisplayEventDialog } from "@/dialogs/Event.dialog";
 
 type DetachedWindowKind = "notes" | "table" | "dashboard" | "assistant";
+const DETACHED_WINDOWS_STORAGE_KEY = "gulp-detached-windows";
 
 interface AssistantWindowTarget {
 	key: string;
@@ -41,6 +43,13 @@ interface DetachedWindowRecord {
 	window: Window;
 	root: ReactDOM.Root;
 	bridgeId: string;
+}
+
+interface PersistedDetachedWindowRecord {
+	key: string;
+	kind: Exclude<DetachedWindowKind, "assistant">;
+	windowName: string;
+	features: string;
 }
 
 interface DetachedWindowContextValue {
@@ -87,6 +96,70 @@ function createAssistantWindowName(targetKey: string): string {
 }
 
 /**
+ * Reads the detached windows that should be reattached after main-tab reloads.
+ *
+ * @returns Persisted detached window records.
+ */
+function readPersistedDetachedWindows(): PersistedDetachedWindowRecord[] {
+	try {
+		const raw = localStorage.getItem(DETACHED_WINDOWS_STORAGE_KEY);
+		if (!raw) return [];
+
+		const records = JSON.parse(raw) as PersistedDetachedWindowRecord[];
+		if (!Array.isArray(records)) return [];
+
+		return records.filter((record) =>
+			["notes", "table", "dashboard"].includes(record.kind) &&
+			!!record.key &&
+			!!record.windowName &&
+			!!record.features,
+		);
+	} catch (error) {
+		console.warn("Failed to read persisted detached windows", {
+			error,
+		});
+		return [];
+	}
+}
+
+/**
+ * Writes detached window records used for post-login reattachment.
+ *
+ * @param records - Persisted detached window records.
+ * @returns Nothing.
+ */
+function writePersistedDetachedWindows(
+	records: PersistedDetachedWindowRecord[],
+): void {
+	localStorage.setItem(DETACHED_WINDOWS_STORAGE_KEY, JSON.stringify(records));
+}
+
+/**
+ * Stores or updates a detached window record in localStorage.
+ *
+ * @param record - Detached window metadata needed to reattach by window name.
+ * @returns Nothing.
+ */
+function persistDetachedWindow(record: PersistedDetachedWindowRecord): void {
+	const records = readPersistedDetachedWindows();
+	writePersistedDetachedWindows([
+		...records.filter((item) => item.key !== record.key),
+		record,
+	]);
+}
+
+/**
+ * Removes a detached window record from localStorage.
+ *
+ * @param key - Detached window key to remove.
+ * @returns Nothing.
+ */
+function removePersistedDetachedWindow(key: string): void {
+	const records = readPersistedDetachedWindows();
+	writePersistedDetachedWindows(records.filter((record) => record.key !== key));
+}
+
+/**
  * Extracts the operation ID from an operation workspace route.
  *
  * @param pathname - Current browser location pathname.
@@ -105,6 +178,38 @@ function getRouteOperationId(pathname: string): Operation.Id | null {
 function hasStoredToken(): boolean {
 	const token = localStorage.getItem("__token");
 	return !!token && token !== "-";
+}
+
+interface MainContextStatusInput {
+	app: App.Type;
+	authLost: boolean;
+	routeOperationId: Operation.Id | null;
+	selectedOperationId: Operation.Id | null | undefined;
+	selectedSourceIds: Source.Id[];
+}
+
+/**
+ * Resolves the lifecycle state that detached windows should render from the
+ * current main-tab authentication and operation selection.
+ *
+ * @param input - Current app, auth, route, operation, and selected source data.
+ * @returns Detached lifecycle status to broadcast.
+ */
+function resolveMainContextStatus(
+	input: MainContextStatusInput,
+): WindowBridge.MainContextStatus {
+	const authenticated =
+		!!input.app.general.user ||
+		hasStoredToken() ||
+		input.app.general.skippedAuth;
+
+	if (input.authLost || !authenticated) return "auth_lost";
+	if (!input.routeOperationId) return "idle";
+	if (!input.selectedOperationId || input.selectedSourceIds.length === 0) {
+		return "initializing";
+	}
+
+	return "active";
 }
 
 /**
@@ -128,9 +233,11 @@ function _({ children }: { children: ReactNode }) {
 		{},
 	);
 	const windowsRef = useRef<Record<string, DetachedWindowRecord>>({});
+	const recoveredPersistedWindowsRef = useRef(false);
 	const bridgeIdRef = useRef(WindowBridge.generateId());
-	const bridgeRef = useRef<ReturnType<typeof WindowBridge.create> | null>(null);
+	const bridgeRef = useRef<WindowBridge.Bridge | null>(null);
 	const [authLost, setAuthLost] = useState(false);
+	const authLostRef = useRef(false);
 	const routeOperationId = getRouteOperationId(location.pathname);
 	const selectedOperationId =
 		Operation.Entity.selected(app)?.id ?? routeOperationId;
@@ -148,6 +255,9 @@ function _({ children }: { children: ReactNode }) {
 
 	const appRef = useRef(app);
 	appRef.current = app;
+	const routeOperationIdRef = useRef(routeOperationId);
+	routeOperationIdRef.current = routeOperationId;
+	authLostRef.current = authLost;
 	const infoRef = useRef(Info);
 	infoRef.current = Info;
 	const spawnDialogRef = useRef(spawnDialog);
@@ -156,11 +266,13 @@ function _({ children }: { children: ReactNode }) {
 	spawnBannerRef.current = spawnBanner;
 
 	const status = useMemo<WindowBridge.MainContextStatus>(() => {
-		const authenticated = !!app.general.user || hasStoredToken() || app.general.skippedAuth;
-		if (authLost || !authenticated) return "auth_lost";
-		if (!routeOperationId) return "idle";
-		if (!selectedOperationId || selectedSourceIds.length === 0) return "initializing";
-		return "active";
+		return resolveMainContextStatus({
+			app,
+			authLost,
+			routeOperationId,
+			selectedOperationId,
+			selectedSourceIds,
+		});
 	}, [
 		app.general.skippedAuth,
 		app.general.user,
@@ -227,17 +339,62 @@ function _({ children }: { children: ReactNode }) {
 	 * @returns Nothing.
 	 */
 	const replayDetachedState = useCallback(() => {
+		const currentApp = appRef.current;
+		const currentRouteOperationId = routeOperationIdRef.current;
+		const currentSelectedOperationId =
+			Operation.Entity.selected(currentApp)?.id ?? currentRouteOperationId;
+		const currentSelectedSourceIds = currentApp.target.files
+			.filter((source) =>
+				source.selected &&
+				(!currentRouteOperationId ||
+					source.operation_id === currentRouteOperationId),
+			)
+			.map((source) => source.id);
+		const currentStatus = resolveMainContextStatus({
+			app: currentApp,
+			authLost: authLostRef.current,
+			routeOperationId: currentRouteOperationId,
+			selectedOperationId: currentSelectedOperationId,
+			selectedSourceIds: currentSelectedSourceIds,
+		});
+
+		if (bridgeRef.current) {
+			WindowBridge.sendMainContext(
+				bridgeRef.current,
+				currentApp,
+				currentStatus,
+				currentSelectedOperationId,
+			);
+			return;
+		}
+
 		WindowBridge.broadcastMainContext(
-			appRef.current,
-			status,
-			selectedOperationId,
+			currentApp,
+			currentStatus,
+			currentSelectedOperationId,
 		);
-	}, [selectedOperationId, status]);
+	}, []);
 	const replayDetachedStateRef = useRef(replayDetachedState);
 
 	useEffect(() => {
 		replayDetachedStateRef.current = replayDetachedState;
 	}, [replayDetachedState]);
+
+	/**
+	 * Sends only the selected timeline event to detached windows.
+	 *
+	 * @returns Nothing.
+	 */
+	const replaySelectedEvent = useCallback(() => {
+		const event = appRef.current.timeline.target ?? null;
+
+		if (bridgeRef.current) {
+			WindowBridge.sendSelectedEvent(bridgeRef.current, event);
+			return;
+		}
+
+		WindowBridge.broadcastSelectedEvent(event);
+	}, []);
 
 	/**
 	 * Removes a detached window record after the external window closes.
@@ -251,6 +408,7 @@ function _({ children }: { children: ReactNode }) {
 			setTimeout(() => record.root.unmount(), 0);
 		}
 		delete windowsRef.current[key];
+		removePersistedDetachedWindow(key);
 		setWindows({ ...windowsRef.current });
 	}, []);
 
@@ -309,6 +467,9 @@ function _({ children }: { children: ReactNode }) {
 				bridgeId,
 			};
 			windowsRef.current[key] = record;
+			if (kind !== "assistant") {
+				persistDetachedWindow({ key, kind, windowName, features });
+			}
 			setWindows({ ...windowsRef.current });
 			targetWindow.addEventListener(
 				"beforeunload",
@@ -388,6 +549,51 @@ function _({ children }: { children: ReactNode }) {
 		[openDetachedWindow],
 	);
 
+	/**
+	 * Reattaches named detached windows that survived a main-tab reload/login
+	 * redirect but lost their React root and BroadcastChannel listener.
+	 *
+	 * @returns Nothing.
+	 */
+	const recoverPersistedDetachedWindows = useCallback(() => {
+		const persistedWindows = readPersistedDetachedWindows();
+		if (persistedWindows.length === 0) return;
+
+		persistedWindows.forEach((record) => {
+			if (windowsRef.current[record.key]) return;
+
+			openDetachedWindow(
+				record.key,
+				record.kind,
+				record.windowName,
+				record.features,
+				(targetWindow) => {
+					if (record.kind === "notes") {
+						return <NotesWindow onClose={() => targetWindow.close()} />;
+					}
+
+					if (record.kind === "table") {
+						return <TableViewWindow onClose={() => targetWindow.close()} />;
+					}
+
+					return <DashboardViewWindow onClose={() => targetWindow.close()} />;
+				},
+			);
+		});
+	}, [openDetachedWindow]);
+
+	useEffect(() => {
+		if (status === "auth_lost") {
+			recoveredPersistedWindowsRef.current = false;
+			return;
+		}
+
+		if (recoveredPersistedWindowsRef.current) return;
+
+		recoveredPersistedWindowsRef.current = true;
+		recoverPersistedDetachedWindows();
+	}, [recoverPersistedDetachedWindows, status]);
+
 	useEffect(() => {
 		const bridge = WindowBridge.create(bridgeIdRef.current, (message) => {
 			switch (message.type) {
@@ -422,9 +628,10 @@ function _({ children }: { children: ReactNode }) {
 				case WindowBridge.MessageType.DOCK_DIALOG:
 					setDialogsDocked(true);
 					break;
-				case WindowBridge.MessageType.DETACHED_READY:
+				case WindowBridge.MessageType.DETACHED_READY: {
 					replayDetachedStateRef.current();
 					break;
+				}
 			}
 		});
 		bridgeRef.current = bridge;
@@ -442,9 +649,15 @@ function _({ children }: { children: ReactNode }) {
 		app.target.operations,
 		app.target.contexts,
 		app.target.filters,
-		app.timeline.filter,
-		app.timeline.target,
+		routeOperationId,
+		selectedOperationId,
+		selectedSourceIdsSignature,
+		status,
 	]);
+
+	useEffect(() => {
+		replaySelectedEvent();
+	}, [app.timeline.target?._id, replaySelectedEvent]);
 
 	useEffect(() => {
 		bridgeRef.current?.send(WindowBridge.MessageType.THEME_CHANGE, {
@@ -460,13 +673,38 @@ function _({ children }: { children: ReactNode }) {
 	}, [theme, windows]);
 
 	useEffect(() => {
-		const handleAuthLost = () => setAuthLost(true);
+		/**
+		 * Marks detached windows as blocked until a fresh login succeeds.
+		 *
+		 * @returns Nothing.
+		 */
+		const handleAuthLost = () => {
+			authLostRef.current = true;
+			setAuthLost(true);
+		};
+
+		/**
+		 * Clears a previous auth-lost state and replays the current context.
+		 *
+		 * @returns Nothing.
+		 */
+		const handleAuthRestored = () => {
+			authLostRef.current = false;
+			setAuthLost(false);
+			window.setTimeout(() => replayDetachedStateRef.current(), 0);
+		};
+
 		window.addEventListener("gulp-auth-lost", handleAuthLost);
-		return () => window.removeEventListener("gulp-auth-lost", handleAuthLost);
+		window.addEventListener("gulp-auth-restored", handleAuthRestored);
+		return () => {
+			window.removeEventListener("gulp-auth-lost", handleAuthLost);
+			window.removeEventListener("gulp-auth-restored", handleAuthRestored);
+		};
 	}, []);
 
 	useEffect(() => {
-		if (app.general.user || hasStoredToken()) {
+		if (authLostRef.current && (app.general.user || hasStoredToken())) {
+			authLostRef.current = false;
 			setAuthLost(false);
 		}
 	}, [app.general.user]);

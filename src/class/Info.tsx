@@ -3519,7 +3519,16 @@ export class Info implements InfoProps {
 		return p;
 	};
 
-	login = async (credentials: Pick<User.Minified, "id" | "password">) => {
+	/**
+	 * Authenticates a user, reloads user-scoped application data, and notifies
+	 * detached windows that the main tab can provide context again.
+	 *
+	 * @param credentials - User identifier and password submitted by the login view.
+	 * @returns The authenticated user, or null when login fails.
+	 */
+	login = async (
+		credentials: Pick<User.Minified, "id" | "password">,
+	): Promise<User.Type | null> => {
 		const user = await api<User.Type>("/login", {
 			method: "POST",
 			query: {
@@ -3558,6 +3567,7 @@ export class Info implements InfoProps {
 		await this.sync();
 
 		this.setInfoByKey(Object.assign(credentials, user), "general", "user");
+		window.dispatchEvent(new CustomEvent("gulp-auth-restored"));
 
 		return user;
 	};
