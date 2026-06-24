@@ -137,16 +137,19 @@ export namespace Collab {
   export namespace Description {
     export interface Props {
       value: string
-      isDefaultOpen?: boolean
     }
   }
-  export function Description({ value, isDefaultOpen = false }: Description.Props) {
-    const [inOpen, setIsOpen] = useState<boolean>(isDefaultOpen)
-    const { t } = Locale.use()
+
+  /**
+   * Renders the full collaboration item description without a collapsed text state.
+   *
+   * @param value Text or markdown content to display for the active note or link.
+   * @returns Markdown content for the selected collaboration item.
+   */
+  export function Description({ value }: Description.Props) {
     return (
-      <Stack dir='column' style={{ minHeight: 32 }} gap={0} ai='unset' pos='relative'>
-        <Markdown className={cn(s.description, inOpen && s.revealed)} value={value} />
-        <Button style={{ width: '100%', position: 'absolute', bottom: 0 }} variant='glass' onClick={() => setIsOpen(v => !v)} icon='AcronymMarkdown'>{inOpen ? t('common.hide') : t('common.show')} {t('common.text')}</Button>
+      <Stack dir='column' className={s.descriptionWrapper} gap={0} ai='unset'>
+        <Markdown className={s.description} value={value} />
       </Stack>
     )
   }

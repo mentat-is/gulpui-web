@@ -76,6 +76,10 @@ interface EventLinkTableRow {
 	icon: Icon.Name;
 }
 
+const INITIAL_COLLAB_PANEL_HEIGHT = 240;
+const MIN_COLLAB_PANEL_HEIGHT = 140;
+const RESERVED_EVENT_VIEWER_HEIGHT = 260;
+
 /**
  * Extracts the path from a detected selection string.
  * Example: `"gulp.unmapped.Data.0": "480 Pacific Standard Time"` -> `gulp.unmapped.Data.0`
@@ -126,6 +130,28 @@ const stripArrayIndices = (path: string): string => {
 		.split(".")
 		.filter((part) => !/^\d+$/.test(part))
 		.join(".");
+};
+
+/**
+ * Clamps the collaboration panel height while preserving room for the event viewer.
+ *
+ * @param value Requested panel height in pixels.
+ * @param viewportHeight Current owner window height in pixels.
+ * @returns Bounded panel height in pixels.
+ */
+const clampCollabPanelHeight = (
+	value: number,
+	viewportHeight: number,
+): number => {
+	const maximumPanelHeight = Math.max(
+		MIN_COLLAB_PANEL_HEIGHT,
+		viewportHeight - RESERVED_EVENT_VIEWER_HEIGHT,
+	);
+
+	return Math.max(
+		MIN_COLLAB_PANEL_HEIGHT,
+		Math.min(value, maximumPanelHeight),
+	);
 };
 
 /**
@@ -1073,7 +1099,9 @@ export function DisplayEventDialog({
 		const opId = Doc.Entity.operationId(app, event);
 		return opId ? Doc.Entity.flag.isFlagged(event._id, opId) : false;
 	});
-	const [isCollabPanelOpen, setIsCollabPanelOpen] = useState<boolean>(true);
+	const [collabPanelHeight, setCollabPanelHeight] = useState<number>(
+		INITIAL_COLLAB_PANEL_HEIGHT,
+	);
 	const [linkedEventsPopup, setLinkedEventsPopup] = useState<{
 		events: Doc.Type[];
 		anchor: { x: number; y: number };
@@ -1888,6 +1916,42 @@ export function DisplayEventDialog({
 		[handleOpenLinkActionBanner, handleOpenLinkedEvents, links, t],
 	);
 
+	/**
+	 * Starts vertical resizing for the notes/links panel and updates its height while dragging.
+	 *
+	 * @param resizeEvent Mouse event emitted by the panel resize handle.
+	 */
+	const handleCollabResizeStart = useCallback(
+		(resizeEvent: ReactMouseEvent<HTMLDivElement>) => {
+			resizeEvent.preventDefault();
+
+			const localDoc = resizeEvent.currentTarget.ownerDocument;
+			const localWin = localDoc.defaultView ?? window;
+			const startY = resizeEvent.clientY;
+			const startHeight = collabPanelHeight;
+
+			const handleMouseMove = (moveEvent: MouseEvent) => {
+				const nextHeight = startHeight + startY - moveEvent.clientY;
+				setCollabPanelHeight(
+					clampCollabPanelHeight(nextHeight, localWin.innerHeight),
+				);
+			};
+
+			const handleMouseUp = () => {
+				localWin.removeEventListener("mousemove", handleMouseMove);
+				localWin.removeEventListener("mouseup", handleMouseUp);
+				localDoc.body.style.cursor = "";
+				localDoc.body.style.userSelect = "";
+			};
+
+			localDoc.body.style.cursor = "row-resize";
+			localDoc.body.style.userSelect = "none";
+			localWin.addEventListener("mousemove", handleMouseMove);
+			localWin.addEventListener("mouseup", handleMouseUp);
+		},
+		[collabPanelHeight],
+	);
+
 	if (!file) {
 		return (
 			<Dialog callback={onClose}>
@@ -2052,7 +2116,18 @@ export function DisplayEventDialog({
 					<Tabs
 						defaultValue="notes"
 						className={s.collabTabs}
+						style={
+							{
+								"--collab-panel-height": `${collabPanelHeight}px`,
+							} as CSSProperties
+						}
 					>
+						<div
+							className={s.collabResizeHandle}
+							onMouseDown={handleCollabResizeStart}
+							role="separator"
+							aria-orientation="horizontal"
+						/>
 						<div className={s.collabTabsHeader}>
 							<TabsList className={s.collabTriggers}>
 								<TabsTrigger value="notes">{t("notes.title")}</TabsTrigger>
@@ -2060,50 +2135,42 @@ export function DisplayEventDialog({
 									{t("eventDialog.links")}
 								</TabsTrigger>
 							</TabsList>
-							<Button
-								variant="tertiary"
-								icon={isCollabPanelOpen ? "ChevronDown" : "ChevronRight"}
-								title={isCollabPanelOpen ? t("common.hide") : t("common.show")}
-								onClick={() => setIsCollabPanelOpen((value) => !value)}
-							/>
 						</div>
-						{isCollabPanelOpen && (
-							<div className={s.collabPanel}>
-								<TabsContent
-									value="notes"
-									className={s.collabContent}
-								>
-									{notes.length > 0 ? (
-										<Collab.List
-											notes={notes}
-											links={[]}
-											container={currentDocument.body}
-										/>
-									) : (
-										<div className={s.emptyState}>
-											{t("eventDialog.noNotes")}
-										</div>
-									)}
-								</TabsContent>
-								<TabsContent
-									value="links"
-									className={s.collabContent}
-								>
-									{linkTableRows.length > 0 ? (
-										<Table
-											values={linkTableRows}
-											columns={linkTableColumns}
-											includeIndex={false}
-											actions={linkTableActions}
-										/>
-									) : (
-										<div className={s.emptyState}>
-											{t("eventDialog.noLinks")}
-										</div>
-									)}
-								</TabsContent>
-							</div>
-						)}
+						<div className={s.collabPanel}>
+							<TabsContent
+								value="notes"
+								className={s.collabContent}
+							>
+								{notes.length > 0 ? (
+									<Collab.List
+										notes={notes}
+										links={[]}
+										container={currentDocument.body}
+									/>
+								) : (
+									<div className={s.emptyState}>
+										{t("eventDialog.noNotes")}
+									</div>
+								)}
+							</TabsContent>
+							<TabsContent
+								value="links"
+								className={s.collabContent}
+							>
+								{linkTableRows.length > 0 ? (
+									<Table
+										values={linkTableRows}
+										columns={linkTableColumns}
+										includeIndex={false}
+										actions={linkTableActions}
+									/>
+								) : (
+									<div className={s.emptyState}>
+										{t("eventDialog.noLinks")}
+									</div>
+								)}
+							</TabsContent>
+						</div>
 					</Tabs>
 					{linkedEventsPopup && (
 						<DisplayGroupDialog
