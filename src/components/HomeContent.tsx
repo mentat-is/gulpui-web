@@ -5,7 +5,9 @@ import { Icon } from "@/ui/Icon";
 import { Application } from "@/context/Application.context";
 import { DisplayGroupDetailDialog } from "@/dialogs/GroupsDetail.dialog";
 import { DisplayOperationDetailDialog } from "@/dialogs/OperationDetail.dialog";
+import { DisplayPluginConfigurationDetailDialog } from "@/dialogs/PluginConfigurationDetail.dialog";
 import { DisplayUserDetailDialog } from "@/dialogs/UserDetail.dialog";
+import { GulpDataset } from "@/class/Info";
 import { Operation } from "@/entities/Operation";
 import { User } from "@/entities/User";
 import { Group } from "@/entities/Group";
@@ -18,9 +20,18 @@ import { Locale } from "@/locales";
 import s from "./styles/HomeContent.module.css";
 
 type EntityRecord = Record<string, unknown> & { id?: string; name?: string };
+type PluginConfigurationObject =
+	GulpDataset.SharedObject.Type<GulpDataset.SharedObject.JsonObject>;
+type PluginConfigurationRow = PluginConfigurationObject & {
+	configurationPreview: string;
+};
 
 export namespace HomeContent {
-	export type Section = "operations" | "users" | "groups";
+	export type Section =
+		| "operations"
+		| "users"
+		| "groups"
+		| "pluginConfigurations";
 
 	export interface OperationsListProps {
 		/** Whether the application is still loading the initial operation list. */
@@ -36,6 +47,23 @@ export namespace HomeContent {
  */
 function getEntityId(entity: EntityRecord): string {
 	return typeof entity.id === "string" ? entity.id : "";
+}
+
+/**
+ * Resolves the backend identifier used by shared object APIs.
+ *
+ * @param sharedObject - Shared object returned by the list or detail API.
+ * @returns The object identifier, preferring obj_id over id.
+ */
+function getSharedObjectId(sharedObject: {
+	obj_id?: string;
+	id?: string;
+}): string {
+	if (typeof sharedObject.obj_id === "string" && sharedObject.obj_id.length > 0) {
+		return sharedObject.obj_id;
+	}
+
+	return typeof sharedObject.id === "string" ? sharedObject.id : "";
 }
 
 /**
@@ -60,6 +88,76 @@ function formatDetailValue(value: unknown): string {
 	}
 
 	return String(value);
+}
+
+interface EntityNameCellProps {
+	/** Icon displayed before the entity name. */
+	iconName: Icon.Name;
+	/** Raw name value rendered for the entity. */
+	name: unknown;
+}
+
+/**
+ * Renders a table name cell with its entity icon directly before the label.
+ *
+ * @param props - Icon name and raw entity name value.
+ * @returns A compact, left-aligned name cell for Home tables.
+ */
+function EntityNameCell({ iconName, name }: EntityNameCellProps) {
+	const displayName = formatDetailValue(name);
+
+	return (
+		<div className={s.entityNameCell}>
+			<div className={s.entityIcon}>
+				<Icon name={iconName} />
+			</div>
+			<span
+				className={s.entityNameText}
+				title={displayName}
+			>
+				{displayName}
+			</span>
+		</div>
+	);
+}
+
+/**
+ * Resolves the icon used for a user table row.
+ *
+ * @param user - User row rendered by the table.
+ * @returns The configured user glyph name, or the User icon fallback.
+ */
+function getUserIconName(user: User.Type): Icon.Name {
+	return Glyph.List.get(user.glyph_id) ?? "User";
+}
+
+/**
+ * Resolves the icon used for a group table row.
+ *
+ * @param group - Group row rendered by the table.
+ * @returns The configured group glyph name, or the Users icon fallback.
+ */
+function getGroupIconName(group: Group.Type): Icon.Name {
+	return (
+		(group.glyph_id ? Glyph.List.get(group.glyph_id as Glyph.Id) : null) ??
+		"Users"
+	);
+}
+
+/**
+ * Resolves the icon used for a plugin configuration shared object.
+ *
+ * @param configuration - Plugin configuration row rendered by the table.
+ * @returns The shared object's glyph name, or the JSON icon fallback.
+ */
+function getPluginConfigurationIconName(
+	configuration: PluginConfigurationObject,
+): Icon.Name {
+	return (
+		configuration.glyph_id
+			? Glyph.List.get(configuration.glyph_id as Glyph.Id)
+			: null
+	) ?? "AcronymJson";
 }
 
 /**
@@ -319,19 +417,15 @@ export function OperationsList({ loading }: HomeContent.OperationsListProps) {
 				actions={actions}
 				columns={[
 					{
-						key: "icon",
-						label: t("common.icon"),
-						width: 60,
-						render: (_, row) => (
-							<div className={s.entityIcon}>
-								<Icon name={Operation.Entity.icon(row)} />
-							</div>
-						),
-					},
-					{
 						key: "name",
 						label: t("common.name"),
 						width: "auto",
+						render: (value, row) => (
+							<EntityNameCell
+								iconName={Operation.Entity.icon(row)}
+								name={value}
+							/>
+						),
 					},
 				]}
 			/>
@@ -531,22 +625,18 @@ export function UsersList() {
 				persistId="home-users-table"
 				actions={actions}
 				columns={[
-					{
-						key: "icon",
-						label: t("common.icon"),
-						width: 60,
-						render: (_, row) => {
-							const glyphId = row.glyph_id || Glyph.getIdByName("User");
-							const glyph = Glyph.List.get(glyphId);
-							return (
-								<div className={s.entityIcon}>
-									<Icon name={glyph || "User"} />
-								</div>
-							);
-						},
-					},
 					{ key: "id", label: t("common.id"), width: "auto" },
-					{ key: "name", label: t("common.name"), width: "auto" },
+					{
+						key: "name",
+						label: t("common.name"),
+						width: "auto",
+						render: (value, row) => (
+							<EntityNameCell
+								iconName={getUserIconName(row)}
+								name={value}
+							/>
+						),
+					},
 					{
 						key: "permission",
 						label: t("permissions.roles"),
@@ -759,18 +849,18 @@ export function GroupsList() {
 				persistId="home-groups-table"
 				actions={actions}
 				columns={[
+					{ key: "id", label: t("common.id"), width: "auto" },
 					{
-						key: "icon",
-						label: t("common.icon"),
-						width: 60,
-						render: () => (
-							<div className={s.entityIcon}>
-								<Icon name="Users" />
-							</div>
+						key: "name",
+						label: t("common.name"),
+						width: "auto",
+						render: (value, row) => (
+							<EntityNameCell
+								iconName={getGroupIconName(row)}
+								name={value}
+							/>
 						),
 					},
-					{ key: "id", label: t("common.id"), width: "auto" },
-					{ key: "name", label: t("common.name"), width: "auto" },
 				]}
 			/>
 			<div className={s.footer}>
@@ -782,6 +872,231 @@ export function GroupsList() {
 						icon="Trash2"
 					>
 						{t("home.groups.deleteSelected", { count: selectedIds.size })}
+					</Button>
+				</Stack>
+			</div>
+		</>
+	);
+}
+
+/**
+ * Builds table rows for plugin configuration shared objects.
+ *
+ * @param sharedObjects - Shared objects returned by the backend.
+ * @returns Rows with a compact configuration preview column.
+ */
+function buildPluginConfigurationRows(
+	sharedObjects: PluginConfigurationObject[],
+): PluginConfigurationRow[] {
+	return sharedObjects.map((sharedObject) => ({
+		...sharedObject,
+		configurationPreview: formatDetailValue(sharedObject.obj),
+	}));
+}
+
+/**
+ * Renders the plugin configuration shared-object list inside the Home panel.
+ *
+ * @returns The plugin configuration table, loading state, or empty state.
+ */
+export function PluginConfigurationsList() {
+	const { Info, spawnDialog } = Application.use();
+	const { t } = Locale.use();
+	const [loading, setLoading] = useState<boolean>(true);
+	const [configurations, setConfigurations] = useState<PluginConfigurationRow[]>(
+		[],
+	);
+	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+	/**
+	 * Reloads plugin configuration shared objects from the backend.
+	 *
+	 * @returns A promise that settles after configurations are refreshed.
+	 */
+	const reloadConfigurations = useCallback(async () => {
+		setLoading(true);
+		try {
+			const response =
+				await Info.shared_object_list<GulpDataset.SharedObject.JsonObject>({
+					type: "shared_object",
+					obj_type: "plugin_configuration",
+				});
+			setConfigurations(buildPluginConfigurationRows(response || []));
+		} finally {
+			setLoading(false);
+		}
+	}, [Info]);
+
+	useEffect(() => {
+		reloadConfigurations();
+	}, [reloadConfigurations]);
+
+	/**
+	 * Deletes one plugin configuration and updates table selection state.
+	 *
+	 * @param objId - Shared object identifier to delete.
+	 * @returns A promise resolving to true when deletion succeeds.
+	 */
+	const deleteConfiguration = useCallback(
+		async (objId: string): Promise<boolean> => {
+			const deleted = await Info.shared_object_delete(objId);
+			if (deleted) {
+				toast.success(t("home.pluginConfigurations.deleted", { objId }), {
+					icon: <Icon name="Check" />,
+					richColors: true,
+				});
+				setSelectedIds((prev) => {
+					const next = new Set(prev);
+					next.delete(objId);
+					return next;
+				});
+			} else {
+				toast.error(t("home.pluginConfigurations.deleteFailed", { objId }), {
+					icon: <Icon name="Stop" />,
+					richColors: true,
+				});
+			}
+			return deleted;
+		},
+		[Info, t],
+	);
+
+	/**
+	 * Deletes all selected plugin configurations and refreshes the table once.
+	 *
+	 * @returns A promise that settles after all selected delete requests finish.
+	 */
+	const handleBulkDelete = useCallback(async () => {
+		for (const objId of selectedIds) {
+			await deleteConfiguration(objId);
+		}
+		await reloadConfigurations();
+	}, [deleteConfiguration, reloadConfigurations, selectedIds]);
+
+	/**
+	 * Opens the plugin configuration detail drawer for the selected row.
+	 *
+	 * @param configuration - Plugin configuration row selected from the table.
+	 */
+	const openConfigurationDetails = useCallback(
+		(configuration: PluginConfigurationRow) => {
+			const objId = getSharedObjectId(configuration);
+			if (!objId) return;
+
+			spawnDialog(
+				<DisplayPluginConfigurationDetailDialog
+					objId={objId}
+					fallbackName={configuration.name}
+					onClose={() => spawnDialog(null)}
+					onUpdated={reloadConfigurations}
+				/>,
+			);
+		},
+		[reloadConfigurations, spawnDialog],
+	);
+
+	const selectedIndices = useMemo(() => {
+		const indices = new Set<number>();
+		configurations.forEach((configuration, index) => {
+			const objId = getSharedObjectId(configuration);
+			if (selectedIds.has(objId)) {
+				indices.add(index);
+			}
+		});
+		return indices;
+	}, [configurations, selectedIds]);
+
+	const actions = useMemo<Table.Action<PluginConfigurationRow>[]>(
+		() => [
+			{
+				icon: "Trash2",
+				label: t("common.delete"),
+				variant: "secondary",
+				onClick: async (configuration) => {
+					const objId = getSharedObjectId(configuration);
+					if (!objId) return;
+					const deleted = await deleteConfiguration(objId);
+					if (deleted) {
+						await reloadConfigurations();
+					}
+				},
+			},
+		],
+		[deleteConfiguration, reloadConfigurations, t],
+	);
+
+	if (loading) {
+		return <ResultState text={t("home.pluginConfigurations.loading")} />;
+	}
+
+	if (configurations.length === 0) {
+		return <ResultState text={t("home.pluginConfigurations.empty")} />;
+	}
+
+	return (
+		<>
+			<Table<PluginConfigurationRow>
+				className={s.result}
+				values={configurations}
+				selectable={true}
+				selectedrows={selectedIndices}
+				onrowselect={(index) => {
+					const configuration = configurations[index];
+					if (!configuration) return;
+
+					const objId = getSharedObjectId(configuration);
+					if (!objId) return;
+
+					setSelectedIds((prev) => {
+						const next = new Set(prev);
+						if (next.has(objId)) {
+							next.delete(objId);
+						} else {
+							next.add(objId);
+						}
+						return next;
+					});
+				}}
+				onSelectAll={(checked) => {
+					const ids = configurations
+						.map((configuration) => getSharedObjectId(configuration))
+						.filter((objId) => objId.length > 0);
+					setSelectedIds(checked ? new Set(ids) : new Set());
+				}}
+				onRowClick={openConfigurationDetails}
+				includeIndex={false}
+				persistId="home-plugin-configurations-table"
+				actions={actions}
+				columns={[
+					{
+						key: "name",
+						label: t("common.name"),
+						width: 220,
+						render: (value, row) => (
+							<EntityNameCell
+								iconName={getPluginConfigurationIconName(row)}
+								name={value}
+							/>
+						),
+					},
+					{
+						key: "configurationPreview",
+						label: t("common.configuration"),
+						width: "auto",
+					},
+				]}
+			/>
+			<div className={s.footer}>
+				<Stack jc="flex-end">
+					<Button
+						variant="glass"
+						disabled={selectedIds.size === 0}
+						onClick={handleBulkDelete}
+						icon="Trash2"
+					>
+						{t("home.pluginConfigurations.deleteSelected", {
+							count: selectedIds.size,
+						})}
 					</Button>
 				</Stack>
 			</div>

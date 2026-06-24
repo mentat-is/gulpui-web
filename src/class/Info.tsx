@@ -148,6 +148,13 @@ export namespace GulpDataset {
 	}
 
 	export namespace SharedObject {
+		export type JsonPrimitive = string | number | boolean | null;
+		export type JsonValue =
+			| JsonPrimitive
+			| JsonValue[]
+			| { [key: string]: JsonValue };
+		export type JsonObject = { [key: string]: JsonValue };
+
 		export interface Type<TObject = Record<string, unknown>> {
 			id?: string;
 			obj_id?: string;
@@ -175,6 +182,14 @@ export namespace GulpDataset {
 		export type ListResponse<TObject = Record<string, unknown>> =
 			| Type<TObject>[]
 			| { data: Type<TObject>[] };
+
+		export interface UpdatePayload {
+			name?: string;
+			glyph_id?: Glyph.Id | string | null;
+			description?: string;
+			tags?: string[];
+			obj?: JsonObject;
+		}
 	}
 
 	export namespace PluginList {
@@ -473,15 +488,26 @@ export class Info implements InfoProps {
 		}
 	};
 
-	enrichment = (
+	/**
+	 * Starts a bulk enrichment request and displays API/websocket completion toasts.
+	 *
+	 * @param plugin - Enrichment plugin filename to execute.
+	 * @param file - Source file whose documents should be enriched.
+	 * @param range - Time range used to filter documents.
+	 * @param custom_parameters - Plugin custom parameter values.
+	 * @param isShowOnlyEnriched - Whether to clear the visible file events while enriched documents stream in.
+	 * @param fields - Field values passed to the enrichment plugin.
+	 * @returns True when the enrichment request is accepted by the API, false on request error.
+	 */
+	enrichment = async (
 		plugin: string,
 		file: Source.Type,
 		range: MinMax,
 		custom_parameters: Record<string, any>,
 		isShowOnlyEnriched: boolean,
 		fields: Record<string, string | null>,
-	) => {
-		return api("/enrich_documents", {
+	): Promise<boolean> => {
+		const response = await api<undefined>("/enrich_documents", {
 			method: "POST",
 			query: {
 				operation_id: file.operation_id,
@@ -502,70 +528,101 @@ export class Info implements InfoProps {
 				},
 				fields,
 			},
-		}).then(({ req_id }) => {
-			if (isShowOnlyEnriched) {
-				this.events_reset_in_file(file);
-				this.setLoading(req_id, file.id);
-			}
-			const bufferedEvents: Doc.Type[] = [];
-			let lastFlushTime = 0;
-			let flushChain: Promise<void> = Promise.resolve();
-			const FLUSH_INTERVAL_MS = 300;
-
-			const sid = SmartSocket.Class.instance.con(
-				SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-				(m) =>
-					m.req_id === req_id &&
-					this.app.general.loadings.byRequestId.has(req_id),
-				(m) => {
-					const events = Doc.Entity.normalize(
-						m.payload.docs ?? [],
-						file.settings.field,
-						file.settings.hash_function,
-					);
-					bufferedEvents.push(...events);
-					if (
-						(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
-							m.payload.last) &&
-						bufferedEvents.length > 0
-					) {
-						const toFlush = bufferedEvents.splice(0);
-						lastFlushTime = Date.now();
-						flushChain = flushChain.then(() => this.events_add_async(toFlush));
-					}
-					if (m.payload.last) {
-						flushChain.then(() => {
-							this.delLoading(req_id);
-							SmartSocket.Class.instance.coff(
-								SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-								sid,
-							);
-						});
-					}
-				},
-			);
-			SmartSocket.Class.instance.conce(
-				SmartSocket.Message.Type.ENRICH_DONE,
-				(m) => m.req_id === req_id,
-				(m) => {
-					if (m.payload.obj.status !== "done") {
-						toast.error(translate("enrichment.failed"), {
-							icon: <Icon name="Stop" />,
-							richColors: true,
-						});
-					} else {
-						toast.success(translate("info.enrichmentFinished"), {
-							description: translate("info.totalProcessedDocuments", {
-								count: m.payload.obj.data.total_hits ?? 0,
-							}),
-							icon: <Icon name="Check" />,
-						});
-					}
-				},
-			);
+			toast: {
+				onError: (errorResponse) =>
+					toast.error(translate("enrichment.failed"), {
+						description: translate("common.reason", {
+							reason: errorResponse.data.__error.msg,
+						}),
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					}),
+			},
 		});
+
+		if (!response?.req_id) {
+			return false;
+		}
+
+		const { req_id } = response;
+		if (isShowOnlyEnriched) {
+			this.events_reset_in_file(file);
+			this.setLoading(req_id, file.id);
+		}
+		const bufferedEvents: Doc.Type[] = [];
+		let lastFlushTime = 0;
+		let flushChain: Promise<void> = Promise.resolve();
+		const FLUSH_INTERVAL_MS = 300;
+
+		const sid = SmartSocket.Class.instance.con(
+			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+			(m) =>
+				m.req_id === req_id &&
+				this.app.general.loadings.byRequestId.has(req_id),
+			(m) => {
+				const events = Doc.Entity.normalize(
+					m.payload.docs ?? [],
+					file.settings.field,
+					file.settings.hash_function,
+				);
+				bufferedEvents.push(...events);
+				if (
+					(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
+						m.payload.last) &&
+					bufferedEvents.length > 0
+				) {
+					const toFlush = bufferedEvents.splice(0);
+					lastFlushTime = Date.now();
+					flushChain = flushChain.then(() => this.events_add_async(toFlush));
+				}
+				if (m.payload.last) {
+					flushChain.then(() => {
+						this.delLoading(req_id);
+						SmartSocket.Class.instance.coff(
+							SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+							sid,
+						);
+					});
+				}
+			},
+		);
+		SmartSocket.Class.instance.conce(
+			SmartSocket.Message.Type.ENRICH_DONE,
+			(m) => m.req_id === req_id,
+			(m) => {
+				if (m.payload.obj.status !== "done") {
+					const reason = m.payload.obj.data?.__error?.msg;
+					toast.error(translate("enrichment.failed"), {
+						description:
+							typeof reason === "string"
+								? translate("common.reason", { reason })
+								: undefined,
+						icon: <Icon name="Stop" />,
+						richColors: true,
+					});
+				} else {
+					toast.success(translate("info.enrichmentFinished"), {
+						description: translate("info.totalProcessedDocuments", {
+							count: m.payload.obj.data.total_hits ?? 0,
+						}),
+						icon: <Icon name="Check" />,
+					});
+				}
+			},
+		);
+
+		return true;
 	};
 
+	/**
+	 * Enriches a single document and displays API result toasts.
+	 *
+	 * @param plugin - Enrichment plugin filename to execute.
+	 * @param event - Document event to enrich.
+	 * @param custom_parameters - Plugin custom parameter values.
+	 * @param fields - Field values passed to the enrichment plugin.
+	 * @returns The enriched document when the API succeeds, otherwise undefined.
+	 */
 	enrich_single_id = (
 		plugin: string,
 		event: Doc.Type,
@@ -591,6 +648,14 @@ export class Info implements InfoProps {
 					toast.success(translate("doc.enriched"), {
 						richColors: true,
 						icon: <Icon name="Check" />,
+					}),
+				onError: (errorResponse) =>
+					toast.error(translate("enrichment.failed"), {
+						description: translate("common.reason", {
+							reason: errorResponse.data.__error.msg,
+						}),
+						icon: <Icon name="Stop" />,
+						richColors: true,
 					}),
 			},
 		});
@@ -1283,6 +1348,83 @@ export class Info implements InfoProps {
 		}
 
 		return response?.data ?? [];
+	};
+
+	/**
+	 * Retrieves one shared object by its backend object identifier.
+	 *
+	 * @param objId - Shared object identifier requested from the backend.
+	 * @returns The matching shared object payload.
+	 */
+	shared_object_get_by_id = async <
+		TObject extends Record<string, unknown> = Record<string, unknown>,
+	>(
+		objId: string,
+	): Promise<GulpDataset.SharedObject.Type<TObject>> => {
+		return api<GulpDataset.SharedObject.Type<TObject>>(
+			"/shared_object_get_by_id",
+			{
+				method: "GET",
+				query: { obj_id: objId },
+			},
+		);
+	};
+
+	/**
+	 * Updates metadata and/or JSON payload stored inside a shared object.
+	 *
+	 * @param objId - Shared object identifier to update.
+	 * @param payload - Shared object fields to update.
+	 * @returns True when the backend confirms the update request.
+	 */
+	shared_object_update = async (
+		objId: string,
+		payload: GulpDataset.SharedObject.UpdatePayload,
+	): Promise<boolean> => {
+		const body: Record<string, unknown> = {};
+		if (payload.obj !== undefined) {
+			body.obj = payload.obj;
+		}
+		if (payload.description !== undefined) {
+			body.description = payload.description;
+		}
+		if (payload.tags !== undefined) {
+			body.tags = payload.tags;
+		}
+
+		const response = await api<undefined>("/shared_object_update", {
+			method: "PATCH",
+			query: {
+				obj_id: objId,
+				...(payload.name !== undefined ? { name: payload.name } : {}),
+				...(payload.glyph_id !== undefined
+					? { glyph_id: payload.glyph_id ?? "" }
+					: {}),
+			},
+			body,
+			raw: true,
+		});
+
+		return response?.status === "success";
+	};
+
+	/**
+	 * Deletes a shared object from the active websocket workspace.
+	 *
+	 * @param objId - Shared object identifier to delete.
+	 * @returns True when the backend confirms the deletion request.
+	 */
+	shared_object_delete = async (objId: string): Promise<boolean> => {
+		const response = await api<undefined>("/shared_object_delete", {
+			method: "DELETE",
+			query: {
+				obj_id: objId,
+				ws_id: this.app.general.ws_id,
+			},
+			raw: true,
+		});
+
+		return response?.status === "success";
 	};
 
 	/**
@@ -3561,15 +3703,22 @@ export class Info implements InfoProps {
 
 		Internal.Settings.token = user.token;
 		localStorage.setItem("__user_id", user.id);
+		const fullUserProfile = await this.user_get_by_id(user.id).catch(() => null);
+		const authenticatedUser = {
+			...credentials,
+			...user,
+			...(fullUserProfile ?? {}),
+			token: user.token,
+		};
 
 		await this.plugin_list();
 		await this.glyphs_reload();
 		await this.sync();
 
-		this.setInfoByKey(Object.assign(credentials, user), "general", "user");
+		this.setInfoByKey(authenticatedUser, "general", "user");
 		window.dispatchEvent(new CustomEvent("gulp-auth-restored"));
 
-		return user;
+		return authenticatedUser;
 	};
 
 	user_set_data = async (

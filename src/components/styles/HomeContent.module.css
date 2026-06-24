@@ -33,6 +33,21 @@
 	flex-shrink: 0;
 }
 
+.entityNameCell {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	width: 100%;
+}
+
+.entityNameText {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 .footer {
 	border-top: 1px solid var(--gray-400);
 	margin-top: 16px;

@@ -157,6 +157,14 @@ function Root() {
 												}
 											/>
 											<Route
+												path="/plugin-configurations"
+												element={
+													<RequireAuth>
+														<Home.Page section="pluginConfigurations" />
+													</RequireAuth>
+												}
+											/>
+											<Route
 												path="/operations/:operation_id"
 												element={
 													<RequireAuth>

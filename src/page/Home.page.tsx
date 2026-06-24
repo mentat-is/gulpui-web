@@ -14,6 +14,7 @@ import {
 	HeaderAction,
 	HomeContent,
 	OperationsList,
+	PluginConfigurationsList,
 	UsersList,
 } from "@/components/HomeContent";
 
@@ -43,6 +44,9 @@ export namespace Home {
 		const navigate = useNavigate();
 		const location = useLocation();
 		const [loading, setLoading] = useState(true);
+		const isAdmin = Array.isArray(app.general.user?.permission)
+			? app.general.user.permission.includes("admin")
+			: false;
 
 		/**
 		 * On mount, initializes shared application state, mirroring OperationView's exact
@@ -98,6 +102,7 @@ export namespace Home {
 					operations: "/",
 					users: "/users",
 					groups: "/groups",
+					pluginConfigurations: "/plugin-configurations",
 				};
 				navigate(routes[nextSection]);
 			},
@@ -114,6 +119,7 @@ export namespace Home {
 				operations: t("home.operations.title"),
 				users: `[ ${t("common.users")} ]`,
 				groups: `[ ${t("common.groups")} ]`,
+				pluginConfigurations: t("home.pluginConfigurations.title"),
 			};
 			return titles[section];
 		}, [section, t]);
@@ -133,6 +139,8 @@ export namespace Home {
 				<UsersList />
 			) : section === "groups" ? (
 				<GroupsList />
+			) : section === "pluginConfigurations" ? (
+				<PluginConfigurationsList />
 			) : (
 				<OperationsList loading={loading} />
 			);
@@ -141,8 +149,8 @@ export namespace Home {
 		 * Top area menu items for the Home page.
 		 * Navigation only switches the Home main content panel.
 		 */
-		const menuTopItems = useMemo<MenuItem[]>(
-			() => [
+		const menuTopItems = useMemo<MenuItem[]>(() => {
+			const items: MenuItem[] = [
 				{
 					label: t("common.operations"),
 					icon: "BookPlus",
@@ -161,9 +169,19 @@ export namespace Home {
 					category: t("common.administration"),
 					action: () => handleSectionChange("groups"),
 				},
-			],
-			[handleSectionChange, t],
-		);
+			];
+
+			if (isAdmin) {
+				items.push({
+					label: t("home.pluginConfigurations.menu"),
+					icon: "AcronymJson",
+					category: t("common.administration"),
+					action: () => handleSectionChange("pluginConfigurations"),
+				});
+			}
+
+			return items;
+		}, [handleSectionChange, isAdmin, t]);
 
 		/**
 		 * Bottom area menu items for the Home page.
