@@ -2211,50 +2211,6 @@ export class Info implements InfoProps {
 	};
 
 	/**
-	 * Initiates package-based ingestion for ZIP archives.
-	 * Supports multi-source generation from a single upload.
-	 */
-	file_ingest_zip = async ({
-		context,
-		file,
-		setProgress,
-		frame,
-	}: {
-		context: FileEntity.IngestOptions["context"];
-		file: File;
-		setProgress?: (num: number) => void;
-		frame?: { min: number; max: number };
-	}) => {
-		const operation = Operation.Entity.selected(this.app);
-		if (!operation) return;
-
-		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
-		const callbacks = this._ingest_orchestrator(
-			id,
-			file,
-			context as string,
-			setProgress,
-		);
-
-		ingestWorkerManager.enqueue({
-			req_id: id,
-			file,
-			operation_id: operation.id,
-			context_name: context as string,
-			ws_id: this.app.general.ws_id,
-			settings: {},
-			server: Internal.Settings.server,
-			token: Internal.Settings.token,
-			endpoint: "ingest_zip",
-			frame,
-			...callbacks,
-		});
-
-		const sidSource = this._register_source_listeners(id);
-		this._register_streaming_listeners(id, sidSource);
-	};
-
-	/**
 	 * Uploads a file in preview mode and returns the parsed preview documents.
 	 *
 	 * @param options - File ingest options used to build the preview request payload.

@@ -1,5 +1,19 @@
-import { Source } from '@/entities/Source';
 import { Request } from '@/entities/Request';
+
+type IngestSettings = {
+  plugin?: string;
+  offset?: number;
+  custom_parameters?: unknown;
+  override_chunk_size?: unknown;
+  override_allow_unmapped_fields?: unknown;
+  method?: string;
+  mapping?: string;
+  additional_mapping_files?: unknown;
+  mappings?: unknown;
+  additional_mappings?: unknown;
+  sigma_mappings?: unknown;
+  store_file?: boolean;
+};
 
 export type IngestTask = {
   req_id: Request.Id;
@@ -7,14 +21,13 @@ export type IngestTask = {
   operation_id: string;
   context_name: string;
   ws_id: string;
-  settings: any;
+  settings: IngestSettings;
   server: string;
   token: string;
   frame?: { min: number; max: number };
   onProgress?: (progress: number, bytes: number) => void;
   onDone?: () => void;
   onError?: (error: string) => void;
-  endpoint?: 'ingest_file' | 'ingest_zip';
 };
 
 class IngestWorkerManager {
@@ -22,7 +35,11 @@ class IngestWorkerManager {
   private taskQueue: IngestTask[] = [];
   private activeTaskCount = 0;
   private readonly MAX_WORKERS = 5;
-  private taskHandlers = new Map<string, { onProgress?: Function, onDone?: Function, onError?: Function }>();
+  private taskHandlers = new Map<string, {
+    onProgress?: (progress: number, bytes: number) => void,
+    onDone?: () => void,
+    onError?: (error: string) => void
+  }>();
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -66,6 +83,12 @@ class IngestWorkerManager {
     }
   }
 
+  /**
+   * Starts a worker with a serialized ingestion task payload.
+   *
+   * @param task - Queued ingestion task to execute.
+   * @returns Nothing.
+   */
   private runTask(task: IngestTask) {
     this.activeTaskCount++;
     let worker = this.workers.pop() || this.createWorker();
@@ -82,7 +105,6 @@ class IngestWorkerManager {
         server: task.server,
         token: task.token,
         frame: task.frame,
-        endpoint: task.endpoint,
       }
     });
   }

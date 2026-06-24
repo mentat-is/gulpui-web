@@ -112,9 +112,8 @@ const FilesList = React.memo(function FilesList(props: {
 		filename: string,
 		update: Partial<FileEntity.Settings>,
 	) => void;
-	ingestMode: "FILES" | "PACKAGE";
 }) {
-	const { files, settings, progress, updateSettings, ingestMode } = props;
+	const { files, settings, progress, updateSettings } = props;
 	const parentRef = useRef<HTMLDivElement>(null);
 
 	const rowVirtualizer = useVirtualizer({
@@ -142,23 +141,7 @@ const FilesList = React.memo(function FilesList(props: {
 			>
 				{rowVirtualizer.getVirtualItems().map((virtualRow) => {
 					const file = files[virtualRow.index];
-					return ingestMode === "PACKAGE" ? (
-						<PackagePreview
-							key={virtualRow.key}
-							data-index={virtualRow.index}
-							ref={rowVirtualizer.measureElement}
-							style={{
-								position: "absolute",
-								top: 0,
-								left: 0,
-								width: "100%",
-								transform: `translateY(${virtualRow.start}px)`,
-							}}
-							file={file}
-							setFiles={props.setFiles}
-							progress={progress[file.name]}
-						/>
-					) : (
+					return (
 						<FilePreview
 							key={virtualRow.key}
 							data-index={virtualRow.index}
@@ -228,53 +211,6 @@ export const ContextSelector = ({
 		</Stack>
 	);
 };
-
-export const PackagePreview = React.memo(
-	React.forwardRef<
-		HTMLDivElement,
-		{
-			file: File;
-			progress: number | undefined;
-			setFiles: SetState<File[]>;
-			style?: React.CSSProperties;
-			"data-index"?: number;
-		}
-	>(({ file, progress, setFiles, style, "data-index": dataIndex }, ref) => {
-		return (
-			<Stack
-				ref={ref}
-				style={style}
-				data-index={dataIndex}
-				className={s.filePreview}
-				gap={0}
-				flex={0}
-				pos={style?.position || "relative"}
-			>
-				{progress !== undefined && <Progress value={progress} />}
-				<Icon name={Default.Icon.SOURCE} />
-				<TooltipProvider>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<p className={s.filename}>{file.name}</p>
-						</TooltipTrigger>
-						<TooltipContent>{file.name}</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
-				<div style={{ flex: 1 }} />
-				<Button
-					icon="X"
-					variant="tertiary"
-					shape="icon"
-					onClick={() =>
-						setFiles((sources) =>
-							sources.filter((source) => source.name !== file.name),
-						)
-					}
-				/>
-			</Stack>
-		);
-	}),
-);
 
 export const FilePreview = React.memo(
 	React.forwardRef<
@@ -877,7 +813,6 @@ export function UploadBanner() {
 	const [customFrame, setCustomFrame] = useState(false);
 	const [frame, setFrame] =
 		useState<FileEntity.IngestOptions["frame"]>(MinMaxBase);
-	const [ingestMode, setIngestMode] = useState<"FILES" | "PACKAGE">("FILES");
 
 	useEffect(() => {
 		setContext("");
@@ -968,8 +903,9 @@ export function UploadBanner() {
 	};
 
 	/**
-	 * Dispatches ingestion requests for all selected files based on active mode.
-	 * [Tech-Note] Strategy pattern used to switch between package and individual file workflows.
+	 * Dispatches standard ingestion requests for all selected files.
+	 *
+	 * @returns A promise that resolves after ingestion requests have been queued.
 	 */
 	const handleSubmit = useCallback(async () => {
 		setLoading(true);
@@ -984,19 +920,15 @@ export function UploadBanner() {
 				frame: frameConfig,
 			};
 
-			if (ingestMode === "PACKAGE") {
-				Info.file_ingest_zip(baseOptions);
-			} else {
-				Info.file_ingest({
-					...baseOptions,
-					settings: settings[file.name],
-				});
-			}
+			Info.file_ingest({
+				...baseOptions,
+				settings: settings[file.name],
+			});
 		}
 
 		setLoading(false);
 		spawnBanner(<SelectFiles.Banner />);
-	}, [files, settings, context, customFrame, frame, ingestMode, app]);
+	}, [files, settings, context, customFrame, frame, Info, spawnBanner]);
 
 	const isValidSettings = useMemo(() => {
 		return Object.keys(settings).every((k) => {
@@ -1034,12 +966,12 @@ export function UploadBanner() {
 				disabled={
 					!context ||
 					!files.length ||
-					(ingestMode === "FILES" && !isValidSettings)
+					!isValidSettings
 				}
 				loading={loading}
 			/>
 		);
-	}, [context, handleSubmit, files, isValidSettings, loading, ingestMode]);
+	}, [context, handleSubmit, files, isValidSettings, loading]);
 
 	/**
 	 * Applies a specific set of settings to all selected files in a single batch.
@@ -1102,14 +1034,6 @@ export function UploadBanner() {
 			done={DoneButton}
 		>
 			<Toggle
-				option={[t("upload.filesMode"), t("upload.packageMode")]}
-				checked={ingestMode === "PACKAGE"}
-				onCheckedChange={(c) => {
-					setIngestMode(c ? "PACKAGE" : "FILES");
-					setFiles([]);
-				}}
-			/>
-			<Toggle
 				option={[t("upload.ingestEverything"), t("upload.useLimits")]}
 				checked={customFrame}
 				onCheckedChange={setCustomFrame}
@@ -1138,7 +1062,6 @@ export function UploadBanner() {
 							settings={settings}
 							progress={progress}
 							updateSettings={updateSettings}
-							ingestMode={ingestMode}
 						/>
 					</Stack>
 				</Stack>
@@ -1148,18 +1071,15 @@ export function UploadBanner() {
 				type="file"
 				multiple
 				value={""}
-				accept={ingestMode === "PACKAGE" ? "application/zip,.zip" : undefined}
 				variant="highlighted"
 				onChange={handleFileChange}
 			/>
 			<Stack>
-				{ingestMode === "FILES" && (
-					<ApplySettinsForAllFiles
-						settings={settings}
-						updateSettings={updateSettings}
-						setSettings={updateAllSettings}
-					/>
-				)}
+				<ApplySettinsForAllFiles
+					settings={settings}
+					updateSettings={updateSettings}
+					setSettings={updateAllSettings}
+				/>
 				<Button
 					variant="secondary"
 					icon="Cross"
