@@ -127,16 +127,21 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 
 		const filtered = DataStore.notes
 			.filter((n) => {
+				const source = Source.Entity.id(app, n.source_id) as
+					| Source.Type
+					| undefined;
+				const context = Context.Entity.id(app, n.context_id) as
+					| Context.Type
+					| undefined;
+				const sourceName = source?.name.toLowerCase() ?? "";
+				const contextName = context?.name.toLowerCase() ?? "";
+
 				return (
 					!search ||
 					n.name.toLowerCase().includes(lowerSearch) ||
 					n.text.toLowerCase().includes(lowerSearch) ||
-					Source.Entity.id(app, n.source_id)
-						.name.toLowerCase()
-						.includes(lowerSearch) ||
-					Context.Entity.id(app, n.context_id)
-						.name.toLowerCase()
-						.includes(lowerSearch) ||
+					sourceName.includes(lowerSearch) ||
+					contextName.includes(lowerSearch) ||
 					n.tags.some((t) => t.toLowerCase() === lowerSearch)
 				);
 			})

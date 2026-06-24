@@ -21,6 +21,7 @@ import { useCallback } from "react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip";
 import { Locale } from "@/locales";
+import { Internal } from "@/entities/addon/Internal";
 
 export namespace NotePoint {
 	export interface Props extends Omit<
@@ -54,10 +55,10 @@ export namespace NotePoint {
 					toast.error(t("notePoint.fetchFailed"));
 					return;
 				}
-				const sourceSettings = Source.Entity.id(
-					Info.app,
-					note.source_id,
-				).settings;
+				const source = Source.Entity.id(Info.app, note.source_id) as
+					| Source.Type
+					| undefined;
+				const sourceSettings = source?.settings ?? Internal.Settings.default;
 				const [event] = Doc.Entity.normalize(
 					[fetched],
 					sourceSettings.field,
@@ -116,7 +117,14 @@ export namespace NotePoint {
 		onDeleteClick,
 		...props
 	}: Combination.Props) {
-		const { app, Info } = Application.use();
+		const { app } = Application.use();
+		const { t } = Locale.use();
+		const context = Context.Entity.id(app, note.context_id);
+		const source = Source.Entity.id(app, note.source_id) as
+			| Source.Type
+			| undefined;
+		const contextName = context?.name ?? t("collab.deletedContext");
+		const sourceName = source?.name ?? t("collab.deletedSource");
 
 		return (
 			<Stack
@@ -146,7 +154,7 @@ export namespace NotePoint {
 				</Tooltip>
 				<Stack className={s.badge_wrapper}>
 					<Badge
-						value={`${Context.Entity.id(app, note.context_id).name} / ${Source.Entity.id(app, note.source_id).name}`}
+						value={`${contextName} / ${sourceName}`}
 						style={{
 							background: stringToHexColor(note.context_id),
 							border: `1px solid ${stringToHexColor(note.context_id)}40`,

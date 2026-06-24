@@ -95,11 +95,36 @@ export namespace Note {
 			return notes;
 		};
 
+		/**
+		 * Resolves the source settings used to normalize a note document.
+		 *
+		 * @param app - Current application state containing loaded source metadata.
+		 * @param note - Note whose source settings should be used for normalization.
+		 * @returns Loaded source settings, or default settings when the source is not available yet.
+		 */
+		private static getNormalizationSettings = (
+			app: App.Type,
+			note: Note.Type,
+		): Source.Type["settings"] => {
+			const source = Source.Entity.id(app, note.source_id) as
+				| Source.Type
+				| undefined;
+
+			return source?.settings ?? Internal.Settings.default;
+		};
+
+		/**
+		 * Normalizes the embedded note document using the owning source settings.
+		 *
+		 * @param app - Current application state containing loaded source metadata.
+		 * @param note - Note payload returned by the API or collaboration socket.
+		 * @returns The same note instance with a normalized doc payload.
+		 */
 		public static normalize_note = (
 			app: App.Type,
 			note: Note.Type,
 		): Note.Type => {
-			const sourceSettings = Source.Entity.id(app, note.source_id).settings;
+			const sourceSettings = Note.Entity.getNormalizationSettings(app, note);
 			note.doc = Doc.Entity.normalize(
 				[note.doc],
 				sourceSettings.field,
