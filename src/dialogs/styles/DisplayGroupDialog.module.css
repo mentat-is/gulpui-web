@@ -38,18 +38,12 @@
   color: var(--accent);
 }
 
-.tooltipToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--second);
-  font-size: 11px;
-  user-select: none;
-  white-space: nowrap;
-}
-
-.tooltipToggle input {
-  margin: 0;
+.dialogEventList {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 12px;
 }
 
 .closeButton {
@@ -62,12 +56,22 @@
 }
 
 .menuBody {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex: 1;
   padding: 6px;
   overflow: auto;
   min-height: 0;
+}
+
+.virtualSpacer {
+  position: relative;
+  width: 100%;
+}
+
+.virtualRow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
 }
 
 .event {
@@ -105,7 +109,40 @@
   text-overflow: ellipsis;
 }
 
-.pagination {
+.previewPortal {
+  background: var(--background-100);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: auto;
+  padding: 8px;
+  pointer-events: auto;
+  z-index: 10000;
+}
+
+.previewContent {
+  font-size: 11px;
+  max-width: 400px;
+}
+
+.previewTitle {
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.previewCode {
   color: var(--second);
-  pointer-events: none;
+  margin: 0 0 4px;
+}
+
+.previewMarkdown {
+  font-size: 10px;
+  max-height: 250px;
+  max-width: 400px;
+  overflow-x: scroll;
+  overflow-y: auto;
+}
+
+.previewLoading {
+  font-size: 11px;
 }

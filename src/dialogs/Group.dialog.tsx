@@ -10,6 +10,7 @@ import {
 	useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { Button } from "@/ui/Button";
 import { Dialog } from "@/ui/Dialog";
 import { Doc } from "@/entities/Doc";
 import { Stack } from "@/ui/Stack";
@@ -158,8 +159,13 @@ interface DisplayGroupDialogProps {
 	onClose?: () => void;
 }
 
+/**
+ * Displays a sorted group of events either as an anchored popup or full dialog.
+ *
+ * @param props - Event collection, optional popup anchor, and close callback.
+ * @returns Virtualized event list with hover-preview controls.
+ */
 export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDialogProps) {
-	const sortedEvents = events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp);
 	const { spawnDialog, Info, app, currentDocument } = Application.use();
 	const { t } = Locale.use();
 	const menuShellRef = useRef<HTMLDivElement>(null);
@@ -171,6 +177,10 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	const [isLoadingHover, setIsLoadingHover] = useState(false);
 	const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
 	const [showTooltip, setShowTooltip] = useState(() => app.general.user?.user_data?.show_preview ?? true);
+	const sortedEvents = useMemo(
+		() => events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp),
+		[events],
+	);
 
 	useEffect(() => {
 		setShowTooltip(app.general.user?.user_data?.show_preview ?? true);
@@ -319,6 +329,29 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		}, 100);
 	}, []);
 
+	/**
+	 * Stores the current event row element so hover previews can anchor to it.
+	 *
+	 * @param eventId - Event identifier associated with the rendered row.
+	 * @param element - Rendered row element, or null when React unmounts it.
+	 */
+	const setEventElementRef = useCallback(
+		(eventId: string, element: HTMLDivElement | null) => {
+			if (element) {
+				eventRefsMap.current.set(eventId, element);
+				return;
+			}
+
+			eventRefsMap.current.delete(eventId);
+		},
+		[],
+	);
+
+	/**
+	 * Updates the persisted hover-preview preference for the current user.
+	 *
+	 * @param checked - Whether hover previews should be enabled.
+	 */
 	const handleShowPreviewChange = useCallback(
 		(checked: boolean) => {
 			setShowTooltip(checked);
@@ -332,6 +365,32 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		[Info, app.general.user],
 	);
 
+	/**
+	 * Renders the preview toggle as a compact icon control shared by every list shell.
+	 *
+	 * @returns Icon button that toggles event hover previews.
+	 */
+	const renderPreviewToggle = useCallback(
+		() => (
+			<Button
+				variant="secondary"
+				size="sm"
+				icon={showTooltip ? "PreviewEye" : "EyeOff"}
+				title={t("common.showPreview")}
+				aria-label={t("common.showPreview")}
+				aria-pressed={showTooltip}
+				onClick={() => handleShowPreviewChange(!showTooltip)}
+			/>
+		),
+		[handleShowPreviewChange, showTooltip, t],
+	);
+
+	/**
+	 * Renders a single event row and its optional hover preview portal.
+	 *
+	 * @param event - Event document to show in the list.
+	 * @returns Event row with preview portal when preview data is available.
+	 */
 	const renderEvent = useCallback(
 		(event: Doc.Type) => {
 			if (!event) return null;
@@ -340,22 +399,14 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 			const eventElement = eventRefsMap.current.get(event._id);
 
 			const tooltipContent = isTooltipOpen && hoveredEventData && hoveredEventId === event._id ? (
-				<div style={{ fontSize: "11px", maxWidth: 400 }}>
-					<p style={{ margin: "0 0 4px 0", fontWeight: "bold" }}>
+				<div className={s.previewContent}>
+					<p className={s.previewTitle}>
 						{event._id}
 					</p>
-					<p style={{ margin: "0 0 4px 0", color: "var(--second)" }}>
+					<p className={s.previewCode}>
 						{event["gulp.event_code"] || "N/A"}
 					</p>
-						<div
-							style={{
-								maxHeight: "250px",
-								maxWidth: "400px",
-								overflowX: "scroll",
-								overflowY: "auto",
-								fontSize: "10px",
-							}}
-						>
+					<div className={s.previewMarkdown}>
 						<Markdown
 							scrollable={false}
 							value={`\`\`\`json\n${JSON.stringify(hoveredEventData, null, 2)}`}
@@ -363,29 +414,20 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 					</div>
 				</div>
 			) : isTooltipOpen && isLoadingHover && hoveredEventId === event._id ? (
-				<div style={{ fontSize: "11px" }}>{t("common.loading")}</div>
+				<div className={s.previewLoading}>{t("common.loading")}</div>
 			) : null;
 
 			const tooltipPortal = tooltipContent && eventElement ? (
 				createPortal(
 					<div
 						ref={tooltipRef}
+						className={s.previewPortal}
 						onMouseEnter={clearCloseTimeout}
 						onMouseLeave={handleMouseLeaveTooltip}
-						style={{
-							...resolvePreviewStyle(
-								eventElement.getBoundingClientRect(),
-								viewportSize,
-							),
-							background: "var(--background-100)",
-							border: "1px solid var(--border)",
-							borderRadius: "0",
-							padding: "8px",
-							boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-							zIndex: 10000,
-							pointerEvents: "auto",
-							overflow: "auto",
-						}}
+						style={resolvePreviewStyle(
+							eventElement.getBoundingClientRect(),
+							viewportSize,
+						)}
 						onClick={(e) => e.stopPropagation()}
 					>
 						{tooltipContent}
@@ -398,7 +440,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				<>
 					<Stack
 						ref={(el) => {
-							if (el) eventRefsMap.current.set(event._id, el);
+							setEventElementRef(event._id, el);
 						}}
 						className={s.event}
 						onClick={() => handleSelectEvent(event)}
@@ -430,7 +472,50 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				</>
 			);
 		},
-		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, showTooltip, t, viewportSize, currentDocument],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, handleMouseLeaveTooltip, setEventElementRef, showTooltip, t, viewportSize, currentDocument],
+	);
+
+	/**
+	 * Renders the sorted events through the virtualizer and appends shared list controls.
+	 *
+	 * @param listClassName - CSS class applied to the scroll container for the current shell.
+	 * @returns Virtualized sorted event list with the preview toggle control.
+	 */
+	const renderSortedEventsList = useCallback(
+		(listClassName: string) => (
+			<>
+				<div
+					ref={parentRef}
+					className={listClassName}
+				>
+					<div
+						className={s.virtualSpacer}
+						style={{ height: `${virtualizer.getTotalSize()}px` }}
+					>
+						{virtualizer.getVirtualItems().map((virtualItem) => {
+							const event = sortedEvents[virtualItem.index];
+
+							return (
+								<div
+									key={virtualItem.key}
+									className={s.virtualRow}
+									style={{
+										height: `${virtualItem.size}px`,
+										transform: `translateY(${virtualItem.start}px)`,
+									}}
+								>
+									{event ? renderEvent(event) : null}
+								</div>
+							);
+						})}
+					</div>
+				</div>
+				<div className={s.dialogToolbar}>
+					{renderPreviewToggle()}
+				</div>
+			</>
+		),
+		[renderEvent, renderPreviewToggle, sortedEvents, virtualizer],
 	);
 
 	const popupStyle = useMemo(() => {
@@ -445,7 +530,11 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 	if (anchor) {
 		return createPortal(
-			<div className={s.menuShell} style={popupStyle} ref={menuShellRef}>
+			<div
+				className={s.menuShell}
+				style={popupStyle}
+				ref={menuShellRef}
+			>
 				<div className={s.menuHeader}>
 					<span className={s.menuTitle}>{t("common.events")}</span>
 					<button
@@ -457,19 +546,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 						×
 					</button>
 				</div>
-				<div className={s.menuBody}>
-					{sortedEvents.map((event) => renderEvent(event))}
-				</div>
-				<div className={s.dialogToolbar}>
-					<label className={s.tooltipToggle}>
-						<input
-							type="checkbox"
-							checked={showTooltip}
-							onChange={(e) => handleShowPreviewChange(e.target.checked)}
-						/>
-						<span>{t("common.showPreview")}</span>
-					</label>
-				</div>
+				{renderSortedEventsList(s.menuBody)}
 			</div>,
 			currentDocument.body,
 		);
@@ -477,44 +554,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 	return (
 		<Dialog>
-			<div
-				ref={parentRef}
-				style={{ height: "100%", paddingRight: 12, overflow: "auto" }}
-			>
-				<div
-					style={{
-						height: `${virtualizer.getTotalSize()}px`,
-						width: "100%",
-						position: "relative",
-					}}
-				>
-					{virtualizer.getVirtualItems().map((v) => (
-						<div
-							key={v.key}
-							style={{
-								position: "absolute",
-								top: 0,
-								left: 0,
-								width: "100%",
-								height: `${v.size}px`,
-								transform: `translateY(${v.start}px)`,
-							}}
-						>
-							{renderEvent(sortedEvents[v.index])}
-						</div>
-						))}
-					</div>
-				</div>
-				<div className={s.dialogToolbar}>
-					<label className={s.tooltipToggle}>
-						<input
-							type="checkbox"
-							checked={showTooltip}
-							onChange={(e) => handleShowPreviewChange(e.target.checked)}
-						/>
-						<span>{t("common.showPreview")}</span>
-					</label>
-				</div>
-			</Dialog>
+			{renderSortedEventsList(s.dialogEventList)}
+		</Dialog>
 	);
 }
