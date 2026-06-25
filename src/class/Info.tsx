@@ -567,8 +567,7 @@ export class Info implements InfoProps {
 				);
 				bufferedEvents.push(...events);
 				if (
-					(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
-						m.payload.last) &&
+					(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) &&
 					bufferedEvents.length > 0
 				) {
 					const toFlush = bufferedEvents.splice(0);
@@ -2873,7 +2872,7 @@ export class Info implements InfoProps {
 			body: {
 				// FIXME: this creates a link without destination documents, which is wrong. the backend allows it
 				// just to support this ui ....
-				doc_ids: [],
+				doc_ids: doc_ids,
 				description: description,
 			},
 		}).then(this.links_reload);
@@ -3412,7 +3411,8 @@ export class Info implements InfoProps {
 						id: ctxId,
 						name: ctxData.name,
 						operation_id: opId,
-							glyph_id: ctxData.glyph_id ?? (Default.Icon.CONTEXT as unknown as Glyph.Id),
+						glyph_id:
+							ctxData.glyph_id ?? (Default.Icon.CONTEXT as unknown as Glyph.Id),
 						color: existCtx.color ?? stringToHexColor(ctxData.name ?? ""),
 						type: "context",
 						selected: existCtx.selected ?? false,
@@ -3659,7 +3659,9 @@ export class Info implements InfoProps {
 
 		Internal.Settings.token = user.token;
 		localStorage.setItem("__user_id", user.id);
-		const fullUserProfile = await this.user_get_by_id(user.id).catch(() => null);
+		const fullUserProfile = await this.user_get_by_id(user.id).catch(
+			() => null,
+		);
 		const authenticatedUser = {
 			...credentials,
 			...user,

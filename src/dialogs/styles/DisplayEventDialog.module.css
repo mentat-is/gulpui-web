@@ -8,6 +8,12 @@
 	flex: none;
 }
 
+.dialog :global([data-content]) {
+	height: 100%;
+	min-height: 0;
+	overflow: hidden;
+}
+
 .titleContainer {
 	display: flex;
 	align-items: center;
@@ -111,10 +117,12 @@
 	position: relative;
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
+	gap: 12px;
 	width: 100%;
-	flex: 0 0 auto;
+	flex: 0 1 auto;
 	min-height: 0;
+	min-width: 0;
+	overflow: hidden;
 }
 
 .collabResizeHandle {
@@ -152,48 +160,61 @@
 .collabTabsHeader {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: stretch;
 	gap: 8px;
 	width: 100%;
-	padding: 2px 4px;
-}
-
-.collabTriggers {
-	width: auto;
-	justify-content: flex-start;
-	background: transparent;
-	box-shadow: none;
-	border: none;
-	padding: 0;
-}
-
-.collabTriggers button {
-	background: transparent;
-	border: 1px solid transparent;
-	box-shadow: none;
-	font-family: var(--font-mono);
-}
-
-.collabTriggers button[data-state="active"] {
-	background: var(--background-100);
-	border-color: var(--gray-400);
-	box-shadow: none;
+	min-width: 0;
 }
 
 .collabPanel {
 	display: flex;
 	flex-direction: column;
 	width: 100%;
+	max-width: 100%;
 	height: var(--collab-panel-height, 240px);
 	min-height: 140px;
+	min-width: 0;
 	overflow: hidden;
 }
 
 .collabContent {
+	display: flex;
+	flex-direction: column;
 	flex: 1 1 auto;
 	min-height: 0;
+	min-width: 0;
 	width: 100%;
-	overflow: auto;
+	max-width: 100%;
+	overflow: auto !important;
+	scrollbar-color: var(--second) var(--background-100);
+	scrollbar-width: thin;
+}
+
+.collabContent::-webkit-scrollbar,
+.collabTable::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+.collabContent::-webkit-scrollbar-track,
+.collabTable::-webkit-scrollbar-track {
+	background: var(--background-100);
+}
+
+.collabContent::-webkit-scrollbar-thumb,
+.collabTable::-webkit-scrollbar-thumb {
+	border: 2px solid var(--background-100);
+	border-radius: 999px;
+	background: var(--gray-600);
+}
+
+.collabTable {
+	flex: 1 1 auto;
+	min-height: 0;
+	min-width: 0;
+	max-width: 100%;
+	scrollbar-color: var(--second) var(--background-100);
+	scrollbar-width: thin;
 }
 
 .collabContent[data-state="inactive"] {

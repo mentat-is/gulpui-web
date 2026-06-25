@@ -148,10 +148,7 @@ const clampCollabPanelHeight = (
 		viewportHeight - RESERVED_EVENT_VIEWER_HEIGHT,
 	);
 
-	return Math.max(
-		MIN_COLLAB_PANEL_HEIGHT,
-		Math.min(value, maximumPanelHeight),
-	);
+	return Math.max(MIN_COLLAB_PANEL_HEIGHT, Math.min(value, maximumPanelHeight));
 };
 
 /**
@@ -1154,6 +1151,27 @@ export function DisplayEventDialog({
 		if (!json || json._id !== event._id) loadEvent();
 	}, [event._id, loadEvent, json]);
 
+	/**
+	 * Keeps the notes/links panel bounded when the dialog opens or the viewport changes.
+	 */
+	useEffect(() => {
+		const localWin = currentDocument.defaultView ?? window;
+
+		/**
+		 * Re-clamps the collaboration panel height against the current window bounds.
+		 */
+		const handleWindowResize = () => {
+			setCollabPanelHeight((currentHeight) =>
+				clampCollabPanelHeight(currentHeight, localWin.innerHeight),
+			);
+		};
+
+		handleWindowResize();
+		localWin.addEventListener("resize", handleWindowResize);
+
+		return () => localWin.removeEventListener("resize", handleWindowResize);
+	}, [currentDocument]);
+
 	// Global selection tracker
 	useEffect(() => {
 		const handleSelectionChange = () => {
@@ -1381,7 +1399,12 @@ export function DisplayEventDialog({
 	}, [spawnBanner, event]);
 
 	const handleCreateLink = useCallback(() => {
-		spawnBanner(<LinkFunctionality.Create.Banner event={event} />);
+		spawnBanner(
+			<LinkFunctionality.Create.Banner
+				event={event}
+				initialDocIds={[event._id]}
+			/>,
+		);
 	}, [spawnBanner, event]);
 
 	const handleSendData = useCallback(() => {
@@ -1954,7 +1977,10 @@ export function DisplayEventDialog({
 
 	if (!file) {
 		return (
-			<Dialog callback={onClose}>
+			<Dialog
+				callback={onClose}
+				className={s.dialog}
+			>
 				<Stack
 					style={{ width: "100%", height: "300px" }}
 					flex
@@ -1978,7 +2004,10 @@ export function DisplayEventDialog({
 	}
 
 	return (
-		<Dialog callback={onClose}>
+		<Dialog
+			callback={onClose}
+			className={s.dialog}
+		>
 			{json ? (
 				<Fragment>
 					<Navigation event={event} />
@@ -2129,9 +2158,19 @@ export function DisplayEventDialog({
 							aria-orientation="horizontal"
 						/>
 						<div className={s.collabTabsHeader}>
-							<TabsList className={s.collabTriggers}>
-								<TabsTrigger value="notes">{t("notes.title")}</TabsTrigger>
+							<TabsList className={s.triggers}>
+								<TabsTrigger value="notes">
+									<Icon
+										name="StickyNote"
+										size={14}
+									/>{" "}
+									{t("notes.title")}
+								</TabsTrigger>
 								<TabsTrigger value="links">
+									<Icon
+										name="GitPullRequestCreate"
+										size={14}
+									/>{" "}
 									{t("eventDialog.links")}
 								</TabsTrigger>
 							</TabsList>
@@ -2148,9 +2187,7 @@ export function DisplayEventDialog({
 										container={currentDocument.body}
 									/>
 								) : (
-									<div className={s.emptyState}>
-										{t("eventDialog.noNotes")}
-									</div>
+									<div className={s.emptyState}>{t("eventDialog.noNotes")}</div>
 								)}
 							</TabsContent>
 							<TabsContent
@@ -2159,15 +2196,14 @@ export function DisplayEventDialog({
 							>
 								{linkTableRows.length > 0 ? (
 									<Table
+										className={s.collabTable}
 										values={linkTableRows}
 										columns={linkTableColumns}
 										includeIndex={false}
 										actions={linkTableActions}
 									/>
 								) : (
-									<div className={s.emptyState}>
-										{t("eventDialog.noLinks")}
-									</div>
+									<div className={s.emptyState}>{t("eventDialog.noLinks")}</div>
 								)}
 							</TabsContent>
 						</div>
