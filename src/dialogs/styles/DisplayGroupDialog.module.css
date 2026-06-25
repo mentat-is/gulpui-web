@@ -77,6 +77,8 @@
 .event {
   width: 100%;
   border-radius: 0;
+  box-sizing: border-box;
+  min-height: 40px;
   padding: 4px;
   transition: all 0.125s var(--transition);
   cursor: pointer;
@@ -107,6 +109,36 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+.noteInfo {
+  align-items: center;
+  border-left: 1px solid var(--gray-alpha-300);
+  color: var(--note-color, transparent);
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  height: 32px;
+  justify-content: flex-start;
+  margin-left: auto;
+  min-width: 132px;
+  overflow: hidden;
+  padding-left: 10px;
+  width: 34%;
+}
+
+.noteInfo span {
+  color: currentColor;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noteInfo svg {
+  flex-shrink: 0;
 }
 
 .previewPortal {

@@ -8,11 +8,14 @@ import {
 	useMemo,
 	useRef,
 	useState,
+	useSyncExternalStore,
 } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/ui/Button";
 import { Dialog } from "@/ui/Dialog";
 import { Doc } from "@/entities/Doc";
+import { Icon } from "@/ui/Icon";
+import { Note } from "@/entities/Note";
 import { Stack } from "@/ui/Stack";
 import { format } from "date-fns";
 import { Markdown } from "@/ui/Markdown";
@@ -20,6 +23,7 @@ import { Markdown } from "@/ui/Markdown";
 import s from "./styles/DisplayGroupDialog.module.css";
 import { Internal } from "@/entities/addon/Internal";
 import { Locale } from "@/locales";
+import { DataStore } from "@/store/DataStore";
 
 // Cache for tooltip event queries
 class TooltipEventCache {
@@ -51,6 +55,12 @@ const EVENT_LIST_WIDTH = 340;
 const EVENT_LIST_HEIGHT = 300;
 const EVENT_PREVIEW_WIDTH = 420;
 const EVENT_PREVIEW_HEIGHT = 330;
+
+interface EventListRow {
+	key: string;
+	event: Doc.Type;
+	note: Note.Type | null;
+}
 
 /**
  * Restricts a coordinate to a visible viewport range.
@@ -153,6 +163,76 @@ const resolvePreviewStyle = (
 	};
 };
 
+/**
+ * Sorts events by timestamp and removes duplicate documents by ID.
+ *
+ * @param events - Events passed by canvas, note, or link callers.
+ * @returns Timestamp-sorted events with each document represented once.
+ */
+function sortUniqueEventsByTimestamp(events: Doc.Type[]): Doc.Type[] {
+	const seenEventIds = new Set<string>();
+	const sortedEvents = events.toSorted(
+		(a, b) => a.gulp_timestamp - b.gulp_timestamp,
+	);
+	const uniqueEvents: Doc.Type[] = [];
+
+	for (const event of sortedEvents) {
+		if (seenEventIds.has(event._id)) {
+			continue;
+		}
+
+		seenEventIds.add(event._id);
+		uniqueEvents.push(event);
+	}
+
+	return uniqueEvents;
+}
+
+/**
+ * Expands events into virtualized display rows, duplicating noted events per note.
+ *
+ * @param events - Timestamp-sorted events to display in the group list.
+ * @param notes - Notes available in the current application state.
+ * @returns Event rows with one blank-note row for unnoted events.
+ */
+function buildEventRows(events: Doc.Type[], notes: Note.Type[]): EventListRow[] {
+	const eventIds = new Set(events.map((event) => event._id));
+	const notesByEventId = new Map<string, Note.Type[]>();
+
+	for (const note of notes) {
+		const eventId = note.doc?._id;
+		if (!eventId || !eventIds.has(eventId)) {
+			continue;
+		}
+
+		const eventNotes = notesByEventId.get(eventId);
+		if (eventNotes) {
+			eventNotes.push(note);
+		} else {
+			notesByEventId.set(eventId, [note]);
+		}
+	}
+
+	const rows: EventListRow[] = [];
+	for (const event of events) {
+		const eventNotes = notesByEventId.get(event._id);
+		if (!eventNotes?.length) {
+			rows.push({ key: event._id, event, note: null });
+			continue;
+		}
+
+		for (const note of eventNotes) {
+			rows.push({
+				key: `${event._id}:${note.id}`,
+				event,
+				note,
+			});
+		}
+	}
+
+	return rows;
+}
+
 interface DisplayGroupDialogProps {
 	events: Doc.Type[];
 	anchor?: { x: number; y: number } | null;
@@ -168,6 +248,10 @@ interface DisplayGroupDialogProps {
 export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDialogProps) {
 	const { spawnDialog, Info, app, currentDocument } = Application.use();
 	const { t } = Locale.use();
+	const dataStoreVersion = useSyncExternalStore(
+		DataStore.subscribe,
+		DataStore.getSnapshot,
+	);
 	const menuShellRef = useRef<HTMLDivElement>(null);
 	const tooltipRef = useRef<HTMLDivElement>(null);
 	const eventRefsMap = useRef(new Map<string, HTMLDivElement>());
@@ -175,11 +259,15 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
 	const [hoveredEventData, setHoveredEventData] = useState<Doc.Type | null>(null);
 	const [isLoadingHover, setIsLoadingHover] = useState(false);
-	const [openTooltipId, setOpenTooltipId] = useState<string | null>(null);
+	const [openTooltipRowKey, setOpenTooltipRowKey] = useState<string | null>(null);
 	const [showTooltip, setShowTooltip] = useState(() => app.general.user?.user_data?.show_preview ?? true);
 	const sortedEvents = useMemo(
-		() => events.toSorted((a, b) => a.gulp_timestamp - b.gulp_timestamp),
+		() => sortUniqueEventsByTimestamp(events),
 		[events],
+	);
+	const eventRows = useMemo(
+		() => buildEventRows(sortedEvents, DataStore.notes),
+		[dataStoreVersion, sortedEvents],
 	);
 
 	useEffect(() => {
@@ -205,7 +293,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 	// Close tooltip on click outside
 	useEffect(() => {
-		if (!openTooltipId) return;
+		if (!openTooltipRowKey) return;
 
 		const handleClickOutside = (e: MouseEvent) => {
 			const target = e.target as Node | null;
@@ -216,7 +304,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				tooltipRef.current.contains(target);
 
 			if (!isClickInside) {
-				setOpenTooltipId(null);
+				setOpenTooltipRowKey(null);
 			}
 		};
 
@@ -229,7 +317,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 			clearTimeout(timer);
 			currentDocument.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [currentDocument, openTooltipId]);
+	}, [currentDocument, openTooltipRowKey]);
 
 	// Cleanup timeout on unmount
 	useEffect(() => {
@@ -245,7 +333,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	const parentRef = useRef<HTMLDivElement>(null);
 
 	const virtualizer = useVirtualizer({
-		count: sortedEvents.length,
+		count: eventRows.length,
 		getScrollElement: () => parentRef.current,
 		estimateSize: () => 44,
 		overscan: 5,
@@ -301,17 +389,22 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		}
 	}, []);
 
+	/**
+	 * Schedules the row preview to close when the pointer leaves both row and preview.
+	 *
+	 * @param event - Mouse leave event emitted by the event row.
+	 */
 	const handleMouseLeaveEvent = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
-			const target = currentDocument.elementFromPoint(
-				event.clientX,
-				event.clientY,
-			);
-			if (tooltipRef.current?.contains(target) || event.currentTarget.contains(target)) {
-				return;
-			}
+		const target = currentDocument.elementFromPoint(
+			event.clientX,
+			event.clientY,
+		);
+		if (tooltipRef.current?.contains(target) || event.currentTarget.contains(target)) {
+			return;
+		}
 
 		closeTimeoutRef.current = setTimeout(() => {
-			setOpenTooltipId(null);
+			setOpenTooltipRowKey(null);
 		}, 100);
 	}, [currentDocument]);
 
@@ -325,24 +418,24 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 
 	const handleMouseLeaveTooltip = useCallback(() => {
 		closeTimeoutRef.current = setTimeout(() => {
-			setOpenTooltipId(null);
+			setOpenTooltipRowKey(null);
 		}, 100);
 	}, []);
 
 	/**
 	 * Stores the current event row element so hover previews can anchor to it.
 	 *
-	 * @param eventId - Event identifier associated with the rendered row.
+	 * @param rowKey - Unique virtual row key associated with the rendered row.
 	 * @param element - Rendered row element, or null when React unmounts it.
 	 */
 	const setEventElementRef = useCallback(
-		(eventId: string, element: HTMLDivElement | null) => {
+		(rowKey: string, element: HTMLDivElement | null) => {
 			if (element) {
-				eventRefsMap.current.set(eventId, element);
+				eventRefsMap.current.set(rowKey, element);
 				return;
 			}
 
-			eventRefsMap.current.delete(eventId);
+			eventRefsMap.current.delete(rowKey);
 		},
 		[],
 	);
@@ -356,7 +449,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		(checked: boolean) => {
 			setShowTooltip(checked);
 			if (!checked) {
-				setOpenTooltipId(null);
+				setOpenTooltipRowKey(null);
 			}
 			if (app.general.user) {
 				void Info.user_set_data("show_preview", checked);
@@ -386,17 +479,49 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	);
 
 	/**
+	 * Renders the note metadata cell for a virtualized event row.
+	 *
+	 * @param note - Note attached to the row, or null for unnoted events.
+	 * @returns Note icon and title when present, otherwise an empty stable cell.
+	 */
+	const renderNoteInfo = useCallback((note: Note.Type | null) => {
+		if (!note) {
+			return (
+				<div
+					className={s.noteInfo}
+					aria-hidden="true"
+				/>
+			);
+		}
+
+		return (
+			<div
+				className={s.noteInfo}
+				title={note.name}
+				style={{ "--note-color": note.color } as CSSProperties}
+			>
+				<Icon
+					name={Note.Entity.icon(note)}
+					size={16}
+				/>
+				<span>{note.name}</span>
+			</div>
+		);
+	}, []);
+
+	/**
 	 * Renders a single event row and its optional hover preview portal.
 	 *
-	 * @param event - Event document to show in the list.
+	 * @param row - Event and note metadata to show in the list.
 	 * @returns Event row with preview portal when preview data is available.
 	 */
 	const renderEvent = useCallback(
-		(event: Doc.Type) => {
+		(row: EventListRow) => {
+			const { event, note } = row;
 			if (!event) return null;
 
-			const isTooltipOpen = showTooltip && openTooltipId === event._id;
-			const eventElement = eventRefsMap.current.get(event._id);
+			const isTooltipOpen = showTooltip && openTooltipRowKey === row.key;
+			const eventElement = eventRefsMap.current.get(row.key);
 
 			const tooltipContent = isTooltipOpen && hoveredEventData && hoveredEventId === event._id ? (
 				<div className={s.previewContent}>
@@ -440,7 +565,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				<>
 					<Stack
 						ref={(el) => {
-							setEventElementRef(event._id, el);
+							setEventElementRef(row.key, el);
 						}}
 						className={s.event}
 						onClick={() => handleSelectEvent(event)}
@@ -448,7 +573,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 							if (!showTooltip) return;
 							clearCloseTimeout();
 							handleEventHover(event);
-							setOpenTooltipId(event._id);
+							setOpenTooltipRowKey(row.key);
 						}}
 						onMouseLeave={handleMouseLeaveEvent}
 					>
@@ -467,12 +592,13 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 							</p>
 							<span className={s.description}>{event._id}</span>
 						</Stack>
+						{renderNoteInfo(note)}
 					</Stack>
 					{tooltipPortal}
 				</>
 			);
 		},
-		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipId, clearCloseTimeout, handleMouseLeaveEvent, handleMouseLeaveTooltip, setEventElementRef, showTooltip, t, viewportSize, currentDocument],
+		[handleSelectEvent, handleEventHover, hoveredEventData, hoveredEventId, isLoadingHover, openTooltipRowKey, clearCloseTimeout, handleMouseLeaveEvent, handleMouseLeaveTooltip, renderNoteInfo, setEventElementRef, showTooltip, t, viewportSize, currentDocument],
 	);
 
 	/**
@@ -493,18 +619,18 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 						style={{ height: `${virtualizer.getTotalSize()}px` }}
 					>
 						{virtualizer.getVirtualItems().map((virtualItem) => {
-							const event = sortedEvents[virtualItem.index];
+							const row = eventRows[virtualItem.index];
 
 							return (
 								<div
-									key={virtualItem.key}
+									key={row?.key ?? virtualItem.key}
 									className={s.virtualRow}
 									style={{
 										height: `${virtualItem.size}px`,
 										transform: `translateY(${virtualItem.start}px)`,
 									}}
 								>
-									{event ? renderEvent(event) : null}
+									{row ? renderEvent(row) : null}
 								</div>
 							);
 						})}
@@ -515,7 +641,7 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 				</div>
 			</>
 		),
-		[renderEvent, renderPreviewToggle, sortedEvents, virtualizer],
+		[eventRows, renderEvent, renderPreviewToggle, virtualizer],
 	);
 
 	const popupStyle = useMemo(() => {
