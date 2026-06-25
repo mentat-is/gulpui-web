@@ -84,17 +84,35 @@
 	white-space: nowrap;
 }
 
-.storyAction {
+.pluginMenuAction {
 	display: flex;
 	width: 100%;
 }
 
-.storyAction button {
+.pluginMenuAction :global(button) {
 	justify-content: flex-start;
 	width: 100%;
 	min-height: 30px;
+	height: auto;
+	padding: 6px 8px !important;
+	border: 0;
 	border-radius: 4px;
+	background: transparent;
+	color: var(--accent);
+	text-align: left;
 	box-shadow: none;
+}
+
+.pluginMenuAction :global(button:hover),
+.pluginMenuAction :global(button:focus-visible) {
+	background: var(--gray-400);
+	outline: none;
+}
+
+.pluginMenuAction :global(button span) {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
 .eventViewer {

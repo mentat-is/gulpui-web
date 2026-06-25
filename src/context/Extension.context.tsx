@@ -334,6 +334,7 @@ export namespace Extension {
 
 	export namespace Component {
 		export interface Props {
+			className?: string;
 			name: string;
 			props?: ComponentProps;
 		}
@@ -342,10 +343,10 @@ export namespace Extension {
 	/**
 	 * Renders a loaded extension component by filename.
 	 *
-	 * @param props - Component filename and optional props for the mounted plugin.
+	 * @param props - Component filename, optional host wrapper class, and optional props for the mounted plugin.
 	 * @returns The plugin component, or null when unavailable.
 	 */
-	export function Component({ name, props }: Extension.Component.Props) {
+	export function Component({ className, name, props }: Extension.Component.Props) {
 		const { extensions } = Extension.use();
 		const extension = extensions[name];
 		if (!extension) {
@@ -361,7 +362,13 @@ export namespace Extension {
 			return null;
 		}
 
-		return <Component {...props} />;
+		const element = <Component {...props} />;
+
+		if (!className) {
+			return element;
+		}
+
+		return <div className={className}>{element}</div>;
 	}
 
 	export namespace Optional {

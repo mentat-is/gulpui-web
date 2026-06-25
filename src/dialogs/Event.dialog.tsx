@@ -2023,6 +2023,13 @@ export function DisplayEventDialog({
 						</div>
 						<div className={s.buttonGroup}>
 							<Button
+								variant="tertiary"
+								className={s.menuAction}
+								icon="StickyNote"
+								onClick={handleCreateNote}
+								title={t("eventDialog.createNewNote")}
+							></Button>
+							<Button
 								onClick={handleToggleFlag}
 								variant="secondary"
 								icon={isFlagged ? "FlagOff" : "Flag"}
@@ -2051,18 +2058,18 @@ export function DisplayEventDialog({
 									<Button
 										variant="tertiary"
 										className={s.menuAction}
-										icon="StickyNote"
-										onClick={handleCreateNote}
-									>
-										{t("eventDialog.createNewNote")}
-									</Button>
-									<Button
-										variant="tertiary"
-										className={s.menuAction}
 										icon="GitPullRequestCreate"
 										onClick={handleCreateLink}
 									>
 										{t("eventDialog.createAndConnectLink")}
+									</Button>
+									<Button
+										variant="tertiary"
+										className={s.menuAction}
+										icon="GitPullRequestCreateArrow"
+										onClick={handleConnectLink}
+									>
+										{t("eventDialog.connectLink")}
 									</Button>
 									<Button
 										variant="tertiary"
@@ -2083,24 +2090,13 @@ export function DisplayEventDialog({
 										</Button>
 									)}
 									{eventActionPlugins.map((plugin) => (
-										<div
+										<Extension.Component
+											className={s.pluginMenuAction}
 											key={plugin.filename}
-											className={s.storyAction}
-										>
-											<Extension.Component
-												name={plugin.filename}
-												props={{ doc: event, event }}
-											/>
-										</div>
+											name={plugin.filename}
+											props={{ doc: event, event }}
+										/>
 									))}
-									<Button
-										variant="tertiary"
-										className={s.menuAction}
-										icon="GitPullRequestCreateArrow"
-										onClick={handleConnectLink}
-									>
-										{t("eventDialog.connectLink")}
-									</Button>
 									<Button
 										variant="tertiary"
 										className={s.menuAction}
