@@ -106,6 +106,7 @@ export class DefaultEngine implements Engine.Interface<any> {
 				range,
 			);
 			this.renderer.ctx.fillRect(x, y, 1, 47);
+			this.renderer.stats.renderedEventPixels++;
 
 			// SKIP-AHEAD: events are descending in timestamp, so as i increases, x decreases.
 			// After drawing pixel x, skip to the first event that maps to a pixel strictly
@@ -135,6 +136,28 @@ export class DefaultEngine implements Engine.Interface<any> {
 	getRanges(file: Source.Type): MinMax {
 		const events = Source.Entity.events(this.renderer.info.app, file);
 		const cache = RenderEngine[CacheKey].range.get(file.id);
+		const cachedHashRange = Doc.Entity.hashRange(file.id);
+
+		if (cachedHashRange && cachedHashRange.length === events.length) {
+			if (
+				cache &&
+				cache.field === file.settings.field &&
+				cache[Hardcode.Length] === events.length &&
+				cache.min === cachedHashRange.min &&
+				cache.max === cachedHashRange.max
+			) {
+				return cache;
+			}
+
+			const range = {
+				min: cachedHashRange.min,
+				max: cachedHashRange.max,
+				field: file.settings.field,
+				[Hardcode.Length]: cachedHashRange.length,
+			};
+			RenderEngine[CacheKey].range.set(file.id, range);
+			return range;
+		}
 
 		if (cache && cache.field === file.settings.field) {
 			if (cache[Hardcode.Length] === events.length) {

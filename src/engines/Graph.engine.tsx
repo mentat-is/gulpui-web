@@ -6,6 +6,14 @@ import { Color } from "@/entities/Color";
 const GRAPH_DRAWABLE_HEIGHT = 47;
 const SEMI_LOG_BASE = 10;
 
+interface GraphBucketCache {
+	key: string;
+	buckets: Map<number, number>;
+	maxHeight: number;
+	sampleCount: number;
+	bucketCount: number;
+}
+
 /**
  * Graph render engine: draws connected line graphs for event density over time.
  * Caches per-source graph points (Map<timestamp, height>) with scale/range metadata.
@@ -27,6 +35,7 @@ export class GraphEngine implements Engine.Interface<
 	};
 	/** Per-source cache of graph data. Key: source ID, Value: graph point map. */
 	map = new Map<Source.Id, typeof GraphEngine.target>();
+	private dynamicBucketCache = new Map<Source.Id, GraphBucketCache>();
 
 	constructor(renderer: Engine.Constructor) {
 		if (GraphEngine.instance) {
@@ -63,20 +72,18 @@ export class GraphEngine implements Engine.Interface<
 			(10 * (frame.max - frame.min)) / this.renderer.info.width;
 
 		const dynamicFrequency = Math.max(freq, timePer10Px);
-
-		const dynamicBuckets = new Map<number, number>();
-		let maxHeight = 0;
-
+		if (!Number.isFinite(dynamicFrequency) || dynamicFrequency <= 0) return;
 		const offset = file.timestamp.min;
-
-		for (let i = 0; i < sampleData.length; i++) {
-			const relativeTs = sampleData[i].min_timestamp - offset;
-			const bucketIndex = Math.floor(relativeTs / dynamicFrequency);
-			const newCount =
-				(dynamicBuckets.get(bucketIndex) || 0) + sampleData[i].sample;
-			dynamicBuckets.set(bucketIndex, newCount);
-			if (newCount > maxHeight) maxHeight = newCount;
-		}
+		const bucketCache = this.getDynamicBuckets(
+			file,
+			sampleData,
+			dynamicFrequency,
+			offset,
+		);
+		const dynamicBuckets = bucketCache.buckets;
+		const maxHeight = bucketCache.maxHeight;
+		this.renderer.stats.graphSamples += bucketCache.sampleCount;
+		this.renderer.stats.graphBuckets += bucketCache.bucketCount;
 
 		if (maxHeight === 0) return;
 
@@ -114,10 +121,7 @@ export class GraphEngine implements Engine.Interface<
 
 			const x = this.renderer.getPixelPosition(centerTimestamp);
 
-			if (
-				x < 0 - dynamicFrequency ||
-				x > this.renderer.ctx.canvas.width + dynamicFrequency
-			)
+			if (x < -32 || x > this.renderer.ctx.canvas.width + 32)
 				continue;
 
 			const count = dynamicBuckets.get(i) || 0;
@@ -137,6 +141,77 @@ export class GraphEngine implements Engine.Interface<
 			}
 			prevDot = currentDot;
 		}
+	}
+
+	/**
+	 * Returns cached dynamic buckets for a graph source at the current zoom frequency.
+	 * @param file Source being rendered.
+	 * @param sampleData Source sample data used to build graph buckets.
+	 * @param dynamicFrequency Current zoom-derived bucket frequency.
+	 * @param offset Source minimum timestamp used as relative bucket origin.
+	 * @returns Cached or newly built bucket data.
+	 */
+	private getDynamicBuckets(
+		file: Source.Type,
+		sampleData: Array<{ min_timestamp: number; sample: number }>,
+		dynamicFrequency: number,
+		offset: number,
+	): GraphBucketCache {
+		const normalizedFrequency = Math.max(
+			0.001,
+			Math.round(dynamicFrequency * 1000) / 1000,
+		);
+		const key = [
+			this.getSampleDataSignature(sampleData),
+			normalizedFrequency,
+			offset,
+			file.timestamp.max,
+		].join(":");
+		const cached = this.dynamicBucketCache.get(file.id);
+		if (cached?.key === key) {
+			return cached;
+		}
+
+		const dynamicBuckets = new Map<number, number>();
+		let maxHeight = 0;
+
+		for (let i = 0; i < sampleData.length; i++) {
+			const relativeTs = sampleData[i].min_timestamp - offset;
+			const bucketIndex = Math.floor(relativeTs / normalizedFrequency);
+			const newCount =
+				(dynamicBuckets.get(bucketIndex) || 0) + sampleData[i].sample;
+			dynamicBuckets.set(bucketIndex, newCount);
+			if (newCount > maxHeight) maxHeight = newCount;
+		}
+
+		const nextCache: GraphBucketCache = {
+			key,
+			buckets: dynamicBuckets,
+			maxHeight,
+			sampleCount: sampleData.length,
+			bucketCount: dynamicBuckets.size,
+		};
+		this.dynamicBucketCache.set(file.id, nextCache);
+		return nextCache;
+	}
+
+	/**
+	 * Builds a stable signature for the sample data used by the graph renderer.
+	 * @param sampleData Source sample data.
+	 * @returns Signature that changes when the sampled timeline changes.
+	 */
+	private getSampleDataSignature(
+		sampleData: Array<{ min_timestamp: number; sample: number }>,
+	): string {
+		const first = sampleData[0];
+		const last = sampleData[sampleData.length - 1];
+		return [
+			sampleData.length,
+			first?.min_timestamp ?? 0,
+			first?.sample ?? 0,
+			last?.min_timestamp ?? 0,
+			last?.sample ?? 0,
+		].join(":");
 	}
 
 	/**
@@ -270,5 +345,24 @@ export class GraphEngine implements Engine.Interface<
 
 	is(file: Source.Type): boolean {
 		return this.map.has(file.id);
+	}
+
+	/**
+	 * Clears cached graph aggregation for a specific source.
+	 * @param sourceId Source identifier to clear.
+	 * @returns Nothing.
+	 */
+	clearSourceCache(sourceId: Source.Id): void {
+		this.map.delete(sourceId);
+		this.dynamicBucketCache.delete(sourceId);
+	}
+
+	/**
+	 * Clears all cached graph aggregations.
+	 * @returns Nothing.
+	 */
+	clearCache(): void {
+		this.map.clear();
+		this.dynamicBucketCache.clear();
 	}
 }

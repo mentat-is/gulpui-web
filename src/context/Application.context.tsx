@@ -133,14 +133,18 @@ function _({ children }: { children: ReactNode }) {
 					);
 					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
 					if (idx >= 0) {
+						const previousNote = DataStore.notes[idx];
 						DataStore.notes[idx] = note;
+						Note.Entity.upsertIndexedNote(note, previousNote);
 					} else {
 						DataStore.notes.push(note);
+						Note.Entity.upsertIndexedNote(note);
 					}
-					Note.Entity.invalidateCache();
-					RenderEngine.clearAllCaches();
-					DataStore.markDirty();
-					instanceRef.current.render();
+					DataStore.notes.sort(
+						(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+					);
+					RenderEngine.reset("notes");
+					DataStore.markDirtySoon();
 					return;
 				}
 				case "link": {
@@ -171,11 +175,11 @@ function _({ children }: { children: ReactNode }) {
 			// Check notes
 			const noteIdx = DataStore.notes.findIndex((n) => n.id === id);
 			if (noteIdx >= 0) {
+				const deletedNote = DataStore.notes[noteIdx];
 				DataStore.notes.splice(noteIdx, 1);
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				instanceRef.current.render();
+				Note.Entity.removeIndexedNote(deletedNote);
+				RenderEngine.reset("notes");
+				DataStore.markDirtySoon();
 				return;
 			}
 

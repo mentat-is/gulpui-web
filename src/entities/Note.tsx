@@ -72,8 +72,17 @@ export namespace Note {
 		 */
 		private static _cacheValid = false;
 
-		public static indexSize = () =>
-			[...Note.Entity[CacheKey].values()].flat().length;
+		/**
+		 * Counts indexed notes without flattening the per-source arrays.
+		 * @returns Total amount of notes currently present in the source index.
+		 */
+		public static indexSize = (): number => {
+			let total = 0;
+			Note.Entity[CacheKey].forEach((notes) => {
+				total += notes.length;
+			});
+			return total;
+		};
 
 		/**
 		 * Marks the note index as stale. This is O(1) — the actual rebuild is
@@ -83,6 +92,79 @@ export namespace Note {
 		public static invalidateCache = () => {
 			Note.Entity._cacheValid = false;
 			Note.Entity[CacheKey].clear();
+		};
+
+		/**
+		 * Updates the source note index for one note when the index is already valid.
+		 * @param note Normalized note to insert or replace.
+		 * @param previousNote Previous note value when an existing note is being edited.
+		 * @returns Nothing.
+		 */
+		public static upsertIndexedNote = (
+			note: Note.Type,
+			previousNote?: Note.Type,
+		): void => {
+			if (!Note.Entity._cacheValid) return;
+
+			if (previousNote && previousNote.source_id !== note.source_id) {
+				Note.Entity.removeIndexedNote(previousNote);
+			}
+
+			const sourceNotes = Note.Entity[CacheKey].get(note.source_id) ?? [];
+			const existingIndex = sourceNotes.findIndex((item) => item.id === note.id);
+			if (existingIndex !== -1) {
+				sourceNotes[existingIndex] = note;
+				sourceNotes.sort(
+					(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+				);
+			} else {
+				const insertIndex = Note.Entity.findNoteInsertIndex(sourceNotes, note);
+				sourceNotes.splice(insertIndex, 0, note);
+			}
+			Note.Entity[CacheKey].set(note.source_id, sourceNotes);
+		};
+
+		/**
+		 * Removes one note from the source note index when the index is valid.
+		 * @param note Note to remove from its source group.
+		 * @returns Nothing.
+		 */
+		public static removeIndexedNote = (note: Note.Type): void => {
+			if (!Note.Entity._cacheValid) return;
+
+			const sourceNotes = Note.Entity[CacheKey].get(note.source_id);
+			if (!sourceNotes) return;
+
+			const index = sourceNotes.findIndex((item) => item.id === note.id);
+			if (index !== -1) {
+				sourceNotes.splice(index, 1);
+			}
+		};
+
+		/**
+		 * Finds the descending timestamp insert position for a note.
+		 * @param notes Source notes sorted by descending timestamp.
+		 * @param note Note to insert.
+		 * @returns Insert index that preserves descending timestamp order.
+		 */
+		private static findNoteInsertIndex = (
+			notes: Note.Type[],
+			note: Note.Type,
+		): number => {
+			const timestamp = Note.Entity.timestamp(note);
+			let left = 0;
+			let right = notes.length;
+
+			while (left < right) {
+				const mid = (left + right) >>> 1;
+				if (Note.Entity.timestamp(notes[mid]) < timestamp) {
+					right = mid;
+				} else {
+					left = mid + 1;
+				}
+			}
+
+			return left;
 		};
 
 		public static normalize = (
@@ -144,11 +226,20 @@ export namespace Note {
 			if (Note.Entity._cacheValid) return;
 
 			Note.Entity[CacheKey].clear();
+			const sourceIds = new Set<Source.Id>();
 			app.target.files.forEach((file) => {
-				Note.Entity[CacheKey].set(
-					file.id,
-					DataStore.notes.filter((n) => n.source_id === file.id),
-				);
+				sourceIds.add(file.id);
+				Note.Entity[CacheKey].set(file.id, []);
+			});
+
+			DataStore.notes.forEach((note) => {
+				if (!sourceIds.has(note.source_id)) return;
+				const sourceNotes = Note.Entity[CacheKey].get(note.source_id);
+				if (sourceNotes) {
+					sourceNotes.push(note);
+				} else {
+					Note.Entity[CacheKey].set(note.source_id, [note]);
+				}
 			});
 
 			Note.Entity._cacheValid = true;
@@ -170,6 +261,10 @@ export namespace Note {
 		): Note.Type[] => {
 			const id = Parser.useUUID(file) as Source.Id;
 			let notes = Note.Entity[CacheKey].get(id);
+
+			if (Note.Entity._cacheValid) {
+				return notes ?? [];
+			}
 
 			if (notes) {
 				return notes;

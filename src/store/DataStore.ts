@@ -22,6 +22,8 @@ export class DataStore {
 
   private static listeners = new Set<() => void>();
   private static version = 0;
+  private static pendingDirtyFrame: number | null = null;
+  private static pendingDirtyTimeout: ReturnType<typeof setTimeout> | null = null;
 
   /**
    * Subscribes a listener to DataStore changes.
@@ -39,8 +41,60 @@ export class DataStore {
 
   /**
    * Signals that data has changed and notifies all subscribers.
+   * @returns Nothing.
    */
-  static markDirty() {
+  static markDirty(): void {
+    this.cancelScheduledDirty();
+    this.notifyDirtyListeners();
+  }
+
+  /**
+   * Coalesces data-change notifications to the next animation frame.
+   * @returns Nothing.
+   */
+  static markDirtySoon(): void {
+    this.isDirty = true;
+    if (this.pendingDirtyFrame !== null || this.pendingDirtyTimeout !== null) {
+      return;
+    }
+
+    const notify = () => {
+      this.pendingDirtyFrame = null;
+      this.pendingDirtyTimeout = null;
+      this.notifyDirtyListeners();
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      this.pendingDirtyFrame = window.requestAnimationFrame(notify);
+      return;
+    }
+
+    this.pendingDirtyTimeout = setTimeout(notify, 0);
+  }
+
+  /**
+   * Cancels any deferred dirty notification before an immediate notification.
+   * @returns Nothing.
+   */
+  private static cancelScheduledDirty(): void {
+    if (this.pendingDirtyFrame !== null) {
+      if (typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+        window.cancelAnimationFrame(this.pendingDirtyFrame);
+      }
+      this.pendingDirtyFrame = null;
+    }
+
+    if (this.pendingDirtyTimeout !== null) {
+      clearTimeout(this.pendingDirtyTimeout);
+      this.pendingDirtyTimeout = null;
+    }
+  }
+
+  /**
+   * Increments the external-store version and notifies subscribers.
+   * @returns Nothing.
+   */
+  private static notifyDirtyListeners(): void {
     this.isDirty = true;
     this.version++;
     this.listeners.forEach(listener => listener());

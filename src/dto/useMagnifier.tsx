@@ -1,19 +1,30 @@
-import { useState, useEffect, useRef } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
+
+interface MousePosition {
+  x: number
+  y: number
+}
 
 export const useMagnifier = (
   canvas_ref: React.RefObject<HTMLCanvasElement>,
-  dependencies: Array<any>,
+  dependencies: unknown[],
   magnifierSize = 100,
   magnificationFactor = 2,
 ) => {
   const magnifier_ref = useRef<HTMLCanvasElement>(null as unknown as HTMLCanvasElement)
   const [isAltPressed, setIsAltPressed] = useState<boolean>(false)
-  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
+  const [mousePosition, setMousePosition] = useState<MousePosition>({
     x: 0,
     y: 0,
   })
+  const latestMousePositionRef = useRef<MousePosition>(mousePosition)
+  const pendingMouseFrameRef = useRef<number | null>(null)
 
-  const drawMagnifier = () => {
+  /**
+   * Draws the magnified canvas snapshot around the latest mouse position.
+   * @returns Nothing.
+   */
+  const drawMagnifier = useCallback((): void => {
     const canvas = canvas_ref.current
     const magnifier = magnifier_ref.current
     if (!magnifier || !canvas) return
@@ -38,28 +49,78 @@ export const useMagnifier = (
       magnifierCtx.imageSmoothingEnabled = false
       magnifierCtx.drawImage(canvas, x, y, w, w, 0, 0, d, d)
     }
-  }
+  }, [canvas_ref, magnificationFactor, magnifierSize, mousePosition])
 
   useEffect(() => {
     isAltPressed && drawMagnifier()
-  }, [isAltPressed, mousePosition, dependencies])
+  }, [isAltPressed, mousePosition, dependencies, drawMagnifier])
 
-  const handleMouseMove = ({
+  useEffect(() => {
+    return () => {
+      if (pendingMouseFrameRef.current !== null) {
+        cancelAnimationFrame(pendingMouseFrameRef.current)
+      }
+    }
+  }, [])
+
+  /**
+   * Commits the latest mouse position to React state at most once per frame.
+   * @returns Nothing.
+   */
+  const commitMousePosition = useCallback((): void => {
+    pendingMouseFrameRef.current = null
+    const nextPosition = latestMousePositionRef.current
+    setMousePosition((previousPosition) => {
+      if (
+        previousPosition.x === nextPosition.x &&
+        previousPosition.y === nextPosition.y
+      ) {
+        return previousPosition
+      }
+
+      return nextPosition
+    })
+  }, [])
+
+  /**
+   * Schedules a mouse position state update for the next animation frame.
+   * @returns Nothing.
+   */
+  const scheduleMousePositionCommit = useCallback((): void => {
+    if (pendingMouseFrameRef.current !== null) {
+      return
+    }
+
+    pendingMouseFrameRef.current = requestAnimationFrame(commitMousePosition)
+  }, [commitMousePosition])
+
+  /**
+   * Tracks the pointer position relative to the canvas without rerendering on every native event.
+   * @param event Mouse event emitted by the canvas wrapper.
+   * @returns Nothing.
+   */
+  const handleMouseMove = useCallback(({
     clientX,
     clientY,
-  }: React.MouseEvent<HTMLDivElement>) => {
+  }: React.MouseEvent<HTMLDivElement>): void => {
     if (!canvas_ref.current) {
       return
     }
 
     const { left, top } = canvas_ref.current.getBoundingClientRect()
-    setMousePosition({
+    latestMousePositionRef.current = {
       x: clientX - left,
       y: clientY - top,
-    })
-  }
+    }
+    scheduleMousePositionCommit()
+  }, [canvas_ref, scheduleMousePositionCommit])
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  /**
+   * Toggles the magnifier when the configured modifier key is pressed.
+   * @param event Keyboard event emitted by the canvas wrapper.
+   * @returns Nothing.
+   */
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>): void => {
     if (event.ctrlKey) {
       setIsAltPressed((v) => !v)
     }

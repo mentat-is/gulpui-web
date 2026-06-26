@@ -43,6 +43,11 @@ import { translate } from "@/locales/core";
 import { WindowBridge } from "@/lib/WindowBridge";
 import { GulpIndexedDB } from "@/class/IndexedDB";
 import { requestStore } from "@/store/request.store";
+import { DataWorker } from "@/workers/DataWorker.class";
+import type {
+	NormalizeQuerySourceSettings,
+	QueryRawDocument,
+} from "@/workers/DataWorker.types";
 
 export namespace GulpDataset {
 	export namespace GetAvailableLoginApi {
@@ -333,6 +338,7 @@ const ACTIVE_REQUEST_STATUSES = new Set<Request.Status>([
 ]);
 const MAX_VISIBLE_QUERY_CONCURRENCY = 4;
 const MAX_BACKGROUND_QUERY_CONCURRENCY = 1;
+const QUERY_DOC_WORKER_THRESHOLD = 1000;
 
 export class Info implements InfoProps {
 	app: App.Type;
@@ -661,20 +667,79 @@ export class Info implements InfoProps {
 	};
 
 	/**
-	 * Normalizes websocket docs using each document source's render settings.
+	 * Prepares websocket docs for insertion, using the worker only when the batch is large enough.
 	 * @param docs Raw document payload received from the websocket.
 	 * @param sourceIds Source ids associated with the query request.
-	 * @returns Normalized render-ready documents.
+	 * @returns Normalized, grouped, and sorted document batches.
 	 */
-	private normalizeQueryDocs = (
-		docs: Doc.Type[],
+	private prepareQueryDocBatches = async (
+		docs: QueryRawDocument[],
 		sourceIds: Source.Id[],
-	): Doc.Type[] => {
+	): Promise<Doc.PreparedBatch[]> => {
 		if (docs.length === 0) return [];
 
+		if (docs.length < QUERY_DOC_WORKER_THRESHOLD) {
+			return this.prepareQueryDocBatchesOnMainThread(docs, sourceIds);
+		}
+
+		try {
+			const result = await DataWorker.normalizeQueryDocs({
+				docs,
+				sourceSettingsById: this.getQuerySourceSettingsById(sourceIds),
+				fallbackSourceId: sourceIds.length === 1 ? sourceIds[0] : undefined,
+			});
+			return result.batches;
+		} catch (error) {
+			Logger.warn(
+				`Worker normalization failed, falling back to main thread: ${
+					(error as Error).message
+				}`,
+				Info,
+			);
+			return this.prepareQueryDocBatchesOnMainThread(docs, sourceIds);
+		}
+	};
+
+	/**
+	 * Builds source settings for worker-side query document normalization.
+	 * @param sourceIds Source ids associated with the query request.
+	 * @returns Source settings keyed by source id.
+	 */
+	private getQuerySourceSettingsById = (
+		sourceIds: Source.Id[],
+	): Record<string, NormalizeQuerySourceSettings> => {
+		const sources =
+			sourceIds.length > 0
+				? sourceIds
+						.map((sourceId) => Source.Entity.id(this.app, sourceId))
+						.filter((source): source is Source.Type => Boolean(source))
+				: this.app.target.files;
+
+		return sources.reduce<Record<string, NormalizeQuerySourceSettings>>(
+			(settingsById, source) => {
+				settingsById[source.id] = {
+					field: String(source.settings.field),
+					hash_function: source.settings.hash_function,
+				};
+				return settingsById;
+			},
+			{},
+		);
+	};
+
+	/**
+	 * Normalizes websocket docs on the main thread for small batches.
+	 * @param docs Raw document payload received from the websocket.
+	 * @param sourceIds Source ids associated with the query request.
+	 * @returns Normalized, grouped, and sorted document batches.
+	 */
+	private prepareQueryDocBatchesOnMainThread = (
+		docs: QueryRawDocument[],
+		sourceIds: Source.Id[],
+	): Doc.PreparedBatch[] => {
 		const fallbackSource =
 			sourceIds.length === 1 ? Source.Entity.id(this.app, sourceIds[0]) : null;
-		const docsBySource = new Map<Source.Id, Doc.Type[]>();
+		const docsBySource = new Map<Source.Id, QueryRawDocument[]>();
 
 		docs.forEach((doc) => {
 			const sourceId =
@@ -686,17 +751,39 @@ export class Info implements InfoProps {
 			docsBySource.set(sourceId, group);
 		});
 
-		const normalizedDocs: Doc.Type[] = [];
-		docsBySource.forEach((sourceDocs, sourceId) => {
+		return Array.from(docsBySource.entries()).map(([sourceId, sourceDocs]) => {
 			const source = Source.Entity.id(this.app, sourceId) ?? fallbackSource;
 			const field = source?.settings.field ?? "gulp.event_code";
 			const hashFunction = source?.settings.hash_function ?? "fnv1a";
-			normalizedDocs.push(
-				...Doc.Entity.normalize(sourceDocs, field, hashFunction),
+			const normalizedDocs = Doc.Entity.normalize(
+				sourceDocs as unknown as Doc.Type[],
+				field,
+				hashFunction,
 			);
+			normalizedDocs.forEach((doc) => {
+				doc["gulp.source_id"] = doc["gulp.source_id"] ?? sourceId;
+			});
+			return {
+				sourceId,
+				docs: Doc.Entity.sort(normalizedDocs),
+			};
 		});
+	};
 
-		return normalizedDocs;
+	/**
+	 * Lets background stream insertion wait while visible rows are queued.
+	 * @param stream Query stream that is about to process another batch.
+	 * @returns Promise that resolves when no visible source is waiting in the queue.
+	 */
+	private waitForVisibleQueueBeforeBackgroundBatch = async (
+		stream: QueryStreamState,
+	): Promise<void> => {
+		if (stream.queuePriority !== "background") return;
+
+		while (!stream.closed && this.hasVisibleQueuedSource()) {
+			this.pumpRefetchQueue();
+			await new Promise((resolve) => setTimeout(resolve, 16));
+		}
 	};
 
 	/**
@@ -1694,18 +1781,44 @@ export class Info implements InfoProps {
 			}
 
 			if (stream) {
-				const bufferedEvents: Doc.Type[] = [];
+				const bufferedDocs: QueryRawDocument[] = [];
 				let lastFlushTime = 0;
 				const FLUSH_INTERVAL_MS = 300;
 
-				const flushBufferedEvents = () => {
-					if (!stream || stream.closed || bufferedEvents.length === 0) return;
-					const toFlush = bufferedEvents.splice(0);
+				const flushBufferedDocs = () => {
+					if (!stream || stream.closed || bufferedDocs.length === 0) return;
+					const toFlush = bufferedDocs.splice(0);
 					lastFlushTime = Date.now();
+					const activeStream = stream;
 
-					stream.flushChain = stream.flushChain.then(async () => {
-						if (!stream || stream.closed) return;
-						await this.events_add_async(toFlush);
+					activeStream.flushChain = activeStream.flushChain.then(async () => {
+						if (
+							activeStream.closed ||
+							this.activeQueryStreams.get(req_id) !== activeStream
+						) {
+							return;
+						}
+
+						await this.waitForVisibleQueueBeforeBackgroundBatch(activeStream);
+						if (
+							activeStream.closed ||
+							this.activeQueryStreams.get(req_id) !== activeStream
+						) {
+							return;
+						}
+
+						const batches = await this.prepareQueryDocBatches(
+							toFlush,
+							activeStream.sourceIds,
+						);
+						if (
+							activeStream.closed ||
+							this.activeQueryStreams.get(req_id) !== activeStream
+						) {
+							return;
+						}
+
+						await this.events_add_prepared_async(batches);
 					});
 				};
 
@@ -1718,17 +1831,15 @@ export class Info implements InfoProps {
 					(m) => {
 						if (!stream || stream.closed) return;
 
-						const events = this.normalizeQueryDocs(
-							m.payload.docs ?? [],
-							stream.sourceIds,
+						bufferedDocs.push(
+							...((m.payload.docs ?? []) as unknown as QueryRawDocument[]),
 						);
-						bufferedEvents.push(...events);
 
 						if (
 							Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
 							m.payload.last
 						) {
-							flushBufferedEvents();
+							flushBufferedDocs();
 						}
 
 						if (m.payload.last) {
@@ -1770,7 +1881,7 @@ export class Info implements InfoProps {
 								(item: any) => item.type === "note",
 							) as Note.Type[];
 							if (newItems.length > 0) {
-								newItems.forEach((note) => this.AddNoteToDataStore(note));
+								this.AddNotesToDataStore(newItems);
 								toast.success(
 									translate("notes.fetchedCount", { count: newItems.length }),
 									{
@@ -2901,12 +3012,28 @@ export class Info implements InfoProps {
 			...file.settings,
 			...settings,
 		} satisfies Source.Type["settings"];
+		const isHashInputChanged =
+			newSettings.field !== file.settings.field ||
+			newSettings.hash_function !== file.settings.hash_function;
+		const isNewFieldFetched =
+			isHashInputChanged &&
+			Source.Entity.isEventKeyFetched(this.app, id, [newSettings.field]);
 
-		if (
-			newSettings.hash_function !== file.settings.hash_function ||
-			!Source.Entity.isEventKeyFetched(this.app, id, [newSettings.field])
-		) {
+		if (isHashInputChanged && isNewFieldFetched) {
+			Doc.Entity.recalculateNumberHashes(
+				this.app,
+				id,
+				String(newSettings.field),
+				newSettings.hash_function,
+			);
+		}
+
+		if (isHashInputChanged && !isNewFieldFetched) {
+			Doc.Entity.clearHashRange(id);
+			RenderEngine.resetSource(id);
 			this.refetch({ ids: id, refetchKeys: { [id]: [newSettings.field] } });
+		} else if (isHashInputChanged) {
+			RenderEngine.resetSource(id);
 		}
 
 		return this.setInfoByKey(
@@ -2961,10 +3088,29 @@ export class Info implements InfoProps {
 		});
 	};
 
+	/**
+	 * Adds normalized events synchronously to the document store.
+	 * @param newEvents Normalized documents to add.
+	 * @returns Updated global events map.
+	 */
 	events_add = (newEvents: Doc.Type[]) => Doc.Entity.add(this.app, newEvents);
 
+	/**
+	 * Adds normalized events asynchronously to the document store.
+	 * @param newEvents Normalized documents to add.
+	 * @returns Promise that resolves when insertion completes.
+	 */
 	events_add_async = async (newEvents: Doc.Type[]) => {
 		await Doc.Entity.addAsync(this.app, newEvents);
+	};
+
+	/**
+	 * Adds prepared source batches asynchronously to the document store.
+	 * @param batches Normalized documents grouped by source and sorted newest first.
+	 * @returns Promise that resolves when insertion completes.
+	 */
+	events_add_prepared_async = async (batches: Doc.PreparedBatch[]) => {
+		await Doc.Entity.addPreparedAsync(this.app, batches);
 	};
 
 	event_keys = async (file: Source.Type): Promise<Filter.Options> => {
@@ -3074,8 +3220,8 @@ export class Info implements InfoProps {
 
 				DataStore.notes = [...notes];
 				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
+				RenderEngine.reset("notes");
+				DataStore.markDirtySoon();
 
 				return new Promise((res) => {
 					setTimeout(() => {
@@ -3090,8 +3236,8 @@ export class Info implements InfoProps {
 				Logger.log(message, Info);
 				DataStore.notes = [...notes];
 				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
+				RenderEngine.reset("notes");
+				DataStore.markDirtySoon();
 				if (notes.length >= 2500) {
 					toast.success(message, {
 						icon: <Icon name="Check" />,
@@ -3163,11 +3309,11 @@ export class Info implements InfoProps {
 		}).then(() => {
 			const index = DataStore.notes.findIndex((n) => n.id === note.id);
 			if (index !== -1) {
+				const deletedNote = DataStore.notes[index];
 				DataStore.notes.splice(index, 1);
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				this.render();
+				Note.Entity.removeIndexedNote(deletedNote);
+				RenderEngine.reset("notes");
+				DataStore.markDirtySoon();
 			}
 		});
 
@@ -3190,13 +3336,13 @@ export class Info implements InfoProps {
 			ids.forEach((id) => {
 				const index = DataStore.notes.findIndex((n) => n.id === id);
 				if (index !== -1) {
+					const deletedNote = DataStore.notes[index];
 					DataStore.notes.splice(index, 1);
+					Note.Entity.removeIndexedNote(deletedNote);
 				}
 			});
-			Note.Entity.invalidateCache();
-			RenderEngine.clearAllCaches();
-			DataStore.markDirty();
-			this.render();
+			RenderEngine.reset("notes");
+			DataStore.markDirtySoon();
 		});
 
 	/* GRANTED PERMISSIONS */
@@ -3928,22 +4074,51 @@ export class Info implements InfoProps {
 		}, 0);
 	};
 
-	private AddNoteToDataStore(note: Note.Type) {
-		note = Note.Entity.normalize_note(this.app, note);
-		const idx = DataStore.notes.findIndex((n) => n.id === note.id);
-		if (idx !== -1) {
-			DataStore.notes[idx] = note;
-		} else {
+	/**
+	 * Adds or updates one note in DataStore and schedules a coalesced canvas repaint.
+	 * @param note Raw note returned by an API or websocket message.
+	 * @returns Normalized note stored in DataStore.
+	 */
+	private AddNoteToDataStore(note: Note.Type): Note.Type {
+		return this.AddNotesToDataStore([note])[0];
+	}
+
+	/**
+	 * Adds or updates multiple notes while sorting and invalidating render caches once.
+	 * @param notes Raw notes returned by an API or websocket message.
+	 * @returns Normalized notes stored in DataStore.
+	 */
+	private AddNotesToDataStore(notes: Note.Type[]): Note.Type[] {
+		if (notes.length === 0) return [];
+
+		const normalizedNotes = notes.map((note) =>
+			Note.Entity.normalize_note(this.app, note),
+		);
+		const noteIndexById = new Map<Note.Id, number>();
+		DataStore.notes.forEach((storedNote, index) => {
+			noteIndexById.set(storedNote.id, index);
+		});
+
+		normalizedNotes.forEach((note) => {
+			const index = noteIndexById.get(note.id);
+			if (typeof index === "number") {
+				const previousNote = DataStore.notes[index];
+				DataStore.notes[index] = note;
+				Note.Entity.upsertIndexedNote(note, previousNote);
+				return;
+			}
+
+			noteIndexById.set(note.id, DataStore.notes.length);
 			DataStore.notes.push(note);
-			DataStore.notes.sort(
-				(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-			);
-		}
-		Note.Entity.invalidateCache();
-		RenderEngine.clearAllCaches();
-		DataStore.markDirty();
-		this.render();
-		return note;
+			Note.Entity.upsertIndexedNote(note);
+		});
+
+		DataStore.notes.sort(
+			(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
+		);
+		RenderEngine.reset("notes");
+		DataStore.markDirtySoon();
+		return normalizedNotes;
 	}
 
 	async session_list(
@@ -4610,7 +4785,7 @@ export class Info implements InfoProps {
 							const newItems = m.payload.obj.filter(
 								(item) => item.type === "note",
 							) as Note.Type[];
-							newItems.forEach((note) => this.AddNoteToDataStore(note));
+							this.AddNotesToDataStore(newItems);
 							toast.success(
 								translate("notes.fetchedCount", { count: newItems.length }),
 								{

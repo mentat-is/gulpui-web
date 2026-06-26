@@ -39,22 +39,30 @@ export const useDrugs = (timeline: RefObject<HTMLCanvasElement>) => {
   const [resize, setResize] = useState<StartEnd>(StartEndBase)
   const [isResizing, setIsResizing] = useState(false)
 
-  const increaseScrollY = (newY: number) => {
-    scrollStore.setScrollY((y) => Math.round(y + newY))
-  }
+  /**
+   * Applies a drag delta to both scroll axes with one external-store notification.
+   * @param deltaX Horizontal movement produced by canvas dragging.
+   * @param deltaY Vertical movement produced by canvas dragging.
+   * @returns Nothing.
+   */
+  const moveScroll = useCallback((deltaX: number, deltaY: number): void => {
+    scrollStore.setScroll(
+      Math.round(scrollStore.getX() + deltaX),
+      Math.round(scrollStore.getY() + deltaY),
+    )
+  }, [])
 
   const dragState = useRef(
-    new DragDealer({ info: Info, timeline, increaseScrollY, setScrollX: scrollStore.setScrollX }),
+    new DragDealer({ info: Info, timeline, moveScroll }),
   )
 
   useEffect(() => {
     dragState.current = new DragDealer({
       info: Info,
       timeline,
-      increaseScrollY,
-      setScrollX: scrollStore.setScrollX
+      moveScroll,
     })
-  }, [timeline])
+  }, [timeline, moveScroll])
 
   const handleMouseDown = useCallback((event: React.MouseEvent) => {
     if (highlightsOverlay) {

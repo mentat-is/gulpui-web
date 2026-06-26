@@ -36,6 +36,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/ui/Button";
 import { Color } from "@/entities/Color";
 import { Locale } from "@/locales";
+import { CanvasProfiler } from "./CanvasProfiler";
 
 export namespace Canvas {
 	export interface Props extends Stack.Props {
@@ -79,6 +80,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 	const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } =
 		useDrugs(canvas_ref);
 	const pendingFrame = useRef<number>(0);
+	const pendingRenderReasonsRef = useRef<Set<string>>(new Set());
+	const pendingRenderForceRef = useRef<boolean>(false);
+	const pendingZoomFrame = useRef<number | null>(null);
+	const pendingZoomScaleRef = useRef<number | null>(null);
+	const pendingZoomScrollXRef = useRef<number | null>(null);
+	const didRenderInitialFrameRef = useRef<boolean>(false);
 	const scrollXRef = useRef(scrollX);
 	const scrollYRef = useRef(scrollY);
 	const mouseXRef = useRef<number>(-1000);
@@ -90,11 +97,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 		scrollYRef.current = scrollY;
 	}, [scrollX, scrollY]);
 
+	/**
+	 * Publishes the latest scroll position to React subscribers in one coalesced store update.
+	 * @param x Horizontal canvas scroll position.
+	 * @param y Vertical canvas scroll position.
+	 * @returns Nothing.
+	 */
 	const syncScrollToContext = useMemo(
 		() =>
 			debounce((x: number, y: number) => {
-				scrollStore.setScrollX(x);
-				scrollStore.setScrollY(y);
+				scrollStore.setScroll(x, y);
 			}, 16), // 60fps circa
 		[],
 	);
@@ -110,7 +122,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		Note.Entity.invalidateCache();
 		RenderEngine.reset("notes");
 		RenderEngine.reset("flags");
-	}, [app.target.notes, app.timeline.scale, app.target.files]);
+	}, [app.target.notes, app.target.files]);
 
 	/**
 	 * Renders the current Canvas frame and reports vertically visible source rows.
@@ -119,8 +131,9 @@ export function Canvas({ timeline }: Canvas.Props) {
 	 * @returns Nothing.
 	 */
 	const renderCanvas = (
-		force?: boolean,
+		force = false,
 		ctx = canvas_ref.current?.getContext("2d"),
+		reason = "direct",
 	) => {
 		if (!wrapper_ref.current || !ctx || !canvas_ref.current) {
 			return;
@@ -142,14 +155,22 @@ export function Canvas({ timeline }: Canvas.Props) {
 				Info.setTimelineScale(app.timeline.scale * delta);
 				scrollStore.setScrollX((s) => s - newWidth + oldWidth);
 			}
+			DataStore.markDirtySoon();
 			return;
 		}
 
-		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+		const profiler = CanvasProfiler.start(reason);
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		profiler?.mark("clear");
 
 		const currentScrollX = scrollXRef.current;
 		const currentScrollY = scrollYRef.current;
 		const limits = getLimits(app, Info, timeline, currentScrollX);
+		const selectedSources = Source.Entity.selected(app).filter((file) =>
+			app.hidden.filesWithNoEvents
+				? Doc.Entity.get(app, file.id).length > 0
+				: true,
+		);
 
 		// Create or reuse the singleton RenderEngine with current frame parameters.
 		// The constructor uses the singleton pattern: if an instance exists, it updates
@@ -164,16 +185,14 @@ export function Canvas({ timeline }: Canvas.Props) {
 			scrollY: currentScrollY,
 			mouseX: mouseXRef.current,
 			mouseY: mouseYRef.current,
-			visibleSources: Source.Entity.selected(app).filter((file) =>
-				app.hidden.filesWithNoEvents
-					? Doc.Entity.get(app, file.id).length > 0
-					: true,
-			),
+			visibleSources: selectedSources,
 		});
+		profiler?.mark("visibleSources");
 
 		const files = render.visibleSources;
 
 		render.ruler.draw();
+		profiler?.mark("ruler");
 
 		// Y-AXIS VIEWPORT CULLING: Each source row is 48px tall. With more sources
 		// and vertical scrolling, most rows are off-screen. By checking the Y position
@@ -181,11 +200,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 		// engine rendering, line drawing, local markers, and info labels for invisible rows.
 		const canvasHeight = ctx.canvas.height;
 		const visibleSourceIds: Source.Id[] = [];
+		const viewportSources: Source.Type[] = [];
 
 		files.forEach((file, i) => {
 			const y = Source.Entity.getHeight(app, file, currentScrollY, i);
 			if (y < -48 || y > canvasHeight + 48) return;
 			visibleSourceIds.push(file.id);
+			viewportSources.push(file);
 
 			if (
 				!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)
@@ -200,7 +221,9 @@ export function Canvas({ timeline }: Canvas.Props) {
 			render.locals(file, y);
 			render.draw_info(file, y);
 		});
+		render.stats.renderedRows = viewportSources.length;
 		Info.setVisibleSourceIds(visibleSourceIds);
+		profiler?.mark("rows");
 
 		render.targetMarker();
 		render.drawHighlights();
@@ -211,16 +234,19 @@ export function Canvas({ timeline }: Canvas.Props) {
 		}
 
 		render.highlightFlaggedDocuments();
+		profiler?.mark("highlightsFlags");
 
 		if (!app.hidden.notes) {
 			// Lazy rebuild: only runs if cache was invalidated since last render
 			Note.Entity.ensureIndexing(app);
-			render.notes(files);
+			render.notes(viewportSources);
 		}
+		profiler?.mark("notes");
 
 		if (!app.hidden.links) {
 			render.links();
 		}
+		profiler?.mark("links");
 
 		ctx.fillStyle = Color.Themer.theme.BORDER;
 		ctx.fillRect(
@@ -237,9 +263,75 @@ export function Canvas({ timeline }: Canvas.Props) {
 		);
 
 		render.ruler.sections();
-
-		renderCanvas;
+		profiler?.mark("ruler");
+		profiler?.setCounts(render.stats);
+		profiler?.finish();
 	};
+
+	const renderCanvasRef = useRef(renderCanvas);
+	renderCanvasRef.current = renderCanvas;
+
+	/**
+	 * Schedules a Canvas repaint and coalesces multiple requests into one animation frame.
+	 * @param reason Human-readable reason used by the dev profiler.
+	 * @param force Whether the scheduled render should invalidate overlay-related caches.
+	 * @returns Nothing.
+	 */
+	const requestCanvasRender = useMemo(
+		() =>
+			(reason: string, force = false): void => {
+				pendingRenderForceRef.current = pendingRenderForceRef.current || force;
+				pendingRenderReasonsRef.current.add(reason);
+
+				if (pendingFrame.current) {
+					return;
+				}
+
+				pendingFrame.current = requestAnimationFrame(() => {
+					const renderReason =
+						Array.from(pendingRenderReasonsRef.current).join(",") || "unknown";
+					const renderForce = pendingRenderForceRef.current;
+					pendingFrame.current = 0;
+					pendingRenderReasonsRef.current.clear();
+					pendingRenderForceRef.current = false;
+					renderCanvasRef.current(renderForce, undefined, renderReason);
+					DataStore.isDirty = false;
+				});
+			},
+		[],
+	);
+
+	/**
+	 * Commits the latest queued zoom scale and anchored scroll position.
+	 * @returns Nothing.
+	 */
+	const commitPendingZoom = useCallback((): void => {
+		pendingZoomFrame.current = null;
+		const nextScale = pendingZoomScaleRef.current;
+		const nextScrollX = pendingZoomScrollXRef.current;
+		pendingZoomScaleRef.current = null;
+		pendingZoomScrollXRef.current = null;
+
+		if (typeof nextScale === "number") {
+			Info.setTimelineScale(nextScale);
+		}
+		if (typeof nextScrollX === "number") {
+			scrollStore.setScrollX(nextScrollX);
+		}
+		requestCanvasRender("wheel:zoom");
+	}, [Info, requestCanvasRender]);
+
+	/**
+	 * Queues one zoom state commit for the next animation frame.
+	 * @returns Nothing.
+	 */
+	const scheduleZoomCommit = useCallback((): void => {
+		if (pendingZoomFrame.current !== null) {
+			return;
+		}
+
+		pendingZoomFrame.current = requestAnimationFrame(commitPendingZoom);
+	}, [commitPendingZoom]);
 
 	const renderOverlay = () => {
 		if (!overlay_ref.current || !canvas_ref.current) return;
@@ -478,12 +570,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 			// Horizontal scroll — pan only, no zoom
 			if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
 				scrollXRef.current += event.deltaX;
-				if (!pendingFrame.current) {
-					pendingFrame.current = requestAnimationFrame(() => {
-						pendingFrame.current = 0;
-						renderCanvas(false);
-					});
-				}
+				requestCanvasRender("wheel:pan");
 				syncScrollToContext(scrollXRef.current, scrollYRef.current);
 				return;
 			}
@@ -493,18 +580,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 			if (!bounding) setBounding(rect);
 
 			// Read current values from refs (always up-to-date, no dependency needed)
-			const oldScale = scaleRef.current;
+			const oldScale = pendingZoomScaleRef.current ?? scaleRef.current;
 			const cursorX = event.clientX - rect.left;
-			const contentX = scrollXRef.current + cursorX;
+			const currentScrollX = pendingZoomScrollXRef.current ?? scrollXRef.current;
+			const contentX = currentScrollX + cursorX;
 
 			// Calculate new scale based on scroll direction and user preference
-			let newScale = Info.app.timeline.isScrollReversed
+			const shouldDecrease = Info.app.timeline.isScrollReversed
 				? event.deltaY < 0
-					? Info.decreasedTimelineScale()
-					: Info.increasedTimelineScale()
-				: event.deltaY > 0
-					? Info.decreasedTimelineScale()
-					: Info.increasedTimelineScale();
+				: event.deltaY > 0;
+			let newScale = shouldDecrease ? oldScale - oldScale / 8 : oldScale + oldScale / 8;
 
 			const timeRange =
 				Info.app.timeline.frame.max - Info.app.timeline.frame.min;
@@ -518,12 +603,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 			if (newScale === oldScale) return;
 
 			// Update scale and recompute scrollX to keep cursor position anchored
-			Info.setTimelineScale(newScale);
-			scrollStore.setScrollX(
-				Math.round(contentX * (newScale / oldScale) - cursorX),
-			);
+			const nextScrollX = Math.round(contentX * (newScale / oldScale) - cursorX);
+			pendingZoomScaleRef.current = newScale;
+			pendingZoomScrollXRef.current = nextScrollX;
+			scrollXRef.current = nextScrollX;
+			scheduleZoomCommit();
 		},
-		[wrapper_ref, banner, Info, bounding],
+		[wrapper_ref, banner, Info, bounding, requestCanvasRender, scheduleZoomCommit],
 	);
 
 	/** Debounced wheel handler — coalesces rapid scroll events (5ms window). */
@@ -533,7 +619,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 	);
 
 	useEffect(() => {
-		CanvasIcon.onIconLoad = () => DataStore.markDirty();
+		CanvasIcon.onIconLoad = () => DataStore.markDirtySoon();
 		return () => {
 			CanvasIcon.onIconLoad = null;
 		};
@@ -545,7 +631,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		const el = wrapper_ref.current;
 		if (!el) return;
 		const observer = new ResizeObserver(() => {
-			DataStore.markDirty();
+			DataStore.markDirtySoon();
 		});
 		observer.observe(el);
 		return () => {
@@ -556,30 +642,20 @@ export function Canvas({ timeline }: Canvas.Props) {
 	useEffect(() => {
 		if (theme) {
 			Color.Themer.setTheme();
-			DataStore.markDirty();
 		}
 
-		const themeRepaintFrameId = requestAnimationFrame(() => {
-			DataStore.markDirty();
+		const unsubscribe = DataStore.subscribe(() => {
+			requestCanvasRender("data-store");
 		});
 
-		let animationFrameId: number;
-
-		const gameLoop = () => {
-			if (DataStore.isDirty) {
-				renderCanvas(false);
-				DataStore.isDirty = false;
-			}
-			animationFrameId = requestAnimationFrame(gameLoop);
-		};
-
-		animationFrameId = requestAnimationFrame(gameLoop);
+		if (theme) {
+			DataStore.markDirtySoon();
+		}
 
 		return () => {
-			cancelAnimationFrame(themeRepaintFrameId);
-			cancelAnimationFrame(animationFrameId);
+			unsubscribe();
 		};
-	}, [theme]);
+	}, [theme, requestCanvasRender]);
 
 	useEffect(() => {
 		const canvas = wrapper_ref.current;
@@ -623,12 +699,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 			if (hoveredItemRef.current !== currentHoveredItemId) {
 				hoveredItemRef.current = currentHoveredItemId;
-				if (!pendingFrame.current) {
-					pendingFrame.current = requestAnimationFrame(() => {
-						pendingFrame.current = 0;
-						renderCanvas(false);
-					});
-				}
+				requestCanvasRender("hover");
 			}
 		};
 
@@ -638,12 +709,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 			if (hoveredItemRef.current !== null) {
 				hoveredItemRef.current = null;
-				if (!pendingFrame.current) {
-					pendingFrame.current = requestAnimationFrame(() => {
-						pendingFrame.current = 0;
-						renderCanvas(false);
-					});
-				}
+				requestCanvasRender("hover:reset");
 			}
 		};
 
@@ -675,16 +741,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 			}
 			debouncedHandleWheel.cancel();
 		};
-	}, [wrapper_ref, debouncedHandleWheel]);
+	}, [wrapper_ref, debouncedHandleWheel, requestCanvasRender]);
 
 	useEffect(() => {
-		renderCanvas();
-		return () => {
-			if (pendingFrame.current) {
-				cancelAnimationFrame(pendingFrame.current);
-				pendingFrame.current = 0;
-			}
-		};
+		if (!didRenderInitialFrameRef.current) {
+			didRenderInitialFrameRef.current = true;
+			renderCanvas(false, undefined, "react:initial");
+			return;
+		}
+
+		requestCanvasRender("react:deps");
 	}, [
 		scrollX,
 		scrollY,
@@ -699,6 +765,19 @@ export function Canvas({ timeline }: Canvas.Props) {
 		target,
 		theme,
 	]);
+
+	useEffect(() => {
+		return () => {
+			if (pendingFrame.current) {
+				cancelAnimationFrame(pendingFrame.current);
+				pendingFrame.current = 0;
+			}
+			if (pendingZoomFrame.current !== null) {
+				cancelAnimationFrame(pendingZoomFrame.current);
+				pendingZoomFrame.current = null;
+			}
+		};
+	}, []);
 
 	const getPixelPosition = useCallback(
 		(timestamp: number) => {
@@ -785,17 +864,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 				a.currentTarget.scrollTop - (canvas_ref.current?.height ?? 0);
 			scrollYRef.current = newScrollY;
 
-			if (!pendingFrame.current) {
-				pendingFrame.current = requestAnimationFrame(() => {
-					pendingFrame.current = 0;
-					renderCanvas(false);
-				});
-			}
+			requestCanvasRender("scrollbar");
 
 			syncScrollToContext(scrollXRef.current, newScrollY);
 			isManualScroll.current = true;
 		},
-		[canvas_ref, syncScrollToContext, renderCanvas],
+		[canvas_ref, syncScrollToContext, requestCanvasRender],
 	);
 
 	useLayoutEffect(() => {
