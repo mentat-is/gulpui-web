@@ -213,7 +213,12 @@ function _({ children }: { children: ReactNode }) {
 			});
 		};
 
-		const reqeustStatsCallback = (message: any) =>
+		/**
+		 * Applies request_stats websocket messages to the shared request list.
+		 * @param message Incoming websocket message that contains a request stats object.
+		 * @returns Nothing.
+		 */
+		const requestStatsCallback = (message: any): void =>
 			instanceRef.current.request_add(message.payload.obj);
 
 		SmartSocket.Class.instance.on(
@@ -228,10 +233,15 @@ function _({ children }: { children: ReactNode }) {
 			SmartSocket.Message.Type.COLLAB_DELETE,
 			collabDeleteCallback,
 		);
-		const sid = SmartSocket.Class.instance.con(
+		const statsCreateListenerId = SmartSocket.Class.instance.con(
+			SmartSocket.Message.Type.STATS_CREATE,
+			(m) => m.payload.obj?.type === "request_stats",
+			requestStatsCallback,
+		);
+		const statsUpdateListenerId = SmartSocket.Class.instance.con(
 			SmartSocket.Message.Type.STATS_UPDATE,
-			(m) => m.payload.obj.type === "request_stats",
-			reqeustStatsCallback,
+			(m) => m.payload.obj?.type === "request_stats",
+			requestStatsCallback,
 		);
 
 		return () => {
@@ -248,8 +258,12 @@ function _({ children }: { children: ReactNode }) {
 				collabDeleteCallback,
 			);
 			SmartSocket.Class.instance.coff(
+				SmartSocket.Message.Type.STATS_CREATE,
+				statsCreateListenerId,
+			);
+			SmartSocket.Class.instance.coff(
 				SmartSocket.Message.Type.STATS_UPDATE,
-				sid,
+				statsUpdateListenerId,
 			);
 		};
 	}, [ws]);

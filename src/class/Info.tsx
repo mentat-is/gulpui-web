@@ -317,6 +317,11 @@ export class Info implements InfoProps {
 		{ filename: string; percent: number }
 	>();
 	private _resyncPollTimer: ReturnType<typeof setInterval> | null = null;
+	private _ingestSourceDoneOperationId: Operation.Id | null = null;
+	private _ingestSourceDoneCleanupListenerId: string | null = null;
+	private _ingestStatsDoneListenerId: string | null = null;
+	private _ingestSourceDoneFailureListenerId: string | null = null;
+	private _notifiedIngestFailures = new Set<Request.Id>();
 	private static _eventKeysCache = new Map<Source.Id, Filter.Options>();
 
 	constructor({ app, setInfo, timeline }: InfoProps) {
@@ -722,40 +727,204 @@ export class Info implements InfoProps {
 			...options,
 		});
 
-	resync_ingestion_state = async (
-		_operationId: Operation.Id,
-	): Promise<void> => {
-		// INGEST_SOURCE_DONE is broadcast — all connected clients receive it.
-		// Register cleanup FIRST so it fires even if the source is marked loading after this point.
-		SmartSocket.Class.instance.con(
+	/**
+	 * Registers current-operation ingestion completion listeners without duplicating websocket handlers.
+	 * @param operationId Operation whose ingest websocket messages should be handled.
+	 * @returns Nothing.
+	 */
+	private _register_ingest_source_done_listeners = (
+		operationId: Operation.Id,
+	): void => {
+		const socket = SmartSocket.Class.instance;
+		if (!socket) return;
+
+		if (
+			this._ingestSourceDoneOperationId === operationId &&
+			this._ingestSourceDoneCleanupListenerId &&
+			this._ingestStatsDoneListenerId &&
+			this._ingestSourceDoneFailureListenerId
+		) {
+			return;
+		}
+
+		this._clear_ingest_source_done_listeners();
+		this._ingestSourceDoneOperationId = operationId;
+
+		this._ingestSourceDoneCleanupListenerId = socket.con(
 			SmartSocket.Message.Type.INGEST_SOURCE_DONE,
 			(m) => {
-				const sourceId = m.payload?.["gulp.source_id"] as Source.Id | undefined;
-				return !!(sourceId && this.app.general.loadings.byFileId.has(sourceId));
+				const sourceId = this._ingest_source_done_source_id(m);
+				return !!(
+					sourceId &&
+					this.app.general.loadings.byFileId.has(sourceId) &&
+					this._is_ingest_message_for_operation(m, operationId)
+				);
 			},
 			(m) => {
-				const sourceId = m.payload?.["gulp.source_id"] as Source.Id;
-				this.delLoadingByFile(sourceId);
-				this.ingestionProgress.delete(sourceId);
+				this._cleanup_ingest_source_done_loading(m);
 				this.sync().catch(() => {});
 			},
 		);
 
-		SmartSocket.Class.instance.con(
+		this._ingestStatsDoneListenerId = socket.con(
 			SmartSocket.Message.Type.STATS_UPDATE,
 			(m) =>
+				this._is_ingest_message_for_operation(m, operationId) &&
 				m.payload?.obj?.req_type === "ingest" &&
 				m.payload?.obj?.status === "done",
 			(m) => {
-				const reqId = m.req_id;
-				if (reqId) {
-					this.delLoading(reqId as Request.Id);
+				if (m.req_id) {
+					this.delLoading(m.req_id);
 				}
 			},
 		);
 
+		this._ingestSourceDoneFailureListenerId = socket.con(
+			SmartSocket.Message.Type.INGEST_SOURCE_DONE,
+			(m) =>
+				this._is_ingest_message_for_operation(m, operationId) &&
+				m.payload?.status === "failed",
+			this._handle_ingest_source_done_failure,
+		);
+	};
+
+	/**
+	 * Removes previously registered ingest completion listeners.
+	 * @returns Nothing.
+	 */
+	private _clear_ingest_source_done_listeners = (): void => {
+		const socket = SmartSocket.Class.instance;
+		if (!socket) return;
+
+		if (this._ingestSourceDoneCleanupListenerId) {
+			socket.coff(
+				SmartSocket.Message.Type.INGEST_SOURCE_DONE,
+				this._ingestSourceDoneCleanupListenerId,
+			);
+		}
+		if (this._ingestStatsDoneListenerId) {
+			socket.coff(
+				SmartSocket.Message.Type.STATS_UPDATE,
+				this._ingestStatsDoneListenerId,
+			);
+		}
+		if (this._ingestSourceDoneFailureListenerId) {
+			socket.coff(
+				SmartSocket.Message.Type.INGEST_SOURCE_DONE,
+				this._ingestSourceDoneFailureListenerId,
+			);
+		}
+
+		this._ingestSourceDoneCleanupListenerId = null;
+		this._ingestStatsDoneListenerId = null;
+		this._ingestSourceDoneFailureListenerId = null;
+	};
+
+	/**
+	 * Checks whether a websocket message belongs to the active operation.
+	 * @param message Incoming websocket message.
+	 * @param operationId Operation ID to match.
+	 * @returns True when the message has no operation marker or matches the operation.
+	 */
+	private _is_ingest_message_for_operation = (
+		message: SmartSocket.Message.Entity,
+		operationId: Operation.Id,
+	): boolean => {
+		const messageOperationId = message["gulp.operation_id"];
+		return !messageOperationId || messageOperationId === operationId;
+	};
+
+	/**
+	 * Reads a source ID from an ingest_source_done websocket payload.
+	 * @param message Incoming ingest completion message.
+	 * @returns Source ID when present.
+	 */
+	private _ingest_source_done_source_id = (
+		message: SmartSocket.Message.Entity,
+	): Source.Id | null => {
+		const sourceId =
+			message.payload?.["gulp.source_id"] ??
+			message.payload?.source_id ??
+			message.payload?.gulp_source_id;
+
+		return typeof sourceId === "string" && sourceId
+			? (sourceId as Source.Id)
+			: null;
+	};
+
+	/**
+	 * Clears loading/progress state for a completed ingest source.
+	 * @param message Incoming ingest completion message.
+	 * @returns Nothing.
+	 */
+	private _cleanup_ingest_source_done_loading = (
+		message: SmartSocket.Message.Entity,
+	): void => {
+		const sourceId = this._ingest_source_done_source_id(message);
+		if (sourceId) {
+			this.delLoadingByFile(sourceId);
+			this.ingestionProgress.delete(sourceId);
+			return;
+		}
+
+		if (message.req_id) {
+			this.delLoading(message.req_id);
+			this.ingestionProgress.delete(message.req_id as unknown as Source.Id);
+		}
+	};
+
+	/**
+	 * Handles failed ingestion completion by notifying the user and refreshing request/source state.
+	 * @param message Incoming failed ingest completion message.
+	 * @returns Nothing.
+	 */
+	private _handle_ingest_source_done_failure = (
+		message: SmartSocket.Message.Entity,
+	): void => {
+		this._show_ingest_source_failure_toast(message);
+		this._cleanup_ingest_source_done_loading(message);
+		this.request_list()?.catch(() => {});
+		this.sync().catch(() => {});
+	};
+
+	/**
+	 * Shows a deduplicated failed-ingest toast with normalized record counters.
+	 * @param message Incoming failed ingest completion message.
+	 * @returns Nothing.
+	 */
+	private _show_ingest_source_failure_toast = (
+		message: SmartSocket.Message.Entity,
+	): void => {
+		if (this._notifiedIngestFailures.has(message.req_id)) {
+			return;
+		}
+
+		this._notifiedIngestFailures.add(message.req_id);
+		const counts = Request.Entity.recordCounts(message.payload);
+
+		toast.error(translate("source.ingestionFailedTitle"), {
+			description: translate("requests.recordSummary", {
+				ingested: counts.records_ingested,
+				skipped: counts.records_skipped,
+				failed: counts.records_failed,
+			}),
+			icon: <Icon name="Stop" />,
+			richColors: true,
+		});
+	};
+
+	/**
+	 * Resynchronizes loading state for in-flight ingestion requests after navigation or reconnect.
+	 * @param operationId Operation whose ingestion requests should be reconciled.
+	 * @returns A promise that resolves when resync registration and initial reconciliation finish.
+	 */
+	resync_ingestion_state = async (
+		operationId: Operation.Id,
+	): Promise<void> => {
+		this._register_ingest_source_done_listeners(operationId);
+
 		try {
-			const requests = (await this.request_list()) as any[] | undefined;
+			const requests = await this.request_list();
 			const ongoing = (requests || []).filter(
 				(r) => r.status === Request.Status.ONGOING,
 			);
@@ -764,8 +933,9 @@ export class Info implements InfoProps {
 			let watcherSources = 0;
 
 			for (const req of ongoing) {
-				const sources: [string, string][] | undefined = req.data?.sources;
-				const sourceId = sources?.[0]?.[1] as Source.Id | undefined;
+				const sourceId = Request.Entity.sourceLink(req)?.sourceId as
+					| Source.Id
+					| undefined;
 				if (!sourceId) continue;
 
 				if (!this.app.general.loadings.byFileId.has(sourceId)) {
@@ -1578,10 +1748,21 @@ export class Info implements InfoProps {
 	preview_query = (query: Query.Type) =>
 		this.query_file(query, { preview: true });
 
-	request_add = (req: Request.Type) => {
+	/**
+	 * Inserts or updates a request while preserving detail fields omitted by websocket stats.
+	 * @param req Request stats object received from websocket or API.
+	 * @returns Nothing.
+	 */
+	request_add = (req: Request.Type): void => {
 		const exist = this.app.general.requests.findIndex((r) => r.id === req.id);
 		if (exist >= 0) {
-			this.app.general.requests[exist] = req;
+			const previous = this.app.general.requests[exist];
+			this.app.general.requests[exist] = {
+				...previous,
+				...req,
+				data: req.data ?? previous.data,
+				errors: req.errors ?? previous.errors,
+			};
 		} else {
 			this.app.general.requests = [...this.app.general.requests, req];
 		}
@@ -2183,6 +2364,8 @@ export class Info implements InfoProps {
 	}) => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) return;
+
+		this._register_ingest_source_done_listeners(operation.id);
 
 		const id = generateUUID<Request.Id>(Request.Prefix.INGESTION);
 		const callbacks = this._ingest_orchestrator(
