@@ -51,6 +51,7 @@ import { formatDuration, intervalToDuration } from "date-fns";
 import { Label } from "@/ui/Label";
 import { toast } from "sonner";
 import { Locale } from "@/locales";
+import { requestStore } from "@/store/request.store";
 
 export namespace Source {
 	export const name = "Source";
@@ -248,7 +249,7 @@ export namespace Source {
 		): Request.Prefix | null | undefined => {
 			const id = Parser.useUUID(file) as Source.Id;
 
-			const request = app.general.loadings.byFileId.get(id);
+			const request = requestStore.getRequestIdByFile(id);
 			if (!request) {
 				// Source.Entity is not requesting
 				return null;

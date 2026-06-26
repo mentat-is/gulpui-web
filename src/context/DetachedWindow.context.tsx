@@ -15,9 +15,6 @@ import { Application } from "@/context/Application.context";
 import { DetachedAppProvider } from "@/context/DetachedApp.provider";
 import { WindowBridge } from "@/lib/WindowBridge";
 import { DataStore } from "@/store/DataStore";
-import { NotesWindow } from "@/components/NotesWindow";
-import { TableViewWindow } from "@/components/TableViewWindow";
-import { DashboardViewWindow } from "@/components/DashboardViewWindow";
 import { AIAssistantWindow } from "@/components/AIAssistantWindow";
 import { RenderEngine } from "@/class/RenderEngine";
 import { App } from "@/entities/App";
@@ -41,7 +38,7 @@ interface DetachedWindowRecord {
 	key: string;
 	kind: DetachedWindowKind;
 	window: Window;
-	root: ReactDOM.Root;
+	root?: ReactDOM.Root;
 	bridgeId: string;
 }
 
@@ -93,6 +90,27 @@ function FetchEventBannerMain({
  */
 function createAssistantWindowName(targetKey: string): string {
 	return `GulpAIAssistant-${targetKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+}
+
+/**
+ * Builds the URL for an independently booted detached route.
+ *
+ * @param kind - Detached route kind.
+ * @param bridgeId - Bridge identifier assigned to the detached window.
+ * @param sourceId - Optional source preselected by the table view.
+ * @returns Absolute URL used for window.open.
+ */
+function createDetachedRouteUrl(
+	kind: Exclude<DetachedWindowKind, "assistant">,
+	bridgeId: string,
+	sourceId?: Source.Id,
+): string {
+	const url = new URL(`/detached/${kind}`, window.location.origin);
+	url.searchParams.set("bridgeId", bridgeId);
+	if (sourceId) {
+		url.searchParams.set("sourceId", sourceId);
+	}
+	return url.toString();
 }
 
 /**
@@ -375,10 +393,33 @@ function _({ children }: { children: ReactNode }) {
 		);
 	}, []);
 	const replayDetachedStateRef = useRef(replayDetachedState);
+	const replayFrameRef = useRef<number | null>(null);
 
 	useEffect(() => {
 		replayDetachedStateRef.current = replayDetachedState;
 	}, [replayDetachedState]);
+
+	/**
+	 * Coalesces detached context replays to one message burst per animation frame.
+	 *
+	 * @returns Nothing.
+	 */
+	const scheduleReplayDetachedState = useCallback(() => {
+		if (replayFrameRef.current !== null) return;
+
+		replayFrameRef.current = window.requestAnimationFrame(() => {
+			replayFrameRef.current = null;
+			replayDetachedStateRef.current();
+		});
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (replayFrameRef.current !== null) {
+				window.cancelAnimationFrame(replayFrameRef.current);
+			}
+		};
+	}, []);
 
 	/**
 	 * Sends only the selected timeline event to detached windows.
@@ -404,8 +445,8 @@ function _({ children }: { children: ReactNode }) {
 	 */
 	const forgetWindow = useCallback((key: string) => {
 		const record = windowsRef.current[key];
-		if (record) {
-			setTimeout(() => record.root.unmount(), 0);
+		if (record?.root) {
+			setTimeout(() => record.root?.unmount(), 0);
 		}
 		delete windowsRef.current[key];
 		removePersistedDetachedWindow(key);
@@ -413,13 +454,67 @@ function _({ children }: { children: ReactNode }) {
 	}, []);
 
 	/**
-	 * Opens a detached window or focuses an already-open instance.
+	 * Opens a detached browser route that owns its own React root and scheduler.
+	 *
+	 * @param key - Internal window key.
+	 * @param kind - Detached route kind.
+	 * @param windowName - Browser window name used for reuse.
+	 * @param features - Browser window feature string.
+	 * @param sourceId - Optional table source to preselect.
+	 * @returns Opened or focused browser window.
+	 */
+	const openRoutedDetachedWindow = useCallback(
+		(
+			key: string,
+			kind: Exclude<DetachedWindowKind, "assistant">,
+			windowName: string,
+			features: string,
+			sourceId?: Source.Id,
+		) => {
+			const existing = windowsRef.current[key];
+			if (existing && !existing.window.closed) {
+				existing.window.focus();
+				replayDetachedState();
+				return existing.window;
+			}
+
+			const bridgeId = WindowBridge.generateId();
+			const targetWindow = window.open(
+				createDetachedRouteUrl(kind, bridgeId, sourceId),
+				windowName,
+				features,
+			);
+			if (!targetWindow) return null;
+
+			const record: DetachedWindowRecord = {
+				key,
+				kind,
+				window: targetWindow,
+				bridgeId,
+			};
+			windowsRef.current[key] = record;
+			persistDetachedWindow({ key, kind, windowName, features });
+			setWindows({ ...windowsRef.current });
+			targetWindow.addEventListener(
+				"beforeunload",
+				() => forgetWindow(key),
+				{ once: true },
+			);
+			window.setTimeout(replayDetachedState, 250);
+			window.setTimeout(replayDetachedState, 1000);
+			return targetWindow;
+		},
+		[forgetWindow, replayDetachedState],
+	);
+
+	/**
+	 * Opens a direct-root detached assistant window or focuses an existing one.
 	 *
 	 * @param key - Internal window key.
 	 * @param kind - Detached window kind.
 	 * @param windowName - Browser window name used for reuse.
 	 * @param features - Browser window feature string.
-	 * @param renderContent - Content renderer for the detached root.
+	 * @param renderContent - Assistant content renderer for the detached root.
 	 * @returns Opened or focused browser window.
 	 */
 	const openDetachedWindow = useCallback(
@@ -450,7 +545,6 @@ function _({ children }: { children: ReactNode }) {
 			root.render(
 				<DetachedAppProvider
 					initialApp={appRef.current}
-					initialNotes={[...DataStore.notes]}
 					bridgeId={bridgeId}
 					detachedDocument={targetWindow.document}
 					mainSpawnBanner={spawnBannerRef.current}
@@ -483,52 +577,43 @@ function _({ children }: { children: ReactNode }) {
 	);
 
 	const openNotesWindow = useCallback(() => {
-		openDetachedWindow(
+		openRoutedDetachedWindow(
 			"notes",
 			"notes",
 			"GulpNotes",
 			"width=1480,height=760,left=100,top=100",
-			(targetWindow) => (
-				<NotesWindow onClose={() => targetWindow.close()} />
-			),
 		);
-	}, [openDetachedWindow]);
+	}, [openRoutedDetachedWindow]);
 
 	const openTableWindow = useCallback(
 		(sourceId?: Source.Id) => {
-			openDetachedWindow(
+			openRoutedDetachedWindow(
 				"table",
 				"table",
 				"GulpTableView",
 				"width=800,height=600,left=150,top=150",
-				(targetWindow) => (
-					<TableViewWindow
-						initialSourceId={sourceId}
-						onClose={() => targetWindow.close()}
-					/>
-				),
+				sourceId,
 			);
 
 			if (sourceId) {
-				bridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
-					sourceId,
-				});
+				window.setTimeout(() => {
+					bridgeRef.current?.send(WindowBridge.MessageType.TABLE_SELECT_SOURCE, {
+						sourceId,
+					});
+				}, 500);
 			}
 		},
-		[openDetachedWindow],
+		[openRoutedDetachedWindow],
 	);
 
 	const openDashboardWindow = useCallback(() => {
-		openDetachedWindow(
+		openRoutedDetachedWindow(
 			"dashboard",
 			"dashboard",
 			"GulpDashboardView",
 			"width=1480,height=820,left=180,top=120",
-			(targetWindow) => (
-				<DashboardViewWindow onClose={() => targetWindow.close()} />
-			),
 		);
-	}, [openDetachedWindow]);
+	}, [openRoutedDetachedWindow]);
 
 	const openAssistantWindow = useCallback(
 		(target: AssistantWindowTarget) => {
@@ -562,25 +647,14 @@ function _({ children }: { children: ReactNode }) {
 		persistedWindows.forEach((record) => {
 			if (windowsRef.current[record.key]) return;
 
-			openDetachedWindow(
+			openRoutedDetachedWindow(
 				record.key,
 				record.kind,
 				record.windowName,
 				record.features,
-				(targetWindow) => {
-					if (record.kind === "notes") {
-						return <NotesWindow onClose={() => targetWindow.close()} />;
-					}
-
-					if (record.kind === "table") {
-						return <TableViewWindow onClose={() => targetWindow.close()} />;
-					}
-
-					return <DashboardViewWindow onClose={() => targetWindow.close()} />;
-				},
 			);
 		});
-	}, [openDetachedWindow]);
+	}, [openRoutedDetachedWindow]);
 
 	useEffect(() => {
 		if (status === "auth_lost") {
@@ -642,9 +716,9 @@ function _({ children }: { children: ReactNode }) {
 	}, [setDialogsDocked]);
 
 	useEffect(() => {
-		replayDetachedState();
+		scheduleReplayDetachedState();
 	}, [
-		replayDetachedState,
+		scheduleReplayDetachedState,
 		app.target.files,
 		app.target.operations,
 		app.target.contexts,

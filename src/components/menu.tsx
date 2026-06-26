@@ -8,6 +8,7 @@ import { Icon } from "@/ui/Icon";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";
 import { Locale } from "@/locales";
+import { useRequests } from "@/store/request.store";
 
 /**
  * Represents a single item rendered inside the Menu component.
@@ -137,8 +138,9 @@ function groupTopItemsWithPlugins(
  * @param props - Component props containing `topItems` and `bottomItems`.
  */
 export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
-	const { app, Info } = Application.use();
+	const { Info } = Application.use();
 	const { t } = Locale.use();
+	const requests = useRequests();
 	const navigate = useNavigate();
 	const [isOpen, setIsOpen] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
@@ -259,7 +261,7 @@ export function Menu({ topItems, bottomItems, pluginNodes }: Menu.Props) {
 	const bottomGroups = groupByCategory(bottomItems);
 
 	/** Count of active (pending/ongoing) requests for the badge indicator. */
-	const activeRequestCount = app.general.requests.filter(
+	const activeRequestCount = requests.filter(
 		(r) => r.status === "pending" || r.status === "ongoing",
 	).length;
 

@@ -42,6 +42,7 @@ import { ingestWorkerManager } from "@/workers/IngestWorker.manager";
 import { translate } from "@/locales/core";
 import { WindowBridge } from "@/lib/WindowBridge";
 import { GulpIndexedDB } from "@/class/IndexedDB";
+import { requestStore } from "@/store/request.store";
 
 export namespace GulpDataset {
 	export namespace GetAvailableLoginApi {
@@ -82,6 +83,7 @@ export namespace GulpDataset {
 			offset?: number;
 			limit?: number;
 			sort?: Record<string, "desc" | "asc">;
+			signal?: AbortSignal;
 		}
 	}
 	export namespace QueryOperations {
@@ -291,6 +293,32 @@ interface RefetchOptions {
 	frame?: MinMax;
 }
 
+type ViewportQueryPriority = "visible" | "background";
+
+type QueryFileOptions = GulpDataset.QueryGulp.Options & {
+	operationId?: Operation.Id;
+	queuePriority?: ViewportQueryPriority;
+};
+
+interface QueryStreamState {
+	requestId: Request.Id;
+	sourceIds: Source.Id[];
+	documentListenerId?: string;
+	collabListenerId?: string;
+	statsListenerId?: string;
+	queuePriority?: ViewportQueryPriority;
+	closed: boolean;
+	completedByStats: boolean;
+	flushChain: Promise<void>;
+}
+
+interface RefetchQueueItem {
+	sourceId: Source.Id;
+	query: Query.Type;
+	options: QueryFileOptions;
+	sequence: number;
+}
+
 interface InfoProps {
 	app: App.Type;
 	setInfo: React.Dispatch<React.SetStateAction<App.Type>>;
@@ -303,6 +331,8 @@ const ACTIVE_REQUEST_STATUSES = new Set<Request.Status>([
 	Request.Status.PENDING,
 	Request.Status.ONGOING,
 ]);
+const MAX_VISIBLE_QUERY_CONCURRENCY = 4;
+const MAX_BACKGROUND_QUERY_CONCURRENCY = 1;
 
 export class Info implements InfoProps {
 	app: App.Type;
@@ -323,6 +353,15 @@ export class Info implements InfoProps {
 	private _ingestSourceDoneFailureListenerId: string | null = null;
 	private _notifiedIngestFailures = new Set<Request.Id>();
 	private static _eventKeysCache = new Map<Source.Id, Filter.Options>();
+	private activeQueryStreams = new Map<Request.Id, QueryStreamState>();
+	private activeQuerySourceRequests = new Map<Source.Id, Request.Id>();
+	private refetchQueue: RefetchQueueItem[] = [];
+	private refetchQueueSequence = 0;
+	private activeVisibleQueryCount = 0;
+	private activeBackgroundQueryCount = 0;
+	private visibleSourceIds = new Set<Source.Id>();
+	private visibleSourceOrder = new Map<Source.Id, number>();
+	private visibleSourceSignature = "";
 
 	constructor({ app, setInfo, timeline }: InfoProps) {
 		this.app = app;
@@ -330,6 +369,357 @@ export class Info implements InfoProps {
 		this.timeline = timeline;
 		Info._latestInstance = this;
 	}
+
+	/**
+	 * Stores the source ids currently visible in the Canvas viewport.
+	 * @param sourceIds Source ids ordered by their vertical row position.
+	 * @returns Nothing.
+	 */
+	setVisibleSourceIds = (sourceIds: Source.Id[]): void => {
+		const signature = sourceIds.join("|");
+		if (signature === this.visibleSourceSignature) return;
+
+		this.visibleSourceSignature = signature;
+		this.visibleSourceIds = new Set(sourceIds);
+		this.visibleSourceOrder = new Map(
+			sourceIds.map((sourceId, index) => [sourceId, index]),
+		);
+		this.pumpRefetchQueue();
+	};
+
+	/**
+	 * Cancels queued refetch work that has not started yet for the supplied sources.
+	 * @param sourceIds Source ids whose pending queue entries should be removed.
+	 * @returns Nothing.
+	 */
+	private removeQueuedRefetchesForSources = (sourceIds: Source.Id[]): void => {
+		if (sourceIds.length === 0 || this.refetchQueue.length === 0) return;
+
+		const sourceIdSet = new Set(sourceIds);
+		this.refetchQueue = this.refetchQueue.filter(
+			(item) => !sourceIdSet.has(item.sourceId),
+		);
+	};
+
+	/**
+	 * Cancels active query streams for the supplied source ids and waits for any
+	 * already-started DataStore flush to finish before callers reset source events.
+	 * @param sourceIds Source ids whose active query work should be stopped.
+	 * @param cancelBackend Whether to send a backend cancellation request.
+	 * @returns Promise that resolves once local stream cleanup is complete.
+	 */
+	private cancelQueryStreamsForSources = async (
+		sourceIds: Source.Id[],
+		cancelBackend: boolean,
+	): Promise<void> => {
+		const requestIds = new Set<Request.Id>();
+
+		sourceIds.forEach((sourceId) => {
+			const activeRequestId = this.activeQuerySourceRequests.get(sourceId);
+			if (activeRequestId) {
+				requestIds.add(activeRequestId);
+				return;
+			}
+
+			const loadingRequestId = requestStore.getRequestIdByFile(sourceId);
+			if (
+				loadingRequestId &&
+				String(loadingRequestId).startsWith(Request.Prefix.QUERY)
+			) {
+				requestStore.deleteLoadingByFile(sourceId);
+				this.app.general.loadings = requestStore.getLoadings();
+				DataStore.markDirty();
+				if (cancelBackend) {
+					this.request_cancel(loadingRequestId);
+				}
+			}
+		});
+
+		await Promise.all(
+			Array.from(requestIds).map((requestId) =>
+				this.closeQueryStream(requestId, { cancelBackend }),
+			),
+		);
+	};
+
+	/**
+	 * Adds one source query to the mutable refetch queue.
+	 * @param item Source query and options to run when a concurrency slot is free.
+	 * @returns Nothing.
+	 */
+	private enqueueRefetchQuery = (item: RefetchQueueItem): void => {
+		this.removeQueuedRefetchesForSources([item.sourceId]);
+		this.refetchQueue.push(item);
+	};
+
+	/**
+	 * Starts queued refetches, giving visible Canvas rows priority over hidden rows.
+	 * @returns Nothing.
+	 */
+	private pumpRefetchQueue = (): void => {
+		while (this.activeVisibleQueryCount < MAX_VISIBLE_QUERY_CONCURRENCY) {
+			const visibleIndex = this.findNextQueuedSourceIndex(true);
+			if (visibleIndex === -1) break;
+
+			const [item] = this.refetchQueue.splice(visibleIndex, 1);
+			this.startRefetchQueueItem(item, "visible");
+		}
+
+		if (this.hasVisibleQueuedSource()) return;
+
+		while (this.activeBackgroundQueryCount < MAX_BACKGROUND_QUERY_CONCURRENCY) {
+			const backgroundIndex = this.findNextQueuedSourceIndex(false);
+			if (backgroundIndex === -1) break;
+
+			const [item] = this.refetchQueue.splice(backgroundIndex, 1);
+			this.startRefetchQueueItem(item, "background");
+		}
+	};
+
+	/**
+	 * Finds the next queued source index for either visible or hidden work.
+	 * @param visible Whether to search visible rows or hidden/background rows.
+	 * @returns Queue index, or -1 when no matching item is waiting.
+	 */
+	private findNextQueuedSourceIndex = (visible: boolean): number => {
+		let bestIndex = -1;
+		let bestOrder = Number.POSITIVE_INFINITY;
+		let bestSequence = Number.POSITIVE_INFINITY;
+
+		for (let index = 0; index < this.refetchQueue.length; index++) {
+			const item = this.refetchQueue[index];
+			const isVisible = this.isQueuedSourceVisible(item.sourceId);
+			if (isVisible !== visible) continue;
+
+			const order = this.visibleSourceOrder.get(item.sourceId) ?? item.sequence;
+			if (order < bestOrder || (order === bestOrder && item.sequence < bestSequence)) {
+				bestIndex = index;
+				bestOrder = order;
+				bestSequence = item.sequence;
+			}
+		}
+
+		return bestIndex;
+	};
+
+	/**
+	 * Checks whether any visible source is waiting in the refetch queue.
+	 * @returns True when visible work is queued.
+	 */
+	private hasVisibleQueuedSource = (): boolean =>
+		this.refetchQueue.some((item) => this.isQueuedSourceVisible(item.sourceId));
+
+	/**
+	 * Checks whether a queued source should be treated as visible.
+	 * @param sourceId Source id to inspect.
+	 * @returns True when the Canvas has not reported visibility yet or the source is visible.
+	 */
+	private isQueuedSourceVisible = (sourceId: Source.Id): boolean =>
+		this.visibleSourceIds.size === 0 || this.visibleSourceIds.has(sourceId);
+
+	/**
+	 * Runs a queued source query and lets the stream lifecycle release concurrency.
+	 * @param item Queue item to execute.
+	 * @param queuePriority Priority bucket used for concurrency accounting.
+	 * @returns Nothing.
+	 */
+	private startRefetchQueueItem = (
+		item: RefetchQueueItem,
+		queuePriority: ViewportQueryPriority,
+	): void => {
+		if (queuePriority === "visible") {
+			this.activeVisibleQueryCount++;
+		} else {
+			this.activeBackgroundQueryCount++;
+		}
+
+		this.query_file(item.query, {
+			...item.options,
+			queuePriority,
+		}).catch((error) => {
+			Logger.warn(
+				`Queued query failed for source ${item.sourceId}: ${(error as Error).message}`,
+				Info,
+			);
+		});
+	};
+
+	/**
+	 * Releases one queue concurrency slot and schedules the next pending source.
+	 * @param queuePriority Priority bucket to decrement.
+	 * @returns Nothing.
+	 */
+	private finishQueuedQuery = (queuePriority?: ViewportQueryPriority): void => {
+		if (queuePriority === "visible") {
+			this.activeVisibleQueryCount = Math.max(0, this.activeVisibleQueryCount - 1);
+		} else if (queuePriority === "background") {
+			this.activeBackgroundQueryCount = Math.max(
+				0,
+				this.activeBackgroundQueryCount - 1,
+			);
+		}
+
+		this.pumpRefetchQueue();
+	};
+
+	/**
+	 * Registers a query stream before the HTTP request starts so early websocket
+	 * chunks can be accepted without depending on request loading state.
+	 * @param requestId Backend request id used by websocket chunks.
+	 * @param sourceIds Source ids affected by this stream.
+	 * @param queuePriority Optional queue priority used for concurrency release.
+	 * @returns Mutable stream state stored until final chunk or cancellation.
+	 */
+	private registerQueryStream = (
+		requestId: Request.Id,
+		sourceIds: Source.Id[],
+		queuePriority?: ViewportQueryPriority,
+	): QueryStreamState => {
+		const stream: QueryStreamState = {
+			requestId,
+			sourceIds,
+			queuePriority,
+			closed: false,
+			completedByStats: false,
+			flushChain: Promise.resolve(),
+		};
+
+		this.activeQueryStreams.set(requestId, stream);
+		sourceIds.forEach((sourceId) => {
+			this.activeQuerySourceRequests.set(sourceId, requestId);
+		});
+
+		return stream;
+	};
+
+	/**
+	 * Closes a query stream, removes websocket listeners, clears loading markers,
+	 * and waits for any already-started event flush before resolving.
+	 * @param requestId Backend request id whose stream should be closed.
+	 * @param options Cleanup options.
+	 * @returns Promise that resolves when local cleanup is complete.
+	 */
+	private closeQueryStream = async (
+		requestId: Request.Id,
+		options: { cancelBackend?: boolean; clearLoading?: boolean } = {},
+	): Promise<void> => {
+		const stream = this.activeQueryStreams.get(requestId);
+		if (!stream) return;
+		if (stream.closed) {
+			await stream.flushChain.catch(() => undefined);
+			return;
+		}
+
+		stream.closed = true;
+
+		if (stream.documentListenerId) {
+			SmartSocket.Class.instance.coff(
+				SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+				stream.documentListenerId,
+			);
+		}
+		if (stream.collabListenerId) {
+			SmartSocket.Class.instance.coff(
+				SmartSocket.Message.Type.COLLAB_CREATE,
+				stream.collabListenerId,
+			);
+		}
+		if (stream.statsListenerId) {
+			SmartSocket.Class.instance.coff(
+				SmartSocket.Message.Type.STATS_UPDATE,
+				stream.statsListenerId,
+			);
+		}
+
+		this.activeQueryStreams.delete(requestId);
+		stream.sourceIds.forEach((sourceId) => {
+			if (this.activeQuerySourceRequests.get(sourceId) === requestId) {
+				this.activeQuerySourceRequests.delete(sourceId);
+			}
+		});
+
+		if (options.cancelBackend) {
+			this.request_cancel(requestId);
+		}
+
+		await stream.flushChain.catch((error) => {
+			Logger.warn(
+				`Query stream flush failed for ${requestId}: ${(error as Error).message}`,
+				Info,
+			);
+		});
+
+		if (options.clearLoading !== false) {
+			if (stream.sourceIds.length > 0) {
+				stream.sourceIds.forEach((sourceId) => this.delLoadingByFile(sourceId));
+			} else {
+				this.delLoading(requestId);
+			}
+		}
+
+		this.finishQueuedQuery(stream.queuePriority);
+	};
+
+	/**
+	 * Normalizes websocket docs using each document source's render settings.
+	 * @param docs Raw document payload received from the websocket.
+	 * @param sourceIds Source ids associated with the query request.
+	 * @returns Normalized render-ready documents.
+	 */
+	private normalizeQueryDocs = (
+		docs: Doc.Type[],
+		sourceIds: Source.Id[],
+	): Doc.Type[] => {
+		if (docs.length === 0) return [];
+
+		const fallbackSource =
+			sourceIds.length === 1 ? Source.Entity.id(this.app, sourceIds[0]) : null;
+		const docsBySource = new Map<Source.Id, Doc.Type[]>();
+
+		docs.forEach((doc) => {
+			const sourceId =
+				(doc["gulp.source_id"] as Source.Id | undefined) ?? fallbackSource?.id;
+			if (!sourceId) return;
+
+			const group = docsBySource.get(sourceId) ?? [];
+			group.push(doc);
+			docsBySource.set(sourceId, group);
+		});
+
+		const normalizedDocs: Doc.Type[] = [];
+		docsBySource.forEach((sourceDocs, sourceId) => {
+			const source = Source.Entity.id(this.app, sourceId) ?? fallbackSource;
+			const field = source?.settings.field ?? "gulp.event_code";
+			const hashFunction = source?.settings.hash_function ?? "fnv1a";
+			normalizedDocs.push(
+				...Doc.Entity.normalize(sourceDocs, field, hashFunction),
+			);
+		});
+
+		return normalizedDocs;
+	};
+
+	/**
+	 * Reconciles source totals after a query stream has flushed all documents.
+	 * @param sourceIds Source ids whose loaded counts should be checked.
+	 * @returns Nothing.
+	 */
+	private reconcileQuerySourceTotals = (sourceIds: Source.Id[]): void => {
+		let changed = false;
+
+		sourceIds.forEach((sourceId) => {
+			const file = Source.Entity.id(this.app, sourceId);
+			const loadedCount = Doc.Entity.get(this.app, sourceId).length;
+			if (file && loadedCount > file.total) {
+				file.total = loadedCount;
+				changed = true;
+			}
+		});
+
+		if (changed) {
+			this.setInfoByKey([...this.app.target.files], "target", "files");
+		}
+	};
 
 	/**
 	 * Refetches documents and updates associated state for the selected source files.
@@ -344,7 +734,7 @@ export class Info implements InfoProps {
 	 * @param options.notes_glyph_id - Icon glyph ID for any auto-created notes.
 	 * @param options.name - Optional name label for this search action.
 	 * @param options.frame - Optional custom timeframe to apply to the timeline.
-	 * @returns A promise that resolves when all queries are initiated.
+	 * @returns A promise that resolves when all queries are queued.
 	 */
 	refetch = async ({
 		ids: _ids = Source.Entity.selected(this.app).map((f) => f.id),
@@ -359,7 +749,9 @@ export class Info implements InfoProps {
 	}: RefetchOptions = {}) => {
 		const files: Source.Type[] = Parser.array(_ids).map((id) =>
 			Source.Entity.id(this.app, id),
-		);
+		).filter(Boolean);
+		if (files.length === 0) return;
+
 		if (frame) {
 			this.setTimelineFrame(frame);
 		} else if (
@@ -375,6 +767,12 @@ export class Info implements InfoProps {
 		this.notes_reload();
 		this.links_reload();
 		this.highlights_reload();
+
+		await this.cancelQueryStreamsForSources(
+			files.map((file) => file.id),
+			true,
+		);
+		this.removeQueuedRefetchesForSources(files.map((file) => file.id));
 
 		files.forEach((file) => {
 			this.events_reset_in_file(file);
@@ -392,18 +790,25 @@ export class Info implements InfoProps {
 					: undefined,
 			};
 
-			this.query_file(dedicatedQuery, {
-				id: file.id,
-				preview: false,
-				refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
-				addToHistory,
-				create_notes,
-				notes_color,
-				notes_tags,
-				notes_glyph_id,
-				name,
+			this.enqueueRefetchQuery({
+				sourceId: file.id,
+				query: dedicatedQuery,
+				options: {
+					id: file.id,
+					preview: false,
+					refetchKeys: refetchKeys ? refetchKeys[file.id] : undefined,
+					addToHistory,
+					create_notes,
+					notes_color,
+					notes_tags,
+					notes_glyph_id,
+					name,
+				},
+				sequence: this.refetchQueueSequence++,
 			});
 		});
+
+		this.pumpRefetchQueue();
 	};
 
 	private static _realtimeTimer: ReturnType<typeof setInterval> | null = null;
@@ -563,7 +968,7 @@ export class Info implements InfoProps {
 			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 			(m) =>
 				m.req_id === req_id &&
-				this.app.general.loadings.byRequestId.has(req_id),
+				requestStore.hasLoadingForRequest(req_id),
 			(m) => {
 				const events = Doc.Entity.normalize(
 					m.payload.docs ?? [],
@@ -756,7 +1161,7 @@ export class Info implements InfoProps {
 				const sourceId = this._ingest_source_done_source_id(m);
 				return !!(
 					sourceId &&
-					this.app.general.loadings.byFileId.has(sourceId) &&
+					requestStore.hasLoadingForFile(sourceId) &&
 					this._is_ingest_message_for_operation(m, operationId)
 				);
 			},
@@ -938,7 +1343,7 @@ export class Info implements InfoProps {
 					| undefined;
 				if (!sourceId) continue;
 
-				if (!this.app.general.loadings.byFileId.has(sourceId)) {
+				if (!requestStore.hasLoadingForFile(sourceId)) {
 					this.setLoading(req.id as Request.Id, sourceId);
 					watcherSources++;
 				}
@@ -950,7 +1355,7 @@ export class Info implements InfoProps {
 			// sync() fetches live source totals from OpenSearch — the same thing Reload does
 			if (this._resyncPollTimer) clearInterval(this._resyncPollTimer);
 			this._resyncPollTimer = setInterval(async () => {
-				if (this.app.general.loadings.byFileId.size === 0) {
+				if (requestStore.getLoadings().byFileId.size === 0) {
 					clearInterval(this._resyncPollTimer!);
 					this._resyncPollTimer = null;
 					return;
@@ -1128,7 +1533,7 @@ export class Info implements InfoProps {
 					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
 					(m) =>
 						m.req_id === req_id &&
-						this.app.general.loadings.byRequestId.has(req_id),
+						requestStore.hasLoadingForRequest(req_id),
 					(m) => {
 						const events = Doc.Entity.normalize(
 							m.payload.docs ?? [],
@@ -1203,9 +1608,14 @@ export class Info implements InfoProps {
 				};
 	};
 
-	query_file = async (
-		query: Query.Type,
-		{
+	/**
+	 * Executes a raw query and streams non-preview documents into DataStore.
+	 * @param query Query definition converted to the backend raw query body.
+	 * @param options Query options, including source id and optional queue priority.
+	 * @returns Backend query response data, or an empty result on missing operation.
+	 */
+	query_file = async (query: Query.Type, options: QueryFileOptions) => {
+		const {
 			preview = false,
 			id,
 			refetchKeys,
@@ -1216,215 +1626,214 @@ export class Info implements InfoProps {
 			notes_glyph_id,
 			name,
 			operationId,
-		}: GulpDataset.QueryGulp.Options & { operationId?: Operation.Id },
-	) => {
+			queuePriority,
+		} = options;
 		const operation = operationId
 			? Operation.Entity.id(this.app, operationId)
 			: Operation.Entity.selected(this.app);
 		if (!operation) {
+			this.finishQueuedQuery(queuePriority);
 			return {
 				docs: [],
 				total_hits: 0,
 			};
 		}
 
-		if (id) {
-			const ids = Array.isArray(id) ? id : [id];
-			ids.forEach((i) => {
-				const request = this.app.general.loadings.byFileId.get(i);
-				if (request) {
-					this.delLoading(request);
-					this.request_cancel(request);
-				}
-			});
-		}
-
-		const body = Filter.Entity.body(query);
-
-		if (preview) {
-			body.q_options.preview_mode = preview;
-		}
-
-		body.q_options.limit = 10000;
+		const sourceIds = id ? (Parser.array(id) as Source.Id[]) : [];
 
 		const request_query: Record<string, string> = {
 			ws_id: this.app.general.ws_id,
 			operation_id: operation.id,
 			req_id: generateUUID(Request.Prefix.QUERY),
 		};
-
-		if (id) {
-			const ids = Array.isArray(id) ? id : [id];
-			body.q_options.fields =
-				refetchKeys ??
-				Array.from(
-					new Set(ids.map((i) => Source.Entity.id(this.app, i).settings.field)),
-				);
-		}
-
-		if (addToHistory) {
-			body.q_options.add_to_history = true;
-		}
-		if (create_notes && !preview) {
-			body.q_options.create_notes = true;
-
-			body.q_options.notes_color = notes_color ?? Default.Color.NOTE;
-			body.q_options.notes_tags = notes_tags;
-			body.q_options.notes_glyph_id = notes_glyph_id;
-			body.q_options.name = name;
-		}
-
 		const req_id = request_query.req_id as Request.Id;
+		let stream: QueryStreamState | null = null;
 
-		// 1. Set loading state synchronously
-		if (id) {
-			const ids = Array.isArray(id) ? id : [id];
-			ids.forEach((i) => this.setLoading(req_id, i as Source.Id));
-		}
-
-		// 2. Define cleanup logic for listeners and loading state
-		let sid: string | undefined;
-		let sidCollab: string | undefined;
-
-		const cleanup = () => {
-			this.delLoading(req_id);
-			if (sid) {
-				SmartSocket.Class.instance.coff(
-					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-					sid,
-				);
+		try {
+			if (sourceIds.length > 0) {
+				await this.cancelQueryStreamsForSources(sourceIds, true);
 			}
-			if (sidCollab) {
-				SmartSocket.Class.instance.coff(
-					SmartSocket.Message.Type.COLLAB_CREATE,
-					sidCollab,
-				);
+
+			const body = Filter.Entity.body(query);
+
+			if (preview) {
+				body.q_options.preview_mode = preview;
 			}
-		};
 
-		const bufferedEvents: Doc.Type[] = [];
-		let lastFlushTime = 0;
-		let flushChain: Promise<void> = Promise.resolve();
-		const FLUSH_INTERVAL_MS = 300;
+			body.q_options.limit = 10000;
 
-		sid = SmartSocket.Class.instance.con(
-			SmartSocket.Message.Type.DOCUMENTS_CHUNK,
-			(m) =>
-				m.req_id === req_id &&
-				this.app.general.loadings.byRequestId.has(req_id),
-			(m) => {
-				// let source = Source.Entity.id(this.app, i).settings.field)
-				let source = this.app.general.loadings.byRequestId.get(req_id);
-				const sourceSettings = Source.Entity.id(
-					this.app,
-					source as Source.Id,
-				).settings;
-				const events = Doc.Entity.normalize(
-					m.payload.docs ?? [],
-					sourceSettings.field,
-					sourceSettings.hash_function,
+			if (sourceIds.length > 0) {
+				const sourceFields = Array.from(
+					new Set(
+						sourceIds
+							.map((sourceId) => Source.Entity.id(this.app, sourceId)?.settings.field)
+							.filter((field): field is keyof Doc.Type => Boolean(field)),
+					),
 				);
-				bufferedEvents.push(...events);
+				body.q_options.fields = refetchKeys ?? sourceFields;
+			}
 
-				if (
-					(Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS || m.payload.last) &&
-					bufferedEvents.length > 0
-				) {
+			if (addToHistory) {
+				body.q_options.add_to_history = true;
+			}
+			if (create_notes && !preview) {
+				body.q_options.create_notes = true;
+
+				body.q_options.notes_color = notes_color ?? Default.Color.NOTE;
+				body.q_options.notes_tags = notes_tags;
+				body.q_options.notes_glyph_id = notes_glyph_id;
+				body.q_options.name = name;
+			}
+
+			if (!preview) {
+				stream = this.registerQueryStream(req_id, sourceIds, queuePriority);
+			}
+
+			if (sourceIds.length > 0) {
+				sourceIds.forEach((sourceId) => this.setLoading(req_id, sourceId));
+			}
+
+			if (stream) {
+				const bufferedEvents: Doc.Type[] = [];
+				let lastFlushTime = 0;
+				const FLUSH_INTERVAL_MS = 300;
+
+				const flushBufferedEvents = () => {
+					if (!stream || stream.closed || bufferedEvents.length === 0) return;
 					const toFlush = bufferedEvents.splice(0);
 					lastFlushTime = Date.now();
-					flushChain = flushChain.then(() => this.events_add_async(toFlush));
-				}
-				if (m.payload.last) {
-					flushChain.then(() => {
-						cleanup();
-						if (id) {
-							const ids = Array.isArray(id) ? id : [id];
-							ids.forEach((i) => {
-								const file = Source.Entity.id(this.app, i as Source.Id);
-								const loadedCount = Doc.Entity.get(
-									this.app,
-									i as Source.Id,
-								).length;
-								if (file && loadedCount > file.total) {
-									file.total = loadedCount;
-								}
-							});
-							this.setInfoByKey([...this.app.target.files], "target", "files");
-						}
-						this.render();
+
+					stream.flushChain = stream.flushChain.then(async () => {
+						if (!stream || stream.closed) return;
+						await this.events_add_async(toFlush);
 					});
-				}
-			},
-		);
-
-		SmartSocket.Class.instance.conce(
-			SmartSocket.Message.Type.STATS_UPDATE,
-			(m) => m.req_id === req_id,
-			(m) => {
-				// empty logic from before
-			},
-		);
-
-		if (create_notes) {
-			sidCollab = SmartSocket.Class.instance.con(
-				SmartSocket.Message.Type.COLLAB_CREATE,
-				(m) => m.req_id === req_id,
-				(m) => {
-					if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
-						const newItems = m.payload.obj.filter(
-							(item: any) => item.type === "note",
-						) as Note.Type[];
-						if (newItems.length > 0) {
-							newItems.forEach((note) => this.AddNoteToDataStore(note));
-							toast.success(
-								translate("notes.fetchedCount", { count: newItems.length }),
-								{
-									richColors: true,
-								},
-							);
-						}
-					}
-				},
-			);
-		}
-
-		const resp = await api<any>("/query_raw", {
-			method: "POST",
-			query: request_query,
-			body,
-			raw: true,
-		});
-
-		// 5. If the API request failed or the job wasn't pending, clean up immediately
-		if (!resp || resp.status !== "pending") {
-			cleanup();
-		}
-
-		if (preview) {
-			if (!resp || (resp || {})?.data?.total_hits === 0) {
-				toast.error(translate("filter.noResults"), {
-					icon: <Icon name="FaceUnhappy" />,
-					richColors: true,
-				});
-			} else {
-				toast(translate("filter.totalHits", { count: resp.data?.total_hits }));
-			}
-		}
-
-		return resp
-			? resp.data
-			: {
-					docs: [],
-					total_hits: 0,
 				};
+
+				stream.documentListenerId = SmartSocket.Class.instance.con(
+					SmartSocket.Message.Type.DOCUMENTS_CHUNK,
+					(m) =>
+						m.req_id === req_id &&
+						this.activeQueryStreams.get(req_id) === stream &&
+						!stream.closed,
+					(m) => {
+						if (!stream || stream.closed) return;
+
+						const events = this.normalizeQueryDocs(
+							m.payload.docs ?? [],
+							stream.sourceIds,
+						);
+						bufferedEvents.push(...events);
+
+						if (
+							Date.now() - lastFlushTime >= FLUSH_INTERVAL_MS ||
+							m.payload.last
+						) {
+							flushBufferedEvents();
+						}
+
+						if (m.payload.last) {
+							const finalStream = stream;
+							finalStream.flushChain.then(async () => {
+								if (
+									this.activeQueryStreams.get(req_id) !== finalStream ||
+									finalStream.closed
+								) {
+									return;
+								}
+
+								this.reconcileQuerySourceTotals(finalStream.sourceIds);
+								await this.closeQueryStream(req_id);
+								this.render();
+							});
+						}
+					},
+				);
+
+				stream.statsListenerId = SmartSocket.Class.instance.conce(
+					SmartSocket.Message.Type.STATS_UPDATE,
+					(m) => m.req_id === req_id,
+					(m) => {
+						if (stream) {
+							stream.completedByStats = true;
+						}
+					},
+				);
+			}
+
+			if (stream && create_notes) {
+				stream.collabListenerId = SmartSocket.Class.instance.con(
+					SmartSocket.Message.Type.COLLAB_CREATE,
+					(m) => m.req_id === req_id,
+					(m) => {
+						if (Array.isArray(m.payload.obj) && m.payload.obj.length > 0) {
+							const newItems = m.payload.obj.filter(
+								(item: any) => item.type === "note",
+							) as Note.Type[];
+							if (newItems.length > 0) {
+								newItems.forEach((note) => this.AddNoteToDataStore(note));
+								toast.success(
+									translate("notes.fetchedCount", { count: newItems.length }),
+									{
+										richColors: true,
+									},
+								);
+							}
+						}
+					},
+				);
+			}
+
+			const resp = await api<any>("/query_raw", {
+				method: "POST",
+				query: request_query,
+				body,
+				raw: true,
+			});
+
+			if (stream && (!resp || resp.status !== "pending")) {
+				await this.closeQueryStream(req_id);
+			}
+
+			if (preview) {
+				if (!resp || (resp || {})?.data?.total_hits === 0) {
+					toast.error(translate("filter.noResults"), {
+						icon: <Icon name="FaceUnhappy" />,
+						richColors: true,
+					});
+				} else {
+					toast(translate("filter.totalHits", { count: resp.data?.total_hits }));
+				}
+			}
+
+			return resp
+				? resp.data
+				: {
+						docs: [],
+						total_hits: 0,
+					};
+		} catch (error) {
+			if (stream) {
+				await this.closeQueryStream(req_id);
+			} else {
+				this.finishQueuedQuery(queuePriority);
+			}
+			throw error;
+		}
 	};
 
+	/**
+	 * Fetches a paginated raw query result for table-style detached views.
+	 * @param query Query body assembled from synced or local filters.
+	 * @param options Pagination, sorting, and cancellation options.
+	 * @returns Paginated documents and total hit count.
+	 */
 	query_paginate = async (
 		query: Query.Type,
 		{
 			limit = 100,
 			offset = 0,
 			sort = { "@timestamp": "asc" },
+			signal,
 		}: GulpDataset.QueryGulp.Options,
 	) => {
 		const operation = Operation.Entity.selected(this.app);
@@ -1450,6 +1859,7 @@ export class Info implements InfoProps {
 			body,
 			query: request_query,
 			raw: true,
+			signal,
 		});
 
 		return resp
@@ -1465,11 +1875,13 @@ export class Info implements InfoProps {
 	 *
 	 * @param operationId - Operation identifier used by the backend to select the target index.
 	 * @param body - OpenSearch query and aggregation body to execute.
+	 * @param options - Optional cancellation settings.
 	 * @returns Aggregation response containing total hits and named aggregation buckets.
 	 */
 	query_aggregation = async (
 		operationId: Operation.Id,
 		body: GulpDataset.QueryAggregation.Body,
+		options: { signal?: AbortSignal } = {},
 	) => {
 		const resp = await api<GulpDataset.QueryAggregation.Response>(
 			"/query_aggregation",
@@ -1481,6 +1893,7 @@ export class Info implements InfoProps {
 					req_id: generateUUID(Request.Prefix.QUERY),
 				},
 				raw: true,
+				signal: options.signal,
 			},
 		);
 
@@ -1754,27 +2167,29 @@ export class Info implements InfoProps {
 	 * @returns Nothing.
 	 */
 	request_add = (req: Request.Type): void => {
-		const exist = this.app.general.requests.findIndex((r) => r.id === req.id);
-		if (exist >= 0) {
-			const previous = this.app.general.requests[exist];
-			this.app.general.requests[exist] = {
-				...previous,
-				...req,
-				data: req.data ?? previous.data,
-				errors: req.errors ?? previous.errors,
-			};
-		} else {
-			this.app.general.requests = [...this.app.general.requests, req];
+		requestStore.upsertRequest(req);
+		this.app.general.requests = requestStore.getRequests();
+		if (ACTIVE_REQUEST_STATUSES.has(req.status)) return;
+
+		const queryStream = this.activeQueryStreams.get(req.id);
+		if (!queryStream) {
+			this.delLoading(req.id);
+			return;
 		}
 
-		this.setInfoByKey(
-			this.app.general.requests.sort((a, b) => b.time_created - a.time_created),
-			"general",
-			"requests",
-		);
-		if (!ACTIVE_REQUEST_STATUSES.has(req.status)) this.delLoading(req.id);
+		queryStream.completedByStats = true;
+		if (
+			req.status === Request.Status.FAILED ||
+			req.status === Request.Status.CANCELED
+		) {
+			this.closeQueryStream(req.id);
+		}
 	};
 
+	/**
+	 * Loads backend requests for the selected operation into the request store.
+	 * @returns Promise with the request list, or undefined when no operation is selected.
+	 */
 	request_list = () => {
 		const operation = Operation.Entity.selected(this.app);
 		if (!operation) {
@@ -1789,7 +2204,10 @@ export class Info implements InfoProps {
 					operation_id: operation.id,
 				},
 			},
-			(requests) => this.setInfoByKey(requests, "general", "requests"),
+			(requests) => {
+				requestStore.setRequests(requests);
+				this.app.general.requests = requestStore.getRequests();
+			},
 		);
 	};
 
@@ -2302,10 +2720,8 @@ export class Info implements InfoProps {
 									max: Math.max(...files.map((f) => f.timestamp.max)),
 								};
 							}
-							const reqId = draft.general.loadings.byFileId.get(finalFileId);
-							draft.general.loadings.byFileId.delete(finalFileId);
-							if (reqId) draft.general.loadings.byRequestId.delete(reqId);
 						});
+						this.delLoadingByFile(finalFileId);
 
 						const finalFile = Source.Entity.id(this.app, finalFileId);
 						if (finalFile) {
@@ -2596,8 +3012,18 @@ export class Info implements InfoProps {
 		return result;
 	};
 
-	events_reset_in_file = (file: Source.Type) => {
+	/**
+	 * Clears loaded events and source-scoped render caches for a file.
+	 * @param file Source whose events should be reset before a new query.
+	 * @returns Nothing.
+	 */
+	events_reset_in_file = (file: Source.Type): void => {
 		Doc.Entity.delete(this.app, file);
+		if (file._sampleDataCached) {
+			file._sampleDataCached.sample_data = null;
+		}
+		RenderEngine.resetSource(file.id);
+		DataStore.markDirty();
 	};
 
 	setDialogSize = (number: number) => {
@@ -2690,46 +3116,41 @@ export class Info implements InfoProps {
 	setSettings = (key: string, value: any) =>
 		this.setInfoByKey(value, "settings", key);
 
+	/**
+	 * Marks a source as loading without committing Application.Context.
+	 * @param req_id Backend request identifier.
+	 * @param file_id Source affected by the request.
+	 * @returns Nothing.
+	 */
 	setLoading(req_id: Request.Id, file_id: Source.Id) {
-		const req = this.app.general.requests.find((r) => r.id === req_id);
+		const req = requestStore.getRequests().find((r) => r.id === req_id);
 		if (req && !ACTIVE_REQUEST_STATUSES.has(req.status)) return;
 
-		this.app.general.loadings.byRequestId.set(req_id, file_id);
-		this.app.general.loadings.byFileId.set(file_id, req_id);
-
-		const loadings = {
-			byRequestId: new Map(this.app.general.loadings.byRequestId),
-			byFileId: new Map(this.app.general.loadings.byFileId),
-		};
-		this.setInfoByKey(loadings, "general", "loadings");
+		requestStore.setLoading(req_id, file_id);
+		this.app.general.loadings = requestStore.getLoadings();
+		DataStore.markDirty();
 	}
 
+	/**
+	 * Clears a loading marker by source without committing Application.Context.
+	 * @param file_id Source identifier.
+	 * @returns Nothing.
+	 */
 	delLoadingByFile(file_id: Source.Id) {
-		const req_id = this.app.general.loadings.byFileId.get(file_id);
-		this.app.general.loadings.byFileId.delete(file_id);
-		if (req_id) this.app.general.loadings.byRequestId.delete(req_id);
-
-		const loadings = {
-			byRequestId: new Map(this.app.general.loadings.byRequestId),
-			byFileId: new Map(this.app.general.loadings.byFileId),
-		};
-		this.setInfoByKey(loadings, "general", "loadings");
+		requestStore.deleteLoadingByFile(file_id);
+		this.app.general.loadings = requestStore.getLoadings();
+		DataStore.markDirty();
 	}
 
+	/**
+	 * Clears a loading marker by request without committing Application.Context.
+	 * @param req_id Backend request identifier.
+	 * @returns Nothing.
+	 */
 	delLoading(req_id: Request.Id) {
-		this.app.general.loadings.byRequestId.delete(req_id);
-		const file_id = [...this.app.general.loadings.byFileId.entries()].find(
-			(e) => e[1] === req_id,
-		)?.[0];
-		if (file_id) {
-			this.app.general.loadings.byFileId.delete(file_id);
-		}
-
-		const loadings = {
-			byRequestId: new Map(this.app.general.loadings.byRequestId),
-			byFileId: new Map(this.app.general.loadings.byFileId),
-		};
-		this.setInfoByKey(loadings, "general", "loadings");
+		requestStore.deleteLoadingByRequest(req_id);
+		this.app.general.loadings = requestStore.getLoadings();
+		DataStore.markDirty();
 	}
 
 	note_delete = (note: Note.Type) =>

@@ -12,6 +12,7 @@ import { Stack } from '@/ui/Stack'
 import { Context } from '@/entities/Context'
 import { Source } from '@/entities/Source'
 import { Locale } from '@/locales'
+import { useRequestLoadings } from '@/store/request.store'
 
 export namespace Frame {
   export namespace Banner {
@@ -23,6 +24,7 @@ export namespace Frame {
   export function Banner({ frame: initFrame, callback, ...props }: Frame.Banner.Props) {
     const { Info, destroyBanner, app } = Application.use()
     const { t } = Locale.use()
+    const loadings = useRequestLoadings()
     const [frame, setFrame] = useState<MinMax>(initFrame ?? Context.Entity.frame(app))
     const [isMinValid, setIsMinValid] = useState<boolean>(true)
     const [isMaxValid, setIsMaxValid] = useState<boolean>(true)
@@ -43,7 +45,7 @@ export namespace Frame {
       }
       Info.setTimelineFrame({ min, max });
       Info.refetch({
-        ids: Source.Entity.selected(app).map(file => file.id).filter(id => !app.general.loadings.byFileId.has(id))
+        ids: Source.Entity.selected(app).map(file => file.id).filter(id => !loadings.byFileId.has(id))
       });
       destroyBanner()
     }

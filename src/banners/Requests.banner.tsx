@@ -12,6 +12,7 @@ import { Stack } from '@/ui/Stack';
 import { Request } from '@/entities/Request';
 import { Button } from '@/ui/Button';
 import { Locale } from '@/locales';
+import { useRequests } from '@/store/request.store';
 
 export namespace Requests {
   export namespace Banner {
@@ -24,8 +25,9 @@ export namespace Requests {
    * @returns Requests banner content.
    */
   export function Banner({ className, ...props }: Requests.Banner.Props) {
-    const { Info, app } = Application.use();
+    const { Info } = Application.use();
     const { t } = Locale.use();
+    const requests = useRequests();
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedRequestId, setSelectedRequestId] = useState<Request.Id | null>(null);
 
@@ -97,8 +99,8 @@ export namespace Requests {
     }, [reload]);
 
     const sortedRequests = useMemo(() => {
-      return [...app.general.requests].sort((a, b) => b.time_created - a.time_created);
-    }, [app.general.requests]);
+      return [...requests].sort((a, b) => b.time_created - a.time_created);
+    }, [requests]);
 
     const selectedRequest = useMemo(() => {
       return sortedRequests.find((request) => request.id === selectedRequestId) ?? null;

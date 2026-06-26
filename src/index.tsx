@@ -14,6 +14,7 @@ import { OperationView } from "./page/OperationView.page";
 import { Home } from "./page/Home.page";
 import { Locale } from "./locales";
 import { DetachedWindow } from "./context/DetachedWindow.context";
+import { DetachedRouteShell } from "./page/DetachedRoute.page";
 
 const root = document.getElementById("root");
 
@@ -82,6 +83,80 @@ function RedirectIfAuthenticated({ children }: { children: React.ReactNode }) {
 	return <>{children}</>;
 }
 
+/**
+ * Renders the authenticated main application routes under the detached-window coordinator.
+ * @returns Main application route tree.
+ */
+function MainApplicationRoutes() {
+	return (
+		<DetachedWindow.Provider>
+			<Routes>
+				<Route
+					path="/renderer-test"
+					element={<RendererTest.Page />}
+				/>
+				<Route
+					path="/login"
+					element={
+						<RedirectIfAuthenticated>
+							<Auth.Page />
+						</RedirectIfAuthenticated>
+					}
+				/>
+				<Route
+					path="/"
+					element={
+						<RequireAuth>
+							<Home.Page section="operations" />
+						</RequireAuth>
+					}
+				/>
+				<Route
+					path="/users"
+					element={
+						<RequireAuth>
+							<Home.Page section="users" />
+						</RequireAuth>
+					}
+				/>
+				<Route
+					path="/groups"
+					element={
+						<RequireAuth>
+							<Home.Page section="groups" />
+						</RequireAuth>
+					}
+				/>
+				<Route
+					path="/plugin-configurations"
+					element={
+						<RequireAuth>
+							<Home.Page section="pluginConfigurations" />
+						</RequireAuth>
+					}
+				/>
+				<Route
+					path="/operations/:operation_id"
+					element={
+						<RequireAuth>
+							<OperationView />
+						</RequireAuth>
+					}
+				/>
+				<Route
+					path="*"
+					element={
+						<Navigate
+							to="/login"
+							replace
+						/>
+					}
+				/>
+			</Routes>
+		</DetachedWindow.Provider>
+	);
+}
+
 function Root() {
 	if (window.onerror) {
 		window.onerror = function (...props) {
@@ -118,71 +193,16 @@ function Root() {
 						<Locale.Provider>
 							<Boundary.Provider>
 								<Extension.Provider>
-									<DetachedWindow.Provider>
-										<Routes>
-											<Route
-												path="/renderer-test"
-												element={<RendererTest.Page />}
-											/>
-											<Route
-												path="/login"
-												element={
-													<RedirectIfAuthenticated>
-														<Auth.Page />
-													</RedirectIfAuthenticated>
-												}
-											/>
-											<Route
-												path="/"
-												element={
-													<RequireAuth>
-														<Home.Page section="operations" />
-													</RequireAuth>
-												}
-											/>
-											<Route
-												path="/users"
-												element={
-													<RequireAuth>
-														<Home.Page section="users" />
-													</RequireAuth>
-												}
-											/>
-											<Route
-												path="/groups"
-												element={
-													<RequireAuth>
-														<Home.Page section="groups" />
-													</RequireAuth>
-												}
-											/>
-											<Route
-												path="/plugin-configurations"
-												element={
-													<RequireAuth>
-														<Home.Page section="pluginConfigurations" />
-													</RequireAuth>
-												}
-											/>
-											<Route
-												path="/operations/:operation_id"
-												element={
-													<RequireAuth>
-														<OperationView />
-													</RequireAuth>
-												}
-											/>
-											<Route
-												path="*"
-												element={
-													<Navigate
-														to="/login"
-														replace
-													/>
-												}
-											/>
-										</Routes>
-									</DetachedWindow.Provider>
+									<Routes>
+										<Route
+											path="/detached/:kind"
+											element={<DetachedRouteShell />}
+										/>
+										<Route
+											path="/*"
+											element={<MainApplicationRoutes />}
+										/>
+									</Routes>
 								</Extension.Provider>
 							</Boundary.Provider>
 						</Locale.Provider>

@@ -138,6 +138,13 @@ type unresolwedArgument<T> =
 	| Callback<T>
 	| undefined;
 
+/**
+ * Normalizes the overloaded API call arguments into fetch options and callback.
+ * @param a First overloaded API argument.
+ * @param b Second overloaded API argument.
+ * @param _path Request path before leading slash normalization.
+ * @returns Normalized request options, callback, query, and path.
+ */
 export function parseApiOptions<T>(
 	a: unresolwedArgument<T>,
 	b: unresolwedArgument<T>,
@@ -204,6 +211,13 @@ export function soft<T>(value: T, func?: Callback<T>) {
 	return func(value);
 }
 
+/**
+ * Executes an authenticated backend request with optional response unwrapping.
+ * @param _path Backend API path.
+ * @param arg2 Options or callback from the overloaded API signature.
+ * @param arg3 Options or callback from the overloaded API signature.
+ * @returns The unwrapped response data or a raw ResponseHandler.
+ */
 const api: Api = async function <T>(
 	_path: string,
 	arg2?: any,
@@ -217,16 +231,25 @@ const api: Api = async function <T>(
 
 	soft(() => true, options.setLoading);
 
-	const response = await fetch(
-		`${Internal.Settings.server}${path}${query ? `?${query}` : ""}`,
-		{
-			...options,
-		},
-	).catch(() => {});
+	let aborted = false;
+	const url = `${Internal.Settings.server}${path}${query ? `?${query}` : ""}`;
+	const response = await fetch(url, {
+		...options,
+	}).catch((error) => {
+		if (error instanceof DOMException && error.name === "AbortError") {
+			aborted = true;
+		}
+		return undefined;
+	});
+
+	if (aborted) {
+		soft(() => false, options.setLoading);
+		return void 0 as T;
+	}
 
 	let json: any;
 	try {
-		json = await response?.json();
+		json = await (response?.json() ?? Promise.resolve(undefined));
 	} catch (err) {
 		// Gracefully handle non-JSON or malformed responses
 	}

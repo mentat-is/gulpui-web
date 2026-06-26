@@ -12,6 +12,9 @@ import type { Note } from '@/entities/Note'
 import type { App } from '@/entities/App'
 import type { Doc } from '@/entities/Doc'
 import type { Operation } from '@/entities/Operation'
+import type { Source } from '@/entities/Source'
+import type { Context } from '@/entities/Context'
+import type { Query } from '@/entities/Query'
 
 const CHANNEL_NAME = 'gulp-window-bridge'
 const MAIN_CONTEXT_STORAGE_KEY = 'gulp-window-bridge:main-context'
@@ -71,9 +74,30 @@ export namespace WindowBridge {
     renderVersion: number
   }
 
+  export type SerializedNanoMinMax = {
+    min: string
+    max: string
+  }
+
+  export type DetachedSourceSummary = Omit<
+    Source.Type,
+    'nanotimestamp' | '_sampleDataCached'
+  > & {
+    nanotimestamp: SerializedNanoMinMax
+    _sampleDataCached: Omit<Source.Type['_sampleDataCached'], 'sample_data'> & {
+      sample_data: null
+    }
+  }
+
   export interface AppSnapshotPayload {
-    app: Partial<App.Type>
-    selectedSourceIds?: string[]
+    operationId?: Operation.Id | null
+    selectedSourceIds: Source.Id[]
+    operations: Operation.Type[]
+    contexts: Context.Type[]
+    sources: DetachedSourceSummary[]
+    filters: Partial<Record<Source.Id, Query.Type>>
+    timeline: Pick<App.Type['timeline'], 'frame' | 'filter' | 'scale' | 'renderVersion'>
+    hidden: App.Type['hidden']
   }
 
   export interface BannerActionPayload {
@@ -160,7 +184,8 @@ export namespace WindowBridge {
 
     return {
       send<T extends MessageType>(type: T, payload: MessagePayload[T]) {
-        channel.postMessage({ type, payload, senderId: id } satisfies Message<T>)
+        const message = { type, payload, senderId: id } satisfies Message<T>
+        channel.postMessage(message)
       },
       destroy() {
         channel.close()
@@ -195,7 +220,12 @@ export namespace WindowBridge {
    */
   function writeStoredMainContext(replay: StoredMainContextReplay): void {
     try {
-      localStorage.setItem(MAIN_CONTEXT_STORAGE_KEY, JSON.stringify(replay))
+      const storedReplay: StoredMainContextReplay = {
+        createdAt: replay.createdAt,
+        status: replay.status,
+      }
+      const serializedReplay = JSON.stringify(storedReplay)
+      localStorage.setItem(MAIN_CONTEXT_STORAGE_KEY, serializedReplay)
     } catch (error) {
       console.warn('Failed to store detached main context fallback', {
         error,
@@ -203,6 +233,74 @@ export namespace WindowBridge {
         operationId: replay.status.operationId ?? null,
       })
     }
+  }
+
+  /**
+   * Creates a source summary that is safe to post between windows.
+   *
+   * @param source - Source from the main application state.
+   * @returns Serializable detached-window source summary.
+   */
+  function createDetachedSourceSummary(
+    source: Source.Type,
+  ): DetachedSourceSummary {
+    const { nanotimestamp, _sampleDataCached, ...summary } = source
+    const fallbackTimestamp = source.timestamp ?? { min: 0, max: 0 }
+    const fallbackCache: Source.Type['_sampleDataCached'] = {
+      frequency_sample: source.settings?.frequency_sample ?? 0,
+      min_timestamp: fallbackTimestamp.min,
+      max_timestampe: fallbackTimestamp.max,
+      sample_data: null,
+    }
+    const sampleDataCache = _sampleDataCached ?? fallbackCache
+
+    /**
+     * Serializes a nanosecond timestamp while tolerating partially-normalized sources.
+     *
+     * @param value - Source nanosecond timestamp value.
+     * @param fallbackMs - Millisecond timestamp fallback.
+     * @returns Nanosecond timestamp string for detached hydration.
+     */
+    const serializeNanoTimestamp = (
+      value: bigint | number | string | undefined,
+      fallbackMs: number,
+    ): string => {
+      if (typeof value === 'bigint') return value.toString()
+      if (typeof value === 'number' || typeof value === 'string') return String(value)
+      return Math.round(fallbackMs * 1_000_000).toString()
+    }
+
+    return {
+      ...summary,
+      nanotimestamp: {
+        min: serializeNanoTimestamp(nanotimestamp?.min, fallbackTimestamp.min),
+        max: serializeNanoTimestamp(nanotimestamp?.max, fallbackTimestamp.max),
+      },
+      _sampleDataCached: {
+        frequency_sample: sampleDataCache.frequency_sample,
+        min_timestamp: sampleDataCache.min_timestamp,
+        max_timestampe: sampleDataCache.max_timestampe,
+        sample_data: null,
+      },
+    }
+  }
+
+  /**
+   * Selects filters that detached synced views actually need.
+   *
+   * @param app - Current application state.
+   * @param sourceIds - Source identifiers included in the detached snapshot.
+   * @returns Serializable filters keyed by source id.
+   */
+  function createDetachedFilters(
+    app: App.Type,
+    sourceIds: Source.Id[],
+  ): Partial<Record<Source.Id, Query.Type>> {
+    return Object.fromEntries(
+      sourceIds
+        .map((sourceId) => [sourceId, app.target.filters[sourceId]] as const)
+        .filter(([, filter]) => Boolean(filter)),
+    ) as Partial<Record<Source.Id, Query.Type>>
   }
 
   /**
@@ -251,12 +349,6 @@ export namespace WindowBridge {
     status: MainContextStatus,
     operationId?: Operation.Id | null,
   ): StoredMainContextReplay {
-    const selectedSourceIds = app.target.files
-      .filter((source) =>
-        source.selected &&
-        (!operationId || source.operation_id === operationId),
-      )
-      .map((source) => source.id)
     const statusPayload: MainContextStatusPayload = {
       status,
       contextVersion: Date.now(),
@@ -268,21 +360,35 @@ export namespace WindowBridge {
     }
 
     if (status === 'active') {
+      const operationSources = app.target.files.filter(
+        (source) => !operationId || source.operation_id === operationId,
+      )
+      const selectedSources = operationSources.filter((source) => source.selected)
+      const sourceIds = selectedSources.map((source) => source.id)
+
       replay.snapshot = {
-        app: {
-          target: {
-            operations: operationId
-              ? app.target.operations.map((operation) => ({
-                ...operation,
-                selected: operation.id === operationId,
-              }))
-              : app.target.operations,
-            contexts: app.target.contexts,
-            files: app.target.files,
-            filters: app.target.filters,
-          } as unknown as App.Type['target'],
+        operationId: operationId ?? null,
+        selectedSourceIds: sourceIds,
+        operations: operationId
+          ? app.target.operations.map((operation) => ({
+            ...operation,
+            selected: operation.id === operationId,
+          }))
+          : app.target.operations,
+        contexts: operationId
+          ? app.target.contexts.filter(
+            (context) => context.operation_id === operationId,
+          )
+          : app.target.contexts,
+        sources: selectedSources.map(createDetachedSourceSummary),
+        filters: createDetachedFilters(app, sourceIds),
+        timeline: {
+          frame: app.timeline.frame,
+          filter: app.timeline.filter,
+          scale: app.timeline.scale,
+          renderVersion: app.timeline.renderVersion,
         },
-        selectedSourceIds,
+        hidden: app.hidden,
       }
     }
 

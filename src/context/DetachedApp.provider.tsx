@@ -40,26 +40,43 @@ import s from './styles/DetachedApp.module.css'
 export namespace DetachedApp {
   export interface ProviderProps {
     /** Serialized snapshot of the main tab's app state */
-    initialApp: App.Type
+    initialApp?: App.Type
     /** Initial notes data from DataStore */
-    initialNotes: Note.Type[]
+    initialNotes?: Note.Type[]
     /** BroadcastChannel bridge ID (used to create a listener) */
     bridgeId: string
     /** The detached window's document, used for portal/selection APIs */
-    detachedDocument: Document
+    detachedDocument?: Document
     /** Main window's spawnBanner — banners should open in the main window, not the detached one */
-    mainSpawnBanner: (node: ReactNode, target?: string) => void
+    mainSpawnBanner?: (node: ReactNode, target?: string) => void
     /** Children to render inside the provider */
     children: ReactNode
   }
 }
 
+/**
+ * Restores a detached source summary into the Source.Type shape expected by UI code.
+ * @param source Serializable source summary received from WindowBridge.
+ * @returns Source entity with bigint nanosecond timestamps restored.
+ */
+function hydrateDetachedSource(
+  source: WindowBridge.DetachedSourceSummary,
+): Source.Type {
+  return {
+    ...source,
+    nanotimestamp: {
+      min: BigInt(source.nanotimestamp.min),
+      max: BigInt(source.nanotimestamp.max),
+    },
+  }
+}
+
 export function DetachedAppProvider({
-  initialApp,
-  initialNotes,
+  initialApp = App.Base,
+  initialNotes = [],
   bridgeId,
-  detachedDocument,
-  mainSpawnBanner,
+  detachedDocument = document,
+  mainSpawnBanner = () => { },
   children,
 }: DetachedApp.ProviderProps) {
   const [app, setRawInfo] = useState<App.Type>(initialApp)
@@ -70,7 +87,7 @@ export function DetachedAppProvider({
   const [detachedStatus, setDetachedStatus] =
     useState<WindowBridge.MainContextStatus>('initializing')
   const [detachedContextVersion, setDetachedContextVersion] = useState(0)
-  const selectedSourceIdsRef = useRef<string[] | null | undefined>(null)
+  const selectedSourceIdsRef = useRef<Source.Id[] | null | undefined>(null)
 
   // Initialize DataStore notes in the detached window context
   useEffect(() => {
@@ -178,37 +195,34 @@ export function DetachedAppProvider({
   const applyAppSnapshot = useCallback((
     payload: WindowBridge.AppSnapshotPayload,
   ) => {
-    const { app: snapshot, selectedSourceIds } = payload
+    const { selectedSourceIds } = payload
     selectedSourceIdsRef.current = selectedSourceIds
 
     setInfo(prev => {
-      const oldOpId = prev.target.operations.find((o: Operation.Type) => o.selected)?.id
-      const newOpId = snapshot.target?.operations?.find((o: Operation.Type) => o.selected)?.id
-      const opChanged = newOpId && oldOpId && newOpId !== oldOpId
-      const snapshotTarget = snapshot.target
+      const files = payload.sources.map((source) => {
+        const file = hydrateDetachedSource(source)
+        return {
+          ...file,
+          selected: selectedSourceIds.includes(file.id),
+        }
+      })
 
-      const next = {
+      return {
         ...prev,
-        ...snapshot,
-        target: snapshotTarget ? {
+        target: {
           ...prev.target,
-          ...snapshotTarget,
-          // Operation changes are followed by instance.sync(); same-operation
-          // snapshots carry live source/context updates for detached dashboards.
-          files: opChanged ? [] : (snapshotTarget.files ?? prev.target.files),
-          contexts: opChanged ? [] : (snapshotTarget.contexts ?? prev.target.contexts),
-        } : prev.target
+          operations: payload.operations,
+          contexts: payload.contexts,
+          files,
+          filters: payload.filters as App.Type['target']['filters'],
+          events: new Map(),
+        },
+        timeline: {
+          ...prev.timeline,
+          ...payload.timeline,
+        },
+        hidden: payload.hidden,
       }
-
-      // Sync selection status for current and newly added files if no op change
-      if (!opChanged && selectedSourceIds) {
-        next.target.files = next.target.files.map((f: Source.Type) => ({
-          ...f,
-          selected: selectedSourceIds.includes(f.id)
-        }))
-      }
-
-      return next
     })
   }, [setInfo])
 

@@ -110,6 +110,8 @@ const DEFAULT_TOP_VALUES_SIZE = 10;
 const DEFAULT_TIME_BUCKET_SIZE = 5;
 const DEFAULT_MAX_DOC_COUNT = 5;
 const DEFAULT_AGGREGATION_INTERVAL = "15m";
+const DASHBOARD_FIELD_METADATA_CONCURRENCY = 4;
+const DASHBOARD_CARD_AGGREGATION_CONCURRENCY = 3;
 const FIELD_AGGREGATION_EXCLUDED_PREFIXES = ["gulp.unmapped", "gulp.enriched"];
 const CALENDAR_INTERVAL_UNITS = new Set([
 	"minute",
@@ -122,6 +124,92 @@ const CALENDAR_INTERVAL_UNITS = new Set([
 ]);
 const CALENDAR_INTERVAL_VALUE_PATTERN = /^1\d*(?:M|q|y)$/;
 const FIXED_INTERVAL_VALUE_PATTERN = /^\d+(?:ms|s|m|h|d)$/;
+let fixedDashboardDefinitionsPromise: Promise<DashboardDefinition[]> | null = null;
+
+/**
+ * Runs async work across a list with a fixed concurrency limit.
+ * @param items Items to process.
+ * @param concurrency Maximum number of active tasks.
+ * @param task Async task for one item.
+ * @returns Ordered results matching the input list.
+ */
+async function runWithConcurrency<TItem, TResult>(
+	items: TItem[],
+	concurrency: number,
+	task: (item: TItem, index: number) => Promise<TResult>,
+): Promise<TResult[]> {
+	const results: TResult[] = [];
+	let nextIndex = 0;
+
+	const workers = Array.from(
+		{ length: Math.min(concurrency, items.length) },
+		async () => {
+			while (nextIndex < items.length) {
+				const index = nextIndex;
+				nextIndex += 1;
+				results[index] = await task(items[index], index);
+			}
+		},
+	);
+
+	await Promise.all(workers);
+	return results;
+}
+
+/**
+ * Creates a FIFO promise scheduler for limiting dashboard request fanout.
+ * @param concurrency Maximum number of active tasks.
+ * @returns Function that schedules one async task.
+ */
+function createTaskQueue(concurrency: number) {
+	let activeCount = 0;
+	const queue: Array<() => void> = [];
+
+	/**
+	 * Starts queued tasks while capacity is available.
+	 * @returns Nothing.
+	 */
+	const drainQueue = (): void => {
+		while (activeCount < concurrency && queue.length > 0) {
+			const run = queue.shift();
+			run?.();
+		}
+	};
+
+	return function scheduleTask<TResult>(
+		task: () => Promise<TResult>,
+		signal?: AbortSignal,
+	): Promise<TResult> {
+		return new Promise<TResult>((resolve, reject) => {
+			/**
+			 * Executes the scheduled task and releases capacity afterward.
+			 * @returns Nothing.
+			 */
+			const run = (): void => {
+				if (signal?.aborted) {
+					reject(new DOMException("Aborted", "AbortError"));
+					return;
+				}
+
+				activeCount += 1;
+				task()
+					.then(resolve)
+					.catch(reject)
+					.finally(() => {
+						activeCount -= 1;
+						drainQueue();
+					});
+			};
+
+			queue.push(run);
+			drainQueue();
+		});
+	};
+}
+
+const scheduleDashboardCardAggregation = createTaskQueue(
+	DASHBOARD_CARD_AGGREGATION_CONCURRENCY,
+);
 
 /**
  * Parses a positive integer input value for OpenSearch aggregation options.
@@ -1197,9 +1285,16 @@ function DashboardCard({
 		if (!body) return;
 
 		let cancelled = false;
+		const requestController = new AbortController();
 		setLoading(true);
 		setError(null);
-		Info.query_aggregation(operationId, body)
+		scheduleDashboardCardAggregation(
+			() =>
+				Info.query_aggregation(operationId, body, {
+					signal: requestController.signal,
+				}),
+			requestController.signal,
+		)
 			.then((nextResponse) => {
 				if (!cancelled) {
 					setResponse(nextResponse);
@@ -1219,6 +1314,7 @@ function DashboardCard({
 
 		return () => {
 			cancelled = true;
+			requestController.abort();
 		};
 	}, [
 		Info,
@@ -1433,6 +1529,7 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 	const [aggregationResponse, setAggregationResponse] =
 		useState<GulpDataset.QueryAggregation.Response | null>(null);
 	const [aggregationError, setAggregationError] = useState<string | null>(null);
+	const fieldAggregationControllerRef = useRef<AbortController | null>(null);
 	const palette = useMemo(
 		() => readChartPalette(currentDocument),
 		[currentDocument, app.timeline.renderVersion],
@@ -1521,13 +1618,24 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 
 	useEffect(() => {
 		let cancelled = false;
-		Info.shared_object_list<Record<string, unknown>>({
-			type: "shared_object",
-			obj_type: "dashboard",
-		})
+		if (!fixedDashboardDefinitionsPromise) {
+			fixedDashboardDefinitionsPromise = Info.shared_object_list<
+				Record<string, unknown>
+			>({
+				type: "shared_object",
+				obj_type: "dashboard",
+			})
+				.then(normalizeDashboardDefinitions)
+				.catch((error) => {
+					fixedDashboardDefinitionsPromise = null;
+					throw error;
+				});
+		}
+
+		fixedDashboardDefinitionsPromise
 			.then((sharedObjects) => {
 				if (!cancelled) {
-					setDashboards(normalizeDashboardDefinitions(sharedObjects));
+					setDashboards(sharedObjects);
 				}
 			})
 			.catch(() => {
@@ -1539,7 +1647,7 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 		return () => {
 			cancelled = true;
 		};
-	}, [Info, operation?.id]);
+	}, [Info]);
 
 	useEffect(() => {
 		const sources = fieldMetadataSourceIds
@@ -1547,8 +1655,12 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 			.filter(Boolean);
 
 		let cancelled = false;
-		Promise.all(sources.map((source) => Info.event_keys(source))).then(
-			(fieldMaps) => {
+		runWithConcurrency(
+			sources,
+			DASHBOARD_FIELD_METADATA_CONCURRENCY,
+			(source) => Info.event_keys(source),
+		)
+			.then((fieldMaps) => {
 				if (cancelled) return;
 				const nextFieldTypeMap: Record<string, string> = {};
 				const nextCounts: Record<string, number> = {};
@@ -1566,8 +1678,12 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 				setFieldSourceCounts((prev) =>
 					areRecordsEqual(prev, nextCounts) ? prev : nextCounts,
 				);
-			},
-		);
+			})
+			.catch(() => {
+				if (cancelled) return;
+				setFieldTypeMap({});
+				setFieldSourceCounts({});
+			});
 
 		return () => {
 			cancelled = true;
@@ -1637,18 +1753,41 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 				options,
 			);
 
+			fieldAggregationControllerRef.current?.abort();
+			const requestController = new AbortController();
+			fieldAggregationControllerRef.current = requestController;
 			setAggregationLoading(true);
 			setAggregationError(null);
-			Info.query_aggregation(operation.id, body)
-				.then(setAggregationResponse)
+			Info.query_aggregation(operation.id, body, {
+				signal: requestController.signal,
+			})
+				.then((nextResponse) => {
+					if (
+						requestController.signal.aborted ||
+						fieldAggregationControllerRef.current !== requestController
+					) {
+						return;
+					}
+					setAggregationResponse(nextResponse);
+				})
 				.catch(() => {
+					if (requestController.signal.aborted) return;
 					setAggregationResponse(null);
 					setAggregationError(t("dashboard.loadFailed"));
 				})
-				.finally(() => setAggregationLoading(false));
+				.finally(() => {
+					if (fieldAggregationControllerRef.current === requestController) {
+						fieldAggregationControllerRef.current = null;
+						setAggregationLoading(false);
+					}
+				});
 		},
 		[Info, fieldTypeMap, filterState, operation, operationSourceIds, t],
 	);
+
+	useEffect(() => {
+		return () => fieldAggregationControllerRef.current?.abort();
+	}, []);
 
 	/**
 	 * Runs the selected field aggregation with the current visible control values.

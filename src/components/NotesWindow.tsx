@@ -37,6 +37,12 @@ interface BulkDeleteNotesBannerProps {
 	onDeleted: () => void;
 }
 
+const NOTES_TABLE_VIRTUALIZATION = {
+	threshold: 20,
+	overscan: 8,
+	estimatedRowHeight: 28,
+} as const;
+
 function BulkDeleteNotesBanner({
 	noteIds,
 	onDeleted,
@@ -435,7 +441,6 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 				</Stack>
 				<div
 					className={s.result}
-					style={{ flex: 1, minHeight: 0 }}
 				>
 					<Table
 						values={tableValues}
@@ -449,6 +454,7 @@ export function NotesWindow({ onClose }: FloatingWindowProps) {
 						highlightedId={app.timeline.target?._id}
 						columnVisibility={true}
 						persistId="notes_table"
+						virtualization={NOTES_TABLE_VIRTUALIZATION}
 					/>
 				</div>
 			</div>

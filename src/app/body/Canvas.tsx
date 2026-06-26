@@ -112,6 +112,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 		RenderEngine.reset("flags");
 	}, [app.target.notes, app.timeline.scale, app.target.files]);
 
+	/**
+	 * Renders the current Canvas frame and reports vertically visible source rows.
+	 * @param force Whether to force cache invalidation for overlay-related render data.
+	 * @param ctx Optional canvas rendering context, defaulting to the main canvas.
+	 * @returns Nothing.
+	 */
 	const renderCanvas = (
 		force?: boolean,
 		ctx = canvas_ref.current?.getContext("2d"),
@@ -174,10 +180,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 		// against the canvas bounds (with 48px buffer for partial visibility), we skip
 		// engine rendering, line drawing, local markers, and info labels for invisible rows.
 		const canvasHeight = ctx.canvas.height;
+		const visibleSourceIds: Source.Id[] = [];
 
 		files.forEach((file, i) => {
 			const y = Source.Entity.getHeight(app, file, currentScrollY, i);
 			if (y < -48 || y > canvasHeight + 48) return;
+			visibleSourceIds.push(file.id);
 
 			if (
 				!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)
@@ -192,6 +200,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 			render.locals(file, y);
 			render.draw_info(file, y);
 		});
+		Info.setVisibleSourceIds(visibleSourceIds);
 
 		render.targetMarker();
 		render.drawHighlights();

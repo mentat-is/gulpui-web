@@ -22,6 +22,7 @@ import { Highlight } from "@/entities/Highlight";
 import { Context } from "@/entities/Context";
 import { stringToHexColor } from "@/ui/utils";
 import { translate } from "@/locales/core";
+import { requestStore } from "@/store/request.store";
 
 
 const NOTE_SIZE = 32;
@@ -774,7 +775,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND;
 		this.ctx.fillText(events, left, line.three);
 
-		if (this.info.app.general.loadings.byFileId.has(file.id)) {
+		if (requestStore.hasLoadingForFile(file.id)) {
 			this.loading(file);
 		}
 	};
@@ -1040,6 +1041,28 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	/** Clears a specific render cache (notes, range, or flags). Used to force recalculation. */
 	public static reset = (key: keyof (typeof RenderEngine)[typeof CacheKey]) => {
 		RenderEngine[CacheKey][key].clear();
+	};
+
+	/**
+	 * Clears render caches that are scoped to one source after its events change.
+	 * @param sourceId Source identifier whose cached render data should be invalidated.
+	 * @returns Nothing.
+	 */
+	public static resetSource = (sourceId: Source.Id): void => {
+		RenderEngine[CacheKey].notes.delete(sourceId);
+		RenderEngine[CacheKey].range.delete(sourceId);
+		RenderEngine[CacheKey].flags.clear();
+
+		if (DefaultEngine.instance) {
+			DefaultEngine.instance.map.delete(sourceId);
+		}
+		if (HeightEngine.instance) {
+			HeightEngine.instance.map.delete(sourceId);
+			HeightEngine.instance.cacheKeys.delete(sourceId);
+		}
+		if (GraphEngine.instance) {
+			GraphEngine.instance.map.delete(sourceId);
+		}
 	};
 
 	/**

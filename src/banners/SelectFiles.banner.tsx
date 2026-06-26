@@ -38,6 +38,7 @@ import { useParams } from "react-router-dom";
 import { Internal } from "@/entities/addon/Internal";
 import { Locale } from "@/locales";
 import { WindowBridge } from "@/lib/WindowBridge";
+import { requestStore } from "@/store/request.store";
 
 export namespace SelectFiles {
 	export namespace Banner {
@@ -696,7 +697,7 @@ function FileComponent({
 				Request.Prefix.INGESTION;
 
 			if (isIngesting) {
-				const reqId = Info.app.general.loadings.byFileId.get(file.id);
+				const reqId = requestStore.getRequestIdByFile(file.id);
 				const p =
 					Info.ingestionProgress.get(file.id) ||
 					(reqId ? Info.ingestionProgress.get(reqId as any) : 0) ||

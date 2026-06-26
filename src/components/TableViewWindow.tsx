@@ -39,6 +39,22 @@ export namespace TableViewWindow {
 	}
 }
 
+type TableEventRow = Doc.Type & Record<string, unknown>;
+
+const DEFAULT_HIDDEN_FIELDS: string[] = [
+	"_id",
+	"gulp.source_id",
+	"gulp.context_id",
+	"gulp.operation_id",
+	"gulp.event_code",
+	"event.original",
+	"gulp.timestamp",
+	"gulp.unmapped",
+	"gulp.enrich",
+];
+
+const DEFAULT_HIDDEN_FIELD_SET = new Set(DEFAULT_HIDDEN_FIELDS);
+
 /**
  * Helper component for date selection using datetime-local input.
  * Converts nanoseconds timestamps to/from browser-compatible date strings.
@@ -158,23 +174,11 @@ export function TableViewWindow({
 	initialSourceId,
 	onClose,
 }: TableViewWindow.Props) {
-	// --- Constants ---
-	const DEFAULT_HIDDEN_FIELDS = [
-		"_id",
-		"gulp.source_id",
-		"gulp.context_id",
-		"gulp.operation_id",
-		"gulp.event_code",
-		"event.original",
-		"gulp.timestamp",
-		"gulp.unmapped",
-		"gulp.enrich",
-	];
-
 	// --- Context & Infrastructure ---
 	const { Info, app, spawnBanner, banner } = Application.use();
 	const { t } = Locale.use();
 	const [container, setContainer] = useState<HTMLDivElement | null>(null);
+	const tableRequestControllerRef = useRef<AbortController | null>(null);
 
 	// --- Selection & Sync State ---
 	const [isSynced, setIsSynced] = useState<boolean>(false);
@@ -306,7 +310,7 @@ export function TableViewWindow({
 	}, [sortableFields, sortField]);
 
 	// --- Data & Results State ---
-	const [data, setData] = useState<any[]>([]);
+	const [data, setData] = useState<TableEventRow[]>([]);
 	const [totalHits, setTotalHits] = useState<number>(0);
 	const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
 	const [loading, setLoading] = useState(false);
@@ -372,12 +376,13 @@ export function TableViewWindow({
 		setLocalSearchQuery("");
 		if (opChanged || sourceChanged) {
 			setLocalFieldTypeMap(null);
+			setData([]);
+			setTotalHits(0);
+			setSelectedRows(new Set());
 		}
 
 		if (opChanged) {
 			setSelectedSourceId(null);
-			setData([]);
-			setTotalHits(0);
 		}
 
 		// Sync timeframe
@@ -420,6 +425,13 @@ export function TableViewWindow({
 		? serializedFilters
 		: JSON.stringify(appliedFilters);
 	const activeTextFilter = isSynced ? syncedTextFilter : searchQuery;
+	const renderableColumns = useMemo(
+		() =>
+			columns?.filter(
+				(column) => !DEFAULT_HIDDEN_FIELD_SET.has(column.toLowerCase()),
+			),
+		[columns],
+	);
 
 	// --- Data Fetching ---
 
@@ -429,6 +441,9 @@ export function TableViewWindow({
 	 */
 	const fetchTableData = useCallback(async () => {
 		if (!selectedSource) return;
+		tableRequestControllerRef.current?.abort();
+		const requestController = new AbortController();
+		tableRequestControllerRef.current = requestController;
 		setLoading(true);
 		try {
 			let queryObj: Query.Type;
@@ -436,12 +451,19 @@ export function TableViewWindow({
 			// Branch logic: Determine if we use synced global filters or local search query
 			if (isSynced) {
 				if (activeFilters) {
-					let filter = { ...activeFilters };
-					if (filter.source_config) {
-						filter.source_config.source_ids = [selectedSource.id];
-						filter.source_config.range = { min: activeMin, max: activeMax };
-					}
-					queryObj = { ...filter, text_filter: syncedTextFilter } as any;
+					queryObj = {
+						...activeFilters,
+						filters: [...(activeFilters.filters ?? [])],
+						text_filter: syncedTextFilter,
+						source_config: {
+							...(activeFilters.source_config ?? {}),
+							operation_id:
+								activeFilters.source_config?.operation_id ??
+								selectedSource.operation_id,
+							source_ids: [selectedSource.id],
+							range: { min: activeMin, max: activeMax },
+						},
+					};
 				} else {
 					queryObj = {
 						string: "",
@@ -477,15 +499,29 @@ export function TableViewWindow({
 				limit,
 				offset,
 				sort: sortOpt,
+				signal: requestController.signal,
 			});
 
-			setData(res?.docs || []);
+			if (
+				requestController.signal.aborted ||
+				tableRequestControllerRef.current !== requestController
+			) {
+				return;
+			}
+
+			setData((res?.docs || []) as TableEventRow[]);
 			setTotalHits(res?.total_hits || 0);
 			setSelectedRows(new Set());
 		} catch (e) {
+			if (requestController.signal.aborted) {
+				return;
+			}
 			toast.error(t("tableView.fetchFailed"));
 		} finally {
-			setLoading(false);
+			if (tableRequestControllerRef.current === requestController) {
+				tableRequestControllerRef.current = null;
+				setLoading(false);
+			}
 		}
 		// We use stable primitives (IDs and serialized strings) for dependencies to avoid
 		// redundant fetches when global object references change.
@@ -503,6 +539,10 @@ export function TableViewWindow({
 		sortDirection,
 		Info,
 	]);
+
+	useEffect(() => {
+		return () => tableRequestControllerRef.current?.abort();
+	}, []);
 
 	/**
 	 * Effect to trigger fetch whenever logical query parameters change.
@@ -570,18 +610,39 @@ export function TableViewWindow({
 	/**
 	 * Updates the sort field and resets to page 1.
 	 */
-	const handleSortFieldChange = (val: string) => {
+	const handleSortFieldChange = useCallback((val: string) => {
 		setSortField(val);
 		setCurrentPage(1);
-	};
+	}, []);
 
 	/**
 	 * Toggles the sort direction and resets to page 1.
 	 */
-	const toggleSortDirection = () => {
+	const toggleSortDirection = useCallback(() => {
 		setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
 		setCurrentPage(1);
-	};
+	}, []);
+
+	/**
+	 * Applies column-header sorting when the selected field can be sorted by the backend.
+	 * @param field Column field requested by the generic Table header.
+	 * @returns Nothing.
+	 */
+	const handleTableSort = useCallback(
+		(field: string) => {
+			if (!sortableFields.includes(field)) {
+				return;
+			}
+
+			if (sortField === field) {
+				toggleSortDirection();
+				return;
+			}
+
+			handleSortFieldChange(field);
+		},
+		[sortableFields, sortField, toggleSortDirection, handleSortFieldChange],
+	);
 
 	/**
 	 * Selects or deselects all visible rows.
@@ -630,7 +691,7 @@ export function TableViewWindow({
 	 * Handles clicking an action on a specific row (usually to target an event in the main view).
 	 */
 	const handleRowAction = useCallback(
-		(doc: any) => {
+		(doc: TableEventRow) => {
 			if (!selectedSource) return;
 			const bridge = WindowBridge.create(WindowBridge.generateId(), () => {});
 			bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
@@ -640,6 +701,32 @@ export function TableViewWindow({
 			bridge.destroy();
 		},
 		[selectedSource?.operation_id],
+	);
+
+	/**
+	 * Updates the selected row index set for the generic Table checkbox column.
+	 * @param index Row index in the current result page.
+	 * @param selected Whether the row is now selected.
+	 * @returns Nothing.
+	 */
+	const handleTableRowSelect = useCallback((index: number, selected: boolean) => {
+		setSelectedRows((prev) => {
+			const next = new Set(prev);
+			if (selected) next.add(index);
+			else next.delete(index);
+			return next;
+		});
+	}, []);
+
+	const tableActions = useMemo<Table.Action<TableEventRow>[]>(
+		() => [
+			{
+				icon: "Search",
+				label: t("tableView.targetEvent"),
+				onClick: handleRowAction,
+			},
+		],
+		[handleRowAction, t],
 	);
 
 	// --- Window Bridge Listener ---
@@ -658,6 +745,7 @@ export function TableViewWindow({
 	// --- Constants ---
 
 	const isAllSelected = data.length > 0 && selectedRows.size === data.length;
+	const isInitialTableLoading = !localFieldTypeMap || (loading && data.length === 0);
 
 	return (
 		<div
@@ -977,45 +1065,24 @@ export function TableViewWindow({
 			<div className={s.result}>
 				{!selectedSourceId ? (
 					<div className={s.placeholder}>{t("tableView.selectSourceToViewEvents")}</div>
-				) : loading || !localFieldTypeMap ? (
+				) : isInitialTableLoading ? (
 					<p className={s.label}>{t("tableView.loadingData")}</p>
 				) : data.length > 0 ? (
 					<Table
 						persistId={`table-${selectedSourceId}`}
 						columnVisibility={true}
 						values={data}
-						columns={columns}
+						columns={renderableColumns}
 						includeIndex={false}
 						notshow={DEFAULT_HIDDEN_FIELDS}
 						selectable={true}
 						selectedrows={selectedRows}
-						onrowselect={(index, selected) => {
-							setSelectedRows((prev) => {
-								const next = new Set(prev);
-								if (selected) next.add(index);
-								else next.delete(index);
-								return next;
-							});
-						}}
+						onrowselect={handleTableRowSelect}
 						onSelectAll={handleSelectAll}
-						actions={[
-							{
-								icon: "Search",
-								label: t("tableView.targetEvent"),
-								onClick: handleRowAction,
-							},
-						]}
+						actions={tableActions}
 						sortField={sortField}
 						sortDirection={sortDirection}
-						onSort={(field) => {
-							if (sortableFields.includes(field)) {
-								if (sortField === field) {
-									toggleSortDirection();
-								} else {
-									handleSortFieldChange(field);
-								}
-							}
-						}}
+						onSort={handleTableSort}
 						highlightedId={app.timeline.target?._id}
 					/>
 				) : (
