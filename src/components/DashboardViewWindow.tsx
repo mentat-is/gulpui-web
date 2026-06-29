@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	memo,
+	startTransition,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import type { ChartData, ChartOptions } from "chart.js";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Application } from "@/context/Application.context";
 import { Extension } from "@/context/Extension.context";
 import { GulpDataset } from "@/class/Info";
@@ -28,6 +37,13 @@ import { format } from "date-fns";
 import s from "./styles/DashboardViewWindow.module.css";
 import { Icon } from "@/ui/Icon";
 import { stringToHexColor } from "@/ui/utils";
+import { DataWorker } from "@/workers/DataWorker.class";
+import type {
+	DashboardAggregationChartBucket,
+	DashboardAggregationTimeRow,
+	DashboardAggregationValueRow,
+	NormalizeDashboardAggregationResult,
+} from "@/workers/DataWorker.types";
 
 export namespace DashboardViewWindow {
 	export interface Props {
@@ -79,23 +95,13 @@ interface FieldInfoRow extends Record<string, string | number> {
 	sources: number;
 }
 
-interface AggregationTableRow extends Record<string, string | number> {
-	value: string;
-	count: number;
-	percent: number;
-}
-
-interface TimeAggregationTableRow extends Record<string, string | number> {
-	time: string;
-	value: string;
-	count: number;
-}
-
-interface ChartBucket {
-	label: string;
-	value: number;
-	sourceId?: string;
-}
+type AggregationTableRow = DashboardAggregationValueRow;
+type TimeAggregationTableRow = DashboardAggregationTimeRow;
+type ChartBucket = DashboardAggregationChartBucket;
+type FieldAggregationResult = Extract<
+	NormalizeDashboardAggregationResult,
+	{ mode: "field_values" | "field_time" }
+>;
 
 interface ChartPalette {
 	accent: string;
@@ -110,6 +116,10 @@ const DEFAULT_TOP_VALUES_SIZE = 10;
 const DEFAULT_TIME_BUCKET_SIZE = 5;
 const DEFAULT_MAX_DOC_COUNT = 5;
 const DEFAULT_AGGREGATION_INTERVAL = "15m";
+const DASHBOARD_MAX_CHART_BUCKETS = 500;
+const DASHBOARD_FIELD_NORMALIZATION_CHUNK_SIZE = 1000;
+const EMPTY_VALUE_ROWS: AggregationTableRow[] = [];
+const EMPTY_TIME_ROWS: TimeAggregationTableRow[] = [];
 const DASHBOARD_FIELD_METADATA_CONCURRENCY = 4;
 const DASHBOARD_CARD_AGGREGATION_CONCURRENCY = 3;
 const FIELD_AGGREGATION_EXCLUDED_PREFIXES = ["gulp.unmapped", "gulp.enriched"];
@@ -567,7 +577,7 @@ function buildFieldAggregationBody(
 					date_histogram: {
 						field: "@timestamp",
 						[histogramInterval.type]: histogramInterval.value,
-						min_doc_count: 0,
+						min_doc_count: 1,
 					},
 					aggs: {
 						top_values_in_bucket: {
@@ -720,101 +730,180 @@ function buildDashboardAggregationBody(
 }
 
 /**
- * Finds the first bucket list in an aggregation response.
+ * Throws when a chunked dashboard normalization run has been superseded.
+ *
+ * @param signal - Request signal shared by the network request and normalization work.
+ * @returns Nothing.
+ */
+function throwIfDashboardNormalizationAborted(signal: AbortSignal): void {
+	if (signal.aborted) {
+		throw new DOMException("Aborted", "AbortError");
+	}
+}
+
+/**
+ * Yields back to the browser between dashboard normalization chunks.
+ *
+ * @param signal - Request signal checked before and after yielding.
+ * @returns Promise resolved after the browser has a chance to handle input.
+ */
+async function yieldDashboardNormalizationChunk(
+	signal: AbortSignal,
+): Promise<void> {
+	throwIfDashboardNormalizationAborted(signal);
+	await new Promise<void>((resolve) => setTimeout(resolve, 0));
+	throwIfDashboardNormalizationAborted(signal);
+}
+
+/**
+ * Finds the first aggregation bucket list in a dashboard aggregation response.
  *
  * @param response - Aggregation response returned by the backend.
- * @returns Bucket array and aggregation key when available.
+ * @returns First bucket list found in the response.
  */
-function getFirstBucketAggregation(
+function getDashboardAggregationBuckets(
 	response: GulpDataset.QueryAggregation.Response,
-) {
-	for (const [name, aggregation] of Object.entries(
-		response.aggregations ?? {},
-	)) {
+): GulpDataset.QueryAggregation.Bucket[] {
+	for (const aggregation of Object.values(response.aggregations ?? {})) {
 		if (Array.isArray(aggregation.buckets)) {
-			return { name, buckets: aggregation.buckets };
+			return aggregation.buckets;
 		}
 	}
 
-	return { name: "", buckets: [] as GulpDataset.QueryAggregation.Bucket[] };
+	return [];
 }
 
 /**
- * Converts aggregation buckets to chart-ready label/value pairs.
+ * Checks whether a dynamic aggregation property contains nested buckets.
  *
- * @param response - Aggregation response returned by the backend.
- * @returns Chart buckets for Chart.js datasets.
+ * @param value - Dynamic property read from an aggregation bucket.
+ * @returns True when the value is a nested bucket aggregation.
  */
-function normalizeChartBuckets(
-	response: GulpDataset.QueryAggregation.Response,
-): ChartBucket[] {
-	const { buckets } = getFirstBucketAggregation(response);
-
-	return buckets.map((bucket) => ({
-		label: String(bucket.key_as_string ?? bucket.key),
-		value: bucket.doc_count,
-		sourceId: typeof bucket.key === "string" ? bucket.key : undefined,
-	}));
+function isDashboardNestedBucketAggregation(
+	value: unknown,
+): value is { buckets: GulpDataset.QueryAggregation.Bucket[] } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"buckets" in value &&
+		Array.isArray((value as { buckets?: unknown }).buckets)
+	);
 }
 
 /**
- * Converts top/rare aggregation buckets to table rows.
+ * Normalizes value aggregation buckets without monopolizing the main thread.
  *
  * @param response - Aggregation response returned by the backend.
+ * @param signal - Request signal used to cancel stale normalization.
  * @returns Table rows with value, count, and percentage columns.
  */
-function normalizeValueRows(
+async function normalizeValueRowsInChunks(
 	response: GulpDataset.QueryAggregation.Response,
-): AggregationTableRow[] {
-	const { buckets } = getFirstBucketAggregation(response);
+	signal: AbortSignal,
+): Promise<AggregationTableRow[]> {
+	const buckets = getDashboardAggregationBuckets(response);
 	const total = Math.max(response.total_hits, 1);
+	const rows: AggregationTableRow[] = [];
 
-	return buckets.map((bucket) => ({
-		value: String(bucket.key_as_string ?? bucket.key),
-		count: bucket.doc_count,
-		percent: Number(((bucket.doc_count / total) * 100).toFixed(2)),
-	}));
+	for (let index = 0; index < buckets.length; index += 1) {
+		throwIfDashboardNormalizationAborted(signal);
+		const bucket = buckets[index];
+		rows.push({
+			value: String(bucket.key_as_string ?? bucket.key),
+			count: bucket.doc_count,
+			percent: Number(((bucket.doc_count / total) * 100).toFixed(2)),
+		});
+
+		if (
+			index > 0 &&
+			index % DASHBOARD_FIELD_NORMALIZATION_CHUNK_SIZE === 0
+		) {
+			await yieldDashboardNormalizationChunk(signal);
+		}
+	}
+
+	return rows;
 }
 
 /**
- * Converts time-bucketed top-value aggregations into flat table rows.
+ * Normalizes time-bucketed aggregations without monopolizing the main thread.
  *
  * @param response - Aggregation response returned by the backend.
- * @returns Table rows with time, value, and count columns.
+ * @param signal - Request signal used to cancel stale normalization.
+ * @returns Flat table rows with time, value, and count columns.
  */
-function normalizeTimeRows(
+async function normalizeTimeRowsInChunks(
 	response: GulpDataset.QueryAggregation.Response,
-): TimeAggregationTableRow[] {
-	const { buckets } = getFirstBucketAggregation(response);
+	signal: AbortSignal,
+): Promise<TimeAggregationTableRow[]> {
+	const buckets = getDashboardAggregationBuckets(response);
+	const rows: TimeAggregationTableRow[] = [];
+	let rowsSinceLastYield = 0;
 
-	return buckets.flatMap((bucket) => {
+	for (const bucket of buckets) {
+		throwIfDashboardNormalizationAborted(signal);
+		const time = String(bucket.key_as_string ?? bucket.key);
 		const nested = Object.values(bucket).find(
-			(value): value is { buckets: GulpDataset.QueryAggregation.Bucket[] } => {
-				return (
-					typeof value === "object" &&
-					value !== null &&
-					"buckets" in value &&
-					Array.isArray((value as { buckets?: unknown }).buckets)
-				);
-			},
+			isDashboardNestedBucketAggregation,
 		);
 
 		if (!nested) {
-			return [
-				{
-					time: String(bucket.key_as_string ?? bucket.key),
-					value: "-",
-					count: bucket.doc_count,
-				},
-			];
+			rows.push({
+				time,
+				value: "-",
+				count: bucket.doc_count,
+			});
+			rowsSinceLastYield += 1;
+		} else {
+			for (const nestedBucket of nested.buckets) {
+				throwIfDashboardNormalizationAborted(signal);
+				rows.push({
+					time,
+					value: String(nestedBucket.key_as_string ?? nestedBucket.key),
+					count: nestedBucket.doc_count,
+				});
+				rowsSinceLastYield += 1;
+
+				if (rowsSinceLastYield >= DASHBOARD_FIELD_NORMALIZATION_CHUNK_SIZE) {
+					rowsSinceLastYield = 0;
+					await yieldDashboardNormalizationChunk(signal);
+				}
+			}
 		}
 
-		return nested.buckets.map((nestedBucket) => ({
-			time: String(bucket.key_as_string ?? bucket.key),
-			value: String(nestedBucket.key_as_string ?? nestedBucket.key),
-			count: nestedBucket.doc_count,
-		}));
-	});
+		if (rowsSinceLastYield >= DASHBOARD_FIELD_NORMALIZATION_CHUNK_SIZE) {
+			rowsSinceLastYield = 0;
+			await yieldDashboardNormalizationChunk(signal);
+		}
+	}
+
+	return rows;
+}
+
+/**
+ * Normalizes the selected field aggregation into the active table result shape.
+ *
+ * @param response - Aggregation response returned by the backend.
+ * @param mode - Target field aggregation display mode.
+ * @param signal - Request signal used to cancel stale normalization.
+ * @returns Render-ready field aggregation result.
+ */
+async function normalizeFieldAggregationResultInChunks(
+	response: GulpDataset.QueryAggregation.Response,
+	mode: FieldAggregationResult["mode"],
+	signal: AbortSignal,
+): Promise<FieldAggregationResult> {
+	if (mode === "field_time") {
+		return {
+			mode,
+			rows: await normalizeTimeRowsInChunks(response, signal),
+		};
+	}
+
+	return {
+		mode,
+		rows: await normalizeValueRowsInChunks(response, signal),
+	};
 }
 
 /**
@@ -1142,23 +1231,188 @@ function DashboardFilterControls({
 	);
 }
 
+interface DashboardFieldListProps {
+	rows: FieldInfoRow[];
+	selectedField: string | null;
+	onSelectField: (field: string) => void;
+}
+
+interface DashboardFieldRowProps {
+	row: FieldInfoRow;
+	selected: boolean;
+	fieldCountLabel: string;
+	onSelectField: (field: string) => void;
+}
+
 /**
- * Renders a fixed dashboard card and handles its aggregation lifecycle.
+ * Renders one selectable field row in the virtualized available-fields list.
  *
- * @param props - Dashboard definition and query dependencies.
+ * @param props - Field row data and selection callback.
  */
-function DashboardCard({
-	dashboard,
-	globalFilterState,
-	fieldTypeMap,
-	fieldKeys,
-	container,
-	palette,
-	sourceNameById,
-	sourceColorById,
-	defaultSourceIds,
-	availableSources,
-}: {
+const DashboardFieldRow = memo(function DashboardFieldRow({
+	row,
+	selected,
+	fieldCountLabel,
+	onSelectField,
+}: DashboardFieldRowProps) {
+	/**
+	 * Selects this field for ad-hoc aggregation.
+	 *
+	 * @returns Nothing.
+	 */
+	const handleClick = useCallback(() => {
+		onSelectField(row.field);
+	}, [onSelectField, row.field]);
+
+	return (
+		<button
+			type="button"
+			className={selected ? s.fieldRowActive : s.fieldRow}
+			onClick={handleClick}
+		>
+			<span>{row.field}</span>
+			<small>{fieldCountLabel}</small>
+		</button>
+	);
+});
+
+/**
+ * Renders available aggregation fields with viewport virtualization.
+ *
+ * @param props - Field rows, active field, and selection callback.
+ */
+function DashboardFieldList({
+	rows,
+	selectedField,
+	onSelectField,
+}: DashboardFieldListProps) {
+	const { t } = Locale.use();
+	const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+	const rowVirtualizer = useVirtualizer({
+		count: rows.length,
+		getScrollElement: () => scrollContainerRef.current,
+		estimateSize: () => 38,
+		overscan: 12,
+	});
+
+	return (
+		<div
+			className={s.fieldList}
+			ref={scrollContainerRef}
+		>
+			<div
+				className={s.fieldListContent}
+				style={{ height: rowVirtualizer.getTotalSize() }}
+			>
+				{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+					const row = rows[virtualRow.index];
+					if (!row) return null;
+
+					return (
+						<div
+							key={row.field}
+							className={s.fieldListVirtualRow}
+							style={{ transform: `translateY(${virtualRow.start}px)` }}
+						>
+							<DashboardFieldRow
+								row={row}
+								selected={row.field === selectedField}
+								fieldCountLabel={t("dashboard.fieldCount", {
+									count: row.sources,
+								})}
+								onSelectField={onSelectField}
+							/>
+						</div>
+					);
+				})}
+			</div>
+		</div>
+	);
+}
+
+interface DashboardTimeRowsTableProps {
+	rows: TimeAggregationTableRow[];
+}
+
+/**
+ * Renders time aggregation rows with div-based virtualization to avoid huge table layout.
+ *
+ * @param props - Time aggregation rows to display.
+ */
+function DashboardTimeRowsTable({ rows }: DashboardTimeRowsTableProps) {
+	const { t } = Locale.use();
+	const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+	const rowVirtualizer = useVirtualizer({
+		count: rows.length,
+		getScrollElement: () => scrollContainerRef.current,
+		estimateSize: () => 28,
+		overscan: 12,
+	});
+
+	return (
+		<div
+			className={s.timeResultTable}
+			role="table"
+		>
+			<div
+				className={s.timeResultHeader}
+				role="row"
+			>
+				<div role="columnheader">{t("common.timestamp")}</div>
+				<div role="columnheader">{t("dashboard.value")}</div>
+				<div role="columnheader">{t("dashboard.count")}</div>
+			</div>
+			<div
+				className={s.timeResultBody}
+				ref={scrollContainerRef}
+				role="rowgroup"
+			>
+				<div
+					className={s.timeResultContent}
+					style={{ height: rowVirtualizer.getTotalSize() }}
+				>
+					{rowVirtualizer.getVirtualItems().map((virtualRow) => {
+						const row = rows[virtualRow.index];
+						if (!row) return null;
+
+						return (
+							<div
+								key={`${row.time}-${row.value}-${virtualRow.index}`}
+								className={s.timeResultRow}
+								role="row"
+								style={{ transform: `translateY(${virtualRow.start}px)` }}
+							>
+								<div
+									className={s.timeResultCell}
+									role="cell"
+									title={row.time}
+								>
+									{row.time}
+								</div>
+								<div
+									className={s.timeResultCell}
+									role="cell"
+									title={row.value}
+								>
+									{row.value}
+								</div>
+								<div
+									className={s.timeResultCell}
+									role="cell"
+									title={String(row.count)}
+								>
+									{row.count}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+interface DashboardCardProps {
 	dashboard: DashboardDefinition;
 	globalFilterState: AnalyticsFilterState;
 	fieldTypeMap: Record<string, string>;
@@ -1169,13 +1423,30 @@ function DashboardCard({
 	sourceColorById: Map<string, string>;
 	defaultSourceIds: Source.Id[];
 	availableSources: Source.Type[];
-}) {
+}
+
+/**
+ * Renders a fixed dashboard card and handles its aggregation lifecycle.
+ *
+ * @param props - Dashboard definition and query dependencies.
+ */
+const DashboardCard = memo(function DashboardCard({
+	dashboard,
+	globalFilterState,
+	fieldTypeMap,
+	fieldKeys,
+	container,
+	palette,
+	sourceNameById,
+	sourceColorById,
+	defaultSourceIds,
+	availableSources,
+}: DashboardCardProps) {
 	const { Info, app, spawnBanner } = Application.use();
 	const { t } = Locale.use();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [response, setResponse] =
-		useState<GulpDataset.QueryAggregation.Response | null>(null);
+	const [chartBuckets, setChartBuckets] = useState<ChartBucket[]>([]);
 	const [settingsPopoverOpen, setSettingsPopoverOpen] = useState(false);
 	const [customFiltersEnabled, setCustomFiltersEnabled] = useState(false);
 	const [localFilterState, setLocalFilterState] =
@@ -1295,15 +1566,29 @@ function DashboardCard({
 				}),
 			requestController.signal,
 		)
-			.then((nextResponse) => {
-				if (!cancelled) {
-					setResponse(nextResponse);
+			.then(async (nextResponse) => {
+				if (cancelled) {
+					return;
+				}
+
+				const nextChartResult =
+					await DataWorker.normalizeDashboardAggregation({
+						mode: "dashboard_chart",
+						response: nextResponse,
+						chartType: dashboard.dashboard,
+						maxChartBuckets: DASHBOARD_MAX_CHART_BUCKETS,
+					});
+
+				if (!cancelled && nextChartResult.mode === "dashboard_chart") {
+					startTransition(() => {
+						setChartBuckets(nextChartResult.buckets);
+					});
 				}
 			})
 			.catch(() => {
 				if (!cancelled) {
 					setError(loadFailedTextRef.current);
-					setResponse(null);
+					setChartBuckets([]);
 				}
 			})
 			.finally(() => {
@@ -1319,6 +1604,7 @@ function DashboardCard({
 	}, [
 		Info,
 		activeFilterSignature,
+		dashboard.dashboard,
 		dashboard.id,
 		dashboardAggregationSignature,
 		defaultSourceIdsSignature,
@@ -1326,23 +1612,22 @@ function DashboardCard({
 		relevantFieldTypesSignature,
 	]);
 
-	const buckets = useMemo(
-		() =>
-			normalizeChartBuckets(response ?? { total_hits: 0, aggregations: {} }),
-		[response],
-	);
-	const labels = buckets.map((bucket) =>
-		bucket.sourceId
-			? (sourceNameById.get(bucket.sourceId) ?? bucket.label)
-			: bucket.label,
-	);
-	const values = buckets.map((bucket) => bucket.value);
-	const bucketColors = buckets.map(
-		(bucket, index) =>
-			(bucket.sourceId ? sourceColorById.get(bucket.sourceId) : undefined) ??
-			palette.bars[index % palette.bars.length],
-	);
-	const hasSourceBuckets = buckets.some((bucket) => bucket.sourceId);
+	const chartRenderData = useMemo(() => {
+		const labels = chartBuckets.map((bucket) =>
+			bucket.sourceId
+				? (sourceNameById.get(bucket.sourceId) ?? bucket.label)
+				: bucket.label,
+		);
+		const values = chartBuckets.map((bucket) => bucket.value);
+		const bucketColors = chartBuckets.map(
+			(bucket, index) =>
+				(bucket.sourceId ? sourceColorById.get(bucket.sourceId) : undefined) ??
+				palette.bars[index % palette.bars.length],
+		);
+		const hasSourceBuckets = chartBuckets.some((bucket) => bucket.sourceId);
+
+		return { labels, values, bucketColors, hasSourceBuckets };
+	}, [chartBuckets, palette.bars, sourceColorById, sourceNameById]);
 	const chartOptions = useMemo<ChartOptions<"line" | "bar">>(
 		() => ({
 			responsive: true,
@@ -1368,40 +1653,42 @@ function DashboardCard({
 
 	const lineData = useMemo<ChartData<"line">>(
 		() => ({
-			labels,
+			labels: chartRenderData.labels,
 			datasets: [
 				{
 					label: dashboard.labels?.tooltip ?? dashboard.name,
-					data: values,
+					data: chartRenderData.values,
 					borderColor: palette.accent,
 					backgroundColor: `${palette.accent}33`,
 					fill: true,
 					tension: 0.25,
 					pointRadius: 2,
-					pointBackgroundColor: hasSourceBuckets
-						? bucketColors
+					pointBackgroundColor: chartRenderData.hasSourceBuckets
+						? chartRenderData.bucketColors
 						: palette.accent,
-					pointBorderColor: hasSourceBuckets ? bucketColors : palette.accent,
+					pointBorderColor: chartRenderData.hasSourceBuckets
+						? chartRenderData.bucketColors
+						: palette.accent,
 				},
 			],
 		}),
-		[dashboard, labels, palette, values, bucketColors, hasSourceBuckets],
+		[chartRenderData, dashboard, palette],
 	);
 
 	const barData = useMemo<ChartData<"bar">>(
 		() => ({
-			labels,
+			labels: chartRenderData.labels,
 			datasets: [
 				{
 					label: dashboard.labels?.value ?? dashboard.name,
-					data: values,
-					backgroundColor: bucketColors,
+					data: chartRenderData.values,
+					backgroundColor: chartRenderData.bucketColors,
 					borderColor: palette.border,
 					borderWidth: 1,
 				},
 			],
 		}),
-		[bucketColors, dashboard, labels, palette.border, values],
+		[chartRenderData, dashboard, palette.border],
 	);
 
 	return (
@@ -1454,7 +1741,7 @@ function DashboardCard({
 					<div className={s.placeholder}>{t("dashboard.loading")}</div>
 				) : error ? (
 					<div className={s.placeholder}>{error}</div>
-				) : values.length === 0 ? (
+				) : chartRenderData.values.length === 0 ? (
 					<div className={s.placeholder}>{t("dashboard.noData")}</div>
 				) : dashboard.dashboard === "line_chart" ? (
 					<Line
@@ -1472,7 +1759,7 @@ function DashboardCard({
 			</div>
 		</section>
 	);
-}
+});
 
 /**
  * Detached analytics window for operation-level dashboards and field aggregations.
@@ -1526,8 +1813,8 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 	);
 	const [maxDocCount, setMaxDocCount] = useState(String(DEFAULT_MAX_DOC_COUNT));
 	const [aggregationLoading, setAggregationLoading] = useState(false);
-	const [aggregationResponse, setAggregationResponse] =
-		useState<GulpDataset.QueryAggregation.Response | null>(null);
+	const [fieldAggregationResult, setFieldAggregationResult] =
+		useState<FieldAggregationResult | null>(null);
 	const [aggregationError, setAggregationError] = useState<string | null>(null);
 	const fieldAggregationControllerRef = useRef<AbortController | null>(null);
 	const palette = useMemo(
@@ -1755,24 +2042,46 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 
 			fieldAggregationControllerRef.current?.abort();
 			const requestController = new AbortController();
+			const resultMode: FieldAggregationResult["mode"] =
+				nextAggregationFunction === "top_values_by_time"
+					? "field_time"
+					: "field_values";
 			fieldAggregationControllerRef.current = requestController;
 			setAggregationLoading(true);
 			setAggregationError(null);
+			setFieldAggregationResult(null);
 			Info.query_aggregation(operation.id, body, {
 				signal: requestController.signal,
 			})
-				.then((nextResponse) => {
+				.then(async (nextResponse) => {
 					if (
 						requestController.signal.aborted ||
 						fieldAggregationControllerRef.current !== requestController
 					) {
 						return;
 					}
-					setAggregationResponse(nextResponse);
+
+					const nextResult = await normalizeFieldAggregationResultInChunks(
+						nextResponse,
+						resultMode,
+						requestController.signal,
+					);
+
+					if (
+						requestController.signal.aborted ||
+						fieldAggregationControllerRef.current !== requestController ||
+						nextResult.mode !== resultMode
+					) {
+						return;
+					}
+
+					startTransition(() => {
+						setFieldAggregationResult(nextResult);
+					});
 				})
 				.catch(() => {
 					if (requestController.signal.aborted) return;
-					setAggregationResponse(null);
+					setFieldAggregationResult(null);
 					setAggregationError(t("dashboard.loadFailed"));
 				})
 				.finally(() => {
@@ -1839,28 +2148,29 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 		setSelectedField(null);
 	}, []);
 
-	const valueRows = useMemo(
+	const valueRows =
+		fieldAggregationResult?.mode === "field_values"
+			? fieldAggregationResult.rows
+			: EMPTY_VALUE_ROWS;
+	const timeRows =
+		fieldAggregationResult?.mode === "field_time"
+			? fieldAggregationResult.rows
+			: EMPTY_TIME_ROWS;
+	const chartValueRows = useMemo(
 		() =>
-			normalizeValueRows(
-				aggregationResponse ?? { total_hits: 0, aggregations: {} },
-			),
-		[aggregationResponse],
-	);
-	const timeRows = useMemo(
-		() =>
-			normalizeTimeRows(
-				aggregationResponse ?? { total_hits: 0, aggregations: {} },
-			),
-		[aggregationResponse],
+			valueRows.length > DASHBOARD_MAX_CHART_BUCKETS
+				? valueRows.slice(0, DASHBOARD_MAX_CHART_BUCKETS)
+				: valueRows,
+		[valueRows],
 	);
 	const aggregationChartData = useMemo<ChartData<"bar">>(
 		() => ({
-			labels: valueRows.map((row) => row.value),
+			labels: chartValueRows.map((row) => row.value),
 			datasets: [
 				{
 					label: selectedField ?? "",
-					data: valueRows.map((row) => row.count),
-					backgroundColor: valueRows.map(
+					data: chartValueRows.map((row) => row.count),
+					backgroundColor: chartValueRows.map(
 						(_, index) => palette.bars[index % palette.bars.length],
 					),
 					borderColor: palette.border,
@@ -1868,7 +2178,7 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 				},
 			],
 		}),
-		[palette, selectedField, valueRows],
+		[chartValueRows, palette, selectedField],
 	);
 	const aggregationChartOptions = useMemo<ChartOptions<"bar">>(
 		() => ({
@@ -1936,25 +2246,11 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 						<div className={s.panel}>
 							<h4>{t("dashboard.availableFields")}</h4>
 							{fieldRows.length > 0 ? (
-								<div className={s.fieldList}>
-									{fieldRows.map((row) => (
-										<button
-											key={row.field}
-											type="button"
-											className={
-												row.field === selectedField
-													? s.fieldRowActive
-													: s.fieldRow
-											}
-											onClick={() => openAggregationPanel(row.field)}
-										>
-											<span>{row.field}</span>
-											<small>
-												{t("dashboard.fieldCount", { count: row.sources })}
-											</small>
-										</button>
-									))}
-								</div>
+								<DashboardFieldList
+									rows={fieldRows}
+									selectedField={selectedField}
+									onSelectField={openAggregationPanel}
+								/>
 							) : (
 								<div className={s.placeholder}>{t("dashboard.noFields")}</div>
 							)}
@@ -2115,19 +2411,13 @@ export function DashboardViewWindow({ onClose }: DashboardViewWindow.Props) {
 										{t("dashboard.runAggregation")}
 									</Button>
 								</div>
-								{aggregationError ? (
+								{aggregationLoading ? (
+									<div className={s.placeholder}>{t("dashboard.loading")}</div>
+								) : aggregationError ? (
 									<div className={s.placeholder}>{aggregationError}</div>
 								) : aggregationFunction === "top_values_by_time" ? (
-									<div className={s.tablePanel}>
-										<Table
-											values={timeRows}
-											includeIndex={false}
-											columns={[
-												{ key: "time", label: t("common.timestamp") },
-												{ key: "value", label: t("dashboard.value") },
-												{ key: "count", label: t("dashboard.count") },
-											]}
-										/>
+									<div className={`${s.tablePanel} ${s.timeTablePanel}`}>
+										<DashboardTimeRowsTable rows={timeRows} />
 									</div>
 								) : (
 									<div className={s.aggregationResults}>

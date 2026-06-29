@@ -5,6 +5,8 @@ import type {
 	DataWorkerPayloadMap,
 	DataWorkerResponse,
 	DataWorkerResultMap,
+	NormalizeDashboardAggregationPayload,
+	NormalizeDashboardAggregationResult,
 	NormalizeQueryDocsPayload,
 	NormalizeQueryDocsResult,
 	TimestampedWorkerItem,
@@ -104,5 +106,16 @@ export class DataWorker {
     payload: NormalizeQueryDocsPayload,
   ): Promise<NormalizeQueryDocsResult> {
     return this.execute('NORMALIZE_QUERY_DOCS', payload);
+  }
+
+  /**
+   * Normalizes dashboard aggregation responses into render-ready chart or table data.
+   * @param payload Aggregation response and target dashboard display mode.
+   * @returns Processed dashboard aggregation result.
+   */
+  static normalizeDashboardAggregation(
+    payload: NormalizeDashboardAggregationPayload,
+  ): Promise<NormalizeDashboardAggregationResult> {
+    return this.execute('NORMALIZE_DASHBOARD_AGGREGATION', payload);
   }
 }

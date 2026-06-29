@@ -2,10 +2,16 @@
 
 import type { Doc } from "@/entities/Doc";
 import type { Source } from "@/entities/Source";
+import type { GulpDataset } from "@/class/Info";
 import type { HashFunctionName } from "@/ui/utils";
 import type {
+	DashboardAggregationChartBucket,
+	DashboardAggregationTimeRow,
+	DashboardAggregationValueRow,
 	DataWorkerRequest,
 	NormalizeQueryDocsPayload,
+	NormalizeDashboardAggregationPayload,
+	NormalizeDashboardAggregationResult,
 	QueryRawDocument,
 	TimestampedWorkerItem,
 	TimestampInput,
@@ -211,6 +217,212 @@ function normalizeQueryDocs(
 	}));
 }
 
+/**
+ * Finds the first aggregation bucket list in a dashboard aggregation response.
+ * @param response Aggregation response returned by the backend.
+ * @returns First bucket list found in the response.
+ */
+function getFirstDashboardBucketAggregation(
+	response: GulpDataset.QueryAggregation.Response,
+): GulpDataset.QueryAggregation.Bucket[] {
+	for (const aggregation of Object.values(response.aggregations ?? {})) {
+		if (Array.isArray(aggregation.buckets)) {
+			return aggregation.buckets;
+		}
+	}
+
+	return [];
+}
+
+/**
+ * Converts a backend bucket into a compact chart bucket.
+ * @param bucket Aggregation bucket returned by OpenSearch.
+ * @returns Chart-ready bucket with a display label and numeric value.
+ */
+function toDashboardChartBucket(
+	bucket: GulpDataset.QueryAggregation.Bucket,
+): DashboardAggregationChartBucket {
+	return {
+		label: String(bucket.key_as_string ?? bucket.key),
+		value: bucket.doc_count,
+		sourceId: typeof bucket.key === "string" ? bucket.key : undefined,
+	};
+}
+
+/**
+ * Downsamples line chart buckets evenly while preserving the first and last bucket.
+ * @param buckets Full chart bucket list.
+ * @param maxBuckets Maximum number of buckets to keep.
+ * @returns Bounded bucket list for Chart.js rendering.
+ */
+function downsampleLineChartBuckets(
+	buckets: DashboardAggregationChartBucket[],
+	maxBuckets: number,
+): DashboardAggregationChartBucket[] {
+	if (buckets.length <= maxBuckets) {
+		return buckets;
+	}
+
+	if (maxBuckets <= 0) {
+		return [];
+	}
+
+	if (maxBuckets === 1) {
+		return [buckets[0]];
+	}
+
+	const lastIndex = buckets.length - 1;
+	const step = lastIndex / (maxBuckets - 1);
+
+	return Array.from({ length: maxBuckets }, (_, index) => {
+		const bucketIndex =
+			index === maxBuckets - 1 ? lastIndex : Math.round(index * step);
+		return buckets[bucketIndex];
+	});
+}
+
+/**
+ * Caps chart buckets according to the dashboard chart type.
+ * @param buckets Full chart bucket list.
+ * @param chartType Dashboard chart renderer type.
+ * @param maxBuckets Maximum number of buckets to keep.
+ * @returns Bounded bucket list for Chart.js rendering.
+ */
+function limitDashboardChartBuckets(
+	buckets: DashboardAggregationChartBucket[],
+	chartType: Extract<
+		NormalizeDashboardAggregationPayload,
+		{ mode: "dashboard_chart" }
+	>["chartType"],
+	maxBuckets: number,
+): DashboardAggregationChartBucket[] {
+	if (buckets.length <= maxBuckets) {
+		return buckets;
+	}
+
+	if (chartType === "line_chart") {
+		return downsampleLineChartBuckets(buckets, maxBuckets);
+	}
+
+	return buckets.slice(0, Math.max(0, maxBuckets));
+}
+
+/**
+ * Normalizes fixed dashboard chart buckets away from the main React render path.
+ * @param payload Dashboard chart normalization payload.
+ * @returns Capped chart bucket result with metadata about the original response size.
+ */
+function normalizeDashboardChartAggregation(
+	payload: Extract<NormalizeDashboardAggregationPayload, { mode: "dashboard_chart" }>,
+): Extract<NormalizeDashboardAggregationResult, { mode: "dashboard_chart" }> {
+	const buckets = getFirstDashboardBucketAggregation(payload.response).map(
+		toDashboardChartBucket,
+	);
+	const limitedBuckets = limitDashboardChartBuckets(
+		buckets,
+		payload.chartType,
+		payload.maxChartBuckets,
+	);
+
+	return {
+		mode: "dashboard_chart",
+		buckets: limitedBuckets,
+		isChartLimited: limitedBuckets.length < buckets.length,
+		originalBucketCount: buckets.length,
+	};
+}
+
+/**
+ * Converts top/rare aggregation buckets into table rows in the worker.
+ * @param payload Field-value aggregation normalization payload.
+ * @returns Table rows with value, count, and percentage columns.
+ */
+function normalizeDashboardValueAggregation(
+	payload: Extract<NormalizeDashboardAggregationPayload, { mode: "field_values" }>,
+): Extract<NormalizeDashboardAggregationResult, { mode: "field_values" }> {
+	const buckets = getFirstDashboardBucketAggregation(payload.response);
+	const total = Math.max(payload.response.total_hits, 1);
+
+	return {
+		mode: "field_values",
+		rows: buckets.map<DashboardAggregationValueRow>((bucket) => ({
+			value: String(bucket.key_as_string ?? bucket.key),
+			count: bucket.doc_count,
+			percent: Number(((bucket.doc_count / total) * 100).toFixed(2)),
+		})),
+	};
+}
+
+/**
+ * Checks whether a dynamic bucket value contains a nested bucket list.
+ * @param value Dynamic aggregation bucket property.
+ * @returns True when the value is a nested aggregation with buckets.
+ */
+function isNestedBucketAggregation(
+	value: unknown,
+): value is { buckets: GulpDataset.QueryAggregation.Bucket[] } {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		"buckets" in value &&
+		Array.isArray((value as { buckets?: unknown }).buckets)
+	);
+}
+
+/**
+ * Converts time-bucketed top-value aggregations into flat table rows in the worker.
+ * @param payload Time aggregation normalization payload.
+ * @returns Table rows with time, value, and count columns.
+ */
+function normalizeDashboardTimeAggregation(
+	payload: Extract<NormalizeDashboardAggregationPayload, { mode: "field_time" }>,
+): Extract<NormalizeDashboardAggregationResult, { mode: "field_time" }> {
+	const buckets = getFirstDashboardBucketAggregation(payload.response);
+	const rows: DashboardAggregationTimeRow[] = [];
+
+	buckets.forEach((bucket) => {
+		const time = String(bucket.key_as_string ?? bucket.key);
+		const nested = Object.values(bucket).find(isNestedBucketAggregation);
+
+		if (!nested) {
+			rows.push({
+				time,
+				value: "-",
+				count: bucket.doc_count,
+			});
+			return;
+		}
+
+		nested.buckets.forEach((nestedBucket) => {
+			rows.push({
+				time,
+				value: String(nestedBucket.key_as_string ?? nestedBucket.key),
+				count: nestedBucket.doc_count,
+			});
+		});
+	});
+
+	return { mode: "field_time", rows };
+}
+
+/**
+ * Normalizes dashboard aggregation responses into render-ready data.
+ * @param payload Dashboard aggregation normalization payload.
+ * @returns Render-ready chart buckets or table rows.
+ */
+function normalizeDashboardAggregation(
+	payload: NormalizeDashboardAggregationPayload,
+): NormalizeDashboardAggregationResult {
+	switch (payload.mode) {
+		case "dashboard_chart":
+			return normalizeDashboardChartAggregation(payload);
+		case "field_values":
+			return normalizeDashboardValueAggregation(payload);
+		case "field_time":
+			return normalizeDashboardTimeAggregation(payload);
+	}
+}
+
 self.onmessage = (event: MessageEvent<DataWorkerRequest>) => {
 	const { type, payload, id } = event.data;
 
@@ -257,6 +469,14 @@ self.onmessage = (event: MessageEvent<DataWorkerRequest>) => {
 				self.postMessage({
 					id,
 					result: { batches: normalizeQueryDocs(payload) },
+				});
+				break;
+			}
+
+			case "NORMALIZE_DASHBOARD_AGGREGATION": {
+				self.postMessage({
+					id,
+					result: normalizeDashboardAggregation(payload),
 				});
 				break;
 			}

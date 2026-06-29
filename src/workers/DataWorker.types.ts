@@ -1,5 +1,6 @@
 import type { Doc } from "@/entities/Doc";
 import type { Source } from "@/entities/Source";
+import type { GulpDataset } from "@/class/Info";
 import type { HashFunctionName } from "@/ui/utils";
 
 export type TimestampInput =
@@ -43,16 +44,77 @@ export interface BinarySearchDescPayload {
 	findFirst: boolean;
 }
 
+export type DashboardAggregationMode =
+	| "dashboard_chart"
+	| "field_values"
+	| "field_time";
+
+export type DashboardAggregationChartType = "line_chart" | "vertical_chart";
+
+export interface DashboardAggregationChartBucket {
+	label: string;
+	value: number;
+	sourceId?: string;
+}
+
+export interface DashboardAggregationValueRow
+	extends Record<string, string | number> {
+	value: string;
+	count: number;
+	percent: number;
+}
+
+export interface DashboardAggregationTimeRow
+	extends Record<string, string | number> {
+	time: string;
+	value: string;
+	count: number;
+}
+
+export type NormalizeDashboardAggregationPayload =
+	| {
+			mode: "dashboard_chart";
+			response: GulpDataset.QueryAggregation.Response;
+			chartType: DashboardAggregationChartType;
+			maxChartBuckets: number;
+	  }
+	| {
+			mode: "field_values";
+			response: GulpDataset.QueryAggregation.Response;
+	  }
+	| {
+			mode: "field_time";
+			response: GulpDataset.QueryAggregation.Response;
+	  };
+
+export type NormalizeDashboardAggregationResult =
+	| {
+			mode: "dashboard_chart";
+			buckets: DashboardAggregationChartBucket[];
+			isChartLimited: boolean;
+			originalBucketCount: number;
+	  }
+	| {
+			mode: "field_values";
+			rows: DashboardAggregationValueRow[];
+	  }
+	| {
+			mode: "field_time";
+			rows: DashboardAggregationTimeRow[];
+	  };
+
 export interface DataWorkerPayloadMap {
 	SORT_EVENTS: TimestampedWorkerItem[];
 	BINARY_SEARCH_DESC: BinarySearchDescPayload;
 	NORMALIZE_QUERY_DOCS: NormalizeQueryDocsPayload;
+	NORMALIZE_DASHBOARD_AGGREGATION: NormalizeDashboardAggregationPayload;
 }
 
 export interface DataWorkerResultMap {
 	SORT_EVENTS: TimestampedWorkerItem[];
 	BINARY_SEARCH_DESC: number;
 	NORMALIZE_QUERY_DOCS: NormalizeQueryDocsResult;
+	NORMALIZE_DASHBOARD_AGGREGATION: NormalizeDashboardAggregationResult;
 }
 
 export type DataWorkerAction = keyof DataWorkerPayloadMap;
