@@ -2,13 +2,11 @@ name: ci
 
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   DOCKER_REPOSITORY: mentatis
@@ -26,23 +24,18 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Git identity
+      - name: Validate release tag
+        id: release
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin master --tags --force
+          tag_commit="$(git rev-list -n 1 "${GITHUB_REF_NAME}")"
 
-      - name: Ensure VERSION
-        run: |
-          test -f VERSION || echo "1.0" > VERSION
-          cat VERSION
+          if ! git merge-base --is-ancestor "${tag_commit}" origin/master; then
+            echo "Tag ${GITHUB_REF_NAME} does not point to a commit contained in origin/master."
+            exit 1
+          fi
 
-      - name: Compute and tag version (no push yet)
-        id: rel
-        env:
-          PUSH_TAGS: "0"
-        run: |
-          v="$(bash scripts/release.sh)"
-          echo "version=${v}" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -59,7 +52,7 @@ jobs:
 
       - name: Build
         env:
-          APP_VERSION: ${{ steps.rel.outputs.version }}
+          APP_VERSION: ${{ steps.release.outputs.version }}
         run: |
           export PATH="$HOME/.local/share/pnpm:$PATH"
           pnpm run build
@@ -76,7 +69,7 @@ jobs:
       - name: Docker meta
         id: meta
         run: |
-          V="${{ steps.rel.outputs.version }}"
+          V="${{ steps.release.outputs.version }}"
           echo "tag=${{ env.DOCKER_REPOSITORY }}/${{ env.DOCKER_IMAGE_NAME }}:${V}" >> "$GITHUB_OUTPUT"
           echo "latest=${{ env.DOCKER_REPOSITORY }}/${{ env.DOCKER_IMAGE_NAME }}:latest" >> "$GITHUB_OUTPUT"
 
@@ -86,12 +79,8 @@ jobs:
           context: .
           push: true
           build-args: |
-            _VERSION=${{ steps.rel.outputs.version }}
+            _VERSION=${{ steps.release.outputs.version }}
           tags: |
             ${{ steps.meta.outputs.tag }}
             ${{ steps.meta.outputs.latest }}
           no-cache: true
-
-      - name: Push tag
-        run: git push --tags
-        continue-on-error: true

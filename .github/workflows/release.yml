@@ -9,6 +9,9 @@ on:
         description: "Minor"
         required: true
 
+permissions:
+  contents: write
+
 jobs:
   tag:
     runs-on: ubuntu-latest
@@ -23,5 +26,3 @@ jobs:
         id: rel
         run: |
           scripts/release.sh --major "${{ github.event.inputs.major }}" --minor "${{ github.event.inputs.minor }}"
-      - name: Push tag
-        run: git push --tags
