@@ -1,3 +1,19 @@
+# v1.7.601
+
+## New Features
+
+- `Saved Plugin Mappings`: Added IndexedDB persistence for custom plugin mappings, including a Last Mappings panel to load, preview, and delete saved mappings per plugin.
+- `Mapping File Upload`: Added support for uploading custom mapping JSON files to the backend from advanced plugin parameters.
+- `Hash Function Selection`: Added configurable source hash functions (`fnv1a`, `djb2`, and `sdbm`) for event field hashing and color calculations.
+- `Custom Color Resolution`: Expanded source color handling with custom palettes, precomputed color overrides, and shared color resolution across event and graph rendering.
+
+## Fixes and Stability
+
+- `Graph Semi-Log Rendering`: Improved graph rendering with semi-log normalization, viewport culling, and clearer density coloring for high-volume buckets.
+- `Ingest Preview Reliability`: Fixed ingest preview loading so missing or failed preview responses return an empty preview instead of leaving stale or broken state.
+- `Mapping List Refresh`: Cached and refreshed mapping file lists after uploads to keep plugin mapping selectors in sync.
+- `Session Source Settings`: Preserved source hash settings when creating and loading sessions.
+
 # v1.7.400
 
 ## Performance and Engine Optimizations
