@@ -431,7 +431,19 @@ export namespace Source {
 		};
 
 		/**
-		 * Resolves the render color for a numeric event value with an O(1) override lookup.
+		 * Resolves only the explicit override color for a numeric event value.
+		 *
+		 * @param file Source whose render settings own the optional color override table.
+		 * @param value Numeric hash used for override lookup.
+		 * @returns Override color when configured for the value, otherwise undefined.
+		 */
+		public static resolveOverrideColor = (
+			file: Source.Type,
+			value: number,
+		): string | undefined => file.settings.color_override?.lookup?.[value];
+
+		/**
+		 * Resolves the render color for a numeric event value with override priority.
 		 *
 		 * @param file Source whose render settings own the optional color override table.
 		 * @param value Numeric hash or bucket amount used for color resolution.
@@ -443,7 +455,7 @@ export namespace Source {
 			value: number,
 			range: MinMax,
 		): string => {
-			const overrideColor = file.settings.color_override?.lookup?.[value];
+			const overrideColor = Source.Entity.resolveOverrideColor(file, value);
 			if (overrideColor) {
 				return overrideColor;
 			}
