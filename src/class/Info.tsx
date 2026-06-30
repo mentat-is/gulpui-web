@@ -3312,7 +3312,7 @@ export class Info implements InfoProps {
 				const deletedNote = DataStore.notes[index];
 				DataStore.notes.splice(index, 1);
 				Note.Entity.removeIndexedNote(deletedNote);
-				RenderEngine.reset("notes");
+				RenderEngine.resetSourceNotes(deletedNote.source_id);
 				DataStore.markDirtySoon();
 			}
 		});
@@ -3333,15 +3333,17 @@ export class Info implements InfoProps {
 			},
 			body: { ids },
 		}).then(() => {
+			const affectedSourceIds = new Set<Source.Id>();
 			ids.forEach((id) => {
 				const index = DataStore.notes.findIndex((n) => n.id === id);
 				if (index !== -1) {
 					const deletedNote = DataStore.notes[index];
+					affectedSourceIds.add(deletedNote.source_id);
 					DataStore.notes.splice(index, 1);
 					Note.Entity.removeIndexedNote(deletedNote);
 				}
 			});
-			RenderEngine.reset("notes");
+			this.resetNoteRenderCaches(affectedSourceIds);
 			DataStore.markDirtySoon();
 		});
 
@@ -4084,7 +4086,27 @@ export class Info implements InfoProps {
 	}
 
 	/**
-	 * Adds or updates multiple notes while sorting and invalidating render caches once.
+	 * Adds or updates collab notes received outside a direct API response.
+	 * @param notes Raw notes returned by a websocket message.
+	 * @returns Normalized notes stored in DataStore.
+	 */
+	public notes_upsert_from_collab(notes: Note.Type[]): Note.Type[] {
+		return this.AddNotesToDataStore(notes);
+	}
+
+	/**
+	 * Clears note render caches only for sources touched by an upsert batch.
+	 * @param sourceIds Source identifiers that received new or updated notes.
+	 * @returns Nothing.
+	 */
+	private resetNoteRenderCaches(sourceIds: Set<Source.Id>): void {
+		sourceIds.forEach((sourceId) => {
+			RenderEngine.resetSourceNotes(sourceId);
+		});
+	}
+
+	/**
+	 * Adds or updates multiple notes while sorting and invalidating affected source render caches once.
 	 * @param notes Raw notes returned by an API or websocket message.
 	 * @returns Normalized notes stored in DataStore.
 	 */
@@ -4095,14 +4117,17 @@ export class Info implements InfoProps {
 			Note.Entity.normalize_note(this.app, note),
 		);
 		const noteIndexById = new Map<Note.Id, number>();
+		const affectedSourceIds = new Set<Source.Id>();
 		DataStore.notes.forEach((storedNote, index) => {
 			noteIndexById.set(storedNote.id, index);
 		});
 
 		normalizedNotes.forEach((note) => {
+			affectedSourceIds.add(note.source_id);
 			const index = noteIndexById.get(note.id);
 			if (typeof index === "number") {
 				const previousNote = DataStore.notes[index];
+				affectedSourceIds.add(previousNote.source_id);
 				DataStore.notes[index] = note;
 				Note.Entity.upsertIndexedNote(note, previousNote);
 				return;
@@ -4116,7 +4141,7 @@ export class Info implements InfoProps {
 		DataStore.notes.sort(
 			(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
 		);
-		RenderEngine.reset("notes");
+		this.resetNoteRenderCaches(affectedSourceIds);
 		DataStore.markDirtySoon();
 		return normalizedNotes;
 	}

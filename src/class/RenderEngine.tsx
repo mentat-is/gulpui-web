@@ -1114,6 +1114,15 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	};
 
 	/**
+	 * Clears note grouping cache for one source after its notes change.
+	 * @param sourceId Source identifier whose note groups should be recalculated.
+	 * @returns Nothing.
+	 */
+	public static resetSourceNotes = (sourceId: Source.Id): void => {
+		RenderEngine[CacheKey].notes.delete(sourceId);
+	};
+
+	/**
 	 * Clears render caches that are scoped to one source after its events change.
 	 * @param sourceId Source identifier whose cached render data should be invalidated.
 	 * @returns Nothing.

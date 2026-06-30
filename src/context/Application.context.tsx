@@ -18,11 +18,32 @@ import { Note } from "@/entities/Note";
 import { Link } from "@/entities/Link";
 import { Source } from "@/entities/Source";
 import { App } from "@/entities/App";
+import { Context } from "@/entities/Context";
 import { DataStore } from "@/store/DataStore";
 import { RenderEngine } from "@/class/RenderEngine";
 import { Operation } from "@/entities/Operation";
 import { useLocation } from "react-router-dom";
 import { translate } from "@/locales/core";
+
+interface CollabPayloadObject {
+	type?: string;
+	id?: string;
+}
+
+/**
+ * Normalizes a websocket collab payload object into typed object entries.
+ * @param payloadObject Single object or object array from the websocket payload.
+ * @returns Payload objects that expose a collab type discriminator.
+ */
+function getCollabPayloadObjects(payloadObject: unknown): CollabPayloadObject[] {
+	const objects = Array.isArray(payloadObject) ? payloadObject : [payloadObject];
+	return objects.filter(
+		(obj): obj is CollabPayloadObject =>
+			typeof obj === "object" &&
+			obj !== null &&
+			typeof (obj as CollabPayloadObject).type === "string",
+	);
+}
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
@@ -91,34 +112,46 @@ function _({ children }: { children: ReactNode }) {
 		if (!SmartSocket.Class.instance) return;
 
 		/**
-		 * Handles incoming collab create messages (context/source) from WebSocket.
+		 * Handles incoming collab create messages from WebSocket.
 		 * This ensures the UI is reactive to new items regardless of who created them.
 		 */
 		const collabCreateCallback = (message: any) => {
-			const obj = message.payload.obj;
-			if (obj.type === "context") {
-				setInfo((prev) => {
-					if (prev.target.contexts.find((c) => c.id === obj.id)) return prev;
-					return {
-						...prev,
-						target: {
-							...prev.target,
-							contexts: [...prev.target.contexts, obj],
-						},
-					};
-				});
-			} else if (obj.type === "source") {
-				setInfo((prev) => {
-					if (prev.target.files.find((f) => f.id === obj.id)) return prev;
-					return {
-						...prev,
-						target: {
-							...prev.target,
-							files: [...prev.target.files, Source.Entity.normalize(prev, obj)],
-						},
-					};
-				});
+			const objects = getCollabPayloadObjects(message.payload.obj);
+			const notes = objects.filter((obj) => obj.type === "note") as Note.Type[];
+			if (notes.length > 0) {
+				instanceRef.current.notes_upsert_from_collab(notes);
 			}
+
+			objects.forEach((obj) => {
+				if (obj.type === "context") {
+					const context = obj as Context.Type;
+					setInfo((prev) => {
+						if (prev.target.contexts.find((c) => c.id === context.id)) return prev;
+						return {
+							...prev,
+							target: {
+								...prev.target,
+								contexts: [...prev.target.contexts, context],
+							},
+						};
+					});
+				} else if (obj.type === "source") {
+					const source = obj as Source.Type;
+					setInfo((prev) => {
+						if (prev.target.files.find((f) => f.id === source.id)) return prev;
+						return {
+							...prev,
+							target: {
+								...prev.target,
+								files: [
+									...prev.target.files,
+									Source.Entity.normalize(prev, source),
+								],
+							},
+						};
+					});
+				}
+			});
 		};
 
 		/**
@@ -127,24 +160,9 @@ function _({ children }: { children: ReactNode }) {
 		const collabUpdateCallback = (message: any) => {
 			switch (message.payload.obj.type) {
 				case "note": {
-					const note: Note.Type = Note.Entity.normalize_note(
-						app,
-						message.payload.obj,
-					);
-					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
-					if (idx >= 0) {
-						const previousNote = DataStore.notes[idx];
-						DataStore.notes[idx] = note;
-						Note.Entity.upsertIndexedNote(note, previousNote);
-					} else {
-						DataStore.notes.push(note);
-						Note.Entity.upsertIndexedNote(note);
-					}
-					DataStore.notes.sort(
-						(a, b) => Note.Entity.timestamp(b) - Note.Entity.timestamp(a),
-					);
-					RenderEngine.reset("notes");
-					DataStore.markDirtySoon();
+					instanceRef.current.notes_upsert_from_collab([
+						message.payload.obj as Note.Type,
+					]);
 					return;
 				}
 				case "link": {
@@ -178,7 +196,7 @@ function _({ children }: { children: ReactNode }) {
 				const deletedNote = DataStore.notes[noteIdx];
 				DataStore.notes.splice(noteIdx, 1);
 				Note.Entity.removeIndexedNote(deletedNote);
-				RenderEngine.reset("notes");
+				RenderEngine.resetSourceNotes(deletedNote.source_id);
 				DataStore.markDirtySoon();
 				return;
 			}
