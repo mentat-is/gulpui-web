@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import {
+	useState,
+	useEffect,
+	useCallback,
+	useRef,
+	useMemo,
+	type SetStateAction,
+} from "react";
 import { Application } from "@/context/Application.context";
 import { Input } from "@/ui/Input";
 import { Stack } from "@/ui/Stack";
@@ -9,7 +16,6 @@ import { Popover } from "@/ui/Popover";
 import { Label } from "@/ui/Label";
 import { Table } from "@/components/Table";
 import { Source } from "@/entities/Source";
-import { Context } from "@/entities/Context";
 import { Query } from "@/entities/Query";
 import s from "./styles/TableViewWindow.module.css";
 import { cn } from "@/ui/utils";
@@ -41,6 +47,15 @@ export namespace TableViewWindow {
 
 type TableEventRow = Doc.Type & Record<string, unknown>;
 
+type OpenSearchBoolQuery = Record<string, unknown> & {
+	bool?: {
+		must?: Record<string, unknown>[];
+		should?: Record<string, unknown>[];
+		must_not?: Record<string, unknown>[];
+		filter?: Record<string, unknown>[];
+	};
+};
+
 const DEFAULT_HIDDEN_FIELDS: string[] = [
 	"_id",
 	"gulp.source_id",
@@ -54,6 +69,72 @@ const DEFAULT_HIDDEN_FIELDS: string[] = [
 ];
 
 const DEFAULT_HIDDEN_FIELD_SET = new Set(DEFAULT_HIDDEN_FIELDS);
+
+/**
+ * Creates a stable signature for source-id selections.
+ * @param sourceIds Selected source identifiers.
+ * @returns Sorted comma-separated source-id signature.
+ */
+function getSourceIdsSignature(sourceIds: Source.Id[]): string {
+	return [...sourceIds].sort((a, b) => a.localeCompare(b)).join(",");
+}
+
+/**
+ * Derives the widest nanosecond time range covered by the selected sources.
+ * @param sources Selected source entities.
+ * @param fallback Timeline range used when sources do not expose nanotimestamps.
+ * @returns Nanosecond min/max strings for table query scoping.
+ */
+function getSelectedSourcesTimeFrame(
+	sources: Source.Type[],
+	fallback: { min: string; max: string },
+): { min: string; max: string } {
+	if (sources.length === 0) {
+		return fallback;
+	}
+
+	const minValues = sources
+		.map((source) => source.nanotimestamp?.min)
+		.filter((value): value is bigint => typeof value === "bigint");
+	const maxValues = sources
+		.map((source) => source.nanotimestamp?.max)
+		.filter((value): value is bigint => typeof value === "bigint");
+
+	if (minValues.length === 0 || maxValues.length === 0) {
+		return fallback;
+	}
+
+	return {
+		min: minValues
+			.reduce((min, value) => (value < min ? value : min))
+			.toString(),
+		max: maxValues
+			.reduce((max, value) => (value > max ? value : max))
+			.toString(),
+	};
+}
+
+/**
+ * Adds a flagged-document id restriction to an OpenSearch bool query.
+ * @param query OpenSearch query generated from the structured Query.Type.
+ * @param flaggedDocIds Flagged document identifiers for the active operation.
+ * @returns Query with a terms clause restricting results to flagged documents.
+ */
+function withFlaggedDocumentFilter(
+	query: OpenSearchBoolQuery,
+	flaggedDocIds: Doc.Id[],
+): OpenSearchBoolQuery {
+	const bool = query.bool ?? {};
+	const must = bool.must ?? [];
+
+	return {
+		...query,
+		bool: {
+			...bool,
+			must: [...must, { terms: { _id: flaggedDocIds } }],
+		},
+	};
+}
 
 /**
  * Helper component for date selection using datetime-local input.
@@ -168,7 +249,7 @@ function InputISOSelection({
 
 /**
  * TableViewWindow Component
- * Opens a paginated table view of raw events for a specific source.
+ * Opens a paginated table view of raw events for one or more sources.
  */
 export function TableViewWindow({
 	initialSourceId,
@@ -182,21 +263,46 @@ export function TableViewWindow({
 
 	// --- Selection & Sync State ---
 	const [isSynced, setIsSynced] = useState<boolean>(false);
-	const [selectedSourceId, setSelectedSourceId] = useState<Source.Id | null>(
-		initialSourceId ?? null,
+	const [selectedSourceIds, setSelectedSourceIds] = useState<Source.Id[]>(
+		initialSourceId ? [initialSourceId] : [],
 	);
 
-	const selectedSource = useMemo(
-		() => (selectedSourceId ? Source.Entity.id(app, selectedSourceId) : null),
-		[app, selectedSourceId],
+	const selectedSourceIdsSignature = useMemo(
+		() => getSourceIdsSignature(selectedSourceIds),
+		[selectedSourceIds],
 	);
 
+	const selectedSources = useMemo(
+		() =>
+			selectedSourceIds
+				.map((sourceId) => Source.Entity.id(app, sourceId))
+				.filter((source): source is Source.Type => !!source),
+		[app, app.target.files, selectedSourceIdsSignature],
+	);
+
+	const selectedSourcesSignature = useMemo(
+		() => getSourceIdsSignature(selectedSources.map((source) => source.id)),
+		[selectedSources],
+	);
+
+	const primarySelectedSource = selectedSources[0] ?? null;
+	const isMultiSourceSelection = selectedSources.length > 1;
+	const isSyncActive = isSynced && !isMultiSourceSelection;
 	const selectedOperationId = app.target.operations.find((o) => o.selected)?.id;
+	const activeOperationId =
+		selectedOperationId ?? primarySelectedSource?.operation_id ?? null;
+
+	useEffect(() => {
+		if (isMultiSourceSelection && isSynced) {
+			setIsSynced(false);
+		}
+	}, [isMultiSourceSelection, isSynced]);
 
 	// --- Filter Derived State ---
-	const syncedSourceFilter = selectedSourceId
-		? app.target.filters?.[selectedSourceId]
-		: null;
+	const syncedSourceFilter =
+		isSyncActive && primarySelectedSource
+			? app.target.filters?.[primarySelectedSource.id]
+			: null;
 
 	const serializedFilters = useMemo(() => {
 		return JSON.stringify(syncedSourceFilter?.filters || []);
@@ -210,21 +316,23 @@ export function TableViewWindow({
 	> | null>(null);
 
 	useEffect(() => {
-		if (!selectedSource) {
+		if (selectedSources.length === 0) {
 			setLocalFieldTypeMap(null);
 			return;
 		}
 
 		let cancelled = false;
 		(async () => {
-			// We always fetch source-specific keys to avoid displaying merged fields
-			// from other sources that might be present in the synced filter.
-			const fileKeys = await Info.event_keys(selectedSource);
+			const map: Record<string, string> = {};
+			await Promise.all(
+				selectedSources.map(async (source) => {
+					const fileKeys = await Info.event_keys(source);
+					Object.entries(fileKeys).forEach(([key, type]) => {
+						map[key] = type as string;
+					});
+				}),
+			);
 			if (!cancelled) {
-				const map: Record<string, string> = {};
-				Object.entries(fileKeys).forEach(([k, t]) => {
-					map[k] = t as string;
-				});
 				setLocalFieldTypeMap(map);
 			}
 		})();
@@ -232,7 +340,7 @@ export function TableViewWindow({
 		return () => {
 			cancelled = true;
 		};
-	}, [selectedSource, Info]);
+	}, [selectedSources, Info]);
 
 	const columns = useMemo(() => {
 		if (!localFieldTypeMap) return undefined;
@@ -319,6 +427,13 @@ export function TableViewWindow({
 	const [manual, setManual] = useState(false);
 	const [isMinValid, setIsMinValid] = useState(true);
 	const [isMaxValid, setIsMaxValid] = useState(true);
+	const timelineTimeFrame = useMemo(
+		() => ({
+			min: (app.timeline.frame.min * 1000000).toString(),
+			max: (app.timeline.frame.max * 1000000).toString(),
+		}),
+		[app.timeline.frame.min, app.timeline.frame.max],
+	);
 	const [timeFrame, setTimeFrame] = useState<{ min: string; max: string }>({
 		min: (app.timeline.frame.min * 1000000).toString(),
 		max: (app.timeline.frame.max * 1000000).toString(),
@@ -328,6 +443,8 @@ export function TableViewWindow({
 	const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 	const [localFilters, setLocalFilters] = useState<Filter.Item[]>([]);
 	const [appliedFilters, setAppliedFilters] = useState<Filter.Item[]>([]);
+	const [localFlaggedOnly, setLocalFlaggedOnly] = useState(false);
+	const [appliedFlaggedOnly, setAppliedFlaggedOnly] = useState(false);
 
 	// --- Performance Optimization: State Adjustment during Rendering ---
 	/**
@@ -337,9 +454,9 @@ export function TableViewWindow({
 	 * This prevents "useEffect cascades" that cause double-fetches.
 	 */
 	const [prevSync, setPrevSync] = useState({
-		sourceId: selectedSourceId,
+		sourceIdsSignature: selectedSourcesSignature,
 		operationId: selectedOperationId,
-		isSynced,
+		isSynced: isSyncActive,
 		filters: serializedFilters,
 		textFilter: syncedTextFilter,
 		timelineMin: app.timeline.frame.min,
@@ -347,10 +464,10 @@ export function TableViewWindow({
 	});
 
 	const hasLogicalChange =
-		prevSync.sourceId !== selectedSourceId ||
+		prevSync.sourceIdsSignature !== selectedSourcesSignature ||
 		prevSync.operationId !== selectedOperationId ||
-		prevSync.isSynced !== isSynced ||
-		(isSynced &&
+		prevSync.isSynced !== isSyncActive ||
+		(isSyncActive &&
 			(prevSync.filters !== serializedFilters ||
 				prevSync.textFilter !== syncedTextFilter)) ||
 		prevSync.timelineMin !== app.timeline.frame.min ||
@@ -358,12 +475,13 @@ export function TableViewWindow({
 
 	if (hasLogicalChange) {
 		const opChanged = prevSync.operationId !== selectedOperationId;
-		const sourceChanged = prevSync.sourceId !== selectedSourceId;
+		const sourceChanged =
+			prevSync.sourceIdsSignature !== selectedSourcesSignature;
 
 		setPrevSync({
-			sourceId: selectedSourceId,
+			sourceIdsSignature: selectedSourcesSignature,
 			operationId: selectedOperationId,
-			isSynced,
+			isSynced: isSyncActive,
 			filters: serializedFilters,
 			textFilter: syncedTextFilter,
 			timelineMin: app.timeline.frame.min,
@@ -382,24 +500,25 @@ export function TableViewWindow({
 		}
 
 		if (opChanged) {
-			setSelectedSourceId(null);
+			setSelectedSourceIds((previousSourceIds) =>
+				previousSourceIds.filter((sourceId) => {
+					const source = Source.Entity.id(app, sourceId);
+					if (source) {
+						return source.operation_id === selectedOperationId;
+					}
+
+					return app.target.files.length === 0;
+				}),
+			);
 		}
 
 		// Sync timeframe
-		if (isSynced) {
-			setTimeFrame({
-				min: (app.timeline.frame.min * 1000000).toString(),
-				max: (app.timeline.frame.max * 1000000).toString(),
-			});
-		} else if (sourceChanged && selectedSource) {
-			setTimeFrame({
-				min: selectedSource.nanotimestamp?.min
-					? selectedSource.nanotimestamp.min.toString()
-					: (app.timeline.frame.min * 1000000).toString(),
-				max: selectedSource.nanotimestamp?.max
-					? selectedSource.nanotimestamp.max.toString()
-					: (app.timeline.frame.max * 1000000).toString(),
-			});
+		if (isSyncActive) {
+			setTimeFrame(timelineTimeFrame);
+		} else if (sourceChanged && selectedSources.length > 0) {
+			setTimeFrame(
+				getSelectedSourcesTimeFrame(selectedSources, timelineTimeFrame),
+			);
 		}
 	}
 
@@ -420,11 +539,17 @@ export function TableViewWindow({
 	const activeMin = timeFrame.min;
 	const activeMax = timeFrame.max;
 	const activeFilters =
-		isSynced && selectedSourceId ? app.target.filters[selectedSourceId] : null;
-	const activeSerializedFilters = isSynced
+		isSyncActive && primarySelectedSource
+			? app.target.filters?.[primarySelectedSource.id]
+			: null;
+	const activeSerializedFilters = isSyncActive
 		? serializedFilters
 		: JSON.stringify(appliedFilters);
-	const activeTextFilter = isSynced ? syncedTextFilter : searchQuery;
+	const activeTextFilter = isSyncActive ? syncedTextFilter : searchQuery;
+	const activeFlaggedDocIdsSignature =
+		appliedFlaggedOnly && activeOperationId
+			? Array.from(Doc.Entity.flag.getList(activeOperationId)).join(",")
+			: "";
 	const renderableColumns = useMemo(
 		() =>
 			columns?.filter(
@@ -440,16 +565,17 @@ export function TableViewWindow({
 	 * Uses query_paginate to retrieve a specific slice of data based on current state.
 	 */
 	const fetchTableData = useCallback(async () => {
-		if (!selectedSource) return;
+		if (!primarySelectedSource || !activeOperationId) return;
 		tableRequestControllerRef.current?.abort();
 		const requestController = new AbortController();
 		tableRequestControllerRef.current = requestController;
 		setLoading(true);
 		try {
 			let queryObj: Query.Type;
+			const sourceIds = selectedSources.map((source) => source.id);
 
 			// Branch logic: Determine if we use synced global filters or local search query
-			if (isSynced) {
+			if (isSyncActive) {
 				if (activeFilters) {
 					queryObj = {
 						...activeFilters,
@@ -458,9 +584,8 @@ export function TableViewWindow({
 						source_config: {
 							...(activeFilters.source_config ?? {}),
 							operation_id:
-								activeFilters.source_config?.operation_id ??
-								selectedSource.operation_id,
-							source_ids: [selectedSource.id],
+								activeFilters.source_config?.operation_id ?? activeOperationId,
+							source_ids: sourceIds,
 							range: { min: activeMin, max: activeMax },
 						},
 					};
@@ -470,11 +595,11 @@ export function TableViewWindow({
 						filters: [],
 						text_filter: "",
 						source_config: {
-							operation_id: selectedSource.operation_id,
-							source_ids: [selectedSource.id],
+							operation_id: activeOperationId,
+							source_ids: sourceIds,
 							range: { min: activeMin, max: activeMax },
 						},
-					} as any;
+					};
 				}
 			} else {
 				queryObj = {
@@ -482,11 +607,33 @@ export function TableViewWindow({
 					filters: appliedFilters,
 					text_filter: searchQuery,
 					source_config: {
-						operation_id: selectedSource.operation_id,
-						source_ids: [selectedSource.id],
+						operation_id: activeOperationId,
+						source_ids: sourceIds,
 						range: { min: activeMin, max: activeMax },
 					},
-				} as any;
+				};
+			}
+
+			if (appliedFlaggedOnly) {
+				const flaggedDocIds = Array.from(
+					Doc.Entity.flag.getList(activeOperationId),
+				);
+
+				if (flaggedDocIds.length === 0) {
+					setData([]);
+					setTotalHits(0);
+					setSelectedRows(new Set());
+					return;
+				}
+
+				queryObj = {
+					...queryObj,
+					isManual: true,
+					raw: withFlaggedDocumentFilter(
+						Filter.Entity.query(queryObj) as OpenSearchBoolQuery,
+						flaggedDocIds,
+					),
+				};
 			}
 
 			const limit = pageSize;
@@ -526,13 +673,15 @@ export function TableViewWindow({
 		// We use stable primitives (IDs and serialized strings) for dependencies to avoid
 		// redundant fetches when global object references change.
 	}, [
-		selectedSource?.id,
-		selectedSource?.operation_id,
-		isSynced,
+		selectedSourcesSignature,
+		activeOperationId,
+		isSyncActive,
 		activeMin,
 		activeMax,
 		activeSerializedFilters,
 		activeTextFilter,
+		appliedFlaggedOnly,
+		activeFlaggedDocIdsSignature,
 		pageSize,
 		currentPage,
 		sortField,
@@ -554,22 +703,27 @@ export function TableViewWindow({
 	// --- Event Handlers ---
 
 	/**
-	 * Commits current local filters and search query, then triggers a fetch.
+	 * Commits current local filters, search query, and flagged-only state.
+	 * @returns Nothing.
 	 */
 	const applyFilters = useCallback(() => {
 		setAppliedFilters(localFilters);
 		setSearchQuery(localSearchQuery);
+		setAppliedFlaggedOnly(localFlaggedOnly);
 		setCurrentPage(1);
-	}, [localFilters, localSearchQuery]);
+	}, [localFilters, localSearchQuery, localFlaggedOnly]);
 
 	/**
 	 * Clears all local and applied filter states.
+	 * @returns Nothing.
 	 */
 	const resetFilters = useCallback(() => {
 		setLocalFilters([]);
 		setAppliedFilters([]);
 		setLocalSearchQuery("");
 		setSearchQuery("");
+		setLocalFlaggedOnly(false);
+		setAppliedFlaggedOnly(false);
 		setCurrentPage(1);
 	}, []);
 
@@ -646,6 +800,8 @@ export function TableViewWindow({
 
 	/**
 	 * Selects or deselects all visible rows.
+	 * @param checked Whether all visible rows should be selected.
+	 * @returns Nothing.
 	 */
 	const handleSelectAll = (checked: boolean) => {
 		if (checked) {
@@ -657,9 +813,11 @@ export function TableViewWindow({
 
 	/**
 	 * Performs bulk operations (flagging or notes) on selected rows.
+	 * @param action Bulk operation requested by the action menu.
+	 * @returns Promise that resolves when the selected action has been handled.
 	 */
 	const handleBulkAction = async (action: "flagged" | "notes") => {
-		if (!selectedSource) return;
+		if (!activeOperationId) return;
 		if (selectedRows.size === 0) {
 			toast.error(t("tableView.noItemsSelected"));
 			return;
@@ -668,12 +826,12 @@ export function TableViewWindow({
 
 		if (action === "flagged") {
 			for (const doc of selectedDocs) {
-				Doc.Entity.flag.toggle(doc._id, selectedSource.operation_id);
+				Doc.Entity.flag.toggle(doc._id, activeOperationId);
 			}
 			const bridge = WindowBridge.create(WindowBridge.generateId(), () => {});
 			bridge.send(WindowBridge.MessageType.FLAGS_CHANGED, {
 				docId: selectedDocs[0]._id,
-				operationId: selectedSource.operation_id,
+				operationId: activeOperationId,
 			});
 			bridge.destroy();
 		} else if (action === "notes") {
@@ -689,18 +847,20 @@ export function TableViewWindow({
 
 	/**
 	 * Handles clicking an action on a specific row (usually to target an event in the main view).
+	 * @param doc Table row document selected by the row action.
+	 * @returns Nothing.
 	 */
 	const handleRowAction = useCallback(
 		(doc: TableEventRow) => {
-			if (!selectedSource) return;
+			if (!activeOperationId) return;
 			const bridge = WindowBridge.create(WindowBridge.generateId(), () => {});
 			bridge.send(WindowBridge.MessageType.TARGET_NOTE, {
 				docId: doc._id,
-				operationId: selectedSource.operation_id,
+				operationId: activeOperationId,
 			});
 			bridge.destroy();
 		},
-		[selectedSource?.operation_id],
+		[activeOperationId],
 	);
 
 	/**
@@ -709,14 +869,17 @@ export function TableViewWindow({
 	 * @param selected Whether the row is now selected.
 	 * @returns Nothing.
 	 */
-	const handleTableRowSelect = useCallback((index: number, selected: boolean) => {
-		setSelectedRows((prev) => {
-			const next = new Set(prev);
-			if (selected) next.add(index);
-			else next.delete(index);
-			return next;
-		});
-	}, []);
+	const handleTableRowSelect = useCallback(
+		(index: number, selected: boolean) => {
+			setSelectedRows((prev) => {
+				const next = new Set(prev);
+				if (selected) next.add(index);
+				else next.delete(index);
+				return next;
+			});
+		},
+		[],
+	);
 
 	const tableActions = useMemo<Table.Action<TableEventRow>[]>(
 		() => [
@@ -729,6 +892,23 @@ export function TableViewWindow({
 		[handleRowAction, t],
 	);
 
+	/**
+	 * Updates the selected source ids from the multi-source selector.
+	 * @param action Next source ids or a React updater function.
+	 * @returns Nothing.
+	 */
+	const handleSelectedSourcesChange = useCallback(
+		(action: SetStateAction<Source.Id[]>) => {
+			setSelectedSourceIds((previousSourceIds) => {
+				const nextSourceIds =
+					typeof action === "function" ? action(previousSourceIds) : action;
+
+				return Array.from(new Set(nextSourceIds));
+			});
+		},
+		[],
+	);
+
 	// --- Window Bridge Listener ---
 	useEffect(() => {
 		const bridgeId = WindowBridge.generateId();
@@ -736,7 +916,7 @@ export function TableViewWindow({
 			if (message.type === WindowBridge.MessageType.TABLE_SELECT_SOURCE) {
 				const payload =
 					message.payload as WindowBridge.TableSelectSourcePayload;
-				setSelectedSourceId(payload.sourceId as Source.Id);
+				setSelectedSourceIds([payload.sourceId as Source.Id]);
 			}
 		});
 		return () => bridge.destroy();
@@ -745,7 +925,17 @@ export function TableViewWindow({
 	// --- Constants ---
 
 	const isAllSelected = data.length > 0 && selectedRows.size === data.length;
-	const isInitialTableLoading = !localFieldTypeMap || (loading && data.length === 0);
+	const isInitialTableLoading =
+		selectedSources.length > 0 &&
+		(!localFieldTypeMap || (loading && data.length === 0));
+	const tableTitle =
+		selectedSources.length === 0
+			? t("tableView.title")
+			: selectedSources.length === 1
+				? `${t("tableView.title")}: ${primarySelectedSource?.name}`
+				: `${t("tableView.title")}: ${t("source.selectedSources", {
+						count: selectedSources.length,
+					})}`;
 
 	return (
 		<div
@@ -753,22 +943,24 @@ export function TableViewWindow({
 			ref={setContainer}
 		>
 			<div className={s.header}>
-				<h2>{t("tableView.title")}{selectedSource ? `: ${selectedSource.name}` : ""}</h2>
+				<h2>{tableTitle}</h2>
 				<TooltipProvider>
 					<Tooltip>
 						<TooltipTrigger asChild>
 							<span>
 								<Toggle
-									checked={isSynced}
+									checked={isSyncActive}
 									onCheckedChange={setIsSynced}
 									option={[t("tableView.detached"), t("tableView.synced")]}
-									disabled={!selectedSourceId}
+									disabled={
+										selectedSourceIds.length === 0 || isMultiSourceSelection
+									}
 								/>
 							</span>
 						</TooltipTrigger>
 						<TooltipContent>
 							<div style={{ maxWidth: 300 }}>
-								{isSynced
+								{isSyncActive
 									? t("tableView.syncedTooltip")
 									: t("tableView.detachedTooltip")}
 							</div>
@@ -779,38 +971,13 @@ export function TableViewWindow({
 
 			<div className={s.row1}>
 				<div className={s.sourceRow}>
-					<Select.Root
-						onValueChange={(val) => setSelectedSourceId(val as Source.Id)}
-						value={selectedSourceId || ""}
-					>
-						<Select.Trigger
-							data-no-icon
-							className={s.sourceSelectTrigger}
-						>
-							<Stack
-								gap={8}
-								ai="center"
-							>
-								<Icon name="File" />
-								<Select.Value placeholder={t("tableView.selectSource")} />
-							</Stack>
-						</Select.Trigger>
-						<Select.Content container={container}>
-							{Source.Entity.selected(app).map((f) => {
-								const ctx = Context.Entity.id(app, f.context_id);
-								return (
-									<Select.Item
-										key={f.id}
-										value={f.id}
-									>
-										{f.name} {ctx ? `(${ctx.name})` : ""}
-									</Select.Item>
-								);
-							})}
-						</Select.Content>
-					</Select.Root>
+					<Source.Select.Multi
+						selected={selectedSourceIds}
+						setSelected={handleSelectedSourcesChange}
+						placeholder={t("source.selectSources")}
+					/>
 				</div>
-				{!isSynced && (
+				{!isSyncActive && (
 					<TooltipProvider>
 						<div className={s.filtersSection}>
 							<Button
@@ -835,8 +1002,11 @@ export function TableViewWindow({
 										<Toggle
 											checked={manual}
 											onCheckedChange={setManual}
-											option={[t("tableView.selectDates"), t("tableView.isoString")]}
-											disabled={!selectedSourceId}
+											option={[
+												t("tableView.selectDates"),
+												t("tableView.isoString"),
+											]}
+											disabled={selectedSourceIds.length === 0}
 										/>
 									</Stack>
 									<div className={s.timeRow}>
@@ -877,6 +1047,24 @@ export function TableViewWindow({
 										setTextFilter={setLocalSearchQuery}
 										reset={() => setLocalSearchQuery("")}
 									/>
+									<Stack
+										ai="center"
+										gap={8}
+									>
+										<Checkbox
+											id="tableViewFlaggedOnly"
+											checked={localFlaggedOnly}
+											onCheckedChange={(checked) =>
+												setLocalFlaggedOnly(!!checked)
+											}
+										/>
+										<Label
+											htmlFor="tableViewFlaggedOnly"
+											value={t("filterFile.flaggedOnly")}
+											cursor="pointer"
+										/>
+										<Icon name="Flag" />
+									</Stack>
 									<OpenSearchQueryBuilder.Query.Add
 										filters={localFilters}
 										setFilters={setLocalFilters}
@@ -1063,13 +1251,15 @@ export function TableViewWindow({
 			</div>
 
 			<div className={s.result}>
-				{!selectedSourceId ? (
-					<div className={s.placeholder}>{t("tableView.selectSourceToViewEvents")}</div>
+				{selectedSources.length === 0 ? (
+					<div className={s.placeholder}>
+						{t("tableView.selectSourceToViewEvents")}
+					</div>
 				) : isInitialTableLoading ? (
 					<p className={s.label}>{t("tableView.loadingData")}</p>
 				) : data.length > 0 ? (
 					<Table
-						persistId={`table-${selectedSourceId}`}
+						persistId={`table-${selectedSourcesSignature}`}
 						columnVisibility={true}
 						values={data}
 						columns={renderableColumns}

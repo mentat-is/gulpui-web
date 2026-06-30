@@ -770,7 +770,8 @@ export namespace Source {
 					{...props}
 				>
 					<p>
-						{t("source.deleteConfirmBefore")} <code>{source.name}</code>. {t("source.deleteConfirmAfter")}
+						{t("source.deleteConfirmBefore")} <code>{source.name}</code>.{" "}
+						{t("source.deleteConfirmAfter")}
 					</p>
 					<Toggle
 						option={[t("common.noDontDelete"), t("common.yesImSure")]}
@@ -904,14 +905,14 @@ export namespace Source {
 			);
 		}
 
-			export function Multi({
-				sources,
-				selected,
-				setSelected,
-				placeholder,
-			}: Select.Multi.Props) {
-				const { app } = Application.use();
-				const { t } = Locale.use();
+		export function Multi({
+			sources,
+			selected,
+			setSelected,
+			placeholder,
+		}: Select.Multi.Props) {
+			const { app } = Application.use();
+			const { t } = Locale.use();
 
 			const all = useMemo(
 				() => sources ?? Source.Entity.selected(app),
@@ -957,6 +958,20 @@ export namespace Source {
 
 			const [isOpen, setIsOpen] = useState(false);
 
+			/**
+			 * Resolves the text shown by the multi-select trigger.
+			 * @param value Selected count or the single selected source id.
+			 * @returns Localized selection count, resolved source name, or loading text while detached state hydrates.
+			 */
+			const getSelectedSourceLabel = (value: number | string): string => {
+				if (typeof value === "number") {
+					return t("source.selectedSources", { count: value });
+				}
+
+				const source = Source.Entity.id(app, value as Source.Id);
+				return source?.name ?? t("common.loading");
+			};
+
 			return (
 				<UISelect.Multi.Root
 					value={selected}
@@ -967,18 +982,18 @@ export namespace Source {
 						<UISelect.Multi.Value
 							icon={["File", "Files"]}
 							placeholder={placeholder ?? t("source.selectSources")}
-							text={(len) =>
-								typeof len === "number"
-									? t("source.selectedSources", { count: len })
-									: Source.Entity.id(app, len as Source.Id).name
-							}
+							text={getSelectedSourceLabel}
 						/>
 					</UISelect.Trigger>
 					<UISelect.Content>
 						{isOpen && (
 							<>
 								<UISelect.Multi.ToggleAll
-									label={isAllSelected ? t("common.deselectAll") : t("common.selectAll")}
+									label={
+										isAllSelected
+											? t("common.deselectAll")
+											: t("common.selectAll")
+									}
 									checked={isAllSelected}
 									onToggle={(val) =>
 										setSelected(val ? all.map((s) => s.id) : [])
@@ -1038,7 +1053,9 @@ export namespace Source {
 			const { Info, app, spawnBanner, destroyBanner } = Application.use();
 			const { t } = Locale.use();
 			const [render_color_palette, setRenderColorPalette] =
-				useState<Color.Gradient>(Color.normalizeGradient(source.settings.render_color_palette));
+				useState<Color.Gradient>(
+					Color.normalizeGradient(source.settings.render_color_palette),
+				);
 			const [offset, setOffset] = useState<number>(source.settings.offset);
 			const [render_engine, setEngine] = useState<Engine.List>(
 				source.settings.render_engine,
@@ -1214,7 +1231,20 @@ export namespace Source {
 							icon="AlarmClockPlus"
 							type="number"
 							label={t("source.offsetLabel", {
-								duration: formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ["years", "months", "days", "hours", "minutes", "seconds"], zero: false }),
+								duration: formatDuration(
+									intervalToDuration({ start: 0, end: offset }),
+									{
+										format: [
+											"years",
+											"months",
+											"days",
+											"hours",
+											"minutes",
+											"seconds",
+										],
+										zero: false,
+									},
+								),
 								ms: parseInt(offset.toString().slice(-3)),
 							})}
 							value={offset}
@@ -1232,7 +1262,11 @@ export namespace Source {
 								gap={4}
 								ai="center"
 							>
-								<Label value={t("source.minFrequencySample", { value: `${frequency_sample}ms` })} />
+								<Label
+									value={t("source.minFrequencySample", {
+										value: `${frequency_sample}ms`,
+									})}
+								/>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span
@@ -1339,7 +1373,11 @@ export namespace Source {
 											}}
 										/>
 									)}
-									<span>{t("source.customPaletteApplied", { name: colorPalette.name })}</span>
+									<span>
+										{t("source.customPaletteApplied", {
+											name: colorPalette.name,
+										})}
+									</span>
 								</div>
 							)}
 							<ColorPicker
