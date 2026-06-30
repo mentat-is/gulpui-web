@@ -1377,7 +1377,7 @@ export function DisplayEventDialog({
 
 			const newFilters: Filter.Type[] = Object.keys(object).map((k) => ({
 				id: generateUUID<Filter.Id>(),
-				type: object[k].includes("*") || k.includes("*") ? "wildcard" : "range",
+				type: "wildcard",
 				operator: "must",
 				field: k,
 				value: object[k],
@@ -1389,7 +1389,6 @@ export function DisplayEventDialog({
 				filters: [...filters, ...newFilters],
 			};
 
-			toast(`Added ${newFilters.length} new filters`);
 			spawnBanner(
 				<FilterFileBanner
 					sources={[file]}
