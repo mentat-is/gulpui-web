@@ -32,6 +32,7 @@ import { BridgeManager } from "../banners/BridgeManager.banner";
 import { Enrichment } from "../banners/Enrichment.banner";
 import { Sigma } from "../banners/Sigma";
 import { Requests } from "../banners/Requests.banner";
+import { OperationPermissions } from "../banners/Permissions.banner";
 import { Operation } from "../entities/Operation";
 import { Settings } from "../banners/Settings.banner";
 import { Session } from "../banners/Session.banner";
@@ -144,7 +145,6 @@ export function OperationView() {
 
 export function OperationTimeline() {
 	const { theme } = useTheme();
-	const navigate = useNavigate();
 	const {
 		Info,
 		app,
@@ -405,6 +405,45 @@ export function OperationTimeline() {
 	);
 
 	/**
+	 * Opens the permissions banner for the currently selected operation.
+	 *
+	 * @returns A promise that resolves after operation details are loaded and the banner is spawned.
+	 */
+	const openSelectedOperationPermissionsBanner =
+		useCallback(async (): Promise<void> => {
+			const selectedOperation = app.target.operations.find(
+				(operation) => operation.selected,
+			);
+			if (!selectedOperation) {
+				Logger.error(
+					"No operation selected",
+					"OperationTimeline.openSelectedOperationPermissionsBanner",
+				);
+				return;
+			}
+
+			try {
+				const details = await Info.operation_get_by_id(selectedOperation.id);
+				spawnBanner(
+					<OperationPermissions.Banner
+						operationId={selectedOperation.id}
+						granted_user_ids={details.granted_user_ids ?? []}
+						granted_user_group_ids={details.granted_user_group_ids ?? []}
+					/>,
+				);
+			} catch (error) {
+				Logger.error(
+					t("operationDetails.loadFailed"),
+					"OperationTimeline.openSelectedOperationPermissionsBanner",
+					{
+						description:
+							error instanceof Error ? error.message : String(error),
+					},
+				);
+			}
+		}, [Info, app.target.operations, spawnBanner, t]);
+
+	/**
 	 * Top area menu items for the MainDashboard, grouped by category.
 	 * Categories map to the original section headers: "Sources/filter", "External", "Plugins".
 	 */
@@ -490,7 +529,7 @@ export function OperationTimeline() {
 				label: t("operationView.menu.managePermissions"),
 				icon: "LucideUserRoundPlus",
 				category: t("operationView.menu.configuration"),
-				action: () => navigate("/users"),
+				action: () => void openSelectedOperationPermissionsBanner(),
 			},
 			{
 				label: t("operationView.menu.backToOperations"),
@@ -519,7 +558,7 @@ export function OperationTimeline() {
 				action: () => spawnBanner(<Session.Save.Banner />),
 			},
 		],
-		[spawnBanner, hintOpen, toggleHintOpen, t],
+		[spawnBanner, hintOpen, openSelectedOperationPermissionsBanner, toggleHintOpen, t],
 	);
 
 	if (!isPreloaded) {
