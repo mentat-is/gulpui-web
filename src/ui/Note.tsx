@@ -1,9 +1,9 @@
 import { Application } from "@/context/Application.context";
 import { DisplayGroupDialog } from "@/dialogs/Group.dialog";
 import { Point as UIPoint } from "./Point";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import s from "./styles/Note.module.css";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { formatTimestampToReadableString, stringToHexColor } from "./utils";
 import { Stack } from "./Stack";
 import { Badge } from "./Badge";
@@ -20,6 +20,8 @@ import { useMemo, useState } from "react";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip";
+import { Locale } from "@/locales";
+import { Internal } from "@/entities/addon/Internal";
 
 export namespace NotePoint {
 	export interface Props extends Omit<
@@ -39,6 +41,7 @@ export namespace NotePoint {
 
 	export function FetchEventBanner({ note }: { note: Note.Type }) {
 		const { app, Info, spawnDialog, destroyBanner } = Application.use();
+		const { t } = Locale.use();
 		const [loading, setLoading] = useState<boolean>(false);
 
 		const fetch = async () => {
@@ -49,13 +52,13 @@ export namespace NotePoint {
 					note.operation_id,
 				);
 				if (!fetched) {
-					toast.error("Event could not be retrieved");
+					toast.error(t("notePoint.fetchFailed"));
 					return;
 				}
-				const sourceSettings = Source.Entity.id(
-					Info.app,
-					note.source_id,
-				).settings;
+				const source = Source.Entity.id(Info.app, note.source_id) as
+					| Source.Type
+					| undefined;
+				const sourceSettings = source?.settings ?? Internal.Settings.default;
 				const [event] = Doc.Entity.normalize(
 					[fetched],
 					sourceSettings.field,
@@ -89,7 +92,7 @@ export namespace NotePoint {
 
 		return (
 			<UIBanner
-				title="Fetch event"
+				title={t("notePoint.fetchTitle")}
 				done={
 					<Button
 						loading={loading}
@@ -100,9 +103,7 @@ export namespace NotePoint {
 				}
 			>
 				<p>
-					The event linked to note <code>{note.name}</code> is not currently
-					loaded in the timeline (it may have been filtered out). Fetch it from
-					the server to view its details?
+					{t("notePoint.fetchDescriptionBefore")} <code>{note.name}</code> {t("notePoint.fetchDescriptionAfter")}
 				</p>
 			</UIBanner>
 		);
@@ -116,7 +117,14 @@ export namespace NotePoint {
 		onDeleteClick,
 		...props
 	}: Combination.Props) {
-		const { app, Info } = Application.use();
+		const { app } = Application.use();
+		const { t } = Locale.use();
+		const context = Context.Entity.id(app, note.context_id);
+		const source = Source.Entity.id(app, note.source_id) as
+			| Source.Type
+			| undefined;
+		const contextName = context?.name ?? t("collab.deletedContext");
+		const sourceName = source?.name ?? t("collab.deletedSource");
 
 		return (
 			<Stack
@@ -146,7 +154,7 @@ export namespace NotePoint {
 				</Tooltip>
 				<Stack className={s.badge_wrapper}>
 					<Badge
-						value={`${Context.Entity.id(app, note.context_id).name} / ${Source.Entity.id(app, note.source_id).name}`}
+						value={`${contextName} / ${sourceName}`}
 						style={{
 							background: stringToHexColor(note.context_id),
 							border: `1px solid ${stringToHexColor(note.context_id)}40`,

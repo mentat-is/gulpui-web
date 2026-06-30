@@ -4,6 +4,7 @@ import { Query } from "./Query";
 import { MinMax } from "@/class/Info";
 import { Source } from "./Source";
 import { App } from "./App";
+import { translate } from "@/locales/core";
 type UUID = string;
 import { Internal } from "./addon/Internal";
 
@@ -49,7 +50,7 @@ export namespace Filter {
 	 */
 	export interface Group {
 		id: Filter.Id;
-		type: 'group';
+		type: "group";
 		operator: OpenSearchQueryBuilder.Operator;
 		children: Filter.Item[];
 		enabled: boolean;
@@ -59,7 +60,7 @@ export namespace Filter {
 	export type Item = Filter.Type | Filter.Group;
 
 	export function isGroup(item: Filter.Item): item is Filter.Group {
-		return (item as any).type === 'group';
+		return (item as any).type === "group";
 	}
 
 	export class Entity {
@@ -92,7 +93,7 @@ export namespace Filter {
 					const clause = Filter.Entity.buildItemClause(child, fieldTypeMap);
 					if (clause) inner[child.operator].push(clause);
 				}
-				Object.keys(inner).forEach(k => {
+				Object.keys(inner).forEach((k) => {
 					if (inner[k].length === 0) delete inner[k];
 				});
 				if (Object.keys(inner).length === 0) return null;
@@ -128,6 +129,8 @@ export namespace Filter {
 					return { range: { [field]: { lte: Number(value) } } };
 				case "GTE":
 					return { range: { [field]: { gte: Number(value) } } };
+				case "eq":
+					return { term: { [field]: value } };
 				default:
 					return { match: { [field]: value } };
 			}
@@ -178,7 +181,7 @@ export namespace Filter {
 			}
 
 			// Process each item — flat condition or nested group
-			filters.forEach(item => {
+			filters.forEach((item) => {
 				if (!item.enabled) return;
 				const clause = Filter.Entity.buildItemClause(item, fieldTypeMap);
 				if (clause) query.bool[item.operator].push(clause);
@@ -217,40 +220,48 @@ export namespace Filter {
 
 			// Show source names (resolved from app) or IDs as fallback
 			if (q.source_config?.source_ids?.length) {
-				const names = q.source_config.source_ids.map(id => {
+				const names = q.source_config.source_ids.map((id) => {
 					if (app) {
 						try {
 							const file = Source.Entity.id(app, id as Source.Id);
 							return file?.name || id;
-						} catch { return id; }
+						} catch {
+							return id;
+						}
 					}
 					return id;
 				});
-				lines.push(`Sources: ${names.join(', ')}`);
+				lines.push(
+					translate("filter.sourcesLine", { sources: names.join(", ") }),
+				);
 			}
 
 			// Show each enabled filter condition/group
 			if (q.filters.length > 0) {
-				const describeItem = (item: Filter.Item, indent = ''): string => {
-					if (!item.enabled) return '';
+				const describeItem = (item: Filter.Item, indent = ""): string => {
+					if (!item.enabled) return "";
 					if (Filter.isGroup(item)) {
-						const childLines = item.children.map(c => describeItem(c, indent + '  ')).filter(Boolean);
-						const body = childLines.length ? `\n${childLines.join('\n')}` : ' (empty)';
-						return `${indent}${item.operator} group:${body}`;
+						const childLines = item.children
+							.map((c) => describeItem(c, indent + "  "))
+							.filter(Boolean);
+						const body = childLines.length
+							? `\n${childLines.join("\n")}`
+							: translate("filter.emptyGroup");
+						return `${indent}${item.operator} ${translate("filter.groupLabel")}:${body}`;
 					}
 					return `${indent}${item.operator} ${item.type} ${item.field}: ${item.value}`;
 				};
-				q.filters.forEach(item => {
+				q.filters.forEach((item) => {
 					const desc = describeItem(item);
 					if (desc) lines.push(desc);
 				});
 			}
 
 			if (q.isManual) {
-				lines.push('[manual query]');
+				lines.push(translate("filter.manualQuery"));
 			}
 
-			return lines.join('\n') || 'No filters applied';
+			return lines.join("\n") || translate("filter.noFiltersApplied");
 		};
 
 		/**
@@ -280,9 +291,17 @@ export namespace Filter {
 					operation_id: targetFile.operation_id,
 					source_ids: [targetFile.id],
 					range: {
-						min: (range?.min ?? targetFile.nanotimestamp?.min ?? Internal.Transformator.toNanos(targetFile.timestamp.min)).toString(),
-						max: (range?.max ?? targetFile.nanotimestamp?.max ?? Internal.Transformator.toNanos(targetFile.timestamp.max)).toString(),
-					}
+						min: (
+							range?.min ??
+							targetFile.nanotimestamp?.min ??
+							Internal.Transformator.toNanos(targetFile.timestamp.min)
+						).toString(),
+						max: (
+							range?.max ??
+							targetFile.nanotimestamp?.max ??
+							Internal.Transformator.toNanos(targetFile.timestamp.max)
+						).toString(),
+					},
 				},
 				filters: [],
 			};

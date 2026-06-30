@@ -1,4 +1,4 @@
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 
 export interface Selectable {
   selected: boolean;

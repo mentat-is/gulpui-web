@@ -1,259 +1,302 @@
-import { type Callback } from '@impactium/types'
-import { Logger } from '@/dto/Logger.class'
-import { Icon } from '@impactium/icons'
-import { Auth } from '@/page/Auth.page'
-import { Request } from '@/entities/Request'
-import { Internal } from '@/entities/addon/Internal'
-import { toast } from 'sonner'
+import { type Callback } from "@/ui/utils";
+import { Logger } from "@/dto/Logger.class";
+import { Icon } from "@/ui/Icon";
+import { Auth } from "@/page/Auth.page";
+import { Request } from "@/entities/Request";
+import { Internal } from "@/entities/addon/Internal";
+import { toast } from "sonner";
+import { translate } from "@/locales/core";
+import { WindowBridge } from "@/lib/WindowBridge";
 
 export interface ResponseBase<T = any> {
-  status: 'success' | 'error' | 'pending'
-  timestamp: Date
-  req_id: Request.Id
-  data: T
+	status: "success" | "error" | "pending";
+	timestamp: Date;
+	req_id: Request.Id;
+	data: T;
 }
 
 export interface ResponseErrorBody {
-  request: {
-    path: string,
-    method: string,
-    query: string,
-    headers: {
-      [key: string]: string
-    },
-    body: string
-  },
-  __error: {
-    name: string;
-    msg: string;
-    trace: string;
-  }
+	request: {
+		path: string;
+		method: string;
+		query: string;
+		headers: {
+			[key: string]: string;
+		};
+		body: string;
+	};
+	__error: {
+		name: string;
+		msg: string;
+		trace: string;
+	};
 }
 
-export type ResponseError = ResponseBase<ResponseErrorBody>
+export type ResponseError = ResponseBase<ResponseErrorBody>;
 
 export class ResponseHandler<T extends ResponseBase<any>> {
-  status: 'success' | 'error' | 'pending'
-  req_id: Request.Id;
-  timestamp: Date
-  data: T['data']
+	status: "success" | "error" | "pending";
+	req_id: Request.Id;
+	timestamp: Date;
+	data: T["data"];
 
-  constructor(payload: T = {} as T) {
-    this.status = payload.status ?? 'error';
-    this.req_id = payload.req_id ?? '' as Request.Id;
-    this.timestamp = payload.timestamp ?? Date.now();
-    this.data = payload.data;
+	constructor(payload: T = {} as T) {
+		this.status = payload.status ?? "error";
+		this.req_id = payload.req_id ?? ("" as Request.Id);
+		this.timestamp = payload.timestamp ?? Date.now();
+		this.data = payload.data;
 
-    if (this.status === 'error' && !this.req_id && !this.data) {
-      toast.error('Gulp UI could not estabilish connection with API', {
-        description: 'Make sure API is working and ready to accept connections',
-        richColors: true,
-        icon: <Icon name='Warning' />
-      });
-    }
-  }
+		if (this.status === "error" && !this.req_id && !this.data) {
+			toast.error(translate("api.connectionFailed"), {
+				description: translate("api.connectionCheck"),
+				richColors: true,
+				icon: <Icon name="Warning" />,
+			});
+		}
+	}
 }
 
-export type SetState<T> = React.Dispatch<React.SetStateAction<T>>
+export type SetState<T> = React.Dispatch<React.SetStateAction<T>>;
 
-
-type Toast<T> = ((data: ResponseBase<T>) => string | number | undefined) | null | undefined;
+type Toast<T> =
+	| ((data: ResponseBase<T>) => string | number | undefined)
+	| null
+	| undefined;
 
 export interface RequestOptions<T> {
-  toast?: {
-    onSuccess?: Toast<T>;
-    onError?: Toast<ResponseErrorBody>;
-  }
-  setLoading?: SetState<boolean>
-  query?: Record<string, any>;
-  body?: Record<string, any> | RequestInit['body']
-  deassign?: boolean
+	toast?: {
+		onSuccess?: Toast<T>;
+		onError?: Toast<ResponseErrorBody>;
+	};
+	setLoading?: SetState<boolean>;
+	query?: Record<string, any>;
+	body?: Record<string, any> | RequestInit["body"];
+	deassign?: boolean;
 }
 
-type RawTrueOptions<T> = Omit<RequestInit, 'body'> & {
-  raw: true
-} & RequestOptions<T>
-type RawFalseOptions<T> = Omit<RequestInit, 'body'> & {
-  raw?: false
-} & RequestOptions<T>
-type AnyOptions<T> = Omit<RequestInit, 'body'> & {
-  raw?: boolean
-} & RequestOptions<T>
+type RawTrueOptions<T> = Omit<RequestInit, "body"> & {
+	raw: true;
+} & RequestOptions<T>;
+type RawFalseOptions<T> = Omit<RequestInit, "body"> & {
+	raw?: false;
+} & RequestOptions<T>;
+type AnyOptions<T> = Omit<RequestInit, "body"> & {
+	raw?: boolean;
+} & RequestOptions<T>;
 
 export type Api = {
-  /**
-   * @param setLoading: SetState<boolean>
-   *
-   * @param toast: keyof Locale | boolean
-   */
-  <T>(path: string, options: RawTrueOptions<T>): Promise<ResponseHandler<ResponseBase<T>>>
-  <T>(path: string, options?: RawFalseOptions<T>): Promise<T>
-  <T>(path: string, options?: AnyOptions<T>): Promise<ResponseHandler<ResponseBase<T>> | T>
+	/**
+	 * @param setLoading: SetState<boolean>
+	 *
+	 * @param toast: keyof Locale | boolean
+	 */
+	<T>(
+		path: string,
+		options: RawTrueOptions<T>,
+	): Promise<ResponseHandler<ResponseBase<T>>>;
+	<T>(path: string, options?: RawFalseOptions<T>): Promise<T>;
+	<T>(
+		path: string,
+		options?: AnyOptions<T>,
+	): Promise<ResponseHandler<ResponseBase<T>> | T>;
 
-  <T>(
-    path: string,
-    options: RawTrueOptions<T>,
-    callback: Callback<ResponseHandler<ResponseBase<T>>>,
-  ): Promise<ResponseHandler<ResponseBase<T>>>
-  <T>(
-    path: string,
-    options?: RawFalseOptions<T>,
-    callback?: Callback<T>,
-  ): Promise<T>
-  <T>(
-    path: string,
-    options?: AnyOptions<T>,
-    callback?: Callback<ResponseHandler<ResponseBase<T>> | T>,
-  ): Promise<ResponseHandler<ResponseBase<T>> | T>
+	<T>(
+		path: string,
+		options: RawTrueOptions<T>,
+		callback: Callback<ResponseHandler<ResponseBase<T>>>,
+	): Promise<ResponseHandler<ResponseBase<T>>>;
+	<T>(
+		path: string,
+		options?: RawFalseOptions<T>,
+		callback?: Callback<T>,
+	): Promise<T>;
+	<T>(
+		path: string,
+		options?: AnyOptions<T>,
+		callback?: Callback<ResponseHandler<ResponseBase<T>> | T>,
+	): Promise<ResponseHandler<ResponseBase<T>> | T>;
 
-  <T>(
-    path: string,
-    callback: Callback<ResponseHandler<ResponseBase<T>>>,
-    options: RawTrueOptions<T>,
-  ): Promise<ResponseHandler<ResponseBase<T>>>
-  <T>(
-    path: string,
-    callback: Callback<T>,
-    options?: RawFalseOptions<T>,
-  ): Promise<T>
-  <T>(
-    path: string,
-    callback: Callback<ResponseHandler<ResponseBase<T>> | T>,
-    options?: AnyOptions<T>,
-  ): Promise<ResponseHandler<ResponseBase<T>> | T>
-}
+	<T>(
+		path: string,
+		callback: Callback<ResponseHandler<ResponseBase<T>>>,
+		options: RawTrueOptions<T>,
+	): Promise<ResponseHandler<ResponseBase<T>>>;
+	<T>(
+		path: string,
+		callback: Callback<T>,
+		options?: RawFalseOptions<T>,
+	): Promise<T>;
+	<T>(
+		path: string,
+		callback: Callback<ResponseHandler<ResponseBase<T>> | T>,
+		options?: AnyOptions<T>,
+	): Promise<ResponseHandler<ResponseBase<T>> | T>;
+};
 
 type unresolwedArgument<T> =
-  | (RequestInit & RequestOptions<T> & { raw?: boolean })
-  | Callback<T>
-  | undefined
+	| (RequestInit & RequestOptions<T> & { raw?: boolean })
+	| Callback<T>
+	| undefined;
 
+/**
+ * Normalizes the overloaded API call arguments into fetch options and callback.
+ * @param a First overloaded API argument.
+ * @param b Second overloaded API argument.
+ * @param _path Request path before leading slash normalization.
+ * @returns Normalized request options, callback, query, and path.
+ */
 export function parseApiOptions<T>(
-  a: unresolwedArgument<T>,
-  b: unresolwedArgument<T>,
-  _path: string,
+	a: unresolwedArgument<T>,
+	b: unresolwedArgument<T>,
+	_path: string,
 ) {
-  const options: RequestInit & RequestOptions<T> & { raw?: boolean } = {}
-  let callback: Callback<T> | undefined
+	const options: RequestInit & RequestOptions<T> & { raw?: boolean } = {};
+	let callback: Callback<T> | undefined;
 
-  if (typeof a === 'function') {
-    callback = a
-    if (b && typeof b === 'object') {
-      Object.assign(options, b)
-    }
-  } else if (typeof a === 'object') {
-    Object.assign(options, a)
-    if (b && typeof b === 'function') {
-      callback = b
-    }
-  }
+	if (typeof a === "function") {
+		callback = a;
+		if (b && typeof b === "object") {
+			Object.assign(options, b);
+		}
+	} else if (typeof a === "object") {
+		Object.assign(options, a);
+		if (b && typeof b === "function") {
+			callback = b;
+		}
+	}
 
-  const headers: Record<string, string> = {
-    token: Internal.Settings.token,
-  }
+	const headers: Record<string, string> = {
+		token: Internal.Settings.token,
+	};
 
-  if (!options.deassign) {
-    headers['Content-Type'] = 'application/json'
-  }
+	if (!options.deassign) {
+		headers["Content-Type"] = "application/json";
+	}
 
-  options.headers = Object.assign(options.headers || {}, headers)
+	options.headers = Object.assign(options.headers || {}, headers);
 
-  if (typeof options.body === 'object' && !(options.body instanceof FormData)) {
-    options.body = JSON.stringify(options.body, (_, v) =>
-      typeof v === 'bigint' ? v.toString() : v,
-    )
-  }
+	if (typeof options.body === "object" && !(options.body instanceof FormData)) {
+		options.body = JSON.stringify(options.body, (_, v) =>
+			typeof v === "bigint" ? v.toString() : v,
+		);
+	}
 
-  const path = _path.startsWith('/') ? _path : `/${_path}`
+	const path = _path.startsWith("/") ? _path : `/${_path}`;
 
-  const toStringObject = (obj: typeof options.query) =>
-    obj
-      ? Object.fromEntries(
-        Object.entries(options.query || {}).map(([key, value]) => [
-          key,
-          String(value),
-        ]),
-      )
-      : ''
+	const toStringObject = (obj: typeof options.query) =>
+		obj
+			? Object.fromEntries(
+					Object.entries(options.query || {}).map(([key, value]) => [
+						key,
+						String(value),
+					]),
+				)
+			: "";
 
-  const query = new URLSearchParams(toStringObject(options.query))
+	const query = new URLSearchParams(toStringObject(options.query));
 
-  return {
-    options,
-    callback,
-    query,
-    path
-  }
+	return {
+		options,
+		callback,
+		query,
+		path,
+	};
 }
 
 export function soft<T>(value: T, func?: Callback<T>) {
-  if (!func) {
-    return;
-  }
+	if (!func) {
+		return;
+	}
 
-  return func(value);
+	return func(value);
 }
 
+/**
+ * Executes an authenticated backend request with optional response unwrapping.
+ * @param _path Backend API path.
+ * @param arg2 Options or callback from the overloaded API signature.
+ * @param arg3 Options or callback from the overloaded API signature.
+ * @returns The unwrapped response data or a raw ResponseHandler.
+ */
 const api: Api = async function <T>(
-  _path: string,
-  arg2?: any,
-  arg3?: any,
+	_path: string,
+	arg2?: any,
+	arg3?: any,
 ): Promise<ResponseHandler<ResponseBase<T>> | T> {
-  const { options, callback, query, path } = parseApiOptions<T>(
-    arg2,
-    arg3,
-    _path,
-  )
+	const { options, callback, query, path } = parseApiOptions<T>(
+		arg2,
+		arg3,
+		_path,
+	);
 
-  soft(() => true, options.setLoading)
+	soft(() => true, options.setLoading);
 
-  const response = await fetch(
-    `${Internal.Settings.server}${path}${query ? `?${query}` : ''}`,
-    {
-      ...options,
-    },
-  ).catch(() => { });
+	let aborted = false;
+	const url = `${Internal.Settings.server}${path}${query ? `?${query}` : ""}`;
+	const response = await fetch(url, {
+		...options,
+	}).catch((error) => {
+		if (error instanceof DOMException && error.name === "AbortError") {
+			aborted = true;
+		}
+		return undefined;
+	});
 
-  let json: any;
-  try {
-    json = await response?.json();
-  } catch (err) {
-    // Gracefully handle non-JSON or malformed responses
-  }
+	if (aborted) {
+		soft(() => false, options.setLoading);
+		return void 0 as T;
+	}
 
-  const res = new ResponseHandler(json as ResponseBase<T>)
+	let json: any;
+	try {
+		json = await (response?.json() ?? Promise.resolve(undefined));
+	} catch (err) {
+		// Gracefully handle non-JSON or malformed responses
+	}
 
-  // [λ] Workaround. Remove after gulp/issues/110 would be fixed
-  // @ts-ignore
-  if (['success', 'pending'].includes(res.status) || (res.data && typeof res.data.__error === 'undefined')) {
-    if (options.toast?.onSuccess) {
-      options.toast?.onSuccess(res);
-      Logger.log(res, 'API');
-    }
-    // @ts-ignore
-    soft(options.raw ? res : res.data, callback);
-  } else if (res.data && (res.data as unknown as ResponseErrorBody).__error?.name === 'MissingPermission') {
-    Internal.Settings.token = ''
-    Logger.warn('Session has been expired', api, {
-      icon: <Icon name='Warning' />,
-      richColors: true
-    });
-    // @ts-ignore
-    window.spawnBanner(<Auth.Banner />);
-  } else {
-    if (options.toast?.onError) {
-      options.toast?.onError(res as ResponseError);
-    }
-    Logger.error(res, 'API');
-    soft(() => false, options.setLoading)
-    return void 0 as T;
-  }
+	const res = new ResponseHandler(json as ResponseBase<T>);
 
-  soft(() => false, options.setLoading)
+	if (
+		["success", "pending"].includes(res.status) ||
+		(res.data &&
+			typeof (res.data as unknown as ResponseErrorBody).__error === "undefined")
+	) {
+		if (options.toast?.onSuccess) {
+			options.toast?.onSuccess(res);
+			Logger.log(res, "API");
+		}
+		// @ts-ignore
+		soft(options.raw ? res : res.data, callback);
+	} else if (
+		res.data &&
+		(res.data as unknown as ResponseErrorBody).__error?.name ===
+			"MissingPermission"
+	) {
+		WindowBridge.broadcastMainStatus("auth_lost");
+		window.dispatchEvent(new CustomEvent("gulp-auth-lost"));
+		Internal.Settings.token = "";
+		localStorage.removeItem("__user_id");
+		Logger.warn("Session has been expired", api, {
+			icon: <Icon name="Warning" />,
+			richColors: true,
+		});
+		if (window.location.pathname !== "/login") {
+			const redirectUrl = encodeURIComponent(
+				window.location.pathname + window.location.search,
+			);
+			window.location.href = `/login?redirect=${redirectUrl}`;
+		}
+	} else {
+		if (options.toast?.onError) {
+			options.toast?.onError(res as ResponseError);
+		}
+		Logger.error(res, "API");
+		soft(() => false, options.setLoading);
+		return void 0 as T;
+	}
 
-  console.log(res.data);
+	soft(() => false, options.setLoading);
+	return options.raw ? res : res.data;
+};
 
-  return options.raw ? res : res.data;
-}
-
-globalThis.api = api
+globalThis.api = api;

@@ -22,11 +22,12 @@ import { Application } from "@/context/Application.context";
 import { Button } from "@/ui/Button";
 import { useMemo, useState, Fragment, ChangeEvent, useEffect } from "react";
 import { Banner as UIBanner } from "@/ui/Banner";
+import { Toggle } from "@/ui/Toggle";
 import { Internal } from "./addon/Internal";
 import { Color } from "./Color";
 import { Select as UISelect } from "@/ui/Select";
 import { SetState } from "@/class/API";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Badge } from "@/ui/Badge";
 import { Checkbox } from "@/ui/Checkbox";
 import { FilterFileBanner } from "@/banners/FilterFile.banner";
@@ -49,6 +50,8 @@ import { Separator } from "@radix-ui/react-select";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { Label } from "@/ui/Label";
 import { toast } from "sonner";
+import { Locale } from "@/locales";
+import { requestStore } from "@/store/request.store";
 
 export namespace Source {
 	export const name = "Source";
@@ -246,7 +249,7 @@ export namespace Source {
 		): Request.Prefix | null | undefined => {
 			const id = Parser.useUUID(file) as Source.Id;
 
-			const request = app.general.loadings.byFileId.get(id);
+			const request = requestStore.getRequestIdByFile(id);
 			if (!request) {
 				// Source.Entity is not requesting
 				return null;
@@ -428,7 +431,19 @@ export namespace Source {
 		};
 
 		/**
-		 * Resolves the render color for a numeric event value with an O(1) override lookup.
+		 * Resolves only the explicit override color for a numeric event value.
+		 *
+		 * @param file Source whose render settings own the optional color override table.
+		 * @param value Numeric hash used for override lookup.
+		 * @returns Override color when configured for the value, otherwise undefined.
+		 */
+		public static resolveOverrideColor = (
+			file: Source.Type,
+			value: number,
+		): string | undefined => file.settings.color_override?.lookup?.[value];
+
+		/**
+		 * Resolves the render color for a numeric event value with override priority.
 		 *
 		 * @param file Source whose render settings own the optional color override table.
 		 * @param value Numeric hash or bucket amount used for color resolution.
@@ -440,7 +455,7 @@ export namespace Source {
 			value: number,
 			range: MinMax,
 		): string => {
-			const overrideColor = file.settings.color_override?.lookup?.[value];
+			const overrideColor = Source.Entity.resolveOverrideColor(file, value);
 			if (overrideColor) {
 				return overrideColor;
 			}
@@ -724,10 +739,23 @@ export namespace Source {
 				source: Source.Type;
 			}
 		}
+
+		/**
+		 * Banner component for confirming deletion of a source file.
+		 *
+		 * @param props - Component props.
+		 * @param props.source - The source object to delete.
+		 * @returns The React element for the confirmation banner.
+		 */
 		export function Banner({ source, ...props }: Source.Delete.Banner.Props) {
 			const { Info, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [loading, setLoading] = useState<boolean>(false);
+			const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
+			/**
+			 * Deletes the source file and triggers the back callback or destroys the banner.
+			 */
 			const deleteFile = async () => {
 				setLoading(true);
 				await Info.file_delete(source);
@@ -737,26 +765,31 @@ export namespace Source {
 				} else {
 					destroyBanner();
 				}
-				toast(`Source.Entity ${source.name} deleted successfully`);
 			};
 
 			return (
 				<UIBanner
-					title="Delete file"
+					title={t("source.deleteTitle")}
+					done={
+						<Button
+							loading={loading}
+							icon="Trash2"
+							variant="secondary"
+							onClick={deleteFile}
+							disabled={!isSubmitted}
+						/>
+					}
 					{...props}
 				>
 					<p>
-						Are you going to delete file <code>{source.name}</code>. Are you
-						sure?
+						{t("source.deleteConfirmBefore")} <code>{source.name}</code>.{" "}
+						{t("source.deleteConfirmAfter")}
 					</p>
-					<Button
-						loading={loading}
-						icon="Trash2"
-						style={{ width: "100" }}
-						onClick={deleteFile}
-					>
-						Yes, delete file
-					</Button>
+					<Toggle
+						option={[t("common.noDontDelete"), t("common.yesImSure")]}
+						checked={isSubmitted}
+						onCheckedChange={setIsSubmitted}
+					/>
 				</UIBanner>
 			);
 		}
@@ -891,6 +924,7 @@ export namespace Source {
 			placeholder,
 		}: Select.Multi.Props) {
 			const { app } = Application.use();
+			const { t } = Locale.use();
 
 			const all = useMemo(
 				() => sources ?? Source.Entity.selected(app),
@@ -936,6 +970,20 @@ export namespace Source {
 
 			const [isOpen, setIsOpen] = useState(false);
 
+			/**
+			 * Resolves the text shown by the multi-select trigger.
+			 * @param value Selected count or the single selected source id.
+			 * @returns Localized selection count, resolved source name, or loading text while detached state hydrates.
+			 */
+			const getSelectedSourceLabel = (value: number | string): string => {
+				if (typeof value === "number") {
+					return t("source.selectedSources", { count: value });
+				}
+
+				const source = Source.Entity.id(app, value as Source.Id);
+				return source?.name ?? t("common.loading");
+			};
+
 			return (
 				<UISelect.Multi.Root
 					value={selected}
@@ -945,19 +993,19 @@ export namespace Source {
 					<UISelect.Trigger>
 						<UISelect.Multi.Value
 							icon={["File", "Files"]}
-							placeholder={placeholder ?? "Select Sources"}
-							text={(len) =>
-								typeof len === "number"
-									? `Selected ${len} files`
-									: Source.Entity.id(app, len as Source.Id).name
-							}
+							placeholder={placeholder ?? t("source.selectSources")}
+							text={getSelectedSourceLabel}
 						/>
 					</UISelect.Trigger>
 					<UISelect.Content>
 						{isOpen && (
 							<>
 								<UISelect.Multi.ToggleAll
-									label={isAllSelected ? "Deselect all" : "Select all"}
+									label={
+										isAllSelected
+											? t("common.deselectAll")
+											: t("common.selectAll")
+									}
 									checked={isAllSelected}
 									onToggle={(val) =>
 										setSelected(val ? all.map((s) => s.id) : [])
@@ -1015,6 +1063,7 @@ export namespace Source {
 		 */
 		export function Banner({ source }: Settings.Banner.Props) {
 			const { Info, app, spawnBanner, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [render_color_palette, setRenderColorPalette] =
 				useState<Color.Gradient>(
 					Color.normalizeGradient(source.settings.render_color_palette),
@@ -1043,13 +1092,31 @@ export namespace Source {
 				() => Object.entries(colorOverride?.values ?? {}),
 				[colorOverride],
 			);
-			const colorPalette = source.settings.color_palette;
+			const [colorPalette, setColorPalette] = useState<
+				Source.ColorPalette | undefined
+			>(source.settings.color_palette);
 			const colorPaletteColors = colorPalette
 				? Color.Entity.getCustomPalette(colorPalette.id)
 				: undefined;
 
 			/**
+			 * Selects a standard render palette and marks any active custom palette for removal.
+			 *
+			 * @param color Selected palette id, or a React state updater from the color picker.
+			 * @returns Nothing.
+			 */
+			const selectRenderColorPalette = (
+				color: string | ((previousColor: string) => string),
+			) => {
+				const nextColor =
+					typeof color === "function" ? color(render_color_palette) : color;
+				setRenderColorPalette(nextColor as Color.Gradient);
+				setColorPalette(undefined);
+			};
+
+			/**
 			 * Saves the updated source settings and optionally updates the associated context color.
+			 * Persists custom palette state unless the user selected a standard render palette.
 			 * Invokes file_set_settings and context_update API calls, then closes the settings banner.
 			 *
 			 * @returns A promise that resolves when saving is completed.
@@ -1063,7 +1130,7 @@ export namespace Source {
 					hash_function,
 					frequency_sample,
 					color_override: colorOverride,
-					color_palette: undefined,
+					color_palette: colorPalette,
 				});
 
 				if (contextColor !== context.color) {
@@ -1109,7 +1176,7 @@ export namespace Source {
 			const clearColorOverride = () => {
 				setColorOverride(undefined);
 				Info.file_set_settings(source.id, { color_override: undefined });
-				toast.success("Color override removed");
+				toast.success(t("source.colorOverrideRemoved"));
 			};
 
 			const done = (
@@ -1160,21 +1227,40 @@ export namespace Source {
 
 			return (
 				<UIBanner
-					title="Source settings"
+					title={t("source.settingsTitle")}
 					done={done}
 					option={option}
 				>
 					<TooltipProvider>
 						<h4>
-							{source.name} in {Context.Entity.id(app, source.context_id)?.name}
+							{t("source.nameInContext", {
+								source: source.name,
+								context: Context.Entity.id(app, source.context_id)?.name ?? "",
+							})}
 						</h4>
 						<Input
 							variant="highlighted"
 							icon="AlarmClockPlus"
 							type="number"
-							label={`Offset: ${formatDuration(intervalToDuration({ start: 0, end: offset }), { format: ["years", "months", "days", "hours", "minutes", "seconds"], zero: false })} ${parseInt(offset.toString().slice(-3))} milliseconds`}
+							label={t("source.offsetLabel", {
+								duration: formatDuration(
+									intervalToDuration({ start: 0, end: offset }),
+									{
+										format: [
+											"years",
+											"months",
+											"days",
+											"hours",
+											"minutes",
+											"seconds",
+										],
+										zero: false,
+									},
+								),
+								ms: parseInt(offset.toString().slice(-3)),
+							})}
 							value={offset}
-							placeholder="Offset time in ms"
+							placeholder={t("source.offsetPlaceholder")}
 							onChange={handleOffsetChange}
 						/>
 						<Stack
@@ -1188,7 +1274,11 @@ export namespace Source {
 								gap={4}
 								ai="center"
 							>
-								<Label value={`Min frequency sample: ${frequency_sample}ms`} />
+								<Label
+									value={t("source.minFrequencySample", {
+										value: `${frequency_sample}ms`,
+									})}
+								/>
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<span
@@ -1206,11 +1296,7 @@ export namespace Source {
 										</span>
 									</TooltipTrigger>
 									<TooltipContent style={{ whiteSpace: "normal" }}>
-										The graph engine dynamically calculates the rendering
-										frequency sample based on the timeline scale and time range:
-										Max(Min Sample, 10 * Time Range / Width). Zooming out
-										dynamically increases the sample rate to optimize
-										performance and prevent overlapping.
+										{t("source.frequencyTooltip")}
 									</TooltipContent>
 								</Tooltip>
 							</Stack>
@@ -1219,7 +1305,7 @@ export namespace Source {
 								icon="AlarmClockPlus"
 								type="number"
 								value={frequency_sample}
-								placeholder="Min frequency sample (ms)"
+								placeholder={t("source.frequencyPlaceholder")}
 								onChange={handleFrequencyChange}
 							/>
 						</Stack>
@@ -1228,7 +1314,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Render engine" />
+							<Label value={t("common.renderEngine")} />
 							<UISelect.Root
 								onValueChange={(v: Engine.List) => setEngine(v)}
 								value={render_engine}
@@ -1261,7 +1347,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Hash function" />
+							<Label value={t("source.hashFunction")} />
 							<UISelect.Root
 								onValueChange={(value: HashFunctionName) =>
 									setHashFunction(value)
@@ -1288,7 +1374,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Color scheme" />
+							<Label value={t("source.colorScheme")} />
 							{colorPalette && (
 								<div className={s.custom_palette_notice}>
 									{!!colorPaletteColors?.length && (
@@ -1299,12 +1385,16 @@ export namespace Source {
 											}}
 										/>
 									)}
-									<span>Custom color palette applied: {colorPalette.name}</span>
+									<span>
+										{t("source.customPaletteApplied", {
+											name: colorPalette.name,
+										})}
+									</span>
 								</div>
 							)}
 							<ColorPicker
 								color={render_color_palette}
-								setColor={(c) => setRenderColorPalette(c as Color.Gradient)}
+								setColor={selectRenderColorPalette}
 							>
 								<ColorPickerTrigger />
 								<ColorPickerPopover
@@ -1318,7 +1408,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Color scheme based on field" />
+							<Label value={t("source.colorSchemeField")} />
 							{EventFieldsSelection}
 						</Stack>
 						{colorOverrideEntries.length > 0 && (
@@ -1333,7 +1423,7 @@ export namespace Source {
 									jc="space-between"
 									className={s.override_header}
 								>
-									<Label value="Overrides" />
+									<Label value={t("source.overrides")} />
 									<Button
 										variant="secondary"
 										icon="Trash2"
@@ -1366,7 +1456,7 @@ export namespace Source {
 							gap={6}
 							ai="flex-start"
 						>
-							<Label value="Change context color" />
+							<Label value={t("source.changeContextColor")} />
 							<ColorPicker
 								color={contextColor}
 								setColor={setContextColor}
@@ -1386,9 +1476,10 @@ export namespace Source {
 			}
 
 			export function Banner({ ...props }: Banner.Props) {
+				const { t } = Locale.use();
 				return (
 					<UIBanner
-						title="Manage render rules"
+						title={t("source.manageRenderRules")}
 						{...props}
 					></UIBanner>
 				);

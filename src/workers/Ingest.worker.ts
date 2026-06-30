@@ -1,5 +1,20 @@
 /// <reference lib="webworker" />
 
+type IngestSettings = {
+  plugin?: string;
+  offset?: number;
+  custom_parameters?: unknown;
+  override_chunk_size?: unknown;
+  override_allow_unmapped_fields?: unknown;
+  method?: string;
+  mapping?: string;
+  additional_mapping_files?: unknown;
+  mappings?: unknown;
+  additional_mappings?: unknown;
+  sigma_mappings?: unknown;
+  store_file?: boolean;
+};
+
 type IngestMessage = {
   type: 'START_INGEST';
   payload: {
@@ -8,12 +23,11 @@ type IngestMessage = {
     operation_id: string;
     context_name: string;
     ws_id: string;
-    settings: any;
+    settings: IngestSettings;
     server: string;
     token: string;
     frame?: { min: number; max: number };
     chunkSize?: number;
-    endpoint?: 'ingest_file' | 'ingest_zip';
   };
 };
 
@@ -24,70 +38,24 @@ self.onmessage = async (event: MessageEvent<IngestMessage>) => {
 
   if (type !== 'START_INGEST') return;
 
-  const { file, req_id, operation_id, context_name, ws_id, settings, server, token, frame, chunkSize = DEFAULT_CHUNK_SIZE, endpoint = 'ingest_file' } = payload;
+  const { file, req_id, operation_id, context_name, ws_id, settings, server, token, frame, chunkSize = DEFAULT_CHUNK_SIZE } = payload;
 
   try {
-    if (endpoint === 'ingest_zip') {
-      const formData = new FormData();
-      const ingestPayload: any = {
-        original_file_path: file.name,
-        offset: 0,
-      };
-      if (frame) {
-        ingestPayload.flt = { time_range: [frame.min, frame.max] };
-      }
-      formData.append("payload", new Blob([JSON.stringify(ingestPayload)], { type: "application/json" }));
-      formData.append("f", file, file.name);
-
-      const query = new URLSearchParams({
-        operation_id,
-        context_name,
-        ws_id,
-        req_id,
-      });
-
-      const xhr = new XMLHttpRequest();
-      xhr.upload.addEventListener('progress', (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          self.postMessage({ type: 'PROGRESS', payload: { req_id, progress, bytes: event.loaded, total: event.total } });
-        }
-      });
-
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          self.postMessage({ type: 'DONE', payload: { req_id } });
-        } else {
-          self.postMessage({ type: 'ERROR', payload: { req_id, message: xhr.statusText } });
-        }
-      });
-
-      xhr.addEventListener('error', () => {
-        self.postMessage({ type: 'ERROR', payload: { req_id, message: 'Upload failed' } });
-      });
-
-      xhr.open('POST', `${server}/ingest_zip?${query.toString()}`);
-      xhr.setRequestHeader('token', token);
-      xhr.setRequestHeader('size', file.size.toString());
-      xhr.send(formData);
-      return;
-    }
-
     const ingest = async (start = 0, current_req_id?: string): Promise<void> => {
       const end = Math.min(file.size, start + chunkSize);
       const formData = new FormData();
 
-      const ingestPayload: any = {
+      const ingestPayload: Record<string, unknown> = {
         original_file_path: file.name,
         offset: settings.offset ?? 0,
       };
 
-      const pluginParams: any = {};
+      const pluginParams: Record<string, unknown> = {};
       if (settings.custom_parameters) pluginParams.custom_parameters = settings.custom_parameters;
       if (settings.override_chunk_size) pluginParams.override_chunk_size = settings.override_chunk_size;
       if (settings.override_allow_unmapped_fields) pluginParams.override_allow_unmapped_fields = settings.override_allow_unmapped_fields;
 
-      const mappingParameters: any = {};
+      const mappingParameters: Record<string, unknown> = {};
       if (settings.method) mappingParameters.mapping_file = settings.method;
       if (settings.mapping) mappingParameters.mapping_id = settings.mapping;
       if (settings.additional_mapping_files) mappingParameters.additional_mapping_files = settings.additional_mapping_files;
@@ -108,6 +76,10 @@ self.onmessage = async (event: MessageEvent<IngestMessage>) => {
 
       formData.append("payload", new Blob([JSON.stringify(ingestPayload)], { type: "application/json" }));
       formData.append("f", file.slice(start, end), file.name);
+
+      if (!settings.plugin) {
+        throw new Error("Missing ingestion plugin");
+      }
 
       const query = new URLSearchParams({
         plugin: settings.plugin.split(".")[0],
@@ -146,7 +118,8 @@ self.onmessage = async (event: MessageEvent<IngestMessage>) => {
     await ingest();
     self.postMessage({ type: 'DONE', payload: { req_id } });
 
-  } catch (error: any) {
-    self.postMessage({ type: 'ERROR', payload: { req_id, message: error.message } });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    self.postMessage({ type: 'ERROR', payload: { req_id, message } });
   }
 };

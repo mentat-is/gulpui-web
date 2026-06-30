@@ -18,9 +18,32 @@ import { Note } from "@/entities/Note";
 import { Link } from "@/entities/Link";
 import { Source } from "@/entities/Source";
 import { App } from "@/entities/App";
+import { Context } from "@/entities/Context";
 import { DataStore } from "@/store/DataStore";
 import { RenderEngine } from "@/class/RenderEngine";
 import { Operation } from "@/entities/Operation";
+import { useLocation } from "react-router-dom";
+import { translate } from "@/locales/core";
+
+interface CollabPayloadObject {
+	type?: string;
+	id?: string;
+}
+
+/**
+ * Normalizes a websocket collab payload object into typed object entries.
+ * @param payloadObject Single object or object array from the websocket payload.
+ * @returns Payload objects that expose a collab type discriminator.
+ */
+function getCollabPayloadObjects(payloadObject: unknown): CollabPayloadObject[] {
+	const objects = Array.isArray(payloadObject) ? payloadObject : [payloadObject];
+	return objects.filter(
+		(obj): obj is CollabPayloadObject =>
+			typeof obj === "object" &&
+			obj !== null &&
+			typeof (obj as CollabPayloadObject).type === "string",
+	);
+}
 
 function _({ children }: { children: ReactNode }) {
 	const [app, setInfo] = useState<App.Type>(App.Base);
@@ -34,10 +57,15 @@ function _({ children }: { children: ReactNode }) {
 	const [highlightsOverlay, setHighlightsOverlay] =
 		useState<React.ReactNode>(null);
 
-	// Reset dialog when operation changes
+	const location = useLocation();
+
+	/**
+	 * Resets the active dialog state to null when either the selected
+	 * operation ID changes or the user navigates to a different route.
+	 */
 	useEffect(() => {
 		setDialog(null);
-	}, [Operation.Entity.selected(app)?.id]);
+	}, [Operation.Entity.selected(app)?.id, location.pathname]);
 
 	/**
 	 * STABLE INFO INSTANCE: Info is stored in a ref and updated in-place
@@ -84,34 +112,46 @@ function _({ children }: { children: ReactNode }) {
 		if (!SmartSocket.Class.instance) return;
 
 		/**
-		 * Handles incoming collab create messages (context/source) from WebSocket.
+		 * Handles incoming collab create messages from WebSocket.
 		 * This ensures the UI is reactive to new items regardless of who created them.
 		 */
 		const collabCreateCallback = (message: any) => {
-			const obj = message.payload.obj;
-			if (obj.type === "context") {
-				setInfo((prev) => {
-					if (prev.target.contexts.find((c) => c.id === obj.id)) return prev;
-					return {
-						...prev,
-						target: {
-							...prev.target,
-							contexts: [...prev.target.contexts, obj],
-						},
-					};
-				});
-			} else if (obj.type === "source") {
-				setInfo((prev) => {
-					if (prev.target.files.find((f) => f.id === obj.id)) return prev;
-					return {
-						...prev,
-						target: {
-							...prev.target,
-							files: [...prev.target.files, Source.Entity.normalize(prev, obj)],
-						},
-					};
-				});
+			const objects = getCollabPayloadObjects(message.payload.obj);
+			const notes = objects.filter((obj) => obj.type === "note") as Note.Type[];
+			if (notes.length > 0) {
+				instanceRef.current.notes_upsert_from_collab(notes);
 			}
+
+			objects.forEach((obj) => {
+				if (obj.type === "context") {
+					const context = obj as Context.Type;
+					setInfo((prev) => {
+						if (prev.target.contexts.find((c) => c.id === context.id)) return prev;
+						return {
+							...prev,
+							target: {
+								...prev.target,
+								contexts: [...prev.target.contexts, context],
+							},
+						};
+					});
+				} else if (obj.type === "source") {
+					const source = obj as Source.Type;
+					setInfo((prev) => {
+						if (prev.target.files.find((f) => f.id === source.id)) return prev;
+						return {
+							...prev,
+							target: {
+								...prev.target,
+								files: [
+									...prev.target.files,
+									Source.Entity.normalize(prev, source),
+								],
+							},
+						};
+					});
+				}
+			});
 		};
 
 		/**
@@ -120,20 +160,9 @@ function _({ children }: { children: ReactNode }) {
 		const collabUpdateCallback = (message: any) => {
 			switch (message.payload.obj.type) {
 				case "note": {
-					const note: Note.Type = Note.Entity.normalize_note(
-						app,
-						message.payload.obj,
-					);
-					const idx = DataStore.notes.findIndex((n) => n.id === note.id);
-					if (idx >= 0) {
-						DataStore.notes[idx] = note;
-					} else {
-						DataStore.notes.push(note);
-					}
-					Note.Entity.invalidateCache();
-					RenderEngine.clearAllCaches();
-					DataStore.markDirty();
-					instanceRef.current.render();
+					instanceRef.current.notes_upsert_from_collab([
+						message.payload.obj as Note.Type,
+					]);
 					return;
 				}
 				case "link": {
@@ -164,11 +193,11 @@ function _({ children }: { children: ReactNode }) {
 			// Check notes
 			const noteIdx = DataStore.notes.findIndex((n) => n.id === id);
 			if (noteIdx >= 0) {
+				const deletedNote = DataStore.notes[noteIdx];
 				DataStore.notes.splice(noteIdx, 1);
-				Note.Entity.invalidateCache();
-				RenderEngine.clearAllCaches();
-				DataStore.markDirty();
-				instanceRef.current.render();
+				Note.Entity.removeIndexedNote(deletedNote);
+				RenderEngine.resetSourceNotes(deletedNote.source_id);
+				DataStore.markDirtySoon();
 				return;
 			}
 
@@ -206,7 +235,12 @@ function _({ children }: { children: ReactNode }) {
 			});
 		};
 
-		const reqeustStatsCallback = (message: any) =>
+		/**
+		 * Applies request_stats websocket messages to the shared request list.
+		 * @param message Incoming websocket message that contains a request stats object.
+		 * @returns Nothing.
+		 */
+		const requestStatsCallback = (message: any): void =>
 			instanceRef.current.request_add(message.payload.obj);
 
 		SmartSocket.Class.instance.on(
@@ -221,10 +255,15 @@ function _({ children }: { children: ReactNode }) {
 			SmartSocket.Message.Type.COLLAB_DELETE,
 			collabDeleteCallback,
 		);
-		const sid = SmartSocket.Class.instance.con(
+		const statsCreateListenerId = SmartSocket.Class.instance.con(
+			SmartSocket.Message.Type.STATS_CREATE,
+			(m) => m.payload.obj?.type === "request_stats",
+			requestStatsCallback,
+		);
+		const statsUpdateListenerId = SmartSocket.Class.instance.con(
 			SmartSocket.Message.Type.STATS_UPDATE,
-			(m) => m.payload.obj.type === "request_stats",
-			reqeustStatsCallback,
+			(m) => m.payload.obj?.type === "request_stats",
+			requestStatsCallback,
 		);
 
 		return () => {
@@ -241,16 +280,25 @@ function _({ children }: { children: ReactNode }) {
 				collabDeleteCallback,
 			);
 			SmartSocket.Class.instance.coff(
+				SmartSocket.Message.Type.STATS_CREATE,
+				statsCreateListenerId,
+			);
+			SmartSocket.Class.instance.coff(
 				SmartSocket.Message.Type.STATS_UPDATE,
-				sid,
+				statsUpdateListenerId,
 			);
 		};
 	}, [ws]);
 
 	const spawnBanner = useCallback(
 		(node: React.ReactNode, target: string = "main") => {
-			setBanner({ node, target });
-			document.querySelector("body")?.classList.add("no-scroll");
+			if (!node) {
+				setBanner(null);
+				document.querySelector("body")?.classList.remove("no-scroll");
+			} else {
+				setBanner({ node, target });
+				document.querySelector("body")?.classList.add("no-scroll");
+			}
 		},
 		[],
 	);
@@ -296,6 +344,8 @@ function _({ children }: { children: ReactNode }) {
 			toggleHintOpen,
 			isDetachedWindow: false,
 			currentDocument: globalThis.document,
+			detachedStatus: "active" as const,
+			detachedContextVersion: 0,
 		}),
 		[
 			spawnBanner,
@@ -341,10 +391,10 @@ function _({ children }: { children: ReactNode }) {
 			if (target) {
 				spawnDialog(<DisplayEventDialog event={target} />);
 			} else {
-				toast(`Cannot open ${delta > 0 ? "previous" : "next"} event`);
+				toast(translate(delta > 0 ? "application.cannotOpenPreviousEvent" : "application.cannotOpenNextEvent"));
 			}
 		} else if (["ф", "а"].includes(key)) {
-			toast("Use English letters A and D for scrolling");
+			toast(translate("application.useEnglishScrollKeys"));
 		} else if (key === "end") {
 			event.preventDefault();
 			const target = instance.setTimelineTarget(events[0]);
@@ -394,6 +444,8 @@ export namespace Application {
 			toggleHintOpen: () => void;
 			isDetachedWindow: boolean;
 			currentDocument: Document;
+			detachedStatus: "active" | "initializing" | "idle" | "auth_lost";
+			detachedContextVersion: number;
 		}
 	}
 

@@ -1,12 +1,12 @@
 import s from './Highlights.module.css';
 import { useScroll } from '@/store/scroll.store';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { useMemo, useRef, useState } from 'react';
 import { MinMax, Range } from '@/class/Info';
 import { Application } from '@/context/Application.context';
 import { Default } from '@/dto/Dataset';
 import { Algorhithm } from '@/ui/utils';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import { Stack } from '@/ui/Stack';
 import { Badge } from '@/ui/Badge';
 import { Input } from '@/ui/Input';
@@ -16,6 +16,7 @@ import { Highlight } from '@/entities/Highlight';
 import { Color } from '@/entities/Color';
 import { ColorPicker, ColorPickerPopover, ColorPickerTrigger } from '@/ui/Color';
 import { Label } from '@/ui/Label';
+import { Locale } from '@/locales';
 
 const HIGHLIGHT_VARIANTS = new Set<string>(Badge.Variants);
 
@@ -75,6 +76,7 @@ export namespace Highlights {
 
     export function Overlay({ className, ...props }: Highlights.Create.Overlay.Props) {
       const { Info, setHighlightsOverlay } = Application.use();
+      const { t } = Locale.use();
       const { x: scrollX, y: scrollY } = useScroll();
       const [icon, setIcon] = useState<Glyph.Id | null>(Glyph.List.keys().next().value!);
       const [name, setName] = useState<string>('');
@@ -123,16 +125,16 @@ export namespace Highlights {
         if (range) {
           return (
             <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
-              <Input className={s.name} variant='highlighted' icon={Glyph.List.get(icon!) ?? Default.Icon.HIGHLIGHT} placeholder='Highlight name' value={name} onChange={e => setName(e.target.value)} />
+              <Input className={s.name} variant='highlighted' icon={Glyph.List.get(icon!) ?? Default.Icon.HIGHLIGHT} placeholder={t('highlights.namePlaceholder')} value={name} onChange={e => setName(e.target.value)} />
               <Glyph.Chooser rootClassName={s.icon} asButton icon={icon} setIcon={setIcon} />
               <Stack dir='column' gap={6} ai='flex-start' data-input>
-                <Label value='Pick a color' />
+                <Label value={t('common.pickColor')} />
                 <ColorPicker color={color} setColor={setColor}>
                   <ColorPickerTrigger className={s.select} />
                   <ColorPickerPopover />
                 </ColorPicker>
               </Stack>
-              <Button variant='glass' disabled={!name} icon='Check' onMouseDown={submit}>Create</Button>
+              <Button variant='glass' disabled={!name} icon='Check' onMouseDown={submit}>{t('common.create')}</Button>
               <Button className={s.x} variant='secondary' icon='X' onMouseDown={unselect} />
             </Stack>
           )
@@ -141,11 +143,11 @@ export namespace Highlights {
         return (
           <Stack className={s.hint} onMouseDown={e => e.stopPropagation()} pos='relative'>
             <Icon name='ChartBarBig' />
-            <code>Select the area to be highlighted</code>
-            <Button className={s.close} variant='secondary' size='sm' icon='Logout' onMouseDown={destroyOverlay}>Exit</Button>
+            <code>{t('highlights.selectArea')}</code>
+            <Button className={s.close} variant='secondary' size='sm' icon='Logout' onMouseDown={destroyOverlay}>{t('common.exit')}</Button>
           </Stack>
         )
-      }, [destroyOverlay, unselect, icon, name, setName, range, submit])
+      }, [destroyOverlay, unselect, icon, name, setName, range, submit, t])
 
       const createHighlightOverlayMouseDownHandler = (event: React.MouseEvent) => {
         if (!overlay.current) {
@@ -251,6 +253,7 @@ export namespace Highlights {
 
   export function Component({ highlight, fixed, layoutWidth, frame = {}, style, className, index = 0, native, ...props }: Highlights.Component.Props) {
     const { Info, app } = Application.use();
+    const { t } = Locale.use();
     const { x: scrollX } = useScroll();
     const highlightColors = useMemo(() => getHighlightColors(highlight.color), [highlight.color]);
 
@@ -300,7 +303,7 @@ export namespace Highlights {
             data-type='badge'
             variant={highlightColors.badgeVariant}
             style={highlightColors.badgeStyle}
-            value={highlight.name || 'Highlight'}
+            value={highlight.name || t('highlights.fallbackName')}
             icon={Glyph.List.get(highlight.glyph_id) || Default.Icon.HIGHLIGHT}
           />
           <Button tabIndex={-1} size='sm' variant='glass' className={s.deleteButton} icon='Trash2' onClick={() => Info.highlight_delete(highlight.id)} />

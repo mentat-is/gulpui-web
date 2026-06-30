@@ -1,7 +1,7 @@
 import React from 'react'
 import { Root, Track, Thumb, Range } from '@radix-ui/react-slider'
 import styles from './styles/Slider.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 
 const Slider = React.forwardRef<
   React.ElementRef<typeof Root>,

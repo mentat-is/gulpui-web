@@ -12,11 +12,17 @@
   overflow-y: auto;
 }
 
+.main {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
 .header h2 {
   margin: 0;
   font-size: 18px;
   color: var(--geist-foreground);
   font-weight: 600;
+  font-family: var(--font-mono);
 }
 
 .row1 {
@@ -32,7 +38,7 @@
   width: 100%;
 }
 
-.timeRow > div {
+.timeRow>div {
   flex: 1;
 }
 
@@ -40,8 +46,33 @@
   width: 100%;
 }
 
-.sourceRow > div {
+.sourceRow>div {
   width: 100%;
+}
+
+.sourceSelectTrigger {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 6px 12px !important;
+  border: 1px solid var(--gray-alpha-400) !important;
+  background: transparent !important;
+  border-radius: 6px !important;
+  cursor: pointer;
+  transition: all 0.125s var(--transition) !important;
+  color: var(--gray-1000) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: none !important;
+}
+
+.sourceSelectTrigger:hover {
+  background: var(--background-200) !important;
+}
+
+.sourceSelectTrigger:focus {
+  outline: none !important;
+  box-shadow: var(--ring) !important;
 }
 
 .filtersSection {
@@ -73,7 +104,8 @@
   align-items: center;
 }
 
-.row2Left, .row2Right {
+.row2Left,
+.row2Right {
   display: flex;
   gap: 12px;
   align-items: center;
@@ -83,7 +115,8 @@
 .sortSelect {
   width: 120px;
 }
-.sortSelect[data-no-icon] > svg {
+
+.sortSelect[data-no-icon]>svg {
   display: none;
 }
 
@@ -92,16 +125,18 @@
 }
 
 .result {
-  background: var(--geist-background);
-  border: var(--geist-border);
-  border-radius: 6px;
-  padding: 12px;
-  flex: 1;
-  overflow: hidden; /* Hide overflow here so Table wrapper handles it */
-  position: relative;
-  min-height: 500px;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+.result :global(.wrapper) {
+  border: none;
 }
 
 .placeholder {
@@ -113,12 +148,13 @@
   font-size: 14px;
 }
 
-.result > div {
+.result>div {
   height: 100%;
 }
 
 .label {
-  font-size: 13px;
+  font-size: 11px;
+  font-family: var(--font-mono);
   opacity: 0.8;
   white-space: nowrap;
 }
@@ -143,7 +179,8 @@
   gap: 8px;
   padding: 6px 8px;
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 11px;
+  font-family: var(--font-mono);
   color: var(--gray-1000);
   cursor: pointer;
   transition: background-color 0.15s;

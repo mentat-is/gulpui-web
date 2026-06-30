@@ -3,6 +3,8 @@
   min-height: 32px;
   height: 32px;
   width: 100%;
+  font-family: var(--font-mono);
+  font-size: 11px;
   align-items: center;
   justify-content: flex-start;
   border-radius: 6px;
@@ -11,10 +13,9 @@
   outline-offset: var(--accent);
   gap: 16px;
   overflow: hidden;
-  font-size: 12px;
   padding: 8px;
   color: var(--accent);
-  text-align: left;
+  text-align: start;
   transition: box-shadow 0.2s;
   position: relative;
   cursor: pointer;
@@ -43,17 +44,17 @@
 
 .trigger:not([data-no-icon]):before {
   position: absolute;
-  left: 0;
+  inset-inline-start: 0;
   content: '';
   height: 100%;
   width: 32px;
   z-index: 0;
-  border-right: 1px solid var(--gray-alpha-400);
+  border-inline-end: 1px solid var(--gray-alpha-400);
   background: var(--background-200);
 }
 
 .trigger:hover::before {
-  border-right: 1px solid var(--gray-alpha-500);
+  border-inline-end: 1px solid var(--gray-alpha-500);
 }
 
 .trigger:focus {
@@ -86,7 +87,7 @@
   width: 100%;
   z-index: 5;
   cursor: default;
-  left: 0;
+  inset-inline-start: 0;
   align-items: center;
   justify-content: center;
   position: absolute;
@@ -106,6 +107,8 @@
   position: relative;
   z-index: 1500;
   max-height: 312px;
+  font-family: var(--font-mono);
+  font-size: 11px;
   min-width: 128px;
   overflow: hidden;
   border-radius: 8px;
@@ -267,7 +270,8 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 11px;
+  font-family: var(--font-mono);
   justify-content: center;
 }
 
@@ -276,6 +280,8 @@
   display: flex;
   width: 100%;
   cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
   min-height: 32px;
   height: min-content;
   user-select: none;
@@ -284,7 +290,6 @@
   padding: 0 8px;
   align-items: center;
   outline: none;
-  font-size: 12px;
   transition: background-color 0.2s, color 0.2s;
   transition-duration: 150ms;
   transition-timing-function: var(--transition);
@@ -303,7 +308,7 @@
   gap: 8px;
   justify-content: center;
   align-items: center;
-  text-align: left;
+  text-align: start;
 }
 
 .item[data-state="checked"] {
@@ -326,8 +331,7 @@
 }
 
 .separator {
-  margin-left: -4px;
-  margin-right: -4px;
+  margin-inline: -4px;
   margin-top: 4px;
   margin-bottom: 4px;
   height: 1px;

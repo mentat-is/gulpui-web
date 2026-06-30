@@ -1,10 +1,11 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import s from './styles/Button.module.css';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { Spinner } from './Spinner';
+import { translate } from '@/locales/core';
 
 const buttonVariants = cva(s.button, {
   variants: {
@@ -75,7 +76,7 @@ const Button = React.forwardRef<HTMLButtonElement, Button.Props>(
           ? (
             <>
               <Spinner color={color} size={iconSize + 4} />
-              {shape !== 'icon' ? placeholder ?? 'Loading...' : null}
+              {shape !== 'icon' ? placeholder ?? translate('common.loading') : null}
             </>
           )
           : <>

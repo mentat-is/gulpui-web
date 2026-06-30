@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/Tabs";
 import { Textarea } from "@/ui/Textarea";
 import { Label } from "@/ui/Label";
 import { Internal } from "@/entities/addon/Internal";
+import { Locale } from "@/locales";
 
 interface FilterFileBannerProps extends Banner.Props {
 	sources: Source.Type[];
@@ -48,7 +49,7 @@ interface FilterFileBannerProps extends Banner.Props {
 }
 
 import { QueriesHistory } from "@/components/QueriesHistory";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 
 /**
  * FilterFileBanner — Modal for building and applying OpenSearch queries/filters
@@ -74,6 +75,7 @@ export function FilterFileBanner({
 	...props
 }: FilterFileBannerProps) {
 	const { app, Info, spawnBanner, destroyBanner } = Application.use();
+	const { t } = Locale.use();
 
 	const [loading, setLoading] = useState(false);
 	const [files, setFiles] = useState<Source.Type[]>(initSources);
@@ -191,10 +193,10 @@ export function FilterFileBanner({
 			const newIdsStr = newIds.sort().join(",");
 			if (newIdsStr !== prevFileIds.current) {
 				if (isManual) {
-					toast.info("Query reset based on source selection");
+					toast.info(t("filterFile.queryResetSource"));
 					resetToCleanBase(newFiles);
 				} else {
-					toast.info("Query updated based on source selection");
+					toast.info(t("filterFile.queryUpdatedSource"));
 					setQuery((prev) => {
 						const cleanBase = getCleanBase(newFiles);
 						const updated = { ...prev, source_config: cleanBase.source_config };
@@ -211,7 +213,7 @@ export function FilterFileBanner({
 				prevFileIds.current = newIdsStr;
 			}
 		},
-		[app, files, isManual, resetToCleanBase, fieldTypeMap],
+		[app, files, isManual, resetToCleanBase, fieldTypeMap, t],
 	);
 
 	/**
@@ -351,7 +353,7 @@ export function FilterFileBanner({
 			manualState = JSON.parse(manualContent);
 		} catch {
 			if (isManual) {
-				toast.error("Invalid JSON");
+				toast.error(t("filterFile.invalidJson"));
 				return null;
 			}
 		}
@@ -367,7 +369,7 @@ export function FilterFileBanner({
 		finalQuery.string = Filter.Entity.describe(finalQuery, app);
 
 		return finalQuery;
-	}, [isManual, manualContent, query, fieldTypeMap, app]);
+	}, [isManual, manualContent, query, fieldTypeMap, app, t]);
 
 	/**
 	 * Submit handler — applies the current query to the selected files.
@@ -436,7 +438,7 @@ export function FilterFileBanner({
 		() => (
 			<Button
 				icon="Check"
-				variant="glass"
+				variant="secondary"
 				loading={loading}
 				onClick={submit}
 			/>
@@ -545,13 +547,19 @@ export function FilterFileBanner({
 	 * Handler for applying a query from the "Last filters" popover.
 	 *
 	 * Resolves source_ids from the history query against available sources in the app.
-	 * If matching sources are found, auto-selects them in the file picker.
+	 * If matching sources are found and `applySource` is true, auto-selects them in the file picker.
 	 * Updates query state, manual mode, and editor content to reflect the applied filter.
+	 *
+	 * @param q - The historical query to apply
+	 * @param applySource - Whether to change the source selection to match the filter's sources
 	 */
 	const handleApplyLastFilter = useCallback(
 		(q: Query.Type, applySource: boolean = true) => {
-			// Resolve matching source files from the query's source_config
+			let filesToUse = files;
+			let queryToApply = { ...q };
+
 			if (applySource && q.source_config?.source_ids?.length) {
+				// Apply the filter's sources
 				const matchedFiles: Source.Type[] = [];
 				for (const id of q.source_config.source_ids) {
 					try {
@@ -564,18 +572,34 @@ export function FilterFileBanner({
 
 				if (matchedFiles.length > 0) {
 					setFiles(matchedFiles);
+					filesToUse = matchedFiles;
 					prevFileIds.current = matchedFiles
 						.map((f) => f.id)
 						.sort()
 						.join(",");
 				}
+			} else {
+				// Keep current files: update query's source_config to match currently selected sources
+				const cleanBase = getCleanBase(files);
+				queryToApply = {
+					...q,
+					source_config: cleanBase.source_config
+						? {
+								operation_id:
+									q.source_config?.operation_id ??
+									cleanBase.source_config.operation_id,
+								range: q.source_config?.range ?? cleanBase.source_config.range,
+								source_ids: files.map((f) => f.id),
+							}
+						: undefined,
+				};
 			}
 
 			// Apply the full query state
-			setQuery(q);
-			setIsManual(!!q.isManual);
-			setManualContent(getManualContentFromQuery(q));
-			Info.setQuery(files, q);
+			setQuery(queryToApply);
+			setIsManual(!!queryToApply.isManual);
+			setManualContent(getManualContentFromQuery(queryToApply));
+			Info.setQuery(filesToUse, queryToApply);
 		},
 		[app, getManualContentFromQuery, Info, files],
 	);
@@ -583,7 +607,7 @@ export function FilterFileBanner({
 	/** Resets both builder and manual mode to a clean generated query from current sources. */
 	const handleManualReset = () => {
 		resetToCleanBase(files);
-		toast.success("Reset to generated query from sources");
+		toast.success(t("filterFile.resetGeneratedSuccess"));
 	};
 
 	/** Formats the manual JSON editor content with proper indentation. */
@@ -591,13 +615,13 @@ export function FilterFileBanner({
 		try {
 			setManualContent(JSON.stringify(JSON.parse(manualContent), null, 2));
 		} catch {
-			toast.error("Failed to parse JSON input");
+			toast.error(t("filterFile.failedParseJson"));
 		}
-	}, [manualContent]);
+	}, [manualContent, t]);
 
 	return (
 		<Banner
-			title="Choose filtering options"
+			title={t("filterFile.title")}
 			done={Done}
 			side={
 				!isManual ? (
@@ -619,7 +643,7 @@ export function FilterFileBanner({
 						<Source.Select.Multi
 							selected={fileIds}
 							setSelected={handleSourceChange}
-							placeholder="Select sources to apply filters to"
+							placeholder={t("filterFile.selectSourcesPlaceholder")}
 						/>
 					),
 					[fileIds, handleSourceChange],
@@ -634,22 +658,24 @@ export function FilterFileBanner({
 						jc="space-between"
 					>
 						<TabsList>
-							<TabsTrigger value="false">Builder</TabsTrigger>
-							<TabsTrigger value="true">Manual</TabsTrigger>
+							<TabsTrigger value="false">{t("common.builder")}</TabsTrigger>
+							<TabsTrigger value="true">{t("common.manual")}</TabsTrigger>
 						</TabsList>
-						<Stack style={{ margin: "8px 0" }}>
-							<Checkbox
-								id="isFlagedEventOnly"
-								checked={flaggedOnly}
-								onCheckedChange={(v) => setFlaggedOnly(!!v)}
-							/>
-							<Label
-								htmlFor="isFlagedEventOnly"
-								value="Flagged events only"
-								cursor="pointer"
-							/>
-							<Icon name="Flag" />
-						</Stack>
+						{!isManual && (
+							<Stack style={{ margin: "8px 0" }}>
+								<Checkbox
+									id="isFlagedEventOnly"
+									checked={flaggedOnly}
+									onCheckedChange={(v) => setFlaggedOnly(!!v)}
+								/>
+								<Label
+									htmlFor="isFlagedEventOnly"
+									value={t("filterFile.flaggedOnly")}
+									cursor="pointer"
+								/>
+								<Icon name="Flag" />
+							</Stack>
+						)}
 					</Stack>
 					<Separator style={{ margin: "8px 0" }} />
 					<TabsContent value="false">
@@ -668,7 +694,7 @@ export function FilterFileBanner({
 							className={s.manualTextarea}
 							value={manualContent}
 							onChange={(e) => setManualContent(e.target.value)}
-							placeholder="Edit OpenSearch query JSON..."
+							placeholder={t("filterFile.manualPlaceholder")}
 						/>
 					</TabsContent>
 				</Tabs>
@@ -678,12 +704,12 @@ export function FilterFileBanner({
 					dir="row"
 				>
 					<Button
-						variant="glass"
+						variant="secondary"
 						loading={isPreviewLoading}
 						onClick={previewCurrentFilterButtonClickHandler}
 						icon="PreviewDocument"
 					>
-						Preview result of current filter
+						{t("filterFile.previewCurrent")}
 					</Button>
 
 					{isManual && (
@@ -693,14 +719,14 @@ export function FilterFileBanner({
 								icon="RefreshCw"
 								onClick={handleManualReset}
 							>
-								Reset to generated
+								{t("filterFile.resetGenerated")}
 							</Button>
 							<Button
 								variant="secondary"
 								icon="Wand"
 								onClick={handleBeautify}
 							>
-								Beautify
+								{t("filterFile.beautify")}
 							</Button>
 						</>
 					)}
@@ -718,7 +744,7 @@ export function FilterFileBanner({
 								/>
 								<Label
 									htmlFor="create_notes"
-									value="If flagged for any documents found gulp add a note."
+									value={t("filterFile.createNoteForFlagged")}
 									cursor="pointer"
 								/>
 							</Stack>

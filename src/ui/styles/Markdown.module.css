@@ -7,6 +7,11 @@
   word-wrap: break-word !important;
 }
 
+.noScroll {
+  overflow: visible !important;
+  overflow-x: visible !important;
+}
+
 .markdown * {
   user-select: text !important;
   -webkit-user-select: text !important;
@@ -39,6 +44,11 @@ pre[class*="language-"] {
   margin: .5em 0;
   overflow: auto;
 }
+
+.noScroll pre[class*="language-"] {
+  overflow: visible !important;
+}
+
 .markdown code:not(pre[class*="language-"] code) {
   background: var(--gray-200);
   border: var(--geist-border);

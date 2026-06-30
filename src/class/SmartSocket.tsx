@@ -5,7 +5,7 @@ import { Group } from "@/entities/Group"
 import { Operation } from "@/entities/Operation"
 import { Request } from "@/entities/Request"
 import { User } from "@/entities/User"
-import { Icon } from "@impactium/icons"
+import { Icon } from "@/ui/Icon"
 import { EventEmitter } from 'events'
 
 export namespace SmartSocket {

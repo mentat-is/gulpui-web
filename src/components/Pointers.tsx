@@ -1,8 +1,8 @@
 import { Application } from '@/context/Application.context'
 import { useScroll } from '@/store/scroll.store'
 import s from './styles/Pointers.module.css'
-import { Icon } from '@impactium/icons'
-import { cn } from '@impactium/utils'
+import { Icon } from '@/ui/Icon'
+import { cn } from '@/ui/utils'
 import { XY } from '@/dto/XY.dto'
 import { formatTimestampToReadableString } from '@/ui/utils'
 import { Stack } from '@/ui/Stack'
@@ -173,9 +173,10 @@ export function Pointers({
             key={p.id}
             className={cn(s.pointer, isRightSide && s.right, !isYours && s.guest)}
             style={{ top: isYours ? p.y : -scrollY + p.y, left: x }}
+            ai="flex-start"
             pos="absolute"
           >
-            <Icon name="Gps" color={p.color} fill={p.color} />
+            <Icon name="MousePointer2" size={14} color={p.color} fill={p.color} />
             <p style={{ background: p.color, color: textColor }}>
               {p.id} {isYours ? `on ${formatTimestampToReadableString(timestamp)}ms` : null}
             </p>

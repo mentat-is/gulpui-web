@@ -1,6 +1,6 @@
-import { Icon as ImpactiumIcon } from '@impactium/icons'
+import { Icon, iconMap } from './Icon'
 
-export const icons = ImpactiumIcon.icons
+export const icons = iconMap
 
 export const ICON_VARIANT_COLORS = {
     default: 'currentColor',
@@ -9,12 +9,12 @@ export const ICON_VARIANT_COLORS = {
     black: '#0d0d0d',
 } as const
 
-export type IconName = ImpactiumIcon.Name
+export type IconName = Icon.Name
 
 export type IconComponent = (typeof icons)[IconName]
 
-export type IconProps = ImpactiumIcon.Props
+export type IconProps = Icon.Props
 
-export type IconSize = ImpactiumIcon.Size
+export type IconSize = Icon.Size
 
 export const getIcon = (name: IconName): IconComponent => icons[name]

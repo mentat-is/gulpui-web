@@ -10,7 +10,7 @@ import { UploadBanner } from "./Upload.banner";
 import { Separator } from "@/ui/Separator";
 import { Preview } from "./Preview.banner";
 import { FilterFileBanner } from "./FilterFile.banner";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Refractor } from "@/ui/utils";
 import { SetState } from "@/class/API";
 import { toast } from "sonner";
@@ -31,14 +31,82 @@ import { Context } from "@/entities/Context";
 import { Source } from "@/entities/Source";
 import { Operation } from "@/entities/Operation";
 import { Request } from "@/entities/Request";
+import { Select } from "@/ui/Select";
+import { Session } from "./Session.banner";
+import { DisplayEventDialog } from "@/dialogs/Event.dialog";
+import { useParams } from "react-router-dom";
+import { Internal } from "@/entities/addon/Internal";
+import { Locale } from "@/locales";
+import { WindowBridge } from "@/lib/WindowBridge";
+import { requestStore } from "@/store/request.store";
 
 export namespace SelectFiles {
 	export namespace Banner {
-		export type Props = UIBanner.Props;
+		export type Props = UIBanner.Props & {
+			showSession?: boolean;
+		};
 	}
 
-	export function Banner(props: Banner.Props) {
-		const { app, Info, spawnBanner } = Application.use();
+	export function Banner({ showSession = true, ...props }: Banner.Props) {
+		const { app, Info, spawnBanner, spawnDialog } = Application.use();
+		const { t } = Locale.use();
+		const { operation_id: routeOpId } = useParams<{ operation_id: string }>();
+		const operation = Operation.Entity.selected(app);
+		const operation_id = routeOpId || operation?.id;
+
+		const [sessions, setSessions] = useState<Internal.Session.Data[]>([]);
+		const [openSelectSession, setOpenSelectSession] = useState(false);
+
+		const activeSessions = useMemo(() => {
+			if (!operation_id) return [];
+			return sessions.filter(
+				(session) =>
+					session.selected.operations &&
+					session.selected.operations === operation_id,
+			);
+		}, [sessions, operation_id]);
+
+		/**
+		 * Reloads the sessions list from the backend for the current user.
+		 */
+		const reloadSessionsList = () => {
+			Info.session_list(app.general.user).then((res) => {
+				if (res) {
+					setSessions(res);
+				}
+			});
+		};
+
+		useEffect(() => {
+			let isMounted = true;
+			Info.session_list(app.general.user).then((res) => {
+				if (isMounted && res) {
+					setSessions(res);
+				}
+			});
+			return () => {
+				isMounted = false;
+			};
+		}, [app.general.user]);
+
+		/**
+		 * Loads a specific saved session, clears local selections, and launches the operation.
+		 * @param name - The name of the session to load.
+		 */
+		const load_session = async (name: string) => {
+			const session = sessions.find((s) => s.name === name);
+			if (!session) return;
+
+			await Info.session_load(session);
+			setSelectedContexts(new Set());
+			setSelectedFiles(new Set());
+			spawnBanner(null);
+
+			if (session.timeline.target) {
+				spawnDialog(<DisplayEventDialog event={session.timeline.target} />);
+			}
+		};
+
 		const [filter, setFilter] = useState("");
 		const [_, debug] = useReducer((i) => ++i, 0);
 		const [loading, setLoading] = useState(false);
@@ -67,7 +135,7 @@ export namespace SelectFiles {
 		function all(select: boolean) {
 			const operation = Operation.Entity.selected(app);
 			if (!operation) {
-				toast.error("Operation not selected", {
+				toast.error(t("operationSelect.notSelected"), {
 					richColors: true,
 				});
 				return;
@@ -151,6 +219,12 @@ export namespace SelectFiles {
 		const hasData =
 			app.target.operations.length > 0 || app.target.contexts.length > 0;
 
+		/**
+		 * Persists the selected contexts and sources, then replays that active
+		 * selection to any detached windows.
+		 *
+		 * @returns Nothing.
+		 */
 		const save = () => {
 			const contexts = Refractor.array(
 				...app.target.contexts.map((context) => ({
@@ -168,8 +242,34 @@ export namespace SelectFiles {
 			Info.setInfoByKey(contexts, "target", "contexts");
 			Info.setInfoByKey(files, "target", "files");
 
+			/**
+			 * Replays the just-saved source/context selection to detached tabs.
+			 *
+			 * @returns Nothing.
+			 */
+			const replayDetachedSelection = () => {
+				if (!operation_id) return;
+
+				WindowBridge.broadcastMainContext(
+					{
+						...app,
+						target: {
+							...app.target,
+							contexts,
+							files,
+						},
+					},
+					"active",
+					operation_id as Operation.Id,
+				);
+			};
+
+			replayDetachedSelection();
 			Info.session_autosave();
+			window.dispatchEvent(new CustomEvent(WindowBridge.DETACHED_REPLAY_EVENT));
 			setTimeout(() => {
+				replayDetachedSelection();
+				window.dispatchEvent(new CustomEvent(WindowBridge.DETACHED_REPLAY_EVENT));
 				spawnBanner(
 					<Frame.Banner
 						//was fixed //(disable close button)
@@ -202,7 +302,7 @@ export namespace SelectFiles {
 			return (
 				<Input
 					icon="Search"
-					placeholder="Search by context name and file name"
+					placeholder={t("selectFiles.searchPlaceholder")}
 					variant="highlighted"
 					value={filter}
 					onChange={(e) => setFilter(e.target.value)}
@@ -213,11 +313,11 @@ export namespace SelectFiles {
 		type VirtualItemType =
 			| { type: "context"; context: Context.Type; hasFiles: boolean }
 			| {
-				type: "file";
-				file: Source.Type;
-				context: Context.Type;
-				isLast: boolean;
-			};
+					type: "file";
+					file: Source.Type;
+					context: Context.Type;
+					isLast: boolean;
+			  };
 
 		const items = useMemo(() => {
 			const arr: VirtualItemType[] = [];
@@ -255,7 +355,7 @@ export namespace SelectFiles {
 
 		return (
 			<UIBanner
-				title="Select sources"
+				title={t("source.selectSources")}
 				className={s.banner}
 				done={
 					<Button
@@ -274,6 +374,57 @@ export namespace SelectFiles {
 				}
 				{...props}
 			>
+				{showSession && activeSessions.length > 0 && (
+					<Stack
+						dir="column"
+						gap={6}
+						ai="stretch"
+						style={{ width: "100%", marginBottom: 12 }}
+					>
+						<Label value={t("session.label")} />
+						<Select.Root
+							open={openSelectSession}
+							onOpenChange={setOpenSelectSession}
+							onValueChange={load_session}
+						>
+							<Select.Trigger>
+								<Select.Icon name="Status" />
+								{t("session.select")}
+							</Select.Trigger>
+							<Select.Content>
+								{activeSessions.map((session) => (
+									<Select.Item
+										key={session.name}
+										value={session.name}
+										style={{ color: session.color }}
+									>
+										<Select.Icon name={session.icon} />
+										{session.name}
+									</Select.Item>
+								))}
+								<Button
+									variant="tertiary"
+									style={{ width: "100%" }}
+									onClick={() =>
+										spawnBanner(
+											<Session.Delete.Banner
+												onClose={reloadSessionsList}
+												back={() =>
+													spawnBanner(
+														<SelectFiles.Banner showSession={showSession} />,
+													)
+												}
+											/>,
+										)
+									}
+									icon="Wrench"
+								>
+									{t("session.manage")}
+								</Button>
+							</Select.Content>
+						</Select.Root>
+					</Stack>
+				)}
 				{SearchInput}
 				<Stack>
 					<Button
@@ -282,7 +433,7 @@ export namespace SelectFiles {
 						className={s.actionButton}
 						icon="FilePlus"
 					>
-						Select all
+						{t("common.selectAll")}
 					</Button>
 					<Button
 						onClick={() => all(false)}
@@ -290,7 +441,7 @@ export namespace SelectFiles {
 						className={s.actionButton}
 						icon="FileMinus"
 					>
-						Unselect all
+						{t("common.deselectAll")}
 					</Button>
 				</Stack>
 				{Info.activeUploads.size > 0 && (
@@ -385,6 +536,9 @@ export namespace SelectFiles {
 														selectedFiles={selectedFiles}
 														setFile={setFile}
 														isLast={item.isLast}
+														onPreviewBack={() =>
+															spawnBanner(<SelectFiles.Banner />)
+														}
 													/>
 												</div>
 											</div>
@@ -394,7 +548,7 @@ export namespace SelectFiles {
 							</div>
 						) : (
 							<p className={s.noData}>
-								There is no data to analyze. Click below to upload...
+								{t("selectFiles.noData")}
 							</p>
 						)}
 					</Skeleton>
@@ -407,7 +561,7 @@ export namespace SelectFiles {
 						icon="RefreshClockwise"
 						loading={loading}
 					>
-						Reload
+						{t("common.refresh")}
 					</Button>
 				</Stack>
 			</UIBanner>
@@ -415,13 +569,15 @@ export namespace SelectFiles {
 	}
 }
 
-function ContextHeading({
+export function ContextHeading({
 	context,
 	selectedContexts,
 	setContext,
 	noFiles,
+	showCheckbox = true,
 }: any) {
 	const { spawnBanner } = Application.use();
+	const { t } = Locale.use();
 
 	return (
 		<Stack
@@ -434,17 +590,19 @@ function ContextHeading({
 				className={s.contextHeading}
 				gap={8}
 			>
-				<Checkbox
-					style={{ height: 20, width: 20 }}
-					checked={selectedContexts.has(context.id)}
-					onCheckedChange={(checked) => setContext(context.id, !!checked)}
-					id={context.name}
-				/>
+				{showCheckbox && (
+					<Checkbox
+						style={{ height: 20, width: 20 }}
+						checked={selectedContexts?.has(context.id) || false}
+						onCheckedChange={(checked) => setContext(context.id, !!checked)}
+						id={context.name}
+					/>
+				)}
 				<Label value={context.name} />
 				<hr style={{ flex: 1 }} />
 				<Badge
 					size="sm"
-					value="Delete"
+					value={t("common.delete")}
 					style={{ border: "1px solid var(--red-400)", borderRadius: "2px" }}
 					variant="red-subtle"
 					icon="Trash2"
@@ -463,7 +621,15 @@ function ContextHeading({
 	);
 }
 
-function FlatFileComponent({ file, selectedFiles, setFile, isLast }: any) {
+export function FlatFileComponent({
+	file,
+	selectedFiles,
+	setFile,
+	isLast,
+	showFilter = true,
+	showCheckbox = true,
+	onPreviewBack,
+}: any) {
 	return (
 		<Stack
 			dir="column"
@@ -475,6 +641,9 @@ function FlatFileComponent({ file, selectedFiles, setFile, isLast }: any) {
 				file={file}
 				selectedFiles={selectedFiles}
 				setFile={setFile}
+				showFilter={showFilter}
+				showCheckbox={showCheckbox}
+				onPreviewBack={onPreviewBack}
 			/>
 		</Stack>
 	);
@@ -484,10 +653,21 @@ interface FileComponentProps {
 	file: Source.Type;
 	selectedFiles: Set<Source.Id>;
 	setFile: (file: Source.Id, select: boolean) => void;
+	showFilter?: boolean;
+	showCheckbox?: boolean;
+	onPreviewBack?: () => void;
 }
 
-function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
+function FileComponent({
+	file,
+	setFile,
+	selectedFiles,
+	showFilter = true,
+	showCheckbox = true,
+	onPreviewBack,
+}: FileComponentProps) {
 	const { app, Info, spawnBanner } = Application.use();
+	const { t } = Locale.use();
 	const [loading, setLoading] = useState<boolean>(false);
 
 	const previewButtonClickHandler = () => {
@@ -498,14 +678,10 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 					total={total_hits}
 					values={docs}
 					fixed
-					back={() => spawnBanner(<SelectFiles.Banner />)}
-					done={
-						<Button
-							icon="Check"
-							onClick={() => spawnBanner(<SelectFiles.Banner />)}
-							variant="glass"
-						/>
-					}
+					back={() => {
+						setLoading(false);
+						if (onPreviewBack) onPreviewBack();
+					}}
 				/>,
 			),
 		);
@@ -521,7 +697,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 				Request.Prefix.INGESTION;
 
 			if (isIngesting) {
-				const reqId = Info.app.general.loadings.byFileId.get(file.id);
+				const reqId = requestStore.getRequestIdByFile(file.id);
 				const p =
 					Info.ingestionProgress.get(file.id) ||
 					(reqId ? Info.ingestionProgress.get(reqId as any) : 0) ||
@@ -546,7 +722,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 				size="sm"
 				variant="amber-subtle"
 				icon="Warning"
-				value="This file is too big"
+				value={t("selectFiles.fileTooBig")}
 			/>
 		);
 	};
@@ -556,11 +732,13 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 			className={cn(s.file, !file.total && s.disabled)}
 			key={file.id}
 		>
-			<Checkbox
-				id={file.name}
-				checked={selectedFiles.has(file.id)}
-				onCheckedChange={(checked) => setFile(file.id, !!checked)}
-			/>
+			{showCheckbox && (
+				<Checkbox
+					id={file.name}
+					checked={selectedFiles?.has(file.id) || false}
+					onCheckedChange={(checked) => setFile(file.id, !!checked)}
+				/>
+			)}
 			{Source.Entity.getRequestType(app, file) === Request.Prefix.INGESTION && (
 				<TooltipProvider>
 					<Tooltip>
@@ -569,7 +747,7 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 								<Spinner size={16} />
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Processing</TooltipContent>
+						<TooltipContent>{t("selectFiles.processing")}</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>
 			)}
@@ -581,21 +759,25 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 				variant="gray-subtle"
 				value={Math.max(file.total, progress)}
 			/>
-			<Button
-				shape="icon"
-				icon="Filter"
-				variant="secondary"
-				className={s.smallButton}
-				onClick={() =>
-					spawnBanner(
-						<FilterFileBanner
-							sources={[file]}
-							fixed
-							back={() => spawnBanner(<SelectFiles.Banner />)}
-						/>,
-					)
-				}
-			/>
+			{showFilter && (
+				<Button
+					shape="icon"
+					icon="Filter"
+					variant="secondary"
+					className={s.smallButton}
+					onClick={() =>
+						spawnBanner(
+							<FilterFileBanner
+								sources={[file]}
+								fixed
+								back={() => {
+									if (onPreviewBack) onPreviewBack();
+								}}
+							/>,
+						)
+					}
+				/>
+			)}
 			<Button
 				shape="icon"
 				icon="PreviewEye"
@@ -617,7 +799,9 @@ function FileComponent({ file, setFile, selectedFiles }: FileComponentProps) {
 					spawnBanner(
 						<Source.Delete.Banner
 							source={file}
-							back={() => spawnBanner(<SelectFiles.Banner />)}
+							back={() => {
+								if (onPreviewBack) onPreviewBack();
+							}}
 						/>,
 					)
 				}

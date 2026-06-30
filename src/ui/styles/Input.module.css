@@ -18,9 +18,10 @@
   height: 100%;
   padding: 0 8px;
   text-overflow: ellipsis;
-  text-align: left;
+  text-align: start;
   overflow: hidden;
-  font-size: 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
 }
 
 .wrapper:hover {
@@ -78,7 +79,7 @@
   outline: none;
   border: none;
   color: var(--second);
-  margin-right: 8px;
+  margin-inline-end: 8px;
   cursor: pointer;
 }
 
@@ -116,17 +117,17 @@
 }
 
 .hasEndIcon input {
-  padding-right: 0;
+  padding-inline-end: 0;
 }
 
 .endIcon,
 .endIconButton {
-  border-left: 1px solid var(--gray-400);
+  border-inline-start: 1px solid var(--gray-400);
 }
 
 .highlighted:hover .endIconButton,
 .highlighted:hover .endIcon {
-  border-left-color: var(--gray-500);
+  border-inline-start-color: var(--gray-500);
 }
 
 .endIcon {
@@ -162,12 +163,12 @@
   height: 100%;
   width: 32px;
   z-index: 0;
-  border-right: 1px solid var(--gray-400);
+  border-inline-end: 1px solid var(--gray-400);
   background: var(--background-200);
 }
 
 .highlighted:hover::before {
-  border-right: 1px solid var(--gray-500);
+  border-inline-end: 1px solid var(--gray-500);
 }
 
 @keyframes shake {

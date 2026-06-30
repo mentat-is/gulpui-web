@@ -1,6 +1,8 @@
 .main {
   --notes-table-row-height: 44px;
   --notes-table-min-width: 1330px;
+  font-family: var(--font-mono);
+  font-size: 11px;
 }
 
 .main {
@@ -32,13 +34,15 @@
 }
 
 .header h3 {
-  font-size: 20px;
+  font-size: 18px;
   margin: 0;
   font-weight: 600;
+  font-family: var(--font-mono);
 }
 
 .content {
   flex: 1;
+  min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   padding: 0px 0px 4px 4px !important;
@@ -104,92 +108,24 @@
 }
 
 .result {
-  background: var(--geist-background);
-  border: var(--geist-border);
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  background: var(--background-100);
+  border: 1px solid var(--gray-400);
   border-radius: 6px;
   max-height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: none;
 }
 
 .result>button {
   max-width: 100%;
 }
-
-.tableScroll {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-}
-
-.tableRowWrap {
-  left: 0;
-  min-width: var(--notes-table-min-width);
-}
-
-.tableRow {
-  display: grid;
-  grid-template-columns: 56px 190px 180px minmax(220px, 1.3fr) 160px 180px minmax(180px, 1fr) 110px;
-  align-items: center;
-  min-width: var(--notes-table-min-width);
-  height: var(--notes-table-row-height);
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--gray-400);
-}
-
-.tableHeaderRow {
-  background: color-mix(in srgb, var(--soft-black) 70%, transparent);
-  border-bottom: 1px solid var(--gray-300);
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  flex: none;
-}
-
-.tableCell {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  height: 100%;
-  padding: 0 12px;
-  border-right: 1px solid var(--gray-400);
-  font-size: 13px;
-  font-family: var(--font-mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tableCell:last-child {
-  border-right: none;
-}
-
-.headerLabel {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--second);
-}
-
-.checkboxCell {
-  justify-content: center;
-}
-
-.timestampCell,
-.titleCell,
-.contextCell,
-.sourceCell,
-.tagsCell,
-.textCell {
-  justify-content: flex-start;
-}
-
-.actionsCell {
-  justify-content: flex-end;
-}
-
 .colorValue {
   display: inline-block;
   min-width: 0;
@@ -201,4 +137,12 @@
 .portalContainer {
   position: relative;
   z-index: 9999;
+}
+
+.helperText {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  opacity: 0.8;
+  cursor: pointer;
+  user-select: none;
 }

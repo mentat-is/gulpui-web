@@ -1,5 +1,7 @@
 .content {
   overflow: hidden;
+  width: 100%;
+  min-width: 0;
 }
 
 .content:focus-visible {
@@ -15,6 +17,8 @@
   height: 100%;
   padding: 0px 8px;
   color: var(--second);
+  font-family: var(--font-mono);
+  font-size: 11px;
   cursor: pointer;
   transition: all 0.25s var(--transition);
 }
@@ -45,4 +49,6 @@
   position: relative;
   box-shadow: inset 0px 0px 0px 1px var(--gray-400);
   color: var(--second);
+  font-family: var(--font-mono);
+  font-size: 11px;
 }

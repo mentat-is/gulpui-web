@@ -2,10 +2,10 @@
   "name": "gulpui-web",
   "version": "0.3.0",
   "private": true,
-  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "prestart": "node ./scripts/copy_paid_plugins.js",
     "prebuild": "node ./scripts/copy_paid_plugins.js && node scripts/write-version.js",
+    "check:locales": "node ./scripts/check-locale-fallback.mjs",
     "build": "react-app-rewired build",
     "start": "react-app-rewired start",
     "server": "serve -s build -l 80"
@@ -23,9 +23,6 @@
     ]
   },
   "dependencies": {
-    "@impactium/icons": "^1.2.8",
-    "@impactium/types": "^1.0.0",
-    "@impactium/utils": "^1.0.2",
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-context-menu": "^2.2.16",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -41,6 +38,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tanstack/react-virtual": "^3.13.12",
     "canvas2svg": "^1.0.16",
+    "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "customize-cra": "^1.0.0",
@@ -51,11 +49,14 @@
     "highlight.js": "^11.11.1",
     "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.487.0",
     "next-themes": "^0.4.6",
     "react": "^19.2.0",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.0",
     "react-json-view-lite": "^2.5.0",
     "react-markdown": "^10.1.0",
+    "react-router-dom": "^6.22.3",
     "react-scripts": "^5.0.1",
     "react-syntax-highlighter": "^16.1.0",
     "rehype-prism": "^2.3.3",
@@ -72,7 +73,6 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@types/uuid": "^11.0.0",
     "baseline-browser-mapping": "^2.9.14",
     "react-app-rewired": "^2.2.1"
   }

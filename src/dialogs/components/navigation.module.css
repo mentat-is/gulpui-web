@@ -1,26 +1,53 @@
 .navigation {
-  height: 48px;
-  padding: 8px;
-  border-radius: var(--round);
-  background: var(--background-100);
-  border: 1px solid var(--gray-400);
+  min-height: 46px;
+  height: 46px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 6px 3px;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
+
+.navigation:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
 .content {
-  max-width: calc(100% - 90px);
-  height: 48px;
-  mask-image: linear-gradient(90deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  height: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
 }
+
 .content canvas {
   cursor: pointer;
   margin-top: 1px;
 }
 
 .focus {
-  border: 1px solid var(--geist-border);
-  box-shadow: 0px 0px 0px 4px #ffffff3d;
+  transform: translateY(-1px);
+  border-color: var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--background-100)) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  z-index: 1;
 }
 
 .placeholder {
-  width: 27px;
-  height: 27px;
+  width: 38px;
+  height: 32px;
+}
+
+.arrow {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 !important;
+  flex: none;
 }

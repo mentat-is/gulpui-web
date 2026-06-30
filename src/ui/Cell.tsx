@@ -1,6 +1,6 @@
 import { HTMLAttributes } from 'react';
 import s from './styles/Cell.module.css';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 
 export namespace Cell {
   type DivProps = HTMLAttributes<HTMLDivElement>;

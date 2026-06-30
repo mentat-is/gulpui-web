@@ -1,6 +1,6 @@
 import { HTMLAttributes, useMemo } from 'react';
 import s from './styles/Spinner.module.css';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 
 export namespace Spinner {
   export interface Props extends HTMLAttributes<HTMLDivElement> {

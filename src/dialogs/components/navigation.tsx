@@ -1,12 +1,13 @@
 import { DisplayEventDialog, EventIndicator } from '../Event.dialog'
 import { Application } from '@/context/Application.context'
-import { useEffect, useState, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { Source } from '@/entities/Source'
 import s from './navigation.module.css'
-import { cn } from '@impactium/utils'
-import { Button } from '@/ui/Button'
+import { cn } from '@/ui/utils'
 import { Doc } from '@/entities/Doc'
 import { Stack } from '@/ui/Stack'
+import { Button } from '@/ui/Button'
+import { Locale } from '@/locales'
 
 export namespace Navigation {
   export interface Props {
@@ -18,6 +19,8 @@ const WINDOW_SIZE = 11
 
 export function Navigation({ event }: Navigation.Props) {
   const { app, spawnDialog } = Application.use()
+  const { t } = Locale.use()
+  const navRef = useRef<HTMLDivElement>(null)
 
   const file = Source.Entity.id(app, event['gulp.source_id'])
 
@@ -47,26 +50,57 @@ export function Navigation({ event }: Navigation.Props) {
     })
   }, [allEvents, currentIndex])
 
-  const openEvent = (e: Doc.Type) => () => spawnDialog(<DisplayEventDialog event={e} />)
+  /**
+   * Opens the event dialog for a specific event from the navigation strip.
+   *
+   * @param targetEvent Event selected by the user.
+   * @returns Click handler that opens the selected event.
+   */
+  const openEvent = (targetEvent: Doc.Type) => () => {
+    spawnDialog(<DisplayEventDialog event={targetEvent} />)
+  }
 
-  const changeEvent = (forward: boolean) => () => {
+  /**
+   * Moves the dialog selection by a relative amount in the source event list.
+   *
+   * @param direction Relative movement, where -1 is previous and 1 is next.
+   */
+  const changeEvent = useCallback((direction: number) => {
     if (currentIndex === -1) return
-    const nextIndex = currentIndex + (forward ? 1 : -1)
+    const nextIndex = currentIndex + direction
     if (nextIndex >= 0 && nextIndex < allEvents.length) {
       spawnDialog(<DisplayEventDialog event={allEvents[nextIndex]} />)
     }
-  }
+  }, [allEvents, currentIndex, spawnDialog])
+
+  const hasPreviousEvent = currentIndex > 0
+  const hasNextEvent = currentIndex >= 0 && currentIndex < allEvents.length - 1
 
   return (
-    <Stack className={s.navigation} jc="space-between">
+    <Stack
+      ref={navRef}
+      className={s.navigation}
+      jc="space-between"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowRight') changeEvent(1)
+        if (event.key === 'ArrowLeft') changeEvent(-1)
+      }}
+      onWheel={(event) => {
+        if (Math.abs(event.deltaY) >= Math.abs(event.deltaX)) {
+          event.preventDefault()
+          changeEvent(event.deltaY > 0 ? 1 : -1)
+        }
+      }}
+    >
       <Button
-        onClick={changeEvent(false)}
-        icon="ArrowLeft"
-        variant="glass"
-        rounded
-        disabled={currentIndex <= 0}
+        className={s.arrow}
+        variant="secondary"
+        icon="ChevronLeft"
+        title={t('eventDialog.previousEvent')}
+        disabled={!hasPreviousEvent}
+        onClick={() => changeEvent(-1)}
       />
-
       <Stack className={s.content} jc="center" gap={4} flex>
         {windowEvents.map((e, i) =>
           e ? (
@@ -81,14 +115,15 @@ export function Navigation({ event }: Navigation.Props) {
           )
         )}
       </Stack>
-
       <Button
-        onClick={changeEvent(true)}
-        icon="ArrowRight"
-        variant="glass"
-        rounded
-        disabled={currentIndex === -1 || currentIndex >= allEvents.length - 1}
+        className={s.arrow}
+        variant="secondary"
+        icon="ChevronRight"
+        title={t('eventDialog.nextEvent')}
+        disabled={!hasNextEvent}
+        onClick={() => changeEvent(1)}
       />
+
     </Stack>
   )
 }

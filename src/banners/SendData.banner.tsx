@@ -6,13 +6,14 @@ import { Button } from '@/ui/Button'
 import { Select } from '@/ui/Select'
 import { Stack } from '@/ui/Stack'
 import { Label } from '@/ui/Label'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { Locale } from '@/locales'
 
 import s from './styles/EnrichmentBanner.module.css'
 
 /**
- * Interface that every "send_data" type plugin MUST expose via forwardRef +
+ * Interface that every send-data slot plugin MUST expose via forwardRef +
  * useImperativeHandle.
  *
  * The parent banner does not know the plugin's internal details: it only knows that,
@@ -37,6 +38,7 @@ export namespace SendData {
 
   export function Banner({ event, onSendData, ...props }: SendData.Props) {
     const { extensions } = Extension.use()
+    const { t } = Locale.use()
     const [selectedPluginFilename, setSelectedPluginFilename] = useState<string | null>(null)
 
     /**
@@ -46,11 +48,13 @@ export namespace SendData {
      */
     const pluginRef = useRef<SendDataPluginRef>(null)
 
-    /** Filter loaded extensions for type "send_data" */
+    /**
+     * Resolves every plugin registered for the send-data slot.
+     *
+     * @returns Loaded extensions that can send event data to an external destination.
+     */
     const sendDataPlugins = useMemo(() => {
-      return Object.values(extensions).filter((ext) =>
-        ext.type.includes('send_data')
-      )
+      return Extension.getBySlot(extensions, Extension.Slot.SendData)
     }, [extensions])
 
     const selectedPlugin = useMemo(() => {
@@ -78,7 +82,7 @@ export namespace SendData {
             <Icon variant='dimmed' name='Send' />
             {selectedPlugin
               ? selectedPlugin.display_name || selectedPlugin.filename
-              : 'Select an external source'}
+              : t('sendData.selectExternalSource')}
           </Stack>
         </Select.Trigger>
       )
@@ -95,7 +99,7 @@ export namespace SendData {
           </Select.Content>
         </Select.Root>
       )
-    }, [selectedPluginFilename, sendDataPlugins, selectedPlugin])
+    }, [selectedPluginFilename, sendDataPlugins, selectedPlugin, t])
 
     /**
      * "Done" button passed to the UI Banner as the `done` prop.
@@ -110,16 +114,16 @@ export namespace SendData {
 
     return (
       <UIBanner
-        title="Send data to external source"
+        title={t('sendData.title')}
         subtitle={<span ></span>}
         done={doneButton}
         {...props}
       >
         <Stack dir="column" ai="flex-start" gap={12} style={{ width: '100%' }}>
           {/* Dropdown to select the destination plugin */}
-           <Stack ai='center' jc='space-between'>
-            <Label style={{ color: 'var(--second)', fontSize: 14 }} value='Select an external source to send the event data to.' /> 
-           </Stack>
+          <Stack ai='center' jc='space-between'>
+            <Label className={s.helperText} value={t('sendData.helper')} />
+          </Stack>
         </Stack>
         <Stack dir="column" ai="flex-start" gap={12} style={{ width: '100%' }}>
           {/* Dropdown to select the destination plugin */}

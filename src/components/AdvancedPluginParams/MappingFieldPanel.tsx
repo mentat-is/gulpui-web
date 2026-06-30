@@ -6,9 +6,10 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Label } from '@/ui/Label'
 import { Select } from '@/ui/Select'
 import { Checkbox } from '@/ui/Checkbox'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import s from '../styles/AdvancedPluginParams.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
+import { Locale } from '@/locales'
 
 /**
  * MappingFieldData defines the structure for a single field configuration 
@@ -39,6 +40,7 @@ interface MappingFieldPanelProps {
  * type forcing, multipliers, and ECS field mappings.
  */
 export function MappingFieldPanel({ initialData, onSave, open, setOpen }: MappingFieldPanelProps) {
+  const { t } = Locale.use()
   const [name, setName] = useState('')
   const [flattenJson, setFlattenJson] = useState(false)
   const [forceType, setForceType] = useState('none')
@@ -127,12 +129,12 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
         >
         <Stack dir="column" gap={16} ai="stretch">
           <Dialog.Title className={cn(s.titleBase, s.titleS)}>
-            {initialData ? 'Update Field' : 'Add Field'}
+            {initialData ? t('advancedParams.updateField') : t('advancedParams.addField')}
           </Dialog.Title>
           
           <Input 
-            label="Field Name" 
-            placeholder="e.g. field1" 
+            label={t('advancedParams.fieldName')} 
+            placeholder={t('advancedParams.fieldNamePlaceholder')} 
             value={name} 
             onChange={(e) => setName(e.target.value)}
             valid={!!name}
@@ -140,17 +142,17 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
 
           <Stack ai="center" gap={8} style={{ padding: '8px 0' }}>
             <Checkbox id="flatten_json" checked={flattenJson} onCheckedChange={(c) => setFlattenJson(!!c)} />
-            <Label htmlFor="flatten_json" value="Flatten JSON" cursor="pointer" />
+            <Label htmlFor="flatten_json" value={t('advancedParams.flattenJson')} cursor="pointer" />
           </Stack>
 
           <Stack dir="column" gap={6} ai="flex-start" data-input>
-            <Label value="Force Type" />
+            <Label value={t('advancedParams.forceType')} />
             <Select.Root value={forceType} onValueChange={setForceType}>
               <Select.Trigger value={forceType} data-no-icon style={{ width: '100%' }}>
-                {forceType === 'none' ? 'None' : forceType}
+                {forceType === 'none' ? t('common.none') : forceType}
               </Select.Trigger>
               <Select.Content>
-                <Select.Item value="none">None</Select.Item>
+                <Select.Item value="none">{t('common.none')}</Select.Item>
                 <Select.Item value="str">str</Select.Item>
                 <Select.Item value="int">int</Select.Item>
                 <Select.Item value="float">float</Select.Item>
@@ -159,8 +161,8 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
           </Stack>
 
           <Input 
-            label="Multiplier" 
-            placeholder="e.g. 1000" 
+            label={t('advancedParams.multiplier')} 
+            placeholder={t('advancedParams.multiplierPlaceholder')} 
             type="number"
             value={multiplier} 
             onChange={(e) => setMultiplier(e.target.value)} 
@@ -169,13 +171,13 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
           />
 
           <Stack dir="column" gap={6} ai="flex-start" data-input>
-            <Label value="Is Timestamp" />
+            <Label value={t('advancedParams.isTimestamp')} />
             <Select.Root value={isTimestamp} onValueChange={setIsTimestamp}>
               <Select.Trigger value={isTimestamp} data-no-icon style={{ width: '100%' }}>
-                {isTimestamp === 'none' ? 'None' : isTimestamp}
+                {isTimestamp === 'none' ? t('common.none') : isTimestamp}
               </Select.Trigger>
               <Select.Content>
-                <Select.Item value="none">None</Select.Item>
+                <Select.Item value="none">{t('common.none')}</Select.Item>
                 <Select.Item value="chrome">chrome</Select.Item>
                 <Select.Item value="windows_filetime">windows_filetime</Select.Item>
                 <Select.Item value="generic">generic</Select.Item>
@@ -184,13 +186,13 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
           </Stack>
 
           <Stack dir="column" gap={6} ai="flex-start" data-input>
-            <Label value="Is Gulp Type" />
+            <Label value={t('advancedParams.isGulpType')} />
             <Select.Root value={isGulpType} onValueChange={setIsGulpType}>
               <Select.Trigger value={isGulpType} data-no-icon style={{ width: '100%' }}>
-                {isGulpType === 'none' ? 'None' : isGulpType}
+                {isGulpType === 'none' ? t('common.none') : isGulpType}
               </Select.Trigger>
               <Select.Content>
-                <Select.Item value="none">None</Select.Item>
+                <Select.Item value="none">{t('common.none')}</Select.Item>
                 <Select.Item value="context_id">context_id</Select.Item>
                 <Select.Item value="context_name">context_name</Select.Item>
                 <Select.Item value="source_id">source_id</Select.Item>
@@ -200,23 +202,23 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
           </Stack>
 
           <Input 
-            label="Extra Doc With Event Code" 
-            placeholder="e.g. some_code" 
+            label={t('advancedParams.extraDocWithEventCode')} 
+            placeholder={t('advancedParams.extraDocPlaceholder')} 
             value={extraDocWithEventCode} 
             onChange={(e) => setExtraDocWithEventCode(e.target.value)}
           />
           
           <Input 
-            label="ECS Fields (comma separated)" 
-            placeholder="e.g. file.name, file.hash.sha256" 
+            label={t('advancedParams.ecsFieldsComma')} 
+            placeholder={t('advancedParams.ecsFieldsPlaceholder')} 
             value={ecsStr} 
             onChange={(e) => setEcsStr(e.target.value)} 
             valid={!!ecsStr}
           />
 
           <Input 
-            label="Timestamp Format" 
-            placeholder="e.g. %Y-%m-%d %H:%M:%S" 
+            label={t('advancedParams.timestampFormat')} 
+            placeholder={t('advancedParams.timestampFormatPlaceholder')} 
             value={timestampFormat} 
             onChange={(e) => setTimestampFormat(e.target.value)} 
           />
@@ -226,14 +228,14 @@ export function MappingFieldPanel({ initialData, onSave, open, setOpen }: Mappin
               variant="secondary" 
               onClick={() => setOpen(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button 
               variant="tertiary" 
               disabled={!name || !ecsStr} 
               onClick={handleSave}
             >
-              {initialData ? 'Update' : 'Add'}
+              {initialData ? t('common.update') : t('common.add')}
             </Button>
           </Stack>
         </Stack>

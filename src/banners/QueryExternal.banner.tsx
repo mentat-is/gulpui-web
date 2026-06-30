@@ -3,12 +3,12 @@ import { Application } from "@/context/Application.context";
 import { Banner as UIBanner } from "@/ui/Banner";
 import { Select } from "@/ui/Select";
 import { Switch } from "@/ui/Switch";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import s from "./styles/QueryExternalBanner.module.css";
 import { Label } from "@/ui/Label";
 import { Input } from "@/ui/Input";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Preview } from "./Preview.banner";
 import { SelectFiles } from "./SelectFiles.banner";
 import { Skeleton } from "@/ui/Skeleton";
@@ -17,6 +17,7 @@ import { Stack } from "@/ui/Stack";
 import { Textarea } from "@/ui/Textarea";
 import { toast } from "sonner";
 import { AdvancedPluginParams } from "@/components/AdvancedPluginParams";
+import { Locale } from "@/locales";
 
 export namespace QueryExternal {
 	export const PluginSelection = ({
@@ -28,6 +29,7 @@ export namespace QueryExternal {
 		selectedOption: GulpDataset.PluginList.Interface | null;
 		onSelect: (name: string) => void;
 	}) => {
+		const { t } = Locale.use();
 		if (!options) return <Skeleton />;
 
 		return (
@@ -40,7 +42,7 @@ export namespace QueryExternal {
 					<Icon name="Puzzle" />
 					{selectedOption
 						? selectedOption.display_name
-						: "Select plugin to query"}
+						: t("queryExternal.selectPlugin")}
 				</Select.Trigger>
 				<Select.Content>
 					{options.map((option) => (
@@ -66,15 +68,16 @@ export namespace QueryExternal {
 		params: Record<string, any>;
 		setParams: React.Dispatch<React.SetStateAction<Record<string, any>>>;
 	}) => {
+		const { t } = Locale.use();
 		const typesMap = useMemo(
 			() => ({
-				list: "Enter a list of values, separate using coma",
-				int: "Enter a number",
-				str: "Enter a string or word",
+				list: t("queryExternal.listPlaceholder"),
+				int: t("queryExternal.numberPlaceholder"),
+				str: t("queryExternal.stringPlaceholder"),
 				bool: "",
 				dict: "",
 			}),
-			[],
+			[t],
 		);
 
 		const handleInputChange =
@@ -184,6 +187,7 @@ export namespace QueryExternal {
 		...props
 	}: QueryExternal.Banner.Props) => {
 		const { Info, spawnBanner, destroyBanner, app } = Application.use();
+		const { t } = Locale.use();
 		const [options, setOptions] = useState<
 			GulpDataset.PluginList.Interface[] | null
 		>(app.target.plugins.filter((i) => i.type.includes("external")));
@@ -253,8 +257,8 @@ export namespace QueryExternal {
 						return;
 					}
 
-					toast.success("Query executed successfully", {
-						description: "Now you can select new source",
+					toast.success(t("queryExternal.executed"), {
+						description: t("queryExternal.selectNewSource"),
 						icon: <Icon name="Check" />,
 						richColors: true,
 					});
@@ -262,8 +266,8 @@ export namespace QueryExternal {
 					spawnBanner(<SelectFiles.Banner />);
 				})
 				.catch(() => {
-					toast.error("Query failed", {
-						description: "Most common reason - there are no matches",
+					toast.error(t("queryExternal.failed"), {
+						description: t("queryExternal.noMatches"),
 						icon: <Icon name="X" />,
 						richColors: true,
 					});
@@ -316,7 +320,7 @@ export namespace QueryExternal {
 
 		return (
 			<UIBanner
-				title="Query external"
+				title={t("queryExternal.title")}
 				done={done}
 				option={optionButton}
 				{...props}
@@ -349,7 +353,7 @@ export namespace QueryExternal {
 						variant="tertiary"
 						icon={showAdvanced ? "ChevronUp" : "ChevronDown"}
 					>
-						Advanced Query Options
+						{t("queryExternal.advancedOptions")}
 					</Button>
 					{showAdvanced && (
 						<>
@@ -358,7 +362,7 @@ export namespace QueryExternal {
 								gap={8}
 								ai="stretch"
 							>
-								<Label value="Query Q in JSON format" />
+								<Label value={t("queryExternal.queryJson")} />
 								<Textarea
 									value={qText}
 									onChange={(e) => {
@@ -378,7 +382,7 @@ export namespace QueryExternal {
 									className={s.jsonInput}
 								/>
 								<span className={s.description}>
-									Query in the target query language
+									{t("queryExternal.queryLanguageHint")}
 								</span>
 							</Stack>
 							<Stack
@@ -386,7 +390,7 @@ export namespace QueryExternal {
 								gap={8}
 								ai="stretch"
 							>
-								<Label value="Query Options in JSON format" />
+								<Label value={t("queryExternal.queryOptionsJson")} />
 								<Textarea
 									value={qOptionsText}
 									onChange={(e) => {
@@ -415,14 +419,14 @@ export namespace QueryExternal {
 									className={s.jsonInput}
 								/>
 								<span className={s.description}>
-									Optional: Query options like limit, fields, sort, etc.
+									{t("queryExternal.queryOptionsHint")}
 								</span>
 							</Stack>
 						</>
 					)}
 				</Stack>
 				<p className={s.hint}>
-					Required params marked with <Icon name="Asterisk" />
+					{t("queryExternal.requiredParams")} <Icon name="Asterisk" />
 				</p>
 			</UIBanner>
 		);

@@ -139,6 +139,37 @@
 .frame_selector > div {
   flex: 1 !important;
 }
+.allSettingsPopover.allSettingsPopover {
+  max-width: calc(100vw - 24px);
+  overflow-x: auto;
+  word-break: normal;
+}
+.allSettingsPopover.allSettingsPopover :where(button, [role="menuitem"], [role="option"]) {
+  white-space: nowrap;
+}
+.allSettings {
+  width: max-content;
+  align-items: flex-end !important;
+}
+.allSettings [data-input] {
+  flex: 0 0 160px !important;
+  min-width: 160px;
+}
+.allSettings .select {
+  width: 100%;
+  gap: 8px;
+}
+.allSettings .select > svg {
+  flex: 0 0 auto;
+}
+.select > span {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .reset_font * {
   font-family: var(--font-sans) !important;
 }

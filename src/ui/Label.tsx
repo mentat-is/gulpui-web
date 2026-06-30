@@ -1,4 +1,4 @@
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { CSSProperties, LabelHTMLAttributes } from "react";
 import s from './styles/Label.module.css'
 

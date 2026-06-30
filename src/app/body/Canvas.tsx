@@ -22,7 +22,7 @@ import { debounce } from "lodash";
 import { useDrugs } from "@/decorator/use";
 import { ContextMenu, ContextMenuTrigger } from "@/ui/ContextMenu";
 import { TargetMenu } from "./Target.menu";
-import { cn } from "@impactium/utils";
+import { cn } from "@/ui/utils";
 import { Pointers } from "@/components/Pointers";
 import { XY } from "@/dto/XY.dto";
 import { Highlights } from "@/overlays/Highlights";
@@ -35,6 +35,8 @@ import { Operation } from "@/entities/Operation";
 import { useTheme } from "next-themes";
 import { Button } from "@/ui/Button";
 import { Color } from "@/entities/Color";
+import { Locale } from "@/locales";
+import { CanvasProfiler } from "./CanvasProfiler";
 
 export namespace Canvas {
 	export interface Props extends Stack.Props {
@@ -44,6 +46,7 @@ export namespace Canvas {
 
 export function Canvas({ timeline }: Canvas.Props) {
 	const { theme } = useTheme();
+	const { t } = Locale.use();
 	const canvas_ref = useRef<HTMLCanvasElement>(
 		null as unknown as HTMLCanvasElement,
 	);
@@ -55,6 +58,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 		Application.use();
 	const { x: scrollX, y: scrollY } = useScroll();
 	const [target, setTarget] = useState<Source.Type | null>(null);
+	const [groupDialogEvents, setGroupDialogEvents] = useState<Doc.Type[]>([]);
+	const [groupDialogAnchor, setGroupDialogAnchor] = useState<{
+		x: number;
+		y: number;
+	} | null>(null);
 	const { toggler, move, magnifier_ref, isAltPressed, mousePosition } =
 		useMagnifier(canvas_ref, [
 			app.target.files,
@@ -72,6 +80,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 	const { resize, handleMouseDown, handleMouseMove, handleMouseUpOrLeave } =
 		useDrugs(canvas_ref);
 	const pendingFrame = useRef<number>(0);
+	const pendingRenderReasonsRef = useRef<Set<string>>(new Set());
+	const pendingRenderForceRef = useRef<boolean>(false);
+	const pendingZoomFrame = useRef<number | null>(null);
+	const pendingZoomScaleRef = useRef<number | null>(null);
+	const pendingZoomScrollXRef = useRef<number | null>(null);
+	const didRenderInitialFrameRef = useRef<boolean>(false);
 	const scrollXRef = useRef(scrollX);
 	const scrollYRef = useRef(scrollY);
 	const mouseXRef = useRef<number>(-1000);
@@ -83,11 +97,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 		scrollYRef.current = scrollY;
 	}, [scrollX, scrollY]);
 
+	/**
+	 * Publishes the latest scroll position to React subscribers in one coalesced store update.
+	 * @param x Horizontal canvas scroll position.
+	 * @param y Vertical canvas scroll position.
+	 * @returns Nothing.
+	 */
 	const syncScrollToContext = useMemo(
 		() =>
 			debounce((x: number, y: number) => {
-				scrollStore.setScrollX(x);
-				scrollStore.setScrollY(y);
+				scrollStore.setScroll(x, y);
 			}, 16), // 60fps circa
 		[],
 	);
@@ -103,11 +122,18 @@ export function Canvas({ timeline }: Canvas.Props) {
 		Note.Entity.invalidateCache();
 		RenderEngine.reset("notes");
 		RenderEngine.reset("flags");
-	}, [app.target.notes, app.timeline.scale, app.target.files]);
+	}, [app.target.notes, app.target.files]);
 
+	/**
+	 * Renders the current Canvas frame and reports vertically visible source rows.
+	 * @param force Whether to force cache invalidation for overlay-related render data.
+	 * @param ctx Optional canvas rendering context, defaulting to the main canvas.
+	 * @returns Nothing.
+	 */
 	const renderCanvas = (
-		force?: boolean,
+		force = false,
 		ctx = canvas_ref.current?.getContext("2d"),
+		reason = "direct",
 	) => {
 		if (!wrapper_ref.current || !ctx || !canvas_ref.current) {
 			return;
@@ -115,25 +141,36 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 		const app = Info.app; // Capture current state for this frame
 
-		if (canvas_ref.current.width !== wrapper_ref.current.clientWidth) {
-			const oldWidth = canvas_ref.current.width;
-			const newWidth = wrapper_ref.current.clientWidth;
+		const oldWidth = canvas_ref.current.width;
+		const oldHeight = canvas_ref.current.height;
+		const newWidth = wrapper_ref.current.clientWidth;
+		const newHeight = wrapper_ref.current.clientHeight;
 
+		if (oldWidth !== newWidth || oldHeight !== newHeight) {
 			canvas_ref.current.width = newWidth;
-			canvas_ref.current.height = wrapper_ref.current.clientHeight;
+			canvas_ref.current.height = newHeight;
 
-			const delta = oldWidth / newWidth;
-
-			Info.setTimelineScale(app.timeline.scale * delta);
-			scrollStore.setScrollX((s) => s - newWidth + oldWidth);
+			if (oldWidth !== 0 && oldWidth !== newWidth) {
+				const delta = oldWidth / newWidth;
+				Info.setTimelineScale(app.timeline.scale * delta);
+				scrollStore.setScrollX((s) => s - newWidth + oldWidth);
+			}
+			DataStore.markDirtySoon();
 			return;
-		} else {
-			ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 		}
+
+		const profiler = CanvasProfiler.start(reason);
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		profiler?.mark("clear");
 
 		const currentScrollX = scrollXRef.current;
 		const currentScrollY = scrollYRef.current;
 		const limits = getLimits(app, Info, timeline, currentScrollX);
+		const selectedSources = Source.Entity.selected(app).filter((file) =>
+			app.hidden.filesWithNoEvents
+				? Doc.Entity.get(app, file.id).length > 0
+				: true,
+		);
 
 		// Create or reuse the singleton RenderEngine with current frame parameters.
 		// The constructor uses the singleton pattern: if an instance exists, it updates
@@ -148,26 +185,28 @@ export function Canvas({ timeline }: Canvas.Props) {
 			scrollY: currentScrollY,
 			mouseX: mouseXRef.current,
 			mouseY: mouseYRef.current,
-			visibleSources: Source.Entity.selected(app).filter((file) =>
-				app.hidden.filesWithNoEvents
-					? Doc.Entity.get(app, file.id).length > 0
-					: true,
-			),
+			visibleSources: selectedSources,
 		});
+		profiler?.mark("visibleSources");
 
 		const files = render.visibleSources;
 
 		render.ruler.draw();
+		profiler?.mark("ruler");
 
 		// Y-AXIS VIEWPORT CULLING: Each source row is 48px tall. With more sources
 		// and vertical scrolling, most rows are off-screen. By checking the Y position
 		// against the canvas bounds (with 48px buffer for partial visibility), we skip
 		// engine rendering, line drawing, local markers, and info labels for invisible rows.
 		const canvasHeight = ctx.canvas.height;
+		const visibleSourceIds: Source.Id[] = [];
+		const viewportSources: Source.Type[] = [];
 
 		files.forEach((file, i) => {
 			const y = Source.Entity.getHeight(app, file, currentScrollY, i);
 			if (y < -48 || y > canvasHeight + 48) return;
+			visibleSourceIds.push(file.id);
+			viewportSources.push(file);
 
 			if (
 				!throwableByTimestamp(file.timestamp, limits, app, file.settings.offset)
@@ -182,6 +221,9 @@ export function Canvas({ timeline }: Canvas.Props) {
 			render.locals(file, y);
 			render.draw_info(file, y);
 		});
+		render.stats.renderedRows = viewportSources.length;
+		Info.setVisibleSourceIds(visibleSourceIds);
+		profiler?.mark("rows");
 
 		render.targetMarker();
 		render.drawHighlights();
@@ -192,16 +234,19 @@ export function Canvas({ timeline }: Canvas.Props) {
 		}
 
 		render.highlightFlaggedDocuments();
+		profiler?.mark("highlightsFlags");
 
 		if (!app.hidden.notes) {
 			// Lazy rebuild: only runs if cache was invalidated since last render
 			Note.Entity.ensureIndexing(app);
-			render.notes(files);
+			render.notes(viewportSources);
 		}
+		profiler?.mark("notes");
 
 		if (!app.hidden.links) {
 			render.links();
 		}
+		profiler?.mark("links");
 
 		ctx.fillStyle = Color.Themer.theme.BORDER;
 		ctx.fillRect(
@@ -218,9 +263,75 @@ export function Canvas({ timeline }: Canvas.Props) {
 		);
 
 		render.ruler.sections();
-
-		renderCanvas;
+		profiler?.mark("ruler");
+		profiler?.setCounts(render.stats);
+		profiler?.finish();
 	};
+
+	const renderCanvasRef = useRef(renderCanvas);
+	renderCanvasRef.current = renderCanvas;
+
+	/**
+	 * Schedules a Canvas repaint and coalesces multiple requests into one animation frame.
+	 * @param reason Human-readable reason used by the dev profiler.
+	 * @param force Whether the scheduled render should invalidate overlay-related caches.
+	 * @returns Nothing.
+	 */
+	const requestCanvasRender = useMemo(
+		() =>
+			(reason: string, force = false): void => {
+				pendingRenderForceRef.current = pendingRenderForceRef.current || force;
+				pendingRenderReasonsRef.current.add(reason);
+
+				if (pendingFrame.current) {
+					return;
+				}
+
+				pendingFrame.current = requestAnimationFrame(() => {
+					const renderReason =
+						Array.from(pendingRenderReasonsRef.current).join(",") || "unknown";
+					const renderForce = pendingRenderForceRef.current;
+					pendingFrame.current = 0;
+					pendingRenderReasonsRef.current.clear();
+					pendingRenderForceRef.current = false;
+					renderCanvasRef.current(renderForce, undefined, renderReason);
+					DataStore.isDirty = false;
+				});
+			},
+		[],
+	);
+
+	/**
+	 * Commits the latest queued zoom scale and anchored scroll position.
+	 * @returns Nothing.
+	 */
+	const commitPendingZoom = useCallback((): void => {
+		pendingZoomFrame.current = null;
+		const nextScale = pendingZoomScaleRef.current;
+		const nextScrollX = pendingZoomScrollXRef.current;
+		pendingZoomScaleRef.current = null;
+		pendingZoomScrollXRef.current = null;
+
+		if (typeof nextScale === "number") {
+			Info.setTimelineScale(nextScale);
+		}
+		if (typeof nextScrollX === "number") {
+			scrollStore.setScrollX(nextScrollX);
+		}
+		requestCanvasRender("wheel:zoom");
+	}, [Info, requestCanvasRender]);
+
+	/**
+	 * Queues one zoom state commit for the next animation frame.
+	 * @returns Nothing.
+	 */
+	const scheduleZoomCommit = useCallback((): void => {
+		if (pendingZoomFrame.current !== null) {
+			return;
+		}
+
+		pendingZoomFrame.current = requestAnimationFrame(commitPendingZoom);
+	}, [commitPendingZoom]);
 
 	const renderOverlay = () => {
 		if (!overlay_ref.current || !canvas_ref.current) return;
@@ -340,18 +451,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 				) {
 					const link = item.link;
 					if (link.doc_ids && link.doc_ids.length > 0) {
-						const dialog =
-							link.doc_ids.length === 1 ? (
-								<DisplayEventDialog
-									event={Doc.Entity.id(Info.app, link.doc_id_from)}
-								/>
-							) : (
-								<DisplayGroupDialog
-									events={link.doc_ids.map((id) => Doc.Entity.id(Info.app, id))}
-								/>
-							);
-
-						spawnDialog(dialog);
+						const docs = link.doc_ids.map((id) => Doc.Entity.id(Info.app, id));
+						if (docs.length === 1) {
+							spawnDialog(<DisplayEventDialog event={docs[0]} />);
+						} else {
+							setGroupDialogEvents(docs);
+							setGroupDialogAnchor({ x: event.clientX, y: event.clientY });
+						}
 					}
 					return;
 				}
@@ -368,20 +474,19 @@ export function Canvas({ timeline }: Canvas.Props) {
 					canvasHitY >= item.rect.y &&
 					canvasHitY <= item.rect.y + item.rect.h
 				) {
-					const dialog =
-						item.notes.length === 1 ? (
+					if (item.notes.length === 1) {
+						return spawnDialog(
 							<DisplayEventDialog
 								event={Doc.Entity.id(Info.app, item.notes[0].doc._id)}
-							/>
-						) : (
-							<DisplayGroupDialog
-								events={item.notes.map((note) =>
-									Doc.Entity.id(Info.app, note.doc._id),
-								)}
-							/>
+							/>,
 						);
+					}
 
-					return spawnDialog(dialog);
+					setGroupDialogEvents(
+						item.notes.map((note) => Doc.Entity.id(Info.app, note.doc._id)),
+					);
+					setGroupDialogAnchor({ x: event.clientX, y: event.clientY });
+					return;
 				}
 			}
 		}
@@ -419,13 +524,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 		LoggerHandler.canvasClick(file, events, click.x);
 
 		if (events.length > 0) {
-			spawnDialog(
-				events.length > 1 ? (
-					<DisplayGroupDialog events={events} />
-				) : (
-					<DisplayEventDialog event={events[0]} />
-				),
-			);
+			if (events.length > 1) {
+				setGroupDialogEvents(events);
+				setGroupDialogAnchor({ x: event.clientX, y: event.clientY });
+				return;
+			}
+
+			spawnDialog(<DisplayEventDialog event={events[0]} />);
 		} else {
 			Info.setTimelineTarget(null);
 		}
@@ -465,12 +570,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 			// Horizontal scroll — pan only, no zoom
 			if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
 				scrollXRef.current += event.deltaX;
-				if (!pendingFrame.current) {
-					pendingFrame.current = requestAnimationFrame(() => {
-						pendingFrame.current = 0;
-						renderCanvas(false);
-					});
-				}
+				requestCanvasRender("wheel:pan");
 				syncScrollToContext(scrollXRef.current, scrollYRef.current);
 				return;
 			}
@@ -480,18 +580,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 			if (!bounding) setBounding(rect);
 
 			// Read current values from refs (always up-to-date, no dependency needed)
-			const oldScale = scaleRef.current;
+			const oldScale = pendingZoomScaleRef.current ?? scaleRef.current;
 			const cursorX = event.clientX - rect.left;
-			const contentX = scrollXRef.current + cursorX;
+			const currentScrollX = pendingZoomScrollXRef.current ?? scrollXRef.current;
+			const contentX = currentScrollX + cursorX;
 
 			// Calculate new scale based on scroll direction and user preference
-			let newScale = Info.app.timeline.isScrollReversed
+			const shouldDecrease = Info.app.timeline.isScrollReversed
 				? event.deltaY < 0
-					? Info.decreasedTimelineScale()
-					: Info.increasedTimelineScale()
-				: event.deltaY > 0
-					? Info.decreasedTimelineScale()
-					: Info.increasedTimelineScale();
+				: event.deltaY > 0;
+			let newScale = shouldDecrease ? oldScale - oldScale / 8 : oldScale + oldScale / 8;
 
 			const timeRange =
 				Info.app.timeline.frame.max - Info.app.timeline.frame.min;
@@ -505,12 +603,13 @@ export function Canvas({ timeline }: Canvas.Props) {
 			if (newScale === oldScale) return;
 
 			// Update scale and recompute scrollX to keep cursor position anchored
-			Info.setTimelineScale(newScale);
-			scrollStore.setScrollX(
-				Math.round(contentX * (newScale / oldScale) - cursorX),
-			);
+			const nextScrollX = Math.round(contentX * (newScale / oldScale) - cursorX);
+			pendingZoomScaleRef.current = newScale;
+			pendingZoomScrollXRef.current = nextScrollX;
+			scrollXRef.current = nextScrollX;
+			scheduleZoomCommit();
 		},
-		[wrapper_ref, banner, Info, bounding],
+		[wrapper_ref, banner, Info, bounding, requestCanvasRender, scheduleZoomCommit],
 	);
 
 	/** Debounced wheel handler — coalesces rapid scroll events (5ms window). */
@@ -520,7 +619,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 	);
 
 	useEffect(() => {
-		CanvasIcon.onIconLoad = () => DataStore.markDirty();
+		CanvasIcon.onIconLoad = () => DataStore.markDirtySoon();
 		return () => {
 			CanvasIcon.onIconLoad = null;
 		};
@@ -532,7 +631,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 		const el = wrapper_ref.current;
 		if (!el) return;
 		const observer = new ResizeObserver(() => {
-			DataStore.markDirty();
+			DataStore.markDirtySoon();
 		});
 		observer.observe(el);
 		return () => {
@@ -543,30 +642,20 @@ export function Canvas({ timeline }: Canvas.Props) {
 	useEffect(() => {
 		if (theme) {
 			Color.Themer.setTheme();
-			DataStore.markDirty();
 		}
 
-		const themeRepaintFrameId = requestAnimationFrame(() => {
-			DataStore.markDirty();
+		const unsubscribe = DataStore.subscribe(() => {
+			requestCanvasRender("data-store");
 		});
 
-		let animationFrameId: number;
-
-		const gameLoop = () => {
-			if (DataStore.isDirty) {
-				renderCanvas(false);
-				DataStore.isDirty = false;
-			}
-			animationFrameId = requestAnimationFrame(gameLoop);
-		};
-
-		animationFrameId = requestAnimationFrame(gameLoop);
+		if (theme) {
+			DataStore.markDirtySoon();
+		}
 
 		return () => {
-			cancelAnimationFrame(themeRepaintFrameId);
-			cancelAnimationFrame(animationFrameId);
+			unsubscribe();
 		};
-	}, [theme]);
+	}, [theme, requestCanvasRender]);
 
 	useEffect(() => {
 		const canvas = wrapper_ref.current;
@@ -610,12 +699,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 			if (hoveredItemRef.current !== currentHoveredItemId) {
 				hoveredItemRef.current = currentHoveredItemId;
-				if (!pendingFrame.current) {
-					pendingFrame.current = requestAnimationFrame(() => {
-						pendingFrame.current = 0;
-						renderCanvas(false);
-					});
-				}
+				requestCanvasRender("hover");
 			}
 		};
 
@@ -625,12 +709,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 			if (hoveredItemRef.current !== null) {
 				hoveredItemRef.current = null;
-				if (!pendingFrame.current) {
-					pendingFrame.current = requestAnimationFrame(() => {
-						pendingFrame.current = 0;
-						renderCanvas(false);
-					});
-				}
+				requestCanvasRender("hover:reset");
 			}
 		};
 
@@ -662,16 +741,16 @@ export function Canvas({ timeline }: Canvas.Props) {
 			}
 			debouncedHandleWheel.cancel();
 		};
-	}, [wrapper_ref, debouncedHandleWheel]);
+	}, [wrapper_ref, debouncedHandleWheel, requestCanvasRender]);
 
 	useEffect(() => {
-		renderCanvas();
-		return () => {
-			if (pendingFrame.current) {
-				cancelAnimationFrame(pendingFrame.current);
-				pendingFrame.current = 0;
-			}
-		};
+		if (!didRenderInitialFrameRef.current) {
+			didRenderInitialFrameRef.current = true;
+			renderCanvas(false, undefined, "react:initial");
+			return;
+		}
+
+		requestCanvasRender("react:deps");
 	}, [
 		scrollX,
 		scrollY,
@@ -687,13 +766,26 @@ export function Canvas({ timeline }: Canvas.Props) {
 		theme,
 	]);
 
+	useEffect(() => {
+		return () => {
+			if (pendingFrame.current) {
+				cancelAnimationFrame(pendingFrame.current);
+				pendingFrame.current = 0;
+			}
+			if (pendingZoomFrame.current !== null) {
+				cancelAnimationFrame(pendingZoomFrame.current);
+				pendingZoomFrame.current = null;
+			}
+		};
+	}, []);
+
 	const getPixelPosition = useCallback(
 		(timestamp: number) => {
 			return (
 				Math.round(
 					((timestamp - Info.app.timeline.frame.min) /
 						(Info.app.timeline.frame.max - Info.app.timeline.frame.min)) *
-						Info.width,
+					Info.width,
 				) - scrollXRef.current
 			);
 		},
@@ -710,7 +802,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 				(event.clientY +
 					scrollYRef.current -
 					timeline.current.getBoundingClientRect().top) /
-					48,
+				48,
 			);
 
 			const files = Source.Entity.selected(Info.app).filter((file) =>
@@ -738,6 +830,11 @@ export function Canvas({ timeline }: Canvas.Props) {
 
 		return <TargetMenu source={target} />;
 	}, [target]);
+
+	const closeGroupDialog = useCallback(() => {
+		setGroupDialogAnchor(null);
+		setGroupDialogEvents([]);
+	}, []);
 
 	const totalHeight = useMemo(() => {
 		if (!canvas_ref.current) {
@@ -767,17 +864,12 @@ export function Canvas({ timeline }: Canvas.Props) {
 				a.currentTarget.scrollTop - (canvas_ref.current?.height ?? 0);
 			scrollYRef.current = newScrollY;
 
-			if (!pendingFrame.current) {
-				pendingFrame.current = requestAnimationFrame(() => {
-					pendingFrame.current = 0;
-					renderCanvas(false);
-				});
-			}
+			requestCanvasRender("scrollbar");
 
 			syncScrollToContext(scrollXRef.current, newScrollY);
 			isManualScroll.current = true;
 		},
-		[canvas_ref, syncScrollToContext, renderCanvas],
+		[canvas_ref, syncScrollToContext, requestCanvasRender],
 	);
 
 	useLayoutEffect(() => {
@@ -827,7 +919,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 							onClick={() => Doc.Entity.flag.reset(operation.id)}
 							icon="FlagOff"
 						>
-							Unflag all {flaggedEvents.size} documents
+							{t("doc.unflagAllDocuments", { count: flaggedEvents.size })}
 						</Button>
 					)}
 				</Stack>
@@ -866,6 +958,14 @@ export function Canvas({ timeline }: Canvas.Props) {
 				{highlightsOverlay}
 			</ContextMenuTrigger>
 			<Menu />
+			{groupDialogAnchor && groupDialogEvents.length > 1 ? (
+				<DisplayGroupDialog
+					events={groupDialogEvents}
+					anchor={groupDialogAnchor}
+					onClose={closeGroupDialog}
+					preserveTimelineTarget={Boolean(app.timeline.target)}
+				/>
+			) : null}
 		</ContextMenu>
 	);
 }

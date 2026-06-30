@@ -1,7 +1,7 @@
 import React from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import s from './styles/Popover.module.css'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Application } from '@/context/Application.context'
 
 export namespace Popover {

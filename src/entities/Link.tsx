@@ -13,6 +13,7 @@ import { Toggle } from "@/ui/Toggle";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Internal } from "./addon/Internal";
+import { Locale } from "@/locales";
 
 export namespace Link {
 	export const name = "Link";
@@ -75,6 +76,7 @@ export namespace Link {
 		}
 		export function Banner({ link, ...props }: Link.Delete.Banner.Props) {
 			const { Info, destroyBanner } = Application.use();
+			const { t } = Locale.use();
 			const [loading, setLoading] = useState<boolean>(false);
 			const [isSubmited, setIsSubmited] = useState<boolean>(false);
 
@@ -97,20 +99,20 @@ export namespace Link {
 				} else {
 					destroyBanner();
 				}
-				toast(`Link ${link.name} has been deleted successfully`);
+				toast(t("link.deleted", { name: link.name }));
 			};
 
 			return (
 				<UIBanner
-					title="Delete link"
+					title={t("link.deleteTitle")}
 					done={<DeleteButton />}
 					{...props}
 				>
 					<p>
-						Are you sure you want to delete link: <code>{link.name}</code>
+						{t("link.deleteConfirm")} <code>{link.name}</code>
 					</p>
 					<Toggle
-						option={["No, don`t delete", "Yes, i`m sure"]}
+						option={[t("common.noDontDelete"), t("common.yesImSure")]}
 						checked={isSubmited}
 						onCheckedChange={setIsSubmited}
 					/>

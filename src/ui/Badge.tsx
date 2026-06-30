@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import s from './styles/Badge.module.css'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { HTMLAttributes } from 'react';
 
 const badgeVariants = cva(s.badge, {

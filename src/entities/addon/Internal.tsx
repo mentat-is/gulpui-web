@@ -1,7 +1,7 @@
 import { MinMax } from "@/class/Info";
 import { Logger } from "@/dto/Logger.class";
 import { XY } from "@/dto/XY.dto";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { App } from "../App";
 import { Context } from "../Context";
 import { Doc } from "../Doc";

@@ -21,6 +21,8 @@ import { DataStore } from "@/store/DataStore";
 import { Highlight } from "@/entities/Highlight";
 import { Context } from "@/entities/Context";
 import { stringToHexColor } from "@/ui/utils";
+import { translate } from "@/locales/core";
+import { requestStore } from "@/store/request.store";
 
 
 const NOTE_SIZE = 32;
@@ -60,6 +62,22 @@ export interface Dot {
 
 type Group = [index: number, count: number];
 
+interface NoteGroupCache {
+	key: string;
+	groups: Group[];
+}
+
+export interface RenderStats {
+	visibleSources: number;
+	renderedRows: number;
+	visibleNotes: number;
+	visibleLinks: number;
+	interactiveRects: number;
+	graphSamples: number;
+	graphBuckets: number;
+	renderedEventPixels: number;
+}
+
 export class RenderEngine implements RenderEngineConstructor, Engines {
 	ctx!: CanvasRenderingContext2D;
 	limits!: MinMax;
@@ -77,6 +95,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	graph!: GraphEngine;
 	shifted: Source.Type[] = [];
 	visibleSources: Source.Type[] = [];
+	visibleSourceIdSet = new Set<Source.Id>();
+	visibleSourceById = new Map<Source.Id, Source.Type>();
+	sourceRowIndexById = new Map<Source.Id, number>();
+	stats: RenderStats = RenderEngine.emptyStats();
 
 	// INTERACTIVE ELEMENTS IN CANVAS saved to manage clicks for notes and links
 	public static interactiveNotes: Array<{
@@ -91,7 +113,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 	// CACHE
 	private static [CacheKey] = {
-		notes: new Map() as Map<Source.Id, Group[]> & { [Hardcode.Scale]: number },
+		notes: new Map() as Map<Source.Id, NoteGroupCache>,
 		range: new Map() as Map<
 			Source.Id,
 			MinMax & {
@@ -135,7 +157,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		visibleSources,
 	}: RenderEngineConstructor) {
 		if (RenderEngine.instance) {
-			RenderEngine.instance.visibleSources = visibleSources || [];
+			RenderEngine.instance.stats = RenderEngine.emptyStats();
+			RenderEngine.instance.setVisibleSources(visibleSources || []);
+			RenderEngine.instance.stats.visibleSources =
+				RenderEngine.instance.visibleSources.length;
 			RenderEngine.instance.ruler = new RulerDrawer({
 				ctx,
 				getPixelPosition,
@@ -162,7 +187,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		}
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
-		this.visibleSources = visibleSources || [];
+		this.stats = RenderEngine.emptyStats();
+		this.setVisibleSources(visibleSources || []);
+		this.stats.visibleSources = this.visibleSources.length;
 		this.ruler = new RulerDrawer({
 			ctx,
 			getPixelPosition,
@@ -186,6 +213,41 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		return this;
 	}
 
+	/**
+	 * Creates a fresh render statistics object for one Canvas frame.
+	 * @returns Zeroed render counters.
+	 */
+	private static emptyStats(): RenderStats {
+		return {
+			visibleSources: 0,
+			renderedRows: 0,
+			visibleNotes: 0,
+			visibleLinks: 0,
+			interactiveRects: 0,
+			graphSamples: 0,
+			graphBuckets: 0,
+			renderedEventPixels: 0,
+		};
+	}
+
+	/**
+	 * Stores visible sources and builds O(1) lookup structures for the current frame.
+	 * @param sources Sources selected for the current render frame.
+	 * @returns Nothing.
+	 */
+	private setVisibleSources(sources: Source.Type[]): void {
+		this.visibleSources = sources;
+		this.visibleSourceIdSet = new Set<Source.Id>();
+		this.visibleSourceById = new Map<Source.Id, Source.Type>();
+		this.sourceRowIndexById = new Map<Source.Id, number>();
+
+		sources.forEach((source, index) => {
+			this.visibleSourceIdSet.add(source.id);
+			this.visibleSourceById.set(source.id, source);
+			this.sourceRowIndexById.set(source.id, index);
+		});
+	}
+
 	public lines = (file: Source.Type, y?: number) => {
 		// Derive a deterministic per-row tint from the context_id hash, but constrained
 		// to the current theme accent colour so monochrome themes stay monochrome.
@@ -199,7 +261,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		// is not overwritten. Use reduced opacity so the line is lighter than the
 		// fully-opaque text labels drawn afterwards by draw_info/locals.
 		this.ctx.fillStyle = color;
-		this.ctx.fillRect(0, y + 24, window.innerWidth, 1);
+		this.ctx.fillRect(0, y + 24, this.ctx.canvas.width, 1);
 		
 		this.fill(
 			color,
@@ -217,7 +279,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const savedAlpha = this.ctx.globalAlpha;
 		this.ctx.globalAlpha = 0.35;
 		this.ctx.fillStyle = Color.Themer.theme.BORDER;
-		this.ctx.fillRect(0, y - 25, window.innerWidth, 1);
+		this.ctx.fillRect(0, y - 25, this.ctx.canvas.width, 1);
 		this.ctx.globalAlpha = savedAlpha;
 	};
 
@@ -225,7 +287,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const base = isShifted ? alpha * 0.4 : alpha * 0.9;
 		this.ctx.globalAlpha = Math.min(base, 0.18);
 		this.ctx.fillStyle = color;
-		this.ctx.fillRect(0, y - 24, window.innerWidth, 48);
+		this.ctx.fillRect(0, y - 24, this.ctx.canvas.width, 48);
 		this.ctx.globalAlpha = 1;
 	};
 
@@ -234,26 +296,28 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	public links = () => {
 		RenderEngine.interactiveLinks = [];
 		const canvasWidth = this.ctx.canvas.width;
+		let visibleLinks = 0;
 
 		DataStore.links.forEach((link) => {
 			const linkedDocIds = [link.doc_id_from, ...link.doc_ids];
-			if (
-				linkedDocIds.some(
-					(id) =>
-						!Source.Entity.selected(this.info.app).find(
-							(s) =>
-								s.id === Doc.Entity.id(this.info.app, id)?.["gulp.source_id"],
-						),
-				)
-			)
-				return;
+			const linkedDocs = linkedDocIds
+				.map((id) => Doc.Entity.id(this.info.app, id))
+				.filter(Boolean);
 
-			const { dots } = this.calcDots(link);
+			if (linkedDocs.length !== linkedDocIds.length) return;
+			if (
+				linkedDocs.some(
+					(doc) => !this.visibleSourceIdSet.has(doc["gulp.source_id"]),
+				)
+			) return;
+
+			const { dots } = this.calcDots(link, linkedDocs);
 
 			const allOutsideLeft = dots.every((d) => d.x < -50);
 			const allOutsideRight = dots.every((d) => d.x > canvasWidth + 50);
 			if (allOutsideLeft || allOutsideRight) return;
 
+			visibleLinks++;
 			this.connection(dots);
 			dots.forEach((dot) => this.dot(dot));
 
@@ -270,6 +334,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 				}
 			}
 		});
+
+		this.stats.visibleLinks += visibleLinks;
+		this.stats.interactiveRects += RenderEngine.interactiveLinks.length;
 	};
 
 	public renderLinkBadge = (link: Link.Type, x: number, y: number) => {
@@ -387,35 +454,23 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		});
 	};
 
-	private getYForDoc = (id: Doc.Id): { y: number; t: number; o: number } => {
-		const e = RenderEngine[CacheKey].flags.get(id);
-		if (!e) {
-			const operation = Operation.Entity.selected(this.info.app);
-			const docs = Doc.Entity.flag.getDocs(this.info.app, operation?.id);
-
-			let result = {
-				y: 0,
-				t: 0,
-				o: 0,
-			};
-
-			docs.forEach((doc) => {
-				const p = {
-					y: Source.Entity.getHeight(this.info.app, doc["gulp.source_id"], 0, this.visibleSources.findIndex(s => s.id === doc["gulp.source_id"])),
-					t: doc.gulp_timestamp,
-					o:
-						Source.Entity.id(this.info.app, doc["gulp.source_id"]).settings
-							.offset ?? 0,
-				};
-				if (doc._id === id) {
-					result = p;
-				}
-				RenderEngine[CacheKey].flags.set(doc._id, p);
-			});
-
-			return result;
+	/**
+	 * Computes the source-row base position for a flagged document in the current frame.
+	 * @param doc Flagged document to position.
+	 * @returns Row position and timestamp metadata, or null when its source is hidden.
+	 */
+	private getYForDoc = (doc: Doc.Type): { y: number; t: number; o: number } | null => {
+		const source = this.visibleSourceById.get(doc["gulp.source_id"]);
+		const rowIndex = this.sourceRowIndexById.get(doc["gulp.source_id"]) ?? -1;
+		if (!source || rowIndex === -1) {
+			return null;
 		}
-		return e;
+
+		return {
+			y: Source.Entity.getHeight(this.info.app, source, 0, rowIndex),
+			t: doc.gulp_timestamp,
+			o: source.settings.offset ?? 0,
+		};
 	};
 	/**
 	 * Draws green line on position of every flagged event for the current operation
@@ -428,12 +483,12 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		for (const id of flagged) {
 			const doc = Doc.Entity.id(this.info.app, id);
 			if (!doc) continue;
-			const source = this.visibleSources.find(
-				(s) => s.id === doc["gulp.source_id"],
-			);
+			const source = this.visibleSourceById.get(doc["gulp.source_id"]);
 			if (!source) continue;
 
-			const { y, t, o } = this.getYForDoc(id);
+			const position = this.getYForDoc(doc);
+			if (!position) continue;
+			const { y, t, o } = position;
 
 			const x = this.getPixelPosition(t + o);
 			//if event is outside canvas, skip it
@@ -451,8 +506,9 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	public renderNote = (note: Note.Type, groupNotes: Note.Type[] = [note]) => {
 		const timestamp = Note.Entity.timestamp(note);
 		const x = this.getPixelPosition(timestamp) + NOTE_OFFSET;
+		const rowIndex = this.sourceRowIndexById.get(note.source_id) ?? -1;
 		const y =
-			Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY, this.visibleSources.findIndex(s => s.id === note.source_id)) +
+			Source.Entity.getHeight(this.info.app, note.source_id, this.scrollY, rowIndex) +
 			NOTE_OFFSET;
 
 		// Hit detection per l'Hover
@@ -513,7 +569,11 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		});
 	};
 
-	private getVisibleNotes = (file: Source.Id) => {
+	private getVisibleNotes = (file: Source.Id): {
+		notes: Note.Type[];
+		min: number;
+		max: number;
+	} => {
 		const notes = Note.Entity.findByFile(this.info.app, file);
 		const min = this.getTimestamp(-128);
 		const max = this.getTimestamp(this.ctx.canvas.width + 128);
@@ -524,34 +584,42 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const start = this.binarySearchDesc(notes, max, true); // Find first note <= max
 		const end = this.binarySearchDesc(notes, min, false); // Find last note >= min
 
-		if (start === -1 || end === -1 || start > end) return [];
+		if (start === -1 || end === -1 || start > end) {
+			return { notes: [], min, max };
+		}
 
-		return notes.slice(start, end + 1);
+		return { notes: notes.slice(start, end + 1), min, max };
 	};
 
 	private calculateNotesGroups(file: Source.Id): {
 		notes: Note.Type[];
 		groups: Group[];
 	} {
-		const notes = this.getVisibleNotes(file);
+		const visibleNotes = this.getVisibleNotes(file);
+		const notes = visibleNotes.notes;
+		const cacheKey = [
+			this.info.app.timeline.scale,
+			Math.floor(visibleNotes.min),
+			Math.ceil(visibleNotes.max),
+			DataStore.notes.length,
+		].join(":");
+
 		if (notes.length === 0) {
-			RenderEngine[CacheKey].notes.set(file, []);
-			RenderEngine[CacheKey].notes[Hardcode.Scale] =
-				this.info.app.timeline.scale;
+			RenderEngine[CacheKey].notes.set(file, {
+				key: cacheKey,
+				groups: [],
+			});
 			return {
 				notes: [],
 				groups: [],
 			};
 		}
 
-		if (
-			RenderEngine[CacheKey].notes[Hardcode.Scale] ===
-			this.info.app.timeline.scale &&
-			RenderEngine[CacheKey].notes.has(file)
-		) {
+		const cachedGroups = RenderEngine[CacheKey].notes.get(file);
+		if (cachedGroups?.key === cacheKey) {
 			return {
 				notes,
-				groups: RenderEngine[CacheKey].notes.get(file)!,
+				groups: cachedGroups.groups,
 			};
 		}
 
@@ -563,8 +631,10 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			i = groupEndIdx + 1;
 		}
 
-		RenderEngine[CacheKey].notes.set(file, groups);
-		RenderEngine[CacheKey].notes[Hardcode.Scale] = this.info.app.timeline.scale;
+		RenderEngine[CacheKey].notes.set(file, {
+			key: cacheKey,
+			groups,
+		});
 		return { notes, groups };
 	}
 
@@ -646,6 +716,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 					.slice(group[0], group[0] + group[1])
 					.filter((n) => Doc.Entity.id(this.info.app, n.doc._id));
 				if (groupNotes.length === 0) return;
+				this.stats.visibleNotes += groupNotes.length;
 
 				if (groupNotes.length === 1) {
 					this.renderNote(groupNotes[0]);
@@ -662,6 +733,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 				}
 			});
 		});
+		this.stats.interactiveRects += RenderEngine.interactiveNotes.length;
 	};
 
 	/* CANVAS DRAW Utility*/
@@ -685,25 +757,27 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 	public calcDots = (
 		link: Link.Type,
+		linkedDocs?: Doc.Type[],
 	): {
 		dots: Dot[];
 	} => {
 		const dots: Dot[] = [];
-		const linkedDocIds = [link.doc_id_from, ...link.doc_ids];
+		const docs =
+			linkedDocs ??
+			[link.doc_id_from, ...link.doc_ids]
+				.map((id) => Doc.Entity.id(this.info.app, id))
+				.filter(Boolean);
 
-		linkedDocIds.forEach((id) => {
-			const e = Doc.Entity.id(this.info.app, id);
-			if (!e) {
+		docs.forEach((e) => {
+			const source = this.visibleSourceById.get(e["gulp.source_id"]);
+			const index = this.sourceRowIndexById.get(e["gulp.source_id"]);
+			if (!source || typeof index === "undefined") {
 				return;
 			}
-			const index = this.visibleSources.findIndex(
-				(f) => f.id === e["gulp.source_id"],
-			);
 
 			const x = this.getPixelPosition(
 				e.gulp_timestamp +
-				(Source.Entity.id(this.info.app, e["gulp.source_id"])?.settings
-					.offset || 0),
+				(source.settings.offset || 0),
 			);
 			const y = index * 48 + 20 - this.scrollY || 0;
 			const color = link.color || Color.Themer.theme.FONT_ACCENT;
@@ -773,7 +847,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		this.ctx.fillStyle = Color.Themer.theme.FONT_SECOND;
 		this.ctx.fillText(events, left, line.three);
 
-		if (this.info.app.general.loadings.byFileId.has(file.id)) {
+		if (requestStore.hasLoadingForFile(file.id)) {
 			this.loading(file);
 		}
 	};
@@ -932,8 +1006,8 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		const suffix = !requestType
 			? ""
 			: requestType === Request.Prefix.INGESTION
-				? " | Ingesting..."
-				: " | Loading...";
+				? translate("renderEngine.ingestingSuffix")
+				: translate("renderEngine.loadingSuffix");
 
 		const context = Source.Entity.context(this.info.app, file);
 		const lines: Array<{ text: string; dy: number; color: string }> = [
@@ -975,8 +1049,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		if (!file) return;
 		if (targetFile && targetFile.id !== file.id) return;
 
-		const selected = this.visibleSources;
-		const index = selected.findIndex((f) => f.id === file.id);
+		const index = this.sourceRowIndexById.get(file.id) ?? -1;
 
 		if (index === -1) return;
 
@@ -995,7 +1068,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 		}
 		this.ctx.beginPath();
 		this.ctx.moveTo(0, rowY + 0.5);
-		this.ctx.lineTo(window.innerWidth, rowY + 0.5);
+		this.ctx.lineTo(this.ctx.canvas.width, rowY + 0.5);
 		this.ctx.stroke();
 		this.ctx.restore();
 	};
@@ -1010,8 +1083,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 
 		if (!file) return;
 
-		const selected = this.visibleSources;
-		const index = selected.findIndex((f) => f.id === file.id);
+		const index = this.sourceRowIndexById.get(file.id) ?? -1;
 
 		if (index === -1) return;
 
@@ -1042,6 +1114,37 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 	};
 
 	/**
+	 * Clears note grouping cache for one source after its notes change.
+	 * @param sourceId Source identifier whose note groups should be recalculated.
+	 * @returns Nothing.
+	 */
+	public static resetSourceNotes = (sourceId: Source.Id): void => {
+		RenderEngine[CacheKey].notes.delete(sourceId);
+	};
+
+	/**
+	 * Clears render caches that are scoped to one source after its events change.
+	 * @param sourceId Source identifier whose cached render data should be invalidated.
+	 * @returns Nothing.
+	 */
+	public static resetSource = (sourceId: Source.Id): void => {
+		RenderEngine[CacheKey].notes.delete(sourceId);
+		RenderEngine[CacheKey].range.delete(sourceId);
+		RenderEngine[CacheKey].flags.clear();
+
+		if (DefaultEngine.instance) {
+			DefaultEngine.instance.map.delete(sourceId);
+		}
+		if (HeightEngine.instance) {
+			HeightEngine.instance.map.delete(sourceId);
+			HeightEngine.instance.cacheKeys.delete(sourceId);
+		}
+		if (GraphEngine.instance) {
+			GraphEngine.instance.clearSourceCache(sourceId);
+		}
+	};
+
+	/**
 	 * Comprehensive memory cleanup — clears ALL render-related caches.
 	 * Must be called when switching operations to prevent memory leaks.
 	 *
@@ -1063,7 +1166,7 @@ export class RenderEngine implements RenderEngineConstructor, Engines {
 			HeightEngine.instance.cacheKeys.clear();
 		}
 		if (GraphEngine.instance) {
-			GraphEngine.instance.map.clear();
+			GraphEngine.instance.clearCache();
 		}
 	};
 }

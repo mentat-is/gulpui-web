@@ -8,10 +8,11 @@ import { Operation } from "./Operation";
 import { Context } from "./Context";
 import { Internal } from "./addon/Internal";
 import { toast } from "sonner";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 import { Logger } from "@/dto/Logger.class";
 import { DataStore } from "@/store/DataStore";
 import { Refractor } from "@/ui/utils";
+import { translate } from "@/locales";
 
 export namespace Doc {
 	export const name = "Doc";
@@ -26,6 +27,22 @@ export namespace Doc {
 		"gulp.source_id": Source.Id;
 		"gulp.event_code": number;
 		number_hash: number;
+	}
+
+	export interface PreparedBatch {
+		sourceId: Source.Id;
+		docs: Doc.Type[];
+	}
+
+	export interface HashRange {
+		min: number;
+		max: number;
+		length: number;
+	}
+
+	interface MergeResult {
+		events: Doc.Type[];
+		hashRange: Doc.HashRange | undefined;
 	}
 
 	export type Minified = Pick<Doc.Type, "_id" | "gulp.source_id">;
@@ -55,9 +72,66 @@ export namespace Doc {
 		 * via `clearIndex()` when switching operations to prevent memory leaks.
 		 */
 		private static _index = new Map<Doc.Id, Doc.Type>();
+		private static _hashRanges = new Map<Source.Id, Doc.HashRange>();
+		private static readonly PREPARED_INSERT_YIELD_CHUNK_SIZE = 25000;
 
-		/** Clears the entire doc lookup index. Called during operation switch to free memory. */
-		public static clearIndex = () => Doc.Entity._index.clear();
+		/**
+		 * Clears cached document lookup and hash range data during operation switch.
+		 * @returns Nothing.
+		 */
+		public static clearIndex = (): void => {
+			Doc.Entity._index.clear();
+			Doc.Entity._hashRanges.clear();
+		};
+
+		/**
+		 * Returns the cached number_hash range for one source.
+		 * @param sourceId Source identifier.
+		 * @returns Cached hash range, or undefined when it must be recomputed.
+		 */
+		public static hashRange = (
+			sourceId: Source.Id,
+		): Doc.HashRange | undefined => Doc.Entity._hashRanges.get(sourceId);
+
+		/**
+		 * Clears cached number_hash range data for one source.
+		 * @param sourceId Source identifier.
+		 * @returns Nothing.
+		 */
+		public static clearHashRange = (sourceId: Source.Id): void => {
+			Doc.Entity._hashRanges.delete(sourceId);
+		};
+
+		/**
+		 * Recomputes number_hash values for one source after render field settings change.
+		 * @param app Current application state.
+		 * @param sourceId Source identifier.
+		 * @param field Field used to read the hash input.
+		 * @param hashFunction Hash function used for string values.
+		 * @returns Nothing.
+		 */
+		public static recalculateNumberHashes = (
+			app: App.Type,
+			sourceId: Source.Id,
+			field: string,
+			hashFunction: Source.Type["settings"]["hash_function"],
+		): void => {
+			const events = Doc.Entity.get(app, sourceId);
+			events.forEach((event) => {
+				event.number_hash = Refractor.any.toNumber(
+					Refractor.get(event, field),
+					hashFunction,
+				);
+			});
+			Doc.Entity.updateHashRange(sourceId, events);
+		};
+
+		/**
+		 * Yields control back to the browser so rendering and input can run between large chunks.
+		 * @returns Promise that resolves on the next macrotask.
+		 */
+		private static yieldToMainThread = (): Promise<void> =>
+			new Promise((resolve) => setTimeout(resolve, 0));
 
 		/** Extracts a minimal Doc payload from a full event, keeping only essential fields. */
 		public static toDoc = (app: App.Type, event: Doc.Type) => {
@@ -106,6 +180,7 @@ export namespace Doc {
 				}
 				DataStore.events.delete(file.id);
 				DataStore.events.set(file.id, []);
+				Doc.Entity.clearHashRange(file.id);
 			});
 
 			return DataStore.events;
@@ -189,6 +264,7 @@ export namespace Doc {
 				// Sort if we modified the list, optimize performance
 				if (hasChanges) {
 					Doc.Entity.sort(existingEvents);
+					Doc.Entity.updateHashRange(id, existingEvents);
 					DataStore.markDirty();
 				}
 			});
@@ -255,12 +331,223 @@ export namespace Doc {
 				// Fast in-place native sort if changes were made
 				if (hasChanges) {
 					Doc.Entity.sort(existingEvents);
-					DataStore.markDirty();
+					Doc.Entity.updateHashRange(id, existingEvents);
+					DataStore.markDirtySoon();
 				}
 			}
 			return DataStore.events;
 		};
 
+		/**
+		 * Adds grouped and timestamp-sorted documents without re-sorting entire source arrays.
+		 * @param app Current application state.
+		 * @param batches Normalized documents grouped by source and sorted newest first.
+		 * @returns Updated global events map.
+		 */
+		public static addPreparedAsync = async (
+			app: App.Type,
+			batches: Doc.PreparedBatch[],
+		) => {
+			for (const batch of batches) {
+				if (batch.docs.length === 0) continue;
+
+				const incomingEvents = Doc.Entity.deduplicateSortedBatch(batch.docs);
+				const existingEvents = Doc.Entity.get(app, batch.sourceId);
+				const retainedEvents = await Doc.Entity.collectRetainedEventsAsync(
+					existingEvents,
+					incomingEvents,
+				);
+
+				incomingEvents.forEach((event) => {
+					Doc.Entity._index.set(event._id, event);
+				});
+
+				const mergeResult = await Doc.Entity.mergeSortedEventsAsync(
+					retainedEvents,
+					incomingEvents,
+				);
+				DataStore.events.set(batch.sourceId, mergeResult.events);
+				Doc.Entity.setHashRange(batch.sourceId, mergeResult.hashRange);
+				DataStore.markDirtySoon();
+			}
+
+			return DataStore.events;
+		};
+
+		/**
+		 * Removes duplicate document IDs from an incoming sorted batch, keeping the latest duplicate value.
+		 * @param docs Incoming documents sorted by descending timestamp.
+		 * @returns Unique documents sorted by descending timestamp.
+		 */
+		private static deduplicateSortedBatch = (docs: Doc.Type[]): Doc.Type[] => {
+			const docsById = new Map<Doc.Id, Doc.Type>();
+			docs.forEach((doc) => docsById.set(doc._id, doc));
+
+			if (docsById.size === docs.length) {
+				return docs;
+			}
+
+			return Doc.Entity.sort(Array.from(docsById.values()));
+		};
+
+		/**
+		 * Collects existing source events that are not replaced by the incoming batch.
+		 * @param existingEvents Current sorted source event array.
+		 * @param incomingEvents Incoming unique events for the same source.
+		 * @returns Existing events that should be retained before merge.
+		 */
+		private static collectRetainedEventsAsync = async (
+			existingEvents: Doc.Type[],
+			incomingEvents: Doc.Type[],
+		): Promise<Doc.Type[]> => {
+			const incomingIds = new Set(incomingEvents.map((event) => event._id));
+			const retainedEvents: Doc.Type[] = [];
+			const chunkSize = Doc.Entity.PREPARED_INSERT_YIELD_CHUNK_SIZE;
+
+			for (let i = 0; i < existingEvents.length; i += chunkSize) {
+				const limit = Math.min(i + chunkSize, existingEvents.length);
+				for (let j = i; j < limit; j++) {
+					const event = existingEvents[j];
+					if (event && !incomingIds.has(event._id)) {
+						retainedEvents.push(event);
+					}
+				}
+				await Doc.Entity.yieldToMainThread();
+			}
+
+			return retainedEvents;
+		};
+
+		/**
+		 * Merges two descending timestamp arrays into one descending timestamp array.
+		 * @param existingEvents Retained existing source events.
+		 * @param incomingEvents Incoming source events sorted newest first.
+		 * @returns Merged source events sorted newest first and their number_hash range.
+		 */
+		private static mergeSortedEventsAsync = async (
+			existingEvents: Doc.Type[],
+			incomingEvents: Doc.Type[],
+		): Promise<MergeResult> => {
+			const mergedEvents = new Array<Doc.Type>(
+				existingEvents.length + incomingEvents.length,
+			);
+			const chunkSize = Doc.Entity.PREPARED_INSERT_YIELD_CHUNK_SIZE;
+			let existingIndex = 0;
+			let incomingIndex = 0;
+			let mergedIndex = 0;
+			let min = Infinity;
+			let max = -Infinity;
+
+			const trackHashRange = (event: Doc.Type): void => {
+				const value = event.number_hash;
+				if (typeof value !== "number") return;
+				if (value > max) max = value;
+				if (value < min) min = value;
+			};
+
+			while (mergedIndex < mergedEvents.length) {
+				const limit = Math.min(mergedIndex + chunkSize, mergedEvents.length);
+				while (mergedIndex < limit) {
+					const existingEvent = existingEvents[existingIndex];
+					const incomingEvent = incomingEvents[incomingIndex];
+
+					if (!existingEvent) {
+						trackHashRange(incomingEvent);
+						mergedEvents[mergedIndex++] = incomingEvent;
+						incomingIndex++;
+						continue;
+					}
+
+					if (!incomingEvent) {
+						trackHashRange(existingEvent);
+						mergedEvents[mergedIndex++] = existingEvent;
+						existingIndex++;
+						continue;
+					}
+
+					if (incomingEvent.gulp_timestamp > existingEvent.gulp_timestamp) {
+						trackHashRange(incomingEvent);
+						mergedEvents[mergedIndex++] = incomingEvent;
+						incomingIndex++;
+					} else {
+						trackHashRange(existingEvent);
+						mergedEvents[mergedIndex++] = existingEvent;
+						existingIndex++;
+					}
+				}
+
+				if (mergedIndex < mergedEvents.length) {
+					await Doc.Entity.yieldToMainThread();
+				}
+			}
+
+			return {
+				events: mergedEvents,
+				hashRange:
+					Number.isFinite(min) && Number.isFinite(max)
+						? {
+								min,
+								max,
+								length: mergedEvents.length,
+							}
+						: undefined,
+			};
+		};
+
+		/**
+		 * Stores or clears the cached number_hash range for a source.
+		 * @param sourceId Source identifier.
+		 * @param hashRange Range to store, or undefined to clear it.
+		 * @returns Nothing.
+		 */
+		private static setHashRange = (
+			sourceId: Source.Id,
+			hashRange: Doc.HashRange | undefined,
+		): void => {
+			if (!hashRange) {
+				Doc.Entity._hashRanges.delete(sourceId);
+				return;
+			}
+
+			Doc.Entity._hashRanges.set(sourceId, hashRange);
+		};
+
+		/**
+		 * Updates the cached number_hash range for a source.
+		 * @param sourceId Source identifier.
+		 * @param events Current source events.
+		 * @returns Nothing.
+		 */
+		private static updateHashRange = (
+			sourceId: Source.Id,
+			events: Doc.Type[],
+		): void => {
+			if (events.length === 0) {
+				Doc.Entity._hashRanges.delete(sourceId);
+				return;
+			}
+
+			let min = Infinity;
+			let max = -Infinity;
+
+			for (let i = 0; i < events.length; i++) {
+				const value = events[i]?.number_hash;
+				if (typeof value !== "number") continue;
+				if (value > max) max = value;
+				if (value < min) min = value;
+			}
+
+			if (!Number.isFinite(min) || !Number.isFinite(max)) {
+				Doc.Entity._hashRanges.delete(sourceId);
+				return;
+			}
+
+			Doc.Entity._hashRanges.set(sourceId, {
+				min,
+				max,
+				length: events.length,
+			});
+		};
 		/** Finds multiple events by their IDs using the O(1) `_index` Map. Filters out missing entries. */
 		public static ids = (_app: App.Type, ids: Doc.Type["_id"][]) =>
 			ids.map((id) => Doc.Entity._index.get(id)).filter(Boolean) as Doc.Type[];
@@ -426,8 +713,8 @@ export namespace Doc {
 				}
 
 				if (!operationId) {
-					toast.error("Cannot flag document", {
-						description: "No operation selected",
+					toast.error(translate("doc.cannotFlag"), {
+						description: translate("doc.noOperationSelected"),
 						richColors: true,
 						icon: <Icon name="X" />,
 					});
@@ -440,8 +727,8 @@ export namespace Doc {
 
 				// Check limit for the specific operation
 				if (!isFlagged && operationIds.length >= 10) {
-					toast.error("Limit reached", {
-						description: "Max 10 events can be flagged per operation",
+					toast.error(translate("doc.limitReached"), {
+						description: translate("doc.flagLimitDescription"),
 						richColors: true,
 						icon: <Icon name="X" />,
 					});
@@ -456,9 +743,7 @@ export namespace Doc {
 					data[operationId] = [...operationIds, id];
 				}
 
-				toast.info(
-					`Event has been successfully ${isFlagged ? "unflagged" : "flagged"}`,
-				);
+				toast.info(translate(isFlagged ? "doc.unflagged" : "doc.flagged"));
 
 				Doc.Entity.saveFlaggedData(data);
 				return !isFlagged;

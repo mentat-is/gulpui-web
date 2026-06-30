@@ -6,6 +6,9 @@
   border-radius: 2px;
   border: 1px solid var(--gray-400);
   background-color: var(--background-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .root:focus-visible {
@@ -17,9 +20,16 @@
   opacity: 0.5;
 }
 .root svg {
-  transform: translateY(2px);
   color: var(--background-200);
 }
 .root[data-state="checked"] {
   background-color: var(--accent);
+}
+
+.indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }

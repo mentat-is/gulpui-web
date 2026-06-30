@@ -1,4 +1,4 @@
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 import { Switch, SwitchProps } from './Switch'
 import s from './styles/Toggle.module.css'
 import { Stack } from './Stack'

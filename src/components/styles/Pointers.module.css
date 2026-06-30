@@ -10,14 +10,14 @@
 
 .pointer {
   transition: transform 0.125s var(--transition);
-  transform: translate(-15px, -2px) !important;
+  transform: translate(-2px, -3px) !important;
 }
 
 .pointer p {
   text-shadow: 0 0 1px black;
   border-radius: 4px;
   padding: 0 4px;
-  transform: translate(calc(-100% - 24px), 100%);
+  transform: translate(-4px, 100%);
   height: 20px;
   line-height: 20px;
   font-size: 11px;
@@ -31,18 +31,20 @@
 }
 
 .pointer svg {
+  display: block;
   rotate: 0deg;
+  transform-origin: center;
   transition: all 0.125s var(--transition);
 }
 
 .right {
-  transform: translate(0px, -2px) !important;
+  transform: translate(-12px, -3px) !important;
 }
 
 .right p {
-  transform: translate(-4px, 100%);
+  transform: translate(calc(-100% - 24px), 100%);
 }
 
 .right svg {
-  rotate: -90deg;
+  transform: scaleX(-1);
 }

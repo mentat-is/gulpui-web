@@ -1,526 +1,1051 @@
-import { Application } from '@/context/Application.context'
-import { Banner as UIBanner } from '@/ui/Banner'
-import { ChangeEvent, useCallback, useEffect, useState } from 'react'
-import s from './styles/PermissaionsBanner.module.css'
-import { Popover } from '@/ui/Popover'
-import { capitalize } from 'lodash'
-import { Switch } from '@/ui/Switch'
-import { Icon } from '@impactium/icons'
-import { toast } from 'sonner'
-import { SetState } from '@/class/API'
-import { Skeleton } from '@/ui/Skeleton'
-import { Button } from '@/ui/Button'
-import { Input } from '@/ui/Input'
-import { Stack } from '@/ui/Stack'
-import { User } from '@/entities/User'
-import { Group } from '@/entities/Group'
-import { Glyph } from '@/entities/Glyph'
+import { Application } from "@/context/Application.context";
+import { Banner as UIBanner } from "@/ui/Banner";
+import { Table } from "@/components/Table";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { Icon } from "@/ui/Icon";
+import { toast } from "sonner";
+import { SetState } from "@/class/API";
+import { Button } from "@/ui/Button";
+import { Input } from "@/ui/Input";
+import { Skeleton } from "@/ui/Skeleton";
+import { Stack } from "@/ui/Stack";
+import { Select } from "@/ui/Select";
+import { Textarea } from "@/ui/Textarea";
+import { User } from "@/entities/User";
+import { Group } from "@/entities/Group";
+import { Glyph } from "@/entities/Glyph";
+import { Locale } from "@/locales";
+import { translate } from "@/locales/core";
+import s from "@/banners/styles/PermissaionsBanner.module.css";
 
 export namespace Permissions {
-  export type Role = 'admin' | 'read' | 'edit' | 'ingest' | 'delete'
-  export const RolesList: Role[] = ['admin', 'edit', 'delete', 'ingest', 'read']
-  export const RolesIcons: Record<Role, Icon.Name> = {
-    admin: 'Crown',
-    read: 'Book',
-    edit: 'PenLine',
-    ingest: 'Upload',
-    delete: 'Trash2',
-  }
+	export type Role = "admin" | "read" | "edit" | "ingest" | "delete";
+	export const PermissionSelectRoles: Role[] = [
+		"read",
+		"ingest",
+		"edit",
+		"delete",
+		"admin",
+	];
+	export const UserListChangedEvent = "gulp:user-list-changed";
+	export const GroupListChangedEvent = "gulp:group-list-changed";
 
-  export const Banner = () => {
-    const { destroyBanner } = Application.use()
-    const [users, setUsers] = useState<User.Type[]>([])
-    const [_groups, setGroups] = useState<Group.Type[]>([])
-    const [loading, setLoading] = useState<boolean>(false)
+	/**
+	 * Notifies listeners that the user list has changed.
+	 */
+	export function notifyUserListChanged() {
+		window.dispatchEvent(new Event(UserListChangedEvent));
+	}
 
-    const reload = useCallback(() => {
-      api<User.Type[]>(
-        '/user_list',
-        {
-          setLoading,
-        },
-        setUsers,
-      )
+	/**
+	 * Notifies listeners that the user group list has changed.
+	 */
+	export function notifyGroupListChanged() {
+		window.dispatchEvent(new Event(GroupListChangedEvent));
+	}
 
-      api<Group.Type[]>(
-        '/user_group_list',
-        {
-          method: 'POST',
-          setLoading,
-        },
-        setGroups,
-      )
-    }, [setUsers, setGroups])
+	/**
+	 * Resolves the default glyph used for group forms.
+	 *
+	 * @returns A glyph ID for the Users icon, or the first available glyph.
+	 */
+	function getDefaultGroupGlyphId(): Glyph.Id {
+		return (
+			Glyph.getIdByName("Users") ||
+			(Array.from(Glyph.List.keys()).find(Boolean) as Glyph.Id)
+		);
+	}
 
-    useEffect(() => {
-      reload()
-    }, [])
+	export namespace Users {
+		export const UsernameRule = /^[a-zA-Z0-9_.@-]{4,16}$/;
+		export const PasswordRule =
+			/^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-])[A-Za-z0-9!@#$%^&*()_+\-]{8,64}$/;
 
-    const update = (
-      user: Pick<User.Type, 'id'> & Partial<User.Type>,
-    ) => {
-      const { glyph_id = user.glyph_id, id: user_id } = user
+		export namespace RolesSelect {
+			export interface Props {
+				value: Permissions.Role[];
+				onChange: (roles: Permissions.Role[]) => void;
+			}
+		}
 
-      const query: Record<string, string> = {
-        user_id,
-      }
+		/**
+		 * Renders a multi-select control for the supported permission roles.
+		 *
+		 * @param props - Current selected roles and update callback.
+		 * @returns A multi-select trigger with selectable permission options.
+		 */
+		export function RolesSelect({ value, onChange }: RolesSelect.Props) {
+			const { t } = Locale.use();
 
-      if (glyph_id) query.glyph_id = glyph_id
+			/**
+			 * Orders the selected roles using the UI display order.
+			 *
+			 * @param selectedRoles - Raw selected role values from the select component.
+			 * @returns The selected roles normalized to known permission values.
+			 */
+			const normalizeSelectedRoles = (
+				selectedRoles: string[],
+			): Permissions.Role[] =>
+				PermissionSelectRoles.filter((role) => selectedRoles.includes(role));
 
-      api<User.Type>(
-        '/user_update',
-        {
-          method: 'PATCH',
-          query,
-          body: user,
-          setLoading,
-        },
-        reload,
-      )
-    }
+			return (
+				<Select.Multi.Root
+					value={value}
+					onValueChange={(selectedRoles) =>
+						onChange(normalizeSelectedRoles(selectedRoles))
+					}
+				>
+					<Select.Trigger>
+						<Icon
+							name="Gavel"
+							color="currentColor"
+						/>
+						<span>
+							{value.length > 0
+								? value
+										.map((role) =>
+											t(
+												role === "delete"
+													? "common.delete"
+													: role === "edit"
+														? "common.edit"
+														: `permissions.role.${role}`,
+											),
+										)
+										.join(", ")
+								: t("common.choosePlaceholder")}
+						</span>
+					</Select.Trigger>
+					<Select.Content>
+						{PermissionSelectRoles.map((role) => (
+							<Select.Item
+								key={role}
+								value={role}
+							>
+								{t(
+									role === "delete"
+										? "common.delete"
+										: role === "edit"
+											? "common.edit"
+											: `permissions.role.${role}`,
+								)}
+							</Select.Item>
+						))}
+					</Select.Content>
+				</Select.Multi.Root>
+			);
+		}
 
-    const UsersList = useCallback(
-      () => (
-        <Stack
-          dir="column"
-          ai="unset"
-          style={{ height: '100%', overflow: 'auto' }}
-        >
-          {users.length
-            ? users.map((user) => (
-              <Users.Combination
-                key={user.id}
-                user={user}
-                update={update}
-                users={users}
-              />
-            ))
-            : Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} width="full" />
-            ))}
-        </Stack>
-      ),
-      [users],
-    )
+		export namespace Create {
+			export const Banner = () => {
+				const { destroyBanner } = Application.use();
+				const { t } = Locale.use();
+				const [loading, setLoading] = useState<boolean>(false);
+				const [icon, setIcon] = useState<Glyph.Id | null>(null);
+				const [id, setId] = useState<string>("");
+				const [isIdValid, setIsIdValid] = useState<boolean>(true);
+				const [password, setPassword] = useState<string>("");
+				const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
+				const [permissions, setPermissions] = useState<Permissions.Role[]>([
+					"read",
+				]);
 
-    const done = <Button icon="Check" variant="glass" onClick={destroyBanner} />
+				const inputConstructor =
+					(
+						set: SetState<string>,
+						setValid: SetState<boolean>,
+						regexp: RegExp,
+					) =>
+					(event: ChangeEvent<HTMLInputElement>) => {
+						const { value } = event.target;
+						setValid(value.length > 3 ? true : regexp.test(value));
+						set(value);
+					};
 
-    return (
-      <UIBanner
-        title="Permissions"
-        option={<Users.Create.Trigger loading={loading} />}
-        loading={!users.length}
-        done={done}
-      >
-        <UsersList />
-        <Button style={{ width: '100%' }} variant="glass" icon="Users">
-          Manage groups
-        </Button>
-      </UIBanner>
-    )
-  }
+				/**
+				 * Stores the permissions selected from the multi-select control.
+				 *
+				 * @param selectedRoles - Roles selected by the user.
+				 */
+				const handlePermissionsChange = (selectedRoles: Permissions.Role[]) => {
+					setPermissions(selectedRoles);
+				};
 
-  export namespace Users {
-    export const UsernameRule = /^[a-zA-Z0-9_.@-]{4,16}$/
-    export const PasswordRule =
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*()_+\-])[A-Za-z0-9!@#$%^&*()_+\-]{8,64}$/
+				/**
+				 * Creates a user using the selected permission list.
+				 */
+				const submit = () => {
+					api(
+						"/user_create",
+						{
+							method: "POST",
+							query: {
+								user_id: id,
+								password,
+								glyph_id:
+									icon ||
+									(Array.from(Glyph.List.entries()).find(
+										(i) => i[1] === "User",
+									)?.[0] as string),
+							},
+							setLoading,
+							body: {
+								permission: permissions,
+							},
+						},
+						() => {
+							notifyUserListChanged();
+							destroyBanner();
+						},
+					);
+				};
 
-    export namespace Combination {
-      export interface Props {
-        user: User.Type
-        update: (
-          user: Pick<User.Type, 'id'> & Partial<User.Type>,
-        ) => void
-        users: User.Type[]
-      }
-    }
-    export const Combination = ({ user, update, users }: Combination.Props) => {
-      const { app, spawnBanner } = Application.use()
+				const Done = () => (
+					<Button
+						icon="Check"
+						loading={loading}
+						onClick={submit}
+						disabled={
+							id.length < 3 ||
+							!isIdValid ||
+							password.length < 5 ||
+							!isPasswordValid ||
+							permissions.length === 0 ||
+							!icon
+						}
+						variant="glass"
+					/>
+				);
 
-      const changeRoles = (
-        id: User.Id,
-        role: Permissions.Role,
-        add?: boolean,
-      ) => {
-        const user = users.find((u) => u.id === id)
-        if (!user) {
-          return
-        }
+				return (
+					<UIBanner
+						title={t("permissions.createUser")}
+						done={<Done />}
+					>
+						<Input
+							icon="User"
+							placeholder={t("permissions.userIdPlaceholder")}
+							variant="highlighted"
+							value={id}
+							valid={isIdValid}
+							onChange={inputConstructor(
+								setId,
+								setIsIdValid,
+								new RegExp(Permissions.Users.UsernameRule),
+							)}
+						/>
+						<Input
+							icon="Key"
+							placeholder={t("auth.password")}
+							variant="highlighted"
+							value={password}
+							valid={isPasswordValid}
+							onChange={inputConstructor(
+								setPassword,
+								setIsPasswordValid,
+								new RegExp(Permissions.Users.PasswordRule),
+							)}
+						/>
+						<Users.RolesSelect
+							value={permissions}
+							onChange={handlePermissionsChange}
+						/>
+						<Glyph.Chooser
+							icon={icon}
+							setIcon={setIcon}
+						/>
+					</UIBanner>
+				);
+			};
+		}
+		export namespace Groups {
+			export const NameRule = /^[a-zA-Z0-9_.@-]{2,64}$/;
 
-        if (role === 'read') {
-          return toast('User should have minimum one role', {
-            description: 'Request has been declined by server',
-          })
-        }
+			export interface SaveOptions {
+				name: string;
+				glyphId: Glyph.Id;
+				permissions: Permissions.Role[];
+				description: string;
+				setLoading?: SetState<boolean>;
+			}
 
-        user.permission = user.permission.filter((p) => p !== role)
-        if (add) {
-          user.permission.push(role)
-        }
+			export interface UpdateOptions extends SaveOptions {
+				groupId: string;
+			}
 
-        update({
-          id,
-          permission: user.permission,
-        })
-      }
+			export interface MembershipOptions {
+				groupId: string;
+				userId: string;
+			}
 
-      return (
-        <Stack className={s.combination}>
-          {Glyph.List.get(user.glyph_id ?? Glyph.getIdByName('User')) && (
-            <Icon name={Glyph.List.get(user.glyph_id ?? Glyph.getIdByName('User'))!} />
-          )}
-          <Stack
-            className={s.general}
-            ai="flex-start"
-            jc="space-around"
-            gap={-1}
-            dir="column"
-          >
-            <p>
-              {user.name}
-              {user.id === app.general.user?.id ? <span>(you)</span> : null}
-            </p>
-            <span>{user.id}</span>
-          </Stack>
-          <Stack flex />
-          <Popover.Root>
-            <Popover.Trigger asChild>
-              <Button icon="Gavel" variant="secondary">
-                Roles /{' '}
-                {user.permission
-                  .map((p) => p[0])
-                  .join('')
-                  .toUpperCase() || '0'}
-              </Button>
-            </Popover.Trigger>
-            <Popover.Content>
-              <Stack dir="column" ai="flex-start" gap={4}>
-                {RolesList.map((r) => {
-                  const has = user.permission.includes(r)
-                  return (
-                    <Stack key={r} className={s.role} gap={6}>
-                      {RolesIcons[r] && <Icon name={RolesIcons[r]} size={12} />}
-                      <p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
-                      <Switch
-                        checked={has}
-                        onCheckedChange={(add) => changeRoles(user.id, r, add)}
-                      />
-                    </Stack>
-                  )
-                })}
-              </Stack>
-            </Popover.Content>
-          </Popover.Root>
-          <Popover.Root>
-            <Popover.Trigger asChild>
-              <Button icon="Users" variant="secondary">
-                Groups
-              </Button>
-            </Popover.Trigger>
-            <Popover.Content>
-              <Stack dir="column" ai="flex-start" gap={4}>
-                {RolesList.map((r) => {
-                  const has = user.permission.includes(r)
-                  return (
-                    <Stack key={r} className={s.role} gap={6}>
-                      <Icon name={RolesIcons[r]} size={12} />
-                      <p style={{ fontSize: 12, flex: 1 }}>{capitalize(r)}</p>
-                      <Switch
-                        checked={has}
-                        onCheckedChange={(add) => changeRoles(user.id, r, add)}
-                      />
-                    </Stack>
-                  )
-                })}
-              </Stack>
-            </Popover.Content>
-          </Popover.Root>
-          <Button
-            icon="PenLine"
-            onClick={() =>
-              spawnBanner(<Permissions.Users.Edit.Banner user={user} />)
-            }
-            variant="secondary"
-          />
-        </Stack>
-      )
-    }
-    export namespace Create {
-      export namespace Trigger {
-        export type Props = Button.Props
-      }
-      export const Trigger = ({ ...props }: Trigger.Props) => {
-        const { spawnBanner } = Application.use()
+			/**
+			 * Extracts user IDs from the group detail payload.
+			 *
+			 * @param group - Group detail payload returned by the API.
+			 * @returns A normalized list of user IDs assigned to the group.
+			 */
+			export function getUserIds(
+				group: Group.Type | null | undefined,
+			): string[] {
+				const members = group?.users ?? group?.user ?? [];
+				return members
+					.map((member) => {
+						if (typeof member === "string") {
+							return member;
+						}
 
-        return (
-          <Button
-            icon="UserPlus"
-            variant='tertiary'
-            onClick={() => spawnBanner(<Users.Create.Banner />)}
-            {...props}
-          />
-        )
-      }
-      export const Banner = () => {
-        const { spawnBanner } = Application.use()
-        const [loading, setLoading] = useState<boolean>(false)
-        const [icon, setIcon] = useState<Glyph.Id | null>(null)
-        const [id, setId] = useState<string>('')
-        const [isIdValid, setIsIdValid] = useState<boolean>(true)
-        const [password, setPassword] = useState<string>('')
-        const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true)
-        const [permissions, setPermisisons] = useState<string>('read')
-        const [isPermissionsValid, setIsPermissionsValid] =
-          useState<boolean>(true)
+						return member.user_id ?? member.id ?? "";
+					})
+					.filter((userId) => userId.length > 0);
+			}
 
-        const inputConstructor =
-          (
-            set: SetState<string>,
-            setValid: SetState<boolean>,
-            regexp: RegExp,
-          ) =>
-            (event: ChangeEvent<HTMLInputElement>) => {
-              const { value } = event.target
-              setValid(value.length > 3 ? true : regexp.test(value))
-              set(value)
-            }
+			/**
+			 * Fetches all user groups available to the current session.
+			 *
+			 * @returns A promise resolving to the user group list returned by the API.
+			 */
+			export function list(): Promise<Group.Type[]> {
+				return api<Group.Type[]>("/user_group_list", {
+					method: "POST",
+				});
+			}
 
-        const submit = () => {
-          api(
-            '/user_create',
-            {
-              method: 'POST',
-              query: {
-                user_id: id,
-                password,
-                glyph_id:
-                  icon ||
-                  (Array.from(Glyph.List.entries()).find(
-                    (i) => i[1] === 'User',
-                  )?.[0] as string),
-              },
-              setLoading,
-              body: { "permission": permissions.split(',').map((v) => v.trim().toLowerCase()) }
-            },
-            () => spawnBanner(<Permissions.Banner />),
-          )
-        }
+			/**
+			 * Fetches detailed information about a specific user group by ID.
+			 *
+			 * @param groupId - Unique identifier of the group to fetch.
+			 * @returns A promise resolving to the detailed group payload.
+			 */
+			export function getById(groupId: string): Promise<Group.Type> {
+				return api<Group.Type>("/user_group_get_by_id", {
+					method: "GET",
+					query: { group_id: groupId },
+				});
+			}
 
-        const handlePermsChange = (event: ChangeEvent<HTMLInputElement>) => {
-          const { value } = event.target
-          const valid = value
-            .split(',')
-            .map((v) => v.trim())
-            .every((v) => RolesList.includes(v as Role))
+			/**
+			 * Deletes a user group by ID.
+			 *
+			 * @param groupId - Unique identifier of the group to delete.
+			 * @returns A promise resolving to true when the API confirms deletion.
+			 */
+			export async function deleteById(groupId: string): Promise<boolean> {
+				const response = await api<undefined>("/user_group_delete", {
+					method: "DELETE",
+					query: { group_id: groupId },
+					raw: true,
+				});
 
-          setIsPermissionsValid(valid)
-          setPermisisons(value)
-        }
+				return response?.status === "success";
+			}
 
-        const Done = () => (
-          <Button
-            icon="Check"
-            loading={loading}
-            onClick={submit}
-            disabled={
-              id.length < 3 ||
-              !isIdValid ||
-              password.length < 5 ||
-              !isPasswordValid ||
-              !isPermissionsValid ||
-              !icon
-            }
-            variant="glass"
-          />
-        )
+			/**
+			 * Creates a new user group with permissions and description metadata.
+			 *
+			 * @param options - Group name, glyph, permissions, and description payload.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function create(options: SaveOptions): Promise<boolean> {
+				const response = await api<undefined>("/user_group_create", {
+					method: "POST",
+					query: {
+						name: options.name,
+						glyph_id: options.glyphId,
+					},
+					setLoading: options.setLoading,
+					raw: true,
+					body: {
+						permission: options.permissions,
+						description: options.description,
+					},
+				});
 
-        return (
-          <UIBanner
-            back={() => spawnBanner(<Permissions.Banner />)}
-            title="Create user"
-            done={<Done />}
-          >
-            <Input
-              icon="User"
-              placeholder="User idendificator"
-              variant="highlighted"
-              value={id}
-              valid={isIdValid}
-              onChange={inputConstructor(
-                setId,
-                setIsIdValid,
-                new RegExp(Permissions.Users.UsernameRule),
-              )}
-            />
-            <Input
-              icon="Key"
-              placeholder="Password"
-              variant="highlighted"
-              value={password}
-              valid={isPasswordValid}
-              onChange={inputConstructor(
-                setPassword,
-                setIsPasswordValid,
-                new RegExp(Permissions.Users.PasswordRule),
-              )}
-            />
-            <Input
-              icon="Gavel"
-              placeholder="read, ingest, edit, delete, admin"
-              variant="highlighted"
-              value={permissions}
-              valid={isPermissionsValid}
-              onChange={handlePermsChange}
-            />
-            <Glyph.Chooser icon={icon} setIcon={setIcon} />
-          </UIBanner>
-        )
-      }
-    }
-    export namespace Groups {
-      export namespace Combination {
-        export interface Props {
-          group: Group.Type
-        }
-      }
-      export function Combination({
-        group: _group,
-        ...props
-      }: Combination.Props) {
-        return <Stack {...props}></Stack>
-      }
-    }
-    export namespace Edit {
-      export namespace Banner {
-        export interface Props extends UIBanner.Props {
-          user: User.Type
-        }
-      }
-      export function Banner({ user, ...props }: Banner.Props) {
-        const { spawnBanner } = Application.use()
-        const [loading, setLoading] = useState<boolean>(false)
-        const [icon, setIcon] = useState<Glyph.Id | null>(user.glyph_id)
-        const [id, setId] = useState<string>(user.id)
-        const [isIdValid, setIsIdValid] = useState<boolean>(true)
-        const [password, setPassword] = useState<string>('')
-        const [showPassword, setShowPassword] = useState(false)
-        const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true)
-        const [permissions, setPermisisons] = useState<string>(
-          user.permission.join(', '),
-        )
-        const [isPermissionsValid, setIsPermissionsValid] =
-          useState<boolean>(true)
+				return response?.status === "success";
+			}
 
-        const inputConstructor =
-          (
-            set: SetState<string>,
-            setValid: SetState<boolean>,
-            regexp: RegExp,
-          ) =>
-            (event: ChangeEvent<HTMLInputElement>) => {
-              const { value } = event.target
-              setValid(value.length > 3 ? true : regexp.test(value))
-              set(value)
-            }
+			/**
+			 * Updates an existing user group with permissions and description metadata.
+			 *
+			 * @param options - Target group ID, glyph, permissions, and description payload.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function update(options: UpdateOptions): Promise<boolean> {
+				const response = await api<undefined>("/user_group_update", {
+					method: "PATCH",
+					query: {
+						group_id: options.groupId,
+						glyph_id: options.glyphId,
+					},
+					setLoading: options.setLoading,
+					raw: true,
+					body: {
+						permission: options.permissions,
+						description: options.description,
+					},
+				});
 
-        const submit = () => {
-          api(
-            '/user_update',
-            {
-              method: 'PATCH',
-              query: {
-                user_id: id,
-                password,
-                glyph_id:
-                  icon ||
-                  (Array.from(Glyph.List.entries()).find(
-                    (i) => i[1] === 'User',
-                  )?.[0] as string),
-              },
-              setLoading,
-              body: {
-                permission: permissions.split(',').map((v) => v.trim()),
-              },
-            },
-            () => spawnBanner(<Permissions.Banner />),
-          )
-        }
+				return response?.status === "success";
+			}
 
-        const handlePermsChange = (event: ChangeEvent<HTMLInputElement>) => {
-          const { value } = event.target
-          const valid = value
-            .split(',')
-            .map((v) => v.trim())
-            .every((v) => RolesList.includes(v as Role))
+			/**
+			 * Adds a user to a group.
+			 *
+			 * @param options - Target group ID and user ID to add.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function addUser(
+				options: MembershipOptions,
+			): Promise<boolean> {
+				const response = await api<undefined>("/user_group_add_user", {
+					method: "PATCH",
+					query: {
+						group_id: options.groupId,
+						user_id: options.userId,
+					},
+					raw: true,
+					toast: {
+						onSuccess: () =>
+							toast.success(translate("permissions.userAdded"), {
+								icon: <Icon name="Check" />,
+								richColors: true,
+							}),
+						onError: (response) =>
+							toast.error(translate("permissions.userAddFailed"), {
+								description: translate("common.reason", {
+									reason: response.data.__error.msg,
+								}),
+								icon: <Icon name="Stop" />,
+								richColors: true,
+							}),
+					},
+				});
 
-          setIsPermissionsValid(valid)
-          setPermisisons(value)
-        }
+				return response?.status === "success";
+			}
 
-        const Done = () => (
-          <Button
-            icon="Check"
-            loading={loading}
-            onClick={submit}
-            disabled={
-              id.length < 3 ||
-              !isIdValid ||
-              password.length < 5 ||
-              !isPasswordValid ||
-              !isPermissionsValid ||
-              !icon
-            }
-            variant="glass"
-          />
-        )
+			/**
+			 * Removes a user from a group.
+			 *
+			 * @param options - Target group ID and user ID to remove.
+			 * @returns A promise resolving when the API request completes.
+			 */
+			export async function removeUser(
+				options: MembershipOptions,
+			): Promise<boolean> {
+				const response = await api<undefined>("/user_group_remove_user", {
+					method: "PATCH",
+					query: {
+						group_id: options.groupId,
+						user_id: options.userId,
+					},
+					raw: true,
+					toast: {
+						onSuccess: () =>
+							toast.success(translate("permissions.userRemoved"), {
+								icon: <Icon name="Check" />,
+								richColors: true,
+							}),
+						onError: (response) =>
+							toast.error(translate("permissions.userRemoveFailed"), {
+								description: translate("common.reason", {
+									reason: response.data.__error.msg,
+								}),
+								icon: <Icon name="Stop" />,
+								richColors: true,
+							}),
+					},
+				});
 
-        return (
-          <UIBanner
-            back={() => spawnBanner(<Permissions.Banner />)}
-            title={`Edit user ${user.name}`}
-            done={<Done />}
-            {...props}
-          >
-            <Input
-              icon="User"
-              placeholder="User idendificator"
-              variant="highlighted"
-              value={id}
-              valid={isIdValid}
-              onChange={inputConstructor(
-                setId,
-                setIsIdValid,
-                new RegExp(Permissions.Users.UsernameRule),
-              )}
-            />
-            <Input
-              icon="Key"
-              placeholder="Password"
-              variant="highlighted"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              endIcon={showPassword ? 'EyeOff' : 'Eye'}
-              endIconTitle={showPassword ? 'Hide password' : 'Show password'}
-              onEndIconClick={() => setShowPassword((current) => !current)}
-              valid={isPasswordValid}
-              onChange={inputConstructor(
-                setPassword,
-                setIsPasswordValid,
-                new RegExp(Permissions.Users.PasswordRule),
-              )}
-            />
-            <Input
-              icon="Gavel"
-              placeholder="read, ingest, edit, delete, admin"
-              variant="highlighted"
-              value={permissions}
-              valid={isPermissionsValid}
-              onChange={handlePermsChange}
-            />
-            <Glyph.Chooser icon={icon} setIcon={setIcon} />
-          </UIBanner>
-        )
-      }
-    }
-  }
+				return response?.status === "success";
+			}
+
+			export namespace FormBanner {
+				export interface Props extends UIBanner.Props {
+					group?: Group.Type;
+				}
+			}
+
+			/**
+			 * Renders the create/edit form for user groups.
+			 *
+			 * @param props - Optional group payload and banner props.
+			 * @returns A banner with group metadata and permission controls.
+			 */
+			export function FormBanner({ group, ...props }: FormBanner.Props) {
+				const { destroyBanner } = Application.use();
+				const { t } = Locale.use();
+				const groupId = typeof group?.id === "string" ? group.id : "";
+				const [loading, setLoading] = useState<boolean>(false);
+				const [name, setName] = useState<string>(group?.name ?? groupId);
+				const [isNameValid, setIsNameValid] = useState<boolean>(true);
+				const [description, setDescription] = useState<string>(
+					group?.description ?? "",
+				);
+				const [permissions, setPermissions] = useState<Permissions.Role[]>(
+					(group?.permission as Permissions.Role[] | undefined) ?? ["read"],
+				);
+				const [icon, setIcon] = useState<Glyph.Id | null>(
+					(group?.glyph_id as Glyph.Id | undefined) ?? getDefaultGroupGlyphId(),
+				);
+
+				/**
+				 * Stores the group name and validates it against the API-safe pattern.
+				 *
+				 * @param event - Name input change event.
+				 */
+				const handleNameChange = (event: ChangeEvent<HTMLInputElement>) => {
+					const { value } = event.target;
+					setIsNameValid(value.length === 0 || Groups.NameRule.test(value));
+					setName(value);
+				};
+
+				/**
+				 * Stores the current description textarea value.
+				 *
+				 * @param event - Description textarea change event.
+				 */
+				const handleDescriptionChange = (
+					event: ChangeEvent<HTMLTextAreaElement>,
+				) => {
+					setDescription(event.target.value);
+				};
+
+				/**
+				 * Stores the permissions selected from the multi-select control.
+				 *
+				 * @param selectedRoles - Roles selected by the user.
+				 */
+				const handlePermissionsChange = (selectedRoles: Permissions.Role[]) => {
+					setPermissions(selectedRoles);
+				};
+
+				/**
+				 * Creates or updates a user group using the current form values.
+				 */
+				const submit = () => {
+					const glyphId = icon ?? getDefaultGroupGlyphId();
+					const onSuccess = () => {
+						notifyGroupListChanged();
+						destroyBanner();
+						props.onClose?.();
+					};
+
+					if (groupId) {
+						Groups.update({
+							groupId,
+							name,
+							glyphId,
+							permissions,
+							description,
+							setLoading,
+						}).then((saved) => {
+							if (saved) onSuccess();
+						});
+						return;
+					}
+
+					Groups.create({
+						name,
+						glyphId,
+						permissions,
+						description,
+						setLoading,
+					}).then((saved) => {
+						if (saved) onSuccess();
+					});
+				};
+
+				const Done = () => (
+					<Button
+						icon="Check"
+						loading={loading}
+						onClick={submit}
+						disabled={
+							name.length < 2 ||
+							!isNameValid ||
+							permissions.length === 0 ||
+							!icon
+						}
+						variant="glass"
+					/>
+				);
+
+				return (
+					<UIBanner
+						title={
+							groupId
+								? t("permissions.editGroup", { name: name || groupId })
+								: t("permissions.createGroup")
+						}
+						done={<Done />}
+						{...props}
+					>
+						<Input
+							icon="Users"
+							placeholder={t("common.name")}
+							variant="highlighted"
+							value={name}
+							valid={isNameValid}
+							disabled={!!groupId}
+							onChange={handleNameChange}
+						/>
+						<Textarea
+							className={s.textarea}
+							placeholder={t("common.description")}
+							value={description}
+							onChange={handleDescriptionChange}
+						/>
+						<Users.RolesSelect
+							value={permissions}
+							onChange={handlePermissionsChange}
+						/>
+						<Glyph.Chooser
+							icon={icon}
+							setIcon={setIcon}
+						/>
+					</UIBanner>
+				);
+			}
+
+			export namespace ManageUsersBanner {
+				export interface Props extends UIBanner.Props {
+					groupId: string;
+					userIds: string[];
+				}
+			}
+
+			/**
+			 * Renders the group membership manager using selectable user rows.
+			 *
+			 * @param props - Target group ID, selected user IDs, and banner props.
+			 * @returns A banner for adding/removing users from a group.
+			 */
+			export function ManageUsersBanner({
+				groupId,
+				userIds,
+				onClose,
+				...props
+			}: ManageUsersBanner.Props) {
+				const { t } = Locale.use();
+				const [users, setUsers] = useState<User.Type[]>([]);
+				const [loading, setLoading] = useState<boolean>(true);
+				const [selectedUsers, setSelectedUsers] = useState<Set<string>>(
+					new Set(userIds),
+				);
+
+				/**
+				 * Reloads the complete user list used for membership selection.
+				 */
+				const reload = useCallback(() => {
+					setLoading(true);
+					api<User.Type[]>("/user_list", {}, (res) => {
+						setUsers(res || []);
+						setLoading(false);
+					});
+				}, []);
+
+				useEffect(() => {
+					reload();
+				}, [reload]);
+
+				/**
+				 * Adds or removes a user from the group based on checkbox state.
+				 *
+				 * @param index - Row index selected in the users table.
+				 * @param selected - Whether the row is now selected.
+				 */
+				const handleUserSelect = (index: number, selected: boolean) => {
+					const user = users[index];
+					if (!user) return;
+
+					const action = selected ? Groups.addUser : Groups.removeUser;
+					action({ groupId, userId: user.id }).then((saved) => {
+						if (!saved) return;
+						setSelectedUsers((prev) => {
+							const next = new Set(prev);
+							if (selected) {
+								next.add(user.id);
+							} else {
+								next.delete(user.id);
+							}
+							return next;
+						});
+						notifyGroupListChanged();
+					});
+				};
+
+				const selectedUserIndices = new Set<number>();
+				users.forEach((user, index) => {
+					if (selectedUsers.has(user.id)) {
+						selectedUserIndices.add(index);
+					}
+				});
+
+				return (
+					<UIBanner
+						title={t("permissions.manageUsers")}
+						loading={loading}
+						onClose={onClose}
+						{...props}
+					>
+						<Stack
+							dir="column"
+							ai="stretch"
+							className={s.tableScroll}
+						>
+							<Stack
+								dir="column"
+								ai="stretch"
+								gap={8}
+								className={s.tableSection}
+							>
+								<div className={s.sectionLabel}>{t("common.users")}</div>
+								{users.length > 0 ? (
+									<Table
+										values={users}
+										selectable={true}
+										selectedrows={selectedUserIndices}
+										onrowselect={handleUserSelect}
+										columns={["id", "name", "permission"]}
+										notshow={["glyph_id", "password"]}
+										includeIndex={false}
+									/>
+								) : (
+									<Skeleton
+										width="full"
+										className={s.tableSkeleton}
+									/>
+								)}
+							</Stack>
+						</Stack>
+					</UIBanner>
+				);
+			}
+		}
+		export namespace Edit {
+			export namespace Banner {
+				export interface Props extends UIBanner.Props {
+					user: User.Type;
+				}
+			}
+			export function Banner({ user, ...props }: Banner.Props) {
+				const { destroyBanner } = Application.use();
+				const { t } = Locale.use();
+				const [loading, setLoading] = useState<boolean>(false);
+				const [icon, setIcon] = useState<Glyph.Id | null>(user.glyph_id);
+				const [id, setId] = useState<string>(user.id);
+				const [isIdValid, setIsIdValid] = useState<boolean>(true);
+				const [password, setPassword] = useState<string>("");
+				const [showPassword, setShowPassword] = useState(false);
+				const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
+				const [permissions, setPermissions] = useState<Permissions.Role[]>(
+					user.permission ?? ["read"],
+				);
+
+				const inputConstructor =
+					(
+						set: SetState<string>,
+						setValid: SetState<boolean>,
+						regexp: RegExp,
+					) =>
+					(event: ChangeEvent<HTMLInputElement>) => {
+						const { value } = event.target;
+						setValid(value.length > 3 ? true : regexp.test(value));
+						set(value);
+					};
+
+				/**
+				 * Stores the permissions selected from the multi-select control.
+				 *
+				 * @param selectedRoles - Roles selected by the user.
+				 */
+				const handlePermissionsChange = (selectedRoles: Permissions.Role[]) => {
+					setPermissions(selectedRoles);
+				};
+
+				/**
+				 * Keeps the password field optional while still validating non-empty values.
+				 *
+				 * @param event - Password input change event.
+				 */
+				const handleOptionalPasswordChange = (
+					event: ChangeEvent<HTMLInputElement>,
+				) => {
+					const { value } = event.target;
+					setPassword(value);
+					setIsPasswordValid(
+						value.length === 0 ||
+							new RegExp(Permissions.Users.PasswordRule).test(value),
+					);
+				};
+
+				/**
+				 * Updates a user using the selected permission list.
+				 */
+				const submit = () => {
+					const query: Record<string, string> = {
+						user_id: id,
+						glyph_id:
+							icon ||
+							(Array.from(Glyph.List.entries()).find(
+								(i) => i[1] === "User",
+							)?.[0] as string),
+					};
+
+					if (password.length > 0) {
+						query.password = password;
+					}
+
+					api(
+						"/user_update",
+						{
+							method: "PATCH",
+							query,
+							setLoading,
+							body: {
+								permission: permissions,
+							},
+						},
+						() => {
+							notifyUserListChanged();
+							destroyBanner();
+						},
+					);
+				};
+
+				const Done = () => (
+					<Button
+						icon="Check"
+						loading={loading}
+						onClick={submit}
+						disabled={
+							id.length < 3 ||
+							!isIdValid ||
+							!isPasswordValid ||
+							permissions.length === 0 ||
+							!icon
+						}
+						variant="glass"
+					/>
+				);
+
+				return (
+					<UIBanner
+						title={t("permissions.editUser", { name: user.name || user.id })}
+						done={<Done />}
+						{...props}
+					>
+						<Input
+							icon="User"
+							placeholder={t("permissions.userIdPlaceholder")}
+							variant="highlighted"
+							value={id}
+							valid={isIdValid}
+							onChange={inputConstructor(
+								setId,
+								setIsIdValid,
+								new RegExp(Permissions.Users.UsernameRule),
+							)}
+						/>
+						<Input
+							icon="Key"
+							placeholder={t("auth.password")}
+							variant="highlighted"
+							type={showPassword ? "text" : "password"}
+							value={password}
+							endIcon={showPassword ? "EyeOff" : "Eye"}
+							endIconTitle={
+								showPassword ? t("auth.hidePassword") : t("auth.showPassword")
+							}
+							onEndIconClick={() => setShowPassword((current) => !current)}
+							valid={isPasswordValid}
+							onChange={handleOptionalPasswordChange}
+						/>
+						<Users.RolesSelect
+							value={permissions}
+							onChange={handlePermissionsChange}
+						/>
+						<Glyph.Chooser
+							icon={icon}
+							setIcon={setIcon}
+						/>
+					</UIBanner>
+				);
+			}
+		}
+	}
+}
+
+export namespace OperationPermissions {
+	export namespace Banner {
+		export interface Props extends UIBanner.Props {
+			operationId: string;
+			granted_user_ids: string[];
+			granted_user_group_ids: string[];
+			onSuccess?: () => void;
+		}
+	}
+
+	export const Banner = ({
+		operationId,
+		granted_user_ids,
+		granted_user_group_ids,
+		onSuccess,
+		...props
+	}: Banner.Props) => {
+		const { Info, destroyBanner } = Application.use();
+		const { t } = Locale.use();
+		const [users, setUsers] = useState<User.Type[]>([]);
+		const [groups, setGroups] = useState<Group.Type[]>([]);
+		const [loading, setLoading] = useState<boolean>(true);
+
+		// Local sets for selection UI
+		const [selectedUsers, setSelectedUsers] = useState<Set<string>>(
+			new Set(granted_user_ids),
+		);
+		const [selectedGroups, setSelectedGroups] = useState<Set<string>>(
+			new Set(granted_user_group_ids),
+		);
+
+		const reload = useCallback(() => {
+			let usersLoaded = false;
+			let groupsLoaded = false;
+
+			const checkDone = () => {
+				if (usersLoaded && groupsLoaded) {
+					setLoading(false);
+				}
+			};
+
+			api<User.Type[]>("/user_list", {}, (res) => {
+				setUsers(res || []);
+				usersLoaded = true;
+				checkDone();
+			});
+
+			Permissions.Users.Groups.list().then((res) => {
+				setGroups(res || []);
+				groupsLoaded = true;
+				checkDone();
+			});
+		}, []);
+
+		useEffect(() => {
+			reload();
+		}, [reload]);
+
+		const handleUserSelect = (index: number, selected: boolean) => {
+			const user = users[index];
+			if (!user) return;
+
+			if (selected) {
+				Info.add_granted_user("operation", operationId, user.id).then(() =>
+					setSelectedUsers((prev) => new Set(prev).add(user.id)),
+				);
+			} else {
+				Info.remove_granted_user("operation", operationId, user.id).then(() =>
+					setSelectedUsers((prev) => {
+						const next = new Set(prev);
+						next.delete(user.id);
+						return next;
+					}),
+				);
+			}
+		};
+
+		const handleGroupSelect = (index: number, selected: boolean) => {
+			const group = groups[index];
+			if (!group) return;
+
+			if (selected) {
+				Info.add_granted_group("operation", operationId, group.id).then(() =>
+					setSelectedGroups((prev) => new Set(prev).add(group.id)),
+				);
+			} else {
+				Info.remove_granted_group("operation", operationId, group.id).then(() =>
+					setSelectedGroups((prev) => {
+						const next = new Set(prev);
+						next.delete(group.id);
+						return next;
+					}),
+				);
+			}
+		};
+
+		// Convert sets to indices for Table
+		const selectedUserIndices = new Set<number>();
+		users.forEach((u, i) => {
+			if (selectedUsers.has(u.id)) selectedUserIndices.add(i);
+		});
+
+		const selectedGroupIndices = new Set<number>();
+		groups.forEach((g, i) => {
+			if (selectedGroups.has(g.id)) selectedGroupIndices.add(i);
+		});
+
+		return (
+			<UIBanner
+				title={t("permissions.operationPermissions")}
+				loading={loading}
+				onClose={onSuccess}
+				{...props}
+			>
+				<Stack
+					dir="column"
+					ai="stretch"
+					className={s.tableScroll}
+				>
+					{/* Users Section */}
+					<Stack
+						dir="column"
+						ai="stretch"
+						gap={8}
+					>
+						<div className={s.sectionLabel}>{t("common.users")}</div>
+						{users.length > 0 ? (
+							<Table
+								values={users}
+								selectable={true}
+								selectedrows={selectedUserIndices}
+								onrowselect={handleUserSelect}
+								columns={["id", "name", "permission"]}
+								notshow={["glyph_id", "password"]}
+								includeIndex={false}
+							/>
+						) : (
+							<Skeleton
+								width="full"
+								className={s.tableSkeleton}
+							/>
+						)}
+					</Stack>
+
+					{/* Groups Section */}
+					<Stack
+						dir="column"
+						ai="stretch"
+						gap={8}
+					>
+						<div className={s.sectionLabel}>{t("common.groups")}</div>
+						{groups.length > 0 ? (
+							<Table
+								values={groups}
+								selectable={true}
+								selectedrows={selectedGroupIndices}
+								onrowselect={handleGroupSelect}
+								columns={["id", "name"]}
+								notshow={["glyph_id"]}
+								includeIndex={false}
+							/>
+						) : (
+							<Skeleton
+								width="full"
+								className={s.tableSkeleton}
+							/>
+						)}
+					</Stack>
+				</Stack>
+			</UIBanner>
+		);
+	};
 }

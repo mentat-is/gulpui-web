@@ -1,11 +1,12 @@
 import { Banner as UIBanner } from '@/ui/Banner'
 import { Table } from '@/components/Table'
 import { useMemo, useState } from 'react';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import s from './styles/PreviewBanner.module.css'
 import { Notification } from '@/ui/Notification';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 import { Button } from '@/ui/Button';
+import { Locale } from '@/locales';
 
 export namespace Preview {
   export namespace Banner {
@@ -16,6 +17,7 @@ export namespace Preview {
   }
 
   export function Banner({ total, values, children, ...props }: Banner.Props) {
+    const { t } = Locale.use();
     const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
     const OptionButton = useMemo(() => {
@@ -25,7 +27,7 @@ export namespace Preview {
     }, [isFullscreen, setIsFullscreen]);
 
     return (
-      <UIBanner className={cn(isFullscreen && s.fullscreen)} title="Preview" option={OptionButton} {...props}>
+      <UIBanner className={cn(isFullscreen && s.fullscreen)} title={t('common.preview')} option={OptionButton} {...props}>
         <Table values={values} />
         <Preview.AmountNotification total={total} />
       </UIBanner>
@@ -39,6 +41,7 @@ export namespace Preview {
   }
 
   export function AmountNotification({ total, ...props }: AmountNotification.Props) {
+    const { t } = Locale.use();
     if (typeof total !== 'number') {
       return null;
     }
@@ -50,9 +53,9 @@ export namespace Preview {
 
     return useMemo(() => (
       <Notification icon={icon} variant={variant} {...props}>
-        Total amount of documents is <span>{total}</span>.{" "}
-        <span>{isTooBig ? "This query is unsafe" : "This query is fine"}</span>
+        {t('preview.totalDocumentsPrefix')} <span>{total}</span>.{" "}
+        <span>{isTooBig ? t('preview.queryUnsafe') : t('preview.queryFine')}</span>
       </Notification>
-    ), [total]);
+    ), [total, t]);
   }
 }

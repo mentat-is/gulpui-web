@@ -6,9 +6,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { cn } from '@impactium/utils';
+import { cn } from '@/ui/utils';
 import s from './styles/FloatingWindow.module.css';
-import { Icon } from '@impactium/icons';
+import { Icon } from '@/ui/Icon';
 
 export namespace FloatingWindow {
   export type PositionOptions = { top?: number; left?: number };

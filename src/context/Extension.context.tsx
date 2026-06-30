@@ -1,208 +1,422 @@
-import { createContext, lazy, ReactNode, useContext, useEffect, useState, useRef } from "react";
+import {
+	createContext,
+	ReactNode,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
 import { Application } from "./Application.context";
 import React from "react";
 import { Version } from "@/dto/Dataset";
-import { Icon } from "@impactium/icons";
+import { Icon } from "@/ui/Icon";
 
-const __component = Symbol('__extension_component');
+const __component = Symbol("__extension_component");
 
-let extensionsPromise: Promise<Record<string, Extension.Interface>> | null = null;
+let extensionsPromise: Promise<Record<string, Extension.Interface>> | null =
+	null;
 
 function _({ children }: Extension.Provider.Props) {
-  const { app } = Application.use();
-  const { banner } = Application.use();
-  const [extensions, setExtensions] = useState<Record<string, Extension.Interface>>({});
+	const { banner } = Application.use();
+	const [extensions, setExtensions] = useState<
+		Record<string, Extension.Interface>
+	>({});
 
-  useEffect(() => {
-    let isMounted = true;
+	useEffect(() => {
+		let isMounted = true;
 
-    const load = async () => {
-      extensionsPromise = (async () => {
-        const plugins = await api<Extension.Interface[]>('/ui_plugin_list');
-        if (!Array.isArray(plugins)) {
-          console.error(`Backend returned unexpected type of ${plugins}. Expected array of plugins, but got ${typeof plugins}`, 'Extension.Provider', {
-            richColors: true,
-            icon: <Icon name='Warning' />
-          });
-          return {};
-        }
+		const load = async () => {
+			extensionsPromise = (async () => {
+				const plugins = await api<Extension.Payload[]>("/ui_plugin_list");
+				if (!Array.isArray(plugins)) {
+					console.error(
+						`Backend returned unexpected type of ${plugins}. Expected array of plugins, but got ${typeof plugins}`,
+						"Extension.Provider",
+						{
+							richColors: true,
+							icon: <Icon name="Warning" />,
+						},
+					);
+					return {};
+				}
 
-        const new_extensions: Record<string, Extension.Interface> = {};
+				const new_extensions: Record<string, Extension.Interface> = {};
 
-        await Promise.all(
-          plugins.map(async (plugin) => {
-            try {
-              console.log(`Loading extension: ${plugin.filename}`, _);
-              const Component = Extension.safe(() => import(`@/plugins/${plugin.filename}`));
-              const component = await Component();
+				await Promise.all(
+					plugins.map(async (plugin) => {
+						try {
+							const Component = Extension.safe(
+								() => import(`@/plugins/${plugin.filename}`),
+							);
+							const component = await Component();
 
-              if (!component) {
-                console.error(`Failed to load component ${plugin.filename}: component is null`, _);
-                return;
-              }
+							if (!component) {
+								console.error(
+									`Failed to load component ${plugin.filename}: component is null`,
+									_,
+								);
+								return;
+							}
 
-              if (component.default) {
-                console.log(`Component ${plugin.filename} has been successfully loaded and memorized`, _);
-              } else {
-                console.warn(`Component ${plugin.filename} loaded but has no default export`, _);
-              }
+							if (component.default) {
+								console.log(
+									`Component ${plugin.filename} has been successfully loaded and memorized`,
+									_,
+								);
+							} else {
+								console.warn(
+									`Component ${plugin.filename} loaded but has no default export`,
+									_,
+								);
+							}
 
-              new_extensions[plugin.filename] = {
-                ...plugin,
-                type: Array.isArray(plugin.type) ? plugin.type : (plugin.type ? [plugin.type] : []),
-                [__component]: component.default,
-              };
-            } catch (err) {
-              console.error(`Failed to load component ${plugin.filename}: ${err}`, _);
-            }
-          })
-        );
+							const types = Extension.normalizeTypeList(plugin.type);
 
-        return new_extensions;
-      })();
+							new_extensions[plugin.filename] = {
+								...plugin,
+								type: types,
+								targets: Extension.normalizeMountTargets(types, plugin.targets),
+								[__component]: component.default,
+							};
+						} catch (err) {
+							console.error(
+								`Failed to load component ${plugin.filename}: ${err}`,
+								_,
+							);
+						}
+					}),
+				);
 
-      try {
-        const data = await extensionsPromise;
-        if (isMounted) {
-          setExtensions(data);
-        }
-      } catch (err) {
-        console.error('Failed to resolve extensions promise:', err);
-      }
-    };
+				return new_extensions;
+			})();
 
-    if (!extensionsPromise) {
-      load();
-    } else {
-      extensionsPromise.then((data) => {
-        if (isMounted) {
-          setExtensions(data);
-        }
-      });
-    }
+			try {
+				const data = await extensionsPromise;
+				if (isMounted) {
+					setExtensions(data);
+				}
+			} catch (err) {
+				console.error("Failed to resolve extensions promise:", err);
+			}
+		};
 
-    const handleServerChanged = () => {
-      extensionsPromise = null;
-      load();
-    };
+		if (!extensionsPromise) {
+			load();
+		} else {
+			extensionsPromise.then((data) => {
+				if (isMounted) {
+					setExtensions(data);
+				}
+			});
+		}
 
-    window.addEventListener('gulp-server-changed', handleServerChanged);
+		const handleServerChanged = () => {
+			extensionsPromise = null;
+			load();
+		};
 
-    return () => {
-      isMounted = false;
-      window.removeEventListener('gulp-server-changed', handleServerChanged);
-    };
-  }, []);
+		window.addEventListener("gulp-server-changed", handleServerChanged);
 
+		return () => {
+			isMounted = false;
+			window.removeEventListener("gulp-server-changed", handleServerChanged);
+		};
+	}, []);
 
-  const extensionProps: Extension.Export = {
-    extensions
-  };
+	const extensionProps: Extension.Export = {
+		extensions,
+	};
 
-  return (
-    <Extension.Context.Provider value={extensionProps}>
-      {children}
-      {banner?.target === 'main' && banner.node}
-    </Extension.Context.Provider>
-  );
-};
+	return (
+		<Extension.Context.Provider value={extensionProps}>
+			{children}
+			{banner?.target === "main" && banner.node}
+		</Extension.Context.Provider>
+	);
+}
 
 export namespace Extension {
-  export type Type = 'menu' | 'banner' | 'send_data';
+	export type Type = string;
+	export type Slot = string;
+	export type ComponentProps = Record<string, unknown>;
 
-  export interface Interface {
-    display_name: string,
-    plugin: string,
-    extension: boolean,
-    version: Version,
-    desc: string,
-    path: string,
-    filename: string
-    type: Type[]
-    [__component]: React.ComponentType<any> | ((props: any) => React.JSX.Element);
-  }
+	export const Slot = {
+		OperationMenu: "operation-menu",
+		SendData: "send-data",
+		EventActions: "event-actions",
+		SigmaUploadMode: "sigma-upload-mode",
+		AIAssistantWindow: "ai-assistant-window",
+		DashboardView: "dashboard-view",
+	} as const;
 
-  export const Context = createContext<Extension.Export | undefined>(undefined);
+	export interface MountTarget {
+		slot: Slot;
+		order?: number;
+		group?: string;
+		variant?: string;
+		labelKey?: string;
+		icon?: string;
+	}
 
-  export interface Export {
-    extensions: Record<string, Extension.Interface>
-  }
+	export interface Payload {
+		display_name: string;
+		plugin: string;
+		extension: boolean;
+		version: Version;
+		desc: string;
+		path: string;
+		filename: string;
+		type?: Type | Type[];
+		targets?: MountTarget[];
+	}
 
-  export const use = () => {
-    const ctx = useContext(Extension.Context);
-    if (!ctx) throw new Error("Extension.Context not found");
-    return ctx;
-  };
+	export interface Interface extends Omit<Payload, "type"> {
+		type: Type[];
+		targets: MountTarget[];
+		[__component]:
+			| React.ComponentType<ComponentProps>
+			| ((props: ComponentProps) => React.JSX.Element);
+	}
 
-  export namespace Provider {
-    export interface Props {
-      children: ReactNode
-    }
-  }
+	export const Context = createContext<Extension.Export | undefined>(undefined);
 
-  export const Provider = _;
+	export interface Export {
+		extensions: Record<string, Extension.Interface>;
+	}
 
-  export const safe = (func: () => Promise<{ default: React.ComponentType<any> }>) => async () => {
-    try {
-      return await func();
-    } catch (error) {
-      console.log('Component not found or failed to load:', String(error));
-      return null;
-    }
-  }
+	export const use = () => {
+		const ctx = useContext(Extension.Context);
+		if (!ctx) throw new Error("Extension.Context not found");
+		return ctx;
+	};
 
-  export namespace Component {
-    export interface Props {
-      name: string;
-      props?: any;
-    }
-  }
+	export namespace Provider {
+		export interface Props {
+			children: ReactNode;
+		}
+	}
 
-  export function Component({ name, props }: Extension.Component.Props) {
-    const { extensions } = Extension.use();
-    const extension = extensions[name];
-    if (!extension) {
-      console.warn(`Extenstion ${name} not found in plugin list. Skipping...`)
-      return null;
-    }
+	export const Provider = _;
 
-    const Component = extension[__component];
-    if (!Component) {
-      console.error(`Extenstion ${name} was found in plugin list, but there is no component. Skipping...`)
-      return null;
-    }
+	/**
+	 * Converts server-provided plugin type data into a predictable array.
+	 *
+	 * @param type - Raw plugin type data from the backend.
+	 * @returns A list of plugin type or slot identifiers.
+	 */
+	export function normalizeTypeList(type?: Type | Type[]): Type[] {
+		if (Array.isArray(type)) {
+			return type.filter((item) => item.trim().length > 0);
+		}
 
-    return (
-      <Component {...props} />
-    )
-  }
+		if (type && type.trim().length > 0) {
+			return [type];
+		}
 
-  export namespace Optional {
-    export interface Props {
-      name: string;
-      children: React.ReactNode;
-    }
-  }
+		return [];
+	}
 
-  export function Optional({ name, children }: Extension.Optional.Props) {
-    const { extensions } = Extension.use();
-    const extension = extensions[name];
-    if (!extension) {
-      return null;
-    }
+	/**
+	 * Resolves legacy plugin type names to their current slot identifiers.
+	 *
+	 * @param type - A plugin type or slot identifier.
+	 * @returns The slot identifier represented by the type.
+	 */
+	export function resolveSlot(type: Type): Slot {
+		if (type === "menu") return Slot.OperationMenu;
+		if (type === "send_data") return Slot.SendData;
+		return type;
+	}
 
-    return children;
-  }
+	/**
+	 * Builds the final mount target list from explicit targets and slot-like types.
+	 *
+	 * @param types - Normalized plugin type or slot identifiers.
+	 * @param targets - Explicit mount target metadata from plugin configuration.
+	 * @returns A de-duplicated list of mount targets.
+	 */
+	export function normalizeMountTargets(
+		types: Type[],
+		targets?: MountTarget[],
+	): MountTarget[] {
+		const normalizedTargets = Array.isArray(targets)
+			? targets
+				.filter(
+					(target) =>
+						typeof target.slot === "string" &&
+						target.slot.trim().length > 0,
+				)
+				.map((target) => ({ ...target, slot: target.slot.trim() }))
+			: [];
+		const knownSlots = new Set(normalizedTargets.map((target) => target.slot));
 
-  export namespace Components {
-    export interface Props {
-      type: Type
-    }
-  }
+		for (const type of types) {
+			const slot = resolveSlot(type);
+			if (!knownSlots.has(slot)) {
+				normalizedTargets.push({ slot });
+				knownSlots.add(slot);
+			}
+		}
 
-  export function Components({ type }: Components.Props) {
-    const { extensions } = Extension.use();
+		return normalizedTargets.sort(
+			(a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER),
+		);
+	}
 
-    return Object.keys(extensions).filter(name => extensions[name].type.includes(type)).map(name => <Extension.Component key={name} name={name} />);
-  }
+	/**
+	 * Checks whether an extension declares support for a UI slot.
+	 *
+	 * @param extension - The loaded extension entry to inspect.
+	 * @param slot - The slot identifier to match.
+	 * @returns True when the extension targets the given slot.
+	 */
+	export function targetsSlot(
+		extension: Extension.Interface,
+		slot: Slot,
+	): boolean {
+		return extension.targets.some((target) => target.slot === slot);
+	}
+
+	/**
+	 * Returns all extensions that target a specific UI slot.
+	 *
+	 * @param extensions - The loaded extension registry.
+	 * @param slot - The slot identifier to query.
+	 * @returns Slot-matching extensions sorted by mount order and display name.
+	 */
+	export function getBySlot(
+		extensions: Record<string, Extension.Interface>,
+		slot: Slot,
+	): Extension.Interface[] {
+		return Object.values(extensions)
+			.filter((extension) => targetsSlot(extension, slot))
+			.sort((first, second) => {
+				const firstTarget = first.targets.find((target) => target.slot === slot);
+				const secondTarget = second.targets.find((target) => target.slot === slot);
+				const firstOrder = firstTarget?.order ?? Number.MAX_SAFE_INTEGER;
+				const secondOrder = secondTarget?.order ?? Number.MAX_SAFE_INTEGER;
+
+				if (firstOrder !== secondOrder) {
+					return firstOrder - secondOrder;
+				}
+
+				return (first.display_name || first.filename).localeCompare(
+					second.display_name || second.filename,
+				);
+			});
+	}
+
+	/**
+	 * Checks whether at least one extension targets a specific UI slot.
+	 *
+	 * @param extensions - The loaded extension registry.
+	 * @param slot - The slot identifier to query.
+	 * @returns True when at least one extension targets the slot.
+	 */
+	export function hasSlot(
+		extensions: Record<string, Extension.Interface>,
+		slot: Slot,
+	): boolean {
+		return Object.values(extensions).some((extension) =>
+			targetsSlot(extension, slot),
+		);
+	}
+
+	export const safe =
+		(func: () => Promise<{ default: React.ComponentType<ComponentProps> }>) =>
+		async () => {
+			try {
+				return await func();
+			} catch (error) {
+				console.log("Component not found or failed to load:", String(error));
+				return null;
+			}
+		};
+
+	export namespace Component {
+		export interface Props {
+			className?: string;
+			name: string;
+			props?: ComponentProps;
+		}
+	}
+
+	/**
+	 * Renders a loaded extension component by filename.
+	 *
+	 * @param props - Component filename, optional host wrapper class, and optional props for the mounted plugin.
+	 * @returns The plugin component, or null when unavailable.
+	 */
+	export function Component({ className, name, props }: Extension.Component.Props) {
+		const { extensions } = Extension.use();
+		const extension = extensions[name];
+		if (!extension) {
+			console.warn(`Extenstion ${name} not found in plugin list. Skipping...`);
+			return null;
+		}
+
+		const Component = extension[__component];
+		if (!Component) {
+			console.error(
+				`Extenstion ${name} was found in plugin list, but there is no component. Skipping...`,
+			);
+			return null;
+		}
+
+		const element = <Component {...props} />;
+
+		if (!className) {
+			return element;
+		}
+
+		return <div className={className}>{element}</div>;
+	}
+
+	export namespace Optional {
+		export interface Props {
+			name: string;
+			children: React.ReactNode;
+		}
+	}
+
+	/**
+	 * Renders children only when a filename-based extension is available.
+	 *
+	 * @param props - Extension filename and children to render conditionally.
+	 * @returns The children when the extension exists, otherwise null.
+	 */
+	export function Optional({ name, children }: Extension.Optional.Props) {
+		const { extensions } = Extension.use();
+		const extension = extensions[name];
+		if (!extension) {
+			return null;
+		}
+
+		return children;
+	}
+
+	export namespace Components {
+		export interface Props {
+			type: Slot;
+			props?: ComponentProps;
+		}
+	}
+
+	/**
+	 * Renders all extensions assigned to a UI slot.
+	 *
+	 * @param props - Slot identifier and optional props passed to every plugin.
+	 * @returns All plugin components registered for the slot.
+	 */
+	export function Components({ type, props }: Components.Props) {
+		const { extensions } = Extension.use();
+
+		return getBySlot(extensions, type)
+			.map((extension) => (
+				<Extension.Component
+					key={extension.filename}
+					name={extension.filename}
+					props={props}
+				/>
+			));
+	}
 }

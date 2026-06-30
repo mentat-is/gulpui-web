@@ -4,7 +4,7 @@ import { Banner as UIBanner } from '@/ui/Banner'
 import { ChangeEvent, useCallback, useState, useMemo } from 'react'
 import { Source } from '@/entities/Source'
 import { Checkbox } from '@/ui/Checkbox'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { NodeFile } from '@/ui/utils'
 import { Button } from '@/ui/Button'
 import { Toggle } from '@/ui/Toggle'
@@ -12,6 +12,7 @@ import { Label } from '@/ui/Label'
 import { Input } from '@/ui/Input'
 import { Stack } from '@/ui/Stack'
 import { toast } from 'sonner'
+import { Locale } from '@/locales'
 
 export namespace Sigma {
   export namespace Banner {
@@ -29,8 +30,18 @@ export namespace Sigma {
     const [rules, setRules] = useState<NodeFile[]>([]);
     const [isZip, setIsZip] = useState<boolean>(false);
     const { Info, destroyBanner } = Application.use();
+    const { t } = Locale.use();
+    const { extensions } = Extension.use();
 
     const [zipSubmit, setZipSubmit] = useState<{ run: () => Promise<void> }>();
+
+    /**
+     * Resolves the optional Sigma upload-mode plugin, such as ZIP upload support.
+     */
+    const sigmaUploadModePlugin = useMemo(
+      () => Extension.getBySlot(extensions, Extension.Slot.SigmaUploadMode)[0] ?? null,
+      [extensions],
+    )
 
     const DoneButton = () => {
       const submit = async () => {
@@ -42,7 +53,7 @@ export namespace Sigma {
         }
 
         if (!rules.length) {
-          return toast('Select at least one rule or zip file')
+          return toast(t('sigma.selectRuleOrZip'))
         }
 
         await Info.query_sigma(sources, rules, createNotes);
@@ -63,7 +74,7 @@ export namespace Sigma {
     ) => {
       const { files } = event.target
       if (!files?.length) {
-        toast.warning('No sigma rules selected', {
+        toast.warning(t('sigma.noRulesSelected'), {
           richColors: true,
           icon: <Icon name='Warning' />
         });
@@ -78,21 +89,21 @@ export namespace Sigma {
 
     const sourcePlaceholder = useMemo(() => {
       if (isZip) {
-        return 'Select sources to apply sigma zip for them'
+        return t('sigma.selectSourcesForZip')
       }
-      return 'Select sources to apply sigma rules for them'
-    }, [isZip])
+      return t('sigma.selectSourcesForRules')
+    }, [isZip, t])
 
     return (
-      <UIBanner title="Apply sigma rules" done={<DoneButton />} {...props}>
-        <Extension.Optional name='SigmaZip.banner.tsx'>
-          <Toggle option={['File', 'Zip']} checked={isZip} onClick={() => setIsZip(!isZip)} />
-        </Extension.Optional>       
+      <UIBanner title={t('sigma.title')} done={<DoneButton />} {...props}>
+        {sigmaUploadModePlugin ? (
+          <Toggle option={[t('common.file'), t('common.zip')]} checked={isZip} onClick={() => setIsZip(!isZip)} />
+        ) : null}
 
         <Source.Select.Multi selected={sources} setSelected={setSources} placeholder={sourcePlaceholder} />
-        {isZip ? (
+        {isZip && sigmaUploadModePlugin ? (
           <Extension.Component
-            name='SigmaZip.banner.tsx'
+            name={sigmaUploadModePlugin.filename}
             props={{
               sources,
               createNotes,
@@ -104,7 +115,7 @@ export namespace Sigma {
         )}
         <Stack ai='center' gap={6}>
           <Checkbox id='isCreateNotes' checked={createNotes} onCheckedChange={v => setCreateNotes(!!v)} />
-          <Label htmlFor='isCreateNotes' cursor='pointer' value='Create notes' />
+          <Label htmlFor='isCreateNotes' cursor='pointer' value={t('sigma.createNotes')} />
         </Stack>
       </UIBanner>
     )

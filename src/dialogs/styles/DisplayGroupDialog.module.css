@@ -1,25 +1,108 @@
+.menuShell {
+  display: flex;
+  flex-direction: column;
+  border: none !important;
+  border-radius: 0 !important;
+  background: color-mix(in srgb, var(--background-100) 92%, transparent);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.menuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--gray-alpha-300);
+  border-radius: 0 !important;
+  background: color-mix(in srgb, var(--background-200) 80%, transparent);
+}
+
+.dialogToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px 4px;
+}
+
+.menuTitle {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.dialogEventList {
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 12px;
+}
+
+.closeButton {
+  border: none;
+  background: transparent;
+  color: var(--second);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.menuBody {
+  flex: 1;
+  padding: 6px;
+  overflow: auto;
+  min-height: 0;
+}
+
+.virtualSpacer {
+  position: relative;
+  width: 100%;
+}
+
+.virtualRow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
 .event {
   width: 100%;
-  border-radius: var(--round);
+  border-radius: 0;
+  box-sizing: border-box;
+  min-height: 40px;
   padding: 4px;
   transition: all 0.125s var(--transition);
+  cursor: pointer;
 }
+
 .event:hover {
   background: var(--gray-alpha-400);
   border-color: var(--gray-400);
 }
+
 .info {
   overflow: hidden;
 }
+
 .id {
-  font-size: 16px;
+  font-size: 11px;
   font-weight: 600;
   text-overflow: ellipsis;
   overflow: hidden;
   max-width: 100%;
 }
+
 .description {
-  font-size: 14px;
+  font-size: 10px;
   font-family: var(--font-mono);
   color: var(--second);
   width: calc(100% - 13px);
@@ -27,7 +110,71 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-.pagination {
+
+.noteInfo {
+  align-items: center;
+  border-left: 1px solid var(--gray-alpha-300);
+  color: var(--note-color, transparent);
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  height: 32px;
+  justify-content: flex-start;
+  margin-left: auto;
+  min-width: 132px;
+  overflow: hidden;
+  padding-left: 10px;
+  width: 34%;
+}
+
+.noteInfo span {
+  color: currentColor;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noteInfo svg {
+  flex-shrink: 0;
+}
+
+.previewPortal {
+  background: var(--background-100);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: auto;
+  padding: 8px;
+  pointer-events: auto;
+  z-index: 10000;
+}
+
+.previewContent {
+  font-size: 11px;
+  max-width: 400px;
+}
+
+.previewTitle {
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.previewCode {
   color: var(--second);
-  pointer-events: none;
+  margin: 0 0 4px;
+}
+
+.previewMarkdown {
+  font-size: 10px;
+  max-height: 250px;
+  max-width: 400px;
+  overflow-x: scroll;
+  overflow-y: auto;
+}
+
+.previewLoading {
+  font-size: 11px;
 }

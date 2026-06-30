@@ -23,6 +23,9 @@ interface RulerSectionProps {
   even: boolean
 }
 
+type RulerSectionTemplate = Omit<RulerSectionProps, 'position'>
+const RULER_SECTION_CACHE_LIMIT = 200
+
 export class RulerDrawer implements RulerDrawerConstructor {
   ctx!: CanvasRenderingContext2D
   selected!: MinMax | null
@@ -32,6 +35,7 @@ export class RulerDrawer implements RulerDrawerConstructor {
   scrollX!: number
   cache: RulerSectionProps[] = []
   private static instance: RulerDrawer
+  private static sectionCache = new Map<string, RulerSectionTemplate[]>()
 
   constructor({
     ctx,
@@ -61,9 +65,31 @@ export class RulerDrawer implements RulerDrawerConstructor {
     return RulerDrawer.instance
   }
 
-  draw() {
-    this.cache = []
+  /**
+   * Draws ruler background walls and stores section metadata for label rendering.
+   * @returns Nothing.
+   */
+  draw(): void {
     if (!this.selected) return
+
+    const templates = this.getSectionTemplates()
+    this.cache = templates.map((template) => {
+      const position = this.getPixelPosition(template.timestamp)
+      this.wall({ even: template.even, position })
+      return {
+        ...template,
+        position,
+      }
+    })
+  }
+
+  /**
+   * Returns cached ruler section templates for the current visible time range.
+   * @returns Ruler section templates without pixel positions.
+   */
+  private getSectionTemplates(): RulerSectionTemplate[] {
+    this.cache = []
+    if (!this.selected) return []
 
     const { max, min } = this.selected
 
@@ -80,22 +106,42 @@ export class RulerDrawer implements RulerDrawerConstructor {
     ).valueOf()
 
     const [step, unit, value] = this.step(end - start)
+    if (step <= 0 || !Number.isFinite(step)) return []
 
     const roundedStart = Math.floor(start / step) * step
     const roundedEnd = Math.ceil(end / step) * step
 
     const format = getDateFormat(step)
+    const cacheKey = [
+      min,
+      max,
+      this.scale,
+      this.ctx.canvas.width,
+      roundedStart,
+      roundedEnd,
+      step,
+    ].join(':')
+    const cached = RulerDrawer.sectionCache.get(cacheKey)
+    if (cached) return cached
 
     let timestamp = roundedStart
     let even = Math.floor(new Date(timestamp).getTime() / step) % 2 === 0
+    const templates: RulerSectionTemplate[] = []
 
     while (timestamp <= roundedEnd) {
-      const position = this.getPixelPosition(timestamp)
-      this.cache.push({ timestamp, position, format, step, unit, value, even })
-      this.wall({ even, position })
+      templates.push({ timestamp, format, step, unit, value, even })
       timestamp += step
       even = !even
     }
+
+    if (RulerDrawer.sectionCache.size >= RULER_SECTION_CACHE_LIMIT) {
+      const oldestKey = RulerDrawer.sectionCache.keys().next().value
+      if (oldestKey) {
+        RulerDrawer.sectionCache.delete(oldestKey)
+      }
+    }
+    RulerDrawer.sectionCache.set(cacheKey, templates)
+    return templates
   }
 
   step(totalMilliseconds: number): [number, string, number] {

@@ -1,10 +1,10 @@
 import { Stack } from './Stack'
 import s from './styles/Resizer.module.css'
 import { Application } from '@/context/Application.context'
-import { Icon } from '@impactium/icons'
+import { Icon } from '@/ui/Icon'
 import { useRef, useEffect } from 'react'
 import { MinMax } from '@/class/Info'
-import { cn } from '@impactium/utils'
+import { cn } from '@/ui/utils'
 
 export namespace Resizer {
   export interface Props extends Stack.Props {

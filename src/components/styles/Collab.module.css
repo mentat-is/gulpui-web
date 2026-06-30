@@ -5,13 +5,14 @@
   border-radius: 6px;
   padding: 8px;
 }
-.detailed .description {
-  height: 0px;
-  padding-left: 6px;
-  transition: all 0.250s var(--transition);
+
+.descriptionWrapper {
+  min-height: 32px;
 }
-.detailed .revealed {
-  padding-bottom: 32px;
-  max-height: 256px;
-  height: unset;
+
+.detailed .description {
+  padding-left: 6px;
+  padding-bottom: 6px;
+  height: auto;
+  max-height: none;
 }

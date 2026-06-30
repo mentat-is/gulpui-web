@@ -1,7 +1,7 @@
 import { Toggle } from "@/ui/Toggle"
 import { copy, fws } from "@/ui/utils"
-import { Icon } from "@impactium/icons"
-import { cn } from "@impactium/utils"
+import { Icon } from "@/ui/Icon"
+import { cn } from "@/ui/utils"
 import { Select } from "@/ui/Select"
 import { Switch } from "@/ui/Switch"
 import * as highlight from 'react-syntax-highlighter/dist/esm/styles/hljs'
@@ -14,6 +14,7 @@ import { Input } from "@/ui/Input"
 import { Filter } from "@/entities/Filter"
 import { Label } from "@/ui/Label"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/Tooltip"
+import { Locale } from "@/locales"
 
 export namespace OpenSearchQueryBuilder {
   export type Condition =
@@ -22,12 +23,13 @@ export namespace OpenSearchQueryBuilder {
     | 'range'
     | 'LTE'
     | 'GTE'
+    | 'eq'
 
   export type Operator = 'must' | 'should' | 'must_not' | 'filter'
 
   interface Object<T> {
     value: T
-    label: string
+    labelKey: string
     icon: Icon.Name
   }
 
@@ -38,18 +40,19 @@ export namespace OpenSearchQueryBuilder {
   }
 
   export const CONDITIONS: Entity.Condition[] = [
-    { value: 'regexp', label: 'Regexp', icon: 'Asterisk' },
-    { value: 'wildcard', label: 'Wildcard', icon: 'Dices' },
-    { value: 'range', label: 'Range', icon: 'CalendarRange' },
-    { value: 'LTE', label: 'Lte', icon: 'ArrowDown' },
-    { value: 'GTE', label: 'Gte', icon: 'ArrowUp' }
+    { value: 'regexp', labelKey: 'queryBuilder.condition.regexp', icon: 'Asterisk' },
+    { value: 'wildcard', labelKey: 'queryBuilder.condition.wildcard', icon: 'Dices' },
+    { value: 'range', labelKey: 'queryBuilder.condition.range', icon: 'CalendarRange' },
+    { value: 'LTE', labelKey: 'queryBuilder.condition.lte', icon: 'ArrowDown' },
+    { value: 'GTE', labelKey: 'queryBuilder.condition.gte', icon: 'ArrowUp' },
+    { value: 'eq', labelKey: 'queryBuilder.condition.eq', icon: 'Check' }
   ]
 
   export const OPERATORS: Entity.Operator[] = [
-    { value: 'must', label: 'Must (AND)', icon: 'Ampersand' },
-    { value: 'should', label: 'Should (OR)', icon: 'SlashForward' },
-    { value: 'must_not', label: 'Must Not (NOT)', icon: 'CircleSlash2' },
-    { value: 'filter', label: 'Filter', icon: 'Filter' },
+    { value: 'must', labelKey: 'queryBuilder.operator.must', icon: 'Ampersand' },
+    { value: 'should', labelKey: 'queryBuilder.operator.should', icon: 'SlashForward' },
+    { value: 'must_not', labelKey: 'queryBuilder.operator.mustNot', icon: 'CircleSlash2' },
+    { value: 'filter', labelKey: 'queryBuilder.operator.filter', icon: 'Filter' },
   ]
 
   export const INITIAL = {
@@ -103,6 +106,7 @@ export namespace OpenSearchQueryBuilder {
     }
 
     export const String = ({ textFilter, setTextFilter, reset, ...props }: Query.String.Props) => {
+      const { t } = Locale.use();
       const queryStringInputChangeHandler = (event: ChangeEvent<HTMLInputElement>) => setTextFilter(event.target.value);
 
       const resetQueryStringButtonClickHandler = () => setTextFilter('');
@@ -111,20 +115,20 @@ export namespace OpenSearchQueryBuilder {
 
       return (
         <Stack dir='column' gap={6} style={fws} ai='stretch' {...props}>
-          <Label value='Search in event.original' />
+          <Label value={t('queryBuilder.searchEventOriginal')} />
           <Stack>
             <Input
               style={{ flex: 1 }}
               variant='highlighted'
               icon='Code'
               className={s.query_string_input}
-              placeholder='Search in raw event content.'
+              placeholder={t('queryBuilder.searchRawEvent')}
               value={textFilter}
               onChange={queryStringInputChangeHandler}
             />
             <Button icon='Copy' variant='secondary' onClick={copyQueryStringButtonClickHandler} />
             <Button icon='Undo2' variant='secondary' onClick={reset ? reset : resetQueryStringButtonClickHandler} revert>
-              Reset
+              {t('common.reset')}
             </Button>
           </Stack>
         </Stack>
@@ -143,6 +147,7 @@ export namespace OpenSearchQueryBuilder {
     }
 
     export const Add = ({ filters, setFilters, container, ...props }: Query.Add.Props) => {
+      const { t } = Locale.use();
       const addCondition = useCallback(() => {
         const filter: Filter.Type = {
           id: `condition-${Date.now()}` as Filter.Id,
@@ -169,13 +174,13 @@ export namespace OpenSearchQueryBuilder {
 
       return (
         <Stack jc='space-between' {...props}>
-          <p>Query conditions</p>
+          <p>{t('queryBuilder.conditions')}</p>
           <Stack>
             <Button onClick={addCondition} variant='secondary' icon='Plus'>
-              Add condition
+              {t('queryBuilder.addCondition')}
             </Button>
             <Button onClick={addGroup} variant='secondary' icon='FolderPlus'>
-              Add group
+              {t('queryBuilder.addGroup')}
             </Button>
           </Stack>
         </Stack>
@@ -203,6 +208,7 @@ export namespace OpenSearchQueryBuilder {
       container?: HTMLDivElement | null;
     }) => {
       const [isOpen, setIsOpen] = useState(false);
+      const { t } = Locale.use();
       const [localField, setLocalField] = useState(filter.field);
 
       useEffect(() => {
@@ -245,13 +251,13 @@ export namespace OpenSearchQueryBuilder {
               onValueChange={(value) => update('operator', value)}
             >
               <Select.Trigger className={s.value}>
-                <Select.Value placeholder='Operator' />
+                <Select.Value placeholder={t('queryBuilder.operatorPlaceholder')} />
               </Select.Trigger>
               <Select.Content container={container}>
                 {OpenSearchQueryBuilder.OPERATORS.map((op) => (
                   <Select.Item key={op.value} value={op.value}>
                     <Icon name={op.icon} />
-                    {op.label}
+                    {t(op.labelKey)}
                   </Select.Item>
                 ))}
               </Select.Content>
@@ -261,13 +267,13 @@ export namespace OpenSearchQueryBuilder {
               onValueChange={(value) => update('type', value)}
             >
               <Select.Trigger className={s.value}>
-                <Select.Value placeholder='Type' />
+                <Select.Value placeholder={t('queryBuilder.typePlaceholder')} />
               </Select.Trigger>
               <Select.Content container={container}>
                 {OpenSearchQueryBuilder.CONDITIONS.map((type) => (
                   <Select.Item key={type.value} value={type.value}>
                     <Icon name={type.icon} />
-                    {type.label}
+                    {t(type.labelKey)}
                   </Select.Item>
                 ))}
               </Select.Content>
@@ -287,7 +293,7 @@ export namespace OpenSearchQueryBuilder {
                     className={s.key_input}
                     icon='Dot'
                     variant='highlighted'
-                    placeholder='Field name'
+                    placeholder={t('queryBuilder.fieldName')}
                     value={localField}
                     onChange={(e) => handleFieldChange(e.target.value)}
                   />
@@ -306,65 +312,65 @@ export namespace OpenSearchQueryBuilder {
                 </Select.Content>
               </Select.Root>
             </Stack>
-              <Stack flex={1}>
-                {filter.type === 'LTE' ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Input
-                        variant='highlighted'
-                        icon='ChevronRightSmall'
-                        placeholder='Min value'
-                        value={filter.value}
-                        onChange={(e) => update('value', e.target.value)}
-                        prefix='<='
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{filter.value}</TooltipContent>
-                  </Tooltip>
-                ) : filter.type === 'GTE' ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Input
-                        variant='highlighted'
-                        icon='ChevronRightSmall'
-                        placeholder='Max value'
-                        value={filter.value}
-                        onChange={(e) => update('value', e.target.value)}
-                        prefix='>='
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{filter.value}</TooltipContent>
-                  </Tooltip>
-                ) : filter.type === 'range' ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Input
-                        variant='highlighted'
-                        icon='ChevronRightSmall'
-                        placeholder='min,max'
-                        value={filter.value}
-                        onChange={(e) => update('value', e.target.value)}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{filter.value}</TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Input
-                        variant='highlighted'
-                        icon='ChevronRightSmall'
-                        placeholder='Value'
-                        value={filter.value}
-                        onChange={(e) => update('value', e.target.value)}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>{filter.value}</TooltipContent>
-                  </Tooltip>
-                )}
-              </Stack>
+            <Stack flex={1}>
+              {filter.type === 'LTE' ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Input
+                      variant='highlighted'
+                      icon='ChevronRightSmall'
+                      placeholder={t('queryBuilder.minValue')}
+                      value={filter.value}
+                      onChange={(e) => update('value', e.target.value)}
+                      prefix='<='
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{filter.value}</TooltipContent>
+                </Tooltip>
+              ) : filter.type === 'GTE' ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Input
+                      variant='highlighted'
+                      icon='ChevronRightSmall'
+                      placeholder={t('queryBuilder.maxValue')}
+                      value={filter.value}
+                      onChange={(e) => update('value', e.target.value)}
+                      prefix='>='
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{filter.value}</TooltipContent>
+                </Tooltip>
+              ) : filter.type === 'range' ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Input
+                      variant='highlighted'
+                      icon='ChevronRightSmall'
+                      placeholder={t('queryBuilder.rangeValue')}
+                      value={filter.value}
+                      onChange={(e) => update('value', e.target.value)}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{filter.value}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Input
+                      variant='highlighted'
+                      icon='ChevronRightSmall'
+                      placeholder={t('common.value')}
+                      value={filter.value}
+                      onChange={(e) => update('value', e.target.value)}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>{filter.value}</TooltipContent>
+                </Tooltip>
+              )}
+            </Stack>
           </Stack>
-          {filter.type === 'wildcard' ? <Toggle option={['Case sensitive', 'Case insensitive']} checked={filter.case_insensitive} onCheckedChange={v => update('case_insensitive', v)} /> : null}
+          {filter.type === 'wildcard' ? <Toggle option={[t('queryBuilder.caseSensitive'), t('queryBuilder.caseInsensitive')]} checked={filter.case_insensitive} onCheckedChange={v => update('case_insensitive', v)} /> : null}
         </Stack>
       );
     });
@@ -387,6 +393,7 @@ export namespace OpenSearchQueryBuilder {
       keys: string[];
       container?: HTMLDivElement | null;
     }) => {
+      const { t } = Locale.use();
       const updateGroup = useCallback((key: string, value: any) => {
         setFilters(prev =>
           prev.map(item => item.id === group.id ? { ...item, [key]: value } : item) as Filter.Item[]
@@ -446,23 +453,23 @@ export namespace OpenSearchQueryBuilder {
             {/* Where this group goes in the parent bool */}
             <Select.Root value={group.operator} onValueChange={v => updateGroup('operator', v)}>
               <Select.Trigger className={s.value}>
-                <Select.Value placeholder='Operator' />
+                <Select.Value placeholder={t('queryBuilder.operatorPlaceholder')} />
               </Select.Trigger>
               <Select.Content container={container}>
                 {OpenSearchQueryBuilder.OPERATORS.map(op => (
                   <Select.Item key={op.value} value={op.value}>
                     <Icon name={op.icon} />
-                    {op.label}
+                    {t(op.labelKey)}
                   </Select.Item>
                 ))}
               </Select.Content>
             </Select.Root>
             <Switch checked={group.enabled} onCheckedChange={v => updateGroup('enabled', v)} />
             <Button variant='secondary' icon='Plus' onClick={addChildCondition}>
-              Add condition
+              {t('queryBuilder.addCondition')}
             </Button>
             <Button variant='secondary' icon='FolderPlus' onClick={addChildGroup}>
-              Add group
+              {t('queryBuilder.addGroup')}
             </Button>
             <Button variant='tertiary' icon='Trash2' onClick={removeGroup} />
           </Stack>
