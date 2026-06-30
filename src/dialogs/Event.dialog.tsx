@@ -369,18 +369,6 @@ const isTreeLeafValue = (
 	return value !== undefined && !isPlainObject(value);
 };
 
-const getLeafTooltipText = (
-	json: Record<string, unknown> | null,
-	path: string | null,
-): string | null => {
-	if (!json || !path || !isTreeLeafValue(json, path)) return null;
-
-	const value = getValueByPath(json, path);
-	if (value === undefined) return null;
-
-	return `${path}: ${String(value)}`;
-};
-
 /**
  * Checks if a coordinate point is within the current browser selection.
  * @param x Client X
@@ -1109,11 +1097,6 @@ export function DisplayEventDialog({
 	const treeContainerRef = useRef<HTMLDivElement | null>(null);
 	const isContextMenuSelectingRef = useRef<boolean>(false);
 	const isTreeViewContextRef = useRef<boolean>(false);
-	const [treeTooltip, setTreeTooltip] = useState<{
-		text: string;
-		x: number;
-		y: number;
-	} | null>(null);
 	const { theme } = useTheme();
 
 	// --- DERIVED DATA ---
@@ -1196,86 +1179,6 @@ export function DisplayEventDialog({
 
 	useEffect(() => setSelection(""), [event._id]);
 	useEffect(() => setLinkedEventsPopup(null), [event._id]);
-
-	// Tree event handlers using ref-based delegation
-	useEffect(() => {
-		const container = treeContainerRef.current;
-		if (!container || !json) return;
-
-		const handleMouseEnter = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
-
-			// For mouseenter, we know target is closer to the actual element
-			// Walk up to find the node container
-			let nodeEl: Element | null = target;
-			while (nodeEl && !nodeEl.classList.contains(s.node)) {
-				nodeEl = nodeEl.parentElement;
-			}
-
-			if (!nodeEl) {
-				setTreeTooltip(null);
-				return;
-			}
-
-			// Find label within node
-			const labelEl = Array.from(nodeEl.children).find(
-				(child) =>
-					child.classList.contains(s.label) ||
-					child.classList.contains(s.clickableLabel),
-			);
-
-			if (!labelEl) {
-				setTreeTooltip(null);
-				return;
-			}
-
-			const path = getTreeKeyPath(
-				labelEl,
-				s.label,
-				s.clickableLabel,
-				s.node,
-				s.basic,
-			);
-
-			// Only show tooltip if this is actually a leaf node
-			if (!isTreeLeafValue(json, path)) {
-				setTreeTooltip(null);
-				return;
-			}
-
-			const tooltipText = getLeafTooltipText(json, path);
-
-			if (!tooltipText) {
-				setTreeTooltip(null);
-				return;
-			}
-
-			// Get the position of the target element to show tooltip near it
-			const rect = target.getBoundingClientRect();
-			setTreeTooltip({
-				text: tooltipText,
-				x: rect.x,
-				y: rect.y,
-			});
-		};
-
-		const handleMouseLeave = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
-			// Only clear tooltip if we're leaving a node
-			if (target.classList.contains(s.node) || target.closest(`.${s.node}`)) {
-				setTreeTooltip(null);
-			}
-		};
-
-		// Use capture phase to catch events before they bubble to container
-		container.addEventListener("mouseenter", handleMouseEnter, true);
-		container.addEventListener("mouseleave", handleMouseLeave, true);
-
-		return () => {
-			container.removeEventListener("mouseenter", handleMouseEnter, true);
-			container.removeEventListener("mouseleave", handleMouseLeave, true);
-		};
-	}, [json, s.node, s.label, s.clickableLabel, s.basic]);
 
 	// --- HANDLERS: Actions ---
 
@@ -2126,17 +2029,6 @@ export function DisplayEventDialog({
 						/>
 						{highlights}
 					</div>
-					{treeTooltip && (
-						<div
-							className={s.treeTooltip}
-							style={{
-								left: treeTooltip.x + 14,
-								top: treeTooltip.y + 14,
-							}}
-						>
-							{treeTooltip.text}
-						</div>
-					)}
 
 					<Tabs
 						defaultValue="notes"

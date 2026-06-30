@@ -264,24 +264,6 @@
 	flex: none;
 }
 
-.treeTooltip {
-	position: fixed;
-	background: var(--background-100);
-	border: 1px solid var(--gray-400);
-	border-radius: 4px;
-	padding: 2px 8px;
-	font-size: 10px;
-	font-family: var(--font-mono);
-	color: var(--second);
-	pointer-events: none;
-	z-index: 9999;
-	max-width: 400px;
-	word-break: break-all;
-	box-shadow:
-		var(--shadow-border),
-		0 8px 20px var(--gray-alpha-500);
-}
-
 .highlighter {
 	padding-right: 8px;
 	height: 100%;
