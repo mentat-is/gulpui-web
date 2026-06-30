@@ -1,6 +1,5 @@
 import React, {
 	useCallback,
-	useEffect,
 	useMemo,
 	useRef,
 	useState,
@@ -33,6 +32,31 @@ import { useTableConfig } from "@/hooks/useTableConfig";
 import { Locale } from "@/locales";
 
 export type Object = Record<string, any>;
+
+type RowRecord = Record<string, unknown>;
+
+interface ColumnAccessor {
+	/** Column key used by headers, visibility settings, and render callbacks. */
+	key: string;
+	/** Pre-split dotted path used when a literal row key is not present. */
+	pathParts: string[] | null;
+	/** Whether this column should resolve to the virtual row index. */
+	isIndex: boolean;
+}
+
+interface FormatCellValueCache {
+	/** Cached object previews keyed by object identity. */
+	objectValues: WeakMap<object, string>;
+}
+
+interface SharedTooltipState {
+	/** Text displayed by the shared cell tooltip. */
+	text: string;
+	/** Viewport-relative top coordinate. */
+	top: number;
+	/** Viewport-relative left coordinate. */
+	left: number;
+}
 
 export namespace Table {
 	/**
@@ -156,11 +180,15 @@ export namespace Table {
 	}
 }
 
+const EMPTY_ACTIONS: Table.Action<Object>[] = [];
+
 interface ColumnModel<T extends Object> {
 	/** Source rows used by the table body. Explicit-column tables keep raw rows. */
 	rows: T[];
 	/** Visible column keys before user column-visibility filtering. */
 	columns: string[];
+	/** Precomputed value accessors keyed by column. */
+	columnAccessors: Record<string, ColumnAccessor>;
 	/** Renderers declared on column definitions. */
 	renderMapFromColumns: Record<string, Table.CellRenderer<T>>;
 	/** Header labels declared on column definitions. */
@@ -180,16 +208,13 @@ interface VirtualizationConfig {
 	estimatedRowHeight: number;
 }
 
-interface RowDescriptor {
-	/** Row index in the full table result set. */
-	index: number;
-}
-
 const DEFAULT_VIRTUALIZATION_CONFIG: VirtualizationConfig = {
 	threshold: 40,
 	overscan: 8,
 	estimatedRowHeight: 28,
 };
+
+const EMPTY_RENDER_MAP: Record<string, never> = {};
 
 /**
  * Resolves row virtualization settings from the public Table prop.
@@ -213,15 +238,26 @@ function resolveVirtualizationConfig(
 	};
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+/**
+ * Checks whether a value is a plain object that should be flattened.
+ * @param value Candidate value from a row.
+ * @returns True when the value is a plain object.
+ */
+function isPlainObject(value: unknown): value is RowRecord {
 	return Object.prototype.toString.call(value) === "[object Object]";
 }
 
+/**
+ * Flattens a row object using dotted keys for nested plain objects.
+ * @param value Source row or nested object.
+ * @param parentKey Dotted prefix accumulated during recursion.
+ * @returns Flattened row record.
+ */
 function flattenRow(
-	value: Record<string, any>,
+	value: RowRecord,
 	parentKey = "",
-): Record<string, any> {
-	return Object.entries(value).reduce<Record<string, any>>(
+): RowRecord {
+	return Object.entries(value).reduce<RowRecord>(
 		(acc, [key, entry]) => {
 			const nextKey = parentKey ? `${parentKey}.${key}` : key;
 
@@ -238,23 +274,131 @@ function flattenRow(
 }
 
 /**
- * Reads a field from a row, supporting both literal and dotted keys.
+ * Creates a reusable accessor for a table column.
+ * @param key Column key from the table schema.
+ * @param includeIndex Whether the virtual index column is enabled.
+ * @returns Column accessor metadata.
+ */
+function createColumnAccessor(
+	key: string,
+	includeIndex: boolean,
+): ColumnAccessor {
+	return {
+		key,
+		pathParts: key.includes(".") ? key.split(".") : null,
+		isIndex: key === "i" && includeIndex,
+	};
+}
+
+/**
+ * Creates column accessors for the provided column keys.
+ * @param columns Column keys available to the table.
+ * @param includeIndex Whether the virtual index column is enabled.
+ * @returns Accessors keyed by column name.
+ */
+function createColumnAccessors(
+	columns: string[],
+	includeIndex: boolean,
+): Record<string, ColumnAccessor> {
+	return columns.reduce<Record<string, ColumnAccessor>>((acc, column) => {
+		acc[column] = createColumnAccessor(column, includeIndex);
+		return acc;
+	}, {});
+}
+
+/**
+ * Reads a field from a row using precomputed dotted-path metadata.
  * @param row Source row object.
- * @param key Literal field key or dotted path.
+ * @param accessor Column accessor metadata.
  * @returns Field value when present.
  */
-function readRowValue(row: Record<string, any>, key: string): unknown {
-	if (Object.prototype.hasOwnProperty.call(row, key)) {
-		return row[key];
+function readRowValue(row: RowRecord, accessor: ColumnAccessor): unknown {
+	if (Object.prototype.hasOwnProperty.call(row, accessor.key)) {
+		return row[accessor.key];
 	}
 
-	return key.split(".").reduce<unknown>((current, part) => {
+	if (!accessor.pathParts) {
+		return undefined;
+	}
+
+	return accessor.pathParts.reduce<unknown>((current, part) => {
 		if (!current || typeof current !== "object") {
 			return undefined;
 		}
 
 		return (current as Record<string, unknown>)[part];
 	}, row);
+}
+
+/**
+ * Determines whether a derived column key should be hidden.
+ * @param key Flattened column key.
+ * @param hiddenColumns Columns hidden by the caller.
+ * @param hasNotshow Whether the caller provided the notshow prop.
+ * @returns True when the key should not be part of the derived schema.
+ */
+function shouldHideDerivedColumn(
+	key: string,
+	hiddenColumns: Set<string> | undefined,
+	hasNotshow: boolean,
+): boolean {
+	if (hiddenColumns?.has(key)) return true;
+	return !hasNotshow && key === "event.original";
+}
+
+/**
+ * Collects flattened leaf keys without allocating a flattened row object.
+ * @param value Source row or nested object.
+ * @param keys Accumulator for discovered column keys.
+ * @param hiddenColumns Columns hidden by the caller.
+ * @param hasNotshow Whether the caller provided the notshow prop.
+ * @param parentKey Dotted prefix accumulated during recursion.
+ */
+function collectFlattenedRowKeys(
+	value: RowRecord,
+	keys: Set<string>,
+	hiddenColumns: Set<string> | undefined,
+	hasNotshow: boolean,
+	parentKey = "",
+): void {
+	Object.entries(value).forEach(([key, entry]) => {
+		const nextKey = parentKey ? `${parentKey}.${key}` : key;
+
+		if (isPlainObject(entry)) {
+			collectFlattenedRowKeys(
+				entry,
+				keys,
+				hiddenColumns,
+				hasNotshow,
+				nextKey,
+			);
+			return;
+		}
+
+		if (!shouldHideDerivedColumn(nextKey, hiddenColumns, hasNotshow)) {
+			keys.add(nextKey);
+		}
+	});
+}
+
+/**
+ * Reads or creates a lazily flattened row for schema-less tables.
+ * @param row Source row object.
+ * @param cache Weak cache keyed by row identity.
+ * @returns Flattened row record.
+ */
+function getFlattenedRow(
+	row: RowRecord,
+	cache: WeakMap<RowRecord, RowRecord>,
+): RowRecord {
+	const cached = cache.get(row);
+	if (cached) {
+		return cached;
+	}
+
+	const flattened = flattenRow(row);
+	cache.set(row, flattened);
+	return flattened;
 }
 
 /**
@@ -298,6 +442,7 @@ function buildExplicitColumnModel<T extends Object>(
 	return {
 		rows: sourceRows,
 		columns,
+		columnAccessors: createColumnAccessors(columns, includeIndex),
 		renderMapFromColumns,
 		columnLabels,
 		columnWidthsFromDefinitions,
@@ -306,36 +451,39 @@ function buildExplicitColumnModel<T extends Object>(
 }
 
 /**
- * Builds the table model for schema-less callers by flattening each row once.
+ * Builds the table model for schema-less callers without flattening every row.
  * @param sourceRows Raw rows passed by the caller.
  * @param notshow Columns hidden by the caller.
  * @param includeIndex Whether to include the virtual index column.
- * @returns Column metadata and flattened rows.
+ * @returns Column metadata and raw rows for lazy flattened reads.
  */
 function buildDerivedColumnModel<T extends Object>(
 	sourceRows: T[],
 	notshow: string[] | undefined,
 	includeIndex: boolean,
 ): ColumnModel<T> {
-	const flattenedRows = sourceRows.map((value) => flattenRow(value) as T);
 	const keys = new Set<string>();
+	const hiddenColumns = notshow ? new Set(notshow) : undefined;
+	const hasNotshow = notshow !== undefined;
 
-	flattenedRows.forEach((row) => {
-		Object.keys(row).forEach((key) => {
-			if (notshow && notshow.includes(key)) return;
-			if (!notshow && key === "event.original") return;
-			keys.add(key);
-		});
+	sourceRows.forEach((row) => {
+		collectFlattenedRowKeys(row as RowRecord, keys, hiddenColumns, hasNotshow);
 	});
 
 	if (includeIndex) {
 		keys.add("i");
 	}
 
+	const columns = Array.from(keys.values()).sort((a, b) => a.localeCompare(b));
+
 	return {
-		rows: flattenedRows,
-		columns: Array.from(keys.values()).sort((a, b) => a.localeCompare(b)),
-		renderMapFromColumns: {},
+		rows: sourceRows,
+		columns,
+		columnAccessors: createColumnAccessors(columns, includeIndex),
+		renderMapFromColumns: EMPTY_RENDER_MAP as Record<
+			string,
+			Table.CellRenderer<T>
+		>,
 		columnLabels: {},
 		columnWidthsFromDefinitions: {},
 		hasExplicitColumns: false,
@@ -345,32 +493,49 @@ function buildDerivedColumnModel<T extends Object>(
 /**
  * Reads a display value for the requested table cell.
  * @param row Source row for the current rendered line.
- * @param column Column key to read.
+ * @param accessor Column accessor to read.
  * @param rowIndex Row index in the full table.
- * @param includeIndex Whether the virtual index column is enabled.
  * @param hasExplicitColumns Whether the caller supplied a column schema.
  * @returns Cell value or the blank placeholder when the field is absent.
  */
 function readTableCellValue<T extends Object>(
 	row: T,
-	column: string,
+	accessor: ColumnAccessor,
 	rowIndex: number,
-	includeIndex: boolean,
 	hasExplicitColumns: boolean,
 ): unknown {
-	if (column === "i" && includeIndex) {
+	if (accessor.isIndex) {
 		return rowIndex;
 	}
 
 	const value = hasExplicitColumns
-		? readRowValue(row, column)
-		: (row as Record<string, unknown>)[column];
+		? readRowValue(row as RowRecord, accessor)
+		: (row as RowRecord)[accessor.key];
 
 	return hasExplicitColumns
 		? value ?? "<BLANK>"
 		: value === undefined
 			? "<BLANK>"
 			: value;
+}
+
+/**
+ * Resolves the row shape used by body rendering and public row callbacks.
+ * @param row Source row from the table values.
+ * @param hasExplicitColumns Whether the caller supplied a column schema.
+ * @param flattenedRowCache Lazy flattened-row cache for schema-less tables.
+ * @returns Raw row for explicit schemas, flattened row for derived schemas.
+ */
+function getRenderableRow<T extends Object>(
+	row: T,
+	hasExplicitColumns: boolean,
+	flattenedRowCache: WeakMap<RowRecord, RowRecord>,
+): T {
+	if (hasExplicitColumns) {
+		return row;
+	}
+
+	return getFlattenedRow(row as RowRecord, flattenedRowCache) as T;
 }
 
 /**
@@ -396,17 +561,6 @@ function isTableColumnSorted(column: string, sortField: string | undefined): boo
 function getRowKey<T extends Object>(row: T, index: number): string {
 	const record = row as Record<string, unknown>;
 	return `${String(record._id ?? record.id ?? "")}-${index}`;
-}
-
-/**
- * Creates descriptors for every row when virtualization is disabled.
- * @param rowCount Total number of table rows.
- * @returns Sequential row descriptors.
- */
-function createSequentialRowDescriptors(rowCount: number): RowDescriptor[] {
-	return Array.from({ length: rowCount }, (_, index) => ({
-		index,
-	}));
 }
 
 /**
@@ -463,6 +617,30 @@ function formatCellValue(value: unknown): string {
 }
 
 /**
+ * Converts a cell value to display text using cached object previews.
+ * @param value Cell value.
+ * @param cache Formatter cache owned by the current table data set.
+ * @returns String safe to compute during table render.
+ */
+function formatCellValueWithCache(
+	value: unknown,
+	cache: FormatCellValueCache,
+): string {
+	if (!value || typeof value !== "object") {
+		return formatCellValue(value);
+	}
+
+	const cached = cache.objectValues.get(value);
+	if (cached) {
+		return cached;
+	}
+
+	const formatted = formatCellValue(value);
+	cache.objectValues.set(value, formatted);
+	return formatted;
+}
+
+/**
  * Resolves the final list of row actions, handling backward compatibility
  * with the deprecated `onrowaction` / `iconAction` props.
  */
@@ -487,7 +665,7 @@ function resolveActions<T extends Object>(
 		];
 	}
 
-	return [];
+	return EMPTY_ACTIONS as Table.Action<T>[];
 }
 
 /**
@@ -521,10 +699,51 @@ export function Table<T extends Object>({
 	virtualization: virtualizationProp,
 	...props
 }: Table.Props<T>) {
+	const { style: stackStyle, onScroll: stackOnScroll, ...stackProps } = props;
 	const wrapperRef = useRef<HTMLDivElement | null>(null);
+	const tableRef = useRef<HTMLTableElement | null>(null);
+	const columnElementRefs = useRef<Record<string, HTMLTableColElement | null>>(
+		{},
+	);
 	const { t } = Locale.use();
 	const isResizingRef = useRef(false);
 	const lastResolvedActionsRef = useRef<Table.Action<T>[]>([]);
+	const [isColumnMenuOpen, setIsColumnMenuOpen] = useState(false);
+	const [sharedTooltip, setSharedTooltip] =
+		useState<SharedTooltipState | null>(null);
+
+	const hasCustomVirtualizationConfig = typeof virtualizationProp === "object";
+	const virtualizationThreshold =
+		hasCustomVirtualizationConfig
+			? virtualizationProp.threshold
+			: undefined;
+	const virtualizationOverscan =
+		hasCustomVirtualizationConfig
+			? virtualizationProp.overscan
+			: undefined;
+	const virtualizationEstimatedRowHeight =
+		hasCustomVirtualizationConfig
+			? virtualizationProp.estimatedRowHeight
+			: undefined;
+	const virtualizationConfig = useMemo(
+		() => resolveVirtualizationConfig(virtualizationProp),
+		[
+			virtualizationProp === false,
+			virtualizationThreshold,
+			virtualizationOverscan,
+			virtualizationEstimatedRowHeight,
+		],
+	);
+	const formatCache = useMemo<FormatCellValueCache>(
+		() => ({
+			objectValues: new WeakMap(),
+		}),
+		[_values],
+	);
+	const flattenedRowCache = useMemo<WeakMap<RowRecord, RowRecord>>(
+		() => new WeakMap(),
+		[_values],
+	);
 
 	const handleSort = useCallback(
 		(field: string) => {
@@ -571,6 +790,7 @@ export function Table<T extends Object>({
 
 	const {
 		columns,
+		columnAccessors,
 		renderMapFromColumns,
 		columnLabels,
 		columnWidthsFromDefinitions,
@@ -578,7 +798,6 @@ export function Table<T extends Object>({
 	} = columnModel;
 	const rows = hasExplicitColumns ? _values : columnModel.rows;
 
-	const virtualizationConfig = resolveVirtualizationConfig(virtualizationProp);
 	const isVirtualizationEnabled =
 		virtualizationProp !== false && rows.length > virtualizationConfig.threshold;
 
@@ -604,15 +823,20 @@ export function Table<T extends Object>({
 						virtualItems[virtualItems.length - 1].end,
 				)
 			: 0;
-	const renderedRowDescriptors = isVirtualizationEnabled
-		? virtualItems.map((virtualItem) => ({
-				index: virtualItem.index,
-			}))
-		: createSequentialRowDescriptors(rows.length);
 
-	/** Combined custom cell renderers from column definition and renderMap prop */
-	const mergedRenderMap = useMemo(() => {
-		return { ...renderMapFromColumns, ...renderMap };
+	/** Combined custom cell renderers from column definition and renderMap prop. */
+	const mergedRenderMap = useMemo<Table.RenderMap<T> | undefined>(() => {
+		const hasColumnRenderers = Object.keys(renderMapFromColumns).length > 0;
+		if (hasColumnRenderers && renderMap) {
+			return { ...renderMapFromColumns, ...renderMap };
+		}
+		if (renderMap) {
+			return renderMap;
+		}
+		if (hasColumnRenderers) {
+			return renderMapFromColumns;
+		}
+		return undefined;
 	}, [renderMapFromColumns, renderMap]);
 
 	/**
@@ -641,17 +865,28 @@ export function Table<T extends Object>({
 		return columns.filter((c) => !hiddenColumns.has(c));
 	}, [columns, hiddenColumns, _columnVisibility]);
 
+	/** Accessors for the columns currently rendered in the body. */
+	const visibleColumnAccessors = useMemo(
+		() => visibleColumns.map((column) => columnAccessors[column]),
+		[visibleColumns, columnAccessors],
+	);
+
 	// ─── Column Resizing ───────────────────────────────────────────────
 	const MIN_COL_WIDTH = 30;
 	const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
 
-	/** Calculate default column widths based on maximum character length of contents or custom column configuration */
+	/** Calculate default column widths for currently visible columns. */
 	const defaultWidths = useMemo(
 		() => {
 			const widths: Record<string, number | string> = {};
-			const skipRowSampling = rows.length > virtualizationConfig.threshold;
+			if (!configLoaded) {
+				return widths;
+			}
+			const skipRowSampling =
+				isVirtualizationEnabled || rows.length > virtualizationConfig.threshold;
 
-			columns.forEach((column) => {
+			visibleColumnAccessors.forEach((accessor) => {
+				const column = accessor.key;
 				const configuredWidth = columnWidthsFromDefinitions[column];
 				if (configuredWidth !== undefined) {
 					widths[column] = configuredWidth;
@@ -666,17 +901,23 @@ export function Table<T extends Object>({
 				let maxLen = (columnLabels[column] || column).length;
 
 				if (!skipRowSampling) {
-					const sampleRows = rows.slice(0, 100);
-					for (let rowIndex = 0; rowIndex < sampleRows.length; rowIndex++) {
+					const sampleCount = Math.min(rows.length, 100);
+					for (let rowIndex = 0; rowIndex < sampleCount; rowIndex++) {
+						const sampleRow = rows[rowIndex];
+						const rowForRead = hasExplicitColumns
+							? sampleRow
+							: (getFlattenedRow(
+									sampleRow as RowRecord,
+									flattenedRowCache,
+								) as T);
 						const value = readTableCellValue(
-							sampleRows[rowIndex],
-							column,
+							rowForRead,
+							accessor,
 							rowIndex,
-							includeIndex,
 							hasExplicitColumns,
 						);
 						if (value !== undefined && value !== null && value !== "<BLANK>") {
-							const valueText = formatCellValue(value);
+							const valueText = formatCellValueWithCache(value, formatCache);
 							if (valueText.length > maxLen) {
 								maxLen = valueText.length;
 							}
@@ -691,12 +932,15 @@ export function Table<T extends Object>({
 		},
 		[
 			rows,
-			columns,
+			visibleColumnAccessors,
 			columnWidthsFromDefinitions,
 			columnLabels,
-			includeIndex,
 			hasExplicitColumns,
+			isVirtualizationEnabled,
 			virtualizationConfig.threshold,
+			flattenedRowCache,
+			formatCache,
+			configLoaded,
 		],
 	);
 
@@ -709,18 +953,60 @@ export function Table<T extends Object>({
 			isResizingRef.current = true;
 			const localDoc = wrapperRef.current?.ownerDocument ?? document;
 			const localWin = localDoc.defaultView ?? window;
+			const initialTableWidth = tableRef.current?.getBoundingClientRect().width;
+			let frame: number | null = null;
+			let pendingWidth = startWidth;
+			let committedWidth = startWidth;
 
-			const onMouseMove = (e: MouseEvent) => {
-				const delta = e.clientX - startX;
-				const newWidth = Math.max(MIN_COL_WIDTH, startWidth + delta);
-				setColumnWidths((prev) => ({ ...prev, [columnKey]: newWidth }));
+			/**
+			 * Applies the in-progress resize directly to table layout elements.
+			 * @param width Next column width in pixels.
+			 */
+			const applyResizeWidth = (width: number) => {
+				const columnElement = columnElementRefs.current[columnKey];
+				if (columnElement) {
+					columnElement.style.width = `${width}px`;
+				}
+				if (tableRef.current && initialTableWidth !== undefined) {
+					const nextTableWidth = Math.max(
+						MIN_COL_WIDTH,
+						initialTableWidth + width - startWidth,
+					);
+					tableRef.current.style.width = `${nextTableWidth}px`;
+				}
 			};
 
+			/**
+			 * Queues visual resize updates without forcing React to render per event.
+			 * @param e Mouse move event from the owner window.
+			 */
+			const onMouseMove = (e: MouseEvent) => {
+				const delta = e.clientX - startX;
+				pendingWidth = Math.max(MIN_COL_WIDTH, startWidth + delta);
+				committedWidth = pendingWidth;
+				if (frame !== null) {
+					return;
+				}
+				frame = localWin.requestAnimationFrame(() => {
+					frame = null;
+					applyResizeWidth(pendingWidth);
+				});
+			};
+
+			/**
+			 * Commits the final resized width to React state and clears listeners.
+			 */
 			const onMouseUp = () => {
+				if (frame !== null) {
+					localWin.cancelAnimationFrame(frame);
+					frame = null;
+				}
+				applyResizeWidth(committedWidth);
 				localWin.removeEventListener("mousemove", onMouseMove);
 				localWin.removeEventListener("mouseup", onMouseUp);
 				localDoc.body.style.cursor = "";
 				localDoc.body.style.userSelect = "";
+				setColumnWidths((prev) => ({ ...prev, [columnKey]: committedWidth }));
 				setTimeout(() => {
 					isResizingRef.current = false;
 				}, 100);
@@ -767,33 +1053,142 @@ export function Table<T extends Object>({
 	);
 
 	/**
-	 * Renders a table body row from a virtual or sequential row descriptor.
-	 * @param descriptor Row descriptor produced by the render plan.
+	 * Hides the shared overflow tooltip for default table cells.
+	 * @returns Nothing.
+	 */
+	const hideSharedTooltip = useCallback(() => {
+		setSharedTooltip(null);
+	}, []);
+
+	/**
+	 * Shows the shared tooltip when a default cell span is visually truncated.
+	 * @param event Mouse event delegated from the table element.
+	 * @returns Nothing.
+	 */
+	const handleTableMouseOver = useCallback(
+		(event: React.MouseEvent<HTMLTableElement>) => {
+			const target =
+				event.target instanceof Element ? event.target : undefined;
+			const trigger = target?.closest<HTMLElement>(
+				'[data-table-tooltip-trigger="true"]',
+			);
+			if (!trigger || !tableRef.current?.contains(trigger)) {
+				return;
+			}
+
+			const isOverflowing = trigger.scrollWidth > trigger.clientWidth + 1;
+			if (!isOverflowing) {
+				hideSharedTooltip();
+				return;
+			}
+
+			const tooltipText = trigger.dataset.tableTooltipText;
+			if (!tooltipText) {
+				hideSharedTooltip();
+				return;
+			}
+
+			const rect = trigger.getBoundingClientRect();
+			const ownerWindow = trigger.ownerDocument.defaultView ?? window;
+			setSharedTooltip({
+				text: tooltipText,
+				top: Math.max(
+					8,
+					Math.min(rect.bottom + 6, ownerWindow.innerHeight - 320),
+				),
+				left: Math.max(8, Math.min(rect.left, ownerWindow.innerWidth - 420)),
+			});
+		},
+		[hideSharedTooltip],
+	);
+
+	/**
+	 * Hides the shared tooltip when the pointer leaves the active default cell.
+	 * @param event Mouse event delegated from the table element.
+	 * @returns Nothing.
+	 */
+	const handleTableMouseOut = useCallback(
+		(event: React.MouseEvent<HTMLTableElement>) => {
+			const target =
+				event.target instanceof Element ? event.target : undefined;
+			const trigger = target?.closest<HTMLElement>(
+				'[data-table-tooltip-trigger="true"]',
+			);
+			if (!trigger) {
+				return;
+			}
+
+			const relatedTarget =
+				event.relatedTarget instanceof Node ? event.relatedTarget : null;
+			if (relatedTarget && trigger.contains(relatedTarget)) {
+				return;
+			}
+
+			hideSharedTooltip();
+		},
+		[hideSharedTooltip],
+	);
+
+	/**
+	 * Preserves caller scroll handling while hiding stale cell tooltips.
+	 * @param event Scroll event from the table wrapper.
+	 * @returns Nothing.
+	 */
+	const handleWrapperScroll = useCallback(
+		(event: React.UIEvent<HTMLDivElement>) => {
+			hideSharedTooltip();
+			stackOnScroll?.(event);
+		},
+		[hideSharedTooltip, stackOnScroll],
+	);
+
+	/**
+	 * Tracks column visibility menu state so menu items render only while open.
+	 * @param open Whether the context menu is open.
+	 * @returns Nothing.
+	 */
+	const handleColumnMenuOpenChange = useCallback(
+		(open: boolean) => {
+			setIsColumnMenuOpen(open);
+			if (open) {
+				hideSharedTooltip();
+			}
+		},
+		[hideSharedTooltip],
+	);
+
+	/**
+	 * Renders a table body row from a virtual or sequential row index.
+	 * @param rowIndex Row index produced by the render plan.
 	 * @returns Rendered table item or null when the row no longer exists.
 	 */
 	const renderBodyRow = useCallback(
-		(descriptor: RowDescriptor) => {
-			const row = rows[descriptor.index];
+		(rowIndex: number) => {
+			const row = rows[rowIndex];
 			if (!row) {
 				return null;
 			}
 
-			const record = row as T & Record<string, unknown>;
+			const record = getRenderableRow(
+				row,
+				hasExplicitColumns,
+				flattenedRowCache,
+			) as T & RowRecord;
 
 			return (
 				<Item
-					columns={visibleColumns}
-					key={getRowKey(record, descriptor.index)}
-					i={record}
-					index={descriptor.index}
-					includeIndex={includeIndex}
+					columns={visibleColumnAccessors}
+					key={getRowKey(record, rowIndex)}
+					i={row}
+					index={rowIndex}
 					hasExplicitColumns={hasExplicitColumns}
+					flattenedRowCache={flattenedRowCache}
 					selectable={selectable}
-					selected={selectedrows?.has(descriptor.index)}
+					selected={selectedrows?.has(rowIndex)}
 					onRowSelect={onrowselect}
 					actions={resolvedActions}
 					onRowClick={onRowClick}
-					isActive={activeRowIndex === descriptor.index}
+					isActive={activeRowIndex === rowIndex}
 					highlighted={!!(highlightedId && record._id === highlightedId)}
 					renderCell={renderCell}
 					renderMap={mergedRenderMap}
@@ -802,9 +1197,9 @@ export function Table<T extends Object>({
 		},
 		[
 			rows,
-			visibleColumns,
-			includeIndex,
+			visibleColumnAccessors,
 			hasExplicitColumns,
+			flattenedRowCache,
 			selectable,
 			selectedrows,
 			onrowselect,
@@ -818,10 +1213,15 @@ export function Table<T extends Object>({
 	);
 
 	/** Renders the inner table element with colgroup, thead, and tbody. */
-	const tableElement = (
+	const tableElement = configLoaded ? (
 		<table
+			ref={tableRef}
 			className={s.table}
 			style={{ width: totalTableWidth }}
+			onMouseOver={handleTableMouseOver}
+			onMouseOut={handleTableMouseOut}
+			onMouseLeave={hideSharedTooltip}
+			onClick={hideSharedTooltip}
 		>
 			<colgroup>
 				{selectable && <col style={{ width: 40 }} />}
@@ -830,6 +1230,9 @@ export function Table<T extends Object>({
 					return (
 						<col
 							key={`col-${c}`}
+							ref={(element) => {
+								columnElementRefs.current[c] = element;
+							}}
 							style={String(w) === "auto" ? undefined : { width: w }}
 						/>
 					);
@@ -852,13 +1255,13 @@ export function Table<T extends Object>({
 							) : null}
 						</th>
 					)}
-					{visibleColumns.map((c, i) => {
+					{visibleColumns.map((c) => {
 						const isSorted = isTableColumnSorted(c, sortField);
 						return (
 							<MemoCol
 								c={c}
 								label={columnLabels[c]}
-								key={c + i}
+								key={c}
 								isSorted={isSorted}
 								sortDirection={isSorted ? sortDirection : undefined}
 								onSort={handleSort}
@@ -882,7 +1285,9 @@ export function Table<T extends Object>({
 						/>
 					</tr>
 				) : null}
-				{renderedRowDescriptors.map(renderBodyRow)}
+				{isVirtualizationEnabled
+					? virtualItems.map((virtualItem) => renderBodyRow(virtualItem.index))
+					: rows.map((_row, rowIndex) => renderBodyRow(rowIndex))}
 				{isVirtualizationEnabled && bottomSpacerHeight > 0 ? (
 					<tr
 						className={s.virtualSpacerRow}
@@ -897,7 +1302,12 @@ export function Table<T extends Object>({
 				) : null}
 			</tbody>
 		</table>
-	);
+	) : null;
+	const wrapperStyle: React.CSSProperties &
+		Record<"--highlight-color", string> = {
+			...stackStyle,
+			"--highlight-color": Color.Themer.getTargetGuideColor(),
+		};
 
 	return (
 		<TooltipProvider>
@@ -907,52 +1317,64 @@ export function Table<T extends Object>({
 				dir="column"
 				ref={wrapperRef}
 				className={cn(s.wrapper, className)}
-				style={{
-					...props.style,
-					["--highlight-color" as any]: Color.Themer.getTargetGuideColor(),
-				}}
-				{...props}
+				onScroll={handleWrapperScroll}
+				style={wrapperStyle}
+				{...stackProps}
 			>
 				{!configLoaded ? null : _columnVisibility ? (
-					<ContextMenu>
+					<ContextMenu onOpenChange={handleColumnMenuOpenChange}>
 						<ContextMenuTrigger asChild>{tableElement}</ContextMenuTrigger>
-						<ContextMenuContent>
-							<ContextMenuLabel>{t("table.columnVisibility")}</ContextMenuLabel>
-							<ContextMenuSeparator />
-							{columns.map((col) => (
-								<ContextMenuCheckboxItem
-									key={col}
-									checked={!hiddenColumns.has(col)}
-									onCheckedChange={() => toggleColumn(col)}
-									onSelect={(e) => e.preventDefault()}
-								>
-									{columnLabels[col] || col}
-								</ContextMenuCheckboxItem>
-							))}
-							{hiddenColumns.size > 0 && (
-								<>
-									<ContextMenuSeparator />
+						{isColumnMenuOpen ? (
+							<ContextMenuContent>
+								<ContextMenuLabel>{t("table.columnVisibility")}</ContextMenuLabel>
+								<ContextMenuSeparator />
+								{columns.map((col) => (
 									<ContextMenuCheckboxItem
-										checked={false}
-										onCheckedChange={() => resetConfig()}
+										key={col}
+										checked={!hiddenColumns.has(col)}
+										onCheckedChange={() => toggleColumn(col)}
 										onSelect={(e) => e.preventDefault()}
 									>
-										{t("table.showAllColumns")}
+										{columnLabels[col] || col}
 									</ContextMenuCheckboxItem>
-								</>
-							)}
-						</ContextMenuContent>
+								))}
+								{hiddenColumns.size > 0 && (
+									<>
+										<ContextMenuSeparator />
+										<ContextMenuCheckboxItem
+											checked={false}
+											onCheckedChange={() => resetConfig()}
+											onSelect={(e) => e.preventDefault()}
+										>
+											{t("table.showAllColumns")}
+										</ContextMenuCheckboxItem>
+									</>
+								)}
+							</ContextMenuContent>
+						) : null}
 					</ContextMenu>
 				) : (
 					tableElement
 				)}
+				{sharedTooltip ? (
+					<div
+						className={s.sharedTooltip}
+						data-table-tooltip="true"
+						style={{
+							top: sharedTooltip.top,
+							left: sharedTooltip.left,
+						}}
+					>
+						{sharedTooltip.text}
+					</div>
+				) : null}
 			</Stack>
 		</TooltipProvider>
 	);
 }
 
 namespace Col {
-	export interface Props extends Stack.Props {
+	export interface Props extends React.ThHTMLAttributes<HTMLTableCellElement> {
 		/** The column field name. */
 		c: string;
 		/** Custom display label for the column header. */
@@ -984,6 +1406,7 @@ function Col({
 	sortDirection,
 	onSort,
 	onResizeStart,
+	className,
 	...props
 }: Col.Props) {
 	const thRef = useRef<HTMLTableCellElement>(null);
@@ -1008,11 +1431,7 @@ function Col({
 			ref={thRef}
 			{...props}
 			onClick={() => onSort?.(c)}
-			style={{
-				cursor: onSort ? "pointer" : "default",
-				userSelect: "none",
-				position: "relative",
-			}}
+			className={cn(s.headerCell, onSort && s.headerCellSortable, className)}
 		>
 			<Stack
 				gap={4}
@@ -1046,17 +1465,18 @@ function Col({
 const MemoCol = React.memo(Col);
 
 namespace Item {
-	export interface Props<T extends Object> extends Stack.Props {
-		/** The flattened data row. */
+	export interface Props<T extends Object>
+		extends React.HTMLAttributes<HTMLTableRowElement> {
+		/** The source data row. */
 		i: T;
-		/** Visible column keys. */
-		columns: string[];
+		/** Visible column accessors. */
+		columns: ColumnAccessor[];
 		/** Row index within the table. */
 		index: number;
-		/** Whether the virtual index column should be populated. */
-		includeIndex: boolean;
 		/** Whether the table uses caller-provided columns and raw row reads. */
 		hasExplicitColumns: boolean;
+		/** Lazy flattened-row cache for schema-less tables. */
+		flattenedRowCache: WeakMap<RowRecord, RowRecord>;
 		/** Whether checkbox selection is enabled. */
 		selectable?: boolean;
 		/** Whether this row's checkbox is checked. */
@@ -1086,8 +1506,8 @@ const Item = React.memo(
 		i,
 		columns,
 		index,
-		includeIndex,
 		hasExplicitColumns,
+		flattenedRowCache,
 		selectable,
 		selected,
 		onRowSelect,
@@ -1099,6 +1519,11 @@ const Item = React.memo(
 		renderMap,
 		...props
 	}: Item.Props<T>) {
+		const renderRow = useMemo(
+			() => getRenderableRow(i, hasExplicitColumns, flattenedRowCache),
+			[i, hasExplicitColumns, flattenedRowCache],
+		);
+
 		/**
 		 * Handle row click for click-selection.
 		 * Prevents triggering row click when clicking on interactive elements (checkbox, button).
@@ -1108,9 +1533,9 @@ const Item = React.memo(
 				if (!onRowClick) return;
 				const target = e.target as HTMLElement;
 				if (target.closest('button, input, [role="checkbox"]')) return;
-				onRowClick(i, index);
+				onRowClick(renderRow, index);
 			},
-			[onRowClick, i, index],
+			[onRowClick, renderRow, index],
 		);
 
 		return (
@@ -1133,12 +1558,12 @@ const Item = React.memo(
 						</div>
 					</td>
 				)}
-				{columns.map((c, idx) => {
+				{columns.map((column) => {
+					const c = column.key;
 					const cellValue = readTableCellValue(
-						i,
-						c,
+						renderRow,
+						column,
 						index,
-						includeIndex,
 						hasExplicitColumns,
 					);
 
@@ -1148,9 +1573,9 @@ const Item = React.memo(
 						return (
 							<td
 								className={cn(s.value, cellValue === "<BLANK>" && s.blank)}
-								key={c + idx}
+								key={c}
 							>
-								{columnRenderer(cellValue, i, c, index)}
+								{columnRenderer(cellValue, renderRow, c, index)}
 							</td>
 						);
 					}
@@ -1158,9 +1583,9 @@ const Item = React.memo(
 						return (
 							<td
 								className={cn(s.value, cellValue === "<BLANK>" && s.blank)}
-								key={c + idx}
+								key={c}
 							>
-								{renderCell(cellValue, i, c, index)}
+								{renderCell(cellValue, renderRow, c, index)}
 							</td>
 						);
 					}
@@ -1168,7 +1593,7 @@ const Item = React.memo(
 						<Value
 							k={c}
 							v={cellValue}
-							key={c + cellValue + idx}
+							key={c}
 						/>
 					);
 				})}
@@ -1189,7 +1614,9 @@ const Item = React.memo(
 											className={s.Button_Icon}
 											icon={action.icon}
 											variant={action.variant || "tertiary"}
-											onClick={(event) => action.onClick(i, index, event)}
+											onClick={(event) =>
+												action.onClick(renderRow, index, event)
+											}
 										/>
 									</TooltipTrigger>
 									<TooltipContent sideOffset={4}>{action.label}</TooltipContent>
@@ -1203,8 +1630,8 @@ const Item = React.memo(
 	},
 	(prevProps, nextProps) => {
 		if (prevProps.index !== nextProps.index) return false;
-		if (prevProps.includeIndex !== nextProps.includeIndex) return false;
 		if (prevProps.hasExplicitColumns !== nextProps.hasExplicitColumns) return false;
+		if (prevProps.flattenedRowCache !== nextProps.flattenedRowCache) return false;
 		if (prevProps.selectable !== nextProps.selectable) return false;
 		if (prevProps.selected !== nextProps.selected) return false;
 		if (prevProps.isActive !== nextProps.isActive) return false;
@@ -1224,61 +1651,31 @@ const Item = React.memo(
 ) as <T extends Object>(props: Item.Props<T>) => React.ReactElement | null;
 
 namespace Value {
-	export interface Props extends Stack.Props {
+	export interface Props extends React.TdHTMLAttributes<HTMLTableCellElement> {
+		/** Column key for cell-specific formatting. */
 		k: string;
-		v: any;
+		/** Raw cell value to display. */
+		v: unknown;
 	}
 }
 
 /**
- * Renders a single cell value, with auto-detection of text truncation.
- * If the value is truncated, hovers trigger a portalled Tooltip.
- * Keeps a completely stable DOM structure to prevent hover flickering and layout shifts.
+ * Renders a lightweight default table cell.
+ * @param props Column key, raw value, and td attributes.
+ * @returns Rendered table data cell.
  */
 const Value = React.memo(
-	function ValueInner({ k, v, ...props }: Value.Props) {
-		const [open, setOpen] = useState(false);
-		const cellRef = useRef<HTMLTableCellElement>(null);
-		const triggerRef = useRef<HTMLSpanElement>(null);
-
-		useEffect(() => {
-			if (!open) return;
-
-			/**
-			 * Handles mouse clicks outside the cell and the active tooltip portal
-			 * to close/dismiss the active tooltip.
-			 *
-			 * @param event - The global MouseEvent object.
-			 */
-			const handleClickOutside = (event: MouseEvent) => {
-				const target = event.target as HTMLElement;
-				if (
-					cellRef.current &&
-					!cellRef.current.contains(target) &&
-					!target.closest('[data-table-tooltip="true"]')
-				) {
-					setOpen(false);
-				}
-			};
-
-			const localDoc = cellRef.current?.ownerDocument ?? document;
-			localDoc.addEventListener("click", handleClickOutside);
-			return () => {
-				localDoc.removeEventListener("click", handleClickOutside);
-			};
-		}, [open]);
-
+	function ValueInner({ k, v, style, ...props }: Value.Props) {
 		const stringified = formatCellValue(v);
 		const displayValue = stringified;
-
-		if (k === "color") {
-			props.style = {
-				...props.style,
-				color: stringified,
-			};
-		}
-
-		const glyph = Glyph.List.get(v as Glyph.Id);
+		const valueStyle =
+			k === "color"
+				? {
+						...style,
+						color: stringified,
+					}
+				: style;
+		const glyph = k === "glyph_id" ? Glyph.List.get(v as Glyph.Id) : undefined;
 		const icon =
 			k === "glyph_id" && glyph ? (
 				<Icon
@@ -1295,62 +1692,19 @@ const Value = React.memo(
 			</>
 		);
 
-		const tooltipText = displayValue;
-
-		const handleMouseEnter = () => {
-			if (!triggerRef.current) return;
-			// Detect if text is truncated (overflowing).
-			// We add a 1px tolerance to avoid subpixel rendering false-positives.
-			const isOverflowing =
-				triggerRef.current.scrollWidth > triggerRef.current.clientWidth + 1;
-			if (isOverflowing) {
-				setOpen(true);
-			}
-		};
-
-		const handleMouseLeave = () => {
-			setOpen(false);
-		};
-
 		return (
 			<td
-				ref={cellRef}
 				className={cn(s.value, displayValue === "<BLANK>" && s.blank)}
-				onMouseEnter={handleMouseEnter}
-				onMouseLeave={handleMouseLeave}
+				style={valueStyle}
 				{...props}
 			>
-				<Tooltip
-					open={open}
-					delayDuration={0}
+				<span
+					className={s.triggerSpan}
+					data-table-tooltip-trigger="true"
+					data-table-tooltip-text={displayValue}
 				>
-					<TooltipTrigger asChild>
-						<span
-							ref={triggerRef}
-							className={s.triggerSpan}
-						>
-							{content}
-						</span>
-					</TooltipTrigger>
-					<TooltipContent
-						data-table-tooltip="true"
-						sideOffset={4}
-						style={{
-							maxWidth: 400,
-							maxHeight: 300,
-							overflow: "auto",
-							whiteSpace: "pre-wrap",
-							textAlign: "left",
-							background: "var(--background-100)",
-							padding: 8,
-							border: "1px solid var(--gray-400)",
-							borderRadius: 6,
-							zIndex: 1500,
-						}}
-					>
-						{tooltipText}
-					</TooltipContent>
-				</Tooltip>
+					{content}
+				</span>
 			</td>
 		);
 	},

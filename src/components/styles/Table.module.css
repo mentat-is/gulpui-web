@@ -37,6 +37,7 @@
 .table th {
 	padding: 0 12px;
 	text-align: left;
+	background: var(--background-100);
 	border-right: 1px solid var(--gray-400);
 	border-bottom: 1px solid var(--gray-400);
 	font-weight: 700;
@@ -60,6 +61,16 @@
 .table th span {
 	text-overflow: ellipsis;
 	overflow: hidden;
+}
+
+.headerCell {
+	cursor: default;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.headerCellSortable {
+	cursor: pointer;
 }
 
 /* ─── Data cells ─── */
@@ -209,4 +220,24 @@
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.sharedTooltip {
+	position: fixed;
+	max-width: 400px;
+	max-height: 300px;
+	overflow: auto;
+	white-space: pre-wrap;
+	text-align: left;
+	background: var(--background-100);
+	padding: 8px;
+	border: 1px solid var(--gray-400);
+	border-radius: 6px;
+	z-index: 1500;
+	color: var(--gray-1000);
+	font-family: var(--font-mono);
+	font-size: 11px;
+	line-height: 1.35;
+	box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+	pointer-events: none;
 }
