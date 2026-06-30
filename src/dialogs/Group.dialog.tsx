@@ -237,15 +237,21 @@ interface DisplayGroupDialogProps {
 	events: Doc.Type[];
 	anchor?: { x: number; y: number } | null;
 	onClose?: () => void;
+	preserveTimelineTarget?: boolean;
 }
 
 /**
  * Displays a sorted group of events either as an anchored popup or full dialog.
  *
- * @param props - Event collection, optional popup anchor, and close callback.
+ * @param props - Event collection, optional popup anchor, close callback, and timeline target behavior.
  * @returns Virtualized event list with hover-preview controls.
  */
-export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDialogProps) {
+export function DisplayGroupDialog({
+	events,
+	anchor,
+	onClose,
+	preserveTimelineTarget = false,
+}: DisplayGroupDialogProps) {
 	const { spawnDialog, Info, app, currentDocument } = Application.use();
 	const { t } = Locale.use();
 	const dataStoreVersion = useSyncExternalStore(
@@ -327,8 +333,10 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 	}, []);
 
 	useEffect(() => {
-		Info.setTimelineTarget(null);
-	}, [Info]);
+		if (!preserveTimelineTarget) {
+			Info.setTimelineTarget(null);
+		}
+	}, [Info, preserveTimelineTarget]);
 
 	const parentRef = useRef<HTMLDivElement>(null);
 
@@ -339,13 +347,20 @@ export function DisplayGroupDialog({ events, anchor, onClose }: DisplayGroupDial
 		overscan: 5,
 	});
 
+	/**
+	 * Opens the selected event and keeps the timeline crosshair focused on it.
+	 *
+	 * @param event Event row selected by the user.
+	 * @returns Nothing.
+	 */
 	const handleSelectEvent = useCallback(
 		(event: Doc.Type) => {
+			Info.setTimelineTarget(event);
 			onClose?.();
 			spawnDialog(null);
 			spawnDialog(<DisplayEventDialog event={event} />);
 		},
-		[onClose, spawnDialog],
+		[Info, onClose, spawnDialog],
 	);
 
 	const handleEventHover = useCallback(

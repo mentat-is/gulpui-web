@@ -2209,6 +2209,7 @@ export function DisplayEventDialog({
 							events={linkedEventsPopup.events}
 							anchor={linkedEventsPopup.anchor}
 							onClose={() => setLinkedEventsPopup(null)}
+							preserveTimelineTarget
 						/>
 					)}
 				</Fragment>

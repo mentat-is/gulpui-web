@@ -963,6 +963,7 @@ export function Canvas({ timeline }: Canvas.Props) {
 					events={groupDialogEvents}
 					anchor={groupDialogAnchor}
 					onClose={closeGroupDialog}
+					preserveTimelineTarget={Boolean(app.timeline.target)}
 				/>
 			) : null}
 		</ContextMenu>
